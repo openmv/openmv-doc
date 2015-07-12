@@ -2,7 +2,7 @@
 
 # by: Kwabena W. Agyeman - kwagyeman@openmv.io
 
-import argparse, os, sys, subprocess, ftplib
+import argparse, os, sys, subprocess
 
 def make():
 
@@ -19,13 +19,15 @@ def make():
     ###########################################################################
 
     if sys.platform.startswith('win'):
+        os.environ["MICROPY_PORT"] = "openmv"
         if os.system("cd " + os.path.join(__folder__,
         "micropython/docs") + " && make.bat html"):
             sys.exit("Make Failed...")
 
     else:
         if os.system("cd " + os.path.join(__folder__,
-        "micropython/docs") + " && make html"):
+        "micropython/docs") + " && make MICROPY_PORT=openmv "
+        "BUILDDIR=_build html"):
             sys.exit("Make Failed...")
 
     ###########################################################################
