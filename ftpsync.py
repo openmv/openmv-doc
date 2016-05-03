@@ -276,7 +276,7 @@ class FtpSession(object):
                     sys.stdout.write('d')
                     sys.stdout.flush()
             else:
-                r[path] = mtime
+                r[path.replace('\\', '/')] = mtime
                 if verbose:
                     sys.stdout.write('.')
                     sys.stdout.flush()
