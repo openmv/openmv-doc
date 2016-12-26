@@ -19,14 +19,14 @@ def make():
     ###########################################################################
 
     if sys.platform.startswith('win'):
-        os.environ["MICROPY_PORT"] = "openmv"
+        os.environ["MICROPY_PORT"] = "openmvcam"
         if os.system("cd " + os.path.join(__folder__,
         "micropython/docs") + " && make.bat html"):
             sys.exit("Make Failed...")
 
     else:
         if os.system("cd " + os.path.join(__folder__,
-        "micropython/docs") + " && make MICROPY_PORT=openmv "
+        "micropython/docs") + " && make MICROPY_PORT=openmvcam "
         "BUILDDIR=_build html"):
             sys.exit("Make Failed...")
 
