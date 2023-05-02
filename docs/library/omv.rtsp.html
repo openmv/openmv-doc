@@ -1,0 +1,233 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>rtsp — rtsp library &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="omv — OpenMV Cam Information" href="omv.omv.html" />
+    <link rel="prev" title="rpc — rpc library" href="omv.rpc.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="omv.omv.html" title="omv — OpenMV Cam Information"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="omv.rpc.html" title="rpc — rpc library"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-rtsp">
+<span id="rtsp-rtsp-library"></span><h1><a class="reference internal" href="#module-rtsp" title="rtsp: rtsp library"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rtsp</span></code></a> — rtsp library<a class="headerlink" href="#module-rtsp" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">rtsp</span></code> module on the OpenMV Cam allows you to stream video from your OpenMV Cam to any
+compatible RTSP client (like <a class="reference external" href="https://www.videolan.org/vlc/index.html">VLC</a>).</p>
+<div class="section" id="how-to-use-the-library">
+<h2>How to use the Library<a class="headerlink" href="#how-to-use-the-library" title="Permalink to this headline">¶</a></h2>
+<p>Please checkout the example scripts in OpenMV IDE under <code class="docutils literal notranslate"><span class="pre">Web</span> <span class="pre">Servers</span></code>.</p>
+<p>The <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> is very easy to use. After being created you just need to call the <a class="reference internal" href="#rtsp.rtsp_server.stream" title="rtsp.rtsp_server.stream"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">rtsp_server.stream()</span></code></a>
+method with a call back function to generate image objects. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">network_if</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">WLAN</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">STA_IF</span><span class="p">)</span>
+<span class="n">network_if</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">network_if</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;your-ssid&#39;</span><span class="p">,</span> <span class="s1">&#39;your-password&#39;</span><span class="p">)</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="n">network_if</span><span class="o">.</span><span class="n">isconnected</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Trying to connect. Note this may take a while...&quot;</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+
+<span class="n">server</span> <span class="o">=</span> <span class="n">rtsp</span><span class="o">.</span><span class="n">rtsp_server</span><span class="p">(</span><span class="n">network_if</span><span class="p">)</span>
+<span class="n">server</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pathname</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">sensor</span><span class="o">.</span><span class="n">snapshot</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Note that not all RTSP clients can decode all types of JPEG images streamed. For best results please
+use the OV2640/OV5640 camera modules <a class="reference internal" href="omv.sensor.html#sensor.JPEG" title="sensor.JPEG"><code class="xref any py py-data docutils literal notranslate"><span class="pre">sensor.JPEG</span></code></a> mode for streaming RTSP JPEG video.</p>
+</div>
+<div class="section" id="class-rtsp-server-rtsp-server-class">
+<h2>class rtsp_server - rtsp_server class<a class="headerlink" href="#class-rtsp-server-rtsp-server-class" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> class creates a single connection RTSP web server on your OpenMV Cam.</p>
+<div class="section" id="constructors">
+<h3>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="rtsp.rtsp_server">
+<em class="property">class </em><code class="sig-prename descclassname">rtsp.</code><code class="sig-name descname">rtsp_server</code><span class="sig-paren">(</span><em class="sig-param">network_if</em>, <em class="sig-param">port=554</em><span class="sig-paren">)</span><a class="headerlink" href="#rtsp.rtsp_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a WiFi <code class="docutils literal notranslate"><span class="pre">rtsp</span></code> server.</p>
+<p><code class="docutils literal notranslate"><span class="pre">network_if</span></code> is the network module interface created from <code class="docutils literal notranslate"><span class="pre">network.LAN()</span></code>, <code class="docutils literal notranslate"><span class="pre">network.WLAN()</span></code>, or etc.</p>
+<p><code class="docutils literal notranslate"><span class="pre">port</span></code> is the port number to use. The default RTSP port is 554.</p>
+<dl class="method">
+<dt id="rtsp.rtsp_server.register_setup_cb">
+<code class="sig-name descname">register_setup_cb</code><span class="sig-paren">(</span><em class="sig-param">cb</em><span class="sig-paren">)</span><a class="headerlink" href="#rtsp.rtsp_server.register_setup_cb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind a call back (<code class="docutils literal notranslate"><span class="pre">cb</span></code>) to be executed when a client sets up a RTSP connection with the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a>.</p>
+<p>Registering a call back is not required for the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> to work.</p>
+<p>The call back should accept two arguments:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pathname</span></code> is the name of the stream resource the client wants. You can ignore this if it’s not
+needed. Otherwise, you can use it to determine what image object to return. By default the
+<code class="docutils literal notranslate"><span class="pre">pathname</span></code> will be “/”.</p>
+<p><code class="docutils literal notranslate"><span class="pre">session</span></code> is random number that will change when a new connection is established. You can use
+<code class="docutils literal notranslate"><span class="pre">session</span></code> with a dictionary to differentiate different accesses to the same <code class="docutils literal notranslate"><span class="pre">pathname</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rtsp.rtsp_server.register_play_cb">
+<code class="sig-name descname">register_play_cb</code><span class="sig-paren">(</span><em class="sig-param">cb</em><span class="sig-paren">)</span><a class="headerlink" href="#rtsp.rtsp_server.register_play_cb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind a call back (<code class="docutils literal notranslate"><span class="pre">cb</span></code>) to be executed when a client wants to start streaming.</p>
+<p>Registering a call back is not required for the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> to work.</p>
+<p>The call back should accept two arguments:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pathname</span></code> is the name of the stream resource the client wants. You can ignore this if it’s not
+needed. Otherwise, you can use it to determine what image object to return. By default the
+<code class="docutils literal notranslate"><span class="pre">pathname</span></code> will be “/”.</p>
+<p><code class="docutils literal notranslate"><span class="pre">session</span></code> is random number that will change when a new connection is established. You can use
+<code class="docutils literal notranslate"><span class="pre">session</span></code> with a dictionary to differentiate different accesses to the same <code class="docutils literal notranslate"><span class="pre">pathname</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rtsp.rtsp_server.register_pause_cb">
+<code class="sig-name descname">register_pause_cb</code><span class="sig-paren">(</span><em class="sig-param">cb</em><span class="sig-paren">)</span><a class="headerlink" href="#rtsp.rtsp_server.register_pause_cb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind a call back (<code class="docutils literal notranslate"><span class="pre">cb</span></code>) to be executed when a client wants to pause streaming.</p>
+<p>Registering a call back is not required for the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> to work.</p>
+<p>NOTE: When you click the pause button on <a class="reference external" href="https://www.videolan.org/vlc/index.html">VLC</a> in does not tell the server to pause.</p>
+<p>The call back should accept two arguments:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pathname</span></code> is the name of the stream resource the client wants. You can ignore this if it’s not
+needed. Otherwise, you can use it to determine what image object to return. By default the
+<code class="docutils literal notranslate"><span class="pre">pathname</span></code> will be “/”.</p>
+<p><code class="docutils literal notranslate"><span class="pre">session</span></code> is random number that will change when a new connection is established. You can use
+<code class="docutils literal notranslate"><span class="pre">session</span></code> with a dictionary to differentiate different accesses to the same <code class="docutils literal notranslate"><span class="pre">pathname</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rtsp.rtsp_server.register_teardown_cb">
+<code class="sig-name descname">register_teardown_cb</code><span class="sig-paren">(</span><em class="sig-param">cb</em><span class="sig-paren">)</span><a class="headerlink" href="#rtsp.rtsp_server.register_teardown_cb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bind a call back (<code class="docutils literal notranslate"><span class="pre">cb</span></code>) to be executed when a client wants tear down a RTSP connection with the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a>.</p>
+<p>Registering a call back is not required for the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> to work.</p>
+<p>The call back should accept two arguments:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pathname</span></code> is the name of the stream resource the client wants. You can ignore this if it’s not
+needed. Otherwise, you can use it to determine what image object to return. By default the
+<code class="docutils literal notranslate"><span class="pre">pathname</span></code> will be “/”.</p>
+<p><code class="docutils literal notranslate"><span class="pre">session</span></code> is random number that will change when a new connection is established. You can use
+<code class="docutils literal notranslate"><span class="pre">session</span></code> with a dictionary to differentiate different accesses to the same <code class="docutils literal notranslate"><span class="pre">pathname</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="rtsp.rtsp_server.stream">
+<code class="sig-name descname">stream</code><span class="sig-paren">(</span><em class="sig-param">cb</em>, <em class="sig-param">quality=90</em><span class="sig-paren">)</span><a class="headerlink" href="#rtsp.rtsp_server.stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Starts running the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> logic and does not return. Make sure to setup everything you
+want to first before calling this method. Once called the <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> will start accepting
+connections and streaming video data.</p>
+<p><code class="docutils literal notranslate"><span class="pre">cb</span></code> should be a call back that returns an <a class="reference internal" href="omv.image.html#image.Image" title="image.Image"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> object which the RTSP library will jpeg
+compress and stream to the remote client. You are free to modify a <a class="reference internal" href="omv.sensor.html#sensor.snapshot" title="sensor.snapshot"><code class="xref any py py-func docutils literal notranslate"><span class="pre">sensor.snapshot()</span></code></a> image
+as much as you like before returning the image object to be sent.</p>
+<p><code class="docutils literal notranslate"><span class="pre">quality</span></code> is the JPEG compression quality to use while streaming.</p>
+<p>The call back should accept two arguments:</p>
+<p><code class="docutils literal notranslate"><span class="pre">pathname</span></code> is the name of the stream resource the client wants. You can ignore this if it’s not
+needed. Otherwise, you can use it to determine what image object to return. By default the
+<code class="docutils literal notranslate"><span class="pre">pathname</span></code> will be “/”.</p>
+<p><code class="docutils literal notranslate"><span class="pre">session</span></code> is random number that will change when a new connection is established. You can use
+<code class="docutils literal notranslate"><span class="pre">session</span></code> with a dictionary to differentiate different accesses to the same <code class="docutils literal notranslate"><span class="pre">pathname</span></code>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rtsp</span></code> — rtsp library</a><ul>
+<li><a class="reference internal" href="#how-to-use-the-library">How to use the Library</a></li>
+<li><a class="reference internal" href="#class-rtsp-server-rtsp-server-class">class rtsp_server - rtsp_server class</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="omv.rpc.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rpc</span></code> — rpc library</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="omv.omv.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">omv</span></code> — OpenMV Cam Information</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/omv.rtsp.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="omv.omv.html" title="omv — OpenMV Cam Information"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="omv.rpc.html" title="rpc — rpc library"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

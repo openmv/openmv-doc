@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>10. Floating point instructions &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="11. Assembler directives" href="asm_thumb2_directives.html" />
+    <link rel="prev" title="9. Miscellaneous instructions" href="asm_thumb2_misc.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_directives.html" title="11. Assembler directives"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_misc.html" title="9. Miscellaneous instructions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="asm_thumb2_index.html" accesskey="U">Inline assembler for Thumb2 architectures</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="floating-point-instructions">
+<h1><span class="section-number">10. </span>Floating point instructions<a class="headerlink" href="#floating-point-instructions" title="Permalink to this headline">¶</a></h1>
+<p>These instructions support the use of the ARM floating point coprocessor
+(on platforms such as the Pyboard which are equipped with one). The FPU
+has 32 registers known as <code class="docutils literal notranslate"><span class="pre">s0-s31</span></code> each of which can hold a single
+precision float. Data can be passed between the FPU registers and the
+ARM core registers with the <code class="docutils literal notranslate"><span class="pre">vmov</span></code> instruction.</p>
+<p>Note that MicroPython doesn’t support passing floats to
+assembler functions, nor can you put a float into <code class="docutils literal notranslate"><span class="pre">r0</span></code> and expect a
+reasonable result. There are two ways to overcome this. The first is to
+use arrays, and the second is to pass and/or return integers and convert
+to and from floats in code.</p>
+<div class="section" id="document-conventions">
+<h2><span class="section-number">10.1. </span>Document conventions<a class="headerlink" href="#document-conventions" title="Permalink to this headline">¶</a></h2>
+<p>Notation: <code class="docutils literal notranslate"><span class="pre">Sd,</span> <span class="pre">Sm,</span> <span class="pre">Sn</span></code> denote FPU registers, <code class="docutils literal notranslate"><span class="pre">Rd,</span> <span class="pre">Rm,</span> <span class="pre">Rn</span></code> denote ARM core
+registers. The latter can be any ARM core register although registers
+<code class="docutils literal notranslate"><span class="pre">R13-R15</span></code> are unlikely to be appropriate in this context.</p>
+</div>
+<div class="section" id="arithmetic">
+<h2><span class="section-number">10.2. </span>Arithmetic<a class="headerlink" href="#arithmetic" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>vadd(Sd, Sn, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">Sn</span> <span class="pre">+</span> <span class="pre">Sm</span></code></p></li>
+<li><p>vsub(Sd, Sn, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">Sn</span> <span class="pre">-</span> <span class="pre">Sm</span></code></p></li>
+<li><p>vneg(Sd, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">-Sm</span></code></p></li>
+<li><p>vmul(Sd, Sn, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">Sn</span> <span class="pre">*</span> <span class="pre">Sm</span></code></p></li>
+<li><p>vdiv(Sd, Sn, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">Sn</span> <span class="pre">/</span> <span class="pre">Sm</span></code></p></li>
+<li><p>vsqrt(Sd, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">sqrt(Sm)</span></code></p></li>
+</ul>
+<p>Registers may be identical: <code class="docutils literal notranslate"><span class="pre">vmul(S0,</span> <span class="pre">S0,</span> <span class="pre">S0)</span></code> will execute <code class="docutils literal notranslate"><span class="pre">S0</span> <span class="pre">=</span> <span class="pre">S0*S0</span></code></p>
+</div>
+<div class="section" id="move-between-arm-core-and-fpu-registers">
+<h2><span class="section-number">10.3. </span>Move between ARM core and FPU registers<a class="headerlink" href="#move-between-arm-core-and-fpu-registers" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>vmov(Sd, Rm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">Rm</span></code></p></li>
+<li><p>vmov(Rd, Sm) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">Sm</span></code></p></li>
+</ul>
+<p>The FPU has a register known as FPSCR, similar to the ARM core’s APSR, which stores condition
+codes plus other data. The following instructions provide access to this.</p>
+<ul class="simple">
+<li><p>vmrs(APSR_nzcv, FPSCR)</p></li>
+</ul>
+<p>Move the floating-point N, Z, C, and V flags to the APSR N, Z, C, and V flags.</p>
+<p>This is done after an instruction such as an FPU
+comparison to enable the condition codes to be tested by the assembler
+code. The following is a more general form of the instruction.</p>
+<ul class="simple">
+<li><p>vmrs(Rd, FPSCR) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">FPSCR</span></code></p></li>
+</ul>
+</div>
+<div class="section" id="move-between-fpu-register-and-memory">
+<h2><span class="section-number">10.4. </span>Move between FPU register and memory<a class="headerlink" href="#move-between-fpu-register-and-memory" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>vldr(Sd, [Rn, offset]) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">[Rn</span> <span class="pre">+</span> <span class="pre">offset]</span></code></p></li>
+<li><p>vstr(Sd, [Rn, offset]) <code class="docutils literal notranslate"><span class="pre">[Rn</span> <span class="pre">+</span> <span class="pre">offset]</span> <span class="pre">=</span> <span class="pre">Sd</span></code></p></li>
+</ul>
+<p>Where <code class="docutils literal notranslate"><span class="pre">[Rn</span> <span class="pre">+</span> <span class="pre">offset]</span></code> denotes the memory address obtained by adding Rn to the offset. This
+is specified in bytes. Since each float value occupies a 32 bit word, when accessing arrays of
+floats the offset must always be a multiple of four bytes.</p>
+</div>
+<div class="section" id="data-comparison">
+<h2><span class="section-number">10.5. </span>Data comparison<a class="headerlink" href="#data-comparison" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>vcmp(Sd, Sm)</p></li>
+</ul>
+<p>Compare the values in Sd and Sm and set the FPU N, Z,
+C, and V flags. This would normally be followed by <code class="docutils literal notranslate"><span class="pre">vmrs(APSR_nzcv,</span> <span class="pre">FPSCR)</span></code>
+to enable the results to be tested.</p>
+</div>
+<div class="section" id="convert-between-integer-and-float">
+<h2><span class="section-number">10.6. </span>Convert between integer and float<a class="headerlink" href="#convert-between-integer-and-float" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>vcvt_f32_s32(Sd, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">float(Sm)</span></code></p></li>
+<li><p>vcvt_s32_f32(Sd, Sm) <code class="docutils literal notranslate"><span class="pre">Sd</span> <span class="pre">=</span> <span class="pre">int(Sm)</span></code></p></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">10. Floating point instructions</a><ul>
+<li><a class="reference internal" href="#document-conventions">10.1. Document conventions</a></li>
+<li><a class="reference internal" href="#arithmetic">10.2. Arithmetic</a></li>
+<li><a class="reference internal" href="#move-between-arm-core-and-fpu-registers">10.3. Move between ARM core and FPU registers</a></li>
+<li><a class="reference internal" href="#move-between-fpu-register-and-memory">10.4. Move between FPU register and memory</a></li>
+<li><a class="reference internal" href="#data-comparison">10.5. Data comparison</a></li>
+<li><a class="reference internal" href="#convert-between-integer-and-float">10.6. Convert between integer and float</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="asm_thumb2_misc.html"
+                        title="previous chapter"><span class="section-number">9. </span>Miscellaneous instructions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="asm_thumb2_directives.html"
+                        title="next chapter"><span class="section-number">11. </span>Assembler directives</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/asm_thumb2_float.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_directives.html" title="11. Assembler directives"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_misc.html" title="9. Miscellaneous instructions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="asm_thumb2_index.html" >Inline assembler for Thumb2 architectures</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

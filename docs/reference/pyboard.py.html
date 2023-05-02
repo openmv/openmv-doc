@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>The pyboard.py tool &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MicroPython differences from CPython" href="../genrst/index.html" />
+    <link rel="prev" title="Working with filesystems" href="filesystem.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../genrst/index.html" title="MicroPython differences from CPython"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="filesystem.html" title="Working with filesystems"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython language and implementation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-pyboard-py-tool">
+<span id="pyboard-py"></span><h1>The pyboard.py tool<a class="headerlink" href="#the-pyboard-py-tool" title="Permalink to this headline">¶</a></h1>
+<p>This is a standalone Python tool that runs on your PC that provides a way to:</p>
+<ul class="simple">
+<li><p>Quickly run a Python script or command on a MicroPython device. This is useful
+while developing MicroPython programs to quickly test code without needing to
+copy files to/from the device.</p></li>
+<li><p>Access the filesystem on a device. This allows you to deploy your code to the
+device (even if the board doesn’t support USB MSC).</p></li>
+</ul>
+<p>Despite the name, <code class="docutils literal notranslate"><span class="pre">pyboard.py</span></code> works on all MicroPython ports that support the
+raw REPL (including STM32, ESP32, ESP8266, NRF).</p>
+<p>You can download the latest version from <a class="reference external" href="https://github.com/micropython/micropython/blob/master/tools/pyboard.py">GitHub</a>. The
+only dependency is the <code class="docutils literal notranslate"><span class="pre">pyserial</span></code> library which can be installed from PiPy or
+your system package manager.</p>
+<p>Running <code class="docutils literal notranslate"><span class="pre">pyboard.py</span> <span class="pre">--help</span></code> gives the following output:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>usage: pyboard [-h] [-d DEVICE] [-b BAUDRATE] [-u USER] [-p PASSWORD]
+               [-c COMMAND] [-w WAIT] [--follow | --no-follow] [-f]
+               [files [files ...]]
+
+Run scripts on the pyboard.
+
+positional arguments:
+  files                 input files
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -d DEVICE, --device DEVICE
+                        the serial device or the IP address of the pyboard
+  -b BAUDRATE, --baudrate BAUDRATE
+                        the baud rate of the serial device
+  -u USER, --user USER  the telnet login username
+  -p PASSWORD, --password PASSWORD
+                        the telnet login password
+  -c COMMAND, --command COMMAND
+                        program passed in as string
+  -w WAIT, --wait WAIT  seconds to wait for USB connected board to become
+                        available
+  --follow              follow the output after running the scripts
+                        [default if no scripts given]
+  -f, --filesystem      perform a filesystem action: cp local :device | cp
+                        :device local | cat path | ls [path] | rm path | mkdir
+                        path | rmdir path
+</pre></div>
+</div>
+<div class="section" id="running-a-command-on-the-device">
+<h2>Running a command on the device<a class="headerlink" href="#running-a-command-on-the-device" title="Permalink to this headline">¶</a></h2>
+<p>This is useful for testing short snippets of code, or to script an interaction
+with the device.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pyboard.py --device /dev/ttyACM0 -c &#39;print(1+1)&#39;
+2
+</pre></div>
+</div>
+<p>If you are often interacting with the same device, you can set the environment
+variable <code class="docutils literal notranslate"><span class="pre">PYBOARD_DEVICE</span></code> as an alternative to using the <code class="docutils literal notranslate"><span class="pre">--device</span></code>
+command line option.  For example, the following is equivalent to the previous
+example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ export PYBOARD_DEVICE=/dev/ttyACM0
+$ pyboard.py -c &#39;print(1+1)&#39;
+</pre></div>
+</div>
+<p>Similarly, the <code class="docutils literal notranslate"><span class="pre">PYBOARD_BAUDRATE</span></code> environment variable can be used
+to set the default for the <code class="docutils literal notranslate"><span class="pre">--baudrate</span></code> option.</p>
+</div>
+<div class="section" id="running-a-script-on-the-device">
+<h2>Running a script on the device<a class="headerlink" href="#running-a-script-on-the-device" title="Permalink to this headline">¶</a></h2>
+<p>If you have a script, <code class="docutils literal notranslate"><span class="pre">app.py</span></code> that you want to run on a device, then use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pyboard.py --device /dev/ttyACM0 app.py
+</pre></div>
+</div>
+<p>Note that this doesn’t actually copy app.py to the device’s filesystem, it just
+loads the code into RAM and executes it. Any output generated by the program
+will be displayed.</p>
+<p>If the program app.py does not finish then you’ll need to stop <code class="docutils literal notranslate"><span class="pre">pyboard.py</span></code>,
+eg with Ctrl-C. The program <code class="docutils literal notranslate"><span class="pre">app.py</span></code> will still continue to run on the
+MicroPython device.</p>
+</div>
+<div class="section" id="filesystem-access">
+<h2>Filesystem access<a class="headerlink" href="#filesystem-access" title="Permalink to this headline">¶</a></h2>
+<p>Using the <code class="docutils literal notranslate"><span class="pre">-f</span></code> flag, the following filesystem operations are supported:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cp</span> <span class="pre">src</span> <span class="pre">[src...]</span> <span class="pre">dest</span></code> Copy files to/from the device.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cat</span> <span class="pre">path</span></code> Print the contents of a file on the device.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ls</span> <span class="pre">[path]</span></code> List contents of a directory (defaults to current working directory).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">path</span></code> Remove a file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mkdir</span> <span class="pre">path</span></code> Create a directory.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rmdir</span> <span class="pre">path</span></code> Remove a directory.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">cp</span></code> command uses a <code class="docutils literal notranslate"><span class="pre">ssh</span></code>-like convention for referring to local and
+remote files. Any path starting with a <code class="docutils literal notranslate"><span class="pre">:</span></code> will be interpreted as on the
+device, otherwise it will be local. So:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pyboard.py --device /dev/ttyACM0 -f cp main.py :main.py
+</pre></div>
+</div>
+<p>will copy main.py from the current directory on the PC to a file named main.py
+on the device. The filename can be omitted, e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pyboard.py --device /dev/ttyACM0 -f cp main.py :
+</pre></div>
+</div>
+<p>is equivalent to the above.</p>
+<p>Some more examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Copy main.py from the device to the local PC.
+$ pyboard.py --device /dev/ttyACM0 -f cp :main.py main.py
+# Same, but using . instead.
+$ pyboard.py --device /dev/ttyACM0 -f cp :main.py .
+
+# Copy three files to the device, keeping their names
+# and paths (note: `lib` must exist on the device)
+$ pyboard.py --device /dev/ttyACM0 -f cp main.py app.py lib/foo.py :
+
+# Remove a file from the device.
+$ pyboard.py --device /dev/ttyACM0 -f rm util.py
+
+# Print the contents of a file on the device.
+$ pyboard.py --device /dev/ttyACM0 -f cat boot.py
+...contents of boot.py...
+</pre></div>
+</div>
+</div>
+<div class="section" id="using-the-pyboard-library">
+<h2>Using the pyboard library<a class="headerlink" href="#using-the-pyboard-library" title="Permalink to this headline">¶</a></h2>
+<p>You can also use <code class="docutils literal notranslate"><span class="pre">pyboard.py</span></code> as a library for scripting interactions with a
+MicroPython board.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyboard</span>
+<span class="n">pyb</span> <span class="o">=</span> <span class="n">pyboard</span><span class="o">.</span><span class="n">Pyboard</span><span class="p">(</span><span class="s1">&#39;/dev/ttyACM0&#39;</span><span class="p">,</span> <span class="mi">115200</span><span class="p">)</span>
+<span class="n">pyb</span><span class="o">.</span><span class="n">enter_raw_repl</span><span class="p">()</span>
+<span class="n">ret</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">exec</span><span class="p">(</span><span class="s1">&#39;print(1+1)&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+<span class="n">pyb</span><span class="o">.</span><span class="n">exit_raw_repl</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The pyboard.py tool</a><ul>
+<li><a class="reference internal" href="#running-a-command-on-the-device">Running a command on the device</a></li>
+<li><a class="reference internal" href="#running-a-script-on-the-device">Running a script on the device</a></li>
+<li><a class="reference internal" href="#filesystem-access">Filesystem access</a></li>
+<li><a class="reference internal" href="#using-the-pyboard-library">Using the pyboard library</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="filesystem.html"
+                        title="previous chapter">Working with filesystems</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../genrst/index.html"
+                        title="next chapter">MicroPython differences from CPython</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/pyboard.py.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../genrst/index.html" title="MicroPython differences from CPython"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="filesystem.html" title="Working with filesystems"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

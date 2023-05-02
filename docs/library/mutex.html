@@ -1,0 +1,195 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>mutex — mutex module &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="uping — Ping another computer" href="uping.html" />
+    <link rel="prev" title="uctypes – access binary data in a structured way" href="uctypes.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="uping.html" title="uping — Ping another computer"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="uctypes.html" title="uctypes – access binary data in a structured way"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mutex">
+<span id="mutex-mutex-module"></span><h1><a class="reference internal" href="#module-mutex" title="mutex: mutex module"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mutex</span></code></a> — mutex module<a class="headerlink" href="#module-mutex" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">mutex</span></code> module is used for creating mutexes.</p>
+<div class="section" id="class-mutex-mutex-object">
+<h2>class Mutex – mutex object<a class="headerlink" href="#class-mutex-mutex-object" title="Permalink to this headline">¶</a></h2>
+<p>A mutex is an object enabling threads of execution to protect critical sections of code from
+reentrancy or to temporarily protect critical data sets from being updated by other threads.
+The term “mutex” derives from the notion of mutual exclusion. A mutex usually provides three methods:</p>
+<div class="line-block">
+<div class="line">lock() (POSIX pthread_mutex_lock): wait until the mutex is free, then lock it</div>
+<div class="line">unlock() (POSIX pthread_mutex_unlock): Immediate return. unlock the mutex.</div>
+<div class="line">test() (POSIX pthread_mutex_trylock): Immediate return. test if it is locked.</div>
+</div>
+<p>In this implementation lock and unlock is controlled by a context manager.</p>
+<p>In the context of MicroPython a mutex provides a mechanism where an interrupt service routine (ISR)
+can test whether the main loop was using critical variables at the time the interrupt occurred, and
+if so avoid modifying those variables. Typical usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyb</span><span class="o">,</span> <span class="nn">mutex</span>
+<span class="n">mutex</span> <span class="o">=</span> <span class="n">mutex</span><span class="o">.</span><span class="n">Mutex</span><span class="p">()</span>
+<span class="n">data_ready</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">def</span> <span class="nf">callback</span><span class="p">():</span> <span class="c1"># Timer or interrupt callback</span>
+    <span class="k">global</span> <span class="n">data_ready</span>
+    <span class="k">if</span> <span class="n">mutex</span><span class="o">.</span><span class="n">test</span><span class="p">():</span>
+        <span class="n">data_ready</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Update critical variables</span>
+        <span class="n">mutex</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># defer any update</span>
+<span class="c1"># Associate callback with device (pin or timer)</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="c1"># code</span>
+    <span class="k">if</span> <span class="n">data_ready</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">mutex</span><span class="p">:</span>
+            <span class="n">data_ready</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># Access critical variables</span>
+    <span class="c1"># more code</span>
+</pre></div>
+</div>
+<p>Note that the with statement will execute immediately because no other process runs a with block on
+the same mutex instance.</p>
+<p><a class="reference external" href="http://linux.die.net/man/3/pthread_mutex_lock">Linux man page</a></p>
+<p>References describing mutex and semaphore objects</p>
+<div class="line-block">
+<div class="line"><a class="reference external" href="http://www.geeksforgeeks.org/mutex-vs-semaphore/">geeksforgeeks</a></div>
+<div class="line"><a class="reference external" href="http://stackoverflow.com/questions/62814/difference-between-binary-semaphore-and-mutex">stackoverflow</a></div>
+<div class="line"><a class="reference external" href="http://www.differencebetween.net/language/difference-between-mutex-and-semaphore/">differencebetween</a></div>
+</div>
+<div class="section" id="constructors">
+<h3>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="mutex.Mutex">
+<em class="property">class </em><code class="sig-prename descclassname">mutex.</code><code class="sig-name descname">Mutex</code><a class="headerlink" href="#mutex.Mutex" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates an unlocked mutex object.</p>
+<dl class="method">
+<dt id="mutex.Mutex.release">
+<code class="sig-name descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mutex.Mutex.release" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Unlock the mutex.</p>
+<dl class="method">
+<dt id="mutex.Mutex.test">
+<code class="sig-name descname">test</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#mutex.Mutex.test" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Try to acquire the mutex in a non-blocking way. Return <code class="docutils literal notranslate"><span class="pre">True</span></code> on success and <code class="docutils literal notranslate"><span class="pre">False</span></code> on failure.</p>
+<p>You may also acquire the mutex in a blocking way by using <code class="docutils literal notranslate"><span class="pre">with</span></code>.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mutex</span></code> — mutex module</a><ul>
+<li><a class="reference internal" href="#class-mutex-mutex-object">class Mutex – mutex object</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="uctypes.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uctypes</span></code> – access binary data in a structured way</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="uping.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uping</span></code> — Ping another computer</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/mutex.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="uping.html" title="uping — Ping another computer"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="uctypes.html" title="uctypes – access binary data in a structured way"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

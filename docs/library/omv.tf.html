@@ -1,0 +1,515 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>tf — Tensor Flow &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="gif — gif recording" href="omv.gif.html" />
+    <link rel="prev" title="image — machine vision" href="omv.image.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="omv.gif.html" title="gif — gif recording"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="omv.image.html" title="image — machine vision"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-tf">
+<span id="tf-tensor-flow"></span><h1><a class="reference internal" href="#module-tf" title="tf: Tensor Flow"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tf</span></code></a> — Tensor Flow<a class="headerlink" href="#module-tf" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">tf</span></code> module is capable of executing Quantized TensorFlow Lite Models
+on the OpenMV Cam (not supported on the OpenMV Cam M4).</p>
+<p>You can read more about how to create your own models that can run on the
+OpenMV Cam <a class="reference external" href="https://www.tensorflow.org/lite/microcontrollers">here</a>. In
+particular:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Supported operations are listed <a class="reference external" href="https://github.com/openmv/tensorflow-lib/blob/master/libtf.cc#L71">here</a>.</p>
+<ul>
+<li><p>Note that tensorflow lite operations are versioned. If no version numbers
+are listed after the operation then the min and max version supported are
+1. If there are numbers after an operation those numbers represent the
+minimum and maximum operation version supported.</p></li>
+<li><p>If you are using Keras to generate your model be careful about only using
+operators that are supported by tensorflow lite for microcontrollers. Otherwise,
+your model will not be runnable by your OpenMV Cam.</p></li>
+</ul>
+</li>
+<li><p>Convert your model to a FlatBuffer by following the instructions <a class="reference external" href="https://www.tensorflow.org/lite/microcontrollers/build_convert#model_conversion">here</a>.</p></li>
+<li><p>Finally, quantize your model by following the instructions <a class="reference external" href="https://www.tensorflow.org/lite/microcontrollers/build_convert#quantization">here</a>.</p></li>
+</ul>
+</div></blockquote>
+<p>Alternatively, just follow Google’s in-depth guide <a class="reference external" href="https://github.com/openmv/tensorflow/blob/master/tensorflow/lite/micro/examples/person_detection/training_a_model.md">here</a>.
+If you have problems with Google’s in-depth guide please contact Google for help.</p>
+<p>The final output <code class="docutils literal notranslate"><span class="pre">.tflite</span></code> model can be directly loaded and run by your
+OpenMV Cam. That said, the model and the model’s required sratch RAM must
+fit within the available frame buffer stack RAM on your OpenMV Cam.</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>The OpenMV Cam M7 has about 384KB of frame buffer RAM. Please try
+to keep your model and it’s required scratch buffer under 320 KB.</p></li>
+<li><p>The OpenMV Cam H7 has about 496KB of frame buffer RAM. Please try
+to keep your model and it’s required scratch buffer under 400 KB.</p></li>
+<li><p>The OpenMV Cam H7 Plus has about 31MB of frame buffer RAM. That
+said, running a model anywhere near the that size will be extremely slow.</p></li>
+</ul>
+</div></blockquote>
+<p>Alternatively, you can also load a model onto the MicroPython Heap or the OpenMV Cam frame buffer.
+However, this significantly limits the model size on all OpenMV Cams.</p>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="tf.classify">
+<code class="sig-prename descclassname">tf.</code><code class="sig-name descname">classify</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">img</em><span class="optional">[</span>, <em class="sig-param">roi</em><span class="optional">[</span>, <em class="sig-param">min_scale=1.0</em><span class="optional">[</span>, <em class="sig-param">scale_mul=0.5</em><span class="optional">[</span>, <em class="sig-param">x_overlap=0</em><span class="optional">[</span>, <em class="sig-param">y_overlap=0</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.classify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite image classification model on the <code class="docutils literal notranslate"><span class="pre">img</span></code>
+object and returns a list of <a class="reference internal" href="#tf.tf_classification" title="tf.tf_classification"><code class="xref any py py-class docutils literal notranslate"><span class="pre">tf_classification</span></code></a> objects. This method
+executes the network multiple times on the image in a controllable sliding
+window type manner (by default the algorithm only executes the network once
+on the whole image frame).</p>
+<p><code class="docutils literal notranslate"><span class="pre">path</span></code> a path to a <code class="docutils literal notranslate"><span class="pre">.tflite</span></code> model to execute on your OpenMV Cam’s
+disk. The model is loaded into memory, executed, and released all in
+one function call to save from having to load the model in the
+MicroPython heap. Pass <code class="docutils literal notranslate"><span class="pre">&quot;person_detection&quot;</span></code> to load the built-in
+person detection model from your OpenMV Cam’s internal flash.</p>
+<p><code class="docutils literal notranslate"><span class="pre">roi</span></code> is the region-of-interest rectangle tuple (x, y, w, h). If not
+specified, it is equal to the image rectangle. Only pixels within the
+<code class="docutils literal notranslate"><span class="pre">roi</span></code> are operated on.</p>
+<p><code class="docutils literal notranslate"><span class="pre">min_scale</span></code> controls how much scaling is applied to the network. At the
+default value the network is not scaled. However, a value of 0.5 would allow
+for detecting objects 50% in size of the image roi size…</p>
+<p><code class="docutils literal notranslate"><span class="pre">scale_mul</span></code> controls how many different scales are tested out. The sliding
+window method works by multiplying a default scale of 1 by <code class="docutils literal notranslate"><span class="pre">scale_mul</span></code>
+while the result is over <code class="docutils literal notranslate"><span class="pre">min_scale</span></code>. The default value of <code class="docutils literal notranslate"><span class="pre">scale_mul</span></code>,
+0.5, tests out a 50% size reduction per scale change. However, a value of
+0.95 would only be a 5% size reductioin.</p>
+<p><code class="docutils literal notranslate"><span class="pre">x_overlap</span></code> controls the percentage of overlap with the next detector
+area of the sliding window. A value of zero means no overlap. A value of
+0.95 would mean 95% overlap.</p>
+<p><code class="docutils literal notranslate"><span class="pre">y_overlap</span></code> controls the percentage of overlap with the next detector
+area of the sliding window. A value of zero means no overlap. A value of
+0.95 would mean 95% overlap.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tf.segment">
+<code class="sig-prename descclassname">tf.</code><code class="sig-name descname">segment</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">img</em><span class="optional">[</span>, <em class="sig-param">roi</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.segment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite image segmentation model on the <code class="docutils literal notranslate"><span class="pre">img</span></code>
+object and returns a list of grayscale <a class="reference internal" href="omv.image.html#module-image" title="image: machine vision"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">image</span></code></a> objects for each
+segmentation class output channel.</p>
+<p><code class="docutils literal notranslate"><span class="pre">path</span></code> a path to a <code class="docutils literal notranslate"><span class="pre">.tflite</span></code> model to execute on your OpenMV Cam’s
+disk. The model is loaded into memory, executed, and released all in
+one function call to save from having to load the model in the
+MicroPython heap.</p>
+<p><code class="docutils literal notranslate"><span class="pre">roi</span></code> is the region-of-interest rectangle tuple (x, y, w, h). If not
+specified, it is equal to the image rectangle. Only pixels within the
+<code class="docutils literal notranslate"><span class="pre">roi</span></code> are operated on.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tf.detect">
+<code class="sig-prename descclassname">tf.</code><code class="sig-name descname">detect</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">img</em><span class="optional">[</span>, <em class="sig-param">roi</em><span class="optional">[</span>, <em class="sig-param">thresholds</em><span class="optional">[</span>, <em class="sig-param">invert</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.detect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite image segmentation model on the <code class="docutils literal notranslate"><span class="pre">img</span></code>
+object and returns a list of <a class="reference internal" href="omv.image.html#image.blob" title="image.blob"><code class="xref any py py-class docutils literal notranslate"><span class="pre">image.blob</span></code></a> objects for each segmentation
+class output. E.g. if you have an image that’s segmented into two classes
+this method will return a list of two lists of blobs that match the requested
+thresholds.</p>
+<p><code class="docutils literal notranslate"><span class="pre">path</span></code> a path to a <code class="docutils literal notranslate"><span class="pre">.tflite</span></code> model to execute on your OpenMV Cam’s
+disk. The model is loaded into memory, executed, and released all in
+one function call to save from having to load the model in the
+MicroPython heap.</p>
+<p><code class="docutils literal notranslate"><span class="pre">roi</span></code> is the region-of-interest rectangle tuple (x, y, w, h). If not
+specified, it is equal to the image rectangle. Only pixels within the
+<code class="docutils literal notranslate"><span class="pre">roi</span></code> are operated on.</p>
+<p><code class="docutils literal notranslate"><span class="pre">thresholds</span></code> must be a list of tuples
+<code class="docutils literal notranslate"><span class="pre">[(lo,</span> <span class="pre">hi),</span> <span class="pre">(lo,</span> <span class="pre">hi),</span> <span class="pre">...,</span> <span class="pre">(lo,</span> <span class="pre">hi)]</span></code> defining the ranges of color you
+want to track. You may pass up to 32 threshold tuples in one call. Each tuple
+needs to contain two values - a min grayscale value and a max grayscale value.
+Only pixel regions that fall between these thresholds will be considered.
+For easy usage this function will automatically fix swapped min and max values.
+If the tuple is too short the rest of the thresholds are assumed to be at maximum
+range. If no thresholds are specified they are assumed to be (128, 255) which
+will detect “active” pixel regions in the segmented images.</p>
+<p><code class="docutils literal notranslate"><span class="pre">invert</span></code> inverts the thresholding operation such that instead of matching
+pixels inside of some known color bounds pixels are matched that are outside
+of the known color bounds.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tf.regression">
+<code class="sig-prename descclassname">tf.</code><code class="sig-name descname">regression</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">array</em><span class="sig-paren">)</span><a class="headerlink" href="#tf.regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite regression model on the passed array of floats and returns
+a new array of floats as the result.</p>
+<p><code class="docutils literal notranslate"><span class="pre">path</span></code> a path to a <code class="docutils literal notranslate"><span class="pre">.tflite</span></code> model to execute on your OpenMV Cam’s
+disk. The model is loaded into memory, executed, and released all in
+one function call to save from having to load the model in the
+MicroPython heap.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tf.load">
+<code class="sig-prename descclassname">tf.</code><code class="sig-name descname">load</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="optional">[</span>, <em class="sig-param">load_to_fb=False</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.load" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">path</span></code> a path to a <code class="docutils literal notranslate"><span class="pre">.tflite</span></code> model to load into memory on the MicroPython heap by default.</p>
+<p>NOTE! The MicroPython heap is only ~50 KB on the OpenMV Cam M7 and ~256 KB on the OpenMV Cam H7.</p>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">&quot;person_detection&quot;</span></code> to load the built-in person detection model from your
+OpenMV Cam’s internal flash. This built-in model does not use any Micropython Heap
+as all the weights are stored in flash which is accessible in the same way as RAM.</p>
+<p><code class="docutils literal notranslate"><span class="pre">load_to_fb</span></code> if passed as True will instead reserve part of the OpenMV Cam frame buffer
+stack for storing the TensorFlow Lite model. You will get the most efficent execution
+performance for large models that do not fit on the heap by loading them into frame buffer
+memory once from disk and then repeatedly executing the model. That said, the frame buffer
+space used will not be available anymore for other algorithms.</p>
+<p>Returns a <a class="reference internal" href="#tf.tf_model" title="tf.tf_model"><code class="xref any py py-class docutils literal notranslate"><span class="pre">tf_model</span></code></a> object which can operate on an image.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tf.free_from_fb">
+<code class="sig-prename descclassname">tf.</code><code class="sig-name descname">free_from_fb</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.free_from_fb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deallocates a previously allocated <a class="reference internal" href="#tf.tf_model" title="tf.tf_model"><code class="xref any py py-class docutils literal notranslate"><span class="pre">tf_model</span></code></a> object created with <code class="docutils literal notranslate"><span class="pre">load_to_fb</span></code> set to True.</p>
+<p>Note that deallocations happen in the reverse order of allocation.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="class-tf-classification-tf-classification-dection-result">
+<h2>class tf_classification – tf classification dection result<a class="headerlink" href="#class-tf-classification-tf-classification-dection-result" title="Permalink to this headline">¶</a></h2>
+<p>The tf_classification object is returned by <a class="reference internal" href="#tf.classify" title="tf.classify"><code class="xref any py py-func docutils literal notranslate"><span class="pre">tf.classify()</span></code></a> or <a class="reference internal" href="#tf.tf_model.classify" title="tf.tf_model.classify"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">tf_model.classify()</span></code></a>.</p>
+<div class="section" id="constructors">
+<h3>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="tf.tf_classification">
+<em class="property">class </em><code class="sig-prename descclassname">tf.</code><code class="sig-name descname">tf_classification</code><a class="headerlink" href="#tf.tf_classification" title="Permalink to this definition">¶</a></dt>
+<dd><p>Please call <a class="reference internal" href="#tf.classify" title="tf.classify"><code class="xref any py py-func docutils literal notranslate"><span class="pre">tf.classify()</span></code></a> or <a class="reference internal" href="#tf.tf_model.classify" title="tf.tf_model.classify"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">tf_model.classify()</span></code></a> to create this object.</p>
+<dl class="method">
+<dt id="tf.tf_classification.rect">
+<code class="sig-name descname">rect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_classification.rect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a rectangle tuple (x, y, w, h) for use with <a class="reference internal" href="omv.image.html#module-image" title="image: machine vision"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">image</span></code></a> methods
+like <a class="reference internal" href="omv.image.html#image.Image.draw_rectangle" title="image.Image.draw_rectangle"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">Image.draw_rectangle()</span></code></a> of the tf_classification’s bounding box.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_classification.x">
+<code class="sig-name descname">x</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_classification.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tf_classification’s bounding box x coordinate (int).</p>
+<p>You may also get this value doing <code class="docutils literal notranslate"><span class="pre">[0]</span></code> on the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_classification.y">
+<code class="sig-name descname">y</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_classification.y" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tf_classification’s bounding box y coordinate (int).</p>
+<p>You may also get this value doing <code class="docutils literal notranslate"><span class="pre">[1]</span></code> on the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_classification.w">
+<code class="sig-name descname">w</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_classification.w" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tf_classification’s bounding box w coordinate (int).</p>
+<p>You may also get this value doing <code class="docutils literal notranslate"><span class="pre">[2]</span></code> on the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_classification.h">
+<code class="sig-name descname">h</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_classification.h" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the tf_classification’s bounding box h coordinate (int).</p>
+<p>You may also get this value doing <code class="docutils literal notranslate"><span class="pre">[3]</span></code> on the object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_classification.classification_output">
+<code class="sig-name descname">classification_output</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_classification.classification_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the classification label scores. The size of this
+list is determined by your model output channel size. For example,
+mobilenet outputs a list of 1000 classification scores for all 1000
+classes understood by mobilenet. Use <code class="docutils literal notranslate"><span class="pre">zip</span></code> in python to combine
+the classification score results with classification labels.</p>
+<p>You may also get this value doing <code class="docutils literal notranslate"><span class="pre">[4]</span></code> on the object.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="class-tf-model-tensorflow-model">
+<h2>class tf_model – TensorFlow Model<a class="headerlink" href="#class-tf-model-tensorflow-model" title="Permalink to this headline">¶</a></h2>
+<p>If your model size is small enough and you have enough heap or frame buffer space you may wish
+to directly load the model into memory to save from having to load it from disk
+each time you wish to execute it.</p>
+<div class="section" id="id1">
+<h3>Constructors<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="tf.tf_model">
+<em class="property">class </em><code class="sig-prename descclassname">tf.</code><code class="sig-name descname">tf_model</code><a class="headerlink" href="#tf.tf_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Please call <a class="reference internal" href="#tf.load" title="tf.load"><code class="xref any py py-func docutils literal notranslate"><span class="pre">tf.load()</span></code></a> to create the TensorFlow Model object. TensorFlow Model objects allow
+you to execute a model from RAM versus having to load it from disk repeatedly.</p>
+<dl class="method">
+<dt id="tf.tf_model.len">
+<code class="sig-name descname">len</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the size in bytes of the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.ram">
+<code class="sig-name descname">ram</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.ram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the model’s required free RAM in bytes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.input_height">
+<code class="sig-name descname">input_height</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.input_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the input height of the model. You can use this to size your input
+image height appropriately.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.input_width">
+<code class="sig-name descname">input_width</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.input_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the input width of the model. You can use this to size your input
+image width appropriately.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.input_channels">
+<code class="sig-name descname">input_channels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.input_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of input color channels in the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.input_datatype">
+<code class="sig-name descname">input_datatype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.input_datatype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the model’s input datatype (this is a string of “uint8”, “int8”, or “float”).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.input_scale">
+<code class="sig-name descname">input_scale</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.input_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the input scale for the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.input_zero_point">
+<code class="sig-name descname">input_zero_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.input_zero_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the output zero point for the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.output_height">
+<code class="sig-name descname">output_height</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.output_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the output height of the model. You can use this to size your output
+image height appropriately.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.output_width">
+<code class="sig-name descname">output_width</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.output_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the output width of the model. You can use this to size your output
+image width appropriately.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.output_channels">
+<code class="sig-name descname">output_channels</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.output_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of output color channels in the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.output_datatype">
+<code class="sig-name descname">output_datatype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.output_datatype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the model’s output datatype (this is a string of “uint8”, “int8”, or “float”).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.output_scale">
+<code class="sig-name descname">output_scale</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.output_scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the output scale for the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.output_zero_point">
+<code class="sig-name descname">output_zero_point</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.output_zero_point" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the output zero point for the model.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.classify">
+<code class="sig-name descname">classify</code><span class="sig-paren">(</span><em class="sig-param">img</em><span class="optional">[</span>, <em class="sig-param">roi</em><span class="optional">[</span>, <em class="sig-param">min_scale=1.0</em><span class="optional">[</span>, <em class="sig-param">scale_mul=0.5</em><span class="optional">[</span>, <em class="sig-param">x_overlap=0</em><span class="optional">[</span>, <em class="sig-param">y_overlap=0</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.classify" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite image classification model on the <code class="docutils literal notranslate"><span class="pre">img</span></code>
+object and returns a list of <a class="reference internal" href="#tf.tf_classification" title="tf.tf_classification"><code class="xref any py py-class docutils literal notranslate"><span class="pre">tf_classification</span></code></a> objects. This method
+executes the network multiple times on the image in a controllable sliding
+window type manner (by default the algorithm only executes the network once
+on the whole image frame).</p>
+<p><code class="docutils literal notranslate"><span class="pre">roi</span></code> is the region-of-interest rectangle tuple (x, y, w, h). If not
+specified, it is equal to the image rectangle. Only pixels within the
+<code class="docutils literal notranslate"><span class="pre">roi</span></code> are operated on.</p>
+<p><code class="docutils literal notranslate"><span class="pre">min_scale</span></code> controls how much scaling is applied to the network. At the
+default value the network is not scaled. However, a value of 0.5 would allow
+for detecting objects 50% in size of the image roi size…</p>
+<p><code class="docutils literal notranslate"><span class="pre">scale_mul</span></code> controls how many different scales are tested out. The sliding
+window method works by multiplying a default scale of 1 by <code class="docutils literal notranslate"><span class="pre">scale_mul</span></code>
+while the result is over <code class="docutils literal notranslate"><span class="pre">min_scale</span></code>. The default value of <code class="docutils literal notranslate"><span class="pre">scale_mul</span></code>,
+0.5, tests out a 50% size reduction per scale change. However, a value of
+0.95 would only be a 5% size reductioin.</p>
+<p><code class="docutils literal notranslate"><span class="pre">x_overlap</span></code> controls the percentage of overlap with the next detector
+area of the sliding window. A value of zero means no overlap. A value of
+0.95 would mean 95% overlap.</p>
+<p><code class="docutils literal notranslate"><span class="pre">y_overlap</span></code> controls the percentage of overlap with the next detector
+area of the sliding window. A value of zero means no overlap. A value of
+0.95 would mean 95% overlap.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.segment">
+<code class="sig-name descname">segment</code><span class="sig-paren">(</span><em class="sig-param">img</em><span class="optional">[</span>, <em class="sig-param">roi</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.segment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite image segmentation model on the <code class="docutils literal notranslate"><span class="pre">img</span></code>
+object and returns a list of grayscale <a class="reference internal" href="omv.image.html#module-image" title="image: machine vision"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">image</span></code></a> objects for each
+segmentation class output channel.</p>
+<p><code class="docutils literal notranslate"><span class="pre">roi</span></code> is the region-of-interest rectangle tuple (x, y, w, h). If not
+specified, it is equal to the image rectangle. Only pixels within the
+<code class="docutils literal notranslate"><span class="pre">roi</span></code> are operated on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.detect">
+<code class="sig-name descname">detect</code><span class="sig-paren">(</span><em class="sig-param">img</em><span class="optional">[</span>, <em class="sig-param">roi</em><span class="optional">[</span>, <em class="sig-param">thresholds</em><span class="optional">[</span>, <em class="sig-param">invert</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.detect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite image segmentation model on the <code class="docutils literal notranslate"><span class="pre">img</span></code>
+object and returns a list of <a class="reference internal" href="omv.image.html#image.blob" title="image.blob"><code class="xref any py py-class docutils literal notranslate"><span class="pre">image.blob</span></code></a> objects for each segmentation
+class output. E.g. if you have an image that’s segmented into two classes
+this method will return a list of two lists of blobs that match the requested
+thresholds.</p>
+<p><code class="docutils literal notranslate"><span class="pre">roi</span></code> is the region-of-interest rectangle tuple (x, y, w, h). If not
+specified, it is equal to the image rectangle. Only pixels within the
+<code class="docutils literal notranslate"><span class="pre">roi</span></code> are operated on.</p>
+<p><code class="docutils literal notranslate"><span class="pre">thresholds</span></code> must be a list of tuples
+<code class="docutils literal notranslate"><span class="pre">[(lo,</span> <span class="pre">hi),</span> <span class="pre">(lo,</span> <span class="pre">hi),</span> <span class="pre">...,</span> <span class="pre">(lo,</span> <span class="pre">hi)]</span></code> defining the ranges of color you
+want to track. You may pass up to 32 threshold tuples in one call. Each tuple
+needs to contain two values - a min grayscale value and a max grayscale value.
+Only pixel regions that fall between these thresholds will be considered.
+For easy usage this function will automatically fix swapped min and max values.
+If the tuple is too short the rest of the thresholds are assumed to be at maximum
+range. If no thresholds are specified they are assumed to be (128, 255) which
+will detect “active” pixel regions in the segmented images.</p>
+<p><code class="docutils literal notranslate"><span class="pre">invert</span></code> inverts the thresholding operation such that instead of matching
+pixels inside of some known color bounds pixels are matched that are outside
+of the known color bounds.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="tf.tf_model.regression">
+<code class="sig-name descname">regression</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="headerlink" href="#tf.tf_model.regression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the TensorFlow Lite regression model on the passed array of floats and returns
+a new array of floats as the result.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tf</span></code> — Tensor Flow</a><ul>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+<li><a class="reference internal" href="#class-tf-classification-tf-classification-dection-result">class tf_classification – tf classification dection result</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#class-tf-model-tensorflow-model">class tf_model – TensorFlow Model</a><ul>
+<li><a class="reference internal" href="#id1">Constructors</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="omv.image.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">image</span></code> — machine vision</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="omv.gif.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gif</span></code> — gif recording</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/omv.tf.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="omv.gif.html" title="gif — gif recording"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="omv.image.html" title="image — machine vision"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

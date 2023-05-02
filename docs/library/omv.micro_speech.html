@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>micro_speech — Micro Speech Audio Module Example &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="lcd — lcd driver" href="omv.lcd.html" />
+    <link rel="prev" title="audio — Audio Module" href="omv.audio.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="omv.lcd.html" title="lcd — lcd driver"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="omv.audio.html" title="audio — Audio Module"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-micro_speech">
+<span id="micro-speech-micro-speech-audio-module-example"></span><h1><a class="reference internal" href="#module-micro_speech" title="micro_speech: Example voice recognition module"><code class="xref py py-mod docutils literal notranslate"><span class="pre">micro_speech</span></code></a> — Micro Speech Audio Module Example<a class="headerlink" href="#module-micro_speech" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference internal" href="#module-micro_speech" title="micro_speech: Example voice recognition module"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">micro_speech</span></code></a> module runs Google’s TensorFlow Lite for Microcontrollers Micro Speech framework
+for voice recognition.</p>
+<p>Please see this <a class="reference external" href="https://www.digikey.com/en/maker/projects/how-to-train-new-tensorflow-lite-micro-speech-models/e9480d4a38264604a2bf0336ce11aa9e">guide</a> for training a new model.</p>
+<div class="section" id="constructors">
+<h2>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="micro_speech.MicroSpeech">
+<em class="property">class </em><code class="sig-prename descclassname">micro_speech.</code><code class="sig-name descname">MicroSpeech</code><a class="headerlink" href="#micro_speech.MicroSpeech" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a MicroSpeech voice recognition class.</p>
+<dl class="method">
+<dt id="micro_speech.MicroSpeech.audio_callback">
+<code class="sig-name descname">audio_callback</code><span class="sig-paren">(</span><em class="sig-param">buf_in</em><span class="sig-paren">)</span><a class="headerlink" href="#micro_speech.MicroSpeech.audio_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Pass this method to <a class="reference internal" href="omv.audio.html#audio.start_streaming" title="audio.start_streaming"><code class="xref any py py-func docutils literal notranslate"><span class="pre">audio.start_streaming()</span></code></a> to fill the <a class="reference internal" href="#micro_speech.MicroSpeech" title="micro_speech.MicroSpeech"><code class="xref any py py-class docutils literal notranslate"><span class="pre">MicroSpeech</span></code></a> class with audio samples.</p>
+<p><a class="reference internal" href="#micro_speech.MicroSpeech" title="micro_speech.MicroSpeech"><code class="xref any py py-class docutils literal notranslate"><span class="pre">MicroSpeech</span></code></a> will compute the FFT of the audio samples and keep a sliding window internally
+of the FFT the last 100ms or so of audio samples received as features for voice recognition.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="micro_speech.MicroSpeech.listen">
+<code class="sig-name descname">listen</code><span class="sig-paren">(</span><em class="sig-param">tf_model</em><span class="optional">[</span>, <em class="sig-param">threshold=0.9</em><span class="optional">[</span>, <em class="sig-param">timeout=1000</em><span class="optional">[</span>, <em class="sig-param">filter=None</em><span class="optional">]</span><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#micro_speech.MicroSpeech.listen" title="Permalink to this definition">¶</a></dt>
+<dd><p>Executes the tensor flow lite model <code class="docutils literal notranslate"><span class="pre">tf_model</span></code>, which should be a path to a tensor flow lite
+model on disk, on the audio stream.</p>
+<p>This method will continue to execute the model until it classifies a result that has a
+confidence ratio above <code class="docutils literal notranslate"><span class="pre">threshold</span></code> and that’s within the range specified by <code class="docutils literal notranslate"><span class="pre">filter</span></code>.</p>
+<p>For example, if the model is designed to classify sounds into the four labels [‘Silence’,
+‘Unknown’, ‘Yes’, ‘No’], then a <code class="docutils literal notranslate"><span class="pre">threshold</span></code> of 0.7 mean that listen() only returns when
+the confidence score for one of those classes goes above 0.7. <code class="docutils literal notranslate"><span class="pre">filter</span></code> can then be <code class="docutils literal notranslate"><span class="pre">[2,</span> <span class="pre">3]</span></code>
+to specify that we only care about ‘Yes’ or ‘No’ going above 0.7.</p>
+<p><code class="docutils literal notranslate"><span class="pre">timeout</span></code> is the amount of time to run the model on audio data. If zero then listen will
+run forever until a result passes the threshold and filter criteria.</p>
+<p>Returns the index of the the label with the highest confidence score. E.g. for the example
+above 0, 1, 2, or 3 for [‘Silence’, ‘Unknown’, ‘Yes’, ‘No’] respectively.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">micro_speech</span></code> — Micro Speech Audio Module Example</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="omv.audio.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">audio</span></code> — Audio Module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="omv.lcd.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lcd</span></code> — lcd driver</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/omv.micro_speech.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="omv.lcd.html" title="lcd — lcd driver"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="omv.audio.html" title="audio — Audio Module"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>class Signal – control and sense external I/O devices &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="class ADC – analog to digital conversion" href="machine.ADC.html" />
+    <link rel="prev" title="class Pin – control I/O pins" href="machine.Pin.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="machine.ADC.html" title="class ADC – analog to digital conversion"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="machine.Pin.html" title="class Pin – control I/O pins"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="machine.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code> — functions related to the hardware</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="class-signal-control-and-sense-external-i-o-devices">
+<span id="machine-signal"></span><h1>class Signal – control and sense external I/O devices<a class="headerlink" href="#class-signal-control-and-sense-external-i-o-devices" title="Permalink to this headline">¶</a></h1>
+<p>The Signal class is a simple extension of the <a class="reference internal" href="machine.Pin.html#machine.Pin" title="machine.Pin"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Pin</span></code></a> class. Unlike Pin, which
+can be only in “absolute” 0 and 1 states, a Signal can be in “asserted”
+(on) or “deasserted” (off) states, while being inverted (active-low) or
+not. In other words, it adds logical inversion support to Pin functionality.
+While this may seem a simple addition, it is exactly what is needed to
+support wide array of simple digital devices in a way portable across
+different boards, which is one of the major MicroPython goals. Regardless
+of whether different users have an active-high or active-low LED, a normally
+open or normally closed relay - you can develop a single, nicely looking
+application which works with each of them, and capture hardware
+configuration differences in few lines in the config file of your app.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Pin</span><span class="p">,</span> <span class="n">Signal</span>
+
+<span class="c1"># Suppose you have an active-high LED on pin 0</span>
+<span class="n">led1_pin</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
+<span class="c1"># ... and active-low LED on pin 1</span>
+<span class="n">led2_pin</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
+
+<span class="c1"># Now to light up both of them using Pin class, you&#39;ll need to set</span>
+<span class="c1"># them to different values</span>
+<span class="n">led1_pin</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">led2_pin</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Signal class allows to abstract away active-high/active-low</span>
+<span class="c1"># difference</span>
+<span class="n">led1</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">led1_pin</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">led2</span> <span class="o">=</span> <span class="n">Signal</span><span class="p">(</span><span class="n">led2_pin</span><span class="p">,</span> <span class="n">invert</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Now lighting up them looks the same</span>
+<span class="n">led1</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">led2</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1"># Even better:</span>
+<span class="n">led1</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+<span class="n">led2</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Following is the guide when Signal vs Pin should be used:</p>
+<ul class="simple">
+<li><p>Use Signal: If you want to control a simple on/off (including software
+PWM!) devices like LEDs, multi-segment indicators, relays, buzzers, or
+read simple binary sensors, like normally open or normally closed buttons,
+pulled high or low, Reed switches, moisture/flame detectors, etc. etc.
+Summing up, if you have a real physical device/sensor requiring GPIO
+access, you likely should use a Signal.</p></li>
+<li><p>Use Pin: If you implement a higher-level protocol or bus to communicate
+with more complex devices.</p></li>
+</ul>
+<p>The split between Pin and Signal come from the use cases above and the
+architecture of MicroPython: Pin offers the lowest overhead, which may
+be important when bit-banging protocols. But Signal adds additional
+flexibility on top of Pin, at the cost of minor overhead (much smaller
+than if you implemented active-high vs active-low device differences in
+Python manually!). Also, Pin is a low-level object which needs to be
+implemented for each support board, while Signal is a high-level object
+which comes for free once Pin is implemented.</p>
+<p>If in doubt, give the Signal a try! Once again, it is offered to save
+developers from the need to handle unexciting differences like active-low
+vs active-high signals, and allow other users to share and enjoy your
+application, instead of being frustrated by the fact that it doesn’t
+work for them simply because their LEDs or relays are wired in a slightly
+different way.</p>
+<div class="section" id="constructors">
+<h2>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="machine.Signal">
+<em class="property">class </em><code class="sig-prename descclassname">machine.</code><code class="sig-name descname">Signal</code><span class="sig-paren">(</span><em class="sig-param">pin_obj</em>, <em class="sig-param">invert=False</em><span class="sig-paren">)</span><a class="headerlink" href="#machine.Signal" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="sig-prename descclassname">machine.</code><code class="sig-name descname">Signal</code><span class="sig-paren">(</span><em class="sig-param">pin_arguments...</em>, <em class="sig-param">*</em>, <em class="sig-param">invert=False</em><span class="sig-paren">)</span></dt>
+<dd><p>Create a Signal object. There’re two ways to create it:</p>
+<ul class="simple">
+<li><p>By wrapping existing Pin object - universal method which works for
+any board.</p></li>
+<li><p>By passing required Pin parameters directly to Signal constructor,
+skipping the need to create intermediate Pin object. Available on
+many, but not all boards.</p></li>
+</ul>
+<p>The arguments are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pin_obj</span></code> is existing Pin object.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pin_arguments</span></code> are the same arguments as can be passed to Pin constructor.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">invert</span></code> - if True, the signal will be inverted (active low).</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="machine.Signal.value">
+<code class="sig-prename descclassname">Signal.</code><code class="sig-name descname">value</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">x</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#machine.Signal.value" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method allows to set and get the value of the signal, depending on whether
+the argument <code class="docutils literal notranslate"><span class="pre">x</span></code> is supplied or not.</p>
+<p>If the argument is omitted then this method gets the signal level, 1 meaning
+signal is asserted (active) and 0 - signal inactive.</p>
+<p>If the argument is supplied then this method sets the signal level. The
+argument <code class="docutils literal notranslate"><span class="pre">x</span></code> can be anything that converts to a boolean. If it converts
+to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the signal is active, otherwise it is inactive.</p>
+<p>Correspondence between signal being active and actual logic level on the
+underlying pin depends on whether signal is inverted (active-low) or not.
+For non-inverted signal, active status corresponds to logical 1, inactive -
+to logical 0. For inverted/active-low signal, active status corresponds
+to logical 0, while inactive - to logical 1.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="machine.Signal.on">
+<code class="sig-prename descclassname">Signal.</code><code class="sig-name descname">on</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#machine.Signal.on" title="Permalink to this definition">¶</a></dt>
+<dd><p>Activate signal.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="machine.Signal.off">
+<code class="sig-prename descclassname">Signal.</code><code class="sig-name descname">off</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#machine.Signal.off" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deactivate signal.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">class Signal – control and sense external I/O devices</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+<li><a class="reference internal" href="#methods">Methods</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="machine.Pin.html"
+                        title="previous chapter">class Pin – control I/O pins</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="machine.ADC.html"
+                        title="next chapter">class ADC – analog to digital conversion</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/machine.Signal.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="machine.ADC.html" title="class ADC – analog to digital conversion"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="machine.Pin.html" title="class Pin – control I/O pins"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="machine.html" ><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code> — functions related to the hardware</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

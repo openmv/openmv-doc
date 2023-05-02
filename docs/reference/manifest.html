@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>MicroPython manifest files &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Package management" href="packages.html" />
+    <link rel="prev" title="MicroPython on microcontrollers" href="constrained.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="packages.html" title="Package management"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="constrained.html" title="MicroPython on microcontrollers"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython language and implementation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="micropython-manifest-files">
+<span id="manifest"></span><h1>MicroPython manifest files<a class="headerlink" href="#micropython-manifest-files" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>MicroPython has a feature that allows Python code to be “frozen” into the
+firmware, as an alternative to loading code from the filesystem.</p>
+<p>This has the following benefits:</p>
+<ul class="simple">
+<li><p>the code is pre-compiled to bytecode, avoiding the need for the Python
+source to be compiled at load-time.</p></li>
+<li><p>the bytecode can be executed directly from ROM (i.e. flash memory) rather than
+being copied into RAM. Similarly any constant objects (strings, tuples, etc)
+are loaded from ROM also. This can lead to significantly more memory being
+available for your application.</p></li>
+<li><p>on devices that do not have a filesystem, this is the only way to
+load Python code.</p></li>
+</ul>
+<p>During development, freezing is generally not recommended as it will
+significantly slow down your development cycle, as each update will require
+re-flashing the entire firmware. However, it can still be useful to
+selectively freeze some rarely-changing dependencies (such as third-party
+libraries).</p>
+<p>The way to list the Python files to be be frozen into the firmware is via
+a “manifest”, which is a Python file that will be interpreted by the build
+process. Typically you would write a manifest file as part of a board
+definition, but you can also write a stand-alone manifest file and use it with
+an existing board definition.</p>
+<p>Manifest files can define dependencies on libraries from <a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a>
+as well as Python files on the filesystem, and also on other manifest files.</p>
+</div>
+<div class="section" id="writing-manifest-files">
+<h2>Writing manifest files<a class="headerlink" href="#writing-manifest-files" title="Permalink to this headline">¶</a></h2>
+<p>A manifest file is a Python file containing a series of function calls. See the
+available functions defined below.</p>
+<p>Any paths used in manifest files can include the following variables. These all
+resolve to absolute paths.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">$(MPY_DIR)</span></code> – path to the micropython repo.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$(MPY_LIB_DIR)</span></code> – path to the micropython-lib submodule. Prefer to use
+<code class="docutils literal notranslate"><span class="pre">require()</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$(PORT_DIR)</span></code> – path to the current port (e.g. <code class="docutils literal notranslate"><span class="pre">ports/stm32</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$(BOARD_DIR)</span></code> – path to the current board
+(e.g. <code class="docutils literal notranslate"><span class="pre">ports/stm32/boards/PYBV11</span></code>)</p></li>
+</ul>
+<p>Custom manifest files should not live in the main MicroPython repository. You
+should keep them in version control with the rest of your project.</p>
+<p>Typically a manifest used for compiling firmware will need to include the port
+manifest, which might include frozen modules that are required for the board to
+function. If you just want to add additional modules to an existing board, then
+include the board manifest (which will in turn include the port manifest).</p>
+<div class="section" id="building-with-a-custom-manifest">
+<h3>Building with a custom manifest<a class="headerlink" href="#building-with-a-custom-manifest" title="Permalink to this headline">¶</a></h3>
+<p>Your manifest can be specified on the <code class="docutils literal notranslate"><span class="pre">make</span></code> command line with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ make <span class="nv">BOARD</span><span class="o">=</span>MYBOARD <span class="nv">FROZEN_MANIFEST</span><span class="o">=</span>/path/to/my/project/manifest.py
+</pre></div>
+</div>
+<p>This applies to all ports, including CMake-based ones (e.g. esp32, rp2), as the
+Makefile wrapper that will pass this into the CMake build.</p>
+</div>
+<div class="section" id="adding-a-manifest-to-a-board-definition">
+<h3>Adding a manifest to a board definition<a class="headerlink" href="#adding-a-manifest-to-a-board-definition" title="Permalink to this headline">¶</a></h3>
+<p>If you have a custom board definition, you can make it include your custom
+manifest automatically. On make-based ports (most ports), in your
+<code class="docutils literal notranslate"><span class="pre">mpconfigboard.mk</span></code> set the <code class="docutils literal notranslate"><span class="pre">FROZEN_MANIFEST</span></code> variable.</p>
+<div class="highlight-makefile notranslate"><div class="highlight"><pre><span></span><span class="nv">FROZEN_MANIFEST</span> <span class="o">?=</span> <span class="k">$(</span>BOARD_DIR<span class="k">)</span>/manifest.py
+</pre></div>
+</div>
+<p>On CMake-based ports (e.g. esp32, rp2), instead use <code class="docutils literal notranslate"><span class="pre">mpconfigboard.cmake</span></code></p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">set</span><span class="p">(</span><span class="s">MICROPY_FROZEN_MANIFEST</span> <span class="o">${</span><span class="nv">MICROPY_BOARD_DIR</span><span class="o">}</span><span class="s">/manifest.py</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="high-level-functions">
+<h3>High-level functions<a class="headerlink" href="#high-level-functions" title="Permalink to this headline">¶</a></h3>
+<p>Note: The <code class="docutils literal notranslate"><span class="pre">opt</span></code> keyword argument can be set on the various functions, this controls
+the optimisation level used by the cross-compiler.
+See <a class="reference internal" href="../library/micropython.html#micropython.opt_level" title="micropython.opt_level"><code class="xref py py-func docutils literal notranslate"><span class="pre">micropython.opt_level()</span></code></a>.</p>
+<dl class="function">
+<dt id="package">
+<code class="sig-name descname">package</code><span class="sig-paren">(</span><em class="sig-param">package_path</em>, <em class="sig-param">files=None</em>, <em class="sig-param">base_path=&quot;.&quot;</em>, <em class="sig-param">opt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#package" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is equivalent to copying the “package_path” directory to the device
+(except as frozen code).</p>
+<p>In the simplest case, to freeze a package “foo” in the current directory:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">package</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will recursively include all .py files in foo, and will be frozen as
+<code class="docutils literal notranslate"><span class="pre">foo/**/*.py</span></code>.</p>
+<p>If the package isn’t in the same directory as the manifest file, use <code class="docutils literal notranslate"><span class="pre">base_path</span></code>:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">package</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">,</span> <span class="n">base_path</span><span class="o">=</span><span class="s2">&quot;path/to/libraries&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can use the variables above, such as <code class="docutils literal notranslate"><span class="pre">$(PORT_DIR)</span></code> in <code class="docutils literal notranslate"><span class="pre">base_path</span></code>.</p>
+<p>To restrict to certain files in the package use <code class="docutils literal notranslate"><span class="pre">files</span></code> (note: paths
+should be relative to the package): <code class="docutils literal notranslate"><span class="pre">package(&quot;foo&quot;,</span> <span class="pre">files=[&quot;bar/baz.py&quot;])</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="module">
+<code class="sig-name descname">module</code><span class="sig-paren">(</span><em class="sig-param">module_path</em>, <em class="sig-param">base_path=&quot;.&quot;</em>, <em class="sig-param">opt=None</em><span class="sig-paren">)</span><a class="headerlink" href="#module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Include a single Python file as a module.</p>
+<p>If the file is in the current directory:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;foo.py&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Otherwise use base_path to locate the file:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;foo.py&quot;</span><span class="p">,</span> <span class="n">base_path</span><span class="o">=</span><span class="s2">&quot;src/drivers&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can use the variables above, such as <code class="docutils literal notranslate"><span class="pre">$(PORT_DIR)</span></code> in <code class="docutils literal notranslate"><span class="pre">base_path</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="require">
+<code class="sig-name descname">require</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">unix_ffi=False</em><span class="sig-paren">)</span><a class="headerlink" href="#require" title="Permalink to this definition">¶</a></dt>
+<dd><p>Require a package by name (and its dependencies) from <a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a>.</p>
+<p>Optionally specify unix_ffi=True to use a module from the unix-ffi directory.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="include">
+<code class="sig-name descname">include</code><span class="sig-paren">(</span><em class="sig-param">manifest_path</em><span class="sig-paren">)</span><a class="headerlink" href="#include" title="Permalink to this definition">¶</a></dt>
+<dd><p>Include another manifest.</p>
+<p>Typically a manifest used for compiling firmware will need to include the
+port manifest, which might include frozen modules that are required for
+the board to function.</p>
+<p>The <em>manifest</em> argument can be a string (filename) or an iterable of
+strings.</p>
+<p>Relative paths are resolved with respect to the current manifest file.</p>
+<p>If the path is to a directory, then it implicitly includes the
+manifest.py file inside that directory.</p>
+<p>You can use the variables above, such as <code class="docutils literal notranslate"><span class="pre">$(PORT_DIR)</span></code> in <code class="docutils literal notranslate"><span class="pre">manifest_path</span></code>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="metadata">
+<code class="sig-name descname">metadata</code><span class="sig-paren">(</span><em class="sig-param">description=None</em>, <em class="sig-param">version=None</em>, <em class="sig-param">license=None</em>, <em class="sig-param">author=None</em><span class="sig-paren">)</span><a class="headerlink" href="#metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Define metadata for this manifest file. This is useful for manifests for
+micropython-lib packages.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="low-level-functions">
+<h3>Low-level functions<a class="headerlink" href="#low-level-functions" title="Permalink to this headline">¶</a></h3>
+<p>These functions are documented for completeness, but with the exception of
+<code class="docutils literal notranslate"><span class="pre">freeze_as_str</span></code> all functionality can be accessed via the high-level functions.</p>
+<dl class="function">
+<dt id="freeze">
+<code class="sig-name descname">freeze</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">script=None</em>, <em class="sig-param">opt=0</em><span class="sig-paren">)</span><a class="headerlink" href="#freeze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Freeze the input specified by <em>path</em>, automatically determining its type.  A
+<code class="docutils literal notranslate"><span class="pre">.py</span></code> script will be compiled to a <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> first then frozen, and a
+<code class="docutils literal notranslate"><span class="pre">.mpy</span></code> file will be frozen directly.</p>
+<p><em>path</em> must be a directory, which is the base directory to begin searching
+for files.  When importing the resulting frozen modules, the name of the
+module will start after <em>path</em>, i.e. <em>path</em> is excluded from the module
+name.</p>
+<p>If <em>path</em> is relative, it is resolved to the current <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code>.</p>
+<p>If <em>script</em> is None, all files in <em>path</em> will be frozen.</p>
+<p>If <em>script</em> is an iterable then <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> is called on all items of the
+iterable (with the same <em>path</em> and <em>opt</em> passed through).</p>
+<p>If <em>script</em> is a string then it specifies the file or directory to freeze,
+and can include extra directories before the file or last directory.  The
+file or directory will be searched for in <em>path</em>.  If <em>script</em> is a
+directory then all files in that directory will be frozen.</p>
+<p><em>opt</em> is the optimisation level to pass to mpy-cross when compiling <code class="docutils literal notranslate"><span class="pre">.py</span></code>
+to <code class="docutils literal notranslate"><span class="pre">.mpy</span></code>.  These levels are described in <a class="reference internal" href="../library/micropython.html#micropython.opt_level" title="micropython.opt_level"><code class="xref py py-func docutils literal notranslate"><span class="pre">micropython.opt_level()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="freeze_as_str">
+<code class="sig-name descname">freeze_as_str</code><span class="sig-paren">(</span><em class="sig-param">path</em><span class="sig-paren">)</span><a class="headerlink" href="#freeze_as_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Freeze the given <em>path</em> and all <code class="docutils literal notranslate"><span class="pre">.py</span></code> scripts within it as a string, which
+will be compiled upon import.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="freeze_as_mpy">
+<code class="sig-name descname">freeze_as_mpy</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">script=None</em>, <em class="sig-param">opt=0</em><span class="sig-paren">)</span><a class="headerlink" href="#freeze_as_mpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Freeze the input by first compiling the <code class="docutils literal notranslate"><span class="pre">.py</span></code> scripts to <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files,
+then freezing the resulting <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files.  See <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> for further
+details on the arguments.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="freeze_mpy">
+<code class="sig-name descname">freeze_mpy</code><span class="sig-paren">(</span><em class="sig-param">path</em>, <em class="sig-param">script=None</em>, <em class="sig-param">opt=0</em><span class="sig-paren">)</span><a class="headerlink" href="#freeze_mpy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Freeze the input, which must be <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files that are frozen directly.
+See <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> for further details on the arguments.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>To freeze a single file from the current directory which will be available as
+<code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">mydriver</span></code>, use:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">module</span><span class="p">(</span><span class="s2">&quot;mydriver.py&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To freeze a directory of files in a subdirectory “mydriver” of the current
+directory which will be available as <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">mydriver</span></code>, use:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">package</span><span class="p">(</span><span class="s2">&quot;mydriver&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To freeze the “hmac” library from <a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a>, use:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="n">require</span><span class="p">(</span><span class="s2">&quot;hmac&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A more complete example of a custom <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code> file for the <code class="docutils literal notranslate"><span class="pre">PYBD_SF2</span></code>
+board is:</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Include the board&#39;s default manifest.</span>
+<span class="n">include</span><span class="p">(</span><span class="s2">&quot;$(BOARD_DIR)/manifest.py&quot;</span><span class="p">)</span>
+<span class="c1"># Add a custom driver</span>
+<span class="n">module</span><span class="p">(</span><span class="s2">&quot;mydriver.py&quot;</span><span class="p">)</span>
+<span class="c1"># Add aiorepl from micropython-lib</span>
+<span class="n">require</span><span class="p">(</span><span class="s2">&quot;aiorepl&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then the board can be compiled with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> ports/stm32
+$ make <span class="nv">BOARD</span><span class="o">=</span>PYBD_SF2 <span class="nv">FROZEN_MANIFEST</span><span class="o">=</span>~/src/myproject/manifest.py
+</pre></div>
+</div>
+<p>Note that most boards do not have their own <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code>, rather they use the
+port one directly, in which case your manifest should just
+<code class="docutils literal notranslate"><span class="pre">include(&quot;$(PORT_DIR)/boards/manifest.py&quot;)</span></code> instead.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">MicroPython manifest files</a><ul>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+<li><a class="reference internal" href="#writing-manifest-files">Writing manifest files</a><ul>
+<li><a class="reference internal" href="#building-with-a-custom-manifest">Building with a custom manifest</a></li>
+<li><a class="reference internal" href="#adding-a-manifest-to-a-board-definition">Adding a manifest to a board definition</a></li>
+<li><a class="reference internal" href="#high-level-functions">High-level functions</a></li>
+<li><a class="reference internal" href="#low-level-functions">Low-level functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="constrained.html"
+                        title="previous chapter">MicroPython on microcontrollers</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="packages.html"
+                        title="next chapter">Package management</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/manifest.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="packages.html" title="Package management"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="constrained.html" title="MicroPython on microcontrollers"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

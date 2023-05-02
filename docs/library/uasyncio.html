@@ -1,0 +1,544 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>uasyncio — asynchronous I/O scheduler &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="zlib – zlib decompression" href="zlib.html" />
+    <link rel="prev" title="time – time related functions" href="time.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="zlib.html" title="zlib – zlib decompression"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="time.html" title="time – time related functions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-uasyncio">
+<span id="uasyncio-asynchronous-i-o-scheduler"></span><h1><a class="reference internal" href="#module-uasyncio" title="uasyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code></a> — asynchronous I/O scheduler<a class="headerlink" href="#module-uasyncio" title="Permalink to this headline">¶</a></h1>
+<p><em>This module implements a subset of the corresponding</em> <a class="reference internal" href="../reference/glossary.html#term-cpython"><span class="xref std std-term">CPython</span></a> <em>module,
+as described below. For more information, refer to the original
+CPython documentation:</em>
+<a class="reference external" href="https://docs.python.org/3.8/library/asyncio.html">asyncio</a></p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">uasyncio</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">blink</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">period_ms</span><span class="p">):</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">led</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="k">await</span> <span class="n">uasyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+        <span class="n">led</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="k">await</span> <span class="n">uasyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">period_ms</span><span class="p">)</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">led1</span><span class="p">,</span> <span class="n">led2</span><span class="p">):</span>
+    <span class="n">uasyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">blink</span><span class="p">(</span><span class="n">led1</span><span class="p">,</span> <span class="mi">700</span><span class="p">))</span>
+    <span class="n">uasyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">blink</span><span class="p">(</span><span class="n">led2</span><span class="p">,</span> <span class="mi">400</span><span class="p">))</span>
+    <span class="k">await</span> <span class="n">uasyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">10_000</span><span class="p">)</span>
+
+<span class="c1"># Running on a pyboard</span>
+<span class="kn">from</span> <span class="nn">pyb</span> <span class="kn">import</span> <span class="n">LED</span>
+<span class="n">uasyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">LED</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+
+<span class="c1"># Running on a generic board</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Pin</span>
+<span class="n">uasyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">Pin</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+</pre></div>
+</div>
+<div class="section" id="core-functions">
+<h2>Core functions<a class="headerlink" href="#core-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="uasyncio.create_task">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">create_task</code><span class="sig-paren">(</span><em class="sig-param">coro</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.create_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new task from the given coroutine and schedule it to run.</p>
+<p>Returns the corresponding <a class="reference internal" href="#uasyncio.Task" title="uasyncio.Task"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.current_task">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">current_task</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.current_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <a class="reference internal" href="#uasyncio.Task" title="uasyncio.Task"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> object associated with the currently running task.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.run">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">run</code><span class="sig-paren">(</span><em class="sig-param">coro</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new task from the given coroutine and run it until it completes.</p>
+<p>Returns the value returned by <em>coro</em>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.sleep">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">sleep</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.sleep" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sleep for <em>t</em> seconds (can be a float).</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.sleep_ms">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">sleep_ms</code><span class="sig-paren">(</span><em class="sig-param">t</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.sleep_ms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sleep for <em>t</em> milliseconds.</p>
+<p>This is a coroutine, and a MicroPython extension.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="additional-functions">
+<h2>Additional functions<a class="headerlink" href="#additional-functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="uasyncio.wait_for">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">wait_for</code><span class="sig-paren">(</span><em class="sig-param">awaitable</em>, <em class="sig-param">timeout</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.wait_for" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the <em>awaitable</em> to complete, but cancel it if it takes longer
+than <em>timeout</em> seconds.  If <em>awaitable</em> is not a task then a task will be
+created from it.</p>
+<p>If a timeout occurs, it cancels the task and raises <code class="docutils literal notranslate"><span class="pre">asyncio.TimeoutError</span></code>:
+this should be trapped by the caller.  The task receives
+<code class="docutils literal notranslate"><span class="pre">asyncio.CancelledError</span></code> which may be ignored or trapped using <code class="docutils literal notranslate"><span class="pre">try...except</span></code>
+or <code class="docutils literal notranslate"><span class="pre">try...finally</span></code> to run cleanup code.</p>
+<p>Returns the return value of <em>awaitable</em>.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.wait_for_ms">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">wait_for_ms</code><span class="sig-paren">(</span><em class="sig-param">awaitable</em>, <em class="sig-param">timeout</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.wait_for_ms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Similar to <a class="reference internal" href="#uasyncio.wait_for" title="uasyncio.wait_for"><code class="xref any py py-func docutils literal notranslate"><span class="pre">wait_for</span></code></a> but <em>timeout</em> is an integer in milliseconds.</p>
+<p>This is a coroutine, and a MicroPython extension.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.gather">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">gather</code><span class="sig-paren">(</span><em class="sig-param">*awaitables</em>, <em class="sig-param">return_exceptions=False</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.gather" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run all <em>awaitables</em> concurrently.  Any <em>awaitables</em> that are not tasks are
+promoted to tasks.</p>
+<p>Returns a list of return values of all <em>awaitables</em>.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="class-task">
+<h2>class Task<a class="headerlink" href="#class-task" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="uasyncio.Task">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">Task</code><a class="headerlink" href="#uasyncio.Task" title="Permalink to this definition">¶</a></dt>
+<dd><p>This object wraps a coroutine into a running task.  Tasks can be waited on
+using <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">task</span></code>, which will wait for the task to complete and return
+the return value of the task.</p>
+<p>Tasks should not be created directly, rather use <a class="reference internal" href="#uasyncio.create_task" title="uasyncio.create_task"><code class="xref any py py-func docutils literal notranslate"><span class="pre">create_task</span></code></a> to create them.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Task.cancel">
+<code class="sig-prename descclassname">Task.</code><code class="sig-name descname">cancel</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Task.cancel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cancel the task by injecting <code class="docutils literal notranslate"><span class="pre">asyncio.CancelledError</span></code> into it.  The task may
+ignore this exception.  Cleanup code may be run by trapping it, or via
+<code class="docutils literal notranslate"><span class="pre">try</span> <span class="pre">...</span> <span class="pre">finally</span></code>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="class-event">
+<h2>class Event<a class="headerlink" href="#class-event" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="uasyncio.Event">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">Event</code><a class="headerlink" href="#uasyncio.Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event which can be used to synchronise tasks.  Events start
+in the cleared state.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Event.is_set">
+<code class="sig-prename descclassname">Event.</code><code class="sig-name descname">is_set</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Event.is_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if the event is set, <code class="docutils literal notranslate"><span class="pre">False</span></code> otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Event.set">
+<code class="sig-prename descclassname">Event.</code><code class="sig-name descname">set</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Event.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the event.  Any tasks waiting on the event will be scheduled to run.</p>
+<p>Note: This must be called from within a task. It is not safe to call this
+from an IRQ, scheduler callback, or other thread. See <a class="reference internal" href="#uasyncio.ThreadSafeFlag" title="uasyncio.ThreadSafeFlag"><code class="xref any py py-class docutils literal notranslate"><span class="pre">ThreadSafeFlag</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Event.clear">
+<code class="sig-prename descclassname">Event.</code><code class="sig-name descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Event.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear the event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Event.wait">
+<code class="sig-prename descclassname">Event.</code><code class="sig-name descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Event.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the event to be set.  If the event is already set then it returns
+immediately.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="class-threadsafeflag">
+<h2>class ThreadSafeFlag<a class="headerlink" href="#class-threadsafeflag" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="uasyncio.ThreadSafeFlag">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">ThreadSafeFlag</code><a class="headerlink" href="#uasyncio.ThreadSafeFlag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new flag which can be used to synchronise a task with code running
+outside the asyncio loop, such as other threads, IRQs, or scheduler
+callbacks.  Flags start in the cleared state.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.ThreadSafeFlag.set">
+<code class="sig-prename descclassname">ThreadSafeFlag.</code><code class="sig-name descname">set</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.ThreadSafeFlag.set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the flag.  If there is a task waiting on the event, it will be scheduled
+to run.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.ThreadSafeFlag.wait">
+<code class="sig-prename descclassname">ThreadSafeFlag.</code><code class="sig-name descname">wait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.ThreadSafeFlag.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the flag to be set.  If the flag is already set then it returns
+immediately.  The flag is automatically reset upon return from <code class="docutils literal notranslate"><span class="pre">wait</span></code>.</p>
+<p>A flag may only be waited on by a single task at a time.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="class-lock">
+<h2>class Lock<a class="headerlink" href="#class-lock" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="uasyncio.Lock">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">Lock</code><a class="headerlink" href="#uasyncio.Lock" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new lock which can be used to coordinate tasks.  Locks start in
+the unlocked state.</p>
+<p>In addition to the methods below, locks can be used in an <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">with</span></code> statement.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Lock.locked">
+<code class="sig-prename descclassname">Lock.</code><code class="sig-name descname">locked</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Lock.locked" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="docutils literal notranslate"><span class="pre">True</span></code> if the lock is locked, otherwise <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Lock.acquire">
+<code class="sig-prename descclassname">Lock.</code><code class="sig-name descname">acquire</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Lock.acquire" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the lock to be in the unlocked state and then lock it in an atomic
+way.  Only one task can acquire the lock at any one time.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Lock.release">
+<code class="sig-prename descclassname">Lock.</code><code class="sig-name descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Lock.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Release the lock.  If any tasks are waiting on the lock then the next one in the
+queue is scheduled to run and the lock remains locked.  Otherwise, no tasks are
+waiting an the lock becomes unlocked.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="tcp-stream-connections">
+<h2>TCP stream connections<a class="headerlink" href="#tcp-stream-connections" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="uasyncio.open_connection">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">open_connection</code><span class="sig-paren">(</span><em class="sig-param">host</em>, <em class="sig-param">port</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.open_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a TCP connection to the given <em>host</em> and <em>port</em>.  The <em>host</em> address will be
+resolved using <a class="reference internal" href="socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref any py py-func docutils literal notranslate"><span class="pre">socket.getaddrinfo</span></code></a>, which is currently a blocking call.</p>
+<p>Returns a pair of streams: a reader and a writer stream.
+Will raise a socket-specific <code class="docutils literal notranslate"><span class="pre">OSError</span></code> if the host could not be resolved or if
+the connection could not be made.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.start_server">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">start_server</code><span class="sig-paren">(</span><em class="sig-param">callback</em>, <em class="sig-param">host</em>, <em class="sig-param">port</em>, <em class="sig-param">backlog=5</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.start_server" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start a TCP server on the given <em>host</em> and <em>port</em>.  The <em>callback</em> will be
+called with incoming, accepted connections, and be passed 2 arguments: reader
+and writer streams for the connection.</p>
+<p>Returns a <a class="reference internal" href="#uasyncio.Server" title="uasyncio.Server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Server</span></code></a> object.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="uasyncio.Stream">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">Stream</code><a class="headerlink" href="#uasyncio.Stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>This represents a TCP stream connection.  To minimise code this class implements
+both a reader and a writer, and both <code class="docutils literal notranslate"><span class="pre">StreamReader</span></code> and <code class="docutils literal notranslate"><span class="pre">StreamWriter</span></code> alias to
+this class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.get_extra_info">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">get_extra_info</code><span class="sig-paren">(</span><em class="sig-param">v</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.get_extra_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get extra information about the stream, given by <em>v</em>.  The valid values for <em>v</em> are:
+<code class="docutils literal notranslate"><span class="pre">peername</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.close">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the stream.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.wait_closed">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">wait_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.wait_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the stream to close.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.read">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param">n</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read up to <em>n</em> bytes and return them.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.readinto">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">readinto</code><span class="sig-paren">(</span><em class="sig-param">buf</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.readinto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read up to n bytes into <em>buf</em> with n being equal to the length of <em>buf</em>.</p>
+<p>Return the number of bytes read into <em>buf</em>.</p>
+<p>This is a coroutine, and a MicroPython extension.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.readexactly">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">readexactly</code><span class="sig-paren">(</span><em class="sig-param">n</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.readexactly" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read exactly <em>n</em> bytes and return them as a bytes object.</p>
+<p>Raises an <code class="docutils literal notranslate"><span class="pre">EOFError</span></code> exception if the stream ends before reading <em>n</em> bytes.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.readline">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">readline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.readline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read a line and return it.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.write">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param">buf</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Accumulated <em>buf</em> to the output buffer.  The data is only flushed when
+<a class="reference internal" href="#uasyncio.Stream.drain" title="uasyncio.Stream.drain"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">Stream.drain</span></code></a> is called.  It is recommended to call <a class="reference internal" href="#uasyncio.Stream.drain" title="uasyncio.Stream.drain"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">Stream.drain</span></code></a> immediately
+after calling this function.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Stream.drain">
+<code class="sig-prename descclassname">Stream.</code><code class="sig-name descname">drain</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Stream.drain" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drain (write) all buffered output data out to the stream.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="uasyncio.Server">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">Server</code><a class="headerlink" href="#uasyncio.Server" title="Permalink to this definition">¶</a></dt>
+<dd><p>This represents the server class returned from <a class="reference internal" href="#uasyncio.start_server" title="uasyncio.start_server"><code class="xref any py py-func docutils literal notranslate"><span class="pre">start_server</span></code></a>.  It can be used
+in an <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">with</span></code> statement to close the server upon exit.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Server.close">
+<code class="sig-prename descclassname">Server.</code><code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Server.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the server.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Server.wait_closed">
+<code class="sig-prename descclassname">Server.</code><code class="sig-name descname">wait_closed</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Server.wait_closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wait for the server to close.</p>
+<p>This is a coroutine.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="event-loop">
+<h2>Event Loop<a class="headerlink" href="#event-loop" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="uasyncio.get_event_loop">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">get_event_loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.get_event_loop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the event loop used to schedule and run tasks.  See <a class="reference internal" href="#uasyncio.Loop" title="uasyncio.Loop"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Loop</span></code></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="uasyncio.new_event_loop">
+<code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">new_event_loop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.new_event_loop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reset the event loop and return it.</p>
+<p>Note: since MicroPython only has a single event loop this function just
+resets the loop’s state, it does not create a new one.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="uasyncio.Loop">
+<em class="property">class </em><code class="sig-prename descclassname">uasyncio.</code><code class="sig-name descname">Loop</code><a class="headerlink" href="#uasyncio.Loop" title="Permalink to this definition">¶</a></dt>
+<dd><p>This represents the object which schedules and runs tasks.  It cannot be
+created, use <a class="reference internal" href="#uasyncio.get_event_loop" title="uasyncio.get_event_loop"><code class="xref any py py-func docutils literal notranslate"><span class="pre">get_event_loop</span></code></a> instead.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.create_task">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">create_task</code><span class="sig-paren">(</span><em class="sig-param">coro</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.create_task" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a task from the given <em>coro</em> and return the new <a class="reference internal" href="#uasyncio.Task" title="uasyncio.Task"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.run_forever">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">run_forever</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.run_forever" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the event loop until <a class="reference internal" href="#uasyncio.Loop.stop" title="uasyncio.Loop.stop"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">stop()</span></code></a> is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.run_until_complete">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">run_until_complete</code><span class="sig-paren">(</span><em class="sig-param">awaitable</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.run_until_complete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the given <em>awaitable</em> until it completes.  If <em>awaitable</em> is not a task
+then it will be promoted to one.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.stop">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop the event loop.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.close">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the event loop.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.set_exception_handler">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">set_exception_handler</code><span class="sig-paren">(</span><em class="sig-param">handler</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.set_exception_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the exception handler to call when a Task raises an exception that is not
+caught.  The <em>handler</em> should accept two arguments: <code class="docutils literal notranslate"><span class="pre">(loop,</span> <span class="pre">context)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.get_exception_handler">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">get_exception_handler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.get_exception_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the current exception handler.  Returns the handler, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if no
+custom handler is set.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.default_exception_handler">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">default_exception_handler</code><span class="sig-paren">(</span><em class="sig-param">context</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.default_exception_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>The default exception handler that is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="uasyncio.Loop.call_exception_handler">
+<code class="sig-prename descclassname">Loop.</code><code class="sig-name descname">call_exception_handler</code><span class="sig-paren">(</span><em class="sig-param">context</em><span class="sig-paren">)</span><a class="headerlink" href="#uasyncio.Loop.call_exception_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call the current exception handler.  The argument <em>context</em> is passed through and
+is a dictionary containing keys: <code class="docutils literal notranslate"><span class="pre">'message'</span></code>, <code class="docutils literal notranslate"><span class="pre">'exception'</span></code>, <code class="docutils literal notranslate"><span class="pre">'future'</span></code>.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code> — asynchronous I/O scheduler</a><ul>
+<li><a class="reference internal" href="#core-functions">Core functions</a></li>
+<li><a class="reference internal" href="#additional-functions">Additional functions</a></li>
+<li><a class="reference internal" href="#class-task">class Task</a></li>
+<li><a class="reference internal" href="#class-event">class Event</a></li>
+<li><a class="reference internal" href="#class-threadsafeflag">class ThreadSafeFlag</a></li>
+<li><a class="reference internal" href="#class-lock">class Lock</a></li>
+<li><a class="reference internal" href="#tcp-stream-connections">TCP stream connections</a></li>
+<li><a class="reference internal" href="#event-loop">Event Loop</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="time.html"
+                        title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">time</span></code> – time related functions</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="zlib.html"
+                        title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">zlib</span></code> – zlib decompression</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/uasyncio.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="zlib.html" title="zlib – zlib decompression"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="time.html" title="time – time related functions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

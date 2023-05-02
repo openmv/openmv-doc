@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>class I2C – a two-wire serial protocol &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="class LED – LED object" href="pyb.LED.html" />
+    <link rel="prev" title="class Flash – access to built-in flash storage" href="pyb.Flash.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyb.LED.html" title="class LED – LED object"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pyb.Flash.html" title="class Flash – access to built-in flash storage"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pyb.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyb</span></code> — functions related to the board</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="class-i2c-a-two-wire-serial-protocol">
+<span id="pyb-i2c"></span><h1>class I2C – a two-wire serial protocol<a class="headerlink" href="#class-i2c-a-two-wire-serial-protocol" title="Permalink to this headline">¶</a></h1>
+<p>I2C is a two-wire protocol for communicating between devices.  At the physical
+level it consists of 2 wires: SCL and SDA, the clock and data lines respectively.
+OpenMV Cam does not provide Pullups on the SDA or SCL lines and external pullups
+are required on both SDA and SCL lines for the I2C bus to be functional.</p>
+<p>I2C objects are created attached to a specific bus.  They can be initialised
+when created, or initialised later on.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyb</span> <span class="kn">import</span> <span class="n">I2C</span>
+
+<span class="n">i2c</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>                         <span class="c1"># create on bus 2</span>
+<span class="n">i2c</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">I2C</span><span class="o">.</span><span class="n">MASTER</span><span class="p">)</span>             <span class="c1"># create and init as a master</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">I2C</span><span class="o">.</span><span class="n">MASTER</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span> <span class="c1"># init as a master</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">I2C</span><span class="o">.</span><span class="n">SLAVE</span><span class="p">,</span> <span class="n">addr</span><span class="o">=</span><span class="mh">0x42</span><span class="p">)</span>       <span class="c1"># init as a slave with given address</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">deinit</span><span class="p">()</span>                         <span class="c1"># turn off the peripheral</span>
+</pre></div>
+</div>
+<p>Printing the i2c object gives you information about its configuration.</p>
+<p>The basic methods are send and recv:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i2c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>      <span class="c1"># send 3 bytes</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="mh">0x42</span><span class="p">)</span>       <span class="c1"># send a single byte, given by the number</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">i2c</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>   <span class="c1"># receive 3 bytes</span>
+</pre></div>
+</div>
+<p>To receive inplace, first create a bytearray:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>  <span class="c1"># create a buffer</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>       <span class="c1"># receive 3 bytes, writing them into data</span>
+</pre></div>
+</div>
+<p>You can specify a timeout (in ms):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i2c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>   <span class="c1"># timeout after 2 seconds</span>
+</pre></div>
+</div>
+<p>A controller must specify the recipient’s address:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i2c</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">I2C</span><span class="o">.</span><span class="n">CONTROLLER</span><span class="p">)</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="mh">0x42</span><span class="p">)</span>        <span class="c1"># send 3 bytes to peripheral with address 0x42</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;456&#39;</span><span class="p">,</span> <span class="n">addr</span><span class="o">=</span><span class="mh">0x42</span><span class="p">)</span>  <span class="c1"># keyword for address</span>
+</pre></div>
+</div>
+<p>Master also has other methods:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">i2c</span><span class="o">.</span><span class="n">is_ready</span><span class="p">(</span><span class="mh">0x42</span><span class="p">)</span>           <span class="c1"># check if peripheral 0x42 is ready</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>                   <span class="c1"># scan for peripherals on the bus, returning</span>
+                             <span class="c1">#   a list of valid addresses</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">mem_read</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mh">0x42</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>     <span class="c1"># read 3 bytes from memory of peripheral 0x42,</span>
+                             <span class="c1">#   starting at address 2 in the peripheral</span>
+<span class="n">i2c</span><span class="o">.</span><span class="n">mem_write</span><span class="p">(</span><span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="mh">0x42</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span> <span class="c1"># write &#39;abc&#39; (3 bytes) to memory of peripheral 0x42</span>
+                                            <span class="c1"># starting at address 2 in the peripheral, timeout after 1 second</span>
+</pre></div>
+</div>
+<div class="section" id="constructors">
+<h2>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyb.pyb.I2C">
+<em class="property">class </em><code class="sig-prename descclassname">pyb.</code><code class="sig-name descname">I2C</code><span class="sig-paren">(</span><em class="sig-param">bus</em>, <em class="sig-param">...</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.pyb.I2C" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct an I2C object on the given bus.  <code class="docutils literal notranslate"><span class="pre">bus</span></code> can be 2 or 4.
+With no additional parameters, the I2C object is created but not
+initialised (it has the settings from the last initialisation of
+the bus, if any).  If extra arguments are given, the bus is initialised.
+See <code class="docutils literal notranslate"><span class="pre">init</span></code> for parameters of initialisation.</p>
+<p>The physical pins of the I2C busses on the OpenMV Cam are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">I2C(2)</span></code> is on the Y position: <code class="docutils literal notranslate"><span class="pre">(SCL,</span> <span class="pre">SDA)</span> <span class="pre">=</span> <span class="pre">(P4,</span> <span class="pre">P5)</span> <span class="pre">=</span> <span class="pre">(PB10,</span> <span class="pre">PB11)</span></code></p></li>
+</ul>
+</div></blockquote>
+<p>The physical pins of the I2C busses on the OpenMV Cam M7 are:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">I2C(2)</span></code> is on the Y position: <code class="docutils literal notranslate"><span class="pre">(SCL,</span> <span class="pre">SDA)</span> <span class="pre">=</span> <span class="pre">(P4,</span> <span class="pre">P5)</span> <span class="pre">=</span> <span class="pre">(PB10,</span> <span class="pre">PB11)</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">I2C(4)</span></code> is on the Y position: <code class="docutils literal notranslate"><span class="pre">(SCL,</span> <span class="pre">SDA)</span> <span class="pre">=</span> <span class="pre">(P7,</span> <span class="pre">P8)</span> <span class="pre">=</span> <span class="pre">(PD12,</span> <span class="pre">PD13)</span></code></p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="pyb.I2C.deinit">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">deinit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.deinit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Turn off the I2C bus.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.init">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">init</code><span class="sig-paren">(</span><em class="sig-param">mode</em>, <em class="sig-param">*</em>, <em class="sig-param">addr=0x12</em>, <em class="sig-param">baudrate=400000</em>, <em class="sig-param">gencall=False</em>, <em class="sig-param">dma=False</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the I2C bus with the given parameters:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code> must be either <code class="docutils literal notranslate"><span class="pre">I2C.CONTROLLER</span></code> or <code class="docutils literal notranslate"><span class="pre">I2C.PERIPHERAL</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr</span></code> is the 7-bit address (only sensible for a peripheral)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">baudrate</span></code> is the SCL clock rate (only sensible for a controller)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gencall</span></code> is whether to support general call mode</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dma</span></code> is whether to allow the use of DMA for the I2C transfers (note
+that DMA transfers have more precise timing but currently do not handle bus
+errors properly)</p></li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.is_ready">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">is_ready</code><span class="sig-paren">(</span><em class="sig-param">addr</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.is_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if an I2C device responds to the given address.  Only valid when in controller mode.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.mem_read">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">mem_read</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">addr</em>, <em class="sig-param">memaddr</em>, <em class="sig-param">*</em>, <em class="sig-param">timeout=5000</em>, <em class="sig-param">addr_size=8</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.mem_read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read from the memory of an I2C device:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data</span></code> can be an integer (number of bytes to read) or a buffer to read into</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr</span></code> is the I2C device address</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">memaddr</span></code> is the memory location within the I2C device</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timeout</span></code> is the timeout in milliseconds to wait for the read</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr_size</span></code> selects width of memaddr: 8 or 16 bits</p></li>
+</ul>
+</div></blockquote>
+<p>Returns the read data.
+This is only valid in controller mode.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.mem_write">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">mem_write</code><span class="sig-paren">(</span><em class="sig-param">data</em>, <em class="sig-param">addr</em>, <em class="sig-param">memaddr</em>, <em class="sig-param">*</em>, <em class="sig-param">timeout=5000</em>, <em class="sig-param">addr_size=8</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.mem_write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write to the memory of an I2C device:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">data</span></code> can be an integer or a buffer to write from</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr</span></code> is the I2C device address</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">memaddr</span></code> is the memory location within the I2C device</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timeout</span></code> is the timeout in milliseconds to wait for the write</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr_size</span></code> selects width of memaddr: 8 or 16 bits</p></li>
+</ul>
+</div></blockquote>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">None</span></code>.
+This is only valid in controller mode.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.recv">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">recv</code><span class="sig-paren">(</span><em class="sig-param">recv</em>, <em class="sig-param">addr=0x00</em>, <em class="sig-param">*</em>, <em class="sig-param">timeout=5000</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.recv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive data on the bus:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">recv</span></code> can be an integer, which is the number of bytes to receive,
+or a mutable buffer, which will be filled with received bytes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr</span></code> is the address to receive from (only required in controller mode)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timeout</span></code> is the timeout in milliseconds to wait for the receive</p></li>
+</ul>
+</div></blockquote>
+<p>Return value: if <code class="docutils literal notranslate"><span class="pre">recv</span></code> is an integer then a new buffer of the bytes received,
+otherwise the same buffer that was passed in to <code class="docutils literal notranslate"><span class="pre">recv</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.send">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">send</code><span class="sig-paren">(</span><em class="sig-param">send</em>, <em class="sig-param">addr=0x00</em>, <em class="sig-param">*</em>, <em class="sig-param">timeout=5000</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send data on the bus:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">send</span></code> is the data to send (an integer to send, or a buffer object)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addr</span></code> is the address to send to (only required in controller mode)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">timeout</span></code> is the timeout in milliseconds to wait for the send</p></li>
+</ul>
+</div></blockquote>
+<p>Return value: <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.I2C.scan">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">scan</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.I2C.scan" title="Permalink to this definition">¶</a></dt>
+<dd><p>Scan all I2C addresses from 0x01 to 0x7f and return a list of those that respond.
+Only valid when in controller mode.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="constants">
+<h2>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="pyb.I2C.CONTROLLER">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">CONTROLLER</code><a class="headerlink" href="#pyb.I2C.CONTROLLER" title="Permalink to this definition">¶</a></dt>
+<dd><p>for initialising the bus to controller mode</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pyb.I2C.PERIPHERAL">
+<code class="sig-prename descclassname">I2C.</code><code class="sig-name descname">PERIPHERAL</code><a class="headerlink" href="#pyb.I2C.PERIPHERAL" title="Permalink to this definition">¶</a></dt>
+<dd><p>for initialising the bus to peripheral mode</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">class I2C – a two-wire serial protocol</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+<li><a class="reference internal" href="#methods">Methods</a></li>
+<li><a class="reference internal" href="#constants">Constants</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pyb.Flash.html"
+                        title="previous chapter">class Flash – access to built-in flash storage</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pyb.LED.html"
+                        title="next chapter">class LED – LED object</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/pyb.I2C.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyb.LED.html" title="class LED – LED object"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pyb.Flash.html" title="class Flash – access to built-in flash storage"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pyb.html" ><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyb</span></code> — functions related to the board</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

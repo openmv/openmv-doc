@@ -1,0 +1,168 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>6. I/O Tutorial &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="6.1.1. LED Control" href="led_control.html" />
+    <link rel="prev" title="5. Script Structure" href="script_structure.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="led_control.html" title="6.1.1. LED Control"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="script_structure.html" title="5. Script Structure"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../quickref.html" >Quick reference for the openmvcam</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">OpenMV Cam Tutorial</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="i-o-tutorial">
+<h1><span class="section-number">6. </span>I/O Tutorial<a class="headerlink" href="#i-o-tutorial" title="Permalink to this headline">¶</a></h1>
+<p>Before getting into machine vision topics we’re going to talk about I/O pin
+control on your OpenMV Cam. It’s important you know how to toggle I/O pins,
+transmit and receive serial data, and put your OpenMV Cam to sleep so that you
+can create a system that’s able to “sense”, “plan”, and “act” in one package.</p>
+<p>First, let’s take a look at your OpenMV Cam’s pinout below:</p>
+<a class="reference internal image-reference" href="../../_images/pinout-openmv-cam-h7-plus-ov56401.png"><img alt="OpenMV Cam H7 Plus OV5640 Pinout" src="../../_images/pinout-openmv-cam-h7-plus-ov56401.png" style="width: 700px;" /></a>
+<a class="reference internal image-reference" href="../../_images/pinout-openmv-cam-h7-ov77251.png"><img alt="OpenMV Cam H7 OV7725 Pinout" src="../../_images/pinout-openmv-cam-h7-ov77251.png" style="width: 700px;" /></a>
+<a class="reference internal image-reference" href="../../_images/pinout-openmv-cam-m7-ov77251.png"><img alt="OpenMV Cam M7 OV7725 Pinout" src="../../_images/pinout-openmv-cam-m7-ov77251.png" style="width: 700px;" /></a>
+<a class="reference internal image-reference" href="../../_images/pinout-openmv-cam-m4-ov77251.png"><img alt="OpenMV Cam M4 OV7725 Pinout" src="../../_images/pinout-openmv-cam-m4-ov77251.png" style="width: 700px;" /></a>
+<a class="reference internal image-reference" href="../../_images/pinout-openmv-cam-m4-ov26401.png"><img alt="OpenMV Cam M4 OV2640 Pinout" src="../../_images/pinout-openmv-cam-m4-ov26401.png" style="width: 700px;" /></a>
+<p>Depending on the model of your OpenMV Cam you have 9-10 general purpose I/O pins
+available which can be used for low-speed digital input and output. Note that we
+use STM32 processors which have 5V tolerant I/O pins so you can hookup your
+OpenMV Cam directly to an Arduino or other 5V device without worry. The I/O pins
+are quite beefy too and can source or sink up to 25 mA each.</p>
+<p>Anyway, different I/O pins have different special functions. P0-P3, for example,
+are your OpenMV Cam’s SPI bus pins which you can use to control SPI devices.
+P4-P5 are your OpenMV Cam’s Asynchronous Serial or I2C bus bins to talk serial
+or I2C. P6 is your OpenMV Cam’s ADC/DAC pin for 0V to 3.3V input and output. And
+P7-P8 (or P7-P9) are your OpenMV Cam’s Auxiliary I/O pins.</p>
+<div class="section" id="the-pyb-module">
+<h2><span class="section-number">6.1. </span>The PYB Module<a class="headerlink" href="#the-pyb-module" title="Permalink to this headline">¶</a></h2>
+<p>All microcontroller I/O functionality is available from the <a class="reference internal" href="../../library/pyb.html#module-pyb" title="pyb: functions related to the board"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">pyb</span></code></a> (Python
+Board) module. You just need to <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">pyb</span></code> in your script to get access to
+it. Once imported you’ll have access to the ADC, CAN, DAC, I2C, Pin, Servo, SPI,
+and UART classes along with being able to control the board’s power consumption.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="led_control.html">6.1.1. LED Control</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gpio_control.html">6.1.2. GPIO Control</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="gpio_control.html#as-an-input">6.1.2.1. As an Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gpio_control.html#as-an-output">6.1.2.2. As an Output</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="analog_io.html">6.1.3. Analog IO</a></li>
+<li class="toctree-l1"><a class="reference internal" href="uart_control.html">6.1.4. UART Control</a></li>
+</ul>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The tutorial is not complete at right now. Please see the quick reference
+and library for more documentation.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">6. I/O Tutorial</a><ul>
+<li><a class="reference internal" href="#the-pyb-module">6.1. The PYB Module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="script_structure.html"
+                        title="previous chapter"><span class="section-number">5. </span>Script Structure</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="led_control.html"
+                        title="next chapter"><span class="section-number">6.1.1. </span>LED Control</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/openmvcam/tutorial/io_tutorial.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="led_control.html" title="6.1.1. LED Control"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="script_structure.html" title="5. Script Structure"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../quickref.html" >Quick reference for the openmvcam</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >OpenMV Cam Tutorial</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

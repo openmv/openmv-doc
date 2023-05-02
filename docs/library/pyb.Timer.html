@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>class Timer – control internal timers &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="class UART – duplex serial communication bus" href="pyb.UART.html" />
+    <link rel="prev" title="class SPI – a controller-driven serial protocol" href="pyb.SPI.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyb.UART.html" title="class UART – duplex serial communication bus"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pyb.SPI.html" title="class SPI – a controller-driven serial protocol"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pyb.html" accesskey="U"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyb</span></code> — functions related to the board</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="class-timer-control-internal-timers">
+<span id="pyb-timer"></span><h1>class Timer – control internal timers<a class="headerlink" href="#class-timer-control-internal-timers" title="Permalink to this headline">¶</a></h1>
+<p>Timers can be used for a great variety of tasks.  At the moment, only
+the simplest case is implemented: that of calling a function periodically.</p>
+<p>Each timer consists of a counter that counts up at a certain rate.  The rate
+at which it counts is the peripheral clock frequency (in Hz) divided by the
+timer prescaler.  When the counter reaches the timer period it triggers an
+event, and the counter resets back to zero.  By using the callback method,
+the timer event can call a Python function.</p>
+<p>Example usage to toggle an LED at a fixed frequency:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tim</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>              <span class="c1"># create a timer object using timer 4</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>                <span class="c1"># trigger at 2Hz</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span><span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toggle</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>Example using named function for the callback:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">tick</span><span class="p">(</span><span class="n">timer</span><span class="p">):</span>                <span class="c1"># we will receive the timer object when being called</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">timer</span><span class="o">.</span><span class="n">counter</span><span class="p">())</span>      <span class="c1"># show current timer&#39;s counter value</span>
+<span class="n">tim</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>      <span class="c1"># create a timer object using timer 4 - trigger at 1Hz</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">tick</span><span class="p">)</span>              <span class="c1"># set the callback to our tick function</span>
+</pre></div>
+</div>
+<p>Further examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tim</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>    <span class="c1"># freq in Hz</span>
+<span class="n">tim</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">prescaler</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="mi">99</span><span class="p">)</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">counter</span><span class="p">()</span>                   <span class="c1"># get counter (can also set)</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">prescaler</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>                <span class="c1"># set prescaler (can also get)</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">period</span><span class="p">(</span><span class="mi">199</span><span class="p">)</span>                 <span class="c1"># set period (can also get)</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="o">...</span><span class="p">)</span>     <span class="c1"># set callback for update interrupt (t=tim instance)</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>              <span class="c1"># clear callback</span>
+</pre></div>
+</div>
+<p><em>Note:</em> Timer(1) is used for the camera.  Similarly, Timer(5) controls the servo driver, and
+Timer(6) is used for timed ADC/DAC reading/writing.  It is recommended to
+use the other timers in your programs.</p>
+<p><em>Note:</em> Memory can’t be allocated during a callback (an interrupt) and so
+exceptions raised within a callback don’t give much information.  See
+<a class="reference internal" href="micropython.html#micropython.alloc_emergency_exception_buf" title="micropython.alloc_emergency_exception_buf"><code class="xref py py-func docutils literal notranslate"><span class="pre">micropython.alloc_emergency_exception_buf()</span></code></a> for how to get around this
+limitation.</p>
+<div class="section" id="constructors">
+<h2>Constructors<a class="headerlink" href="#constructors" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyb.pyb.Timer">
+<em class="property">class </em><code class="sig-prename descclassname">pyb.</code><code class="sig-name descname">Timer</code><span class="sig-paren">(</span><em class="sig-param">id</em>, <em class="sig-param">...</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.pyb.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Construct a new timer object of the given id.  If additional
+arguments are given, then the timer is initialised by <code class="docutils literal notranslate"><span class="pre">init(...)</span></code>.
+<code class="docutils literal notranslate"><span class="pre">id</span></code> can be 1 to 14.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="methods">
+<h2>Methods<a class="headerlink" href="#methods" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="id1">
+<h2>Methods<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="pyb.Timer.init">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">init</code><span class="sig-paren">(</span><em class="sig-param">*</em>, <em class="sig-param">freq</em>, <em class="sig-param">prescaler</em>, <em class="sig-param">period</em>, <em class="sig-param">mode=Timer.UP</em>, <em class="sig-param">div=1</em>, <em class="sig-param">callback=None</em>, <em class="sig-param">deadtime=0</em>, <em class="sig-param">brk=Timer.BRK_OFF</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialise the timer.  Initialisation must be either by frequency (in Hz)
+or by prescaler and period:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tim</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>                  <span class="c1"># set the timer to trigger at 100Hz</span>
+<span class="n">tim</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">prescaler</span><span class="o">=</span><span class="mi">83</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="mi">999</span><span class="p">)</span>  <span class="c1"># set the prescaler and period directly</span>
+</pre></div>
+</div>
+<p>Keyword arguments:</p>
+<blockquote>
+<div><blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">freq</span></code> — specifies the periodic frequency of the timer. You might also
+view this as the frequency with which the timer goes through one complete cycle.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prescaler</span></code> [0-0xffff] - specifies the value to be loaded into the
+timer’s Prescaler Register (PSC). The timer clock source is divided by
+(<code class="docutils literal notranslate"><span class="pre">prescaler</span> <span class="pre">+</span> <span class="pre">1</span></code>) to arrive at the timer clock. Timers 2-7 and 12-14
+have a clock source of 84 MHz (pyb.freq()[2] * 2), and Timers 1, and 8-11
+have a clock source of 168 MHz (pyb.freq()[3] * 2).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">period</span></code> [0-0xffff] for timers 1, 3, 4, and 6-15. [0-0x3fffffff] for timers 2 &amp; 5.
+Specifies the value to be loaded into the timer’s AutoReload
+Register (ARR). This determines the period of the timer (i.e. when the
+counter cycles). The timer counter will roll-over after <code class="docutils literal notranslate"><span class="pre">period</span> <span class="pre">+</span> <span class="pre">1</span></code>
+timer clock cycles.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code> can be one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.UP</span></code> - configures the timer to count from 0 to ARR (default)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.DOWN</span></code> - configures the timer to count from ARR down to 0.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.CENTER</span></code> - configures the timer to count from 0 to ARR and
+then back down to 0.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">div</span></code> can be one of 1, 2, or 4. Divides the timer clock to determine
+the sampling clock used by the digital filters.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code> - as per Timer.callback()</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deadtime</span></code> - specifies the amount of “dead” or inactive time between
+transitions on complimentary channels (both channels will be inactive)
+for this time). <code class="docutils literal notranslate"><span class="pre">deadtime</span></code> may be an integer between 0 and 1008, with
+the following restrictions: 0-128 in steps of 1. 128-256 in steps of
+2, 256-512 in steps of 8, and 512-1008 in steps of 16. <code class="docutils literal notranslate"><span class="pre">deadtime</span></code>
+measures ticks of <code class="docutils literal notranslate"><span class="pre">source_freq</span></code> divided by <code class="docutils literal notranslate"><span class="pre">div</span></code> clock ticks.
+<code class="docutils literal notranslate"><span class="pre">deadtime</span></code> is only available on timers 1 and 8.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">brk</span></code> - specifies if the break mode is used to kill the output of
+the PWM when the <code class="docutils literal notranslate"><span class="pre">BRK_IN</span></code> input is asserted. The value of this
+argument determines if break is enabled and what the polarity is, and
+can be one of <code class="docutils literal notranslate"><span class="pre">Timer.BRK_OFF</span></code>, <code class="docutils literal notranslate"><span class="pre">Timer.BRK_LOW</span></code> or
+<code class="docutils literal notranslate"><span class="pre">Timer.BRK_HIGH</span></code>. To select the <code class="docutils literal notranslate"><span class="pre">BRK_IN</span></code> pin construct a Pin object with
+<code class="docutils literal notranslate"><span class="pre">mode=Pin.ALT,</span> <span class="pre">alt=Pin.AFn_TIMx</span></code>. The pin’s GPIO input features are
+available in alt mode - <code class="docutils literal notranslate"><span class="pre">pull=</span></code> , <code class="docutils literal notranslate"><span class="pre">value()</span></code> and <code class="docutils literal notranslate"><span class="pre">irq()</span></code>.</p></li>
+</ul>
+</div></blockquote>
+<p>You must either specify freq or both of period and prescaler.</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.deinit">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">deinit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.deinit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deinitialises the timer.</p>
+<p>Disables the callback (and the associated irq).</p>
+<p>Disables any channel callbacks (and the associated irq).
+Stops the timer, and disables the timer peripheral.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.callback">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">callback</code><span class="sig-paren">(</span><em class="sig-param">fun</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the function to be called when the timer triggers.
+<code class="docutils literal notranslate"><span class="pre">fun</span></code> is passed 1 argument, the timer object.
+If <code class="docutils literal notranslate"><span class="pre">fun</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> then the callback will be disabled.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.channel">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">channel</code><span class="sig-paren">(</span><em class="sig-param">channel</em>, <em class="sig-param">mode</em>, <em class="sig-param">...</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>If only a channel number is passed, then a previously initialized channel
+object is returned (or <code class="docutils literal notranslate"><span class="pre">None</span></code> if there is no previous channel).</p>
+<p>Otherwise, a TimerChannel object is initialized and returned.</p>
+<p>Each channel can be configured to perform pwm, output compare, or
+input capture. All channels share the same underlying timer, which means
+that they share the same timer clock.</p>
+<p>Keyword arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code> can be one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.PWM</span></code> — configure the timer in PWM mode (active high).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.PWM_INVERTED</span></code> — configure the timer in PWM mode (active low).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.OC_TIMING</span></code> — indicates that no pin is driven.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.OC_ACTIVE</span></code> — the pin will be made active when a compare match occurs (active is determined by polarity)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.OC_INACTIVE</span></code> — the pin will be made inactive when a compare match occurs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.OC_TOGGLE</span></code> — the pin will be toggled when an compare match occurs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.OC_FORCED_ACTIVE</span></code> — the pin is forced active (compare match is ignored).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.OC_FORCED_INACTIVE</span></code> — the pin is forced inactive (compare match is ignored).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.IC</span></code> — configure the timer in Input Capture mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.ENC_A</span></code> — configure the timer in Encoder mode. The counter only changes when CH1 changes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.ENC_B</span></code> — configure the timer in Encoder mode. The counter only changes when CH2 changes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.ENC_AB</span></code> — configure the timer in Encoder mode. The counter changes when CH1 or CH2 changes.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">callback</span></code> - as per TimerChannel.callback()</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pin</span></code> None (the default) or a Pin object. If specified (and not None)
+this will cause the alternate function of the the indicated pin
+to be configured for this timer channel. An error will be raised if
+the pin doesn’t support any alternate functions for this timer channel.</p></li>
+</ul>
+</div></blockquote>
+<p>Keyword arguments for Timer.PWM modes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pulse_width</span></code> - determines the initial pulse width value to use.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pulse_width_percent</span></code> - determines the initial pulse width percentage to use.</p></li>
+</ul>
+</div></blockquote>
+<p>Keyword arguments for Timer.OC modes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">compare</span></code> - determines the initial value of the compare register.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">polarity</span></code> can be one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.HIGH</span></code> - output is active high</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.LOW</span></code> - output is active low</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<p>Optional keyword arguments for Timer.IC modes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">polarity</span></code> can be one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.RISING</span></code> - captures on rising edge.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.FALLING</span></code> - captures on falling edge.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Timer.BOTH</span></code> - captures on both edges.</p></li>
+</ul>
+</li>
+</ul>
+<p>Note that capture only works on the primary channel, and not on the
+complimentary channels.</p>
+</div></blockquote>
+<p>Notes for Timer.ENC modes:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Requires 2 pins, so one or both pins will need to be configured to use
+the appropriate timer AF using the Pin API.</p></li>
+<li><p>Read the encoder value using the timer.counter() method.</p></li>
+<li><p>Only works on CH1 and CH2 (and not on CH1N or CH2N)</p></li>
+<li><p>The channel number is ignored when setting the encoder mode.</p></li>
+</ul>
+</div></blockquote>
+<p>PWM Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">timer</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="n">ch2</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">channel</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="o">.</span><span class="n">PWM</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="n">pyb</span><span class="o">.</span><span class="n">Pin</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">X2</span><span class="p">,</span> <span class="n">pulse_width</span><span class="o">=</span><span class="mi">8000</span><span class="p">)</span>
+<span class="n">ch3</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">channel</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="o">.</span><span class="n">PWM</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="n">pyb</span><span class="o">.</span><span class="n">Pin</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">X3</span><span class="p">,</span> <span class="n">pulse_width</span><span class="o">=</span><span class="mi">16000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>PWM Motor Example with complementary outputs, dead time, break input and break callback:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pyb</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Pin</span> <span class="c1"># machine.Pin supports alt mode and irq on the same pin.</span>
+<span class="n">pin_t8_1</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="n">Pin</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">Y1</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">ALT</span><span class="p">,</span> <span class="n">af</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">AF3_TIM8</span><span class="p">)</span>   <span class="c1"># Pin PC6, TIM8_CH1</span>
+<span class="n">pin_t8_1n</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="n">Pin</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">X8</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">ALT</span><span class="p">,</span> <span class="n">af</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">AF3_TIM8</span><span class="p">)</span>  <span class="c1"># Pin PA7, TIM8_CH1N</span>
+<span class="n">pin_bkin</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="n">Pin</span><span class="o">.</span><span class="n">board</span><span class="o">.</span><span class="n">X7</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">ALT</span><span class="p">,</span> <span class="n">af</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">AF3_TIM8</span><span class="p">)</span>   <span class="c1"># Pin PA6, TIM8_BKIN</span>
+<span class="n">pin_bkin</span><span class="o">.</span><span class="n">irq</span><span class="p">(</span><span class="n">handler</span><span class="o">=</span><span class="n">break_callabck</span><span class="p">,</span> <span class="n">trigger</span><span class="o">=</span><span class="n">Pin</span><span class="o">.</span><span class="n">IRQ_FALLING</span><span class="p">)</span>
+<span class="n">timer</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">deadtime</span><span class="o">=</span><span class="mi">1008</span><span class="p">,</span> <span class="n">brk</span><span class="o">=</span><span class="n">Timer</span><span class="o">.</span><span class="n">BRK_LOW</span><span class="p">)</span>
+<span class="n">ch1</span> <span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">channel</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Timer</span><span class="o">.</span><span class="n">PWM</span><span class="p">,</span> <span class="n">pulse_width_percent</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.counter">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">counter</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.counter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the timer counter.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.freq">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">freq</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.freq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the frequency for the timer (changes prescaler and period if set).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.period">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">period</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.period" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the period of the timer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.prescaler">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">prescaler</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.prescaler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the prescaler for the timer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.Timer.source_freq">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">source_freq</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.Timer.source_freq" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the frequency of the source of the timer.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="class-timerchannel-setup-a-channel-for-a-timer">
+<h1>class TimerChannel — setup a channel for a timer<a class="headerlink" href="#class-timerchannel-setup-a-channel-for-a-timer" title="Permalink to this headline">¶</a></h1>
+<p>Timer channels are used to generate/capture a signal using a timer.</p>
+<p>TimerChannel objects are created using the Timer.channel() method.</p>
+<div class="section" id="id2">
+<h2>Methods<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<dl class="method">
+<dt id="pyb.timerchannel.callback">
+<code class="sig-prename descclassname">timerchannel.</code><code class="sig-name descname">callback</code><span class="sig-paren">(</span><em class="sig-param">fun</em><span class="sig-paren">)</span><a class="headerlink" href="#pyb.timerchannel.callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the function to be called when the timer channel triggers.
+<code class="docutils literal notranslate"><span class="pre">fun</span></code> is passed 1 argument, the timer object.
+If <code class="docutils literal notranslate"><span class="pre">fun</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> then the callback will be disabled.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.timerchannel.capture">
+<code class="sig-prename descclassname">timerchannel.</code><code class="sig-name descname">capture</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.timerchannel.capture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the capture value associated with a channel.
+capture, compare, and pulse_width are all aliases for the same function.
+capture is the logical name to use when the channel is in input capture mode.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.timerchannel.compare">
+<code class="sig-prename descclassname">timerchannel.</code><code class="sig-name descname">compare</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.timerchannel.compare" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the compare value associated with a channel.
+capture, compare, and pulse_width are all aliases for the same function.
+compare is the logical name to use when the channel is in output compare mode.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.timerchannel.pulse_width">
+<code class="sig-prename descclassname">timerchannel.</code><code class="sig-name descname">pulse_width</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.timerchannel.pulse_width" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the pulse width value associated with a channel.
+capture, compare, and pulse_width are all aliases for the same function.
+pulse_width is the logical name to use when the channel is in PWM mode.</p>
+<p>In edge aligned mode, a pulse_width of <code class="docutils literal notranslate"><span class="pre">period</span> <span class="pre">+</span> <span class="pre">1</span></code> corresponds to a duty cycle of 100%
+In center aligned mode, a pulse width of <code class="docutils literal notranslate"><span class="pre">period</span></code> corresponds to a duty cycle of 100%</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyb.timerchannel.pulse_width_percent">
+<code class="sig-prename descclassname">timerchannel.</code><code class="sig-name descname">pulse_width_percent</code><span class="sig-paren">(</span><span class="optional">[</span><em class="sig-param">value</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#pyb.timerchannel.pulse_width_percent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get or set the pulse width percentage associated with a channel.  The value
+is a number between 0 and 100 and sets the percentage of the timer period
+for which the pulse is active.  The value can be an integer or
+floating-point number for more accuracy.  For example, a value of 25 gives
+a duty cycle of 25%.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="constants">
+<h2>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h2>
+<dl class="data">
+<dt id="pyb.Timer.UP">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">UP</code><a class="headerlink" href="#pyb.Timer.UP" title="Permalink to this definition">¶</a></dt>
+<dt id="pyb.Timer.DOWN">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">DOWN</code><a class="headerlink" href="#pyb.Timer.DOWN" title="Permalink to this definition">¶</a></dt>
+<dt id="pyb.Timer.CENTER">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">CENTER</code><a class="headerlink" href="#pyb.Timer.CENTER" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configures the timer to count Up, Down, or from 0 to ARR and then back down to 0.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pyb.Timer.BRK_OFF">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">BRK_OFF</code><a class="headerlink" href="#pyb.Timer.BRK_OFF" title="Permalink to this definition">¶</a></dt>
+<dt id="pyb.Timer.BRK_LOW">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">BRK_LOW</code><a class="headerlink" href="#pyb.Timer.BRK_LOW" title="Permalink to this definition">¶</a></dt>
+<dt id="pyb.Timer.BRK_HIGH">
+<code class="sig-prename descclassname">Timer.</code><code class="sig-name descname">BRK_HIGH</code><a class="headerlink" href="#pyb.Timer.BRK_HIGH" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configures the break mode when passed to the <code class="docutils literal notranslate"><span class="pre">brk</span></code> keyword argument.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">class Timer – control internal timers</a><ul>
+<li><a class="reference internal" href="#constructors">Constructors</a></li>
+<li><a class="reference internal" href="#methods">Methods</a></li>
+<li><a class="reference internal" href="#id1">Methods</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#class-timerchannel-setup-a-channel-for-a-timer">class TimerChannel — setup a channel for a timer</a><ul>
+<li><a class="reference internal" href="#id2">Methods</a></li>
+<li><a class="reference internal" href="#constants">Constants</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pyb.SPI.html"
+                        title="previous chapter">class SPI – a controller-driven serial protocol</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pyb.UART.html"
+                        title="next chapter">class UART – duplex serial communication bus</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/library/pyb.Timer.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pyb.UART.html" title="class UART – duplex serial communication bus"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pyb.SPI.html" title="class SPI – a controller-driven serial protocol"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython libraries</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="pyb.html" ><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyb</span></code> — functions related to the board</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>

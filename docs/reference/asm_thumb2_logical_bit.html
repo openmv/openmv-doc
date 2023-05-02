@@ -1,0 +1,175 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>4. Logical &amp; bitwise instructions &#8212; MicroPython 1.19 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="5. Arithmetic instructions" href="asm_thumb2_arith.html" />
+    <link rel="prev" title="3. Store register to memory" href="asm_thumb2_str.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_arith.html" title="5. Arithmetic instructions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_str.html" title="3. Store register to memory"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="asm_thumb2_index.html" accesskey="U">Inline assembler for Thumb2 architectures</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="logical-bitwise-instructions">
+<h1><span class="section-number">4. </span>Logical &amp; bitwise instructions<a class="headerlink" href="#logical-bitwise-instructions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="document-conventions">
+<h2><span class="section-number">4.1. </span>Document conventions<a class="headerlink" href="#document-conventions" title="Permalink to this headline">¶</a></h2>
+<p>Notation: <code class="docutils literal notranslate"><span class="pre">Rd,</span> <span class="pre">Rn</span></code> denote ARM registers R0-R7 except in the case of the
+special instructions where R0-R15 may be used. <code class="docutils literal notranslate"><span class="pre">Rn&lt;a-b&gt;</span></code> denotes an ARM register
+whose contents must lie in range <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">&lt;=</span> <span class="pre">contents</span> <span class="pre">&lt;=</span> <span class="pre">b</span></code>. In the case of instructions
+with two register arguments, it is permissible for them to be identical. For example
+the following will zero R0 (Python <code class="docutils literal notranslate"><span class="pre">R0</span> <span class="pre">^=</span> <span class="pre">R0</span></code>) regardless of its initial contents.</p>
+<ul class="simple">
+<li><p>eor(r0, r0)</p></li>
+</ul>
+<p>These instructions affect the condition flags except where stated.</p>
+</div>
+<div class="section" id="logical-instructions">
+<h2><span class="section-number">4.2. </span>Logical instructions<a class="headerlink" href="#logical-instructions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>and_(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">&amp;=</span> <span class="pre">Rn</span></code></p></li>
+<li><p>orr(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">|=</span> <span class="pre">Rn</span></code></p></li>
+<li><p>eor(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">^=</span> <span class="pre">Rn</span></code></p></li>
+<li><p>mvn(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">Rn</span> <span class="pre">^</span> <span class="pre">0xffffffff</span></code> i.e. Rd = 1’s complement of Rn</p></li>
+<li><p>bic(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">&amp;=</span> <span class="pre">~Rn</span></code> bit clear Rd using mask in Rn</p></li>
+</ul>
+<p>Note the use of “and_” instead of “and”, because “and” is a reserved keyword in Python.</p>
+</div>
+<div class="section" id="shift-and-rotation-instructions">
+<h2><span class="section-number">4.3. </span>Shift and rotation instructions<a class="headerlink" href="#shift-and-rotation-instructions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>lsl(Rd, Rn&lt;0-31&gt;) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">&lt;&lt;=</span> <span class="pre">Rn</span></code></p></li>
+<li><p>lsr(Rd, Rn&lt;1-32&gt;) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">(Rd</span> <span class="pre">&amp;</span> <span class="pre">0xffffffff)</span> <span class="pre">&gt;&gt;</span> <span class="pre">Rn</span></code> Logical shift right</p></li>
+<li><p>asr(Rd, Rn&lt;1-32&gt;) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">&gt;&gt;=</span> <span class="pre">Rn</span></code> arithmetic shift right</p></li>
+<li><p>ror(Rd, Rn&lt;1-31&gt;) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">rotate_right(Rd,</span> <span class="pre">Rn)</span></code> Rd is rotated right Rn bits.</p></li>
+</ul>
+<p>A rotation by (for example) three bits works as follows. If Rd initially
+contains bits <code class="docutils literal notranslate"><span class="pre">b31</span> <span class="pre">b30..b0</span></code> after rotation it will contain <code class="docutils literal notranslate"><span class="pre">b2</span> <span class="pre">b1</span> <span class="pre">b0</span> <span class="pre">b31</span> <span class="pre">b30..b3</span></code></p>
+</div>
+<div class="section" id="special-instructions">
+<h2><span class="section-number">4.4. </span>Special instructions<a class="headerlink" href="#special-instructions" title="Permalink to this headline">¶</a></h2>
+<p>Condition codes are unaffected by these instructions.</p>
+<ul class="simple">
+<li><p>clz(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">count_leading_zeros(Rn)</span></code></p></li>
+</ul>
+<p>count_leading_zeros(Rn) returns the number of binary zero bits before the first binary one bit in Rn.</p>
+<ul class="simple">
+<li><p>rbit(Rd, Rn) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">bit_reverse(Rn)</span></code></p></li>
+</ul>
+<p>bit_reverse(Rn) returns the bit-reversed contents of Rn. If Rn contains bits <code class="docutils literal notranslate"><span class="pre">b31</span> <span class="pre">b30..b0</span></code> Rd will be set
+to <code class="docutils literal notranslate"><span class="pre">b0</span> <span class="pre">b1</span> <span class="pre">b2..b31</span></code></p>
+<p>Trailing zeros may be counted by performing a bit reverse prior to executing clz.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">4. Logical &amp; bitwise instructions</a><ul>
+<li><a class="reference internal" href="#document-conventions">4.1. Document conventions</a></li>
+<li><a class="reference internal" href="#logical-instructions">4.2. Logical instructions</a></li>
+<li><a class="reference internal" href="#shift-and-rotation-instructions">4.3. Shift and rotation instructions</a></li>
+<li><a class="reference internal" href="#special-instructions">4.4. Special instructions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="asm_thumb2_str.html"
+                        title="previous chapter"><span class="section-number">3. </span>Store register to memory</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="asm_thumb2_arith.html"
+                        title="next chapter"><span class="section-number">5. </span>Arithmetic instructions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/reference/asm_thumb2_logical_bit.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_arith.html" title="5. Arithmetic instructions"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="asm_thumb2_str.html" title="3. Store register to memory"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="asm_thumb2_index.html" >Inline assembler for Thumb2 architectures</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      Last updated on 02 May 2023.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
+    </div>
+  </body>
+</html>
