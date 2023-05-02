@@ -1,53 +1,123 @@
-
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta charset="utf-8" />
-    <title>Writing interrupt handlers &#8212; MicroPython 1.19 documentation</title>
-    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
-    
-    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/language_data.js"></script>
-    
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Writing interrupt handlers &mdash; MicroPython 1.19 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
     <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Maximising MicroPython speed" href="speed_python.html" />
     <link rel="prev" title="MicroPython .mpy files" href="mpyfiles.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="speed_python.html" title="Maximising MicroPython speed"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="mpyfiles.html" title="MicroPython .mpy files"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">MicroPython language and implementation</a> &#187;</li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
-  <div class="section" id="writing-interrupt-handlers">
-<span id="isr-rules"></span><h1>Writing interrupt handlers<a class="headerlink" href="#writing-interrupt-handlers" title="Permalink to this headline">¶</a></h1>
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.19
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython language and implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="repl.html">The MicroPython Interactive Interpreter Mode (aka REPL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython remote control: mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy files</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Writing interrupt handlers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tips-and-recommended-practices">Tips and recommended practices</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#micropython-issues">MicroPython issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#the-emergency-exception-buffer">The emergency exception buffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#simplicity">Simplicity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#communication-between-an-isr-and-the-main-program">Communication between an ISR and the main program</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#the-use-of-object-methods-as-callbacks">The use of object methods as callbacks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#creation-of-python-objects">Creation of Python objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#use-of-python-objects">Use of Python objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#overcoming-the-float-limitation">Overcoming the float limitation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#using-micropython-schedule">Using micropython.schedule</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interfacing-to-uasyncio">Interfacing to uasyncio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#general-issues">General issues</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#interrupt-handler-design">Interrupt handler design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#reentrancy">Reentrancy</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#critical-sections">Critical sections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#interrupts-and-the-repl">Interrupts and the REPL</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">Maximising MicroPython speed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">MicroPython on microcontrollers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython manifest files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython language and implementation</a></li>
+      <li class="breadcrumb-item active">Writing interrupt handlers</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/isr_rules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="writing-interrupt-handlers">
+<span id="isr-rules"></span><h1>Writing interrupt handlers<a class="headerlink" href="#writing-interrupt-handlers" title="Permalink to this heading">¶</a></h1>
 <p>On suitable hardware MicroPython offers the ability to write interrupt handlers in Python. Interrupt handlers
 - also known as interrupt service routines (ISR’s) - are defined as callback functions. These are executed
 in response to an event such as a timer trigger or a voltage change on a pin. Such events can occur at any point
@@ -57,8 +127,8 @@ the language specific issues first, followed by a brief introduction to real tim
 <p>This introduction uses vague terms like “slow” or “as fast as possible”. This is deliberate, as speeds are
 application dependent. Acceptable durations for an ISR are dependent on the rate at which interrupts occur,
 the nature of the main program, and the presence of other concurrent events.</p>
-<div class="section" id="tips-and-recommended-practices">
-<h2>Tips and recommended practices<a class="headerlink" href="#tips-and-recommended-practices" title="Permalink to this headline">¶</a></h2>
+<section id="tips-and-recommended-practices">
+<h2>Tips and recommended practices<a class="headerlink" href="#tips-and-recommended-practices" title="Permalink to this heading">¶</a></h2>
 <p>This summarises the points detailed below and lists the principal recommendations for interrupt handler code.</p>
 <ul class="simple">
 <li><p>Keep the code as short and simple as possible.</p></li>
@@ -70,11 +140,11 @@ shared between an ISR and the main program consider an array (<code class="docut
 the data in the main program and re-enabling them immediately afterwards (see Critical Sections).</p></li>
 <li><p>Allocate an emergency exception buffer (see below).</p></li>
 </ul>
-</div>
-<div class="section" id="micropython-issues">
-<h2>MicroPython issues<a class="headerlink" href="#micropython-issues" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="the-emergency-exception-buffer">
-<h3>The emergency exception buffer<a class="headerlink" href="#the-emergency-exception-buffer" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="micropython-issues">
+<h2>MicroPython issues<a class="headerlink" href="#micropython-issues" title="Permalink to this heading">¶</a></h2>
+<section id="the-emergency-exception-buffer">
+<h3>The emergency exception buffer<a class="headerlink" href="#the-emergency-exception-buffer" title="Permalink to this heading">¶</a></h3>
 <p>If an error occurs in an ISR, MicroPython is unable to produce an error report unless a special buffer is created
 for the purpose. Debugging is simplified if the following code is included in any program using interrupts.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">micropython</span>
@@ -85,25 +155,25 @@ for the purpose. Debugging is simplified if the following code is included in an
 thrown during the handling of an exception while the heap is locked, that second exception’s stack trace will
 replace the original one - even if the second exception is cleanly handled. This can lead to confusing exception
 messages if the buffer is later printed.</p>
-</div>
-<div class="section" id="simplicity">
-<h3>Simplicity<a class="headerlink" href="#simplicity" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="simplicity">
+<h3>Simplicity<a class="headerlink" href="#simplicity" title="Permalink to this heading">¶</a></h3>
 <p>For a variety of reasons it is important to keep ISR code as short and simple as possible. It should do only what
 has to be done immediately after the event which caused it: operations which can be deferred should be delegated
 to the main program loop. Typically an ISR will deal with the hardware device which caused the interrupt, making
 it ready for the next interrupt to occur. It will communicate with the main loop by updating shared data to indicate
 that the interrupt has occurred, and it will return. An ISR should return control to the main loop as quickly
 as possible. This is not a specific MicroPython issue so is covered in more detail <a class="reference internal" href="#isr"><span class="std std-ref">below</span></a>.</p>
-</div>
-<div class="section" id="communication-between-an-isr-and-the-main-program">
-<h3>Communication between an ISR and the main program<a class="headerlink" href="#communication-between-an-isr-and-the-main-program" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="communication-between-an-isr-and-the-main-program">
+<h3>Communication between an ISR and the main program<a class="headerlink" href="#communication-between-an-isr-and-the-main-program" title="Permalink to this heading">¶</a></h3>
 <p>Normally an ISR needs to communicate with the main program. The simplest means of doing this is via one or more
 shared data objects, either declared as global or shared via a class (see below). There are various restrictions
 and hazards around doing this, which are covered in more detail below. Integers, <code class="docutils literal notranslate"><span class="pre">bytes</span></code> and <code class="docutils literal notranslate"><span class="pre">bytearray</span></code> objects
 are commonly used for this purpose along with arrays (from the array module) which can store various data types.</p>
-</div>
-<div class="section" id="the-use-of-object-methods-as-callbacks">
-<h3>The use of object methods as callbacks<a class="headerlink" href="#the-use-of-object-methods-as-callbacks" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="the-use-of-object-methods-as-callbacks">
+<h3>The use of object methods as callbacks<a class="headerlink" href="#the-use-of-object-methods-as-callbacks" title="Permalink to this heading">¶</a></h3>
 <p>MicroPython supports this powerful technique which enables an ISR to share instance variables with the underlying
 code. It also enables a class implementing a device driver to support multiple device instances. The following
 example causes two LED’s to flash at different rates.</p>
@@ -128,9 +198,9 @@ a bound method the callback function’s first argument is <code class="docutils
 data and to save state between successive calls. For example, if the class above had a variable <code class="docutils literal notranslate"><span class="pre">self.count</span></code>
 set to zero in the constructor, <code class="docutils literal notranslate"><span class="pre">cb()</span></code> could increment the counter. The <code class="docutils literal notranslate"><span class="pre">red</span></code> and <code class="docutils literal notranslate"><span class="pre">green</span></code> instances would
 then maintain independent counts of the number of times each LED had changed state.</p>
-</div>
-<div class="section" id="creation-of-python-objects">
-<h3>Creation of Python objects<a class="headerlink" href="#creation-of-python-objects" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="creation-of-python-objects">
+<h3>Creation of Python objects<a class="headerlink" href="#creation-of-python-objects" title="Permalink to this heading">¶</a></h3>
 <p>ISR’s cannot create instances of Python objects. This is because MicroPython needs to allocate memory for the
 object from a store of free memory block called the heap. This is not permitted in an interrupt handler because
 heap allocation is not re-entrant. In other words the interrupt might occur when the main program is part way
@@ -177,9 +247,9 @@ and to pass that reference in the ISR. For example:</p>
 </div>
 <p>Other techniques are to define and instantiate the method in the constructor
 or to pass <code class="xref py py-meth docutils literal notranslate"><span class="pre">Foo.bar()</span></code> with the argument <em>self</em>.</p>
-</div>
-<div class="section" id="use-of-python-objects">
-<h3>Use of Python objects<a class="headerlink" href="#use-of-python-objects" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="use-of-python-objects">
+<h3>Use of Python objects<a class="headerlink" href="#use-of-python-objects" title="Permalink to this heading">¶</a></h3>
 <p>A further restriction on objects arises because of the way Python works. When an <code class="docutils literal notranslate"><span class="pre">import</span></code> statement is executed the
 Python code is compiled to bytecode, with one line of code typically mapping to multiple bytecodes. When the code
 runs the interpreter reads each bytecode and executes it as a series of machine code instructions. Given that an
@@ -199,17 +269,17 @@ for both the main loop and the ISR to alter the contents of these.</p>
 a single machine word. Larger values are stored as Python objects. Consequently changes to long integers cannot
 be considered atomic. The use of long integers in ISR’s is unsafe because memory allocation may be
 attempted as the variable’s value changes.</p>
-</div>
-<div class="section" id="overcoming-the-float-limitation">
-<h3>Overcoming the float limitation<a class="headerlink" href="#overcoming-the-float-limitation" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="overcoming-the-float-limitation">
+<h3>Overcoming the float limitation<a class="headerlink" href="#overcoming-the-float-limitation" title="Permalink to this heading">¶</a></h3>
 <p>In general it is best to avoid using floats in ISR code: hardware devices normally handle integers and conversion
 to floats is normally done in the main loop. However there are a few DSP algorithms which require floating point.
 On platforms with hardware floating point (such as the Pyboard) the inline ARM Thumb assembler can be used to work
 round this limitation. This is because the processor stores float values in a machine word; values can be shared
 between the ISR and main program code via an array of floats.</p>
-</div>
-<div class="section" id="using-micropython-schedule">
-<h3>Using micropython.schedule<a class="headerlink" href="#using-micropython-schedule" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="using-micropython-schedule">
+<h3>Using micropython.schedule<a class="headerlink" href="#using-micropython-schedule" title="Permalink to this heading">¶</a></h3>
 <p>This function enables an ISR to schedule a callback for execution “very soon”. The callback is queued for
 execution which will take place at a time when the heap is not locked. Hence it can create Python objects
 and use floats. The callback is also guaranteed to run at a time when the main program has completed any
@@ -225,15 +295,15 @@ for execution; this will run after the current instance has completed. A sustain
 rate therefore carries a risk of unconstrained queue growth and eventual failure with a <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>.</p>
 <p>If the callback to be passed to <a class="reference internal" href="../library/micropython.html#micropython.schedule" title="micropython.schedule"><code class="xref any py py-func docutils literal notranslate"><span class="pre">schedule()</span></code></a> is a bound method, consider the
 note in “Creation of Python objects”.</p>
-</div>
-</div>
-<div class="section" id="exceptions">
-<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this heading">¶</a></h2>
 <p>If an ISR raises an exception it will not propagate to the main loop. The interrupt will be disabled unless the
 exception is handled by the ISR code.</p>
-</div>
-<div class="section" id="interfacing-to-uasyncio">
-<h2>Interfacing to uasyncio<a class="headerlink" href="#interfacing-to-uasyncio" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="interfacing-to-uasyncio">
+<h2>Interfacing to uasyncio<a class="headerlink" href="#interfacing-to-uasyncio" title="Permalink to this heading">¶</a></h2>
 <p>When an ISR runs it can preempt the <a class="reference internal" href="../library/uasyncio.html#module-uasyncio" title="uasyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code></a> scheduler. If the ISR performs a <a class="reference internal" href="../library/uasyncio.html#module-uasyncio" title="uasyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code></a>
 operation the scheduler’s operation can be disrupted. This applies whether the interrupt is hard
 or soft and also applies if the ISR has passed execution to another function via
@@ -255,16 +325,16 @@ to an interrupt:</p>
 <p>In this example there will be a variable amount of latency between the execution of the ISR and the execution
 of <code class="docutils literal notranslate"><span class="pre">foo()</span></code>. This is inherent to cooperative scheduling. The maximum latency is application
 and platform dependent but may typically be measured in tens of ms.</p>
-</div>
-<div class="section" id="general-issues">
-<h2>General issues<a class="headerlink" href="#general-issues" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="general-issues">
+<h2>General issues<a class="headerlink" href="#general-issues" title="Permalink to this heading">¶</a></h2>
 <p>This is merely a brief introduction to the subject of real time programming. Beginners should note
 that design errors in real time programs can lead to faults which are particularly hard to diagnose. This is because
 they can occur rarely and at intervals which are essentially random. It is crucial to get the initial design right and
 to anticipate issues before they arise. Both interrupt handlers and the main program need to be designed
 with an appreciation of the following issues.</p>
-<div class="section" id="interrupt-handler-design">
-<span id="isr"></span><h3>Interrupt handler design<a class="headerlink" href="#interrupt-handler-design" title="Permalink to this headline">¶</a></h3>
+<section id="interrupt-handler-design">
+<span id="isr"></span><h3>Interrupt handler design<a class="headerlink" href="#interrupt-handler-design" title="Permalink to this heading">¶</a></h3>
 <p>As mentioned above, ISR’s should be designed to be as simple as possible. They should always return in a short,
 predictable period of time. This is important because when the ISR is running, the main loop is not: inevitably
 the main loop experiences pauses in its execution at random points in the code. Such pauses can be a source of hard
@@ -297,16 +367,16 @@ the number received, but the main program has already read the number, so proces
 The newly arrived bytes are lost.</p>
 <p>There are various ways of avoiding this hazard, the simplest being to use a circular buffer. If it is not possible
 to use a structure with inherent thread safety other ways are described below.</p>
-</div>
-<div class="section" id="reentrancy">
-<h3>Reentrancy<a class="headerlink" href="#reentrancy" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="reentrancy">
+<h3>Reentrancy<a class="headerlink" href="#reentrancy" title="Permalink to this heading">¶</a></h3>
 <p>A potential hazard may occur if a function or method is shared between the main program and one or more ISR’s or
 between multiple ISR’s. The issue here is that the function may itself be interrupted and a further instance of
 that function run. If this is to occur, the function must be designed to be reentrant. How this is done is an
 advanced topic beyond the scope of this tutorial.</p>
-</div>
-<div class="section" id="critical-sections">
-<span id="critical"></span><h3>Critical sections<a class="headerlink" href="#critical-sections" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="critical-sections">
+<span id="critical"></span><h3>Critical sections<a class="headerlink" href="#critical-sections" title="Permalink to this heading">¶</a></h3>
 <p>An example of a critical section of code is one which accesses more than one variable which can be affected by an ISR. If
 the interrupt happens to occur between accesses to the individual variables, their values will be inconsistent. This is
 an instance of a hazard known as a race condition: the ISR and the main program loop race to alter the variables. To
@@ -382,9 +452,9 @@ that access to the critical variables is denied. A simple example of a mutex may
 <a class="reference external" href="https://github.com/peterhinch/micropython-samples.git">here</a>. Note that the mutex code does disable interrupts,
 but only for the duration of eight machine instructions: the benefit of this approach is that other interrupts are
 virtually unaffected.</p>
-</div>
-<div class="section" id="interrupts-and-the-repl">
-<h3>Interrupts and the REPL<a class="headerlink" href="#interrupts-and-the-repl" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="interrupts-and-the-repl">
+<h3>Interrupts and the REPL<a class="headerlink" href="#interrupts-and-the-repl" title="Permalink to this heading">¶</a></h3>
 <p>Interrupt handlers, such as those associated with timers, can continue to run
 after a program terminates.  This may produce unexpected results where you might
 have expected the object raising the callback to have gone out of scope.  For
@@ -397,97 +467,79 @@ example on the Pyboard:</p>
 </div>
 <p>This continues to run until the timer is explicitly disabled or the board is
 reset with <code class="docutils literal notranslate"><span class="pre">ctrl</span> <span class="pre">D</span></code>.</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-            <p class="logo"><a href="../index.html">
-              <img class="logo" src="../_static/web-logo-sticky.png" alt="Logo"/>
-            </a></p>
-  <h3><a href="../index.html">Table of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Writing interrupt handlers</a><ul>
-<li><a class="reference internal" href="#tips-and-recommended-practices">Tips and recommended practices</a></li>
-<li><a class="reference internal" href="#micropython-issues">MicroPython issues</a><ul>
-<li><a class="reference internal" href="#the-emergency-exception-buffer">The emergency exception buffer</a></li>
-<li><a class="reference internal" href="#simplicity">Simplicity</a></li>
-<li><a class="reference internal" href="#communication-between-an-isr-and-the-main-program">Communication between an ISR and the main program</a></li>
-<li><a class="reference internal" href="#the-use-of-object-methods-as-callbacks">The use of object methods as callbacks</a></li>
-<li><a class="reference internal" href="#creation-of-python-objects">Creation of Python objects</a></li>
-<li><a class="reference internal" href="#use-of-python-objects">Use of Python objects</a></li>
-<li><a class="reference internal" href="#overcoming-the-float-limitation">Overcoming the float limitation</a></li>
-<li><a class="reference internal" href="#using-micropython-schedule">Using micropython.schedule</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
-<li><a class="reference internal" href="#interfacing-to-uasyncio">Interfacing to uasyncio</a></li>
-<li><a class="reference internal" href="#general-issues">General issues</a><ul>
-<li><a class="reference internal" href="#interrupt-handler-design">Interrupt handler design</a></li>
-<li><a class="reference internal" href="#reentrancy">Reentrancy</a></li>
-<li><a class="reference internal" href="#critical-sections">Critical sections</a></li>
-<li><a class="reference internal" href="#interrupts-and-the-repl">Interrupts and the REPL</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="mpyfiles.html" class="btn btn-neutral float-left" title="MicroPython .mpy files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="speed_python.html" class="btn btn-neutral float-right" title="Maximising MicroPython speed" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="mpyfiles.html"
-                        title="previous chapter">MicroPython .mpy files</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="speed_python.html"
-                        title="next chapter">Maximising MicroPython speed</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/reference/isr_rules.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" />
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</div>
-<script>$('#searchbox').show(0);</script>
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 02 May 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="speed_python.html" title="Maximising MicroPython speed"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="mpyfiles.html" title="MicroPython .mpy files"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">MicroPython 1.19 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="index.html" >MicroPython language and implementation</a> &#187;</li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
-      Last updated on 02 May 2023.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.4.4.
-    </div>
-  </body>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>
