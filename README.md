@@ -43,12 +43,12 @@ git -C openmv remote add upstream https://github.com/openmv/openmv-doc.git
 
 Set the `origin` remote of the micropython submodule to the forked micropython repo:
 ```bash
-git -C openmv/src/micropython remote set-url origin https://github.com/<username>/micropython.git
+git -C openmv-doc/src/micropython remote set-url origin https://github.com/<username>/micropython.git
 ```
 
-Finally add a remote to openmv's micropython fork:
+Finally add a remote to openmv-doc's micropython fork:
 ```bash
-git -C openmv/src/micropython remote add upstream https://github.com/openmv/micropython.git
+git -C openmv-doc/src/micropython remote add upstream https://github.com/openmv/micropython.git
 ```
 
 Now the repositories are ready for pull requests. To send a pull request, create a new feature branch and push it to origin, and use Github to create the pull request from the forked repository to the upstream openmv/micropython repository. For example:
