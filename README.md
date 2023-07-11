@@ -38,7 +38,7 @@ Contributions are most welcome. If you are interested in contributing to the pro
 Clone the forked openmv-doc repository, and add a remote to the main openmv-doc repository:
 ```bash
 git clone --recursive https://github.com/<username>/openmv-doc.git
-git -C openmv remote add upstream https://github.com/openmv/openmv-doc.git
+git -C openmv-doc remote add upstream https://github.com/openmv/openmv-doc.git
 ```
 
 Set the `origin` remote of the micropython submodule to the forked micropython repo:
