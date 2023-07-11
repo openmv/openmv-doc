@@ -1,4 +1,4 @@
-[![Firmware Build 🔥](https://github.com/openmv/openmv-doc/actions/workflows/main.yml/badge.svg)](https://github.com/openmv/openmv-doc/actions/workflows/main.yml)
+[![GitHub Build](https://github.com/openmv/openmv-doc/actions/workflows/main.yml/badge.svg)](https://github.com/openmv/openmv-doc/actions/workflows/main.yml)
 [![GitHub license](https://img.shields.io/github/license/openmv/openmv-doc?label=license%20%E2%9A%96)](https://github.com/openmv/openmv-doc/blob/master/LICENSE)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/openmv/openmv-doc?sort=semver)
 [![GitHub forks](https://img.shields.io/github/forks/openmv/openmv-doc?color=green)](https://github.com/openmv/openmv-doc/network)
