@@ -49,14 +49,11 @@ limitation.
 Constructors
 ------------
 
-.. class:: pyb.Timer(id, ...)
+.. class:: Timer(id, ...)
 
    Construct a new timer object of the given id.  If additional
    arguments are given, then the timer is initialised by ``init(...)``.
    ``id`` can be 1 to 14.
-
-Methods
--------
 
 Methods
 -------
