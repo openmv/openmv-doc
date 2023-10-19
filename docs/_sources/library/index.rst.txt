@@ -117,7 +117,7 @@ The following libraries are specific to the OpenMV Cam.
    omv.mjpeg.rst
    omv.audio.rst
    omv.micro_speech.rst
-   omv.lcd.rst
+   omv.display.rst
    omv.fir.rst
    omv.tv.rst
    omv.cpufreq.rst
@@ -126,6 +126,9 @@ The following libraries are specific to the OpenMV Cam.
    omv.rpc.rst
    omv.rtsp.rst
    omv.omv.rst
+   omv.gt911.rst
+   omv.ft5x06.rst
+   omv.tfp410.rst
 
 Third-party libraries on the OpenMV Cam
 ---------------------------------------

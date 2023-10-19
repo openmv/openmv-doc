@@ -342,6 +342,19 @@ Functions
    Returns a tuple with the current camera red, green, and blue gain values in
    decibels ((float, float, float)).
 
+.. function:: set_auto_blc([enable, [regs]])
+
+   Sets the auto black line calibration (blc) control on the camera.
+
+   ``enable`` pass `True` or `False` to turn BLC on or off. You typically always want this on.
+
+   ``regs`` if disabled then you can manually set the blc register values via the values you
+   got previously from `get_blc_regs()`.
+
+.. function:: get_blc_regs()
+
+   Returns the sensor blc registers as an opaque tuple of integers. For use with `set_auto_blc`.
+
 .. function:: set_hmirror(enable)
 
    Turns horizontal mirror mode on (True) or off (False). Defaults to off.
@@ -439,7 +452,7 @@ Functions
       frames and not frames from long ago.
 
    Fun fact, you can pass a value of 100 or so on OpenMV Cam's with SDRAM for a huge video fifo. If
-   you then call snapshot slower than the camera frame rate (by adding `pyb.delay()`) you'll get
+   you then call snapshot slower than the camera frame rate (by adding `machine.sleep()`) you'll get
    slow-mo effects in OpenMV IDE. However, you will also see the above policy effect of resetting
    the frame buffer on a frame drop to ensure that frames do not get too old. If you want to record
    slow-mo video just record video normally to the SD card and then play the video back on a desktop
@@ -448,6 +461,16 @@ Functions
 .. function:: get_framebuffers()
 
    Returns the current number of frame buffers allocated.
+
+.. function:: disable_delays([disable])
+
+   If ``disable`` is ``True`` then disable all settling time delays in the sensor module.
+   Whenever you reset the camera module, change modes, etc. the sensor driver delays to prevent
+   you can from calling `snapshot` to quickly afterwards and receiving corrupt frames from the
+   camera module. By disabling delays you can quickly update the camera module settings in bulk
+   via multiple function calls before delaying at the end and calling `snapshot`.
+
+   If this function is called with no arguments it returns if delays are disabled.
 
 .. function:: disable_full_flush([disable])
 
@@ -507,6 +530,8 @@ Functions
    * `sensor.IOCTL_PAUSE_AUTO_FOCUS` - Pass this enum for `sensor.ioctl` to pause auto focus (after triggering) on the OV5640 FPC camera module.
    * `sensor.IOCTL_RESET_AUTO_FOCUS` - Pass this enum for `sensor.ioctl` to reset auto focus (after triggering) on the OV5640 FPC camera module.
    * `sensor.IOCTL_WAIT_ON_AUTO_FOCUS` - Pass this enum for `sensor.ioctl` to wait for auto focus (after triggering) to finish on the OV5640 FPC camera module. You may pass a second argument of the timeout in milliseconds. The default is 5000 ms.
+   * `sensor.IOCTL_SET_NIGHT_MODE` - Pass this enum followed by True or False set nightmode the OV7725 and OV5640 sensors.
+   * `sensor.IOCTL_GET_NIGHT_MODE` - Pass this enum for `sensor.ioctl` to return the current night mode state.
    * `sensor.IOCTL_LEPTON_GET_WIDTH` - Pass this enum to get the FLIR Lepton image width in pixels.
    * `sensor.IOCTL_LEPTON_GET_HEIGHT` - Pass this enum to get the FLIR Lepton image height in pixels.
    * `sensor.IOCTL_LEPTON_GET_RADIOMETRY` - Pass this enum to get the FLIR Lepton type (radiometric or not).
@@ -861,6 +886,14 @@ Constants
 .. data:: IOCTL_WAIT_ON_AUTO_FOCUS
 
    Used to wait on auto focus to finish after being triggered for the OV5640 FPC camera module.
+
+.. data:: IOCTL_SET_NIGHT_MODE
+
+   Used to turn night mode on or off on a sensor. Nightmode reduces the frame rate to increase exposure dynamically.
+
+.. data:: IOCTL_GET_NIGHT_MODE
+
+   Gets the current value of if night mode is enabled or disabled for your sensor.
 
 .. data:: IOCTL_LEPTON_GET_WIDTH
 
