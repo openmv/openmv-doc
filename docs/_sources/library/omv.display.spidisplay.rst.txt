@@ -24,7 +24,7 @@ Example usage for driving the 128x160 LCD shield::
 Constructors
 ------------
 
-.. class:: SPIDisplay([width=128, [height=160, [refresh=60, [bgr=False, [byte_swap=False, [triple_buffer]]]]]])
+.. class:: SPIDisplay([width=128, [height=160, [refresh=60, [bgr=False, [byte_swap=False, [triple_buffer, [backlight]]]]]]])
 
     ``width`` SPI LCD width. By default this is 128 to match the OpenMV 128x160 LCD shield.
 
@@ -40,6 +40,9 @@ Constructors
 
     ``triple_buffer`` If True then makes updates to the screen non-blocking at the cost of 3X the
     display size in RAM. This is on by default for OpenMV Cam boards with SDRAM.
+
+    ``backlight`` specify a backlight controller module to use. By default the backlight will be
+    controlled via a GPIO pin.
 
     .. note::
 
@@ -76,16 +79,20 @@ Methods
 
    Returns if triple buffering is enabled.
 
-.. method:: SPIDisplay.write(image, [x=0, [y=0, [x_scale=1.0, [y_scale=1.0, [roi=None, [rgb_channel=-1, [alpha=256, [color_palette=None, [alpha_palette=None, [hint=0, [x_size=None, [y_size=None]]]]]]]]]]]])
+.. method:: SPIDisplay.write(image, [x=0, [y=0, [x_scale=1.0, [y_scale=1.0, [roi=None, [rgb_channel=-1, [alpha=256, [color_palette=None, [alpha_palette=None, [hint=0]]]]]]]]]])
 
-   Displays an ``image`` whose top-left corner starts at location x, y. You may either pass x, y
-   separately, as a tuple (x, y), or neither.
+   Displays an ``image`` whose top-left corner starts at location x, y.
+
+   You may also pass a path instead of an image object for this method to automatically load the image
+   from disk and draw it in one step. E.g. ``write("test.jpg")``.
 
    ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally.
+   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
+   then it will match ``x_scale`` to maintain the aspect ratio.
 
    ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically.
+   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
+   then it will match ``x_scale`` to maintain the aspect ratio.
 
    ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the image to display. This
    allows you to extract just the pixels in the ROI to scale.
@@ -97,7 +104,7 @@ Methods
    ``alpha`` controls how opaque the image is. A value of 256 displays an opaque image while a
    value lower than 256 produces a black transparent image. 0 results in a perfectly black image.
 
-   ``color_palette`` if not ``-1`` can be `sensor.PALETTE_RAINBOW`, `sensor.PALETTE_IRONBOW`, or
+   ``color_palette`` if not ``-1`` can be `image.PALETTE_RAINBOW`, `image.PALETTE_IRONBOW`, or
    a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
    whatever the input image is. This is applied after ``rgb_channel`` extraction if used.
 
@@ -112,19 +119,18 @@ Methods
       * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
       * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
       * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image image being displayed on (x, y).
+      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
+      * `image.HMIRROR`: Horizontally mirror the image.
+      * `image.VFLIP`: Vertically flip the image.
+      * `image.TRANSPOSE`: Transpose the image (swap x/y).
       * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
       * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-
-   ``x_size`` may be passed if ``x_scale`` is not passed to specify the size of the image to display
-   and ``x_scale`` will automatically be determined passed on the input image size. If neither
-   ``y_scale`` or ``y_size`` are specified then ``y_scale`` internally will be set to be equal to
-   ``x_size`` to maintain the aspect-ratio.
-
-   ``y_size`` may be passed if ``y_scale`` is not passed to specify the size of the image to display
-   and ``y_scale`` will automatically be determined passed on the input image size. If neither
-   ``x_scale`` or ``x_size`` are specified then ``x_scale`` internally will be set to be equal to
-   ``y_size`` to maintain the aspect-ratio.
+      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
+      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
+      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
+      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
+      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
+      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
 .. method:: SPIDisplay.clear([display_off=False])
 
@@ -136,10 +142,9 @@ Methods
 
 .. method:: SPIDisplay.backlight([value])
 
-   Sets the lcd backlight dimming value. 0 (off) to 255 (on).
+   Sets the lcd backlight dimming value. 0 (off) to 100 (on).
 
-   In this controls the DAC on P6 to provide the dimming value. If set to 0
-   P6 is pulled low and if set to 255 P6 is unitialized assuming that the SPI LCD shield's backlight
-   is by default always on.
+   Note that unless you pass `DACBacklight` or `PWMBacklight` the backlight will be controlled
+   as a GPIO pin and will only go from 0 (off) to !0 (on).
 
    Pass no arguments to get the state of the backlight value.

@@ -17,6 +17,8 @@ Classes
    omv.display.dsidisplay.rst
    omv.display.displaydata.rst
    omv.display.ST7701.rst
+   omv.display.DACBacklight.rst
+   omv.display.PWMBacklight.rst
 
 Constants
 ---------
