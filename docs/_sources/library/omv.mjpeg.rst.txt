@@ -33,7 +33,7 @@ Example usage::
         m.add_frame(sensor.snapshot())
 
     # Finalize.
-    m.close(c.fps())
+    m.close()
 
 Constructors
 ~~~~~~~~~~~~
@@ -128,20 +128,16 @@ Constructors
 
       Alias for `Mjpeg.add_frame()`.
 
-   .. method:: sync(fps)
+   .. method:: sync()
 
       Flushes the mjpeg file to disk but keeps the file open for writing more data. You should call
       flush periodically ensure that the file is saved to disk.
 
-      ``fps`` is the frame rate the mjpeg was recorded at.
-
       Returns the object.
 
-   .. method:: close(fps)
+   .. method:: close()
 
       Finalizes the mjpeg recording. This method must be called once the recording
       is complete to make the file viewable.
-
-      ``fps`` is the frame rate the mjpeg was recorded at.
 
       Returns the object.

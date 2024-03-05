@@ -2,7 +2,7 @@
 
 Core language
 =============
-Generated Fri 01 Dec 2023 02:10:23 UTC
+Generated Tue 05 Mar 2024 02:12:06 UTC
 
 .. _cpydiff_core_fstring_concat:
 
@@ -81,35 +81,24 @@ Sample code::
 
 .. _cpydiff_core_fstring_repr:
 
-f-strings don't support the !r, !s, and !a conversions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+f-strings don't support !a conversions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Cause:** MicroPython is optimised for code space.
+**Cause:** MicropPython does not implement ascii()
 
-**Workaround:** Use repr(), str(), and ascii() explictly.
+**Workaround:** None
 
 Sample code::
 
     
-    
-    class X:
-        def __repr__(self):
-            return "repr"
-    
-        def __str__(self):
-            return "str"
-    
-    
-    print(f"{X()!r}")
-    print(f"{X()!s}")
+    f"{'unicode text'!a}"
 
 +-------------+---------------------------------------------------------------------+
 | CPy output: | uPy output:                                                         |
 +-------------+---------------------------------------------------------------------+
-| ::          | ::                                                                  |
+|             | ::                                                                  |
 |             |                                                                     |
-|     repr    |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-|     str     |                                                                     |
+|             |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 +-------------+---------------------------------------------------------------------+
 
 Classes
@@ -475,7 +464,7 @@ Sample code::
 __path__ attribute of a package has a different type (single string instead of list of strings) in MicroPython
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Cause:** MicroPython does't support namespace packages split across filesystem. Beyond that, MicroPython's import system is highly optimized for minimal memory usage.
+**Cause:** MicroPython doesn't support namespace packages split across filesystem. Beyond that, MicroPython's import system is highly optimized for minimal memory usage.
 
 **Workaround:** Details of import handling is inherently implementation dependent. Don't rely on such details in portable applications.
 
@@ -493,45 +482,10 @@ Sample code::
 |     ['/github/workspace/micropython/tests/cpydiff/modules'] |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 +-------------------------------------------------------------+---------------------------------------------------------------------+
 
-.. _cpydiff_core_import_prereg:
-
-Failed to load modules are still registered as loaded
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Cause:** To make module handling more efficient, it's not wrapped with exception handling.
-
-**Workaround:** Test modules before production use; during development, use ``del sys.modules["name"]``, or just soft or hard reset the board.
-
-Sample code::
-
-    import sys
-    
-    try:
-        from modules import foo
-    except NameError as e:
-        print(e)
-    try:
-        from modules import foo
-    
-        print("Should not get here")
-    except NameError as e:
-        print(e)
-
-+-------------------------------+---------------------------------------------------------------------+
-| CPy output:                   | uPy output:                                                         |
-+-------------------------------+---------------------------------------------------------------------+
-| ::                            | ::                                                                  |
-|                               |                                                                     |
-|     foo                       |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-|     name 'xxx' is not defined |                                                                     |
-|     foo                       |                                                                     |
-|     name 'xxx' is not defined |                                                                     |
-+-------------------------------+---------------------------------------------------------------------+
-
 .. _cpydiff_core_import_split_ns_pkgs:
 
-MicroPython does't support namespace packages split across filesystem.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MicroPython doesn't support namespace packages split across filesystem.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Cause:** MicroPython's import system is highly optimized for simplicity, minimal memory usage, and minimal filesystem search overhead.
 

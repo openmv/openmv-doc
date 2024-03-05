@@ -129,10 +129,10 @@ Methods
 
    Pass no arguments to get the state of the backlight value.
 
-.. method:: DSIDisplay.dsi_write(cmd, [args=None, [dcs=False]])
+.. method:: DSIDisplay.bus_write(cmd, [args=None, [dcs=False]])
 
    Send the DSI Display ``cmd`` with ``args``.
 
-.. method:: DSIDisplay.dsi_read(cmd, [len, [args=None, [dcs=False]]])
+.. method:: DSIDisplay.bus_read(cmd, [len, [args=None, [dcs=False]]])
 
    Read ``len`` using ``cmd`` with ``args`` from the DSI Display.

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Writing interrupt handlers &mdash; MicroPython 1.20 documentation</title>
+  <title>Writing interrupt handlers &mdash; MicroPython 1.22 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
@@ -18,7 +18,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=6b422e2e"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/js/theme.js"></script>
@@ -41,7 +41,7 @@
               <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.20
+                1.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -72,7 +72,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#exceptions">Exceptions</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#interfacing-to-uasyncio">Interfacing to uasyncio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interfacing-to-asyncio">Interfacing to asyncio</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#general-issues">General issues</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#interrupt-handler-design">Interrupt handler design</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#reentrancy">Reentrancy</a></li>
@@ -89,6 +89,7 @@
 <li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">MicroPython 2.0 Migration Guide</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
@@ -307,16 +308,16 @@ note in “Creation of Python objects”.</p>
 <p>If an ISR raises an exception it will not propagate to the main loop. The interrupt will be disabled unless the
 exception is handled by the ISR code.</p>
 </section>
-<section id="interfacing-to-uasyncio">
-<h2>Interfacing to uasyncio<a class="headerlink" href="#interfacing-to-uasyncio" title="Permalink to this heading">¶</a></h2>
-<p>When an ISR runs it can preempt the <a class="reference internal" href="../library/uasyncio.html#module-uasyncio" title="uasyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code></a> scheduler. If the ISR performs a <a class="reference internal" href="../library/uasyncio.html#module-uasyncio" title="uasyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code></a>
+<section id="interfacing-to-asyncio">
+<h2>Interfacing to asyncio<a class="headerlink" href="#interfacing-to-asyncio" title="Permalink to this heading">¶</a></h2>
+<p>When an ISR runs it can preempt the <a class="reference internal" href="../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> scheduler. If the ISR performs a <a class="reference internal" href="../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a>
 operation the scheduler’s operation can be disrupted. This applies whether the interrupt is hard
 or soft and also applies if the ISR has passed execution to another function via
 <a class="reference internal" href="../library/micropython.html#micropython.schedule" title="micropython.schedule"><code class="xref any py py-func docutils literal notranslate"><span class="pre">micropython.schedule</span></code></a>. In particular creating or cancelling tasks is invalid in an ISR context.
-The safe way to interact with <a class="reference internal" href="../library/uasyncio.html#module-uasyncio" title="uasyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">uasyncio</span></code></a> is to implement a coroutine with synchronisation performed by
-<a class="reference internal" href="../library/uasyncio.html#uasyncio.ThreadSafeFlag" title="uasyncio.ThreadSafeFlag"><code class="xref any py py-class docutils literal notranslate"><span class="pre">uasyncio.ThreadSafeFlag</span></code></a>. The following fragment illustrates the creation of a task in response
+The safe way to interact with <a class="reference internal" href="../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> is to implement a coroutine with synchronisation performed by
+<a class="reference internal" href="../library/asyncio.html#asyncio.ThreadSafeFlag" title="asyncio.ThreadSafeFlag"><code class="xref any py py-class docutils literal notranslate"><span class="pre">asyncio.ThreadSafeFlag</span></code></a>. The following fragment illustrates the creation of a task in response
 to an interrupt:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tsf</span> <span class="o">=</span> <span class="n">uasyncio</span><span class="o">.</span><span class="n">ThreadSafeFlag</span><span class="p">()</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">tsf</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">ThreadSafeFlag</span><span class="p">()</span>
 
 <span class="k">def</span> <span class="nf">isr</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>  <span class="c1"># Interrupt handler</span>
     <span class="n">tsf</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
@@ -324,7 +325,7 @@ to an interrupt:</p>
 <span class="k">async</span> <span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
         <span class="k">await</span> <span class="n">tsf</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-        <span class="n">uasyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">bar</span><span class="p">())</span>
+        <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">bar</span><span class="p">())</span>
 </pre></div>
 </div>
 <p>In this example there will be a variable amount of latency between the execution of the ISR and the execution
@@ -487,8 +488,8 @@ reset with <code class="docutils literal notranslate"><span class="pre">ctrl</sp
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
-      <span class="lastupdated">Last updated on 01 Dec 2023.
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
       </span></p>
   </div>
 

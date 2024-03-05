@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>6. The accelerometer &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><span class="section-number">6. </span>The accelerometer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/pyboard/tutorial/accel.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-accelerometer">
+<h1><span class="section-number">6. </span>The accelerometer<a class="headerlink" href="#the-accelerometer" title="Permalink to this heading">¶</a></h1>
+<p>Here you will learn how to read the accelerometer and signal using LEDs states like tilt left and tilt right.</p>
+<section id="using-the-accelerometer">
+<h2><span class="section-number">6.1. </span>Using the accelerometer<a class="headerlink" href="#using-the-accelerometer" title="Permalink to this heading">¶</a></h2>
+<p>The pyboard has an accelerometer (a tiny mass on a tiny spring) that can be used
+to detect the angle of the board and motion. There is a different sensor for
+each of the x, y, z directions. To get the value of the accelerometer, create a
+pyb.Accel() object and then call the x() method.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">accel</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Accel</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">accel</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+<span class="go">7</span>
+</pre></div>
+</div>
+<p>This returns a signed integer with a value between around -30 and 30. Note that
+the measurement is very noisy, this means that even if you keep the board
+perfectly still there will be some variation in the number that you measure.
+Because of this, you shouldn’t use the exact value of the x() method but see if
+it is in a certain range.</p>
+<p>We will start by using the accelerometer to turn on a light if it is not flat.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">accel</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Accel</span><span class="p">()</span>
+<span class="n">light</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">SENSITIVITY</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">accel</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SENSITIVITY</span><span class="p">:</span>
+        <span class="n">light</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">light</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+    <span class="n">pyb</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We create Accel and LED objects, then get the value of the x direction of the
+accelerometer. If the magnitude of x is bigger than a certain value <code class="docutils literal notranslate"><span class="pre">SENSITIVITY</span></code>,
+then the LED turns on, otherwise it turns off. The loop has a small <code class="docutils literal notranslate"><span class="pre">pyb.delay()</span></code>
+otherwise the LED flashes annoyingly when the value of x is close to
+<code class="docutils literal notranslate"><span class="pre">SENSITIVITY</span></code>. Try running this on the pyboard and tilt the board left and right
+to make the LED turn on and off.</p>
+<p><strong>Exercise: Change the above script so that the blue LED gets brighter the more
+you tilt the pyboard.  HINT: You will need to rescale the values, intensity goes
+from 0-255.</strong></p>
+</section>
+<section id="making-a-spirit-level">
+<h2><span class="section-number">6.2. </span>Making a spirit level<a class="headerlink" href="#making-a-spirit-level" title="Permalink to this heading">¶</a></h2>
+<p>The example above is only sensitive to the angle in the x direction but if we
+use the <code class="docutils literal notranslate"><span class="pre">y()</span></code> value and more LEDs we can turn the pyboard into a spirit level.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">xlights</span> <span class="o">=</span> <span class="p">(</span><span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">ylights</span> <span class="o">=</span> <span class="p">(</span><span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+
+<span class="n">accel</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Accel</span><span class="p">()</span>
+<span class="n">SENSITIVITY</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">accel</span><span class="o">.</span><span class="n">x</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">SENSITIVITY</span><span class="p">:</span>
+        <span class="n">xlights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">xlights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">SENSITIVITY</span><span class="p">:</span>
+        <span class="n">xlights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">xlights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">xlights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">xlights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+    <span class="n">y</span> <span class="o">=</span> <span class="n">accel</span><span class="o">.</span><span class="n">y</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">SENSITIVITY</span><span class="p">:</span>
+        <span class="n">ylights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">ylights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">SENSITIVITY</span><span class="p">:</span>
+        <span class="n">ylights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">ylights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ylights</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">ylights</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+    <span class="n">pyb</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We start by creating a tuple of LED objects for the x and y directions. Tuples
+are immutable objects in python which means they can’t be modified once they are
+created. We then proceed as before but turn on a different LED for positive and
+negative x values. We then do the same for the y direction. This isn’t
+particularly sophisticated but it does the job. Run this on your pyboard and you
+should see different LEDs turning on depending on how you tilt the board.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

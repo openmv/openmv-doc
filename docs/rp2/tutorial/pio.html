@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programmable IO &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Programmable IO</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/rp2/tutorial/pio.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="programmable-io">
+<h1>Programmable IO<a class="headerlink" href="#programmable-io" title="Permalink to this heading">¶</a></h1>
+<p>The RP2040 has hardware support for standard communication protocols like I2C,
+SPI and UART. For protocols where there is no hardware support, or where there
+is a requirement of custom I/O behaviour, Programmable Input Output (PIO) comes
+into play.  Also, some MicroPython applications make use of a technique called
+bit banging in which pins are rapidly turned on and off to transmit data.  This
+can make the entire process slow as the processor concentrates on bit banging
+rather than executing other logic.  However, PIO allows bit banging to happen
+in the background while the CPU is executing the main work.</p>
+<p>Along with the two central Cortex-M0+ processing cores, the RP2040 has two PIO
+blocks each of which has four independent state machines.  These state machines
+can transfer data to/from other entities using First-In-First-Out (FIFO) buffers,
+which allow the state machine and main processor to work independently yet also
+synchronise their data.  Each FIFO has four words (each of 32 bits) which can be
+linked to the DMA to transfer larger amounts of data.</p>
+<p>All PIO instructions follow a common pattern:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">instruction</span><span class="o">&gt;</span> <span class="o">.</span><span class="n">side</span><span class="p">(</span><span class="o">&lt;</span><span class="n">side_set_value</span><span class="o">&gt;</span><span class="p">)</span> <span class="p">[</span><span class="o">&lt;</span><span class="n">delay_value</span><span class="o">&gt;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The side-set <code class="docutils literal notranslate"><span class="pre">.side(...)</span></code> and delay <code class="docutils literal notranslate"><span class="pre">[...]</span></code> parts are both optional, and if
+specified allow the instruction to perform more than one operation.  This keeps
+PIO programs small and efficient.</p>
+<p>There are nine instructions which perform the following tasks:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">jmp()</span></code> transfers control to a different part of the code</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wait()</span></code> pauses until a particular action happens</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">in_()</span></code> shifts the bits from a source (scratch register or set of pins) to the
+input shift register</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">out()</span></code> shifts the bits from the output shift register to a destination</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">push()</span></code> sends data to the RX FIFO</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pull()</span></code> receives data from the TX FIFO</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mov()</span></code> moves data from a source to a destination</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">irq()</span></code> sets or clears an IRQ flag</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set()</span></code> writes a literal value to a destination</p></li>
+</ul>
+<p>The instruction modifiers are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">.side()</span></code> sets the side-set pins at the start of the instruction</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">[]</span></code> delays for a certain number of cycles after execution of the instruction</p></li>
+</ul>
+<p>There are also directives:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">wrap_target()</span></code> specifies where the program execution will get continued from</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wrap()</span></code> specifies the instruction where the control flow of the program will
+get wrapped from</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">label()</span></code> sets a label for use with <code class="docutils literal notranslate"><span class="pre">jmp()</span></code> instructions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">word()</span></code> emits a raw 16-bit value which acts as an instruction in the program</p></li>
+</ul>
+<section id="an-example">
+<h2>An example<a class="headerlink" href="#an-example" title="Permalink to this heading">¶</a></h2>
+<p>Take the <code class="docutils literal notranslate"><span class="pre">pio_1hz.py</span></code> example for a simple understanding of how to use the PIO
+and state machines. Below is the code for reference.</p>
+<div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Example using PIO to blink an LED and raise an IRQ at 1Hz.</span>
+
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">machine</span> <span class="kn">import</span> <span class="n">Pin</span>
+<span class="kn">import</span> <span class="nn">rp2</span>
+
+
+<span class="nd">@rp2</span><span class="o">.</span><span class="n">asm_pio</span><span class="p">(</span><span class="n">set_init</span><span class="o">=</span><span class="n">rp2</span><span class="o">.</span><span class="n">PIO</span><span class="o">.</span><span class="n">OUT_LOW</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">blink_1hz</span><span class="p">():</span>
+    <span class="c1"># Cycles: 1 + 1 + 6 + 32 * (30 + 1) = 1000</span>
+    <span class="n">irq</span><span class="p">(</span><span class="n">rel</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="nb">set</span><span class="p">(</span><span class="n">pins</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>                  <span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+    <span class="n">label</span><span class="p">(</span><span class="s2">&quot;delay_high&quot;</span><span class="p">)</span>
+    <span class="n">nop</span><span class="p">()</span>                       <span class="p">[</span><span class="mi">29</span><span class="p">]</span>
+    <span class="n">jmp</span><span class="p">(</span><span class="n">x_dec</span><span class="p">,</span> <span class="s2">&quot;delay_high&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Cycles: 1 + 1 + 6 + 32 * (30 + 1) = 1000</span>
+    <span class="n">nop</span><span class="p">()</span>
+    <span class="nb">set</span><span class="p">(</span><span class="n">pins</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">31</span><span class="p">)</span>                  <span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+    <span class="n">label</span><span class="p">(</span><span class="s2">&quot;delay_low&quot;</span><span class="p">)</span>
+    <span class="n">nop</span><span class="p">()</span>                       <span class="p">[</span><span class="mi">29</span><span class="p">]</span>
+    <span class="n">jmp</span><span class="p">(</span><span class="n">x_dec</span><span class="p">,</span> <span class="s2">&quot;delay_low&quot;</span><span class="p">)</span>
+
+
+<span class="c1"># Create the StateMachine with the blink_1hz program, outputting on Pin(25).</span>
+<span class="n">sm</span> <span class="o">=</span> <span class="n">rp2</span><span class="o">.</span><span class="n">StateMachine</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">blink_1hz</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">set_base</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">25</span><span class="p">))</span>
+
+<span class="c1"># Set the IRQ handler to print the millisecond timestamp.</span>
+<span class="n">sm</span><span class="o">.</span><span class="n">irq</span><span class="p">(</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">ticks_ms</span><span class="p">()))</span>
+
+<span class="c1"># Start the StateMachine.</span>
+<span class="n">sm</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This creates an instance of class <a class="reference internal" href="../../library/rp2.StateMachine.html#rp2.StateMachine" title="rp2.StateMachine"><code class="xref py py-class docutils literal notranslate"><span class="pre">rp2.StateMachine</span></code></a> which runs the
+<code class="docutils literal notranslate"><span class="pre">blink_1hz</span></code> program at 2000Hz, and connects to pin 25.  The <code class="docutils literal notranslate"><span class="pre">blink_1hz</span></code>
+program uses the PIO to blink an LED connected to this pin at 1Hz, and also
+raises an IRQ as the LED turns on.  This IRQ then calls the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> function
+which prints out a millisecond timestamp.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">blink_1hz</span></code> program is a PIO assembler routine.  It connects to a single
+pin which is configured as an output and starts out low.  The instructions do
+the following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">irq(rel(0))</span></code> raises the IRQ associated with the state machine.</p></li>
+<li><p>The LED is turned on via the <code class="docutils literal notranslate"><span class="pre">set(pins,</span> <span class="pre">1)</span></code> instruction.</p></li>
+<li><p>The value 31 is put into register X, and then there is a delay for 5 more
+cycles, specified by the <code class="docutils literal notranslate"><span class="pre">[5]</span></code>.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">nop()</span> <span class="pre">[29]</span></code> instruction waits for 30 cycles.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">jmp(x_dec,</span> <span class="pre">&quot;delay_high&quot;)</span></code> will keep looping to the <code class="docutils literal notranslate"><span class="pre">delay_high</span></code> label
+as long as the register X is non-zero, and will also post-decrement X.  Since
+X starts with the value 31 this jump will happen 31 times, so the <code class="docutils literal notranslate"><span class="pre">nop()</span> <span class="pre">[29]</span></code>
+runs 32 times in total (note there is also one instruction cycle taken by the
+<code class="docutils literal notranslate"><span class="pre">jmp</span></code> for each of these 32 loops).</p></li>
+<li><p>The single <code class="docutils literal notranslate"><span class="pre">nop()</span></code> correlates with the cycle used for IRQ raise, and ensures
+the same number of cycles are used for LED on and LED off.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">set(pins,</span> <span class="pre">0)</span></code> will turn the LED off by setting pin 25 low.</p></li>
+<li><p>Another 32 loops of <code class="docutils literal notranslate"><span class="pre">nop()</span> <span class="pre">[29]</span></code> and <code class="docutils literal notranslate"><span class="pre">jmp(...)</span></code> will execute.</p></li>
+<li><p>Because <code class="docutils literal notranslate"><span class="pre">wrap_target()</span></code> and <code class="docutils literal notranslate"><span class="pre">wrap()</span></code> are not specified, their default will
+be used and execution of the program will wrap around from the bottom to the
+top.  This wrapping does not cost any execution cycles.</p></li>
+</ul>
+<p>The entire routine takes exactly 2000 cycles of the state machine.  Setting the
+frequency of the state machine to 2000Hz makes the LED blink at 1Hz.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

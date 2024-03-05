@@ -1574,7 +1574,7 @@ or to memory. This class provides fast read/write random access for loading/stor
 
       Returns the ImageIO object.
 
-   .. method:: read([copy_to_fb=False, [loop=True, [pause=True]]])
+   .. method:: read([copy_to_fb=True, [loop=True, [pause=True]]])
 
       Returns an image object from the ImageIO object. If ``copy_to_fb`` is False then
       the new image is allocated on the MicroPython heap. However, the MicroPython heap is limited
@@ -3111,31 +3111,28 @@ The image object is the basic object for machine vision operations.
 
    .. method:: ccm(matrix)
 
-      Multiples the passed (3x3) or (4x3) floating-point color-correction-matrix with the image.
+      Multiples the passed floating-point color-correction-matrix with the image. Matrices may be in the form of::
 
-      For example, if you pass a 3x3 matrix the method will do this to every pixel the image::
+          [[rr, rg, rb], [gr, gg, gb], [br, bg, bb]]
+          [[rr, rg, rb], [gr, gg, gb], [br, bg, bb], [xx, xx, xx]]
+          [[rr, rg, rb, ro], [gr, gg, gb, go], [br, bg, bb, bo]]
+          [[rr, rg, rb, ro], [gr, gg, gb, go], [br, bg, bb, bo], [xx, xx, xx, xx]]
 
-             1x3         1x4         4x3 
-          [R, G, B] = [r, g, b][1, 0, 0,
-                                0, 1, 0,
-                                0, 0, 1]
+          [rr, rg, rb, ro, gr, gg, gb, go, br, bg, bb, bo]
+          [rr, rg, rb, ro, gr, gg, gb, go, br, bg, bb, bo, xx, xx, xx, xx]
 
-      Note that the sum of each column in the 3x3 matrix should generally be 1. Weights may either
-      be positive or negative but, again, should generally sum to 1 per column.
+      The CCM Method does::
 
-      If you pass a 4x3 matrix the method will do this to every pixel the image::
+          |R'|                |R|      |R'|                |R|
+          |G'| = 3x3 Matrix * |G|  or  |G'| = 3x4 Matrix * |G|
+          |B'|                |B|      |B'|                |B|
+                                                           |1|
 
-             1x3         1x4         4x3 
-          [R, G, B] = [r, g, b, 1][1, 0, 0,
-                                   0, 1, 0,
-                                   0, 0, 1,
-                                   0, 0, 0]
+      Note that the sum of each row in the 3x3 matrix should generally be -1, +1, or 0.
+      Weights may either be positive or negative.
 
-      Where the last row of the 4x3 matrix is an offset per color channel. If you add an offset
-      you may wish to make the weights sum to less than 1 to account for the offset.
-
-      You want to use this method to eliminate systemic cross talk between color channels.
-      However, this should generally be never.
+      You may want to use this method to eliminate systemic cross talk between color channels.
+      Or alternatively, to do color correction on the whole image.
 
       Returns the image object so you can call another method using ``.`` notation.
 
@@ -3143,9 +3140,7 @@ The image object is the basic object for machine vision operations.
 
    .. method:: gamma([gamma=1.0, [contrast=1.0, [brightness=0.0])
 
-      Quickly changes the image gamma, contrast, and brightness. Please use this
-      method instead of `Image.mul` or `Image.div` which are meant for blending to
-      adjust pixels values.
+      Quickly changes the image gamma, contrast, and brightness.
 
       ``gamma`` with values greater than 1.0 makes the image darker in a non-linear
       manner while less than 1.0 makes the image brighter. The gamma value is applied
@@ -3265,61 +3260,6 @@ The image object is the basic object for machine vision operations.
       Returns the image object so you can call another method using ``.`` notation.
 
       Not supported on compressed images or bayer images.
-
-   .. method:: mul(image, [invert=False, [mask=None]])
-
-      Multiplies two images pixel-wise with each other.
-
-      ``image`` can either be an image object, a path to an uncompressed image
-      file (bmp/pgm/ppm), or a scalar value. If a scalar value the value can
-      either be an RGB888 tuple or the underlying pixel value (e.g. an 8-bit grayscale
-      for grayscale images or a RGB565 value for RGB images).
-
-      Set ``invert`` to True to change the multiplication operation from ``a*b``
-      to ``1/((1/a)*(1/b))``. In particular, this lightens the image instead of
-      darkening it (e.g. multiply versus burn operations).
-
-      ``mask`` is another image to use as a pixel level mask for the operation.
-      The mask should be an image with just black or white pixels and should be the
-      same size as the image being operated on. Only pixels set in the mask are
-      modified.
-
-      Returns the image object so you can call another method using ``.`` notation.
-
-      Not supported on compressed images or bayer images.
-
-      .. note::
-
-         This method is meant for image blending and cannot multiply the pixels in
-         the image by a scalar like ``2``. Use `Image.gamma_corr` for that.
-
-   .. method:: div(image, [invert=False, [mod=False, [mask=None]]])
-
-      Divides this image by another one.
-
-      ``image`` can either be an image object, a path to an uncompressed image
-      file (bmp/pgm/ppm), or a scalar value. If a scalar value the value can
-      either be an RGB888 tuple or the underlying pixel value (e.g. an 8-bit grayscale
-      for grayscale images or a RGB565 value for RGB images).
-
-      Set ``invert`` to True to change the division direction from ``a/b`` to
-      ``b/a``.
-
-      Set ``mod`` to True to change the division operation to the modulus operation.
-
-      ``mask`` is another image to use as a pixel level mask for the operation.
-      The mask should be an image with just black or white pixels and should be the
-      same size as the image being operated on. Only pixels set in the mask are
-      modified.
-
-      Returns the image object so you can call another method using ``.`` notation.
-
-      Not supported on compressed images or bayer images.
-
-      .. note::
-
-         This method is meant for image blending and cannot divide the pixels in
-         the image by a scalar like ``2``. Use `Image.gamma_corr` for that.
 
    .. method:: min(image, [mask=None])
 

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1. Controlling hobby servo motors &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><span class="section-number">1. </span>Controlling hobby servo motors</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/pyboard/tutorial/servo.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="controlling-hobby-servo-motors">
+<h1><span class="section-number">1. </span>Controlling hobby servo motors<a class="headerlink" href="#controlling-hobby-servo-motors" title="Permalink to this heading">¶</a></h1>
+<p>There are 4 dedicated connection points on the pyboard for connecting up
+hobby servo motors (see eg
+<a class="reference external" href="http://en.wikipedia.org/wiki/Servo_%28radio_control%29">Wikipedia</a>).
+These motors have 3 wires: ground, power and signal.  On the pyboard you
+can connect them in the bottom right corner, with the signal pin on the
+far right.  Pins X1, X2, X3 and X4 are the 4 dedicated servo signal pins.</p>
+<img alt="../../_images/pyboard_servo.jpg" src="../../_images/pyboard_servo.jpg" />
+<p>In this picture there are male-male double adaptors to connect the servos
+to the header pins on the pyboard.</p>
+<p>The ground wire on a servo is usually the darkest coloured one, either
+black or dark brown.  The power wire will most likely be red.</p>
+<p>The power pin for the servos (labelled VIN) is connected directly to the
+input power source of the pyboard.  When powered via USB, VIN is powered
+through a diode by the 5V USB power line.  Connect to USB, the pyboard can
+power at least 4 small to medium sized servo motors.</p>
+<p>If using a battery to power the pyboard and run servo motors, make sure it
+is not greater than 6V, since this is the maximum voltage most servo motors
+can take.  (Some motors take only up to 4.8V, so check what type you are
+using.)</p>
+<section id="creating-a-servo-object">
+<h2><span class="section-number">1.1. </span>Creating a Servo object<a class="headerlink" href="#creating-a-servo-object" title="Permalink to this heading">¶</a></h2>
+<p>Plug in a servo to position 1 (the one with pin X1) and create a servo object
+using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Servo</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To change the angle of the servo use the <code class="docutils literal notranslate"><span class="pre">angle</span></code> method:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="mi">45</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="o">-</span><span class="mi">60</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The angle here is measured in degrees, and ranges from about -90 to +90,
+depending on the motor.  Calling <code class="docutils literal notranslate"><span class="pre">angle</span></code> without parameters will return
+the current angle:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">angle</span><span class="p">()</span>
+<span class="go">-60</span>
+</pre></div>
+</div>
+<p>Note that for some angles, the returned angle is not exactly the same as
+the angle you set, due to rounding errors in setting the pulse width.</p>
+<p>You can pass a second parameter to the <code class="docutils literal notranslate"><span class="pre">angle</span></code> method, which specifies how
+long to take (in milliseconds) to reach the desired angle.  For example, to
+take 1 second (1000 milliseconds) to go from the current position to 50 degrees,
+use</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This command will return straight away and the servo will continue to move
+to the desired angle, and stop when it gets there.  You can use this feature
+as a speed control, or to synchronise 2 or more servo motors.  If we have
+another servo motor (<code class="docutils literal notranslate"><span class="pre">servo2</span> <span class="pre">=</span> <span class="pre">pyb.Servo(2)</span></code>) then we can do</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="o">-</span><span class="mi">45</span><span class="p">,</span> <span class="mi">2000</span><span class="p">);</span> <span class="n">servo2</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will move the servos together, making them both take 2 seconds to
+reach their final angles.</p>
+<p>Note: the semicolon between the 2 expressions above is used so that they
+are executed one after the other when you press enter at the REPL prompt.
+In a script you don’t need to do this, you can just write them one line
+after the other.</p>
+</section>
+<section id="continuous-rotation-servos">
+<h2><span class="section-number">1.2. </span>Continuous rotation servos<a class="headerlink" href="#continuous-rotation-servos" title="Permalink to this heading">¶</a></h2>
+<p>So far we have been using standard servos that move to a specific angle
+and stay at that angle.  These servo motors are useful to create joints
+of a robot, or things like pan-tilt mechanisms.  Internally, the motor
+has a variable resistor (potentiometer) which measures the current angle
+and applies power to the motor proportional to how far it is from the
+desired angle.  The desired angle is set by the width of a high-pulse on
+the servo signal wire.  A pulse width of 1500 microsecond corresponds
+to the centre position (0 degrees).  The pulses are sent at 50 Hz, ie
+50 pulses per second.</p>
+<p>You can also get <strong>continuous rotation</strong> servo motors which turn
+continuously clockwise or counterclockwise.  The direction and speed of
+rotation is set by the pulse width on the signal wire.  A pulse width
+of 1500 microseconds corresponds to a stopped motor.  A pulse width
+smaller or larger than this means rotate one way or the other, at a
+given speed.</p>
+<p>On the pyboard, the servo object for a continuous rotation motor is
+the same as before.  In fact, using <code class="docutils literal notranslate"><span class="pre">angle</span></code> you can set the speed.  But
+to make it easier to understand what is intended, there is another method
+called <code class="docutils literal notranslate"><span class="pre">speed</span></code> which sets the speed:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">speed</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">speed</span></code> has the same functionality as <code class="docutils literal notranslate"><span class="pre">angle</span></code>: you can get the speed,
+set it, and set it with a time to reach the final speed.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">speed</span><span class="p">()</span>
+<span class="go">30</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">speed</span><span class="p">(</span><span class="o">-</span><span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">speed</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The final command above will set the motor to stop, but take 2 seconds
+to do it.  This is essentially a control over the acceleration of the
+continuous servo.</p>
+<p>A servo speed of 100 (or -100) is considered maximum speed, but actually
+you can go a bit faster than that, depending on the particular motor.</p>
+<p>The only difference between the <code class="docutils literal notranslate"><span class="pre">angle</span></code> and <code class="docutils literal notranslate"><span class="pre">speed</span></code> methods (apart from
+the name) is the way the input numbers (angle or speed) are converted to
+a pulse width.</p>
+</section>
+<section id="calibration">
+<h2><span class="section-number">1.3. </span>Calibration<a class="headerlink" href="#calibration" title="Permalink to this heading">¶</a></h2>
+<p>The conversion from angle or speed to pulse width is done by the servo
+object using its calibration values.  To get the current calibration,
+use</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">calibration</span><span class="p">()</span>
+<span class="go">(640, 2420, 1500, 2470, 2200)</span>
+</pre></div>
+</div>
+<p>There are 5 numbers here, which have meaning:</p>
+<ol class="arabic simple">
+<li><p>Minimum pulse width; the smallest pulse width that the servo accepts.</p></li>
+<li><p>Maximum pulse width; the largest pulse width that the servo accepts.</p></li>
+<li><p>Centre pulse width; the pulse width that puts the servo at 0 degrees
+or 0 speed.</p></li>
+<li><p>The pulse width corresponding to 90 degrees.  This sets the conversion
+in the method <code class="docutils literal notranslate"><span class="pre">angle</span></code> of angle to pulse width.</p></li>
+<li><p>The pulse width corresponding to a speed of 100.  This sets the conversion
+in the method <code class="docutils literal notranslate"><span class="pre">speed</span></code> of speed to pulse width.</p></li>
+</ol>
+<p>You can recalibrate the servo (change its default values) by using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">servo1</span><span class="o">.</span><span class="n">calibration</span><span class="p">(</span><span class="mi">700</span><span class="p">,</span> <span class="mi">2400</span><span class="p">,</span> <span class="mi">1510</span><span class="p">,</span> <span class="mi">2500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Of course, you would change the above values to suit your particular
+servo motor.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

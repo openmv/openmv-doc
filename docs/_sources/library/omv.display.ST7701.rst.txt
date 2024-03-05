@@ -20,8 +20,8 @@ Methods
 
 .. method:: ST7701.init(display_controller)
 
-   Initializes the display using the display controller which must provide `dsi_write()` and
-   `dsi_read()` methods.
+   Initializes the display using the display controller which must provide `display.DSIDisplay.bus_write()` and
+   `display.DSIDisplay.bus_read()` methods.
 
 .. method:: ST7701.read_id()
 

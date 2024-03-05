@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Porting MicroPython &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Porting MicroPython</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/develop/porting.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="porting-micropython">
+<span id="porting-to-a-board"></span><h1>Porting MicroPython<a class="headerlink" href="#porting-micropython" title="Permalink to this heading">¶</a></h1>
+<p>The MicroPython project contains several ports to different microcontroller families and
+architectures. The project repository has a <a class="reference external" href="https://github.com/micropython/micropython/tree/master/ports">ports</a>
+directory containing a subdirectory for each supported port.</p>
+<p>A port will typically contain definitions for multiple “boards”, each of which is a specific piece of
+hardware that that port can run on, e.g. a development kit or device.</p>
+<p>The <a class="reference external" href="https://github.com/micropython/micropython/tree/master/ports/minimal">minimal port</a> is
+available as a simplified reference implementation of a MicroPython port.  It can run on both the
+host system and an STM32F4xx MCU.</p>
+<p>In general, starting a port requires:</p>
+<ul class="simple">
+<li><p>Setting up the toolchain (configuring Makefiles, etc).</p></li>
+<li><p>Implementing boot configuration and CPU initialization.</p></li>
+<li><p>Initialising basic drivers required for development and debugging (e.g. GPIO, UART).</p></li>
+<li><p>Performing the board-specific configurations.</p></li>
+<li><p>Implementing the port-specific modules.</p></li>
+</ul>
+<section id="minimal-micropython-firmware">
+<h2>Minimal MicroPython firmware<a class="headerlink" href="#minimal-micropython-firmware" title="Permalink to this heading">¶</a></h2>
+<p>The best way to start porting MicroPython to a new board is by integrating a minimal
+MicroPython interpreter.  For this walkthrough, create a subdirectory for the new
+port in the <code class="docutils literal notranslate"><span class="pre">ports</span></code> directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>ports
+$<span class="w"> </span>mkdir<span class="w"> </span>example_port
+</pre></div>
+</div>
+<p>The basic MicroPython firmware is implemented in the main port file, e.g <code class="docutils literal notranslate"><span class="pre">main.c</span></code>:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/builtin.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/compile.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/gc.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/mperrno.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/stackctrl.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;shared/runtime/gchelper.h&quot;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;shared/runtime/pyexec.h&quot;</span>
+
+<span class="c1">// Allocate memory for the MicroPython GC heap.</span>
+<span class="k">static</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">heap</span><span class="p">[</span><span class="mi">4096</span><span class="p">];</span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">argc</span><span class="p">,</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">argv</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Initialise the MicroPython runtime.</span>
+<span class="w">    </span><span class="n">mp_stack_ctrl_init</span><span class="p">();</span>
+<span class="w">    </span><span class="n">gc_init</span><span class="p">(</span><span class="n">heap</span><span class="p">,</span><span class="w"> </span><span class="n">heap</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">heap</span><span class="p">));</span>
+<span class="w">    </span><span class="n">mp_init</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Start a normal REPL; will exit when ctrl-D is entered on a blank line.</span>
+<span class="w">    </span><span class="n">pyexec_friendly_repl</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Deinitialise the runtime.</span>
+<span class="w">    </span><span class="n">gc_sweep_all</span><span class="p">();</span>
+<span class="w">    </span><span class="n">mp_deinit</span><span class="p">();</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Handle uncaught exceptions (should never be reached in a correct C implementation).</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">nlr_jump_fail</span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">val</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(;;)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Do a garbage collection cycle.</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">gc_collect</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">gc_collect_start</span><span class="p">();</span>
+<span class="w">    </span><span class="n">gc_helper_collect_regs_and_stack</span><span class="p">();</span>
+<span class="w">    </span><span class="n">gc_collect_end</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// There is no filesystem so stat&#39;ing returns nothing.</span>
+<span class="n">mp_import_stat_t</span><span class="w"> </span><span class="nf">mp_import_stat</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">path</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">MP_IMPORT_STAT_NO_EXIST</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// There is no filesystem so opening a file raises an exception.</span>
+<span class="n">mp_lexer_t</span><span class="w"> </span><span class="o">*</span><span class="nf">mp_lexer_new_from_file</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">filename</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">mp_raise_OSError</span><span class="p">(</span><span class="n">MP_ENOENT</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We also need a Makefile at this point for the port:</p>
+<div class="highlight-Makefile notranslate"><div class="highlight"><pre><span></span><span class="c"># Include the core environment definitions; this will set $(TOP).</span>
+<span class="cp">include ../../py/mkenv.mk</span>
+
+<span class="c"># Include py core make definitions.</span>
+<span class="cp">include $(TOP)/py/py.mk</span>
+<span class="cp">include $(TOP)/extmod/extmod.mk</span>
+
+<span class="c"># Set CFLAGS and libraries.</span>
+<span class="nv">CFLAGS</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span>-I.<span class="w"> </span>-I<span class="k">$(</span>BUILD<span class="k">)</span><span class="w"> </span>-I<span class="k">$(</span>TOP<span class="k">)</span>
+<span class="nv">LIBS</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span>-lm
+
+<span class="c"># Define the required source files.</span>
+<span class="nv">SRC_C</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>main.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>mphalport.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>shared/readline/readline.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>shared/runtime/gchelper_generic.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>shared/runtime/pyexec.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>shared/runtime/stdout_helpers.c<span class="w"> </span><span class="se">\</span>
+
+<span class="c"># Define source files containung qstrs.</span>
+<span class="nv">SRC_QSTR</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span>shared/readline/readline.c<span class="w"> </span>shared/runtime/pyexec.c
+
+<span class="c"># Define the required object files.</span>
+<span class="nv">OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">$(</span>PY_CORE_O<span class="k">)</span><span class="w"> </span><span class="k">$(</span>addprefix<span class="w"> </span><span class="k">$(</span>BUILD<span class="k">)</span>/,<span class="w"> </span><span class="k">$(</span>SRC_C:.c<span class="o">=</span>.o<span class="k">))</span>
+
+<span class="c"># Define the top-level target, the main firmware.</span>
+<span class="nf">all</span><span class="o">:</span><span class="w"> </span><span class="k">$(</span><span class="nv">BUILD</span><span class="k">)</span>/<span class="n">firmware</span>.<span class="n">elf</span>
+
+<span class="c"># Define how to build the firmware.</span>
+<span class="nf">$(BUILD)/firmware.elf</span><span class="o">:</span><span class="w"> </span><span class="k">$(</span><span class="nv">OBJ</span><span class="k">)</span>
+<span class="w">    </span><span class="k">$(</span>ECHO<span class="k">)</span><span class="w"> </span><span class="s2">&quot;LINK </span><span class="nv">$@</span><span class="s2">&quot;</span>
+<span class="w">    </span><span class="k">$(</span>Q<span class="k">)$(</span>CC<span class="k">)</span><span class="w"> </span><span class="k">$(</span>LDFLAGS<span class="k">)</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$@</span><span class="w"> </span>$^<span class="w"> </span><span class="k">$(</span>LIBS<span class="k">)</span>
+<span class="w">    </span><span class="k">$(</span>Q<span class="k">)$(</span>SIZE<span class="k">)</span><span class="w"> </span><span class="nv">$@</span>
+
+<span class="c"># Include remaining core make rules.</span>
+<span class="cp">include $(TOP)/py/mkrules.mk</span>
+</pre></div>
+</div>
+<p>Remember to use proper tabs to indent the Makefile.</p>
+</section>
+<section id="micropython-configurations">
+<h2>MicroPython Configurations<a class="headerlink" href="#micropython-configurations" title="Permalink to this heading">¶</a></h2>
+<p>After integrating the minimal code above, the next step is to create the MicroPython
+configuration files for the port. The compile-time configurations are specified in
+<code class="docutils literal notranslate"><span class="pre">mpconfigport.h</span></code> and additional hardware-abstraction functions, such as time keeping,
+in <code class="docutils literal notranslate"><span class="pre">mphalport.h</span></code>.</p>
+<p>The following is an example of an <code class="docutils literal notranslate"><span class="pre">mpconfigport.h</span></code> file:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdint.h&gt;</span>
+
+<span class="c1">// Python internal features.</span>
+<span class="cp">#define MICROPY_ENABLE_GC                       (1)</span>
+<span class="cp">#define MICROPY_HELPER_REPL                     (1)</span>
+<span class="cp">#define MICROPY_ERROR_REPORTING                 (MICROPY_ERROR_REPORTING_TERSE)</span>
+<span class="cp">#define MICROPY_FLOAT_IMPL                      (MICROPY_FLOAT_IMPL_FLOAT)</span>
+
+<span class="c1">// Fine control over Python builtins, classes, modules, etc.</span>
+<span class="cp">#define MICROPY_PY_ASYNC_AWAIT                  (0)</span>
+<span class="cp">#define MICROPY_PY_BUILTINS_SET                 (0)</span>
+<span class="cp">#define MICROPY_PY_ATTRTUPLE                    (0)</span>
+<span class="cp">#define MICROPY_PY_COLLECTIONS                  (0)</span>
+<span class="cp">#define MICROPY_PY_MATH                         (0)</span>
+<span class="cp">#define MICROPY_PY_IO                           (0)</span>
+<span class="cp">#define MICROPY_PY_STRUCT                       (0)</span>
+
+<span class="c1">// Type definitions for the specific machine.</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="kt">intptr_t</span><span class="w"> </span><span class="n">mp_int_t</span><span class="p">;</span><span class="w"> </span><span class="c1">// must be pointer size</span>
+<span class="k">typedef</span><span class="w"> </span><span class="kt">uintptr_t</span><span class="w"> </span><span class="n">mp_uint_t</span><span class="p">;</span><span class="w"> </span><span class="c1">// must be pointer size</span>
+<span class="k">typedef</span><span class="w"> </span><span class="kt">long</span><span class="w"> </span><span class="n">mp_off_t</span><span class="p">;</span>
+
+<span class="c1">// We need to provide a declaration/definition of alloca().</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;alloca.h&gt;</span>
+
+<span class="c1">// Define the port&#39;s name and hardware.</span>
+<span class="cp">#define MICROPY_HW_BOARD_NAME &quot;example-board&quot;</span>
+<span class="cp">#define MICROPY_HW_MCU_NAME   &quot;unknown-cpu&quot;</span>
+
+<span class="cp">#define MP_STATE_PORT MP_STATE_VM</span>
+</pre></div>
+</div>
+<p>This configuration file contains machine-specific configurations including aspects like if different
+MicroPython features should be enabled e.g. <code class="docutils literal notranslate"><span class="pre">#define</span> <span class="pre">MICROPY_ENABLE_GC</span> <span class="pre">(1)</span></code>. Making this Setting
+<code class="docutils literal notranslate"><span class="pre">(0)</span></code> disables the feature.</p>
+<p>Other configurations include type definitions, root pointers, board name, microcontroller name
+etc.</p>
+<p>Similarly, an minimal example <code class="docutils literal notranslate"><span class="pre">mphalport.h</span></code> file looks like this:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kr">inline</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">mp_hal_set_interrupt_char</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="n">c</span><span class="p">)</span><span class="w"> </span><span class="p">{}</span>
+</pre></div>
+</div>
+</section>
+<section id="support-for-standard-input-output">
+<h2>Support for standard input/output<a class="headerlink" href="#support-for-standard-input-output" title="Permalink to this heading">¶</a></h2>
+<p>MicroPython requires at least a way to output characters, and to have a REPL it also
+requires a way to input characters. Functions for this can be implemented in the file
+<code class="docutils literal notranslate"><span class="pre">mphalport.c</span></code>, for example:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;unistd.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/mpconfig.h&quot;</span>
+
+<span class="c1">// Receive single character, blocking until one is available.</span>
+<span class="kt">int</span><span class="w"> </span><span class="nf">mp_hal_stdin_rx_chr</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">    </span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">r</span><span class="p">;</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">c</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Send the string of given length.</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">mp_hal_stdout_tx_strn</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">mp_uint_t</span><span class="w"> </span><span class="n">len</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">int</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">write</span><span class="p">(</span><span class="n">STDOUT_FILENO</span><span class="p">,</span><span class="w"> </span><span class="n">str</span><span class="p">,</span><span class="w"> </span><span class="n">len</span><span class="p">);</span>
+<span class="w">    </span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">r</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>These input and output functions have to be modified depending on the
+specific board API. This example uses the standard input/output stream.</p>
+</section>
+<section id="building-and-running">
+<h2>Building and running<a class="headerlink" href="#building-and-running" title="Permalink to this heading">¶</a></h2>
+<p>At this stage the directory of the new port should contain:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ports/example_port/
+├── main.c
+├── Makefile
+├── mpconfigport.h
+├── mphalport.c
+└── mphalport.h
+</pre></div>
+</div>
+<p>The port can now be built by running <code class="docutils literal notranslate"><span class="pre">make</span></code> (or otherwise, depending on your system).</p>
+<p>If you are using the default compiler settings in the Makefile given above then this
+will create an executable called <code class="docutils literal notranslate"><span class="pre">build/firmware.elf</span></code> which can be executed directly.
+To get a functional REPL you may need to first configure the terminal to raw mode:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>stty<span class="w"> </span>raw<span class="w"> </span>opost<span class="w"> </span>-echo
+$<span class="w"> </span>./build/firmware.elf
+</pre></div>
+</div>
+<p>That should give a MicroPython REPL.  You can then run commands like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>MicroPython<span class="w"> </span>v1.13<span class="w"> </span>on<span class="w"> </span><span class="m">2021</span>-01-01<span class="p">;</span><span class="w"> </span>example-board<span class="w"> </span>with<span class="w"> </span>unknown-cpu
+&gt;&gt;&gt;<span class="w"> </span>import<span class="w"> </span>sys
+&gt;&gt;&gt;<span class="w"> </span>sys.implementation
+<span class="o">(</span><span class="s1">&#39;micropython&#39;</span>,<span class="w"> </span><span class="o">(</span><span class="m">1</span>,<span class="w"> </span><span class="m">13</span>,<span class="w"> </span><span class="m">0</span><span class="o">))</span>
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>Use Ctrl-D to exit, and then run <code class="docutils literal notranslate"><span class="pre">reset</span></code> to reset the terminal.</p>
+</section>
+<section id="adding-a-module-to-the-port">
+<h2>Adding a module to the port<a class="headerlink" href="#adding-a-module-to-the-port" title="Permalink to this heading">¶</a></h2>
+<p>To add a custom module like <code class="docutils literal notranslate"><span class="pre">myport</span></code>, first add the module definition in a file
+<code class="docutils literal notranslate"><span class="pre">modmyport.c</span></code>:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/runtime.h&quot;</span>
+
+<span class="n">STATIC</span><span class="w"> </span><span class="n">mp_obj_t</span><span class="w"> </span><span class="n">myport_info</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">mp_printf</span><span class="p">(</span><span class="o">&amp;</span><span class="n">mp_plat_print</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;info about my port</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mp_const_none</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="n">STATIC</span><span class="w"> </span><span class="n">MP_DEFINE_CONST_FUN_OBJ_0</span><span class="p">(</span><span class="n">myport_info_obj</span><span class="p">,</span><span class="w"> </span><span class="n">myport_info</span><span class="p">);</span>
+
+<span class="n">STATIC</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="n">mp_rom_map_elem_t</span><span class="w"> </span><span class="n">myport_module_globals_table</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">MP_OBJ_NEW_QSTR</span><span class="p">(</span><span class="n">MP_QSTR___name__</span><span class="p">),</span><span class="w"> </span><span class="n">MP_OBJ_NEW_QSTR</span><span class="p">(</span><span class="n">MP_QSTR_myport</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="n">MP_ROM_QSTR</span><span class="p">(</span><span class="n">MP_QSTR_info</span><span class="p">),</span><span class="w"> </span><span class="n">MP_ROM_PTR</span><span class="p">(</span><span class="o">&amp;</span><span class="n">myport_info_obj</span><span class="p">)</span><span class="w"> </span><span class="p">},</span>
+<span class="p">};</span>
+<span class="n">STATIC</span><span class="w"> </span><span class="nf">MP_DEFINE_CONST_DICT</span><span class="p">(</span><span class="n">myport_module_globals</span><span class="p">,</span><span class="w"> </span><span class="n">myport_module_globals_table</span><span class="p">);</span>
+
+<span class="k">const</span><span class="w"> </span><span class="n">mp_obj_module_t</span><span class="w"> </span><span class="n">myport_module</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">.</span><span class="n">base</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mp_type_module</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">.</span><span class="n">globals</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">mp_obj_dict_t</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">myport_module_globals</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="n">MP_REGISTER_MODULE</span><span class="p">(</span><span class="n">MP_QSTR_myport</span><span class="p">,</span><span class="w"> </span><span class="n">myport_module</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>You will also need to edit the Makefile to add <code class="docutils literal notranslate"><span class="pre">modmyport.c</span></code> to the <code class="docutils literal notranslate"><span class="pre">SRC_C</span></code> list, and
+a new line adding the same file to <code class="docutils literal notranslate"><span class="pre">SRC_QSTR</span></code> (so qstrs are searched for in this new file),
+like this:</p>
+<div class="highlight-Makefile notranslate"><div class="highlight"><pre><span></span><span class="nv">SRC_C</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>main.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>modmyport.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>mphalport.c<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>...
+
+<span class="nv">SRC_QSTR</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span>modmyport.c
+</pre></div>
+</div>
+<p>If all went correctly then, after rebuilding, you should be able to import the new module:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt;<span class="w"> </span>import<span class="w"> </span>myport
+&gt;&gt;&gt;<span class="w"> </span>myport.info<span class="o">()</span>
+info<span class="w"> </span>about<span class="w"> </span>my<span class="w"> </span>port
+&gt;&gt;&gt;
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

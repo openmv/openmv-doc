@@ -24,7 +24,7 @@ Example usage for driving the 128x160 LCD shield::
 Constructors
 ------------
 
-.. class:: SPIDisplay([width=128, [height=160, [refresh=60, [bgr=False, [byte_swap=False, [triple_buffer, [backlight]]]]]]])
+.. class:: SPIDisplay([width=128, [height=160, [refresh=60, [bgr=False, [byte_swap=False, [triple_buffer, [controller, [backlight]]]]]]]])
 
     ``width`` SPI LCD width. By default this is 128 to match the OpenMV 128x160 LCD shield.
 
@@ -40,6 +40,8 @@ Constructors
 
     ``triple_buffer`` If True then makes updates to the screen non-blocking at the cost of 3X the
     display size in RAM. This is on by default for OpenMV Cam boards with SDRAM.
+
+    ``controller`` Pass the controller chip class here to initialize it along with the display.
 
     ``backlight`` specify a backlight controller module to use. By default the backlight will be
     controlled via a GPIO pin.
@@ -148,3 +150,7 @@ Methods
    as a GPIO pin and will only go from 0 (off) to !0 (on).
 
    Pass no arguments to get the state of the backlight value.
+
+.. method:: SPIDisplay.bus_write(cmd, [args=None])
+
+   Send the SPI Display ``cmd`` with ``args``.

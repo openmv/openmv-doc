@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>10. Inline assembler &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><span class="section-number">10. </span>Inline assembler</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/pyboard/tutorial/assembler.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="inline-assembler">
+<span id="pyboard-tutorial-assembler"></span><h1><span class="section-number">10. </span>Inline assembler<a class="headerlink" href="#inline-assembler" title="Permalink to this heading">¶</a></h1>
+<p>Here you will learn how to write inline assembler in MicroPython.</p>
+<p><strong>Note</strong>: this is an advanced tutorial, intended for those who already
+know a bit about microcontrollers and assembly language.</p>
+<p>MicroPython includes an inline assembler.  It allows you to write
+assembly routines as a Python function, and you can call them as you would
+a normal Python function.</p>
+<section id="returning-a-value">
+<h2><span class="section-number">10.1. </span>Returning a value<a class="headerlink" href="#returning-a-value" title="Permalink to this heading">¶</a></h2>
+<p>Inline assembler functions are denoted by a special function decorator.
+Let’s start with the simplest example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@micropython</span><span class="o">.</span><span class="n">asm_thumb</span>
+<span class="k">def</span> <span class="nf">fun</span><span class="p">():</span>
+    <span class="n">movw</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="mi">42</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can enter this in a script or at the REPL.  This function takes no
+arguments and returns the number 42.  <code class="docutils literal notranslate"><span class="pre">r0</span></code> is a register, and the value
+in this register when the function returns is the value that is returned.
+MicroPython always interprets the <code class="docutils literal notranslate"><span class="pre">r0</span></code> as an integer, and converts it to an
+integer object for the caller.</p>
+<p>If you run <code class="docutils literal notranslate"><span class="pre">print(fun())</span></code> you will see it print out 42.</p>
+</section>
+<section id="accessing-peripherals">
+<h2><span class="section-number">10.2. </span>Accessing peripherals<a class="headerlink" href="#accessing-peripherals" title="Permalink to this heading">¶</a></h2>
+<p>For something a bit more complicated, let’s turn on an LED:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@micropython</span><span class="o">.</span><span class="n">asm_thumb</span>
+<span class="k">def</span> <span class="nf">led_on</span><span class="p">():</span>
+    <span class="n">movwt</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">stm</span><span class="o">.</span><span class="n">GPIOA</span><span class="p">)</span>
+    <span class="n">movw</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">13</span><span class="p">)</span>
+    <span class="n">strh</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="p">[</span><span class="n">r0</span><span class="p">,</span> <span class="n">stm</span><span class="o">.</span><span class="n">GPIO_BSRRL</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>This code uses a few new concepts:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stm</span></code> is a module which provides a set of constants for easy
+access to the registers of the pyboard’s microcontroller.  Try
+running <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">stm</span></code> and then <code class="docutils literal notranslate"><span class="pre">help(stm)</span></code> at the REPL.  It will
+give you a list of all the available constants.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stm.GPIOA</span></code> is the address in memory of the GPIOA peripheral.
+On the pyboard, the red LED is on port A, pin PA13.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">movwt</span></code> moves a 32-bit number into a register.  It is a convenience
+function that turns into 2 thumb instructions: <code class="docutils literal notranslate"><span class="pre">movw</span></code> followed by <code class="docutils literal notranslate"><span class="pre">movt</span></code>.
+The <code class="docutils literal notranslate"><span class="pre">movt</span></code> also shifts the immediate value right by 16 bits.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">strh</span></code> stores a half-word (16 bits).  The instruction above stores
+the lower 16-bits of <code class="docutils literal notranslate"><span class="pre">r1</span></code> into the memory location <code class="docutils literal notranslate"><span class="pre">r0</span> <span class="pre">+</span> <span class="pre">stm.GPIO_BSRRL</span></code>.
+This has the effect of setting high all those pins on port A for which
+the corresponding bit in <code class="docutils literal notranslate"><span class="pre">r0</span></code> is set.  In our example above, the 13th
+bit in <code class="docutils literal notranslate"><span class="pre">r0</span></code> is set, so PA13 is pulled high.  This turns on the red LED.</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="accepting-arguments">
+<h2><span class="section-number">10.3. </span>Accepting arguments<a class="headerlink" href="#accepting-arguments" title="Permalink to this heading">¶</a></h2>
+<p>Inline assembler functions can accept up to 4 arguments.  If they are
+used, they must be named <code class="docutils literal notranslate"><span class="pre">r0</span></code>, <code class="docutils literal notranslate"><span class="pre">r1</span></code>, <code class="docutils literal notranslate"><span class="pre">r2</span></code> and <code class="docutils literal notranslate"><span class="pre">r3</span></code> to reflect the registers
+and the calling conventions.</p>
+<p>Here is a function that adds its arguments:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@micropython</span><span class="o">.</span><span class="n">asm_thumb</span>
+<span class="k">def</span> <span class="nf">asm_add</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r1</span><span class="p">):</span>
+    <span class="n">add</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">r1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This performs the computation <code class="docutils literal notranslate"><span class="pre">r0</span> <span class="pre">=</span> <span class="pre">r0</span> <span class="pre">+</span> <span class="pre">r1</span></code>.  Since the result is put
+in <code class="docutils literal notranslate"><span class="pre">r0</span></code>, that is what is returned.  Try <code class="docutils literal notranslate"><span class="pre">asm_add(1,</span> <span class="pre">2)</span></code>, it should return
+3.</p>
+</section>
+<section id="loops">
+<h2><span class="section-number">10.4. </span>Loops<a class="headerlink" href="#loops" title="Permalink to this heading">¶</a></h2>
+<p>We can assign labels with <code class="docutils literal notranslate"><span class="pre">label(my_label)</span></code>, and branch to them using
+<code class="docutils literal notranslate"><span class="pre">b(my_label)</span></code>, or a conditional branch like <code class="docutils literal notranslate"><span class="pre">bgt(my_label)</span></code>.</p>
+<p>The following example flashes the green LED.  It flashes it <code class="docutils literal notranslate"><span class="pre">r0</span></code> times.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@micropython</span><span class="o">.</span><span class="n">asm_thumb</span>
+<span class="k">def</span> <span class="nf">flash_led</span><span class="p">(</span><span class="n">r0</span><span class="p">):</span>
+    <span class="c1"># get the GPIOA address in r1</span>
+    <span class="n">movwt</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">stm</span><span class="o">.</span><span class="n">GPIOA</span><span class="p">)</span>
+
+    <span class="c1"># get the bit mask for PA14 (the pin LED #2 is on)</span>
+    <span class="n">movw</span><span class="p">(</span><span class="n">r2</span><span class="p">,</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">14</span><span class="p">)</span>
+
+    <span class="n">b</span><span class="p">(</span><span class="n">loop_entry</span><span class="p">)</span>
+
+    <span class="n">label</span><span class="p">(</span><span class="n">loop1</span><span class="p">)</span>
+
+    <span class="c1"># turn LED on</span>
+    <span class="n">strh</span><span class="p">(</span><span class="n">r2</span><span class="p">,</span> <span class="p">[</span><span class="n">r1</span><span class="p">,</span> <span class="n">stm</span><span class="o">.</span><span class="n">GPIO_BSRRL</span><span class="p">])</span>
+
+    <span class="c1"># delay for a bit</span>
+    <span class="n">movwt</span><span class="p">(</span><span class="n">r4</span><span class="p">,</span> <span class="mi">5599900</span><span class="p">)</span>
+    <span class="n">label</span><span class="p">(</span><span class="n">delay_on</span><span class="p">)</span>
+    <span class="n">sub</span><span class="p">(</span><span class="n">r4</span><span class="p">,</span> <span class="n">r4</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">cmp</span><span class="p">(</span><span class="n">r4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">bgt</span><span class="p">(</span><span class="n">delay_on</span><span class="p">)</span>
+
+    <span class="c1"># turn LED off</span>
+    <span class="n">strh</span><span class="p">(</span><span class="n">r2</span><span class="p">,</span> <span class="p">[</span><span class="n">r1</span><span class="p">,</span> <span class="n">stm</span><span class="o">.</span><span class="n">GPIO_BSRRH</span><span class="p">])</span>
+
+    <span class="c1"># delay for a bit</span>
+    <span class="n">movwt</span><span class="p">(</span><span class="n">r4</span><span class="p">,</span> <span class="mi">5599900</span><span class="p">)</span>
+    <span class="n">label</span><span class="p">(</span><span class="n">delay_off</span><span class="p">)</span>
+    <span class="n">sub</span><span class="p">(</span><span class="n">r4</span><span class="p">,</span> <span class="n">r4</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">cmp</span><span class="p">(</span><span class="n">r4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">bgt</span><span class="p">(</span><span class="n">delay_off</span><span class="p">)</span>
+
+    <span class="c1"># loop r0 times</span>
+    <span class="n">sub</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">label</span><span class="p">(</span><span class="n">loop_entry</span><span class="p">)</span>
+    <span class="n">cmp</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">bgt</span><span class="p">(</span><span class="n">loop1</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="further-reading">
+<h2><span class="section-number">10.5. </span>Further reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
+<p>For further information about supported instructions of the inline assembler,
+see the <a class="reference internal" href="../../reference/asm_thumb2_index.html#asm-thumb2-index"><span class="std std-ref">reference documentation</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

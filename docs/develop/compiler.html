@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Compiler &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">The Compiler</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/develop/compiler.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-compiler">
+<span id="compiler"></span><h1>The Compiler<a class="headerlink" href="#the-compiler" title="Permalink to this heading">¶</a></h1>
+<p>The compilation process in MicroPython involves the following steps:</p>
+<ul class="simple">
+<li><p>The lexer converts the stream of text that makes up a MicroPython program into tokens.</p></li>
+<li><p>The parser then converts the tokens into an abstract syntax (parse tree).</p></li>
+<li><p>Then bytecode or native code is emitted based on the parse tree.</p></li>
+</ul>
+<p>For purposes of this discussion we are going to add a simple language feature <code class="docutils literal notranslate"><span class="pre">add1</span></code>
+that can be use in Python as:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt;<span class="w"> </span>add1<span class="w"> </span><span class="m">3</span>
+<span class="m">4</span>
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">add1</span></code> statement takes an integer as argument and adds <code class="docutils literal notranslate"><span class="pre">1</span></code> to it.</p>
+<section id="adding-a-grammar-rule">
+<h2>Adding a grammar rule<a class="headerlink" href="#adding-a-grammar-rule" title="Permalink to this heading">¶</a></h2>
+<p>MicroPython’s grammar is based on the <a class="reference external" href="https://docs.python.org/3.5/reference/grammar.html">CPython grammar</a>
+and is defined in <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/grammar.h">py/grammar.h</a>.
+This grammar is what is used to parse MicroPython source files.</p>
+<p>There are two macros you need to know to define a grammar rule: <code class="docutils literal notranslate"><span class="pre">DEF_RULE</span></code> and <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code>.
+<code class="docutils literal notranslate"><span class="pre">DEF_RULE</span></code> allows you to define a rule with an associated compile function,
+while <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code> has no compile (NC) function for it.</p>
+<p>A simple grammar definition with a compile function for our new <code class="docutils literal notranslate"><span class="pre">add1</span></code> statement
+looks like the following:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">DEF_RULE</span><span class="p">(</span><span class="n">add1_stmt</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">add1_stmt</span><span class="p">),</span><span class="w"> </span><span class="n">and</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">tok</span><span class="p">(</span><span class="n">KW_ADD1</span><span class="p">),</span><span class="w"> </span><span class="n">rule</span><span class="p">(</span><span class="n">testlist</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The second argument <code class="docutils literal notranslate"><span class="pre">c(add1_stmt)</span></code> is the corresponding compile function that should be implemented
+in <code class="docutils literal notranslate"><span class="pre">py/compile.c</span></code> to turn this rule into executable code.</p>
+<p>The third required argument can be <code class="docutils literal notranslate"><span class="pre">or</span></code> or <code class="docutils literal notranslate"><span class="pre">and</span></code>. This specifies the number of nodes associated
+with a statement. For example, in this case, our <code class="docutils literal notranslate"><span class="pre">add1</span></code> statement is similar to ADD1 in assembly
+language. It takes one numeric argument. Therefore, the <code class="docutils literal notranslate"><span class="pre">add1_stmt</span></code> has two nodes associated with it.
+One node is for the statement itself, i.e the literal <code class="docutils literal notranslate"><span class="pre">add1</span></code> corresponding to <code class="docutils literal notranslate"><span class="pre">KW_ADD1</span></code>,
+and the other for its argument, a <code class="docutils literal notranslate"><span class="pre">testlist</span></code> rule which is the top-level expression rule.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">add1</span></code> rule here is just an example and not part of the standard
+MicroPython grammar.</p>
+</div>
+<p>The fourth argument in this example is the token associated with the rule, <code class="docutils literal notranslate"><span class="pre">KW_ADD1</span></code>. This token should be
+defined in the lexer by editing <code class="docutils literal notranslate"><span class="pre">py/lexer.h</span></code>.</p>
+<p>Defining the same rule without a compile function is achieved by using the <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code> macro
+and omitting the compile function argument:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">DEF_RULE_NC</span><span class="p">(</span><span class="n">add1_stmt</span><span class="p">,</span><span class="w"> </span><span class="n">and</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">tok</span><span class="p">(</span><span class="n">KW_ADD1</span><span class="p">),</span><span class="w"> </span><span class="n">rule</span><span class="p">(</span><span class="n">testlist</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The remaining arguments take on the same meaning. A rule without a compile function must
+be handled explicitly by all rules that may have this rule as a node. Such NC-rules are usually
+used to express sub-parts of a complicated grammar structure that cannot be expressed in a
+single rule.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The macros <code class="docutils literal notranslate"><span class="pre">DEF_RULE</span></code> and <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code> take other arguments. For an in-depth understanding of
+supported parameters, see <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/grammar.h">py/grammar.h</a>.</p>
+</div>
+</section>
+<section id="adding-a-lexical-token">
+<h2>Adding a lexical token<a class="headerlink" href="#adding-a-lexical-token" title="Permalink to this heading">¶</a></h2>
+<p>Every rule defined in the grammar should have a token associated with it that is defined in <code class="docutils literal notranslate"><span class="pre">py/lexer.h</span></code>.
+Add this token by editing the <code class="docutils literal notranslate"><span class="pre">_mp_token_kind_t</span></code> enum:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">typedef</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="n">_mp_token_kind_t</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_OR</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_PASS</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_RAISE</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_RETURN</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_TRY</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_WHILE</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_WITH</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_YIELD</span><span class="p">,</span>
+<span class="w">    </span><span class="n">MP_TOKEN_KW_ADD1</span><span class="p">,</span>
+<span class="hll"><span class="w">    </span><span class="p">...</span>
+</span><span class="p">}</span><span class="w"> </span><span class="n">mp_token_kind_t</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Then also edit <code class="docutils literal notranslate"><span class="pre">py/lexer.c</span></code> to add the new keyword literal text:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">STATIC</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">tok_kw</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="s">&quot;or&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;pass&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;raise&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;return&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;try&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;while&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;with&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;yield&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s">&quot;add1&quot;</span><span class="p">,</span>
+<span class="hll"><span class="w">    </span><span class="p">...</span>
+</span><span class="p">};</span>
+</pre></div>
+</div>
+<p>Notice the keyword is named depending on what you want it to be. For consistency, maintain the
+naming standard accordingly.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The order of these keywords in <code class="docutils literal notranslate"><span class="pre">py/lexer.c</span></code> must match the order of tokens in the enum
+defined in <code class="docutils literal notranslate"><span class="pre">py/lexer.h</span></code>.</p>
+</div>
+</section>
+<section id="parsing">
+<h2>Parsing<a class="headerlink" href="#parsing" title="Permalink to this heading">¶</a></h2>
+<p>In the parsing stage the parser takes the tokens produced by the lexer and converts them to an abstract syntax tree (AST) or
+<em>parse tree</em>. The implementation for the parser is defined in <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/parse.c">py/parse.c</a>.</p>
+<p>The parser also maintains a table of constants for use in different aspects of parsing, similar to what a
+<a class="reference external" href="https://steemit.com/programming/&#64;drifter1/writing-a-simple-compiler-on-my-own-symbol-table-basic-structure">symbol table</a>
+does.</p>
+<p>Several optimizations like <a class="reference external" href="http://compileroptimizations.com/category/constant_folding.htm">constant folding</a>
+on integers for most operations e.g. logical, binary, unary, etc, and optimizing enhancements on parenthesis
+around expressions are performed during this phase, along with some optimizations on strings.</p>
+<p>It’s worth noting that <em>docstrings</em> are discarded and not accessible to the compiler.
+Even optimizations like <a class="reference external" href="https://en.wikipedia.org/wiki/String_interning">string interning</a> are
+not applied to <em>docstrings</em>.</p>
+</section>
+<section id="compiler-passes">
+<h2>Compiler passes<a class="headerlink" href="#compiler-passes" title="Permalink to this heading">¶</a></h2>
+<p>Like many compilers, MicroPython compiles all code to MicroPython bytecode or native code. The functionality
+that achieves this is implemented in <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/compile.c">py/compile.c</a>.
+The most relevant method you should know about is this:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">mp_obj_t</span><span class="w"> </span><span class="nf">mp_compile</span><span class="p">(</span><span class="n">mp_parse_tree_t</span><span class="w"> </span><span class="o">*</span><span class="n">parse_tree</span><span class="p">,</span><span class="w"> </span><span class="n">qstr</span><span class="w"> </span><span class="n">source_file</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_repl</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Create a context for this module, and set its globals dict.</span>
+<span class="w">    </span><span class="n">mp_module_context_t</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_new_obj</span><span class="p">(</span><span class="n">mp_module_context_t</span><span class="p">);</span>
+<span class="w">    </span><span class="n">context</span><span class="o">-&gt;</span><span class="n">module</span><span class="p">.</span><span class="n">globals</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mp_globals_get</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Compile the input parse_tree to a raw-code structure.</span>
+<span class="w">    </span><span class="n">mp_compiled_module_t</span><span class="w"> </span><span class="n">cm</span><span class="p">;</span>
+<span class="w">    </span><span class="n">cm</span><span class="p">.</span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">;</span>
+<span class="w">    </span><span class="n">mp_compile_to_raw_code</span><span class="p">(</span><span class="n">parse_tree</span><span class="p">,</span><span class="w"> </span><span class="n">source_file</span><span class="p">,</span><span class="w"> </span><span class="n">is_repl</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cm</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Create and return a function object that executes the outer module.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mp_make_function_from_raw_code</span><span class="p">(</span><span class="n">cm</span><span class="p">.</span><span class="n">rc</span><span class="p">,</span><span class="w"> </span><span class="n">cm</span><span class="p">.</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The compiler compiles the code in four passes: scope, stack size, code size and emit.
+Each pass runs the same C code over the same AST data structure, with different things
+being computed each time based on the results of the previous pass.</p>
+<section id="first-pass">
+<h3>First pass<a class="headerlink" href="#first-pass" title="Permalink to this heading">¶</a></h3>
+<p>In the first pass, the compiler learns about the known identifiers (variables) and
+their scope, being global, local, closed over, etc. In the same pass the emitter
+(bytecode or native code) also computes the number of labels needed for the emitted
+code.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Compile pass 1.</span>
+<span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_bc</span><span class="p">;</span>
+<span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit_method_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">emit_bc_method_table</span><span class="p">;</span>
+
+<span class="n">uint</span><span class="w"> </span><span class="n">max_num_labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">scope_t</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">scope_head</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">emit_options</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_EMIT_OPT_ASM</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">compile_scope_inline_asm</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_SCOPE</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_SCOPE</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Check if any implicitly declared variables should be closed over.</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">id_info_len</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">id_info_t</span><span class="w"> </span><span class="o">*</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">id_info</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="o">-&gt;</span><span class="n">kind</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ID_INFO_KIND_GLOBAL_IMPLICIT</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">scope_check_to_close_over</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="second-and-third-passes">
+<h3>Second and third passes<a class="headerlink" href="#second-and-third-passes" title="Permalink to this heading">¶</a></h3>
+<p>The second and third passes involve computing the Python stack size and code size
+for the bytecode or native code. After the third pass the code size cannot change,
+otherwise jump labels will be incorrect.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">scope_t</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">scope_head</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+
+<span class="w">    </span><span class="c1">// Pass 2: Compute the Python stack size.</span>
+<span class="w">    </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_STACK_SIZE</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Pass 3: Compute the code size.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_CODE_SIZE</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Just before pass two there is a selection for the type of code to be emitted, which can
+either be native or bytecode.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Choose the emitter type.</span>
+<span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">emit_options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MP_EMIT_OPT_NATIVE_PYTHON</span><span class="p">:</span>
+<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MP_EMIT_OPT_VIPER</span><span class="p">:</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">emit_native</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">emit_native</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NATIVE_EMITTER</span><span class="p">(</span><span class="n">new</span><span class="p">)(</span><span class="o">&amp;</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">next_label</span><span class="p">,</span><span class="w"> </span><span class="n">max_num_labels</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit_method_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NATIVE_EMITTER_TABLE</span><span class="p">;</span>
+<span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_native</span><span class="p">;</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">    </span><span class="k">default</span><span class="o">:</span>
+<span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_bc</span><span class="p">;</span>
+<span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit_method_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">emit_bc_method_table</span><span class="p">;</span>
+<span class="w">        </span><span class="k">break</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The bytecode option is the default but something unique to note for the native
+code option is that there is another option via <code class="docutils literal notranslate"><span class="pre">VIPER</span></code>. See the
+<a class="reference internal" href="#emitting-native-code"><span class="std std-ref">Emitting native code</span></a> section for more details on
+viper annotations.</p>
+<p>There is also support for <em>inline assembly code</em>, where assembly instructions are
+written as Python function calls but are emitted directly as the corresponding
+machine code. This assembler has only three passes (scope, code size, emit)
+and uses a different implementation, not the <code class="docutils literal notranslate"><span class="pre">compile_scope</span></code> function.
+See the <a class="reference external" href="https://docs.micropython.org/en/latest/pyboard/tutorial/assembler.html#pyboard-tutorial-assembler">inline assembler tutorial</a>
+for more details.</p>
+</section>
+<section id="fourth-pass">
+<h3>Fourth pass<a class="headerlink" href="#fourth-pass" title="Permalink to this heading">¶</a></h3>
+<p>The fourth pass emits the final code that can be executed, either bytecode in
+the virtual machine, or native code directly by the CPU.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">scope_t</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">scope_head</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+
+<span class="w">    </span><span class="c1">// Pass 4: Emit the compiled bytecode or native code.</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_EMIT</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="emitting-bytecode">
+<h2>Emitting bytecode<a class="headerlink" href="#emitting-bytecode" title="Permalink to this heading">¶</a></h2>
+<p>Statements in Python code usually correspond to emitted bytecode, for example <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span></code>
+generates “push a” then “push b” then “binary op add”. Some statements do not emit
+anything but instead affect other things like the scope of variables, for example
+<code class="docutils literal notranslate"><span class="pre">global</span> <span class="pre">a</span></code>.</p>
+<p>The implementation of a function that emits bytecode looks similar to this:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">void</span><span class="w"> </span><span class="nf">mp_emit_bc_unary_op</span><span class="p">(</span><span class="n">emit_t</span><span class="w"> </span><span class="o">*</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">mp_unary_op_t</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">emit_write_bytecode_byte</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MP_BC_UNARY_OP_MULTI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">op</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>We use the unary operator expressions for an example here but the implementation
+details are similar for other statements/expressions. The method <code class="docutils literal notranslate"><span class="pre">emit_write_bytecode_byte()</span></code>
+is a wrapper around the main function <code class="docutils literal notranslate"><span class="pre">emit_get_cur_to_write_bytecode()</span></code> that all
+functions must call to emit bytecode.</p>
+</section>
+<section id="emitting-native-code">
+<span id="id2"></span><h2>Emitting native code<a class="headerlink" href="#emitting-native-code" title="Permalink to this heading">¶</a></h2>
+<p>Similar to how bytecode is generated, there should be a corresponding function in <code class="docutils literal notranslate"><span class="pre">py/emitnative.c</span></code> for each
+code statement:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="n">STATIC</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="n">emit_native_unary_op</span><span class="p">(</span><span class="n">emit_t</span><span class="w"> </span><span class="o">*</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">mp_unary_op_t</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">     </span><span class="n">vtype_kind_t</span><span class="w"> </span><span class="n">vtype</span><span class="p">;</span>
+<span class="w">     </span><span class="n">emit_pre_pop_reg</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">vtype</span><span class="p">,</span><span class="w"> </span><span class="n">REG_ARG_2</span><span class="p">);</span>
+<span class="w">     </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">vtype</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">VTYPE_PYOBJ</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">         </span><span class="n">emit_call_with_imm_arg</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">MP_F_UNARY_OP</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">REG_ARG_1</span><span class="p">);</span>
+<span class="w">         </span><span class="n">emit_post_push_reg</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">VTYPE_PYOBJ</span><span class="p">,</span><span class="w"> </span><span class="n">REG_RET</span><span class="p">);</span>
+<span class="w">     </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">         </span><span class="n">adjust_stack</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">         </span><span class="n">EMIT_NATIVE_VIPER_TYPE_ERROR</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span>
+<span class="w">             </span><span class="n">MP_ERROR_TEXT</span><span class="p">(</span><span class="s">&quot;unary op %q not implemented&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">mp_unary_op_method_name</span><span class="p">[</span><span class="n">op</span><span class="p">]);</span>
+<span class="w">     </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The difference here is that we have to handle <em>viper typing</em>. Viper annotations allow
+us to handle more than one type of variable. By default all variables are Python objects,
+but with viper a variable can also be declared as a machine-typed variable like a native
+integer or pointer. Viper can be thought of as a superset of Python, where normal Python
+objects are handled as usual, while native machine variables are handled in an optimised
+way by using direct machine instructions for the operations. Viper typing may break
+Python equivalence because, for example, integers become native integers and can overflow
+(unlike Python integers which extend automatically to arbitrary precision).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
