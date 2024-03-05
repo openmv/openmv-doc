@@ -10,6 +10,7 @@ def make():
 
     if sys.platform.startswith('win'):
         os.environ["MICROPY_PORT"] = "openmvcam"
+        os.environ["SPHINXBUILD"] = "python -m sphinx.cmd.build"
         if os.system("cd " + os.path.join(__folder__,
         "micropython/docs") + " && make.bat html"):
             sys.exit("Make Failed...")
