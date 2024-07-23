@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Builtin types &mdash; MicroPython 1.22 documentation</title>
+  <title>Builtin types &mdash; MicroPython 1.23 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
@@ -18,7 +18,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=5cbaa444"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/js/theme.js"></script>
@@ -41,7 +41,7 @@
               <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.22
+                1.23
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -102,6 +102,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#list-store-with-step-1-not-implemented">List store with step != 1 not implemented</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#memoryview">memoryview</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#memoryview-can-become-invalid-if-its-target-is-resized">memoryview can become invalid if its target is resized</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#str">str</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#start-end-indices-such-as-str-endswith-s-start-not-implemented">Start/end indices such as str.endswith(s, start) not implemented</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#attributes-subscr-not-implemented">Attributes/subscr not implemented</a></li>
@@ -151,7 +155,7 @@
              
   <section id="builtin-types">
 <h1>Builtin types<a class="headerlink" href="#builtin-types" title="Permalink to this heading">¶</a></h1>
-<p>Generated Tue 05 Mar 2024 02:12:06 UTC</p>
+<p>Generated Tue 23 Jul 2024 04:50:56 UTC</p>
 <section id="exception">
 <h2>Exception<a class="headerlink" href="#exception" title="Permalink to this heading">¶</a></h2>
 <section id="all-exceptions-have-readable-value-and-errno-attributes-not-just-stopiteration-and-oserror">
@@ -642,6 +646,40 @@
 </table>
 </section>
 </section>
+<section id="memoryview">
+<h2>memoryview<a class="headerlink" href="#memoryview" title="Permalink to this heading">¶</a></h2>
+<section id="memoryview-can-become-invalid-if-its-target-is-resized">
+<span id="cpydiff-types-memoryview-invalid"></span><h3>memoryview can become invalid if its target is resized<a class="headerlink" href="#memoryview-can-become-invalid-if-its-target-is-resized" title="Permalink to this heading">¶</a></h3>
+<p><strong>Cause:</strong> CPython prevents a <code class="docutils literal notranslate"><span class="pre">bytearray</span></code> or <code class="docutils literal notranslate"><span class="pre">io.bytesIO</span></code> object from changing size while there is a <code class="docutils literal notranslate"><span class="pre">memoryview</span></code> object that references it. MicroPython requires the programmer to manually ensure that an object is not resized while any <code class="docutils literal notranslate"><span class="pre">memoryview</span></code> references it.</p>
+<p>In the worst case scenario, resizing an object which is the target of a memoryview can cause the memoryview(s) to reference invalid freed memory (a use-after-free bug) and corrupt the MicroPython runtime.</p>
+<p><strong>Workaround:</strong> Do not change the size of any <code class="docutils literal notranslate"><span class="pre">bytearray</span></code> or <code class="docutils literal notranslate"><span class="pre">io.bytesIO</span></code> object that has a <code class="docutils literal notranslate"><span class="pre">memoryview</span></code> assigned to it.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">b</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;abcdefg&quot;</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="nb">memoryview</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hijklmnop&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">11</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">BufferError</span><span class="p">:</span> <span class="n">Existing</span> <span class="n">exports</span> <span class="n">of</span> <span class="n">data</span><span class="p">:</span> <span class="nb">object</span> <span class="n">cannot</span> <span class="n">be</span> <span class="n">re</span><span class="o">-</span><span class="n">sized</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="str">
 <h2>str<a class="headerlink" href="#str" title="Permalink to this heading">¶</a></h2>
 <section id="start-end-indices-such-as-str-endswith-s-start-not-implemented">
@@ -826,7 +864,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
-      <span class="lastupdated">Last updated on 05 Mar 2024.
+      <span class="lastupdated">Last updated on 23 Jul 2024.
       </span></p>
   </div>
 

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Core language &mdash; MicroPython 1.22 documentation</title>
+  <title>Core language &mdash; MicroPython 1.23 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
@@ -18,7 +18,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=5cbaa444"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/js/theme.js"></script>
@@ -41,7 +41,7 @@
               <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.22
+                1.23
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -72,6 +72,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#special-method-del-not-implemented-for-user-defined-classes">Special method __del__ not implemented for user-defined classes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#method-resolution-order-mro-is-not-compliant-with-cpython">Method Resolution Order (MRO) is not compliant with CPython</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#private-class-members-name-mangling-is-not-implemented">Private Class Members name mangling is not implemented</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#when-inheriting-from-multiple-classes-super-only-calls-one-class">When inheriting from multiple classes super() only calls one class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#calling-super-getter-property-in-subclass-will-return-a-property-object-not-the-value">Calling super() getter property in subclass will return a property object, not the value</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
@@ -132,7 +133,7 @@
              
   <section id="core-language">
 <h1>Core language<a class="headerlink" href="#core-language" title="Permalink to this heading">¶</a></h1>
-<p>Generated Tue 05 Mar 2024 02:12:06 UTC</p>
+<p>Generated Tue 23 Jul 2024 04:50:56 UTC</p>
 <section id="f-strings-don-t-support-concatenation-with-adjacent-literals-if-the-adjacent-literals-contain-braces-or-are-f-strings">
 <span id="cpydiff-core-fstring-concat"></span><h2>f-strings don’t support concatenation with adjacent literals if the adjacent literals contain braces or are f-strings<a class="headerlink" href="#f-strings-don-t-support-concatenation-with-adjacent-literals-if-the-adjacent-literals-contain-braces-or-are-f-strings" title="Permalink to this heading">¶</a></h2>
 <p><strong>Cause:</strong> MicroPython is optimised for code space.</p>
@@ -298,6 +299,52 @@
 <td><p>uPy output:</p></td>
 </tr>
 <tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Foo</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="private-class-members-name-mangling-is-not-implemented">
+<span id="cpydiff-core-class-name-mangling"></span><h2>Private Class Members name mangling is not implemented<a class="headerlink" href="#private-class-members-name-mangling-is-not-implemented" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> The MicroPython compiler does not implement name mangling for private class members.</p>
+<p><strong>Workaround:</strong> Avoid using or having a collision with global names, by adding a unique prefix to the private class member name manually.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">__print_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">string</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">string</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string</span> <span class="o">=</span> <span class="n">string</span>
+
+    <span class="k">def</span> <span class="nf">do_print</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">__print_string</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+
+
+<span class="n">example_string</span> <span class="o">=</span> <span class="s2">&quot;Example String to print.&quot;</span>
+
+<span class="n">class_item</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">example_string</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">class_item</span><span class="o">.</span><span class="n">string</span><span class="p">)</span>
+
+<span class="n">class_item</span><span class="o">.</span><span class="n">do_print</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Example</span> <span class="n">String</span> <span class="n">to</span> <span class="nb">print</span><span class="o">.</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">26</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+  <span class="n">File</span> <span class="s2">&quot;&lt;stdin&gt;&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">18</span><span class="p">,</span> <span class="ow">in</span> <span class="n">do_print</span>
+<span class="ne">NameError</span><span class="p">:</span> <span class="n">name</span> <span class="s1">&#39;_Foo__print_string&#39;</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">defined</span>
 </pre></div>
 </div>
 </td>
@@ -707,7 +754,7 @@
 
   <div role="contentinfo">
     <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
-      <span class="lastupdated">Last updated on 05 Mar 2024.
+      <span class="lastupdated">Last updated on 23 Jul 2024.
       </span></p>
   </div>
 

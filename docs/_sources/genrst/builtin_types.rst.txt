@@ -2,7 +2,7 @@
 
 Builtin types
 =============
-Generated Tue 05 Mar 2024 02:12:06 UTC
+Generated Tue 23 Jul 2024 04:50:56 UTC
 
 Exception
 ---------
@@ -422,6 +422,37 @@ Sample code::
 |                  |                                                                     |
 |     [5, 2, 6, 4] |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 +------------------+---------------------------------------------------------------------+
+
+memoryview
+----------
+
+.. _cpydiff_types_memoryview_invalid:
+
+memoryview can become invalid if its target is resized
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** CPython prevents a ``bytearray`` or ``io.bytesIO`` object from changing size while there is a ``memoryview`` object that references it. MicroPython requires the programmer to manually ensure that an object is not resized while any ``memoryview`` references it.
+
+In the worst case scenario, resizing an object which is the target of a memoryview can cause the memoryview(s) to reference invalid freed memory (a use-after-free bug) and corrupt the MicroPython runtime.
+
+**Workaround:** Do not change the size of any ``bytearray`` or ``io.bytesIO`` object that has a ``memoryview`` assigned to it.
+
+Sample code::
+
+    b = bytearray(b"abcdefg")
+    m = memoryview(b)
+    b.extend(b"hijklmnop")
+    print(b, bytes(m))
+
++----------------------------------------------------------------------+---------------------------------------------------------------------+
+| CPy output:                                                          | uPy output:                                                         |
++----------------------------------------------------------------------+---------------------------------------------------------------------+
+| ::                                                                   | ::                                                                  |
+|                                                                      |                                                                     |
+|     Traceback (most recent call last):                               |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|       File "<stdin>", line 11, in <module>                           |                                                                     |
+|     BufferError: Existing exports of data: object cannot be re-sized |                                                                     |
++----------------------------------------------------------------------+---------------------------------------------------------------------+
 
 str
 ---

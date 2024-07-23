@@ -2,7 +2,7 @@
 
 Core language
 =============
-Generated Tue 05 Mar 2024 02:12:06 UTC
+Generated Tue 23 Jul 2024 04:50:56 UTC
 
 .. _cpydiff_core_fstring_concat:
 
@@ -164,6 +164,50 @@ Sample code::
 |             |                                                                     |
 |     Foo     |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 +-------------+---------------------------------------------------------------------+
+
+.. _cpydiff_core_class_name_mangling:
+
+Private Class Members name mangling is not implemented
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** The MicroPython compiler does not implement name mangling for private class members.
+
+**Workaround:** Avoid using or having a collision with global names, by adding a unique prefix to the private class member name manually.
+
+Sample code::
+
+    
+    
+    def __print_string(string):
+        print(string)
+    
+    
+    class Foo:
+        def __init__(self, string):
+            self.string = string
+    
+        def do_print(self):
+            __print_string(self.string)
+    
+    
+    example_string = "Example String to print."
+    
+    class_item = Foo(example_string)
+    print(class_item.string)
+    
+    class_item.do_print()
+
++---------------------------------------------------------+---------------------------------------------------------------------+
+| CPy output:                                             | uPy output:                                                         |
++---------------------------------------------------------+---------------------------------------------------------------------+
+| ::                                                      | ::                                                                  |
+|                                                         |                                                                     |
+|     Example String to print.                            |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|     Traceback (most recent call last):                  |                                                                     |
+|       File "<stdin>", line 26, in <module>              |                                                                     |
+|       File "<stdin>", line 18, in do_print              |                                                                     |
+|     NameError: name '_Foo__print_string' is not defined |                                                                     |
++---------------------------------------------------------+---------------------------------------------------------------------+
 
 .. _cpydiff_core_class_supermultiple:
 
