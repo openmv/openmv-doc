@@ -87,7 +87,7 @@ Functions
    ``alpha`` controls how opaque the image is. A value of 256 displays an opaque image while a
    value lower than 256 produces a black transparent image. 0 results in a perfectly black image.
 
-   ``color_palette`` if not ``-1`` can be `image.PALETTE_RAINBOW`, `image.PALETTE_IRONBOW`, or
+   ``color_palette`` if not ``-1`` can be an a color palette enum or
    a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
    whatever the input image is. This is applied after ``rgb_channel`` extraction if used.
 

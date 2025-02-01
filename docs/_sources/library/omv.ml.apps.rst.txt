@@ -23,7 +23,7 @@ guide.
 Constructors
 ~~~~~~~~~~~~
 
-.. class:: MicroSpeech(preprocessor:str=None, micro_speech:str=None, labels:list[str, ...]=None) -> MicroSpeech
+.. class:: MicroSpeech(preprocessor:str=None, micro_speech:str=None, labels:list[str, ...]=None, **kwargs) -> MicroSpeech
 
     Creates a MicroSpeech object. If no preprocessor is provided, the default preprocessor is used.
     If no micro_speech model is provided, the default model is used. If no labels are provided, the

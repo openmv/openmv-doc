@@ -89,10 +89,10 @@ Constructors
       destination.
 
       ``alpha`` controls how much of the source image to blend into the destination. A value of
-      256 draws an opaque source image while a value lower than 256 produces a blend between the source
+      255 draws an opaque source image while a value lower than 255 produces a blend between the source
       and destination (which is a black background in this case). 0 results in a black image.
 
-      ``color_palette`` if not ``-1`` can be `image.PALETTE_RAINBOW`, `image.PALETTE_IRONBOW`, or
+      ``color_palette`` if not ``-1`` can be an a color palette enum or
       a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
       whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
 

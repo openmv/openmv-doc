@@ -256,10 +256,10 @@ Functions
    destination image.
 
    ``alpha`` controls how much of the source image to blend into the destination image. A value of
-   256 draws an opaque source image while a value lower than 256 produces a blend between the source
+   255 draws an opaque source image while a value lower than 255 produces a blend between the source
    and destination image. 0 results in no modification to the destination image.
 
-   ``color_palette`` if not ``-1`` can be `image.PALETTE_RAINBOW`, `image.PALETTE_IRONBOW`, or
+   ``color_palette`` if not ``-1`` can be an a color palette enum or
    a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
    whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
 
@@ -296,9 +296,7 @@ Functions
    .. note::
 
       To handle a transposed ``ir`` array `read_ir` remembers if it was called with ``transposed``
-      ``True``. This is then passed to ``draw_ir`` internally. However, you may pass a 3-value tuple
-      (w, h, ir) as the ``ir`` array instead to use `draw_ir` to draw any floating point array with
-      width ``w`` and height ``h``.
+      ``True``. This is then passed to ``draw_ir`` internally.
 
 .. function:: snapshot(hmirror=False, vflip=False, transpose=False, x_scale=1.0, y_scale=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel=-1, alpha=128, color_palette=image.PALETTE_RAINBOW, alpha_palette=None, hint=0, scale:Optional[Tuple[float, float]]=None, pixformat=image.RGB565, copy_to_fb=False, timeout=-1) -> image.Image
 
@@ -338,10 +336,10 @@ Functions
    destination image.
 
    ``alpha`` controls how much of the source image to blend into the destination image. A value of
-   256 draws an opaque source image while a value lower than 256 produces a blend between the source
+   255 draws an opaque source image while a value lower than 255 produces a blend between the source
    and destination image. 0 results in no modification to the destination image.
 
-   ``color_palette`` if not ``-1`` can be `image.PALETTE_RAINBOW`, `image.PALETTE_IRONBOW`, or
+   ``color_palette`` if not ``-1`` can be an a color palette enum or
    a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
    whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
 

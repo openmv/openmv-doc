@@ -20,7 +20,7 @@ Constructors
 Methods
 -------
 
-.. method:: display.DisplayData.display_id() -> int
+.. method:: DisplayData.display_id() -> int
 
    Returns the external display EDID data as a bytes()
    object. Verifying the EDID headers, checksums, and concatenating all sections into one bytes()

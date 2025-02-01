@@ -2,16 +2,16 @@
 
 Core language
 =============
-Generated Thu 05 Sep 2024 00:47:45 UTC
+Generated Sat 01 Feb 2025 20:08:46 UTC
 
 .. _cpydiff_core_fstring_concat:
 
-f-strings don't support concatenation with adjacent literals if the adjacent literals contain braces or are f-strings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+f-strings don't support concatenation with adjacent literals if the adjacent literals contain braces
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Cause:** MicroPython is optimised for code space.
 
-**Workaround:** Use the + operator between literal strings when either or both are f-strings
+**Workaround:** Use the + operator between literal strings when they are not both f-strings
 
 Sample code::
 
@@ -21,7 +21,6 @@ Sample code::
     print(f"{x}" "ab")  # works
     print("a{}a" f"{x}")  # fails
     print(f"{x}" "a{}b")  # fails
-    print(f"{x}" f"{y}")  # fails
 
 +-------------+---------------------------------------------------------------------+
 | CPy output: | uPy output:                                                         |
@@ -32,7 +31,6 @@ Sample code::
 |     1ab     |                                                                     |
 |     a{}a1   |                                                                     |
 |     1a{}b   |                                                                     |
-|     12      |                                                                     |
 +-------------+---------------------------------------------------------------------+
 
 .. _cpydiff_core_fstring_parser:
@@ -58,26 +56,6 @@ Sample code::
 |     hello { world |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 |     hello ] world |                                                                     |
 +-------------------+---------------------------------------------------------------------+
-
-.. _cpydiff_core_fstring_raw:
-
-Raw f-strings are not supported
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Cause:** MicroPython is optimised for code space.
-
-Sample code::
-
-    
-    rf"hello"
-
-+-------------+---------------------------------------------------------------------+
-| CPy output: | uPy output:                                                         |
-+-------------+---------------------------------------------------------------------+
-|             | ::                                                                  |
-|             |                                                                     |
-|             |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-+-------------+---------------------------------------------------------------------+
 
 .. _cpydiff_core_fstring_repr:
 
@@ -208,6 +186,52 @@ Sample code::
 |       File "<stdin>", line 18, in do_print              |                                                                     |
 |     NameError: name '_Foo__print_string' is not defined |                                                                     |
 +---------------------------------------------------------+---------------------------------------------------------------------+
+
+.. _cpydiff_core_class_super_init:
+
+When inheriting native types, calling a method in ``__init__(self, ...)`` before ``super().__init__()`` raises an ``AttributeError`` (or segfaults if ``MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG`` is not enabled).
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** MicroPython does not have separate ``__new__`` and ``__init__`` methods in native types.
+
+**Workaround:** Call ``super().__init__()`` first.
+
+Sample code::
+
+    
+    
+    class L1(list):
+        def __init__(self, a):
+            self.append(a)
+    
+    
+    try:
+        L1(1)
+        print("OK")
+    except AttributeError:
+        print("AttributeError")
+    
+    
+    class L2(list):
+        def __init__(self, a):
+            super().__init__()
+            self.append(a)
+    
+    
+    try:
+        L2(1)
+        print("OK")
+    except AttributeError:
+        print("AttributeError")
+
++-------------+---------------------------------------------------------------------+
+| CPy output: | uPy output:                                                         |
++-------------+---------------------------------------------------------------------+
+| ::          | ::                                                                  |
+|             |                                                                     |
+|     OK      |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|     OK      |                                                                     |
++-------------+---------------------------------------------------------------------+
 
 .. _cpydiff_core_class_supermultiple:
 
