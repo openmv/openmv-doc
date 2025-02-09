@@ -110,17 +110,28 @@ Functions
 
    Returns the camera module ID.
 
-      * `sensor.OV9650`: First gen OpenMV Cam sensor - never released.
       * `sensor.OV2640`: Second gen OpenMV Cam sensor - never released.
-      * `sensor.OV5640`: High-res OpenMV Cam H7 sensor.
-      * `sensor.OV7725`: Rolling shutter sensor module.
+      * `sensor.OV5640`: High-res OpenMV Cam H7 Plus sensor.
       * `sensor.OV7690`: OpenMV Cam Micro sensor module.
+      * `sensor.OV7725`: Rolling shutter sensor module.
+      * `sensor.OV9650`: First gen OpenMV Cam sensor - never released.
+      * `sensor.MT9V022`: Global shutter sensor module.
+      * `sensor.MT9V024`: Global shutter sensor module.
+      * `sensor.MT9V032`: Global shutter sensor module.
       * `sensor.MT9V034`: Global shutter sensor module.
-      * `sensor.MT9M114`: New Rolling shutter sensor module.
+      * `sensor.MT9M114`: OV7725 replacement rolling shutter sensor module.
+      * `sensor.BOSON320`: Boson 320x256 thermal sensor module.
+      * `sensor.BOSON640`: Boson 640x512 thermal sensor module.
       * `sensor.LEPTON`: Lepton1/2/3 sensor module.
       * `sensor.HM01B0`: Arduino Portenta H7 sensor module.
+      * `sensor.HM0360`: Arduino Portenta H7 sensor module.
       * `sensor.GC2145`: Arduino Nicla Vision H7 sensor module.
+      * `sensor.GENX320ES`: Prophesee Event Camera sensor module (engineering sample).
+      * `sensor.GENX320`: Prophesee Event Camera sensor module.
+      * `sensor.PAG7920`: PixArt Imaging sensor Module.
+      * `sensor.PAG7936`: PixArt Imaging sensor Module.
       * `sensor.PAJ6100`: PixArt Imaging sensor Module.
+      * `sensor.FROGEYE2020` : FrogEye2020 event camera sensor module - never released.
 
 .. function:: alloc_extra_fb(width:int, height:int, pixformat:int) -> image.Image
 
@@ -561,6 +572,7 @@ Functions
    * `sensor.IOCTL_HIMAX_OSC_ENABLE` - Pass this enum followed by ``True``/``False`` to enable/disable the oscillator HM01B0 to save power.
    * `sensor.IOCTL_RGB_STATS` - Pass this enum to get the RGB statistics from the camera sensor. Returns a tuple of (r, gb, gr, b) values.
    * `sensor.IOCTL_GENX320_SET_BIASES` - Pass this enum followed by a bias enum to set the GENX320 sensor biases.
+   * `sensor.IOCTL_GENX320_SET_BIAS` - Pass this enum followed by a bias enum and a bias value to set the GENX320 sensor bias.
 
 .. function:: set_color_palette(palette:int) -> None
 
@@ -683,6 +695,16 @@ Constants
 
    `sensor.get_id()` returns this for the MT9M114 camera.
 
+.. data:: BOSON320
+   :type: int
+
+   `sensor.get_id()` returns this for the BOSON 320x256 camera.
+
+.. data:: BOSON640
+   :type: int
+
+   `sensor.get_id()` returns this for the BOSON 640x512 camera.
+
 .. data:: LEPTON
    :type: int
 
@@ -696,17 +718,32 @@ Constants
 .. data:: HM0360
    :type: int
 
-   `sensor.get_id()` returns this for the HM01B0 camera.
+   `sensor.get_id()` returns this for the HM0360 camera.
 
 .. data:: GC2145
    :type: int
 
    `sensor.get_id()` returns this for the GC2145 camera.
 
+.. data:: GENX320ES
+   :type: int
+
+   `sensor.get_id()` returns this for the GENX320 (Engineering Samples) camera.
+
+.. data:: GENX320
+   :type: int
+
+   `sensor.get_id()` returns this for the GENX320 camera.
+
 .. data:: PAG7920
    :type: int
 
    `sensor.get_id()` returns this for the PAG7920 camera.
+
+.. data:: PAG7936
+   :type: int
+
+   `sensor.get_id()` returns this for the PAG7936 camera.
 
 .. data:: PAJ6100
    :type: int
@@ -1105,6 +1142,36 @@ Constants
    :type: int
 
    High speed biases for the GENX320 camera sensor.
+
+.. data:: IOCTL_GENX320_SET_BIAS
+   :type: int
+
+   Lets you set a single GENX320 camera sensor bias. See `sensor.ioctl()` for more information.
+
+.. data:: GENX320_BIAS_DIFF_OFF
+   :type: int
+
+   Set the GENX320 DIFF OFF bias.
+
+.. data:: GENX320_BIAS_DIFF_ON
+   :type: int
+
+   Set the GENX320 DIFF ON bias.
+
+.. data:: GENX320_BIAS_FO
+   :type: int
+
+   Set the GENX320 FO bias.
+
+.. data:: GENX320_BIAS_HPF
+   :type: int
+
+   Set the GENX320 HPF bias.
+
+.. data:: ENX320_BIAS_REFR
+   :type: int
+
+   Set the GENX320 REFR bias.
 
 .. data:: SINGLE_BUFFER
    :type: int
