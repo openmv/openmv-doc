@@ -12,6 +12,14 @@ the OpenMV Cam please consider reading the following sections first:
    general.rst
    tutorial/index.rst
 
+.. image:: pinout-openmv-n6-pag7936.png
+    :alt: OpenMV N6 PAG7936 Pinout
+    :width: 700px
+
+.. image:: pinout-openmv-ae3-pag7936.png
+    :alt: OpenMV AE3 PAG7936 Pinout
+    :width: 700px
+
 .. image:: pinout-openmv-cam-rt1062-ov5640.png
     :alt: OpenMV Cam RT1062 OV5640 Pinout
     :width: 700px

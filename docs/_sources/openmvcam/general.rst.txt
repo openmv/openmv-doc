@@ -6,16 +6,23 @@ General information about the openmvcam
 Local filesystem and SD card
 ----------------------------
 
-There is a small internal filesystem (a drive) on the openmvcam which is stored
-within the microcontroller's flash memory.
+There is a small internal filesystem (a drive) on the openmvcam, called ``/flash``,
+which is stored within the microcontroller's flash memory.  If a micro SD card
+is inserted into the slot, it is available as ``/sdcard``.
 
 When the openmvcam boots up, it needs to choose a filesystem to boot from.  If
-there is no SD card, then it uses the internal filesystem as the boot
-filesystem, otherwise, it uses the SD card.  After the boot, the current
-directory is set to ``/``.
+there is no SD card, then it uses the internal filesystem ``/flash`` as the boot
+filesystem, otherwise, it uses the SD card ``/sdcard``. After the boot, the current
+directory is set to one of the directories above.
+
+If needed, you can prevent the use of the SD card by creating an empty file
+called ``/flash/SKIPSD``.  If this file exists when the openmvcam boots
+up then the SD card will be skipped and the openmvcam will always boot from the
+internal filesystem (in this case the SD card won't be mounted but you can still
+mount and use it later in your program using ``vfs.mount``).
 
 The boot filesystem is used for 2 things: it is the filesystem from which
-``boot.py`` and ``main.py`` files are searched for, and it is the filesystem
+the ``boot.py`` and ``main.py`` files are searched for, and it is the filesystem
 which is made available on your PC over the USB cable.
 
 The filesystem will be available as a USB flash drive on your PC.  You can
@@ -26,18 +33,7 @@ pyboard.*
 
 .. note::
 
-   The above behavior is different from the pyboard which allows access to the
-   internal file system and SD card at the same time within a script by creating
-   a virtual file system with multiple drives for the internal flash and SD
-   card.  The OpenMV Cam's behavior is different because modern operating systems
-   do not mount the OpenMV Cam's internal flash drive and/or SD Card as a
-   virtual file system but instead as a block device... meaning that modern
-   operating systems do not see a pyboard's file system the same way as the
-   pyboard sees it.  To avoid this situation we only allow one file system at a
-   time to keep the operating system the OpenMV Cam is attached to and what the
-   OpenMV Cam thinks its file system looks like in sync.
-
-   That said, there is another complication.  Because modern operating systems
+   Because modern operating systems
    mount the OpenMV Cam's internal flash drive or SD card as a block device they
    treat it as if it cannot create files itself.  Because of this if you create
    a file onboard your OpenMV Cam in code you must remount the OpenMV Cam after

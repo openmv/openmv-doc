@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>sys – system specific functions &mdash; MicroPython 1.24 documentation</title>
+  <title>sys – system specific functions &mdash; MicroPython 1.25 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
       <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
@@ -16,7 +16,7 @@
     <link rel="shortcut icon" href="../_static/openmv.ico"/>
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=97333489"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=334bb090"></script>
       <script src="../_static/doctools.js?v=888ff710"></script>
       <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <script src="../_static/js/theme.js"></script>
@@ -62,6 +62,7 @@
 <li class="toctree-l3"><a class="reference internal" href="heapq.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">heapq</span></code> – heap queue algorithm</a></li>
 <li class="toctree-l3"><a class="reference internal" href="io.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io</span></code> – input/output streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="json.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">json</span></code> – JSON encoding and decoding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="marshal.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">marshal</span></code> – Python object serialization</a></li>
 <li class="toctree-l3"><a class="reference internal" href="math.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">math</span></code> – mathematical functions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="os.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">os</span></code> – basic “operating system” services</a></li>
 <li class="toctree-l3"><a class="reference internal" href="platform.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">platform</span></code> – access to underlying platform’s identifying data</a></li>
@@ -129,8 +130,10 @@ CPython documentation:</em> <a class="reference external" href="https://docs.pyt
 <dt class="sig sig-object py" id="sys.exit">
 <span class="sig-prename descclassname"><span class="pre">sys.</span></span><span class="sig-name descname"><span class="pre">exit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">retval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sys.exit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminate current program with a given exit code. Underlyingly, this
-function raise as <a class="reference internal" href="builtins.html#SystemExit" title="SystemExit"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">SystemExit</span></code></a> exception. If an argument is given, its
+function raises a <a class="reference internal" href="builtins.html#SystemExit" title="SystemExit"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">SystemExit</span></code></a> exception. If an argument is given, its
 value given as an argument to <a class="reference internal" href="builtins.html#SystemExit" title="SystemExit"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">SystemExit</span></code></a>.</p>
+<p>On embedded ports (i.e. all ports but Windows and Unix), an unhandled
+<a class="reference internal" href="builtins.html#SystemExit" title="SystemExit"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">SystemExit</span></code></a> currently causes a <a class="reference internal" href="../reference/reset_boot.html#soft-reset"><span class="std std-ref">Soft Reset</span></a> of MicroPython.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -198,12 +201,24 @@ MicroPython, it has following attributes:</p>
 <li><p><em>version</em> - tuple (major, minor, micro, releaselevel), e.g. (1, 22, 0, ‘’)</p></li>
 <li><p><em>_machine</em> - string describing the underlying machine</p></li>
 <li><p><em>_mpy</em> - supported mpy file-format version (optional attribute)</p></li>
+<li><p><em>_build</em> - string that can help identify the configuration that
+MicroPython was built with</p></li>
 </ul>
 <p>This object is the recommended way to distinguish MicroPython from other
 Python implementations (note that it still may not exist in the very
 minimal ports).</p>
 <p>Starting with version 1.22.0-preview, the fourth node <em>releaselevel</em> in
 <em>implementation.version</em> is either an empty string or <code class="docutils literal notranslate"><span class="pre">&quot;preview&quot;</span></code>.</p>
+<p>The <em>_build</em> entry was added in version 1.25.0 and is a hyphen-separated
+set of elements.  New elements may be appended in the future so it’s best to
+access this field using <code class="docutils literal notranslate"><span class="pre">sys.implementation._build.split(&quot;-&quot;)</span></code>.  The
+elements that are currently used are:</p>
+<ul class="simple">
+<li><p>On the unix, webassembly and windows ports the first element is the variant
+name, for example <code class="docutils literal notranslate"><span class="pre">'standard'</span></code>.</p></li>
+<li><p>On microcontroller targets, the first element is the board name and the second
+element (if present) is the board variant, for example <code class="docutils literal notranslate"><span class="pre">'RPI_PICO2-RISCV'</span></code></p></li>
+</ul>
 <div class="attention admonition">
 <p class="admonition-title">Difference to CPython</p>
 <p>CPython mandates more attributes for this object, but the actual useful
@@ -339,7 +354,7 @@ they can be referenced only by index, not by name.</p>
 
   <div role="contentinfo">
     <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2025, Damien P. George, Paul Sokolovsky, and contributors.
-      <span class="lastupdated">Last updated on 09 Feb 2025.
+      <span class="lastupdated">Last updated on 02 Jun 2025.
       </span></p>
   </div>
 

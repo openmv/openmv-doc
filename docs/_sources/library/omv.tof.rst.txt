@@ -36,7 +36,7 @@ Functions
    ``type`` indicates the type of thermopile shield:
 
       * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53L5CX`: 8x8 pixels.
+      * `tof.TOF_VL53LX`: 8x8 pixels.
 
    By default type is ``-1`` which will cause `tof.init()` to automatically scan and initialize an
    attached thermal sensor based on the I2C address.
@@ -48,7 +48,7 @@ Functions
    ``type`` indicates the type of thermopile shield:
 
       * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53L5CX`: 8x8 pixels.
+      * `tof.TOF_VL53LX`: 8x8 pixels.
 
    By default type is ``-1`` which will cause `tof.init()` to automatically scan and initialize an
    attached thermal sensor based on the I2C address.
@@ -62,28 +62,28 @@ Functions
    Returns the width (horizontal resolution) of the depth sensor in-use:
 
       * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53L5CX`: 8 pixels.
+      * `tof.TOF_VL53LX`: 8 pixels.
 
 .. function:: height() -> int
 
    Returns the height (vertical resolution) of the depth sensor in-use:
 
       * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53L5CX`: 8 pixels.
+      * `tof.TOF_VL53LX`: 8 pixels.
 
 .. function:: type() -> int
 
    Returns the type of the depth sensor in-use:
 
       * `tof.TOF_NONE`
-      * `tof.TOF_VL53L5CX`
+      * `tof.TOF_VL53LX`
 
 .. function:: refresh() -> int
 
    Returns the refresh rate of the depth sensor in-use:
 
       * `tof.TOF_NONE`: 0 Hz.
-      * `tof.TOF_VL53L5CX`: 15 Hz.
+      * `tof.TOF_VL53LX`: 15 Hz.
 
 .. function:: read_depth(hmirror:bool=False, vflip:bool=False, transpose:bool=False, timeout:int=-1)
 
@@ -266,7 +266,7 @@ Constants
 
    No TOF sensor type.
 
-.. data:: TOF_VL53L5CX
+.. data:: TOF_VL53LX
    :type: int
 
-   VL53L5CX TOF sensor.
+   VL53L5CX or VL53L8CX TOF sensor.

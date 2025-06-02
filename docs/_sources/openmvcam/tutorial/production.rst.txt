@@ -50,6 +50,13 @@ be looked at before running your code. That said, your script can still determin
 is attached or not and read/write files. So, if you still want to be able to execute generic
 scripts from the flash and/or sd card you can do so.
 
+.. note::
+
+   Only the a frozn ``boot.py`` and ``main.py`` will override MicroPython's default search paths. For
+   any imported scripts/modules a matching script/module will override any other scripts/modules
+   frozen in the firmware. This allows you to quickly test changes in scripts/modules without having
+   to deploy a new firmware. To disable this behavior clean the ``sys`` module search path.   
+
 How to protect your code
 ------------------------
 
@@ -58,5 +65,3 @@ dump your OpenMV Cam's program flash (or if you code in a back door vulnerabilit
 feature ways for developers to protect their application from being read using debugging tools.
 Right now, OpenMV does not offer a generic way for you to do this. We leave this up to you. However,
 rest assured. If you really need to prevent anyone from seeing your scripts it's absolutely possible.
-
-

@@ -140,6 +140,11 @@ looking for errors. When OpenMV IDE detects and error it will automatically
 open the file in error and highlight the line in error along with displaying
 a nice error message box. This feature saves you tons of time fixing errors.
 
+.. note::
+
+   The serial terminal in the IDE shows text output from the OpenMV Cam.
+   It does not allow you to send data to the OpenMV Cam.
+
 Anyway, if you want to stop the script just click on the stop button which will
 replace the run button while a script is running. Note that scripts can
 automatically stop by themselves either due to finishing or a compile error. In

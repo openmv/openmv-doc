@@ -1,0 +1,381 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reset and Boot Sequence &mdash; MicroPython 1.25 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=334bb090"></script>
+      <script src="../_static/doctools.js?v=888ff710"></script>
+      <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MicroPython remote control: mpremote" href="mpremote.html" />
+    <link rel="prev" title="The MicroPython Interactive Interpreter Mode (aka REPL)" href="repl.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython language and implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="repl.html">The MicroPython Interactive Interpreter Mode (aka REPL)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Reset and Boot Sequence</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#hard-reset">Hard reset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#soft-reset">Soft Reset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#boot-sequence">Boot Sequence</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#boot-py">_boot.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#id4">boot.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#main-py">main.py</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#interactive-interpreter-repl">Interactive Interpreter (REPL)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#soft-bricking-failure-to-boot">Soft Bricking (failure to boot)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#keyboardinterrupt">KeyboardInterrupt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython remote control: mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="isr_rules.html">Writing interrupt handlers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">Maximising MicroPython speed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">MicroPython on microcontrollers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython manifest files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">MicroPython 2.0 Migration Guide</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython language and implementation</a></li>
+      <li class="breadcrumb-item active">Reset and Boot Sequence</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/reset_boot.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="reset-and-boot-sequence">
+<h1>Reset and Boot Sequence<a class="headerlink" href="#reset-and-boot-sequence" title="Permalink to this heading">¶</a></h1>
+<p>A device running MicroPython follows a particular boot sequence to start up and
+initialise itself after a reset.</p>
+<section id="hard-reset">
+<span id="id1"></span><h2>Hard reset<a class="headerlink" href="#hard-reset" title="Permalink to this heading">¶</a></h2>
+<p>Booting from hard reset is what happens when a board is first powered up, a cold
+boot. This is a complete reset of the MCU hardware.</p>
+<p>The MicroPython port code initialises all essential hardware (including embedded
+clocks and power regulators, internal serial UART, etc), and then starts the
+MicroPython environment. Existing <a class="reference internal" href="../library/machine.RTC.html"><span class="doc">RTC</span></a>
+configuration may be retained after a hard reset, but all other hardware state
+is cleared.</p>
+<p>The same hard reset boot sequence can be triggered by a number of events such as:</p>
+<ul class="simple">
+<li><p>Python code executing <a class="reference internal" href="../library/machine.html#machine.reset" title="machine.reset"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.reset()</span></code></a>.</p></li>
+<li><p>User presses a physical Reset button on the board (where applicable).</p></li>
+<li><p>Waking from deep sleep (on most ports).</p></li>
+<li><p>MCU hardware watchdog reset.</p></li>
+<li><p>MCU hardware brown out detector.</p></li>
+</ul>
+<p>The details of hardware-specific reset triggers depend on the port and
+associated hardware. The <a class="reference internal" href="../library/machine.html#machine.reset_cause" title="machine.reset_cause"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.reset_cause()</span></code></a> function can be used to
+further determine the cause of a reset.</p>
+</section>
+<section id="soft-reset">
+<span id="id2"></span><h2>Soft Reset<a class="headerlink" href="#soft-reset" title="Permalink to this heading">¶</a></h2>
+<p>When MicroPython is already running, it’s possible to trigger a soft reset by
+<a class="reference internal" href="repl.html#repl-soft-reset"><span class="std std-ref">typing Ctrl-D in the REPL</span></a> or executing
+<a class="reference internal" href="../library/machine.html#machine.soft_reset" title="machine.soft_reset"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.soft_reset()</span></code></a>.</p>
+<p>A soft reset clears the Python interpreter, frees all Python memory, and starts
+the MicroPython environment again.</p>
+<p>State which is cleared by a soft reset includes:</p>
+<ul class="simple">
+<li><p>All Python variables, objects, imported modules, etc.</p></li>
+<li><p>Most peripherals configured using the <a class="reference internal" href="../library/machine.html"><span class="doc">machine module</span></a>. There are very limited exceptions, for example
+<a class="reference internal" href="../library/machine.Pin.html"><span class="doc">machine.Pin</span></a> modes (i.e. if a pin is input or
+output, high or low) are not reset on most ports. More advanced configuration
+such as <code class="xref py py-func docutils literal notranslate"><span class="pre">Pin.irq()</span></code> is always reset.</p></li>
+<li><p>Bluetooth.</p></li>
+<li><p>Network sockets. Open TCP sockets are closed cleanly with respect to the other party.</p></li>
+<li><p>Open files. The filesystem is left in a valid state.</p></li>
+</ul>
+<p>Some system state remains the same after a soft reset, including:</p>
+<ul class="simple">
+<li><p>Any existing network connections (Ethernet, Wi-Fi, etc) remain active at the
+IP Network layer. Querying the <a class="reference internal" href="../library/network.html"><span class="doc">network interface from code</span></a> may indicate the network interface is still active with a
+configured IP address, etc.</p></li>
+<li><p>An active <a class="reference internal" href="repl.html"><span class="doc">REPL</span></a> appears continuous before and after soft reset,
+except in some unusual cases:</p>
+<ul>
+<li><p>A serial UART REPL will restore its default hardware configuration (baud
+rate, etc).</p></li>
+</ul>
+</li>
+<li><p>CPU clock speed is usually not changed by a soft reset.</p></li>
+<li><p><a class="reference internal" href="../library/machine.RTC.html"><span class="doc">RTC</span></a> configuration (i.e. setting of the current
+time) is not changed by soft reset.</p></li>
+</ul>
+</section>
+<section id="boot-sequence">
+<span id="id3"></span><h2>Boot Sequence<a class="headerlink" href="#boot-sequence" title="Permalink to this heading">¶</a></h2>
+<p>When MicroPython boots following either a hard or soft reset, it follows this
+boot sequence in order:</p>
+<section id="boot-py">
+<h3>_boot.py<a class="headerlink" href="#boot-py" title="Permalink to this heading">¶</a></h3>
+<p>This is an internal script <a class="reference internal" href="manifest.html"><span class="doc">frozen into the MicroPython firmware</span></a>. It is provided by MicroPython on many ports to do essential
+initialisation.</p>
+<p>For example, on most ports <code class="docutils literal notranslate"><span class="pre">_boot.py</span></code> will detect the first boot of a new
+device and format the <a class="reference internal" href="filesystem.html"><span class="doc">internal flash filesystem</span></a> ready for
+use.</p>
+<p>Unless you’re creating a custom MicroPython build or adding a new port then you
+probably don’t need to worry about <code class="docutils literal notranslate"><span class="pre">_boot.py</span></code>. It’s best not to change the
+contents unless you really know what you’re doing.</p>
+</section>
+<section id="id4">
+<span id="id5"></span><h3>boot.py<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h3>
+<p>A file named <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> can be copied to the board’s internal <a class="reference internal" href="filesystem.html#filesystem"><span class="std std-ref">filesystem</span></a> using <a class="reference internal" href="mpremote.html"><span class="doc">mpremote</span></a>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> is found then it is executed. You can add code in <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> to
+perform custom one-off initialisation (for example, to configure the board’s
+hardware).</p>
+<p>A common practice is to configure a board’s network connection in <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> so
+that it’s always available after reset for use with the <a class="reference internal" href="repl.html"><span class="doc">REPL</span></a>,
+<a class="reference internal" href="mpremote.html"><span class="doc">mpremote</span></a>, etc.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>boot.py should always exit and not run indefinitely.</p>
+<p>Depending on the port, some hardware initialisation is delayed until after
+<code class="docutils literal notranslate"><span class="pre">boot.py</span></code> exits. This includes initialising USB on the stm32 port. On these
+ports, output printed from <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> may not be visible on the built-in USB
+serial port until after <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> finishes running.</p>
+<p>The purpose of this late initialisation is so that it’s possible to
+pre-configure particular hardware in <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>, and then have it start with
+the correct configuration.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>It is sometimes simpler to not have a <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> file and place any
+initialisation code at the top of <code class="docutils literal notranslate"><span class="pre">main.py</span></code> instead.</p>
+</div>
+</section>
+<section id="main-py">
+<span id="id6"></span><h3>main.py<a class="headerlink" href="#main-py" title="Permalink to this heading">¶</a></h3>
+<p>Similar to <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>, a file named <code class="docutils literal notranslate"><span class="pre">main.py</span></code> can be copied to the board’s
+internal <a class="reference internal" href="filesystem.html#filesystem"><span class="std std-ref">filesystem</span></a>. If found then it is executed next in the
+startup process.</p>
+<p><code class="docutils literal notranslate"><span class="pre">main.py</span></code> is for any Python code that you want to run each time your device
+starts.</p>
+<p>Some tips for <code class="docutils literal notranslate"><span class="pre">main.py</span></code> usage:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">main.py</span></code> doesn’t have to exit, feel free to put an infinite <code class="docutils literal notranslate"><span class="pre">while</span>
+<span class="pre">True</span></code> loop in there.</p></li>
+<li><p>For complex Python applications then you don’t need to put all your
+code in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>. <code class="docutils literal notranslate"><span class="pre">main.py</span></code> can be a simple entry point that
+imports your application and starts execution:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">my_app</span>
+<span class="n">my_app</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This can help keep the structure of your application clear. It also makes
+it easy to install multiple applications on a board and switch among them.</p>
+</li>
+<li><p>It’s good practice when writing robust apps to wrap code in <code class="docutils literal notranslate"><span class="pre">main.py</span></code> with an
+exception handler to take appropriate action if the code crashes. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span><span class="o">,</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">my_app</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">my_app</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fatal error in main:&quot;</span><span class="p">)</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+<span class="c1"># Following a normal Exception or main() exiting, reset the board.</span>
+<span class="c1"># Following a non-Exception error such as KeyboardInterrupt (Ctrl-C),</span>
+<span class="c1"># this code will drop to a REPL. Place machine.reset() in a finally</span>
+<span class="c1"># block to always reset, instead.</span>
+<span class="n">machine</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Otherwise MicroPython will drop to the REPL following any crash or if main
+exits (see below).</p>
+</li>
+<li><p>Any global variables that were set in <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> will still be set in the
+global context of <code class="docutils literal notranslate"><span class="pre">main.py</span></code>.</p></li>
+<li><p>To fully optimise flash usage and memory consumption, you can copy
+<a class="reference internal" href="mpyfiles.html"><span class="doc">pre-compiled</span></a> <code class="docutils literal notranslate"><span class="pre">main.mpy</span></code> and/or <code class="docutils literal notranslate"><span class="pre">boot.mpy</span></code> files to the
+filesystem, or even <a class="reference internal" href="manifest.html"><span class="doc">freeze</span></a> them into the firmware build
+instead.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">main.py</span></code> execution is skipped when a soft reset is initiated from <a class="reference internal" href="repl.html#raw-repl"><span class="std std-ref">raw
+REPL mode</span></a> (for example, when <a class="reference internal" href="mpremote.html"><span class="doc">mpremote</span></a> or another
+program is interacting directly with MicroPython).</p></li>
+</ul>
+</section>
+<section id="interactive-interpreter-repl">
+<h3>Interactive Interpreter (REPL)<a class="headerlink" href="#interactive-interpreter-repl" title="Permalink to this heading">¶</a></h3>
+<p>If <code class="docutils literal notranslate"><span class="pre">main.py</span></code> is not found, or if <code class="docutils literal notranslate"><span class="pre">main.py</span></code> exits, then <a class="reference internal" href="repl.html"><span class="doc">The MicroPython Interactive Interpreter Mode (aka REPL)</span></a>
+will start immediately.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Even if <code class="docutils literal notranslate"><span class="pre">main.py</span></code> contains an infinite loop, typing Ctrl-C on the
+REPL serial port will inject a <a class="reference internal" href="../library/builtins.html#KeyboardInterrupt" title="KeyboardInterrupt"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">KeyboardInterrupt</span></code></a>. If no exception
+handler catches it then <code class="docutils literal notranslate"><span class="pre">main.py</span></code> will exit and the REPL will start.</p>
+</div>
+<p>Any global variables that were set in <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> and <code class="docutils literal notranslate"><span class="pre">main.py</span></code> will still be
+set in the global context of the REPL.</p>
+<p>The REPL continues executing until Python code triggers a hard or soft reset.</p>
+</section>
+</section>
+<section id="soft-bricking-failure-to-boot">
+<span id="soft-bricking"></span><h2>Soft Bricking (failure to boot)<a class="headerlink" href="#soft-bricking-failure-to-boot" title="Permalink to this heading">¶</a></h2>
+<p>It is rare but possible for MicroPython to become unresponsive during startup, a
+state sometimes called “soft bricked”. For example:</p>
+<ul class="simple">
+<li><p>If <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> execution gets stuck and the native USB serial port
+never initialises.</p></li>
+<li><p>If Python code reconfigures the REPL interface, making it inaccessible.</p></li>
+</ul>
+<p>Rest assured, recovery is possible!</p>
+<section id="keyboardinterrupt">
+<h3>KeyboardInterrupt<a class="headerlink" href="#keyboardinterrupt" title="Permalink to this heading">¶</a></h3>
+<p>In many cases, opening the REPL serial port and typing <code class="docutils literal notranslate"><span class="pre">Ctrl-C</span></code> will inject
+<a class="reference internal" href="../library/builtins.html#KeyboardInterrupt" title="KeyboardInterrupt"><code class="xref any py py-exc docutils literal notranslate"><span class="pre">KeyboardInterrupt</span></code></a> and may cause the running script to exit and a REPL to
+start. From the REPL, you can use <a class="reference internal" href="../library/os.html#os.remove" title="os.remove"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.remove()</span></code></a> to remove the misbehaving
+Python file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;main.py&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To confirm which files are still present in the internal filesystem:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">()</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="repl.html" class="btn btn-neutral float-left" title="The MicroPython Interactive Interpreter Mode (aka REPL)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mpremote.html" class="btn btn-neutral float-right" title="MicroPython remote control: mpremote" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2025, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 02 Jun 2025.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

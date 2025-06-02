@@ -573,6 +573,7 @@ Functions
    * `sensor.IOCTL_RGB_STATS` - Pass this enum to get the RGB statistics from the camera sensor. Returns a tuple of (r, gb, gr, b) values.
    * `sensor.IOCTL_GENX320_SET_BIASES` - Pass this enum followed by a bias enum to set the GENX320 sensor biases.
    * `sensor.IOCTL_GENX320_SET_BIAS` - Pass this enum followed by a bias enum and a bias value to set the GENX320 sensor bias.
+   * `sensor.IOCTL_GENX320_SET_AFK` - Pass this enum followed by ``enable``, ``freq_low_in_hz``, ``freq_high_in_hz`` to change the GENX320 anti-flickering-filter settings.
 
 .. function:: set_color_palette(palette:int) -> None
 
@@ -1117,6 +1118,11 @@ Constants
    :type: int
 
    Lets you set the GENX320 camera sensor biases. See `sensor.ioctl()` for more information.
+
+.. data:: IOCTL_GENX320_SET_AFK
+   :type: int
+
+   Lets you set the GENX320 camera sensor anti-flickering-filter. See `sensor.ioctl()` for more information.
 
 .. data:: GENX320_BIASES_DEFAULT
    :type: int

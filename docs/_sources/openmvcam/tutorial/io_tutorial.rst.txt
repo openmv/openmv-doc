@@ -8,6 +8,18 @@ can create a system that's able to "sense", "plan", and "act" in one package.
 
 First, let's take a look at your OpenMV Cam's pinout below:
 
+.. image:: ../pinout-openmv-n6-pag7936.png
+    :alt: OpenMV N6 PAG7936 Pinout
+    :width: 700px
+
+.. image:: ../pinout-openmv-ae3-pag7936.png
+    :alt: OpenMV AE3 PAG7936 Pinout
+    :width: 700px
+
+.. image:: ../pinout-openmv-cam-rt1062-ov5640.png
+    :alt: OpenMV Cam RT1062 OV5640 Pinout
+    :width: 700px
+
 .. image:: ../pinout-openmv-cam-h7-plus-ov5640.png
     :alt: OpenMV Cam H7 Plus OV5640 Pinout
     :width: 700px
