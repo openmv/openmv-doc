@@ -4,8 +4,7 @@
 .. module:: imu
    :synopsis: imu sensor
 
-The ``imu`` module is used for reading the 6-DOF `LSM6DS3 <https://www.st.com/en/mems-and-sensors/lsm6ds3.html>`_
-IMU sensor under the camera sensor.
+The ``imu`` module is used for reading the IMU sensor under the camera sensor.
 
 .. note::
 
@@ -33,6 +32,10 @@ Functions
    X points to the right of the camera sensor
    Y points down below the camera sensor (towards the bottom on the board)
    Z points in the reverse direction of the camera sensor (into the table)
+
+   .. note::
+
+      Not available if the IMU only provides acceleration data.
 
 .. function:: temperature_c() -> float
 
@@ -62,8 +65,8 @@ Functions
 
 .. function:: __write_reg(addr:int, val:int) -> None
 
-   Set 8-bit LSM6DS3 register ``addr`` to 8-bit ``val``.
+   Set a register ``addr`` to a ``val``.
 
 .. function:: __read_reg(addr:int) -> int
 
-   Get 8-bit LSM6DS3 register ``addr``.
+   Get a register from ``addr``.

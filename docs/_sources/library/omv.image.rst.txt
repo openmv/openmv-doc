@@ -1796,7 +1796,7 @@ The image object is the basic object for machine vision operations.
       The ``ndarray`` returned has the shape of ``(height, width)`` for GRAYSCALE images and
       ``(height, width, 3)`` for RGB565 images.
 
-   .. method:: to_bitmap(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_bitmap(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to a bitmap image (1 bit per pixel).
 
@@ -1848,6 +1848,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -1870,7 +1873,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_grayscale(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_grayscale(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to a grayscale image (8-bits per pixel).
 
@@ -1922,6 +1925,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -1931,7 +1937,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_rgb565(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_rgb565(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to an RGB565 image (16-bits per pixel).
 
@@ -1983,6 +1989,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -1992,7 +2001,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_rainbow(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_RAINBOW, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_rainbow(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_RAINBOW, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to an RGB565 rainbow image (16-bits per pixel).
 
@@ -2044,6 +2053,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2053,7 +2065,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_ironbow(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_ironbow(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to an RGB565 ironbow image (16-bits per pixel).
 
@@ -2105,6 +2117,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2114,7 +2129,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_depth(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_depth(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to an RGB565 Depth Image (16-bits per pixel).
 
@@ -2166,6 +2181,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2175,7 +2193,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_evt_dark(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_evt_dark(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to an RGB565 Dark Event Image (16-bits per pixel).
 
@@ -2227,6 +2245,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2236,7 +2257,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_evt_light(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_evt_light(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=PALETTE_IRONBOW, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to an RGB565 Light Event Image (16-bits per pixel).
 
@@ -2288,6 +2309,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2297,7 +2321,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_jpeg(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False, quality:int=90, encode_for_ide:bool=False, subsampling:int=0) -> Image
+   .. method:: to_jpeg(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False, quality:int=90, subsampling:int=0) -> Image
 
       Converts an image to a JPEG image.
 
@@ -2349,6 +2373,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2357,10 +2384,6 @@ The image object is the basic object for machine vision operations.
       the frame buffer.
 
       ``quality`` controls the jpeg image compression quality. The value can be between 0 and 100.
-
-      ``encode_for_ide`` if True the image is encoded in a way that the IDE can display it if
-      printed by doing ``print(image)``. This is useful for debugging purposes over UARTs via
-      Open Terminal in the IDE.
 
       ``subsampling`` can be:
 
@@ -2371,7 +2394,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: to_png(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: to_png(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Converts an image to a PNG image.
 
@@ -2423,6 +2446,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2432,7 +2458,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: compress(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False, quality:int=90, encode_for_ide:bool=False, subsampling:int=0) -> Image
+   .. method:: compress(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False, quality:int=90, subsampling:int=0) -> Image
 
       Converts an image to a JPEG image.
 
@@ -2484,6 +2510,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
 
@@ -2492,10 +2521,6 @@ The image object is the basic object for machine vision operations.
       the frame buffer.
 
       ``quality`` controls the jpeg image compression quality. The value can be between 0 and 100.
-
-      ``encode_for_ide`` if True the image is encoded in a way that the IDE can display it if
-      printed by doing ``print(image)``. This is useful for debugging purposes over UARTs via
-      Open Terminal in the IDE.
 
       ``subsampling`` can be:
 
@@ -2510,7 +2535,7 @@ The image object is the basic object for machine vision operations.
 
          `Image.compress` is an alias for `Image.to_jpeg`.
 
-   .. method:: copy(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy_to_fb:float=False) -> Image
+   .. method:: copy(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy_to_fb:float=False) -> Image
 
       Creates a deep copy of the image object.
 
@@ -2562,12 +2587,15 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       ``copy_to_fb`` if True the image is loaded directly into the frame buffer.
       This has no special effect if the image is already in the frame buffer.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: crop(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: crop(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Modifies an image in-place without changing the underlying image type.
 
@@ -2618,6 +2646,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
 
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
@@ -2628,7 +2659,7 @@ The image object is the basic object for machine vision operations.
 
       Returns the image object so you can call another method using ``.`` notation.
 
-   .. method:: scale(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, copy:bool=False, copy_to_fb:bool=False) -> Image
+   .. method:: scale(x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, copy:bool=False, copy_to_fb:bool=False) -> Image
 
       Modifies an image in-place without changing the underlying image type.
 
@@ -2679,6 +2710,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
 
       ``copy`` if True create a deep-copy on the heap of the image that's been converted versus converting the
       original image in-place.
@@ -2889,7 +2923,7 @@ The image object is the basic object for machine vision operations.
 
       Not supported on compressed images or bayer images.
 
-   .. method:: draw_image(image:Image, x:int, y:int, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0) -> Image
+   .. method:: draw_image(image:Image, x:int, y:int, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None) -> Image
 
       Draws an ``image`` whose top-left corner starts at location x, y. You may either pass x, y
       separately or as a tuple (x, y). This method automatically handles rendering the image passed
@@ -2947,6 +2981,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
          * `image.BLACK_BACKGROUND`: Assume the background image being drawn on is black speeding up blending.
 
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
+
       Returns the image object so you can call another method using ``.`` notation.
 
    .. method:: draw_keypoints(keypoints, color:Optional[int,Tuple[int,int,int]]=None, size=10, thickness=1, fill=False) -> Image
@@ -3001,6 +3038,18 @@ The image object is the basic object for machine vision operations.
       Not supported on compressed images or bayer images.
 
       This method is not available on the OpenMV Cam M4.
+
+   .. method:: draw_event_histogram(array, clear=True, brightness=128, contrast=16) -> Image
+
+      Draws an ndarray of events from the GENX320 camera module onto an `Image`. The image
+      buffer should be a 320x320 GRAYSCALE image.
+
+      ``clear`` if True zeros the image buffer before drawing on it.
+
+      ``brightness`` controls the default value of pixels to be cleared to.
+
+      ``contrast`` controls how much to add/subtract from a pixel per event in the ndarray
+      of events (events can be positive or negative). Values are clampped between 0-255.
 
    Masking Methods
    ~~~~~~~~~~~~~~~
@@ -3271,8 +3320,8 @@ The image object is the basic object for machine vision operations.
 
       Quickly changes the image gamma, contrast, and brightness.
 
-      ``gamma`` with values greater than 1.0 makes the image darker in a non-linear
-      manner while less than 1.0 makes the image brighter. The gamma value is applied
+      ``gamma`` with values greater than 1.0 makes the image brighter in a non-linear
+      manner while less than 1.0 makes the image darker. The gamma value is applied
       to the image by scaling all pixel color channels to be between [0:1) and then
       doing a remapping of ``pow(pixel, 1/gamma)`` on all pixels before scaling back.
 
@@ -3950,7 +3999,7 @@ The image object is the basic object for machine vision operations.
    Get Methods
    ~~~~~~~~~~~
 
-   .. method:: get_similarity(image:Image, x:Optional[int]=0, y:Optional[int]=0, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, dssim:bool=False) -> Similarity
+   .. method:: get_similarity(image:Image, x:Optional[int]=0, y:Optional[int]=0, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=256, color_palette=None, alpha_palette=None, hint:int=0, transform=None, dssim:bool=False) -> Similarity
 
       Computes the similarity between two images. The similarity is computed by
       using the structural similiary index (SSIM). The SSIM is a metric that
@@ -4018,6 +4067,9 @@ The image object is the basic object for machine vision operations.
          * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
          * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
          * `image.BLACK_BACKGROUND`: Assume the background image being drawn on is black speeding up blending.
+
+      ``transform`` is 3x3 ``ndarray`` that is used to perform a persepective transformation on the image. Only
+      supported on the OpenMV Cam N6 currently as it has a GPU that can do this in hardware.
 
       ``dssim`` if true will compute the structual disimilarity index (DSSIM) instead of the SSIM. A
       value of 0 means the images are identical. A value of 1 means the images are completely different.

@@ -39,6 +39,10 @@ Sub Modules
     omv.ml.apps.rst
     omv.ml.preprocessing.rst
     omv.ml.postprocessing.rst
+
+.. toctree::
+    :maxdepth: 1
+
     omv.ml.utils.rst
 
 class model -- Model Container
@@ -52,7 +56,7 @@ model. Each input/output tensor is an numpy ``ndarray``.
 Constructors
 ~~~~~~~~~~~~
 
-.. class:: Model(path:str, load_to_fb:bool=False) -> Model
+.. class:: Model(path:str, load_to_fb:bool=False, postprocess=None) -> Model
 
    Loads a model from ``path`` into memory and prepares it for being executed. ``path`` can either
    be a file on disk or the name of a built-in model which will be loaded from internal flash. Models that are
@@ -70,10 +74,13 @@ Constructors
 
    When deleted the model will automatically free up any memory it used from the heap or frame buffer stack.
 
+   ``postprocess`` is a class which will be called by `Model.predict` after inference to post-process the Model
+   output. E.g. turn YOLO ``ndarray`` output into bounding boxes. See `Model.predict` for more details.
+
    Methods
    ~~~~~~~
 
-   .. method:: predict(inputs:list, callback=None) -> list
+   .. method:: predict(inputs:list) -> list
 
       Executes the model with the given inputs. The inputs should be a list of numpy ``ndarray`` objects corresponding
       to the number of input tensors the model supports. The method returns a list of numpy ``ndarray`` objects
@@ -89,16 +96,19 @@ Constructors
       The model's output tensors can be up to 4D tensors of uint8, int8, or float32 values. For uint8
       and int8 tensors the returned numpy ndarray is created by subtracting the output tensor's zero
       point value before multiplying by the output tensor's scale value. For float32 tensors, values are
-      passed directly to the output without any scaling or offset being applied.
+      passed directly to the output without any scaling or offset being applied. By this method, the output
+      is always float32, unless a ``postprocessor`` is used (passed when creating the model object).
 
       Note that `predict()` requires the shape of the input ``ndarray`` objects to match the shape of the model
       input tensors exactly. You can use the ``reshape()`` method of an ndarray with the `input_shape`
       attribute of the model to reshape the input data to the correct shape if necessary.
 
-      If a ``callback`` is passed then it will receive the `Model`, ``inputs``, and ``outputs`` as arguments
+      If a ``postprocessor`` is passed then it will receive the `Model`, ``inputs``, and ``outputs`` as arguments
       which allows for custom post-processing of the model outputs. The callback may then return
-      whatever it likes which will be returned by `predict()`. The ``callback`` method allows for building
-      up a library of post-processing functions that can be used on demand for different models.
+      whatever it likes which will be returned by `predict()`. The ``postprocessor`` allows for building
+      up a library of post-processing functions that can be used on demand for different models. Note that the
+      callback will receive the outputs ``ndarray`` in RAW form from the model, like int8. This is done to
+      improve performance for post-processing large ``ndarrays``.
 
       For custom pre-processing, `predict()` also accepts "callable" objects as inputs. Any object
       implementing the ``__call__`` method can be passed to `predict()` as an input. `predict()` will
@@ -160,6 +170,10 @@ Constructors
       :type: list[int]
          
       A list of integers containing the zero point of each output tensor.
+
+   .. attribute:: postprocess
+         
+      The attached post-processor class.
 
    .. attribute:: labels
       :type: list[str]

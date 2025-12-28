@@ -2,7 +2,9 @@
 
 Builtin types
 =============
-Generated Mon 02 Jun 2025 03:14:31 UTC
+
+
+Generated Sun 28 Dec 2025 05:43:38 UTC
 
 Exception
 ---------
@@ -239,6 +241,37 @@ Sample code::
 |     b'13'   |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 +-------------+---------------------------------------------------------------------+
 
+complex
+-------
+
+.. _cpydiff_types_complex_parser:
+
+MicroPython's complex() accepts certain incorrect values that CPython rejects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** MicroPython is highly optimized for memory usage.
+
+**Workaround:** Do not use non-standard complex literals as argument to complex()
+
+MicroPython's ``complex()`` function accepts literals that contain a space and
+no sign between the real and imaginary parts, and interprets it as a plus.
+
+Sample code::
+
+    
+    try:
+        print(complex("1 1j"))
+    except ValueError:
+        print("ValueError")
+
++----------------+---------------------------------------------------------------------+
+| CPy output:    | uPy output:                                                         |
++----------------+---------------------------------------------------------------------+
+| ::             | ::                                                                  |
+|                |                                                                     |
+|     ValueError |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
++----------------+---------------------------------------------------------------------+
+
 dict
 ----
 
@@ -294,24 +327,6 @@ Sample code::
 |       File "<stdin>", line 14, in <module>                           |                                                                     |
 |     TypeError: unsupported operand type(s) for *: 'float' and 'Test' |                                                                     |
 +----------------------------------------------------------------------+---------------------------------------------------------------------+
-
-.. _cpydiff_types_float_rounding:
-
-uPy and CPython outputs formats may differ
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Sample code::
-
-    
-    print("%.1g" % -9.9)
-
-+-------------+---------------------------------------------------------------------+
-| CPy output: | uPy output:                                                         |
-+-------------+---------------------------------------------------------------------+
-| ::          | ::                                                                  |
-|             |                                                                     |
-|     -1e+01  |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-+-------------+---------------------------------------------------------------------+
 
 int
 ---
@@ -502,23 +517,40 @@ Sample code::
 str
 ---
 
-.. _cpydiff_types_str_endswith:
+.. _cpydiff_types_str_formatsep:
 
-Start/end indices such as str.endswith(s, start) not implemented
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+MicroPython accepts the "," grouping option with any radix, unlike CPython
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** To reduce code size, MicroPython does not issue an error for this combination
+
+**Workaround:** Do not use a format string like ``{:,b}`` if CPython compatibility is required.
 
 Sample code::
 
     
-    print("abc".endswith("c", 1))
+    try:
+        print("{:,b}".format(99))
+    except ValueError:
+        print("ValueError")
+    try:
+        print("{:,x}".format(99))
+    except ValueError:
+        print("ValueError")
+    try:
+        print("{:,o}".format(99))
+    except ValueError:
+        print("ValueError")
 
-+-------------+---------------------------------------------------------------------+
-| CPy output: | uPy output:                                                         |
-+-------------+---------------------------------------------------------------------+
-| ::          | ::                                                                  |
-|             |                                                                     |
-|     True    |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-+-------------+---------------------------------------------------------------------+
++----------------+---------------------------------------------------------------------+
+| CPy output:    | uPy output:                                                         |
++----------------+---------------------------------------------------------------------+
+| ::             | ::                                                                  |
+|                |                                                                     |
+|     ValueError |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|     ValueError |                                                                     |
+|     ValueError |                                                                     |
++----------------+---------------------------------------------------------------------+
 
 .. _cpydiff_types_str_formatsubscr:
 

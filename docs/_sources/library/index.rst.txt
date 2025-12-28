@@ -119,6 +119,7 @@ The following libraries are specific to the OpenMV Cam.
    pyb.rst
    stm.rst
    omv.sensor.rst
+   omv.csi.rst
    omv.image.rst
    omv.ml.rst
    omv.gif.rst
@@ -129,7 +130,6 @@ The following libraries are specific to the OpenMV Cam.
    omv.tof.rst
    omv.tv.rst
    omv.cpufreq.rst
-   omv.buzzer.rst
    omv.imu.rst
    omv.rpc.rst
    omv.rtsp.rst
@@ -137,6 +137,7 @@ The following libraries are specific to the OpenMV Cam.
    omv.gt911.rst
    omv.ft5x06.rst
    omv.tfp410.rst
+   omv.pca9674a.rst
 
 Third-party libraries on the OpenMV Cam
 ---------------------------------------

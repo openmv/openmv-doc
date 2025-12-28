@@ -2,7 +2,144 @@
 
 Syntax
 ======
-Generated Mon 02 Jun 2025 03:14:31 UTC
+
+
+Generated Sun 28 Dec 2025 05:43:38 UTC
+
+Literals
+--------
+
+.. _cpydiff_syntax_literal_underscore:
+
+MicroPython accepts underscores in numeric literals where CPython doesn't
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** Different parser implementation
+
+MicroPython's tokenizer ignores underscores in numeric literals, while CPython
+rejects multiple consecutive underscores and underscores after the last digit.
+
+**Workaround:** Remove the underscores not accepted by CPython.
+
+Sample code::
+
+    
+    try:
+        print(eval("1__1"))
+    except SyntaxError:
+        print("Should not work")
+    try:
+        print(eval("1_"))
+    except SyntaxError:
+        print("Should not work")
+
++---------------------+---------------------------------------------------------------------+
+| CPy output:         | uPy output:                                                         |
++---------------------+---------------------------------------------------------------------+
+| ::                  | ::                                                                  |
+|                     |                                                                     |
+|     Should not work |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|     Should not work |                                                                     |
++---------------------+---------------------------------------------------------------------+
+
+.. _cpydiff_syntax_spaces:
+
+MicroPython requires spaces between literal numbers and keywords or ".", CPython doesn't
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** Different parser implementation
+
+MicroPython's tokenizer treats a sequence like ``1and`` as a single token, while CPython treats it as two tokens.
+
+Since CPython 3.11, when the literal number is followed by a token, this syntax causes a ``SyntaxWarning`` for an "invalid literal". When a literal number is followed by a "." denoting attribute access, CPython does not warn.
+
+**Workaround:** Add a space between the integer literal and the intended next token.
+
+This also fixes the ``SyntaxWarning`` in CPython.
+
+Sample code::
+
+    
+    try:
+        print(eval("1and 0"))
+    except SyntaxError:
+        print("Should have worked")
+    try:
+        print(eval("1or 0"))
+    except SyntaxError:
+        print("Should have worked")
+    try:
+        print(eval("1if 1else 0"))
+    except SyntaxError:
+        print("Should have worked")
+    try:
+        print(eval("0x1.to_bytes(1)"))
+    except SyntaxError:
+        print("Should have worked")
+
++-------------------------------------------------------------------------+---------------------------------------------------------------------+
+| CPy output:                                                             | uPy output:                                                         |
++-------------------------------------------------------------------------+---------------------------------------------------------------------+
+| ::                                                                      | ::                                                                  |
+|                                                                         |                                                                     |
+|     0                                                                   |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|     1                                                                   |                                                                     |
+|     1                                                                   |                                                                     |
+|     Traceback (most recent call last):                                  |                                                                     |
+|       File "<stdin>", line 28, in <module>                              |                                                                     |
+|       File "<string>", line 1, in <module>                              |                                                                     |
+|     TypeError: to_bytes() missing required argument 'byteorder' (pos 2) |                                                                     |
++-------------------------------------------------------------------------+---------------------------------------------------------------------+
+
+Operators
+---------
+
+.. _cpydiff_syntax_assign_expr:
+
+MicroPython allows := to assign to the iteration variable in nested comprehensions, CPython does not.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Cause:** MicroPython is optimised for code size. Although it is a syntax error to assign to the iteration variable in a standard comprehension (same as CPython), it doesn't check if an inner nested comprehension assigns to the iteration variable of the outer comprehension.
+
+**Workaround:** Do not use := to assign to the iteration variable of a comprehension.
+
+Sample code::
+
+    
+    print([[(j := i) for i in range(2)] for j in range(2)])
+
++-------------------------------------------------------------------------------------------+---------------------------------------------------------------------+
+| CPy output:                                                                               | uPy output:                                                         |
++-------------------------------------------------------------------------------------------+---------------------------------------------------------------------+
+| ::                                                                                        | ::                                                                  |
+|                                                                                           |                                                                     |
+|       File "<stdin>", line 8                                                              |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
+|     SyntaxError: assignment expression cannot rebind comprehension iteration variable 'j' |                                                                     |
++-------------------------------------------------------------------------------------------+---------------------------------------------------------------------+
+
+Unicode
+-------
+
+.. _cpydiff_syntax_unicode_nameesc:
+
+Unicode name escapes are not implemented
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sample code::
+
+    
+    print("\N{LATIN SMALL LETTER A}")
+
++-------------+---------------------------------------------------------------------+
+| CPy output: | uPy output:                                                         |
++-------------+---------------------------------------------------------------------+
+| ::          | ::                                                                  |
+|             |                                                                     |
+|     a       |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
++-------------+---------------------------------------------------------------------+
+
+Unpacking
+---------
 
 .. _cpydiff_syntax_arg_unpacking:
 
@@ -38,86 +175,5 @@ Sample code::
 | ::          | ::                                                                  |
 |             |                                                                     |
 |     67      |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-+-------------+---------------------------------------------------------------------+
-
-Operators
----------
-
-.. _cpydiff_syntax_assign_expr:
-
-MicroPython allows using := to assign to the variable of a comprehension, CPython raises a SyntaxError.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**Cause:** MicroPython is optimised for code size and doesn't check this case.
-
-**Workaround:** Do not rely on this behaviour if writing CPython compatible code.
-
-Sample code::
-
-    
-    print([i := -1 for i in range(4)])
-
-+-------------------------------------------------------------------------------------------+---------------------------------------------------------------------+
-| CPy output:                                                                               | uPy output:                                                         |
-+-------------------------------------------------------------------------------------------+---------------------------------------------------------------------+
-| ::                                                                                        | ::                                                                  |
-|                                                                                           |                                                                     |
-|       File "<stdin>", line 8                                                              |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-|     SyntaxError: assignment expression cannot rebind comprehension iteration variable 'i' |                                                                     |
-+-------------------------------------------------------------------------------------------+---------------------------------------------------------------------+
-
-Spaces
-------
-
-.. _cpydiff_syntax_spaces:
-
-uPy requires spaces between literal numbers and keywords, CPy doesn't
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Sample code::
-
-    
-    try:
-        print(eval("1and 0"))
-    except SyntaxError:
-        print("Should have worked")
-    try:
-        print(eval("1or 0"))
-    except SyntaxError:
-        print("Should have worked")
-    try:
-        print(eval("1if 1else 0"))
-    except SyntaxError:
-        print("Should have worked")
-
-+-------------+---------------------------------------------------------------------+
-| CPy output: | uPy output:                                                         |
-+-------------+---------------------------------------------------------------------+
-| ::          | ::                                                                  |
-|             |                                                                     |
-|     0       |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
-|     1       |                                                                     |
-|     1       |                                                                     |
-+-------------+---------------------------------------------------------------------+
-
-Unicode
--------
-
-.. _cpydiff_syntax_unicode_nameesc:
-
-Unicode name escapes are not implemented
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Sample code::
-
-    
-    print("\N{LATIN SMALL LETTER A}")
-
-+-------------+---------------------------------------------------------------------+
-| CPy output: | uPy output:                                                         |
-+-------------+---------------------------------------------------------------------+
-| ::          | ::                                                                  |
-|             |                                                                     |
-|     a       |     /bin/sh: 1: ../ports/unix/build-standard/micropython: not found |
 +-------------+---------------------------------------------------------------------+
 

@@ -12,7 +12,7 @@ Constructors
 .. class:: display.ST7701()
 
    Creates a controller object to initialize the ST7701 display controller which typically powers
-   MIPI DSI displays. This class should be passed as the ``cotnroller`` argument to the `DSIDisplay()`
+   MIPI DSI displays. This class should be passed as the ``controller`` argument to the `DSIDisplay()`
    class constructor which will take care of calling the `ST7701.init()` method for you.
 
 Methods

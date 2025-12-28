@@ -32,7 +32,7 @@ Functions
 
 .. function:: init(type=-1, refresh:Optional[int]=None, resolution:Optional[int]=None) -> None
 
-   Initializes an attached thermopile shield using I/O pins P4 and P5 (and P0, P1, P2, P3 for `fir.FIR_LEPTON`)
+   Initializes an attached thermopile shield using I/O pins P4 and P5.
 
    ``type`` indicates the type of thermopile shield:
 
@@ -42,14 +42,11 @@ Functions
       * `fir.FIR_MLX90640`: 32x24 pixels.
       * `fir.FIR_MLX90641`: 16x12 pixels.
       * `fir.FIR_AMG8833`: 8x8 pixels.
-      * `fir.FIR_LEPTON`: 80x60 pixels (FLIR Lepton 1.x/2.x) or 160x120 pixels (FLIR Lepton 3.x)
 
    By default type is ``-1`` which will cause `fir.init()` to automatically scan and initialize an
    attached thermal sensor based on the I2C address. Note that `fir.FIR_MLX90640` and
    `fir.FIR_MLX90641` have the same I2C address so you must pass `fir.FIR_MLX90641` to type
    to initialize it specifically.
-
-   `fir.FIR_LEPTON` on the OpenMV Cam Pure Thermal this uses internal I/O pins and does not use P0-P5.
 
    ``refresh`` is the thermopile sensor power-of-2 refresh rate in Hz:
 
@@ -59,7 +56,6 @@ Functions
       * `fir.FIR_MLX90640`: Defaults to 32 Hz. Can be 1 Hz, 2 Hz, 4 Hz, 8 Hz, 16 Hz, 32 Hz, or 64 Hz. Note that a higher refresh rate lowers the accuracy and vice-versa.
       * `fir.FIR_MLX90641`: Defaults to 32 Hz. Can be 1 Hz, 2 Hz, 4 Hz, 8 Hz, 16 Hz, 32 Hz, or 64 Hz. Note that a higher refresh rate lowers the accuracy and vice-versa.
       * `fir.FIR_AMG8833`: 10 Hz
-      * `fir.FIR_LEPTON`: 9 Hz (really 8.7 Hz).
 
    ``resolution`` is the thermopile sensor measurement resolution:
 
@@ -69,7 +65,6 @@ Functions
       * `fir.FIR_MLX90640`: Defaults to 19-bits. Can be 16-bits, 17-bits, 18-bits, or 19-bits. Note that a higher resolution lowers the maximum temperature range and vice-versa.
       * `fir.FIR_MLX90641`: Defaults to 19-bits. Can be 16-bits, 17-bits, 18-bits, or 19-bits. Note that a higher resolution lowers the maximum temperature range and vice-versa.
       * `fir.FIR_AMG8833`: 12-bits.
-      * `fir.FIR_LEPTON`: 14-bits.
 
    For the `fir.FIR_SHIELD` and `fir.FIR_MLX90621`:
 
@@ -89,17 +84,6 @@ Functions
 
       * Max of ~80C.
 
-   For the `fir.FIR_LEPTON`:
-
-      * Max of ~140C (can be up to 400C-450C in low-gain mode).
-
-   .. note::
-
-      For `fir.FIR_LEPTON` mode this driver implements triple buffering to receive the FLIR Lepton
-      image. This uses 28.125 KB of RAM for the FLIR Lepton 1.x/2.x and 112.5 KB of RAM for the
-      FLIR Lepton 3.x. Triple buffering ensures that reading an image with `fir.read_ir()` and
-      `fir.snapshot()` never block. For all other sensors the I2C bus is accessed to read the image.
-
 .. function:: deinit() -> None
 
    Deinitializes the thermal sensor freeing up resources.
@@ -114,7 +98,6 @@ Functions
       * `fir.FIR_MLX90640`: 32 pixels.
       * `fir.FIR_MLX90641`: 16 pixels.
       * `fir.FIR_AMG8833`: 8 pixels.
-      * `fir.FIR_LEPTON`: 80 pixels (FLIR Lepton 1.x/2.x) or 160 pixels (FLIR Lepton 3.x).
 
 .. function:: height() -> int
 
@@ -126,7 +109,6 @@ Functions
       * `fir.FIR_MLX90640`: 24 pixels.
       * `fir.FIR_MLX90641`: 12 pixels.
       * `fir.FIR_AMG8833`: 8 pixels.
-      * `fir.FIR_LEPTON`: 60 pixels (FLIR Lepton 1.x/2.x) or 120 pixels (FLIR Lepton 3.x).
 
 .. function:: type() -> int
 
@@ -138,7 +120,6 @@ Functions
       * `fir.FIR_MLX90640`
       * `fir.FIR_MLX90641`
       * `fir.FIR_AMG8833`
-      * `fir.FIR_LEPTON`
 
 .. function:: refresh() -> int
 
@@ -147,50 +128,6 @@ Functions
 .. function:: resolution() -> int
 
    Returns the current resolution set during the `fir.init()` call.
-
-.. function:: radiometric() -> bool
-
-   Returns if the thermal sensor reports accurate temperature readings (True or False). If False
-   this means that the thermal sensor reports relative temperature readings based on its ambient
-   temperature which may not be very accurate.
-
-.. function:: register_vsync_cb(cb) -> None
-
-   For the `fir.FIR_LEPTON` mode only on the OpenMV Cam Pure Thermal.
-
-   Registers callback ``cb`` to be executed (in interrupt context) whenever the FLIR Lepton
-   generates a new frame (but, before the frame is received).
-
-   This nomially triggers at 9 Hz.
-
-   ``cb`` takes no arguments.
-
-.. function:: register_frame_cb(cb) -> None
-
-   For the `fir.FIR_LEPTON` mode only on the OpenMV Cam Pure Thermal.
-
-   Registers callback ``cb`` to be executed (in interrupt context) whenever the FLIR Lepton
-   generates a new frame and the frame is ready to be read via `fir.read_ir()` or `fir.snapshot()`.
-
-   This nomially triggers at 9 Hz.
-
-   ``cb`` takes no arguments.
-
-   Use this to get an interrupt to schedule reading a frame later with `micropython.schedule()`.
-
-.. function:: get_frame_available() -> bool
-
-   Returns True if a frame is available to read by calling `fir.read_ir()` or `fir.snapshot()`.
-
-.. function:: trigger_ffc(timeout=-1) -> None
-
-   For the `fir.FIR_LEPTON` mode only.
-
-   Triggers the Flat-Field-Correction process on your FLIR Lepton which calibrates the thermal
-   image. This process happens automatically with the sensor. However, you may call this function
-   to force the process to happen.
-
-   ``timeout`` if not -1 then how many milliseconds to wait for FFC to complete.
 
 .. function:: read_ta() -> float
 
@@ -408,8 +345,3 @@ Constants
    :type: int
 
    FIR_AMG8833 FIR sensor.
-
-.. data:: FIR_LEPTON
-   :type: int
-
-   FIR_LEPTON FIR sensor.

@@ -24,7 +24,7 @@ Example usage for driving the 128x160 LCD shield::
 Constructors
 ------------
 
-.. class:: SPIDisplay(width=128, height=160, refresh=60, bgr=False, byte_swap=False, triple_buffer, controller, backlight)
+.. class:: SPIDisplay(width=128, height=160, refresh=60, bgr=False, byte_swap=False, hmirror=False, vflip=True, triple_buffer, controller, backlight)
 
     ``width`` SPI LCD width. By default this is 128 to match the OpenMV 128x160 LCD shield.
 
@@ -36,6 +36,12 @@ Constructors
     This argument allows you to use our driver with more types of displays.
 
     ``byte_swap`` set to True to swap RGB565 pixel bytes sent to the LCD.
+    This argument allows you to use our driver with more types of displays.
+
+    ``hmirror`` set to True to horizontally mirror the display output.
+    This argument allows you to use our driver with more types of displays.
+
+    ``vflip``  set to True to vertically flip the display output.
     This argument allows you to use our driver with more types of displays.
 
     ``triple_buffer`` If True then makes updates to the screen non-blocking at the cost of 3X the

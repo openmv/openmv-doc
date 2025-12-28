@@ -4,6 +4,10 @@
 .. module:: sensor
    :synopsis: camera sensor
 
+**THIS MODULE IS NOW DEPRECATED AND TO BE REPLACED BY THE CSI MODULE. PLEASE
+UPDATE YOUR CODE TO USE THE NEW CSI MODULE. NO NEW FEATURES WILL BE ADDED TO
+THE SENSOR MODULE AND IT MAY BE REMOVED IN THE FUTURE.**
+
 The ``sensor`` module is used for taking pictures.
 
 Example usage::
@@ -112,6 +116,7 @@ Functions
 
       * `sensor.OV2640`: Second gen OpenMV Cam sensor - never released.
       * `sensor.OV5640`: High-res OpenMV Cam H7 Plus sensor.
+      * `sensor.OV7670`: Arduino Giga Sensor Module.
       * `sensor.OV7690`: OpenMV Cam Micro sensor module.
       * `sensor.OV7725`: Rolling shutter sensor module.
       * `sensor.OV9650`: First gen OpenMV Cam sensor - never released.
@@ -131,6 +136,7 @@ Functions
       * `sensor.PAG7920`: PixArt Imaging sensor Module.
       * `sensor.PAG7936`: PixArt Imaging sensor Module.
       * `sensor.PAJ6100`: PixArt Imaging sensor Module.
+      * `sensor.PSS5520`: PixArt Imaging sensor Module. 
       * `sensor.FROGEYE2020` : FrogEye2020 event camera sensor module - never released.
 
 .. function:: alloc_extra_fb(width:int, height:int, pixformat:int) -> image.Image
@@ -227,7 +233,7 @@ Functions
       * `sensor.SXGAM`: 1280x960 (for the MT9M114)
       * `sensor.UXGA`: 1600x1200 (only for the OV2640/OV5640 sensor)
       * `sensor.HD`: 1280x720 (only for the OV2640/OV5640 sensor)
-      * `sensor.FHD`: 1920x1080 (only for the OV5640 sensor)
+      * `sensor.FHD`: 1920x1080 (only for the OV5640/PSS520 sensor)
       * `sensor.QHD`: 2560x1440 (only for the OV5640 sensor)
       * `sensor.QXGA`: 2048x1536 (only for the OV5640 sensor)
       * `sensor.WQXGA`: 2560x1600 (only for the OV5640 sensor)
@@ -329,7 +335,7 @@ Functions
 
       Camera auto exposure algorithms are pretty conservative about how much
       they adjust the exposure value by and will generally avoid changing the
-      exposure value by much. Instead, they change the gain value alot of deal
+      exposure value by much. Instead, they change the gain value a lot to deal
       with changing lighting.
 
 .. function:: get_exposure_us() -> int
@@ -436,7 +442,7 @@ Functions
           In double buffer mode your OpenMV Cam will allocate two frame buffers for receiving images.
           When you call `sensor.snapshot()` one framebuffer will be used to receive the image and
           the camera driver will continue to run. When the next frame is received it will be stored
-          in the other frame bufer. In the advent you call `sensor.snapshot()` again
+          in the other frame buffer. In the advent you call `sensor.snapshot()` again
           before the first line of the next frame after is received your code will execute at the frame rate
           of the camera. Otherwise, the image will be dropped.
 
@@ -656,6 +662,11 @@ Constants
 
    `sensor.get_id()` returns this for the OV5640 camera.
 
+.. data:: OV7670
+   :type: int
+
+   `sensor.get_id()` returns this for the OV7670 camera.
+
 .. data:: OV7690
    :type: int
 
@@ -745,6 +756,11 @@ Constants
    :type: int
 
    `sensor.get_id()` returns this for the PAG7936 camera.
+
+.. data:: PSS5520
+   :type: int
+
+   `sensor.get_id()` returns this for the PS5520 camera.
 
 .. data:: PAJ6100
    :type: int
@@ -932,7 +948,7 @@ Constants
 .. data:: FHD
    :type: int
 
-   1920x1080 resolution for the camera sensor. Only works for the OV5640 camera.
+   1920x1080 resolution for the camera sensor. Only works for the OV5640/PSS520 camera.
 
 .. data:: QHD
    :type: int
