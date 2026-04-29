@@ -61,14 +61,17 @@ def run_sphinx(docs_dir):
     for name, entry in py.objects.items():
         objects[name] = entry.objtype
 
-    # Walk doctrees for signatures
-    sigs = {}  # fullname -> raw signature text
+    # Walk doctrees for signatures and docstrings
+    sigs = {}  # fullname -> (objtype, raw signature, docstring)
     for docname in sorted(app.env.found_docs):
         if docname == "index":
             continue
         doctree = app.env.get_doctree(docname)
         for node in doctree.findall(addnodes.desc):
             objtype = node.get("objtype", "")
+            doc = ""
+            for content in node.findall(addnodes.desc_content):
+                doc = content.astext().strip()
             for sig_node in node.findall(addnodes.desc_signature):
                 module = sig_node.get("module", "")
                 fullname = sig_node.get("fullname", "")
@@ -78,7 +81,7 @@ def run_sphinx(docs_dir):
                 raw = sig_node.astext()
                 # Prefer method signatures over class-level duplicates
                 if fqn not in sigs or objtype == "method":
-                    sigs[fqn] = (objtype, raw)
+                    sigs[fqn] = (objtype, raw, doc)
 
     shutil.rmtree(tmp)
     return objects, sigs
@@ -141,7 +144,7 @@ def build_modules(objects, sigs):
     """Organize domain objects into per-module data structures."""
     modules = defaultdict(lambda: {
         "functions": [],
-        "classes": defaultdict(lambda: {"params": "", "methods": []}),
+        "classes": defaultdict(lambda: {"params": "", "doc": "", "methods": []}),
         "constants": [],
         "exceptions": [],
     })
@@ -168,18 +171,21 @@ def build_modules(objects, sigs):
             fname = rest[-1]
             if fqn in sigs:
                 _, params, ret = parse_sig(sigs[fqn][1])
+                doc = sigs[fqn][2]
             else:
-                params, ret = "", "Any"
-            modules[mod]["functions"].append((fname, params, ret))
+                params, ret, doc = "", "Any", ""
+            modules[mod]["functions"].append((fname, params, ret, doc))
 
         elif objtype == "class":
             mod, rest = resolve_module(parts)
             cname = rest[-1]
             if fqn in sigs:
                 _, params, ret = parse_sig(sigs[fqn][1])
+                doc = sigs[fqn][2]
             else:
-                params = ""
+                params, doc = "", ""
             modules[mod]["classes"][cname]["params"] = params
+            modules[mod]["classes"][cname]["doc"] = doc
 
         elif objtype == "method":
             mod, rest = resolve_module(parts)
@@ -190,29 +196,32 @@ def build_modules(objects, sigs):
                 continue
             if fqn in sigs:
                 _, params, ret = parse_sig(sigs[fqn][1])
+                doc = sigs[fqn][2]
             else:
-                params, ret = "", "Any"
+                params, ret, doc = "", "Any", ""
             modules[mod]["classes"][cname]["methods"].append(
-                (mname, params, ret)
+                (mname, params, ret, doc)
             )
 
         elif objtype == "exception":
             mod, rest = resolve_module(parts)
             ename = rest[-1]
-            modules[mod]["exceptions"].append(ename)
+            doc = sigs[fqn][2] if fqn in sigs else ""
+            modules[mod]["exceptions"].append((ename, doc))
 
         elif objtype in ("data", "attribute"):
             mod, rest = resolve_module(parts)
+            doc = sigs[fqn][2] if fqn in sigs else ""
             if objtype == "attribute" and len(rest) >= 2:
                 # Class attribute (e.g. Model.len)
                 cname = rest[-2]
                 aname = rest[-1]
                 if "attrs" not in modules[mod]["classes"][cname]:
                     modules[mod]["classes"][cname]["attrs"] = []
-                modules[mod]["classes"][cname]["attrs"].append(aname)
+                modules[mod]["classes"][cname]["attrs"].append((aname, doc))
             else:
                 dname = rest[-1]
-                modules[mod]["constants"].append(dname)
+                modules[mod]["constants"].append((dname, doc))
 
     # Move empty-string module to "builtins", filtering out
     # non-builtin objects that lack a .. module:: directive.
@@ -238,15 +247,17 @@ def build_modules(objects, sigs):
     if "" in modules:
         orphans = modules.pop("")
         filtered = {
-            "functions": [(n, p, r) for n, p, r in orphans["functions"]
+            "functions": [(n, p, r, d) for n, p, r, d in orphans["functions"]
                           if n in BUILTIN_NAMES],
-            "classes": defaultdict(lambda: {"params": "", "methods": []},
-                                   {k: v for k, v in orphans["classes"].items()
-                                    if k in BUILTIN_NAMES}),
-            "constants": [c for c in orphans["constants"]
-                          if c in BUILTIN_NAMES],
-            "exceptions": [e for e in orphans["exceptions"]
-                           if e in BUILTIN_NAMES],
+            "classes": defaultdict(
+                lambda: {"params": "", "doc": "", "methods": []},
+                {k: v for k, v in orphans["classes"].items()
+                 if k in BUILTIN_NAMES},
+            ),
+            "constants": [(n, d) for n, d in orphans["constants"]
+                          if n in BUILTIN_NAMES],
+            "exceptions": [(n, d) for n, d in orphans["exceptions"]
+                           if n in BUILTIN_NAMES],
         }
         if "builtins" in modules:
             modules["builtins"]["functions"].extend(filtered["functions"])
@@ -269,12 +280,12 @@ def find_module_refs(module, all_module_names):
     refs = set()
     mod_name = module.get("_name", "")
     sigs = []
-    for _, params, ret in module["functions"]:
+    for _, params, ret, _doc in module["functions"]:
         sigs.append(params)
         sigs.append(ret)
     for cls in module["classes"].values():
         sigs.append(cls["params"])
-        for _, params, ret in cls["methods"]:
+        for _, params, ret, _doc in cls["methods"]:
             sigs.append(params)
             sigs.append(ret)
     blob = " ".join(sigs)
@@ -282,6 +293,26 @@ def find_module_refs(module, all_module_names):
         if name and name != mod_name and name + "." in blob:
             refs.add(name)
     return sorted(refs)
+
+
+def format_docstring(doc, indent=0):
+    """Format a docstring with proper indentation for .pyi emission."""
+    if not doc:
+        return []
+    prefix = " " * indent
+    doc = doc.replace('"""', "'''")
+    lines = doc.split("\n")
+    if len(lines) == 1:
+        return [f'{prefix}"""{lines[0]}"""']
+    result = [f'{prefix}"""']
+    for line in lines:
+        stripped = line.strip()
+        if stripped:
+            result.append(f"{prefix}{stripped}")
+        else:
+            result.append("")
+    result.append(f'{prefix}"""')
+    return result
 
 
 def emit_pyi(mod_name, module, out_path, all_module_names):
@@ -296,43 +327,60 @@ def emit_pyi(mod_name, module, out_path, all_module_names):
         lines.append(f"import {ref}")
     lines.append("")
 
-    for name in module["constants"]:
+    for name, doc in module["constants"]:
         lines.append(f"{name}: int")
+        lines.extend(format_docstring(doc, indent=0))
 
     if module["constants"]:
         lines.append("")
 
-    for name, params, ret in module["functions"]:
+    for name, params, ret, doc in module["functions"]:
         if params:
-            lines.append(f"def {name}({params}) -> {ret}: ...")
+            lines.append(f"def {name}({params}) -> {ret}:")
         else:
-            lines.append(f"def {name}() -> {ret}: ...")
+            lines.append(f"def {name}() -> {ret}:")
+        ds = format_docstring(doc, indent=4)
+        if ds:
+            lines.extend(ds)
+        lines.append("    ...")
 
     if module["functions"]:
         lines.append("")
 
-    for ename in module.get("exceptions", []):
-        lines.append(f"class {ename}(Exception): ...")
+    for ename, doc in module.get("exceptions", []):
+        lines.append(f"class {ename}(Exception):")
+        ds = format_docstring(doc, indent=4)
+        if ds:
+            lines.extend(ds)
+            lines.append("    ...")
+        else:
+            lines.append("    ...")
 
     if module.get("exceptions"):
         lines.append("")
 
     for cls_name, cls in sorted(module["classes"].items()):
         lines.append(f"class {cls_name}:")
+        lines.extend(format_docstring(cls.get("doc", ""), indent=4))
         ctor = cls["params"]
         if ctor:
             lines.append(f"    def __init__(self, {ctor}) -> None: ...")
         else:
             lines.append(f"    def __init__(self) -> None: ...")
 
-        for aname in cls.get("attrs", []):
+        for aname, adoc in cls.get("attrs", []):
             lines.append(f"    {aname}: Any")
+            lines.extend(format_docstring(adoc, indent=4))
 
-        for mname, params, ret in cls["methods"]:
+        for mname, params, ret, doc in cls["methods"]:
             if params:
-                lines.append(f"    def {mname}(self, {params}) -> {ret}: ...")
+                lines.append(f"    def {mname}(self, {params}) -> {ret}:")
             else:
-                lines.append(f"    def {mname}(self) -> {ret}: ...")
+                lines.append(f"    def {mname}(self) -> {ret}:")
+            ds = format_docstring(doc, indent=8)
+            if ds:
+                lines.extend(ds)
+            lines.append("        ...")
 
         lines.append("")
 
@@ -406,7 +454,7 @@ def main():
         sum(len(c["methods"]) for c in m["classes"].values())
         for m in modules.values()
     )
-    nk = sum(len(m["constants"]) for m in modules.values())
+    nk = sum(len(m.get("constants", [])) for m in modules.values())
     print(
         f"Done: {len(modules)} modules, {nf} functions, "
         f"{nc} classes, {nm} methods, {nk} constants"
