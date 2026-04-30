@@ -9,13 +9,7 @@ class MutexException(Exception):
     ...
 
 class Mutex:
-    """
-    Try to acquire the mutex in a non-blocking way. Returns True on success
-    and False if the mutex is already locked.
-
-    To acquire the mutex in a blocking way, use the instance as a context
-    manager (with statement). The mutex is released automatically on exit.
-    """
+    """Creates an unlocked mutex object."""
     def __init__(self) -> None: ...
     def release(self) -> None:
         """
@@ -27,7 +21,6 @@ class Mutex:
         """
         Try to acquire the mutex in a non-blocking way. Returns True on success
         and False if the mutex is already locked.
-
         To acquire the mutex in a blocking way, use the instance as a context
         manager (with statement). The mutex is released automatically on exit.
         """

@@ -19,13 +19,11 @@ class dtype:
     (int8), 'H' (uint16), 'h' (int16), 'f' / 'd' (float)
     or 'D' (complex), and is what is returned by the
     ndarray.dtype property.
-
     The constructor accepts either a single-character type code, one of
     the integer constants exposed by numpy (numpy.uint8,
     numpy.int8, numpy.uint16, numpy.int16, numpy.float,
     numpy.bool, and – if the firmware was built with complex
     support – numpy.complex), or another dtype instance.
-
     When the firmware is built with ULAB_HAS_DTYPE_OBJECT disabled,
     ndarray.dtype returns the underlying type-code integer
     directly instead of a dtype object, and this class is not

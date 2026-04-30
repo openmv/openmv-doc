@@ -34,7 +34,6 @@ def rfcore_fw_version(id: int) -> Tuple[int, int, int, int, int]:
     """
     Get the version of the firmware running on the second CPU.  Pass in 0 for
     id to get the FUS version, and 1 to get the WS version.
-
     Returns a 5-tuple with the full version number.
     """
     ...
@@ -47,7 +46,6 @@ def rfcore_status() -> int:
 def rfcore_sys_hci(ogf: int, ocf: int, data: bytes, timeout_ms: int = 0) -> bytes:
     """
     Execute a HCI command on the SYS channel.  The execution is synchronous.
-
     Returns a bytes object with the result of the SYS command.
     """
     ...
@@ -56,7 +54,6 @@ def subghz_cs(level: bool) -> None:
     Sets the internal SPI CS pin attached to the radio peripheral. The level
     argument is active-low: a truthy value means “CS pin high” and de-asserts the
     signal, a falsey value means “CS pin low” and asserts the signal.
-
     The internal-only SPI bus corresponding to this CS signal can be instantiated
     using machine.SPI() id value "SUBGHZ".
     """
@@ -67,9 +64,7 @@ def subghz_irq(handler: Callable[..., Any] | None) -> None:
     function. The handler function is called as a “hard” interrupt in response to
     radio peripheral interrupts. See isr_rules for more information about
     interrupt handlers in MicroPython.
-
     Calling this function with the handler argument set to None disables the IRQ.
-
     Due to a hardware limitation, each time this IRQ fires MicroPython disables
     it before calling the handler. In order to receive another interrupt, Python
     code should call subghz_irq() to set the handler again. This has the side

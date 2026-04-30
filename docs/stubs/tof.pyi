@@ -12,42 +12,32 @@ def draw_depth(image: image.Image, depth: List[float], x: int = 0, y: int = 0, x
     """
     Draws a depth array (as returned by read_depth) onto image whose
     top-left corner starts at location x, y.
-
     x_scale controls how much the displayed image is scaled by in the x
     direction (float). If this value is negative the image will be flipped
     horizontally. If unspecified it matches y_scale to maintain aspect ratio.
-
     y_scale controls how much the displayed image is scaled by in the y
     direction (float). If this value is negative the image will be flipped
     vertically. If unspecified it matches x_scale to maintain aspect ratio.
-
     roi is the region-of-interest rectangle tuple (x, y, w, h) of the
     source depth array to draw.
-
     rgb_channel is the RGB channel (0=R, 1=G, 2=B) to extract from the
     source. -1 (default) uses all channels.
-
     alpha controls how much of the source is blended into the destination
     image. 255 is opaque, 0 results in no modification. Range: 0-255.
-
     color_palette is a color palette enum (e.g. image.PALETTE_DEPTH,
     image.PALETTE_RAINBOW) or a 256-pixel RGB565 image used as a color lookup
     table on the grayscale depth value.
-
     alpha_palette if not None is a 256-pixel GRAYSCALE image used as an
     alpha lookup table modulating alpha per pixel.
-
     hint is a logical OR of image flags such as image.BILINEAR,
     image.BICUBIC, image.AREA, image.CENTER, image.HMIRROR,
     image.VFLIP, image.TRANSPOSE, image.EXTRACT_RGB_CHANNEL_FIRST,
     image.APPLY_COLOR_PALETTE_FIRST, image.SCALE_ASPECT_KEEP,
     image.SCALE_ASPECT_EXPAND, image.SCALE_ASPECT_IGNORE,
     image.ROTATE_90, image.ROTATE_180, image.ROTATE_270.
-
     scale is a two-value tuple (min, max) controlling the min and max
     depth (in mm) used to scale the depth image. Defaults to the depth array’s
     actual min and max.
-
     read_depth remembers if it was called with transpose=True and
     draw_depth uses that internally to size the source array.
     """
@@ -61,11 +51,8 @@ def height() -> int:
 def init(type: int = -1) -> None:
     """
     Initializes an onboard depth sensor.
-
     type indicates the type of TOF sensor:
-
     tof.TOF_VL53LX: 8x8 pixels.
-
     By default type is -1 which causes tof.init() to automatically scan
     and initialize an attached TOF sensor based on the I2C address.
     """
@@ -74,13 +61,9 @@ def read_depth(hmirror: bool = False, vflip: bool = False, transpose: bool = Fal
     """
     Returns a tuple containing the depth list (width * height floats in mm),
     the minimum depth seen, and the maximum depth seen.
-
     hmirror if True horizontally mirrors the depth array.
-
     vflip if True vertically flips the depth array.
-
     transpose if True transposes the depth array.
-
     timeout how many milliseconds to wait for the new frame before raising
     a RuntimeError. If 0 waits forever.
     """
@@ -88,9 +71,7 @@ def read_depth(hmirror: bool = False, vflip: bool = False, transpose: bool = Fal
 def refresh() -> int:
     """
     Returns the refresh rate (in Hz) of the depth sensor in-use:
-
     tof.TOF_VL53LX: 15 Hz.
-
     Raises a RuntimeError if the sensor is not initialized.
     """
     ...
@@ -101,49 +82,34 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
     """
     Reads a frame from the depth sensor and returns a new image.Image object
     that is either image.GRAYSCALE or image.RGB565.
-
     hmirror if True horizontally mirrors the new image.
-
     vflip if True vertically flips the new image.
-
     transpose if True transposes the new image.
-
     x_scale controls how much the image is scaled in the x direction
     (float). Negative values flip horizontally. If unspecified it matches
     y_scale.
-
     y_scale controls how much the image is scaled in the y direction
     (float). Negative values flip vertically. If unspecified it matches
     x_scale.
-
     roi is the region-of-interest rectangle tuple (x, y, w, h) of the
     source to extract.
-
     rgb_channel is the RGB channel (0=R, 1=G, 2=B) to extract. -1
     (default) uses all channels.
-
     alpha controls source-to-destination blending. 255 is opaque, 0
     leaves the destination unchanged. Range: 0-255.
-
     color_palette is a color palette enum (e.g. image.PALETTE_DEPTH) or a
     256-pixel RGB565 image used as a color lookup table.
-
     alpha_palette if not None is a 256-pixel GRAYSCALE image used as an
     alpha lookup table.
-
     hint is a logical OR of image scaling/orientation flags (see
     draw_depth).
-
     scale is a two-value tuple (min, max) controlling the min and max
     depth (in mm) used to scale the image. Defaults to the frame’s actual
     min/max.
-
     pixformat controls the final image pixel format. Must be
     image.GRAYSCALE or image.RGB565.
-
     copy_to_fb if True writes the new image into the frame buffer
     instead of allocating it on the MicroPython heap.
-
     timeout how many milliseconds to wait for the new frame before raising
     a RuntimeError. If 0 waits forever.
     """
@@ -151,9 +117,7 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
 def type() -> int:
     """
     Returns the type of the depth sensor in-use:
-
     tof.TOF_VL53LX
-
     Raises a RuntimeError if the sensor is not initialized.
     """
     ...

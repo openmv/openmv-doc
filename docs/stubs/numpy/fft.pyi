@@ -4,7 +4,6 @@ from typing import Any, Optional, Union, Tuple, List
 def fft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     """
     Compute the one-dimensional discrete Fourier Transform of r.
-
     Parameters
 
     r – a one-dimensional array whose length is a power of two. Holds the
@@ -22,7 +21,6 @@ def fft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     Raises
 
     ValueError – if the length of the input is not a power of two.
-
     When ulab is compiled with ULAB_SUPPORTS_COMPLEX and
     ULAB_FFT_IS_NUMPY_COMPATIBLE set to 1, the function instead takes a
     single (possibly complex) array and returns a complex array, in the same
@@ -32,7 +30,6 @@ def fft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
 def ifft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     """
     Compute the one-dimensional inverse discrete Fourier Transform.
-
     Parameters
 
     r – a one-dimensional array whose length is a power of two. Holds the
@@ -52,7 +49,6 @@ def ifft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     Raises
 
     ValueError – if the length of the input is not a power of two.
-
     When ulab is compiled with ULAB_SUPPORTS_COMPLEX and
     ULAB_FFT_IS_NUMPY_COMPATIBLE set to 1, the function takes a single
     (possibly complex) array and returns a complex array.

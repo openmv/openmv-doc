@@ -6,12 +6,9 @@ def gmtime(secs: int | None = None) -> Tuple[int, int, int, int, int, int, int, 
     Convert the time secs expressed in seconds since the Epoch (see above) into an
     8-tuple which contains: (year, month, mday, hour, minute, second, weekday, yearday)
     If secs is not provided or None, then the current time from the RTC is used.
-
     The gmtime() function returns a date-time tuple in UTC, and localtime() returns a
     date-time tuple in local time.
-
     The format of the entries in the 8-tuple are:
-
     year includes the century (for example 2014).
 
     month   is 1-12
@@ -34,12 +31,9 @@ def localtime(secs: int | None = None) -> Tuple[int, int, int, int, int, int, in
     Convert the time secs expressed in seconds since the Epoch (see above) into an
     8-tuple which contains: (year, month, mday, hour, minute, second, weekday, yearday)
     If secs is not provided or None, then the current time from the RTC is used.
-
     The gmtime() function returns a date-time tuple in UTC, and localtime() returns a
     date-time tuple in local time.
-
     The format of the entries in the 8-tuple are:
-
     year includes the century (for example 2014).
 
     month   is 1-12
@@ -70,7 +64,6 @@ def sleep(seconds: float) -> None:
     floating-point number to sleep for a fractional number of seconds. Note that
     other boards may not accept a floating-point argument, for compatibility with
     them use sleep_ms() and sleep_us() functions.
-
     Calling sleep, including sleep(0) is guaranteed to call pending callback
     functions.
     """
@@ -78,12 +71,10 @@ def sleep(seconds: float) -> None:
 def sleep_ms(ms: int) -> None:
     """
     Delay for given number of milliseconds, should be positive or 0.
-
     This function will delay for at least the given number of milliseconds, but
     may take longer than that if other processing must take place, for example
     interrupt handlers or other threads.  Passing in 0 for ms will still allow
     this other processing to occur.  Use sleep_us() for more precise delays.
-
     Calling sleep_ms, including sleep_ms(0) is guaranteed to call
     pending callback functions.
     """
@@ -91,7 +82,6 @@ def sleep_ms(ms: int) -> None:
 def sleep_us(us: int) -> None:
     """
     Delay for given number of microseconds, should be positive or 0.
-
     This function attempts to provide an accurate delay of at least us
     microseconds, but it may take longer if the system has other higher priority
     processing to perform.
@@ -108,9 +98,7 @@ def ticks_add(ticks: int, delta: int) -> int:
     or numeric expression. ticks_add() is useful for calculating deadlines for
     events/tasks. (Note: you must use ticks_diff() function to work with
     deadlines.)
-
     Examples:
-
     # Find out what ticks value there was 100ms ago
     print(ticks_add(time.ticks_ms(), -100))
 
@@ -133,7 +121,6 @@ def ticks_cpu() -> int:
     documentation for a specific port may provide more specific information. This
     function is intended for very fine benchmarking or very tight real-time loops.
     Avoid using it in portable code.
-
     Availability: Not every port implements this function.
     """
     ...
@@ -141,7 +128,6 @@ def ticks_diff(ticks1: int, ticks2: int) -> int:
     """
     Measure ticks difference between values returned from ticks_ms(), ticks_us(),
     or ticks_cpu() functions, as a signed value which may wrap around.
-
     The argument order is the same as for subtraction
     operator, ticks_diff(ticks1, ticks2) has the same meaning as ticks1 - ticks2.
     However, values returned by ticks_ms(), etc. functions may wrap around, so
@@ -159,7 +145,6 @@ def ticks_diff(ticks1: int, ticks2: int) -> int:
     However, if TICKS_PERIOD/2 of real-time ticks has passed between them, the
     function will return -TICKS_PERIOD/2 instead, i.e. result value will wrap around
     to the negative range of possible values.
-
     Informal rationale of the constraints above: Suppose you are locked in a room with no
     means to monitor passing of time except a standard 12-notch clock. Then if you look at
     dial-plate now, and don’t look again for another 13 hours (e.g., if you fall for a
@@ -168,9 +153,7 @@ def ticks_diff(ticks1: int, ticks2: int) -> int:
     should do the same. “Too long sleep” metaphor also maps directly to application
     behaviour: don’t let your application run any single task for too long. Run tasks
     in steps, and do time-keeping in between.
-
     ticks_diff() is designed to accommodate various usage patterns, among them:
-
     Polling with timeout. In this case, the order of events is known, and you will deal
     only with positive results of ticks_diff():
 
@@ -196,7 +179,6 @@ def ticks_diff(ticks1: int, ticks2: int) -> int:
     elif ticks_diff(scheduled_time, now) < 0:
     print("Oops, running late, tell task to run faster!")
     task.run(run_faster=true)
-
     Note: Do not pass time() values to ticks_diff(), you should use
     normal mathematical operations on them. But note that time() may (and will)
     also overflow. This is known as https://en.wikipedia.org/wiki/Year_2038_problem .
@@ -206,7 +188,6 @@ def ticks_ms() -> int:
     """
     Returns an increasing millisecond counter with an arbitrary reference point, that
     wraps around after some value.
-
     The wrap-around value is not explicitly exposed, but we will
     refer to it as TICKS_MAX to simplify discussion. Period of the values is
     TICKS_PERIOD = TICKS_MAX + 1. TICKS_PERIOD is guaranteed to be a power of
@@ -217,7 +198,6 @@ def ticks_ms() -> int:
     non-negative values are used. For the most part, you should treat values returned
     by these functions as opaque. The only operations available for them are
     ticks_diff() and ticks_add() functions described below.
-
     Note: Performing standard mathematical operations (+, -) or relational
     operators (<, <=, >, >=) directly on these value will lead to invalid
     result. Performing mathematical operations and then passing their results
@@ -239,7 +219,6 @@ def time() -> int:
     timestamps, use time_ns().  If relative times are acceptable then use the
     ticks_ms() and ticks_us() functions.  If you need calendar time, gmtime() or
     localtime() without an argument is a better choice.
-
     Difference to CPython
 
     In CPython, this function returns number of
@@ -262,13 +241,45 @@ def time_ns() -> int:
     ...
 
 class clock:
-    """Resets the clock object."""
+    """
+    Returns a clock object.
+    Methods
+
+
+
+    tick() -> None
+
+    Starts tracking elapsed time.
+
+
+
+    fps() -> float
+
+    Stops tracking the elapsed time and returns the current FPS
+    (frames per second).
+
+    Always call tick first before calling this function.
+
+
+
+    avg() -> float
+
+    Stops tracking the elapsed time and returns the current average elapsed time
+    in milliseconds.
+
+    Always call tick first before calling this function.
+
+
+
+    reset() -> None
+
+    Resets the clock object.
+    """
     def __init__(self) -> None: ...
     def avg(self) -> float:
         """
         Stops tracking the elapsed time and returns the current average elapsed time
         in milliseconds.
-
         Always call tick first before calling this function.
         """
         ...
@@ -276,7 +287,6 @@ class clock:
         """
         Stops tracking the elapsed time and returns the current FPS
         (frames per second).
-
         Always call tick first before calling this function.
         """
         ...

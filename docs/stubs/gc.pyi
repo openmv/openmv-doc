@@ -16,7 +16,6 @@ def enable() -> None:
 def mem_alloc() -> int:
     """
     Return the number of bytes of heap RAM that are allocated by Python code.
-
     Difference to CPython
 
     This function is MicroPython extension.
@@ -26,7 +25,6 @@ def mem_free() -> int:
     """
     Return the number of bytes of heap RAM that is available for Python
     code to allocate, or -1 if this amount is not known.
-
     Difference to CPython
 
     This function is MicroPython extension.
@@ -45,10 +43,8 @@ def threshold(amount: int | None = None) -> Optional[int]:
     excessive memory fragmentation. This is a heuristic measure, the effect
     of which will vary from application to application, as well as
     the optimal value of the amount parameter.
-
     Calling the function without argument will return the current value of
     the threshold. A value of -1 means a disabled allocation threshold.
-
     Difference to CPython
 
     This function is a MicroPython extension. CPython has a similar

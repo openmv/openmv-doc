@@ -4,203 +4,44 @@ import machine
 
 class ModbusRTU:
     """
-    Read a single Modbus request from the UART, update the internal
-    register array as required, and write the corresponding response back
-    to the UART.
+    Construct a ModbusRTU slave.
+    uart is a UART instance (e.g. machine.UART or pyb.UART)
+    used to send and receive Modbus frames. The UART must be configured
+    with appropriate baud rate, parity, and timeouts before being passed
+    in.
 
-    Supported function codes:
+    slave_id is the Modbus slave address (1-247) this instance will
+    respond to. Frames addressed to other slave IDs are ignored.
 
-    0x03 Read Holding Registers — responds with the requested
-    range of register values.
-
-    0x06 Write Single Register — writes a single register and
-    echoes the address and value.
-
-    0x10 Write Multiple Registers — writes a contiguous range
-    of registers and responds with the starting address and count.
-
-    Modbus exception responses are returned for:
-
-    Illegal Function (0x01) — unsupported function code.
-
-    Illegal Data Address (0x02) — register index out of range.
-
-    Illegal Data Value (0x03) — byte count does not match the
-    declared quantity of registers.
-
-    Frames whose CRC does not match or whose slave address does not match
-    SLAVE_ID are silently dropped.
-
-    debug if True, prints the raw request, parsed function code,
-    generated response, and any error details to the REPL. Defaults to
-    False.
+    register_num is the number of 16-bit holding registers backing
+    this slave. Registers are stored in the REGISTER list and
+    initialized to zero.
     """
     def __init__(self, uart: machine.UART, slave_id: int = 0x01, register_num: int = 30) -> None: ...
     CRC16_TABLE: Any
     """
-    Read a single Modbus request from the UART, update the internal
-    register array as required, and write the corresponding response back
-    to the UART.
-
-    Supported function codes:
-
-    0x03 Read Holding Registers — responds with the requested
-    range of register values.
-
-    0x06 Write Single Register — writes a single register and
-    echoes the address and value.
-
-    0x10 Write Multiple Registers — writes a contiguous range
-    of registers and responds with the starting address and count.
-
-    Modbus exception responses are returned for:
-
-    Illegal Function (0x01) — unsupported function code.
-
-    Illegal Data Address (0x02) — register index out of range.
-
-    Illegal Data Value (0x03) — byte count does not match the
-    declared quantity of registers.
-
-    Frames whose CRC does not match or whose slave address does not match
-    SLAVE_ID are silently dropped.
-
-    debug if True, prints the raw request, parsed function code,
-    generated response, and any error details to the REPL. Defaults to
-    False.
+    Precomputed 256-entry lookup table for the Modbus CRC-16 polynomial,
+    used by crc16().
     """
     REGISTER: Any
     """
-    Read a single Modbus request from the UART, update the internal
-    register array as required, and write the corresponding response back
-    to the UART.
-
-    Supported function codes:
-
-    0x03 Read Holding Registers — responds with the requested
-    range of register values.
-
-    0x06 Write Single Register — writes a single register and
-    echoes the address and value.
-
-    0x10 Write Multiple Registers — writes a contiguous range
-    of registers and responds with the starting address and count.
-
-    Modbus exception responses are returned for:
-
-    Illegal Function (0x01) — unsupported function code.
-
-    Illegal Data Address (0x02) — register index out of range.
-
-    Illegal Data Value (0x03) — byte count does not match the
-    declared quantity of registers.
-
-    Frames whose CRC does not match or whose slave address does not match
-    SLAVE_ID are silently dropped.
-
-    debug if True, prints the raw request, parsed function code,
-    generated response, and any error details to the REPL. Defaults to
-    False.
+    List of length register_num holding the current 16-bit register
+    values. Reads and writes performed via incoming Modbus requests update
+    this list. Application code may read from or write to this list directly
+    to exchange data with the Modbus master.
     """
     SLAVE_ID: Any
     """
-    Read a single Modbus request from the UART, update the internal
-    register array as required, and write the corresponding response back
-    to the UART.
-
-    Supported function codes:
-
-    0x03 Read Holding Registers — responds with the requested
-    range of register values.
-
-    0x06 Write Single Register — writes a single register and
-    echoes the address and value.
-
-    0x10 Write Multiple Registers — writes a contiguous range
-    of registers and responds with the starting address and count.
-
-    Modbus exception responses are returned for:
-
-    Illegal Function (0x01) — unsupported function code.
-
-    Illegal Data Address (0x02) — register index out of range.
-
-    Illegal Data Value (0x03) — byte count does not match the
-    declared quantity of registers.
-
-    Frames whose CRC does not match or whose slave address does not match
-    SLAVE_ID are silently dropped.
-
-    debug if True, prints the raw request, parsed function code,
-    generated response, and any error details to the REPL. Defaults to
-    False.
+    The Modbus slave address this instance will respond to. Set from the
+    slave_id constructor argument.
     """
     register_num: Any
     """
-    Read a single Modbus request from the UART, update the internal
-    register array as required, and write the corresponding response back
-    to the UART.
-
-    Supported function codes:
-
-    0x03 Read Holding Registers — responds with the requested
-    range of register values.
-
-    0x06 Write Single Register — writes a single register and
-    echoes the address and value.
-
-    0x10 Write Multiple Registers — writes a contiguous range
-    of registers and responds with the starting address and count.
-
-    Modbus exception responses are returned for:
-
-    Illegal Function (0x01) — unsupported function code.
-
-    Illegal Data Address (0x02) — register index out of range.
-
-    Illegal Data Value (0x03) — byte count does not match the
-    declared quantity of registers.
-
-    Frames whose CRC does not match or whose slave address does not match
-    SLAVE_ID are silently dropped.
-
-    debug if True, prints the raw request, parsed function code,
-    generated response, and any error details to the REPL. Defaults to
-    False.
+    The number of 16-bit holding registers, set from the register_num
+    constructor argument.
     """
     uart: Any
-    """
-    Read a single Modbus request from the UART, update the internal
-    register array as required, and write the corresponding response back
-    to the UART.
-
-    Supported function codes:
-
-    0x03 Read Holding Registers — responds with the requested
-    range of register values.
-
-    0x06 Write Single Register — writes a single register and
-    echoes the address and value.
-
-    0x10 Write Multiple Registers — writes a contiguous range
-    of registers and responds with the starting address and count.
-
-    Modbus exception responses are returned for:
-
-    Illegal Function (0x01) — unsupported function code.
-
-    Illegal Data Address (0x02) — register index out of range.
-
-    Illegal Data Value (0x03) — byte count does not match the
-    declared quantity of registers.
-
-    Frames whose CRC does not match or whose slave address does not match
-    SLAVE_ID are silently dropped.
-
-    debug if True, prints the raw request, parsed function code,
-    generated response, and any error details to the REPL. Defaults to
-    False.
-    """
+    """The UART instance passed to the constructor, used for all I/O."""
     def any(self) -> int:
         """
         Return the number of bytes currently available in the underlying UART’s
@@ -216,7 +57,6 @@ class ModbusRTU:
         Compute the Modbus CRC-16 of data using CRC16_TABLE and return
         it as a 2-byte little-endian bytes object suitable for appending to a
         Modbus frame.
-
         data is a bytes/bytearray (or any iterable of integers)
         containing the bytes to checksum.
         """
@@ -226,9 +66,7 @@ class ModbusRTU:
         Read a single Modbus request from the UART, update the internal
         register array as required, and write the corresponding response back
         to the UART.
-
         Supported function codes:
-
         0x03 Read Holding Registers — responds with the requested
         range of register values.
 
@@ -237,19 +75,15 @@ class ModbusRTU:
 
         0x10 Write Multiple Registers — writes a contiguous range
         of registers and responds with the starting address and count.
-
         Modbus exception responses are returned for:
-
         Illegal Function (0x01) — unsupported function code.
 
         Illegal Data Address (0x02) — register index out of range.
 
         Illegal Data Value (0x03) — byte count does not match the
         declared quantity of registers.
-
         Frames whose CRC does not match or whose slave address does not match
         SLAVE_ID are silently dropped.
-
         debug if True, prints the raw request, parsed function code,
         generated response, and any error details to the REPL. Defaults to
         False.

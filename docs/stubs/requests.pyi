@@ -22,7 +22,6 @@ def put(url: str, **kw) -> Response:
 def request(method: str, url: str, data: bytes | None = None, json: Any | None = None, files: dict | None = None, headers: dict = {}, auth: tuple | None = None, stream: Any | None = None) -> Response:
     """
     Send an HTTP request to url and return a requests.Response.
-
     method — HTTP method as a str (e.g. "GET", "POST").
 
     url — Target URL. Must start with http:// or https://.
@@ -47,35 +46,29 @@ def request(method: str, url: str, data: bytes | None = None, json: Any | None =
 
 class Response:
     """
-    Parse requests.Response.content as JSON and return the resulting
-    object.
+    Represents an HTTP response. Instances are returned by requests.request
+    and the per-method helpers.
     """
     def __init__(self, code: int, reason: str, headers: bytes = None, content: bytes = None) -> None: ...
     content: Any
     """
-    Parse requests.Response.content as JSON and return the resulting
-    object.
+    Response body decoded with requests.Response.encoding and returned as
+    a str.
     """
     encoding: Any
     """
-    Parse requests.Response.content as JSON and return the resulting
-    object.
+    String encoding used to decode requests.Response.headers and
+    requests.Response.content. Defaults to "utf-8".
     """
     headers: Any
     """
-    Parse requests.Response.content as JSON and return the resulting
-    object.
+    Response headers decoded with requests.Response.encoding and returned
+    as a str.
     """
     reason: Any
-    """
-    Parse requests.Response.content as JSON and return the resulting
-    object.
-    """
+    """Reason phrase returned by the server (decoded str)."""
     status_code: Any
-    """
-    Parse requests.Response.content as JSON and return the resulting
-    object.
-    """
+    """Integer HTTP status code returned by the server."""
     def json(self) -> dict:
         """
         Parse requests.Response.content as JSON and return the resulting

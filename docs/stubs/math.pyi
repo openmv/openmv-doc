@@ -92,7 +92,6 @@ def lgamma(x: float) -> float:
 def log(x: float) -> float:
     """
     With one argument, return the natural logarithm of x.
-
     With two arguments, return the logarithm of x to the given base.
     """
     ...

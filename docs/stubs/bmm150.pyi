@@ -4,10 +4,28 @@ import machine
 
 class BMM150:
     """
-    Read a fresh sample via magnet_raw() and return the
-    compensated magnetic-field vector (x, y, z). The compensation
-    uses the trim values read at construction and matches the reference
-    C driver supplied by Bosch.
+    Construct a BMM150 instance, soft-reset the chip, verify its chip
+    ID, configure it for normal mode at magnet_odr Hz and read the
+    factory trim registers.
+    bus
+
+    A configured machine.I2C bus the sensor is attached to.
+
+    cs
+
+    Reserved for SPI mode. Must be left as None; SPI is not
+    currently implemented and supplying a non-I2C bus raises
+    ValueError.
+
+    address
+
+    7-bit I2C address of the device. Defaults to 0x10.
+
+    magnet_odr
+
+    Magnetometer output data rate in Hz. Must be one of
+    2, 6, 8, 10, 15, 20, 25 or 30;
+    anything else raises ValueError.
     """
     def __init__(self, bus: machine.I2C, cs: machine.Pin | None = None, address: int = 0x10, magnet_odr: int = 30) -> None: ...
     def magnet(self) -> tuple[float, float, float]:

@@ -3,13 +3,13 @@ from typing import Any, Optional, Union, Tuple, List
 
 class Flash:
     """
-    These methods implement the simple and extended
-    block protocol defined by
-    vfs.AbstractBlockDev.
-
-    The block size can be queried by calling ioctl(5, 0). Block numbers
-    are relative to the start of the user flash storage area, not the physical
-    start of flash memory.
+    Gets the singleton object for accessing the SPI flash memory. This class
+    gives access to the on-board SPI flash memory.
+    In most cases, to store persistent data on the device, you’ll want to
+    use a higher-level abstraction, for example the filesystem via Python’s
+    standard file API, but this interface is useful to customise the
+    filesystem configuration or implement a low-level storage
+    system for your application.
     """
     def __init__(self) -> None: ...
     def ioctl(self, cmd: int, arg: int) -> Optional[int]:
@@ -17,7 +17,6 @@ class Flash:
         These methods implement the simple and extended
         block protocol defined by
         vfs.AbstractBlockDev.
-
         The block size can be queried by calling ioctl(5, 0). Block numbers
         are relative to the start of the user flash storage area, not the physical
         start of flash memory.
@@ -28,7 +27,6 @@ class Flash:
         These methods implement the simple and extended
         block protocol defined by
         vfs.AbstractBlockDev.
-
         The block size can be queried by calling ioctl(5, 0). Block numbers
         are relative to the start of the user flash storage area, not the physical
         start of flash memory.
@@ -39,7 +37,6 @@ class Flash:
         These methods implement the simple and extended
         block protocol defined by
         vfs.AbstractBlockDev.
-
         The block size can be queried by calling ioctl(5, 0). Block numbers
         are relative to the start of the user flash storage area, not the physical
         start of flash memory.

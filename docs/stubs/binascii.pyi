@@ -25,7 +25,6 @@ def hexlify(data: bytes, sep: str | bytes | None = None) -> bytes:
     """
     Convert the bytes in the data object to a hexadecimal representation.
     Returns a bytes object.
-
     If the additional argument sep is supplied it is used as a separator
     between hexadecimal values.
     """

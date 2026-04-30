@@ -7,7 +7,6 @@ def cho_solve(c: ndarray, b: ndarray) -> ndarray:
     factorization of A. Unlike CPython’s scipy.linalg.cho_solve
     the function takes the Cholesky-factorised matrix directly rather
     than a (c, lower) tuple.
-
     Parameters
 
     c – the Cholesky factor of A as a square two-dimensional
@@ -25,7 +24,6 @@ def solve_triangular(a: ndarray, b: ndarray, lower: bool = False) -> ndarray:
     """
     Solve the linear system a @ x = b for x assuming that a
     is a triangular matrix.
-
     Parameters
 
     a – a square two-dimensional numpy.ndarray. Only the
@@ -41,7 +39,6 @@ def solve_triangular(a: ndarray, b: ndarray, lower: bool = False) -> ndarray:
     Returns
 
     the solution vector x as a float numpy.ndarray.
-
     a itself need not be triangular: values outside the selected
     triangle are simply treated as zero. In that case a @ x will not
     reproduce b.

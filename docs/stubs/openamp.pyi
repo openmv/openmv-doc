@@ -4,7 +4,6 @@ from typing import Any, Optional, Union, Tuple, List
 def new_service_callback(ns_callback: Callable[[str, int], Any]) -> None:
     """
     Set the new service callback.
-
     The ns_callback argument is a function that will be called when the remote processor
     announces new services. At that point the host processor can choose to create the
     announced endpoint, if this particular service is supported, or ignore it if it’s
@@ -16,21 +15,21 @@ def new_service_callback(ns_callback: Callable[[str, int], Any]) -> None:
 
 class Endpoint:
     """
-    Send a message to the remote processor over this endpoint.
-
+    Construct a new RPMsg Endpoint. An endpoint is a bidirectional communication
+    channel between two cores.
     Arguments are:
+    name is the name of the endpoint.
 
-    buffer is the message payload (any object supporting the buffer protocol,
-    e.g. bytes, bytearray, or str).
+    callback is a function that is called when the endpoint receives data with the
+    source address of the remote point, and the data as bytes passed by reference.
 
-    src is the source endpoint address of the message. If none is provided, the
-    source address the endpoint is bound to is used.
+    src is the endpoint source address. If none is provided one will be assigned
+    to the endpoint by the library.
 
-    dest is the destination endpoint address of the message. If none is provided,
-    the destination address the endpoint is bound to is used.
-
-    timeout specifies the time in milliseconds to wait for a free buffer. By default
-    the function is blocking.
+    dest is the endpoint destination address. If the endpoint is created from the
+    new_service_callback, this must be provided and it must match the remote endpoint’s
+    source address. If the endpoint is registered locally, before the announcement, the
+    destination address will be assigned by the library when the endpoint is bound.
     """
     def __init__(self, name: str, callback: Callable[[int, bytes], Any], src: int = ENDPOINT_ADDR_ANY, dest: int = ENDPOINT_ADDR_ANY) -> None: ...
     def deinit(self) -> None:
@@ -42,9 +41,7 @@ class Endpoint:
     def send(self, buffer: bytes, *, src: int = -1, dest: int = -1, timeout: int = -1) -> int:
         """
         Send a message to the remote processor over this endpoint.
-
         Arguments are:
-
         buffer is the message payload (any object supporting the buffer protocol,
         e.g. bytes, bytearray, or str).
 
@@ -61,11 +58,11 @@ class Endpoint:
 
 class RemoteProc:
     """
-    Shutdown stops the remote processor and releases all of its resources. The exact behavior
-    is platform-dependent, however typically it disables power and clocks to the remote core.
-    This function is also used as the finaliser (i.e., called when RemoteProc object is
-    collected). Note that on the STM32H7, it’s not possible to stop and then restart the
-    Cortex-M4 core, so a complete system reset is performed on a call to this function.
+    The RemoteProc object provides processor Life Cycle Management (LCM) support, such as
+    loading firmware, starting and stopping a remote core.
+    The entry argument can be a path to firmware image, in which case the firmware is
+    loaded from file to its target memory, or an entry point address, in which case the
+    firmware must be loaded already at the given address.
     """
     def __init__(self, entry: str | int) -> None: ...
     def shutdown(self) -> None:

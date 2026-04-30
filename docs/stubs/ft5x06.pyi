@@ -23,13 +23,15 @@ GESTURE_ZOOM_OUT: int
 """Touch screen zoom out gesture."""
 
 class FT5X06:
-    """Reads the touch screen state and returns the number of touch points (0-5)."""
+    """
+    Creates a touch screen controller object.
+    i2c_addr is the I2C address of the FT5x06 controller.
+    """
     def __init__(self, i2c_addr: int = 0x38) -> None: ...
     def get_gesture(self) -> int:
         """
         Returns the current gesture. The return value is one of the
         ft5x06.GESTURE_* constants.
-
         When a callback is registered via FT5X06.touch_callback() this method
         should only be called from within the callback.
         """
@@ -38,7 +40,6 @@ class FT5X06:
         """
         Returns the current state of the touch point at index (0-4). The return
         value is one of the ft5x06.FLAG_* constants.
-
         When a callback is registered via FT5X06.touch_callback() this method
         should only be called from within the callback.
         """
@@ -48,7 +49,6 @@ class FT5X06:
         Returns the id of the touch point at index (0-4). The id is a numeric
         value that allows tracking a touch point across updates as points are added
         and removed.
-
         When a callback is registered via FT5X06.touch_callback() this method
         should only be called from within the callback.
         """
@@ -56,7 +56,6 @@ class FT5X06:
     def get_point_x(self, index: int) -> int:
         """
         Returns the x pixel position of the touch point at index (0-4).
-
         When a callback is registered via FT5X06.touch_callback() this method
         should only be called from within the callback.
         """
@@ -64,7 +63,6 @@ class FT5X06:
     def get_point_y(self, index: int) -> int:
         """
         Returns the y pixel position of the touch point at index (0-4).
-
         When a callback is registered via FT5X06.touch_callback() this method
         should only be called from within the callback.
         """
@@ -72,7 +70,6 @@ class FT5X06:
     def get_points(self) -> int:
         """
         Returns the current number of touch points (0-5).
-
         When a callback is registered via FT5X06.touch_callback() this method
         should only be called from within the callback.
         """
@@ -81,7 +78,6 @@ class FT5X06:
         """
         Registers callback to be invoked on a touch event. The callback receives
         one argument: the current number of touch points (0-5).
-
         Pass None as callback to disable the callback. While a callback is
         registered, do not call FT5X06.update_points() outside of the callback.
         """

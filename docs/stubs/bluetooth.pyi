@@ -3,28 +3,14 @@ from typing import Any, Optional, Union, Tuple, List
 
 class BLE:
     """
-    Respond to a _IRQ_PASSKEY_ACTION event for the specified conn_handle
-    and action.
-
-    The passkey is a numeric value and will depend on on the
-    action (which will depend on what I/O capability has been set):
-
-    When the action is _PASSKEY_ACTION_INPUT, then the application should
-    prompt the user to enter the passkey that is shown on the remote device.
-
-    When the action is _PASSKEY_ACTION_DISPLAY, then the application should
-    generate a random 6-digit passkey and show it to the user.
-
-    When the action is _PASSKEY_ACTION_NUMERIC_COMPARISON, then the application
-    should show the passkey that was provided in the _IRQ_PASSKEY_ACTION event
-    and then respond with either 0 (cancel pairing), or 1 (accept pairing).
+    Returns the singleton BLE object.
+    Configuration
     """
     def __init__(self) -> None: ...
     def active(self, active: bool | None = None, /) -> bool:
         """
         Optionally changes the active state of the BLE radio, and returns the
         current state.
-
         The radio must be made active before using any other methods on this class.
         """
         ...
@@ -34,9 +20,7 @@ class BLE:
         parameter name should be quoted as a string, and just one parameter is
         queried at a time.  To set values use the keyword syntax, and one or more
         parameter can be set at a time.
-
         Currently supported values are:
-
         'mac': The current address in use, depending on the current address mode.
         This returns a tuple of (addr_type, addr).
 
@@ -99,11 +83,9 @@ class BLE:
         Starts advertising at the specified interval (in microseconds). This
         interval will be rounded down to the nearest 625us. To stop advertising, set
         interval_us to None.
-
         adv_data and resp_data can be any type that implements the buffer
         protocol (e.g. bytes, bytearray, str). adv_data is included
         in all broadcasts, and resp_data is send in reply to an active scan.
-
         Note: if adv_data (or resp_data) is None, then the data passed
         to the previous call to gap_advertise will be reused. This allows a
         broadcaster to resume advertising with just gap_advertise(interval_us).
@@ -113,19 +95,14 @@ class BLE:
     def gap_connect(self, addr_type: int | None, addr: bytes | None = None, scan_duration_ms: int = 2000, min_conn_interval_us: int | None = None, max_conn_interval_us: int | None = None, /) -> None:
         """
         Connect to a peripheral.
-
         See gap_scan for details about address types.
-
         To cancel an outstanding connection attempt early, call
         gap_connect(None).
-
         On success, the _IRQ_PERIPHERAL_CONNECT event will be raised. If
         cancelling a connection attempt, the _IRQ_PERIPHERAL_DISCONNECT event
         will be raised.
-
         The device will wait up to scan_duration_ms to receive an advertising
         payload from the device.
-
         The connection interval can be configured in microseconds using either
         or both of min_conn_interval_us and max_conn_interval_us. Otherwise a
         default interval will be chosen, typically between 30000 and 50000
@@ -139,10 +116,8 @@ class BLE:
         central that has connected to this device (if acting as a peripheral)
         or a peripheral that was previously connected to by this device (if acting
         as a central).
-
         On success, the _IRQ_PERIPHERAL_DISCONNECT or _IRQ_CENTRAL_DISCONNECT
         event will be raised.
-
         Returns False if the connection handle wasn’t connected, and True
         otherwise.
         """
@@ -150,10 +125,8 @@ class BLE:
     def gap_pair(self, conn_handle: int, /) -> None:
         """
         Initiate pairing with the remote device.
-
         Before calling this, ensure that the io, mitm, le_secure, and
         bond configuration options are set (via config).
-
         On successful pairing, the _IRQ_ENCRYPTION_UPDATE event will be raised.
         """
         ...
@@ -161,10 +134,8 @@ class BLE:
         """
         Respond to a _IRQ_PASSKEY_ACTION event for the specified conn_handle
         and action.
-
         The passkey is a numeric value and will depend on on the
         action (which will depend on what I/O capability has been set):
-
         When the action is _PASSKEY_ACTION_INPUT, then the application should
         prompt the user to enter the passkey that is shown on the remote device.
 
@@ -179,28 +150,21 @@ class BLE:
     def gap_scan(self, duration_ms: int | None, interval_us: int = 1280000, window_us: int = 11250, active: bool = False, /) -> None:
         """
         Run a scan operation lasting for the specified duration (in milliseconds).
-
         To scan indefinitely, set duration_ms to 0.
-
         To stop scanning, set duration_ms to None.
-
         Use interval_us and window_us to optionally configure the duty cycle.
         The scanner will run for window_us microseconds every interval_us
         microseconds for a total of duration_ms milliseconds. The default
         interval and window are 1.28 seconds and 11.25 milliseconds respectively
         (background scanning).
-
         For each scan result the _IRQ_SCAN_RESULT event will be raised, with event
         data (addr_type, addr, adv_type, rssi, adv_data).
-
         addr_type values indicate public or random addresses:
 
         0x00 - PUBLIC
 
         0x01 - RANDOM (either static, RPA, or NRPA, the type is encoded in the address itself)
-
         adv_type values correspond to the Bluetooth Specification:
-
         0x00 - ADV_IND - connectable and scannable undirected advertising
 
         0x01 - ADV_DIRECT_IND - connectable directed advertising
@@ -210,9 +174,7 @@ class BLE:
         0x03 - ADV_NONCONN_IND - non-connectable undirected advertising
 
         0x04 - SCAN_RSP - scan response
-
         active can be set True if you want to receive scan responses in the results.
-
         When scanning is stopped (either due to the duration finishing or when
         explicitly stopped), the _IRQ_SCAN_DONE event will be raised.
         """
@@ -220,13 +182,10 @@ class BLE:
     def gattc_discover_characteristics(self, conn_handle: int, start_handle: int, end_handle: int, uuid: UUID | None = None, /) -> None:
         """
         Query a connected server for characteristics in the specified range.
-
         Optionally specify a characteristic uuid to query for that
         characteristic only.
-
         You can use start_handle=1, end_handle=0xffff to search for a
         characteristic in any service.
-
         For each characteristic discovered, the _IRQ_GATTC_CHARACTERISTIC_RESULT
         event will be raised, followed by _IRQ_GATTC_CHARACTERISTIC_DONE on completion.
         """
@@ -234,7 +193,6 @@ class BLE:
     def gattc_discover_descriptors(self, conn_handle: int, start_handle: int, end_handle: int, /) -> None:
         """
         Query a connected server for descriptors in the specified range.
-
         For each descriptor discovered, the _IRQ_GATTC_DESCRIPTOR_RESULT event
         will be raised, followed by _IRQ_GATTC_DESCRIPTOR_DONE on completion.
         """
@@ -242,9 +200,7 @@ class BLE:
     def gattc_discover_services(self, conn_handle: int, uuid: UUID | None = None, /) -> None:
         """
         Query a connected server for its services.
-
         Optionally specify a service uuid to query for that service only.
-
         For each service discovered, the _IRQ_GATTC_SERVICE_RESULT event will
         be raised, followed by _IRQ_GATTC_SERVICE_DONE on completion.
         """
@@ -253,10 +209,8 @@ class BLE:
         """
         Initiate MTU exchange with a connected server, using the preferred MTU
         set using BLE.config(mtu=value).
-
         The _IRQ_MTU_EXCHANGED event will be raised when MTU exchange
         completes.
-
         Note: MTU exchange is typically initiated by the central. When using
         the BlueKitchen stack in the central role, it does not support a remote
         peripheral initiating the MTU exchange. NimBLE works for both roles.
@@ -266,7 +220,6 @@ class BLE:
         """
         Issue a remote read to a connected server for the specified
         characteristic or descriptor handle.
-
         When a value is available, the _IRQ_GATTC_READ_RESULT event will be
         raised. Additionally, the _IRQ_GATTC_READ_DONE will be raised.
         """
@@ -275,10 +228,8 @@ class BLE:
         """
         Issue a remote write to a connected server for the specified
         characteristic or descriptor handle.
-
         The argument mode specifies the write behaviour, with the currently
         supported values being:
-
         mode=0 (default) is a write-without-response: the write will
         be sent to the remote server but no confirmation will be
         returned, and no event will be raised.
@@ -286,7 +237,6 @@ class BLE:
         mode=1 is a write-with-response: the remote server is
         requested to send a response/acknowledgement that it received the
         data.
-
         If a response is received from the remote server the
         _IRQ_GATTC_WRITE_DONE event will be raised.
         """
@@ -294,16 +244,12 @@ class BLE:
     def gatts_indicate(self, conn_handle: int, value_handle: int, data: bytes | None = None, /) -> None:
         """
         Sends a indication request to a connected client.
-
         If data is None (the default), then the current local value (as set
         with gatts_write) will be sent.
-
         Otherwise, if data is not None, then that value is sent to the client
         as part of the indication. The local value will not be modified.
-
         On acknowledgment (or failure, e.g. timeout), the
         _IRQ_GATTS_INDICATE_DONE event will be raised.
-
         Note: The indication will be sent regardless of the subscription
         status of the client to this characteristic.
         """
@@ -311,13 +257,10 @@ class BLE:
     def gatts_notify(self, conn_handle: int, value_handle: int, data: bytes | None = None, /) -> None:
         """
         Sends a notification request to a connected client.
-
         If data is None (the default), then the current local value (as set
         with gatts_write) will be sent.
-
         Otherwise, if data is not None, then that value is sent to the client
         as part of the notification. The local value will not be modified.
-
         Note: The notification will be sent regardless of the subscription
         status of the client to this characteristic.
         """
@@ -332,26 +275,19 @@ class BLE:
         """
         Configures the server with the specified services, replacing any
         existing services.
-
         services_definition is a list of services, where each service is a
         two-element tuple containing a UUID and a list of characteristics.
-
         Each characteristic is a two-or-three-element tuple containing a UUID, a
         flags value, and optionally a list of descriptors.
-
         Each descriptor is a two-element tuple containing a UUID and a flags
         value.
-
         The flags are a bitwise-OR combination of the flags defined below. These
         set both the behaviour of the characteristic (or descriptor) as well as the
         security and privacy requirements.
-
         The return value is a list (one element per service) of tuples (each element
         is a value handle). Characteristics and descriptor handles are flattened
         into the same tuple, in the order that they are defined.
-
         The following example registers two services (Heart Rate, and Nordic UART):
-
         HR_UUID = bluetooth.UUID(0x180D)
         HR_CHAR = (bluetooth.UUID(0x2A37), bluetooth.FLAG_READ | bluetooth.FLAG_NOTIFY,)
         HR_SERVICE = (HR_UUID, (HR_CHAR,),)
@@ -361,15 +297,11 @@ class BLE:
         UART_SERVICE = (UART_UUID, (UART_TX, UART_RX,),)
         SERVICES = (HR_SERVICE, UART_SERVICE,)
         ( (hr,), (tx, rx,), ) = bt.gatts_register_services(SERVICES)
-
         The three value handles (hr, tx, rx) can be used with
         gatts_read, gatts_write, gatts_notify, and
         gatts_indicate.
-
         Note: Advertising must be stopped before registering services.
-
         Available flags for characteristics and descriptors are:
-
         from micropython import const
         _FLAG_BROADCAST = const(0x0001)
         _FLAG_READ = const(0x0002)
@@ -386,7 +318,6 @@ class BLE:
         _FLAG_WRITE_ENCRYPTED = const(0x1000)
         _FLAG_WRITE_AUTHENTICATED = const(0x2000)
         _FLAG_WRITE_AUTHORIZED = const(0x4000)
-
         As for the IRQs above, any required constants should be added to your Python code.
         """
         ...
@@ -394,7 +325,6 @@ class BLE:
         """
         Sets the internal buffer size for a value in bytes. This will limit the
         largest possible write that can be received. The default is 20.
-
         Setting append to True will make all remote writes append to, rather
         than replace, the current value. At most len bytes can be buffered in
         this way. When you use gatts_read, the value will
@@ -405,7 +335,6 @@ class BLE:
     def gatts_write(self, value_handle: int, data: bytes, send_update: bool = False, /) -> None:
         """
         Writes the local value for this handle, which can be read by a client.
-
         If send_update is True, then any subscribed clients will be notified
         (or indicated, depending on what they’re subscribed to and which operations
         the characteristic supports) about this write.
@@ -416,7 +345,6 @@ class BLE:
         Registers a callback for events from the BLE stack. The handler takes two
         arguments, event (which will be one of the codes below) and data
         (which is an event-specific tuple of values).
-
         Note: As an optimisation to prevent unnecessary allocations, the addr,
         adv_data, char_data, notify_data, and uuid entries in the
         tuples are read-only memoryview instances pointing to bluetooth’s internal
@@ -425,17 +353,13 @@ class BLE:
         the IRQ handler has returned (e.g. by saving it in a class instance or global
         variable), then it needs to take a copy of the data, either by using bytes()
         or bluetooth.UUID(), like this:
-
         connected_addr = bytes(addr)  # equivalently: adv_data, char_data, or notify_data
         matched_uuid = bluetooth.UUID(uuid)
-
         For example, the IRQ handler for a scan result might inspect the adv_data
         to decide if it’s the correct device, and only then copy the address data to be
         used elsewhere in the program.  And to print data from within the IRQ handler,
         print(bytes(addr)) will be needed.
-
         An event handler showing all possible events:
-
         def bt_irq(event, data):
         if event == _IRQ_CENTRAL_CONNECT:
         # A central has connected to this peripheral.
@@ -547,9 +471,7 @@ class BLE:
         # action will be an action that is compatible with the configured "io" config.
         # passkey will be non-zero if action is "numeric comparison".
         conn_handle, action, passkey = data
-
         The event codes are:
-
         from micropython import const
         _IRQ_CENTRAL_CONNECT = const(1)
         _IRQ_CENTRAL_DISCONNECT = const(2)
@@ -581,23 +503,18 @@ class BLE:
         _IRQ_ENCRYPTION_UPDATE = const(28)
         _IRQ_GET_SECRET = const(29)
         _IRQ_SET_SECRET = const(30)
-
         For the _IRQ_GATTS_READ_REQUEST event, the available return codes are:
-
         _GATTS_NO_ERROR = const(0x00)
         _GATTS_ERROR_READ_NOT_PERMITTED = const(0x02)
         _GATTS_ERROR_WRITE_NOT_PERMITTED = const(0x03)
         _GATTS_ERROR_INSUFFICIENT_AUTHENTICATION = const(0x05)
         _GATTS_ERROR_INSUFFICIENT_AUTHORIZATION = const(0x08)
         _GATTS_ERROR_INSUFFICIENT_ENCRYPTION = const(0x0f)
-
         For the _IRQ_PASSKEY_ACTION event, the available actions are:
-
         _PASSKEY_ACTION_NONE = const(0)
         _PASSKEY_ACTION_INPUT = const(2)
         _PASSKEY_ACTION_DISPLAY = const(3)
         _PASSKEY_ACTION_NUMERIC_COMPARISON = const(4)
-
         In order to save space in the firmware, these constants are not included on the
         bluetooth module. Add the ones that you need from the list above to your
         program.
@@ -606,10 +523,8 @@ class BLE:
     def l2cap_connect(self, conn_handle: int, psm: int, mtu: int, /) -> None:
         """
         Connect to a listening peer on the specified psm with local MTU set to mtu.
-
         On successful connection, the _IRQ_L2CAP_CONNECT event will be
         raised, allowing the client to obtain the CID and the local and remote (peer) MTU.
-
         An unsuccessful connection will raise the _IRQ_L2CAP_DISCONNECT event
         with a non-zero status.
         """
@@ -624,15 +539,12 @@ class BLE:
         """
         Start listening for incoming L2CAP channel requests on the specified psm
         with the local MTU set to mtu.
-
         When a remote device initiates a connection, the _IRQ_L2CAP_ACCEPT
         event will be raised, which gives the listening server a chance to reject
         the incoming connection (by returning a non-zero integer).
-
         Once the connection is accepted, the _IRQ_L2CAP_CONNECT event will be
         raised, allowing the server to obtain the channel id (CID) and the local and
         remote MTU.
-
         Note: It is not currently possible to stop listening.
         """
         ...
@@ -641,16 +553,12 @@ class BLE:
         Receive data from the specified conn_handle and cid into the provided
         buf (which must support the buffer protocol, e.g. bytearray or
         memoryview).
-
         Returns the number of bytes read from the channel.
-
         If buf is None, then returns the number of bytes available.
-
         Note: After receiving the _IRQ_L2CAP_RECV event, the application should
         continue calling l2cap_recvinto until no more
         bytes are available in the receive buffer (typically up to the size of the
         remote (peer) MTU).
-
         Until the receive buffer is empty, the remote device will not be granted
         more channel credits and will be unable to send any more data.
         """
@@ -659,10 +567,8 @@ class BLE:
         """
         Send the specified buf (which must support the buffer protocol) on the
         L2CAP channel identified by conn_handle and cid.
-
         The specified buffer cannot be larger than the remote (peer) MTU, and no
         more than twice the size of the local MTU.
-
         This will return False if the channel is now “stalled”, which means that
         l2cap_send must not be called again until the
         _IRQ_L2CAP_SEND_READY event is received (which will happen when the
@@ -674,9 +580,7 @@ class BLE:
 class UUID:
     """
     Creates a UUID instance with the specified value.
-
     The value can be either:
-
     A 16-bit integer. e.g. 0x2908.
 
     An object with the buffer protocol and that is 2, 4 or 16 bytes long, e.g. b'\x08\x29'.

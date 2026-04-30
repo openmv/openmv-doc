@@ -11,18 +11,14 @@ def dupterm(stream_object: Any, index: int = 0, /) -> Any:
     from io.IOBase and implement the readinto() and
     write() methods.  The stream should be in non-blocking mode and
     readinto() should return None if there is no data available for reading.
-
     After calling this function all terminal output is repeated on this stream,
     and any input that is available on the stream is passed on to the terminal input.
-
     The index parameter should be a non-negative integer and specifies which
     duplication slot is set.  A given port may implement more than one slot (slot 0
     will always be available) and in that case terminal input and output is
     duplicated on all the slots that are set.
-
     If None is passed as the stream_object then duplication is cancelled on
     the slot given by index.
-
     The function returns the previous stream-like object in the given slot.
     """
     ...
@@ -30,24 +26,19 @@ def dupterm_notify(obj_in: Any, /) -> None:
     """
     Notify the MicroPython REPL that input is available on a stream-like object
     previously registered via os.dupterm().
-
     This function should be called by custom stream implementations (e.g., UART,
     Bluetooth, or other non-USB REPL streams) to inform the REPL that input is
     ready to be read. Proper use ensures that special characters such as
     Ctrl+C (used to trigger KeyboardInterrupt) are processed promptly by the
     REPL, enabling expected interruption behavior for user code.
-
     The obj_in parameter is ignored by os.dupterm_notify(), but is required to allow calling
     dupterm_notify from an interrupt handler such as UART.irq().
-
     Example:
-
     from machine import UART
     import os
     uart = UART(0)
     os.dupterm(uart, 0)
     uart.irq(os.dupterm_notify, machine.UART.IRQ_RX)
-
     If the dupterm_notify() function is not called, input from the custom stream
     may not be detected or processed until the next REPL poll, potentially delaying
     KeyboardInterrupts or other control signals.
@@ -63,9 +54,7 @@ def ilistdir(dir: str | None = None) -> Iterator[Tuple]:
     This function returns an iterator which then yields tuples corresponding to
     the entries in the directory that it is listing.  With no argument it lists the
     current directory, otherwise it lists the directory given by dir.
-
     The tuples have the form (name, type, inode[, size]):
-
     name is a string (or bytes if dir is a bytes object) and is the name of
     the entry;
 
@@ -104,9 +93,7 @@ def stat(path: str) -> Tuple:
 def statvfs(path: str) -> Tuple:
     """
     Get the status of a filesystem.
-
     Returns a tuple with the filesystem information in the following order:
-
     f_bsize – file system block size
 
     f_frsize – fragment size
@@ -126,7 +113,6 @@ def statvfs(path: str) -> Tuple:
     f_flag – mount flags
 
     f_namemax – maximum filename length
-
     Parameters related to inodes: f_files, f_ffree, f_avail
     and the f_flags parameter may return 0 as they can be unavailable
     in a port-specific implementation.
@@ -143,7 +129,6 @@ def uname() -> Tuple[str, str, str, str, str]:
     Return a tuple (possibly a named tuple) containing information about the
     underlying machine and/or its operating system.  The tuple has five fields
     in the following order, each of them being a string:
-
     sysname – the name of the underlying system
 
     nodename – the network name (can be the same as sysname)

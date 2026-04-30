@@ -13,7 +13,6 @@ def advertise(interval_us: int, adv_data: bytes | None = None, resp_data: bytes 
     central connection. Returns a DeviceConnection representing the
     connected central, or raises asyncio.TimeoutError on
     timeout.
-
     interval_us
 
     Advertising interval, in microseconds.
@@ -67,7 +66,6 @@ def config(*args, **kwargs) -> Any:
     """
     Forwards to bluetooth.BLE.config(), ensuring the BLE radio is
     active first.
-
     args
 
     Optional single parameter name to query.
@@ -83,7 +81,6 @@ def register_services(*services: Service) -> None:
     and descriptors) with the GATT server. Must be called once before
     starting advertise. Subsequent calls replace the previous
     registration.
-
     services
 
     One or more Service instances.
@@ -94,7 +91,6 @@ def scan(duration_ms: int, interval_us: int | None = None, window_us: int | None
     Returns a scan async context-manager / async-iterator that yields
     ScanResult instances for each unique device discovered (or for
     each new piece of advertising data from a known device).
-
     duration_ms
 
     How long to scan, in milliseconds. Pass 0 to scan
@@ -154,7 +150,6 @@ class BufferedCharacteristic:
     A Characteristic whose backing GATT buffer can be configured.
     Useful for receiving values larger than the default attribute
     size, or for queuing back-to-back writes.
-
     max_len
 
     Buffer size, in bytes.
@@ -163,41 +158,47 @@ class BufferedCharacteristic:
 
     If True, sequential writes append into the buffer instead
     of overwriting.
-
     Other arguments forward to Characteristic.
     """
     def __init__(self, service: Service, uuid: bluetooth.UUID, max_len: int = 20, append: bool = False, **kwargs) -> None: ...
 
 class Characteristic:
     """
-    Override hook invoked synchronously when a remote read is
-    received. Return 0 to allow the read or a non-zero ATT
-    error code to reject it. Default implementation returns 0.
+    A local GATT characteristic. Constructing one automatically
+    appends it to service.
+    service
+
+    The owning Service.
+
+    uuid
+
+    The characteristic UUID.
+
+    read, write, write_no_response, notify, indicate
+
+    Booleans selecting the supported GATT operations.
+
+    initial
+
+    Optional initial value (bytes).
+
+    capture
+
+    If True, written values are queued (up to 10 deep) so that
+    rapid back-to-back writes are not lost. Each written call
+    then returns a (connection, data) tuple.
     """
     def __init__(self, service: Service, uuid: bluetooth.UUID, read: bool = False, write: bool = False, write_no_response: bool = False, notify: bool = False, indicate: bool = False, initial: bytes | None = None, capture: bool = False) -> None: ...
     descriptors: Any
-    """
-    Override hook invoked synchronously when a remote read is
-    received. Return 0 to allow the read or a non-zero ATT
-    error code to reject it. Default implementation returns 0.
-    """
+    """List of Descriptor objects bound to this characteristic."""
     flags: Any
-    """
-    Override hook invoked synchronously when a remote read is
-    received. Return 0 to allow the read or a non-zero ATT
-    error code to reject it. Default implementation returns 0.
-    """
+    """Bitmask of the GATT property flags built from the constructor."""
     uuid: Any
-    """
-    Override hook invoked synchronously when a remote read is
-    received. Return 0 to allow the read or a non-zero ATT
-    error code to reject it. Default implementation returns 0.
-    """
+    """The characteristic UUID."""
     def indicate(self, connection: DeviceConnection, data: bytes | None = None, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Send a GATT Indicate to connection and wait for the
         client confirmation. Raises GattError on a non-zero status.
-
         connection
 
         The target client connection.
@@ -214,7 +215,6 @@ class Characteristic:
     def notify(self, connection: DeviceConnection, data: bytes | None = None) -> None:
         """
         Send a GATT Notify to connection.
-
         connection
 
         The target client connection.
@@ -238,7 +238,6 @@ class Characteristic:
     def write(self, data: bytes, send_update: bool = False) -> None:
         """
         Update the value in the local GATT database.
-
         data
 
         New value bytes.
@@ -254,7 +253,6 @@ class Characteristic:
         Async. Wait for a remote write. Returns the writing
         DeviceConnection, or (connection, data) if the
         characteristic was created with capture=True.
-
         timeout_ms
 
         Maximum time to wait. None waits forever.
@@ -263,25 +261,18 @@ class Characteristic:
 
 class ClientCharacteristic:
     """
-    Return an async iterator of ClientDescriptor objects. Use
-    with async for and run the loop to completion.
+    A remote GATT characteristic discovered on a peer. Returned by
+    ClientService.characteristic() or iterated from
+    ClientService.characteristics().
+    Do not construct directly.
     """
     def __init__(self) -> None: ...
     properties: Any
-    """
-    Return an async iterator of ClientDescriptor objects. Use
-    with async for and run the loop to completion.
-    """
+    """Bitmask of supported GATT operations as reported by the peer."""
     service: Any
-    """
-    Return an async iterator of ClientDescriptor objects. Use
-    with async for and run the loop to completion.
-    """
+    """The owning ClientService."""
     uuid: Any
-    """
-    Return an async iterator of ClientDescriptor objects. Use
-    with async for and run the loop to completion.
-    """
+    """The characteristic UUID."""
     def descriptor(self, uuid: bluetooth.UUID, timeout_ms: int = 2000) -> Awaitable[ClientDescriptor | None]:
         """
         Async. Discover a single descriptor by UUID, or None if
@@ -298,7 +289,6 @@ class ClientCharacteristic:
         """
         Async. Wait for the next indication on this characteristic and
         return its payload.
-
         timeout_ms
 
         Maximum time to wait.
@@ -309,7 +299,6 @@ class ClientCharacteristic:
         Async. Wait for the next notification on this characteristic
         and return its payload. Returns immediately if a notification
         is already queued.
-
         timeout_ms
 
         Maximum time to wait. None waits forever.
@@ -319,7 +308,6 @@ class ClientCharacteristic:
         """
         Async. Issue a GATT Read and return the value. Raises
         GattError on a non-zero status.
-
         timeout_ms
 
         Read timeout.
@@ -330,7 +318,6 @@ class ClientCharacteristic:
         Async. Write the Client Characteristic Configuration
         Descriptor (CCCD) to subscribe (or unsubscribe) for
         notifications and/or indications.
-
         notify
 
         Enable notifications.
@@ -343,7 +330,6 @@ class ClientCharacteristic:
     def write(self, data: bytes, response: bool | None = None, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Issue a GATT Write.
-
         data
 
         Value to write.
@@ -362,53 +348,29 @@ class ClientCharacteristic:
         ...
 
 class ClientDescriptor:
-    """The descriptor UUID."""
+    """
+    A remote GATT descriptor discovered on a peer. Inherits
+    read and write from ClientCharacteristic.
+    Do not construct directly.
+    """
     def __init__(self) -> None: ...
     characteristic: Any
-    """The descriptor UUID."""
+    """The owning ClientCharacteristic."""
     uuid: Any
     """The descriptor UUID."""
 
 class ClientService:
     """
-    Return an async iterator of ClientCharacteristic objects.
-    Use with async for and run the loop to completion.
-
-    uuid
-
-    Optional UUID filter.
-
-    timeout_ms
-
-    Per-discovery timeout.
+    A remote GATT service discovered on a peer. Returned by
+    DeviceConnection.service() or iterated from
+    DeviceConnection.services().
+    Do not construct directly.
     """
     def __init__(self) -> None: ...
     connection: Any
-    """
-    Return an async iterator of ClientCharacteristic objects.
-    Use with async for and run the loop to completion.
-
-    uuid
-
-    Optional UUID filter.
-
-    timeout_ms
-
-    Per-discovery timeout.
-    """
+    """The owning DeviceConnection."""
     uuid: Any
-    """
-    Return an async iterator of ClientCharacteristic objects.
-    Use with async for and run the loop to completion.
-
-    uuid
-
-    Optional UUID filter.
-
-    timeout_ms
-
-    Per-discovery timeout.
-    """
+    """The remote service UUID."""
     def characteristic(self, uuid: bluetooth.UUID, timeout_ms: int = 2000) -> Awaitable[ClientCharacteristic | None]:
         """
         Async. Discover a single characteristic by UUID, or None
@@ -419,7 +381,6 @@ class ClientService:
         """
         Return an async iterator of ClientCharacteristic objects.
         Use with async for and run the loop to completion.
-
         uuid
 
         Optional UUID filter.
@@ -435,7 +396,6 @@ class Descriptor:
     A local GATT descriptor. Constructing one automatically appends it
     to characteristic. Inherits read,
     write and written from Characteristic.
-
     characteristic
 
     The owning Characteristic.
@@ -456,59 +416,23 @@ class Descriptor:
 
 class Device:
     """
-    Async. Initiate a GAP connection to this device and return the
-    resulting DeviceConnection. Cancels any in-progress scan.
+    Represents a remote BLE device by address. Two Device instances
+    compare equal if both addr_type and addr match. Used as the
+    handle for initiating connections.
+    addr_type
 
-    timeout_ms
+    Either ADDR_PUBLIC or ADDR_RANDOM.
 
-    How long to wait for the connection to complete.
+    addr
 
-    scan_duration_ms
-
-    Initial scan duration before connecting (controller
-    specific).
-
-    min_conn_interval_us / max_conn_interval_us
-
-    Optional connection interval bounds, in microseconds.
+    Six-byte address as bytes, or a colon-separated hex string
+    (e.g. "aa:bb:cc:dd:ee:ff").
     """
     def __init__(self, addr_type: int, addr: bytes | str) -> None: ...
     addr: Any
-    """
-    Async. Initiate a GAP connection to this device and return the
-    resulting DeviceConnection. Cancels any in-progress scan.
-
-    timeout_ms
-
-    How long to wait for the connection to complete.
-
-    scan_duration_ms
-
-    Initial scan duration before connecting (controller
-    specific).
-
-    min_conn_interval_us / max_conn_interval_us
-
-    Optional connection interval bounds, in microseconds.
-    """
+    """The raw six-byte device address."""
     addr_type: Any
-    """
-    Async. Initiate a GAP connection to this device and return the
-    resulting DeviceConnection. Cancels any in-progress scan.
-
-    timeout_ms
-
-    How long to wait for the connection to complete.
-
-    scan_duration_ms
-
-    Initial scan duration before connecting (controller
-    specific).
-
-    min_conn_interval_us / max_conn_interval_us
-
-    Optional connection interval bounds, in microseconds.
-    """
+    """The address type the device was constructed with."""
     def addr_hex(self) -> str:
         """Return the address formatted as a colon-separated hex string."""
         ...
@@ -516,7 +440,6 @@ class Device:
         """
         Async. Initiate a GAP connection to this device and return the
         resulting DeviceConnection. Cancels any in-progress scan.
-
         timeout_ms
 
         How long to wait for the connection to complete.
@@ -534,121 +457,30 @@ class Device:
 
 class DeviceConnection:
     """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
+    An active GAP connection to a Device. Returned by
+    Device.connect() or advertise. Supports use as an
+    async with context manager that auto-disconnects on exit.
+    Do not construct directly.
     """
     def __init__(self) -> None: ...
     authenticated: Any
-    """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
-    """
+    """True if the link was authenticated (MITM-protected pair)."""
     bonded: Any
-    """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
-    """
+    """True if pairing produced bonding keys."""
     device: Any
-    """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
-    """
+    """The underlying Device."""
     encrypted: Any
-    """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
-    """
+    """True once the link is encrypted (e.g. after pairing)."""
     key_size: Any
     """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
+    Negotiated encryption key size in bytes, or False if not
+    encrypted.
     """
     mtu: Any
-    """
-    Async. Open an L2CAP channel to the remote on the given PSM.
-
-    psm
-
-    Protocol/Service Multiplexer to connect to.
-
-    mtu
-
-    Maximum receive size, in bytes.
-
-    timeout_ms
-
-    Connection timeout.
-    """
+    """Negotiated ATT MTU after exchange_mtu, or None until set."""
     def disconnect(self, timeout_ms: int = 2000) -> Awaitable[None]:
         """
         Async. Disconnect and wait for the disconnection IRQ.
-
         timeout_ms
 
         Maximum time to wait for the disconnection.
@@ -659,7 +491,6 @@ class DeviceConnection:
         Async. Wait for the connection to be terminated by either
         side. If disconnect is True it actively disconnects
         first.
-
         timeout_ms
 
         Maximum time to wait. None means wait forever.
@@ -673,7 +504,6 @@ class DeviceConnection:
         """
         Async. Initiate an ATT MTU exchange and return the negotiated
         MTU.
-
         mtu
 
         Optional preferred MTU to set on the underlying BLE
@@ -691,7 +521,6 @@ class DeviceConnection:
         """
         Async. Listen on the given PSM and return an L2CAPChannel
         once the remote opens it.
-
         psm
 
         Protocol/Service Multiplexer to listen on.
@@ -708,7 +537,6 @@ class DeviceConnection:
     def l2cap_connect(self, psm: int, mtu: int, timeout_ms: int = 1000) -> Awaitable[L2CAPChannel]:
         """
         Async. Open an L2CAP channel to the remote on the given PSM.
-
         psm
 
         Protocol/Service Multiplexer to connect to.
@@ -727,7 +555,6 @@ class DeviceConnection:
         Async. Initiate pairing on this connection. Updates the
         encrypted / authenticated / bonded / key_size
         attributes when complete.
-
         bond
 
         Persist pairing keys.
@@ -759,7 +586,6 @@ class DeviceConnection:
         """
         Return an async iterator of remote ClientService objects.
         Use with async for and run the loop to completion.
-
         uuid
 
         Optional UUID filter. None returns every service.
@@ -774,7 +600,6 @@ class DeviceConnection:
         Return a context manager that cancels its body if either the
         timeout elapses (raising asyncio.TimeoutError) or the
         device disconnects (raising DeviceDisconnectedError).
-
         timeout_ms
 
         Timeout in milliseconds, or None for no timeout.
@@ -783,28 +608,22 @@ class DeviceConnection:
 
 class L2CAPChannel:
     """
-    Async. Wait until the channel is disconnected by either side.
-
-    timeout_ms
-
-    Maximum time to wait.
+    An active L2CAP connection-oriented channel. Returned by
+    DeviceConnection.l2cap_accept() or
+    DeviceConnection.l2cap_connect(). Supports use as an
+    async with context manager that auto-disconnects on exit.
+    Do not construct directly.
     """
     def __init__(self) -> None: ...
     our_mtu: Any
     """
-    Async. Wait until the channel is disconnected by either side.
-
-    timeout_ms
-
-    Maximum time to wait.
+    Maximum size, in bytes, that the peer may send to us in a
+    single SDU.
     """
     peer_mtu: Any
     """
-    Async. Wait until the channel is disconnected by either side.
-
-    timeout_ms
-
-    Maximum time to wait.
+    Maximum size, in bytes, that we may send to the peer in a
+    single SDU.
     """
     def available(self) -> bool:
         """
@@ -816,7 +635,6 @@ class L2CAPChannel:
         """
         Async. Disconnect the channel and wait for the disconnection
         IRQ.
-
         timeout_ms
 
         Maximum time to wait.
@@ -825,7 +643,6 @@ class L2CAPChannel:
     def disconnected(self, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Wait until the channel is disconnected by either side.
-
         timeout_ms
 
         Maximum time to wait.
@@ -835,7 +652,6 @@ class L2CAPChannel:
         """
         Async. Wait until any stalled send has been drained by the
         controller.
-
         timeout_ms
 
         Maximum time to wait.
@@ -845,7 +661,6 @@ class L2CAPChannel:
         """
         Async. Receive into buf, returning the number of bytes
         read. Awaits new data if the channel is empty.
-
         buf
 
         Pre-allocated buffer to fill.
@@ -859,7 +674,6 @@ class L2CAPChannel:
         """
         Async. Send buf on the channel, fragmenting larger payloads
         into MTU-sized chunks. Awaits flow-control credits as needed.
-
         buf
 
         Bytes-like object to send.
@@ -877,64 +691,28 @@ class L2CAPChannel:
 
 class ScanResult:
     """
-    Generator yielding (company_id, data) tuples from
-    manufacturer-specific advertising fields.
-
-    filter
-
-    If given, only yield entries whose company ID matches.
+    A single device discovered during scan. The same instance is
+    re-yielded as new advertising data arrives.
+    Do not construct directly.
     """
     def __init__(self) -> None: ...
     adv_data: Any
-    """
-    Generator yielding (company_id, data) tuples from
-    manufacturer-specific advertising fields.
-
-    filter
-
-    If given, only yield entries whose company ID matches.
-    """
+    """Raw advertising payload (bytes or None)."""
     connectable: Any
-    """
-    Generator yielding (company_id, data) tuples from
-    manufacturer-specific advertising fields.
-
-    filter
-
-    If given, only yield entries whose company ID matches.
-    """
+    """True if the most recent advertisement was connectable."""
     device: Any
-    """
-    Generator yielding (company_id, data) tuples from
-    manufacturer-specific advertising fields.
-
-    filter
-
-    If given, only yield entries whose company ID matches.
-    """
+    """The underlying Device."""
     resp_data: Any
     """
-    Generator yielding (company_id, data) tuples from
-    manufacturer-specific advertising fields.
-
-    filter
-
-    If given, only yield entries whose company ID matches.
+    Raw scan response payload (bytes or None), if active
+    scanning is enabled.
     """
     rssi: Any
-    """
-    Generator yielding (company_id, data) tuples from
-    manufacturer-specific advertising fields.
-
-    filter
-
-    If given, only yield entries whose company ID matches.
-    """
+    """Last reported RSSI, in dBm."""
     def manufacturer(self, filter: int | None = None) -> Iterator[tuple[int, bytes]]:
         """
         Generator yielding (company_id, data) tuples from
         manufacturer-specific advertising fields.
-
         filter
 
         If given, only yield entries whose company ID matches.
@@ -954,10 +732,16 @@ class ScanResult:
         ...
 
 class Service:
-    """List of Characteristic objects bound to this service."""
+    """
+    A local GATT service. Build a service with one or more
+    Characteristic instances, then pass it to register_services.
+    uuid
+
+    The service UUID.
+    """
     def __init__(self, uuid: bluetooth.UUID) -> None: ...
     characteristics: Any
     """List of Characteristic objects bound to this service."""
     uuid: Any
-    """List of Characteristic objects bound to this service."""
+    """The service UUID."""
 

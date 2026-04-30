@@ -20,7 +20,6 @@ def angular_rate_mdps() -> Tuple[float, float, float]:
 def pitch() -> float:
     """
     Returns the pitch angle of the camera module in degrees.
-
     0 -> Camera is standing up.
 
     90 -> Camera is pointing down.
@@ -33,7 +32,6 @@ def pitch() -> float:
 def roll() -> float:
     """
     Returns the roll angle of the camera module in degrees.
-
     0 -> Camera is standing up.
 
     90 -> Camera is rotated left.
@@ -55,8 +53,14 @@ def temperature_c() -> float:
 
 class IMU:
     """
-    Return the latest magnetometer reading as an (x, y, z) tuple in
-    micro-tesla (uT).
+    Construct an IMU object bound to an I2C bus.
+    bus is an initialised machine.I2C instance connected
+    to the on-board IMU(s).
+    On construction the bus is scanned: if a device responds at address
+    0x68 a BMI270 plus BMM150 pair is instantiated (Nano 33 BLE Sense
+    Rev 2), otherwise an LSM9DS1 is instantiated (Rev 1). The underlying
+    driver is kept on the imu attribute and configured with default ranges
+    and output data rates.
     """
     def __init__(self, bus: 'machine.I2C') -> None: ...
     def accel(self) -> tuple[float, float, float]:

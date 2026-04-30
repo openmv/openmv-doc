@@ -4,9 +4,49 @@ import machine
 
 class BMI270:
     """
-    If a bmm_magnet was supplied at construction, return the latest
-    magnetometer reading from that device. Otherwise return
-    (0.0, 0.0, 0.0).
+    Construct a BMI270 instance and run the full configuration-load
+    initialisation sequence. Raises OSError if the chip ID does not
+    match or if the load sequence fails.
+    bus
+
+    A configured machine.I2C bus the sensor is attached to.
+
+    cs
+
+    Reserved for SPI mode. Must be left as None; SPI is not
+    currently implemented.
+
+    address
+
+    7-bit I2C address of the device. Defaults to 0x68; some boards
+    strap the SDO pin high which selects 0x69.
+
+    gyro_odr
+
+    Gyroscope output data rate in Hz. Must be one of
+    0.78, 1.5, 3.1, 6.25, 12.5, 25, 50,
+    100, 200, 400, 800 or 1200.
+
+    gyro_scale
+
+    Gyroscope full-scale range in degrees-per-second. Must be one of
+    125, 250, 500, 1000 or 2000.
+
+    accel_odr
+
+    Accelerometer output data rate in Hz. Same set of values as
+    gyro_odr.
+
+    accel_scale
+
+    Accelerometer full-scale range in g. Must be one of 2, 4,
+    8 or 16.
+
+    bmm_magnet
+
+    Optional bmm150.BMM150 instance. When provided, the
+    magnet() method delegates to it; otherwise magnet()
+    returns zeros.
     """
     def __init__(self, bus: machine.I2C, cs: machine.Pin | None = None, address: int = 0x68, gyro_odr: float = 100, gyro_scale: int = 2000, accel_odr: float = 100, accel_scale: int = 4, bmm_magnet: BMM150 | None = None) -> None: ...
     def accel(self) -> tuple[float, float, float]:

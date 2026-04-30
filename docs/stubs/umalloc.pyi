@@ -22,9 +22,7 @@ def stats(index: int = -1) -> tuple[int, int, int, int, int, int, int]:
     Returns a 7-tuple of statistics for the allocator pool selected by
     index. When index is -1 (the default), aggregated statistics
     across all pools are returned.
-
     The tuple contains:
-
     used_count — number of currently allocated blocks.
 
     free_count — number of free blocks.

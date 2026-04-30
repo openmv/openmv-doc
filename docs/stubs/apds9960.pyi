@@ -145,7 +145,458 @@ class ADPS9960InvalidMode(Exception):
     ...
 
 class APDS9960:
-    """Clear a pending proximity interrupt."""
+    """
+    Construct an APDS9960 driver instance.
+    bus is a configured I2C bus object used to communicate with the
+    sensor. The base class issues SMBus-style read_byte_data,
+    write_byte_data, and read_i2c_block_data calls; for MicroPython’s
+    machine.I2C use uAPDS9960 instead.
+
+    address is the 7-bit I2C address of the device. Defaults to
+    APDS9960_I2C_ADDR (0x39).
+
+    valid_id is a list of acceptable values returned by the chip’s ID
+    register. Defaults to APDS9960_DEV_ID.
+    The constructor reads the device ID and raises ADPS9960InvalidDevId
+    if it is not in valid_id. It then disables every feature, programs the
+    default ATIME/WTIME/PPULSE values, and applies the default LED drive,
+    proximity gain, ALS gain, proximity thresholds, ambient-light thresholds,
+    persistence, and gesture-engine configuration (entry/exit thresholds,
+    GCONF1, gesture gain, gesture LED drive, gesture wait time, gesture
+    offsets, GPULSE, GCONF3, and gesture interrupt enable).
+    Mode and power control
+
+
+
+    getMode() -> int
+
+    Return the raw value of the ENABLE register, encoding which features
+    are currently enabled (power, ALS, proximity, wait, ALS interrupt,
+    proximity interrupt, gesture).
+
+
+
+    setMode(mode: int, enable: bool = True) -> None
+
+    Enable or disable an individual feature in the ENABLE register.
+    mode must be one of the APDS9960_MODE_* values
+    (APDS9960_MODE_POWER ..\ APDS9960_MODE_ALL).
+    When mode is APDS9960_MODE_ALL, all bits are turned on or
+    off at once. Raises ADPS9960InvalidMode for out-of-range values.
+
+
+
+    enablePower() -> None
+
+    Power the APDS9960 on (sets the PON bit in ENABLE).
+
+
+
+    disablePower() -> None
+
+    Power the APDS9960 off (clears the PON bit in ENABLE).
+    Ambient light / RGB sensor
+
+
+
+    enableLightSensor(interrupts: bool = True) -> None
+
+    Restore the default ALS gain, configure the ALS interrupt enable bit,
+    power the device on, and enable the ambient-light/color engine.
+
+
+
+    disableLightSensor() -> None
+
+    Disable the ALS interrupt and stop the ambient-light/color engine.
+
+
+
+    readAmbientLight() -> int
+
+    Read the clear-channel ambient-light level as a 16-bit unsigned value.
+
+
+
+    readRedLight() -> int
+
+    Read the red-channel level as a 16-bit unsigned value.
+
+
+
+    readGreenLight() -> int
+
+    Read the green-channel level as a 16-bit unsigned value.
+
+
+
+    readBlueLight() -> int
+
+    Read the blue-channel level as a 16-bit unsigned value.
+    Proximity sensor
+
+
+
+    enableProximitySensor(interrupts: bool = True) -> None
+
+    Restore the default proximity gain and LED drive, configure the
+    proximity interrupt enable bit, power the device on, and enable the
+    proximity engine.
+
+
+
+    disableProximitySensor() -> None
+
+    Disable the proximity interrupt and stop the proximity engine.
+
+
+
+    readProximity() -> int
+
+    Read the proximity level as an 8-bit unsigned value.
+    Gesture engine
+
+
+
+    enableGestureSensor(interrupts: bool = True) -> None
+
+    Reset the gesture state, set WTIME and the gesture pulse count, boost
+    the LED to 300%, configure the gesture interrupt enable bit, enter the
+    gesture state machine, power the device on, and enable wait, proximity,
+    and gesture modes.
+
+
+
+    disableGestureSensor() -> None
+
+    Reset the gesture state, disable the gesture interrupt and state
+    machine, and stop the gesture engine.
+
+
+
+    isGestureAvailable() -> bool
+
+    Return True if the GVALID bit of the gesture status register is set,
+    indicating that gesture FIFO data is ready to be read.
+
+
+
+    readGesture() -> int
+
+    Drain the gesture FIFO, run the on-board gesture decoder, and return
+    one of the APDS9960_DIR_* direction constants. Returns
+    APDS9960_DIR_NONE if the engine is not running, no valid data
+    is available, or the data did not resolve to a recognized gesture.
+
+
+
+    resetGestureParameters() -> None
+
+    Clear the internal gesture FIFO buffer, deltas, counts, near/far
+    counters, state, and last-decoded motion.
+
+
+
+    processGestureData() -> bool
+
+    Process the raw U/D/L/R FIFO samples currently buffered to update the
+    U/D and L/R deltas and the near/far counters. Returns True if a
+    near or far event was detected, False otherwise.
+
+
+
+    decodeGesture() -> bool
+
+    Convert the current U/D and L/R counts and accumulated deltas into a
+    direction stored in the internal gesture_motion_ field. Returns
+    True when a direction is recognized, False otherwise.
+    Proximity thresholds
+
+
+
+    getProxIntLowThresh() -> int
+
+    Return the low proximity-interrupt threshold (PILT register).
+
+
+
+    setProxIntLowThresh(threshold: int) -> None
+
+    Set the low proximity-interrupt threshold.
+
+
+
+    getProxIntHighThresh() -> int
+
+    Return the high proximity-interrupt threshold (PIHT register).
+
+
+
+    setProxIntHighThresh(threshold: int) -> None
+
+    Set the high proximity-interrupt threshold.
+
+
+
+    getProximityIntLowThreshold() -> int
+
+    Alias for getProxIntLowThresh().
+
+
+
+    setProximityIntLowThreshold(threshold: int) -> None
+
+    Alias for setProxIntLowThresh().
+
+
+
+    getProximityIntHighThreshold() -> int
+
+    Alias for getProxIntHighThresh().
+
+
+
+    setProximityIntHighThreshold(threshold: int) -> None
+
+    Alias for setProxIntHighThresh().
+    LED drive, gain, and boost
+
+
+
+    getLEDDrive() -> int
+
+    Return the LED drive strength used for proximity and ALS. Encoded as
+    one of the APDS9960_LED_DRIVE_* values (0 = 100 mA, 1 = 50 mA,
+    2 = 25 mA, 3 = 12.5 mA).
+
+
+
+    setLEDDrive(drive: int) -> None
+
+    Set the LED drive strength used for proximity and ALS. drive is
+    one of the APDS9960_LED_DRIVE_* values.
+
+
+
+    getProximityGain() -> int
+
+    Return the proximity-receiver gain. Encoded as one of the
+    APDS9960_PGAIN_* values (0 = 1x, 1 = 2x, 2 = 4x, 3 = 8x).
+
+
+
+    setProximityGain(drive: int) -> None
+
+    Set the proximity-receiver gain. drive is one of the
+    APDS9960_PGAIN_* values.
+
+
+
+    getAmbientLightGain() -> int
+
+    Return the ambient-light-sensor gain. Encoded as one of the
+    APDS9960_AGAIN_* values (0 = 1x, 1 = 4x, 2 = 16x, 3 = 64x).
+
+
+
+    setAmbientLightGain(drive: int) -> None
+
+    Set the ambient-light-sensor gain. drive is one of the
+    APDS9960_AGAIN_* values.
+
+
+
+    getLEDBoost() -> int
+
+    Return the LED current boost. Encoded as one of the
+    APDS9960_LED_BOOST_* values (0 = 100%, 1 = 150%, 2 = 200%,
+    3 = 300%).
+
+
+
+    setLEDBoost(boost: int) -> None
+
+    Set the LED current boost. boost is one of the
+    APDS9960_LED_BOOST_* values.
+    Proximity gain compensation and photodiode mask
+
+
+
+    getProxGainCompEnable() -> bool
+
+    Return True if proximity gain compensation is enabled.
+
+
+
+    setProxGainCompEnable(enable: bool) -> None
+
+    Enable or disable proximity gain compensation.
+
+
+
+    getProxPhotoMask() -> int
+
+    Return the 4-bit mask of disabled proximity photodiodes. Bits map as
+    3=UP, 2=DOWN, 1=LEFT, 0=RIGHT; 1 disables a
+    photodiode and 0 enables it.
+
+
+
+    setProxPhotoMask(mask: int) -> None
+
+    Set the 4-bit mask of disabled proximity photodiodes (see encoding
+    above).
+    Gesture configuration
+
+
+
+    getGestureEnterThresh() -> int
+
+    Return the proximity threshold required to enter gesture mode.
+
+
+
+    setGestureEnterThresh(threshold: int) -> None
+
+    Set the proximity threshold required to enter gesture mode.
+
+
+
+    getGestureExitThresh() -> int
+
+    Return the proximity threshold required to exit gesture mode.
+
+
+
+    setGestureExitThresh(threshold: int) -> None
+
+    Set the proximity threshold required to exit gesture mode.
+
+
+
+    getGestureGain() -> int
+
+    Return the photodiode gain used during gesture mode. Encoded as one of
+    the APDS9960_GGAIN_* values (0 = 1x, 1 = 2x, 2 = 4x, 3 = 8x).
+
+
+
+    setGestureGain(gain: int) -> None
+
+    Set the photodiode gain used during gesture mode.
+
+
+
+    getGestureLEDDrive() -> int
+
+    Return the LED drive current used during gesture mode. Encoded as one
+    of the APDS9960_LED_DRIVE_* values.
+
+
+
+    setGestureLEDDrive(drive: int) -> None
+
+    Set the LED drive current used during gesture mode.
+
+
+
+    getGestureWaitTime() -> int
+
+    Return the low-power wait time between gesture detections. Encoded as
+    one of the APDS9960_GWTIME_* values (0 = 0 ms .. 7 = 39.2 ms).
+
+
+
+    setGestureWaitTime(time: int) -> None
+
+    Set the low-power wait time between gesture detections.
+
+
+
+    getGestureMode() -> bool
+
+    Return True if the gesture state machine is currently running.
+
+
+
+    setGestureMode(enable: bool) -> None
+
+    Enter or leave the gesture state machine.
+    Ambient-light interrupt thresholds
+
+
+
+    getLightIntLowThreshold() -> int
+
+    Return the 16-bit low threshold used for the ambient-light interrupt.
+
+
+
+    setLightIntLowThreshold(threshold: int) -> None
+
+    Set the 16-bit low threshold used for the ambient-light interrupt.
+
+
+
+    getLightIntHighThreshold() -> int
+
+    Return the 16-bit high threshold used for the ambient-light interrupt.
+
+
+
+    setLightIntHighThreshold(threshold: int) -> None
+
+    Set the 16-bit high threshold used for the ambient-light interrupt.
+    Interrupt enables and clears
+
+
+
+    getAmbientLightIntEnable() -> bool
+
+    Return True if ambient-light interrupts are enabled.
+
+
+
+    setAmbientLightIntEnable(enable: bool) -> None
+
+    Enable or disable ambient-light interrupts.
+
+
+
+    getProximityIntEnable() -> bool
+
+    Return True if proximity interrupts are enabled.
+
+
+
+    setProximityIntEnable(enable: bool) -> None
+
+    Enable or disable proximity interrupts.
+
+
+
+    getGestureIntEnable() -> bool
+
+    Return True if gesture interrupts are enabled.
+
+
+
+    setGestureIntEnable(enable: bool) -> None
+
+    Enable or disable gesture interrupts.
+
+
+
+    clearAmbientLightInt() -> None
+
+    Clear a pending ambient-light interrupt.
+
+
+
+    clearProximityInt() -> None
+
+    Clear a pending proximity interrupt.
+    """
     def __init__(self, bus: machine.I2C, address: int = 0x39, valid_id: list = [0xAB, 0x9C, 0xA8, -0x55]) -> None: ...
     def clearAmbientLightInt(self) -> None:
         """Clear a pending ambient-light interrupt."""

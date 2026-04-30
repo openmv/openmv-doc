@@ -24,29 +24,8 @@ CLASS_C: int
 """LoRaWAN end-device Class C."""
 LoraErrors: int
 """
-Build an AT command from cmd and args, optionally append a raw
-data payload, transmit it, and return the modem’s response. For
-query commands ending in ?, only the value portion (the substring
-after =) is returned.
-
-Parameters
-
-cmd – AT command suffix (e.g. "+JOIN", "+DR="); the
-"AT" prefix and trailing \r are added automatically.
-
-args – Additional arguments concatenated to cmd after string
-conversion.
-
-delimiter – Delimiter forwarded to receive().
-
-data – Optional raw bytes written immediately after the AT
-command (used for binary uplink payloads).
-
-timeout – Response timeout, in milliseconds.
-
-raise_error – When True, error responses are converted into
-LoraError exceptions; when False, the raw response is
-returned to the caller.
+Mapping from modem error response strings (e.g. "+ERR_BUSY") to the
+corresponding exception class. Used internally by handle_error().
 """
 MODE_ABP: int
 """Activation By Personalization mode."""
@@ -105,29 +84,28 @@ class LoraErrorUnknown(Exception):
 
 class Lora:
     """
-    Build an AT command from cmd and args, optionally append a raw
-    data payload, transmit it, and return the modem’s response. For
-    query commands ending in ?, only the value portion (the substring
-    after =) is returned.
-
+    Construct a new modem driver. The constructor initializes (or auto-creates)
+    the UART and reset/boot pins, hardware-resets the module, performs autobaud
+    synchronization, reboots the module, queries its firmware version, and
+    configures the requested regional band.
     Parameters
 
-    cmd – AT command suffix (e.g. "+JOIN", "+DR="); the
-    "AT" prefix and trailing \r are added automatically.
+    uart – Pre-configured pyb.UART instance used to talk to the
+    modem. If None, the driver opens UART(8, 19200) with 8N2 framing
+    (the Portenta Vision Shield default).
 
-    args – Additional arguments concatenated to cmd after string
-    conversion.
+    rst_pin – pyb.Pin driving the modem’s reset line. If None,
+    PC6 is configured as a push-pull output.
 
-    delimiter – Delimiter forwarded to receive().
+    boot_pin – pyb.Pin driving the modem’s boot-select line. If
+    None, PG7 is configured as a push-pull output pulled low.
 
-    data – Optional raw bytes written immediately after the AT
-    command (used for binary uplink payloads).
+    band – Regional band to configure. One of the BAND_* constants.
 
-    timeout – Response timeout, in milliseconds.
+    poll_ms – Interval in milliseconds between automatic empty uplinks
+    triggered by poll() to keep the downlink window open.
 
-    raise_error – When True, error responses are converted into
-    LoraError exceptions; when False, the raw response is
-    returned to the caller.
+    debug – When True, all UART traffic is printed via print().
     """
     def __init__(self, uart: pyb.UART = None, rst_pin: pyb.Pin = None, boot_pin: pyb.Pin = None, band: int = BAND_EU868, poll_ms: int = 300000, debug: bool = False) -> None: ...
     def available(self) -> int:
@@ -139,7 +117,6 @@ class Lora:
     def change_mode(self, mode: int) -> None:
         """
         Switch the activation mode.
-
         Parameters
 
         mode – One of MODE_ABP, MODE_OTAA.
@@ -150,7 +127,6 @@ class Lora:
         Configure the regional band and, on Arduino firmware with
         BAND_EU868, enable the ETSI duty-cycle limiter. Returns True
         on success.
-
         Parameters
 
         band – One of the BAND_* constants.
@@ -159,7 +135,6 @@ class Lora:
     def configure_class(self, _class: str) -> None:
         """
         Configure the LoRaWAN device class.
-
         Parameters
 
         _class – One of CLASS_A, CLASS_B, CLASS_C.
@@ -177,7 +152,6 @@ class Lora:
     def format(self, hexMode: bool) -> None:
         """
         Select the data format used over the UART for payload bytes.
-
         Parameters
 
         hexMode – True for ASCII-hex payload format, False for raw
@@ -234,7 +208,6 @@ class Lora:
         Inspect a modem response and raise the matching LoraError
         subclass if it represents an error. Does nothing for non-error
         responses.
-
         Parameters
 
         command – The AT command (without the AT prefix) that produced
@@ -261,7 +234,6 @@ class Lora:
         Issue an AT+JOIN and wait for the join-accept event. Returns True
         if the modem reports +EVENT=1,1 (join succeeded) within
         timeout_ms.
-
         Parameters
 
         timeout_ms – Maximum time to wait for both the +ACK and the
@@ -272,7 +244,6 @@ class Lora:
         """
         Switch the modem to ABP mode, program the supplied addresses and keys,
         then attempt to join. Returns the result of get_join_status().
-
         Parameters
 
         nwkId – Network identifier (currently ignored by the firmware).
@@ -290,7 +261,6 @@ class Lora:
         """
         Switch the modem to OTAA mode, program the supplied keys and EUIs, then
         attempt to join the network. Returns True if the join succeeded.
-
         Parameters
 
         appEui – 64-bit Application/Join EUI as a hex string.
@@ -316,7 +286,6 @@ class Lora:
         is matched, max_bytes characters have been read, or timeout
         milliseconds elapse, then returns the accumulated string with any
         trailing \r stripped.
-
         Parameters
 
         delimiter – Either a single character to match at the end of the
@@ -334,7 +303,6 @@ class Lora:
         Wait for a downlink. Returns None if no +RECV event was received
         within timeout milliseconds, otherwise a dict {"port": str,
         "data": str} containing the FPort and the payload bytes.
-
         Parameters
 
         timeout – Maximum time to wait, in milliseconds.
@@ -353,7 +321,6 @@ class Lora:
         data payload, transmit it, and return the modem’s response. For
         query commands ending in ?, only the value portion (the substring
         after =) is returned.
-
         Parameters
 
         cmd – AT command suffix (e.g. "+JOIN", "+DR="); the
@@ -378,7 +345,6 @@ class Lora:
         """
         Transmit a LoRaWAN uplink. Raises LoraError if buff is larger
         than get_max_size().
-
         Parameters
 
         buff – Payload bytes to transmit.
@@ -396,7 +362,6 @@ class Lora:
     def set_adr(self, adr: bool) -> None:
         """
         Enable or disable Adaptive Data Rate.
-
         Parameters
 
         adr – True to enable ADR, False to disable it.
@@ -407,7 +372,6 @@ class Lora:
         Send empty AT commands until the modem responds with +OK or until
         timeout milliseconds elapse. Returns True if synchronization
         succeeded.
-
         Parameters
 
         timeout – Maximum time to spend trying, in milliseconds.
@@ -416,7 +380,6 @@ class Lora:
     def set_baudrate(self, baudrate: int) -> None:
         """
         Change the modem’s UART baud rate (AT+UART).
-
         Parameters
 
         baudrate – New baud rate, in bits per second.
@@ -425,7 +388,6 @@ class Lora:
     def set_datarate(self, dr: int) -> None:
         """
         Set the LoRaWAN data rate index (AT+DR).
-
         Parameters
 
         dr – Region-specific data rate index.
@@ -434,7 +396,6 @@ class Lora:
     def set_fcd(self, fcd: int) -> None:
         """
         Set the downlink frame counter (AT+FCD).
-
         Parameters
 
         fcd – New downlink frame counter value.
@@ -443,7 +404,6 @@ class Lora:
     def set_fcu(self, fcu: int) -> None:
         """
         Set the uplink frame counter (AT+FCU).
-
         Parameters
 
         fcu – New uplink frame counter value.
@@ -453,7 +413,6 @@ class Lora:
         """
         Configure the LoRaWAN application port (1..223) used by subsequent
         send_data() calls.
-
         Parameters
 
         port – LoRaWAN FPort.
@@ -462,7 +421,6 @@ class Lora:
     def set_public_network(self, enable: bool) -> None:
         """
         Enable or disable the public-network sync word.
-
         Parameters
 
         enable – True for the public LoRaWAN sync word, False for
@@ -472,7 +430,6 @@ class Lora:
     def set_rf_power(self, mode: int, power: int) -> None:
         """
         Configure the modem RF output stage (AT+RFPOWER).
-
         Parameters
 
         mode – One of RF_MODE_RFO, RF_MODE_PABOOST.
@@ -483,7 +440,6 @@ class Lora:
     def set_rx2dr(self, dr: int) -> None:
         """
         Set the data rate index used for the RX2 receive window.
-
         Parameters
 
         dr – Region-specific data rate index.
@@ -492,7 +448,6 @@ class Lora:
     def set_rx2freq(self, freq: int) -> None:
         """
         Set the frequency used for the RX2 receive window.
-
         Parameters
 
         freq – Frequency in Hz.

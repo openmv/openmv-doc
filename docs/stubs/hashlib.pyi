@@ -3,8 +3,8 @@ from typing import Any, Optional, Union, Tuple, List
 
 class hash:
     """
-    This method is NOT implemented. Use binascii.hexlify(hash.digest())
-    to achieve a similar effect.
+    Hasher object returned by hashlib.sha256(), hashlib.sha1(), or
+    hashlib.md5().
     """
     def __init__(self) -> None: ...
     def digest(self) -> bytes:

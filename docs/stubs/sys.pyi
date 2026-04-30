@@ -9,7 +9,6 @@ implementation: int
 """
 Object with information about the current Python implementation. For
 MicroPython, it has following attributes:
-
 name - string “micropython”
 
 version - tuple (major, minor, micro, releaselevel), e.g. (1, 22, 0, ‘’)
@@ -23,25 +22,20 @@ MicroPython was built with
 
 _thread - optional string attribute, exists if the target has threading
 and is either “GIL” or “unsafe”
-
 This object is the recommended way to distinguish MicroPython from other
 Python implementations (note that it still may not exist in the very
 minimal ports).
-
 Starting with version 1.22.0-preview, the fourth node releaselevel in
 implementation.version is either an empty string or "preview".
-
 The _build entry was added in version 1.25.0 and is a hyphen-separated
 set of elements.  New elements may be appended in the future so it’s best to
 access this field using sys.implementation._build.split("-").  The
 elements that are currently used are:
-
 On the unix, webassembly and windows ports the first element is the variant
 name, for example 'standard'.
 
 On microcontroller targets, the first element is the board name and the second
 element (if present) is the board variant, for example 'RPI_PICO2-RISCV'
-
 The _thread entry was added in version 1.26.0 and if it exists then the
 target has the _thread module.  If the target enables the GIL (global
 interpreter lock) then this attribute is "GIL".  Otherwise the attribute
@@ -49,7 +43,6 @@ is "unsafe" and the target has threading but does not enable the GIL,
 and mutable Python objects (such as bytearray, list and dict) that are
 shared amongst threads must be protected explicitly by locks such as
 _thread.allocate_lock.
-
 Difference to CPython
 
 CPython mandates more attributes for this object, but the actual useful
@@ -61,11 +54,9 @@ Maximum value which a native integer type can hold on the current platform,
 or maximum value representable by MicroPython integer type, if it’s smaller
 than platform max value (that is the case for MicroPython ports without
 long int support).
-
 This attribute is useful for detecting “bitness” of a platform (32-bit vs
 64-bit, etc.). It’s recommended to not compare this attribute to some
 value directly, but instead count number of bits in it:
-
 bits = 0
 v = sys.maxsize
 while v:
@@ -88,7 +79,6 @@ modules.
 path: int
 """
 A mutable list of directories to search for imported modules.
-
 Difference to CPython
 
 On MicroPython, an entry with the value ".frozen" will indicate that import
@@ -126,7 +116,6 @@ tracebacklimit: int
 A mutable attribute holding an integer value which is the maximum number of traceback
 entries to store in an exception.  Set to 0 to disable adding tracebacks.  Defaults
 to 1000.
-
 Note: this is not available on all ports.
 """
 version: int
@@ -134,7 +123,6 @@ version: int
 version_info: int
 """
 Python language version that this implementation conforms to, as a tuple of ints.
-
 Difference to CPython
 
 Only the first three version numbers (major, minor, micro) are supported and
@@ -147,7 +135,6 @@ def atexit(func: Callable[[], None] | None) -> Optional[Callable[[], None]]:
     that takes no arguments, or None to disable the call.  The atexit
     function will return the previous value set by this function, which is
     initially None.
-
     Difference to CPython
 
     This function is a MicroPython extension intended to provide similar
@@ -159,7 +146,6 @@ def exit(retval: object = 0, /) -> NoReturn:
     Terminate current program with a given exit code. Underlyingly, this
     function raises a SystemExit exception. If an argument is given, its
     value given as an argument to SystemExit.
-
     On embedded ports (i.e. all ports but Windows and Unix), an unhandled
     SystemExit currently causes a soft_reset of MicroPython.
     """
@@ -168,7 +154,6 @@ def print_exception(exc: BaseException, file: Any = sys.stdout, /) -> None:
     """
     Print exception with a traceback to a file-like object file (or
     sys.stdout by default).
-
     Difference to CPython
 
     This is simplified version of a function which appears in the
@@ -183,7 +168,6 @@ def settrace(tracefunc: Callable | None) -> None:
     """
     Enable tracing of bytecode execution.  For details see the CPython
     documentation.
-
     This function requires a custom MicroPython build as it is typically not
     present in pre-built firmware (due to it affecting performance).  The relevant
     configuration option is MICROPY_PY_SYS_SETTRACE.

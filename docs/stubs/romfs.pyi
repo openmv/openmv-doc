@@ -5,9 +5,7 @@ def ls_romfs() -> None:
     """
     Lists every file present in the ROMFS mounted at /rom and prints
     diagnostic information about each entry to stdout.
-
     For each file, the following information is printed:
-
     addr: The memory address of the file’s data, masked to 28 bits
     and formatted as an 8-digit hexadecimal value.
 
@@ -20,7 +18,6 @@ def ls_romfs() -> None:
     boundaries, NOT aligned is printed instead.
 
     name: The file name within /rom.
-
     This function takes no arguments and returns None.
     """
     ...

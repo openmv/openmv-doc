@@ -31,7 +31,6 @@ def seed(n: int | None = None, /) -> None:
     be an integer.  When no argument (or None) is passed in it will (if
     supported by the port) initialise the PRNG with a true random number
     (usually a hardware generated random number).
-
     The None case only works if MICROPY_PY_RANDOM_SEED_INIT_FUNC is
     enabled by the port, otherwise it raises ValueError.
     """

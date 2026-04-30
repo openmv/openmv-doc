@@ -16,31 +16,26 @@ def info() -> None:
 
 class Flash:
     """
-    Performs a block-device control operation. cmd is one of the
-    standard MicroPython MP_BLOCKDEV_IOCTL_* commands:
-
-    1 (init) — returns 0.
-
-    2 (deinit) — returns 0.
-
-    3 (sync) — returns 0.
-
-    4 (block count) — returns the number of blocks in the
-    region.
-
-    5 (block size) — returns the flash block size in bytes.
-
-    6 (block erase) — erases the block at index arg and
-    returns the result of the erase operation.
-
-    Other cmd values return None.
+    Creates a block-device object backed by the on-board OSPI flash. This
+    class is only available when the firmware is built with OSPI support
+    enabled.
+    When called with no arguments, returns the default singleton object
+    covering the writable filesystem region of flash.
+    start is the byte offset into the flash storage region. Must be a
+    multiple of the flash block size and within the flash storage range.
+    Defaults to -1 which means start at offset 0.
+    len is the length in bytes of the flash region exposed by the object.
+    Must be a multiple of the flash block size and not extend past the
+    end of the flash storage region. Defaults to -1 which means use
+    all remaining bytes from start.
+    The object also implements the buffer protocol, allowing read-only
+    memory-mapped access to the flash region via the OSPI XIP base.
     """
     def __init__(self, *, start: int = -1, len: int = -1) -> None: ...
     def ioctl(self, cmd: int, arg: int) -> int:
         """
         Performs a block-device control operation. cmd is one of the
         standard MicroPython MP_BLOCKDEV_IOCTL_* commands:
-
         1 (init) — returns 0.
 
         2 (deinit) — returns 0.
@@ -54,7 +49,6 @@ class Flash:
 
         6 (block erase) — erases the block at index arg and
         returns the result of the erase operation.
-
         Other cmd values return None.
         """
         ...
@@ -63,7 +57,6 @@ class Flash:
         Reads from the flash starting at the block block_num (and an
         optional byte offset within that block) into buf. The number
         of bytes read is determined by the length of buf.
-
         Returns 0 on success or a negative error code.
         """
         ...
@@ -71,12 +64,10 @@ class Flash:
         """
         Writes buf to the flash starting at the block block_num (and
         an optional byte offset within that block).
-
         When called without offset, the affected blocks are erased
         before being written. When called with offset, the data is
         written without erasing first (the caller must ensure the target
         region has already been erased).
-
         Returns 0 on success or a negative error code.
         """
         ...

@@ -46,8 +46,21 @@ This is the default mode used by the constructor.
 
 class BNO055:
     """
-    Return the gravity vector as a 3-element list [x, y, z] of floats
-    in m/s^2.
+    Construct a BNO055 driver instance.
+    bus is a configured machine.I2C bus object used to
+    communicate with the sensor.
+
+    address is the 7-bit I2C address of the device. Defaults to 0x28.
+
+    mode is the operation mode the device is placed into after reset. See
+    the operation-mode constants below. Defaults to NDOF_MODE.
+
+    axis is a 2-byte axis-remap configuration value. See the axis
+    placement constants below. Defaults to AXIS_P4.
+    The constructor verifies the chip ID, performs a soft reset, switches to
+    normal power, applies the axis configuration, and enters the requested
+    operation mode using the external oscillator. Raises RuntimeError if
+    the expected ID register values are not read back.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x28, mode: int = NDOF_MODE, axis: bytes = AXIS_P4) -> None: ...
     def accelerometer(self) -> list:

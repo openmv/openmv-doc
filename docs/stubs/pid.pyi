@@ -3,26 +3,31 @@ from typing import Any, Optional, Union, Tuple, List
 
 class PID:
     """
-    Reset the integrator state. Clears the accumulated integral term to
-    zero and clears the cached derivative value (set to NaN) so that
-    the next call to PID.get_pid() re-initialises the derivative
-    filter.
+    Construct a PID controller.
+    p is the proportional gain (Kp).
+
+    i is the integral gain (Ki).
+
+    d is the derivative gain (Kd).
+
+    imax is the absolute maximum value the integrator term is
+    clamped to (anti-windup limit). The integrator output is bounded
+    to the range [-abs(imax), +abs(imax)].
+    The derivative term is filtered by a fixed first-order low-pass
+    filter with a cutoff frequency of 20 Hz.
     """
     def __init__(self, p: float = 0, i: float = 0, d: float = 0, imax: float = 0) -> None: ...
     def get_pid(self, error: float, scaler: float) -> float:
         """
         Compute and return the PID controller output for the given error.
-
         error is the current error (typically target - measurement).
 
         scaler is a multiplicative scale factor applied to the
         proportional + derivative sum and to the integrator increment.
-
         The time delta between successive calls is measured internally using
         time.ticks_ms(). If more than 1000 ms elapse between calls (or on
         the first call), the integrator is reset via PID.reset_I() and
         the time delta is treated as zero for that step.
-
         Returns the PID output as a float.
         """
         ...

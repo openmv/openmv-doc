@@ -4,9 +4,20 @@ import machine
 
 class HTS221:
     """
-    Read the temperature output registers and return the temperature in
-    degrees Celsius, already compensated using the calibration values
-    stored on the device.
+    Construct an HTS221 instance.
+    bus
+
+    A configured machine.I2C bus the sensor is attached to.
+
+    data_rate
+
+    Output data-rate selector written into the CTRL_REG1 ODR field.
+    Valid values are 0 (one-shot), 1 (1 Hz), 2 (7 Hz) and 3 (12.5 Hz).
+
+    address
+
+    7-bit I2C address of the device. Defaults to 0x5F, the factory
+    address used by all HTS221 parts.
     """
     def __init__(self, bus: machine.I2C, data_rate: int = 1, address: int = 0x5F) -> None: ...
     def humidity(self) -> float:

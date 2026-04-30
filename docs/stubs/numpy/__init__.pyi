@@ -533,32 +533,38 @@ def zeros(shape: int | tuple[int, ...], *, dtype: int = float) -> ndarray:
 
 class ndarray:
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    Create a new ndarray.
+    Parameters
+
+    values – Source data. Either another ndarray (which is
+    deep-copied, with type conversion if dtype differs) or any
+    MicroPython iterable. Nested iterables produce multi-dimensional
+    arrays; the inner iterables must all have the same length or a
+    ValueError is raised.
+
+    dtype – Element type for the new array. One of the type-code
+    integers exposed by numpy (numpy.bool, numpy.uint8,
+    numpy.int8, numpy.uint16, numpy.int16,
+    numpy.float, and – when supported – numpy.complex), or
+    a dtype instance. Defaults to numpy.float.
+    The factory function numpy.array is the conventional way to
+    create an ndarray; it forwards to this constructor.
     """
     def __init__(self, values: ndarray | bytes | list | tuple, *, dtype: int = numpy.float) -> None: ...
     T: Any
-    """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
-    """
+    """The transpose of the array; equivalent to transpose()."""
     dtype: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    The data type of the array’s elements. Returns a dtype
+    instance when the firmware is built with
+    ULAB_HAS_DTYPE_OBJECT enabled, otherwise the underlying
+    single-character type code as an integer.
     """
     flat: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    A flat iterator that yields every element of the array in
+    C order. Unlike flatten(), iterating flat does not
+    allocate a new array.
     """
     imag: Any
     """
@@ -569,45 +575,33 @@ class ndarray:
     """
     itemsize: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    Size in bytes of a single array element, derived from
+    dtype.
     """
     ndim: Any
-    """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
-    """
+    """Number of array dimensions (length of shape)."""
     real: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    The real part of a complex array, returned as a float
+    ndarray. For real arrays this is a copy of self with the
+    same dtype. Only available when the firmware was built with
+    complex support.
     """
     shape: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    Lengths of the array along each axis. Assigning a tuple to
+    shape reshapes the array in place (equivalent to
+    reshape()).
     """
     size: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    Total number of elements in the array (the product of
+    shape).
     """
     strides: Any
     """
-    The imaginary part of a complex array, returned as a float
-    ndarray. For real arrays this is an array of zeros with the
-    same dtype as self. Only available when the firmware was
-    built with complex support.
+    Number of bytes to step in memory along each axis to reach the
+    next element along that axis.
     """
     def byteswap(self, *, inplace: bool = False) -> ndarray:
         """
@@ -617,7 +611,6 @@ class ndarray:
         whose endianness does not match the microcontroller’s. For
         single-byte dtypes (bool, uint8, int8) this is a
         no-op that returns a view or copy.
-
         If inplace is False (the default) a new ndarray is
         returned and the original is left untouched. If inplace is
         True the bytes of self are swapped in place and a view
@@ -633,7 +626,6 @@ class ndarray:
     def flatten(self, *, order: str = 'C') -> ndarray:
         """
         Return a new one-dimensional copy of the array.
-
         Parameters
 
         order – 'C' (the default) walks the data in C order
@@ -652,7 +644,6 @@ class ndarray:
     def sort(self, *, axis: int | None = -1) -> None:
         """
         Sort the array in place.
-
         Parameters
 
         axis – Axis along which to sort. -1 (the default)

@@ -5,7 +5,6 @@ def cholesky(A: ndarray) -> ndarray:
     """
     Compute the Cholesky decomposition of a positive-definite, symmetric square
     matrix.
-
     Parameters
 
     A – a positive-definite, symmetric, two-dimensional square matrix.
@@ -24,7 +23,6 @@ def cholesky(A: ndarray) -> ndarray:
 def det(m: ndarray) -> float:
     """
     Compute the determinant of a square matrix.
-
     Parameters
 
     m – a two-dimensional square matrix.
@@ -37,14 +35,12 @@ def det(m: ndarray) -> float:
     Raises
 
     ValueError – if m is not square.
-
     The computation is performed by Gaussian elimination with partial pivoting.
     """
     ...
 def eig(m: ndarray) -> tuple[ndarray, ndarray]:
     """
     Compute the eigenvalues and eigenvectors of a real symmetric square matrix.
-
     Parameters
 
     m – a two-dimensional, real, symmetric square matrix.
@@ -65,7 +61,6 @@ def eig(m: ndarray) -> tuple[ndarray, ndarray]:
 def inv(m: ndarray) -> ndarray:
     """
     Compute the inverse of a square matrix.
-
     Parameters
 
     m – a two-dimensional square matrix.
@@ -77,14 +72,12 @@ def inv(m: ndarray) -> ndarray:
     Raises
 
     ValueError – if m is not square or is singular.
-
     The inversion is performed by Gauss-Jordan elimination.
     """
     ...
 def norm(x: ndarray, axis: int | None = None) -> float | ndarray:
     """
     Compute the 2-norm of a vector or matrix.
-
     Parameters
 
     x – an numpy.ndarray, tuple, list, or range.
@@ -99,7 +92,6 @@ def norm(x: ndarray, axis: int | None = None) -> float | ndarray:
     either a Python float (when axis is None or when x is
     an iterable other than an ndarray) or a numpy.ndarray
     with that axis removed.
-
     The 2-norm is computed as sqrt(sum(x*x)) using a numerically stable
     running mean, so the operation does not require additional storage
     proportional to the size of the input.
@@ -109,7 +101,6 @@ def qr(m: ndarray, mode: str = 'reduced') -> tuple[ndarray, ndarray]:
     """
     Factor a matrix as the product of an orthonormal matrix and an
     upper-triangular matrix.
-
     Parameters
 
     m – a two-dimensional matrix of shape (M, N).
@@ -131,7 +122,6 @@ def qr(m: ndarray, mode: str = 'reduced') -> tuple[ndarray, ndarray]:
 
     ValueError – if m is not two-dimensional or mode is not one of
     the accepted values.
-
     The decomposition is implemented via successive Givens rotations.
     """
     ...

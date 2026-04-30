@@ -4,10 +4,52 @@ import machine
 
 class LSM9DS1:
     """
-    Generator that yields (gyro, accel) tuples for every sample
-    currently available in the FIFO and stops once the FIFO is empty.
-    Each component vector has the same units as gyro() and
-    accel() respectively.
+    Construct an LSM9DS1 instance, verify the WHO_AM_I registers of
+    both sub-devices, configure all three sensors and enable the
+    accel/gyro FIFO in continuous mode.
+    bus
+
+    A configured machine.I2C bus the sensor is attached to.
+
+    address_imu
+
+    7-bit I2C address of the accelerometer/gyroscope sub-device.
+    Defaults to 0x6B.
+
+    address_magnet
+
+    7-bit I2C address of the magnetometer sub-device. Defaults to
+    0x1E.
+
+    gyro_odr
+
+    Gyroscope output data rate in Hz. Must be one of 0 (off),
+    14.9, 59.5, 119, 238, 476 or 952.
+
+    gyro_scale
+
+    Gyroscope full-scale range in degrees-per-second. Must be one of
+    245, 500 or 2000.
+
+    accel_odr
+
+    Accelerometer output data rate in Hz. Same set of values as
+    gyro_odr.
+
+    accel_scale
+
+    Accelerometer full-scale range in g. Must be one of 2, 4,
+    8 or 16.
+
+    magnet_odr
+
+    Magnetometer output data rate in Hz. Must be one of 0.625,
+    1.25, 2.5, 5, 10, 20, 40 or 80.
+
+    magnet_scale
+
+    Magnetometer full-scale range in gauss. Must be one of 4,
+    8, 12 or 16.
     """
     def __init__(self, bus: machine.I2C, address_imu: int = 0x6B, address_magnet: int = 0x1E, gyro_odr: float = 952, gyro_scale: int = 245, accel_odr: float = 952, accel_scale: int = 4, magnet_odr: int = 80, magnet_scale: int = 4) -> None: ...
     def accel(self) -> tuple[float, float, float]:

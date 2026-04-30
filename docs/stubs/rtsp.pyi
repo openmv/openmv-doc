@@ -4,20 +4,16 @@ import image
 
 class rtsp_server:
     """
-    Starts running the rtsp_server logic and does not return.
-
-    image_callback is invoked to produce each frame and must return an image.Image object.
-    It receives pathname and session as described in rtsp_server.register_setup_cb().
-
-    quality is the JPEG compression quality used while streaming.
+    Creates an RTSP server bound to network_if.
+    network_if is the network module interface created from network.LAN(),
+    network.WLAN(), or similar.
+    port is the TCP port to listen on. The default RTSP port is 554.
     """
     def __init__(self, network_if: Any, port: int = 554) -> None: ...
     def register_pause_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client pauses streaming.
-
         Note: VLC’s pause button does not actually notify the server.
-
         The callback receives pathname and session as described in
         register_setup_cb().
         """
@@ -25,7 +21,6 @@ class rtsp_server:
     def register_play_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client starts streaming.
-
         The callback receives pathname and session as described in
         register_setup_cb().
         """
@@ -33,7 +28,6 @@ class rtsp_server:
     def register_setup_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client sets up an RTSP connection.
-
         The callback receives pathname (the requested stream resource path, defaults to "/")
         and session (a random session id).
         """
@@ -41,7 +35,6 @@ class rtsp_server:
     def register_teardown_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client tears down the RTSP connection.
-
         The callback receives pathname and session as described in
         register_setup_cb().
         """
@@ -49,10 +42,8 @@ class rtsp_server:
     def stream(self, image_callback: Callable[[str, int], image.Image], quality: int = 90) -> None:
         """
         Starts running the rtsp_server logic and does not return.
-
         image_callback is invoked to produce each frame and must return an image.Image object.
         It receives pathname and session as described in rtsp_server.register_setup_cb().
-
         quality is the JPEG compression quality used while streaming.
         """
         ...

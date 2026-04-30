@@ -4,8 +4,9 @@ import machine
 
 class DHT11:
     """
-    Return the temperature from the most recent measure() call,
-    as an integer in degrees Celsius.
+    Driver for the DHT11 sensor. Connect the sensor’s data line to pin
+    (a machine.Pin). The DHT11 reports integer values with 1
+    percent relative humidity and 1 degree Celsius resolution.
     """
     def __init__(self, pin: machine.Pin) -> None: ...
     def humidity(self) -> int:
@@ -23,8 +24,10 @@ class DHT11:
 
 class DHT22:
     """
-    Return the temperature from the most recent measure() call,
-    as a float in degrees Celsius. Negative values are supported.
+    Driver for the DHT22 / AM2302 sensor. Connect the sensor’s data line
+    to pin (a machine.Pin). The DHT22 reports values with 0.1
+    percent relative humidity and 0.1 degree Celsius resolution, and
+    supports negative temperatures.
     """
     def __init__(self, pin: machine.Pin) -> None: ...
     def humidity(self) -> float:
@@ -42,13 +45,8 @@ class DHT22:
 
 class DHTBase:
     """
-    Trigger a measurement on the sensor and read the 5-byte response
-    into the internal buffer. Raises Exception with the message
-    "checksum error" if the data checksum is invalid.
-
-    Call this method before reading temperature() or
-    humidity(). The DHT sensors require at least 1 second
-    (DHT11) or 2 seconds (DHT22) between consecutive measurements.
+    Base class for DHT sensors. Not normally instantiated directly — use
+    DHT11 or DHT22 instead.
     """
     def __init__(self, pin: machine.Pin) -> None: ...
     def measure(self) -> None:
@@ -56,7 +54,6 @@ class DHTBase:
         Trigger a measurement on the sensor and read the 5-byte response
         into the internal buffer. Raises Exception with the message
         "checksum error" if the data checksum is invalid.
-
         Call this method before reading temperature() or
         humidity(). The DHT sensors require at least 1 second
         (DHT11) or 2 seconds (DHT22) between consecutive measurements.

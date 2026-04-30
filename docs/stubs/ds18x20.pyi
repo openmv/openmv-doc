@@ -3,14 +3,8 @@ from typing import Any, Optional, Union, Tuple, List
 
 class DS18X20:
     """
-    Read the most recently converted temperature from the device
-    addressed by rom and return it in degrees Celsius as a
-    float. Handles both DS18S20 (family code 0x10) and DS18B20
-    / DS1822 (family codes 0x28 / 0x22) encodings, including
-    negative temperatures.
-
-    Call convert_temp() and wait for the conversion to finish
-    before calling this method.
+    Construct a DS18x20 driver bound to the given onewire.OneWire bus.
+    Multiple DS18x20 sensors may share the same bus.
     """
     def __init__(self, onewire: OneWire) -> None: ...
     def convert_temp(self) -> None:
@@ -27,7 +21,6 @@ class DS18X20:
         return it as a bytearray. The scratchpad CRC is verified;
         raises Exception with the message "CRC error" on a CRC
         mismatch.
-
         The returned buffer is the driver’s internal buffer and is
         overwritten by subsequent calls.
         """
@@ -39,7 +32,6 @@ class DS18X20:
         float. Handles both DS18S20 (family code 0x10) and DS18B20
         / DS1822 (family codes 0x28 / 0x22) encodings, including
         negative temperatures.
-
         Call convert_temp() and wait for the conversion to finish
         before calling this method.
         """

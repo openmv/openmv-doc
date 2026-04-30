@@ -4,13 +4,27 @@ import machine
 
 ORDER: int
 """
-Transmit the buffered pixel data to the strip using
-machine.bitstream().
+Class attribute that maps the user-facing channel order to the wire
+order. Defaults to (1, 0, 2, 3), i.e. user-supplied (R, G, B[, W])
+tuples are transmitted as G R B [W]. Subclasses may override
+ORDER to support strips with a different wire order.
 """
 
 class NeoPixel:
     """
-    Transmit the buffered pixel data to the strip using
+    Construct a NeoPixel object for a strip of LEDs connected to pin.
+    pin is a machine.Pin instance; it will be
+    reconfigured as an output by the constructor.
+
+    n is the number of LEDs in the strip.
+
+    bpp is the number of bytes per pixel: 3 for RGB LEDs (such as
+    WS2812) and 4 for RGBW LEDs (such as SK6812-RGBW).
+
+    timing selects the bit timing. 0 selects the slow 400 kHz
+    timing, 1 selects the standard 800 kHz timing used by most
+    modern strips. A 4-tuple (high_0, low_0, high_1, low_1) of
+    nanosecond durations may be passed instead, in the form accepted by
     machine.bitstream().
     """
     def __init__(self, pin: 'machine.Pin', n: int, bpp: int = 3, timing: int | tuple[int, int, int, int] = 1) -> None: ...

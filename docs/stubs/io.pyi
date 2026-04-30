@@ -10,13 +10,33 @@ def open(name: str, mode: str = 'r', **kwargs) -> Any:
     ...
 
 class BytesIO:
-    """Get the current contents of the underlying buffer which holds data."""
+    """
+    In-memory file-like objects for input/output. StringIO is used for
+    text-mode I/O (similar to a normal file opened with “t” modifier).
+    BytesIO is used for binary-mode I/O (similar to a normal file
+    opened with “b” modifier). Initial contents of file-like objects
+    can be specified with string parameter (should be normal string
+    for StringIO or bytes object for BytesIO). All the usual file
+    methods like read(), write(), seek(), flush(),
+    close() are available on these objects, and additionally, a
+    following method:
+    """
     def __init__(self, string: bytes = b'') -> None: ...
     def getvalue(self) -> Any:
         """Get the current contents of the underlying buffer which holds data."""
         ...
 
 class StringIO:
-    """Get the current contents of the underlying buffer which holds data."""
+    """
+    In-memory file-like objects for input/output. StringIO is used for
+    text-mode I/O (similar to a normal file opened with “t” modifier).
+    BytesIO is used for binary-mode I/O (similar to a normal file
+    opened with “b” modifier). Initial contents of file-like objects
+    can be specified with string parameter (should be normal string
+    for StringIO or bytes object for BytesIO). All the usual file
+    methods like read(), write(), seek(), flush(),
+    close() are available on these objects, and additionally, a
+    following method:
+    """
     def __init__(self, string: str = '') -> None: ...
 

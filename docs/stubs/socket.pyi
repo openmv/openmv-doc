@@ -36,25 +36,18 @@ def getaddrinfo(host: str, port: int, af: int = 0, type: int = 0, proto: int = 0
     can be used to filter which kind of addresses are returned. If a parameter is not
     specified or zero, all combinations of addresses can be returned (requiring
     filtering on the user side).
-
     The resulting list of 5-tuples has the following structure:
-
     (family, type, proto, canonname, sockaddr)
-
     The following example shows how to connect to a given url:
-
     s = socket.socket()
     # This assumes that if "type" is not specified, an address for
     # SOCK_STREAM will be returned, which may be not true
     s.connect(socket.getaddrinfo('www.micropython.org', 80)[0][-1])
-
     Recommended use of filtering params:
-
     s = socket.socket()
     # Guaranteed to return an address which can be connect'ed to for
     # stream operation.
     s.connect(socket.getaddrinfo('www.micropython.org', 80, 0, SOCK_STREAM)[0][-1])
-
     Difference to CPython
 
     CPython raises a socket.gaierror exception (OSError subclass) in case
@@ -72,7 +65,6 @@ def inet_ntop(af: int, bin_addr: bytes) -> str:
     """
     Convert a binary network address bin_addr of the given address family af
     to a textual representation:
-
     >>> socket.inet_ntop(socket.AF_INET, b"\x7f\0\0\1")
     '127.0.0.1'
     """
@@ -81,7 +73,6 @@ def inet_pton(af: int, txt_addr: str) -> bytes:
     """
     Convert a textual network address txt_addr of the given address family af
     to a binary representation:
-
     >>> socket.inet_pton(socket.AF_INET, "1.2.3.4")
     b'\x01\x02\x03\x04'
     """
@@ -89,12 +80,15 @@ def inet_pton(af: int, txt_addr: str) -> bytes:
 
 class socket:
     """
-    Write the buffer of bytes to the socket. This function will try to
-    write all data to a socket (no “short writes”). This may be not possible
-    with a non-blocking socket though, and returned value will be less than
-    the length of buf.
-
-    Return value: number of bytes written.
+    Create a new socket using the given address family, socket type and
+    protocol number. Note that specifying proto in most cases is not
+    required (and not recommended, as some MicroPython ports may omit
+    IPPROTO_* constants). Instead, type argument will select needed
+    protocol automatically:
+    # Create STREAM TCP socket
+    socket(AF_INET, SOCK_STREAM)
+    # Create DGRAM UDP socket
+    socket(AF_INET, SOCK_DGRAM)
     """
     def __init__(self, af: int = AF_INET, type: int = SOCK_STREAM, proto: int = IPPROTO_TCP, /) -> None: ...
     def accept(self) -> Tuple['socket', Tuple]:
@@ -113,7 +107,6 @@ class socket:
         Mark the socket closed and release all resources. Once that happens, all future operations
         on the socket object will fail. The remote end will receive EOF indication if
         supported by protocol.
-
         Sockets are automatically closed when they are garbage-collected, but it is recommended
         to close() them explicitly as soon you finished working with them.
         """
@@ -134,12 +127,10 @@ class socket:
         Return a file object associated with the socket. The exact returned type depends on the arguments
         given to makefile(). The support is limited to binary modes only (‘rb’, ‘wb’, and ‘rwb’).
         CPython’s arguments: encoding, errors and newline are not supported.
-
         Difference to CPython
 
         As MicroPython doesn’t support buffered streams, values of buffering
         parameter is ignored and treated as if it was 0 (unbuffered).
-
         Difference to CPython
 
         Closing the file object returned by makefile() WILL close the
@@ -160,14 +151,12 @@ class socket:
         Read bytes into the buf.  If nbytes is specified then read at most
         that many bytes.  Otherwise, read at most len(buf) bytes. Just as
         read(), this method follows “no short reads” policy.
-
         Return value: number of bytes read and stored into buf.
         """
         ...
     def readline(self) -> bytes:
         """
         Read a line, ending in a newline character.
-
         Return value: the line read.
         """
         ...
@@ -175,7 +164,6 @@ class socket:
         """
         Receive data from the socket. The return value is a bytes object representing the data
         received. The maximum amount of data to be received at once is specified by bufsize.
-
         Most ports support the optional flags argument. Available flags are defined as constants
         in the socket module and have the same meaning as in CPython. MSG_PEEK and MSG_DONTWAIT
         are supported on all ports which accept the flags argument.
@@ -186,7 +174,6 @@ class socket:
         Receive data from the socket. The return value is a pair (bytes, address) where bytes is a
         bytes object representing the data received and address is the address of the socket sending
         the data.
-
         See the recv function for an explanation of the optional flags argument.
         """
         ...
@@ -202,7 +189,6 @@ class socket:
         Send all data to the socket. The socket must be connected to a remote socket.
         Unlike send(), this method will try to send all of data, by sending data
         chunk by chunk consecutively.
-
         The behaviour of this method on non-blocking sockets is undefined. Due to this,
         on MicroPython, it’s recommended to use write() method instead, which
         has the same “no short writes” policy for blocking sockets, and will return
@@ -219,9 +205,7 @@ class socket:
         """
         Set blocking or non-blocking mode of the socket: if flag is false, the socket is set to non-blocking,
         else to blocking mode.
-
         This method is a shorthand for certain settimeout() calls:
-
         sock.setblocking(True) is equivalent to sock.settimeout(None)
 
         sock.setblocking(False) is equivalent to sock.settimeout(0)
@@ -237,18 +221,15 @@ class socket:
     def settimeout(self, value: float | None) -> None:
         """
         Note: Not every port supports this method, see below.
-
         Set a timeout on blocking socket operations. The value argument can be a nonnegative floating
         point number expressing seconds, or None. If a non-zero value is given, subsequent socket operations
         will raise an OSError exception if the timeout period value has elapsed before the operation has
         completed. If zero is given, the socket is put in non-blocking mode. If None is given, the socket
         is put in blocking mode.
-
         Not every MicroPython port supports this method. A more portable and
         generic solution is to use select.poll object. This allows to wait on
         multiple objects at the same time (and not just on sockets, but on generic
         stream objects which support polling). Example:
-
         # Instead of:
         s.settimeout(1.0)  # time in seconds
         s.read(10)  # may timeout
@@ -259,7 +240,6 @@ class socket:
         res = poller.poll(1000)  # time in milliseconds
         if not res:
         # s is still not ready for input, i.e. operation timed out
-
         Difference to CPython
 
         CPython raises a socket.timeout exception in case of timeout,
@@ -274,7 +254,6 @@ class socket:
         write all data to a socket (no “short writes”). This may be not possible
         with a non-blocking socket though, and returned value will be less than
         the length of buf.
-
         Return value: number of bytes written.
         """
         ...

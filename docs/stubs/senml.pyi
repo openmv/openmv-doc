@@ -11,47 +11,41 @@ class SenmlBase:
 
 class SenmlPack:
     """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
+    Represents a SenML pack – a collection of SenmlRecord instances and
+    optionally other child SenmlPack objects. When a pack only
+    contains records it represents a single device; when it contains other
+    packs it acts as a gateway.
+    name is the SenML base name (bn) used for every record contained in
+    this pack.
+    callback is invoked from from_json / from_cbor whenever an inbound
+    record names a previously-unknown sensor; the new SenmlRecord is passed
+    as the first argument and (for nested packs) the originating device pack
+    is passed as device=.... It is typically used to handle actuator
+    commands.
+    SenmlPack instances are iterable – iteration yields each record
+    in insertion order – and may be used as a context manager so that on
+    exit the pack removes itself from its parent.
     """
     def __init__(self, name: str, callback=None) -> None: ...
     actuate: Any
     """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
+    The callback supplied at construction time. May be re-assigned at
+    runtime.
     """
     base_sum: Any
-    """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
-    """
+    """Optional base sum (bs) added to each record’s sum field."""
     base_time: Any
-    """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
-    """
+    """Optional base time (bt) added to each record’s timestamp."""
     base_unit: Any
-    """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
-    """
+    """Optional base unit (bu) – typically a value from SenmlUnits."""
     base_value: Any
     """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
+    Optional base value (bv) added to each record’s numeric value when
+    encoding and subtracted on decoding. Setting a non-numeric value
+    raises Exception.
     """
     name: Any
-    """
-    Internal helper invoked while parsing inbound data when no existing
-    record matches an entry. Adds a new SenmlRecord to device (or to
-    this pack) and forwards it to the callback.
-    """
+    """The pack’s base name (bn)."""
     def add(self, item: SenmlRecord | SenmlPack) -> None:
         """
         Append item to this pack. item must be a SenmlRecord or another
@@ -98,44 +92,51 @@ class SenmlPack:
 
 class SenmlRecord:
     """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
+    Represents a single measurement inside a SenmlPack.
+    name is the SenML record name (n).
+    The following keyword arguments are accepted:
+    value – bool, int, float, str or bytearray.
+    Other types raise Exception.
+
+    time – numeric timestamp (t).
+
+    unit – a unit string, typically a member of SenmlUnits.
+
+    sum – numeric integrated sum (s).
+
+    update_time – maximum time before the sensor will provide a fresh
+    reading (ut).
+
+    callback – function invoked when an inbound payload updates this
+    record. It receives the SenmlRecord as its only argument.
+    SenmlRecord may be used as a context manager so that on exit it
+    removes itself from its parent pack.
     """
     def __init__(self, name: str, **kwargs) -> None: ...
     actuate: Any
     """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
+    The callback supplied at construction time. May be re-assigned at
+    runtime.
     """
     name: Any
-    """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
-    """
+    """Record name (n)."""
     sum: Any
-    """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
-    """
+    """Integrated sum field (s)."""
     time: Any
-    """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
-    """
+    """Timestamp associated with this measurement (t)."""
     unit: Any
-    """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
-    """
+    """Unit string (u)."""
     update_time: Any
     """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
+    Maximum time before the sensor will provide an updated reading
+    (ut).
     """
     value: Any
     """
-    Update this record from a raw inbound SenML dictionary and, if
-    present, invoke the actuate callback.
+    The current value. Re-assigning checks the type; only bool,
+    numbers, str and bytearray are accepted. To control the
+    rendered precision of a float value, round before assignment, e.g.
+    record.value = round(x, 2).
     """
     def do_actuate(self, raw: dict, naming_map: dict) -> None:
         """
@@ -150,9 +151,7 @@ class SenmlUnits:
     RFC 8428. Each
     attribute resolves to the unit’s string code, suitable for assignment to
     SenmlRecord.unit or SenmlPack.base_unit.
-
     Examples of available unit attributes:
-
     SENML_UNIT_METER -> "m"
 
     SENML_UNIT_KILOGRAM -> "kg"
@@ -192,7 +191,6 @@ class SenmlUnits:
     SENML_UNIT_RATIO -> "//"
 
     SENML_UNIT_BPM -> "beat/min"
-
     See the SenML unit registry in
     RFC 8428 Section 12.1
     for the complete list.

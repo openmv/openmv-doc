@@ -4,11 +4,10 @@ import ml
 
 class YoloV5:
     """
-    Post-process the outputs list of arrays produced by model for the given
-    inputs list. Returns a list of per-class lists; each inner list contains
-    ((x, y, w, h), score) tuples in ROI coordinates. Empty class lists are
-    preserved so each list index matches the corresponding class index in the
-    model output.
+    Create a YOLO V5 postprocessor.
+    threshold Score threshold for filtering detections before NMS.
+    nms_threshold IoU threshold used by NMS to suppress overlapping bounding boxes.
+    nms_sigma Sigma value used by Soft-NMS for score decay.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
@@ -23,11 +22,10 @@ class YoloV5:
 
 class YoloV8:
     """
-    Post-process the outputs list of arrays produced by model for the given
-    inputs list. Returns a list of per-class lists; each inner list contains
-    ((x, y, w, h), score) tuples in ROI coordinates. Empty class lists are
-    preserved so each list index matches the corresponding class index in the
-    model output.
+    Create a YOLO V8 postprocessor.
+    threshold Score threshold for filtering detections before NMS.
+    nms_threshold IoU threshold used by NMS to suppress overlapping bounding boxes.
+    nms_sigma Sigma value used by Soft-NMS for score decay.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:

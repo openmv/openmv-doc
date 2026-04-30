@@ -61,7 +61,6 @@ def new_class(name: str, bases: tuple = (), kwds: dict | None = None, exec_body:
     """
     Create a class object dynamically in a way that mirrors the
     PEP 3115-compliant class statement.
-
     name is the name of the new class.
 
     bases is a tuple of base classes.
@@ -72,7 +71,6 @@ def new_class(name: str, bases: tuple = (), kwds: dict | None = None, exec_body:
     exec_body is an optional callable that will be invoked with the
     freshly prepared class namespace; it should populate it with the
     new class’s attributes.
-
     Returns the newly constructed class.
     """
     ...
@@ -80,7 +78,6 @@ def prepare_class(name: str, bases: tuple = (), kwds: dict | None = None) -> tup
     """
     Compute the appropriate metaclass and prepare the namespace for a new
     class.
-
     name is the name of the class about to be created.
 
     bases is a tuple of base classes.
@@ -89,7 +86,6 @@ def prepare_class(name: str, bases: tuple = (), kwds: dict | None = None) -> tup
     present, is removed from the returned kwds and used as the
     metaclass. Otherwise the metaclass of bases[0] is used, falling
     back to type.
-
     Returns a 3-tuple (metaclass, namespace, kwds) where namespace is the
     result of calling metaclass.__prepare__ if defined, or an empty dict
     otherwise, and kwds is a copy of the input with any "metaclass" entry

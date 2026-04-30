@@ -4,21 +4,18 @@ import machine
 
 MATCH_ROM: int
 """
-Compute the Maxim/Dallas 8-bit CRC over data. The result is 0
-when data already includes a valid trailing CRC byte, which can be
-used to validate received scratchpad contents.
+Match ROM command (0x55). Used internally by select_rom() to
+address a specific device by its 64-bit ROM code.
 """
 SEARCH_ROM: int
 """
-Compute the Maxim/Dallas 8-bit CRC over data. The result is 0
-when data already includes a valid trailing CRC byte, which can be
-used to validate received scratchpad contents.
+Search ROM command (0xF0). Used internally by scan() to
+discover devices on the bus.
 """
 SKIP_ROM: int
 """
-Compute the Maxim/Dallas 8-bit CRC over data. The result is 0
-when data already includes a valid trailing CRC byte, which can be
-used to validate received scratchpad contents.
+Skip ROM command (0xCC). Addresses all devices on the bus
+simultaneously, skipping ROM matching.
 """
 
 class OneWireError(Exception):
@@ -31,9 +28,9 @@ class OneWireError(Exception):
 
 class OneWire:
     """
-    Compute the Maxim/Dallas 8-bit CRC over data. The result is 0
-    when data already includes a valid trailing CRC byte, which can be
-    used to validate received scratchpad contents.
+    Construct a 1-Wire bus master on the given machine.Pin. The
+    pin is automatically configured as open-drain with a pull-up.
+    ROM command constants:
     """
     def __init__(self, pin: machine.Pin) -> None: ...
     def crc8(self, data: bytes | bytearray) -> int:

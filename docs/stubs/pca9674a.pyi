@@ -3,7 +3,16 @@ from typing import Any, Optional, Union, Tuple, List
 import machine
 
 class PCA9674A:
-    """Resets and re-initializes the I/O expander, and re-attaches the IRQ callback if one was provided."""
+    """
+    Creates an interface to the I/O expander.
+    bus is the machine.I2C bus the expander is connected to.
+
+    irq_pin is the pin label connected to the expander’s IRQ output.
+
+    address is the I2C address of the expander.
+
+    callback is invoked on the falling edge of irq_pin when any pin state changes.
+    """
     def __init__(self, bus: machine.I2C, irq_pin: str, address: int = 63, callback: Callable | None = None) -> None: ...
     def read(self) -> int:
         """Returns the 8-bit value of the I/O expander pins."""

@@ -2,7 +2,26 @@
 from typing import Any, Optional, Union, Tuple, List
 
 class aes:
-    """Like encrypt(), but for decryption."""
+    """
+    Create a new AES cipher object, suitable for encryption or decryption.
+    After initialization, the cipher object can be used only for one
+    direction — running decrypt() after encrypt() (or vice versa)
+    is not supported.
+    Parameters are:
+    key is an encryption/decryption key (bytes-like).
+
+    mode is:
+
+    1 (or cryptolib.MODE_ECB if it exists) for Electronic Code Book (ECB).
+
+    2 (or cryptolib.MODE_CBC if it exists) for Cipher Block Chaining (CBC).
+
+    6 (or cryptolib.MODE_CTR if it exists) for Counter mode (CTR).
+
+    IV is an initialization vector for CBC mode.
+
+    For Counter mode, IV is the initial value for the counter.
+    """
     def __init__(self, key: bytes | bytearray | memoryview, mode: int, IV: bytes | bytearray | memoryview | None = None) -> None: ...
     def decrypt(self, in_buf: bytes | bytearray | memoryview, out_buf: bytearray | memoryview | None = None) -> bytes:
         """Like encrypt(), but for decryption."""

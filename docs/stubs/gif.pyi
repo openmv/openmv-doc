@@ -4,15 +4,21 @@ import image
 
 class Gif:
     """
-    Finalizes the gif recording. This method must be called once the recording
-    is complete to make the file viewable.
+    Creates a Gif object which frames can be added to. filename is the path
+    to save the gif recording to.
+    width defaults to the main framebuffer horizontal resolution.
+    height defaults to the main framebuffer vertical resolution.
+    color defaults to the main framebuffer color mode:
+    False results in a sensor.GRAYSCALE 7-bit per pixel gif.
+
+    True results in a sensor.RGB565 7-bit per pixel gif.
+    loop when True results in the gif automatically looping on playback.
     """
     def __init__(self, filename: str, width: int | None = None, height: int | None = None, color: bool | None = None, loop: bool = True) -> None: ...
     def add_frame(self, image: image.Image, delay: int = 10) -> None:
         """
         Adds an image to the gif recording. The image width, height, and color mode
         must match the values used in the constructor.
-
         delay is the number of centi-seconds to wait before displaying this frame
         after the previous frame.
         """

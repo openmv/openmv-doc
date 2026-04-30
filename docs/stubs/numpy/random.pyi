@@ -3,36 +3,28 @@ from typing import Any, Optional, Union, Tuple, List
 
 class Generator:
     """
-    Draw samples from the uniform distribution over the half-open interval
-    [low, high).
-
+    Construct a new pseudo-random number generator.
     Parameters
 
-    low – the lower bound (inclusive) of the distribution.
-
-    high – the upper bound (exclusive) of the distribution.
-
-    size – the shape of the output. If a tuple, an array of that
-    shape is returned. If None (the default), a single
-    Python float drawn from [0.0, 1.0) is returned
-    (the low/high bounds are ignored in the scalar case).
-
-    Returns
-
-    either a Python float or a float numpy.ndarray of
-    the requested shape.
+    seed – the seed used to initialise the generator state. If an integer
+    is supplied it is used directly. If a tuple of integers is
+    supplied, a tuple of independently-seeded Generator
+    objects (one per element) is returned instead of a single
+    instance. If None is supplied, a platform-default seed is
+    used (when one is configured at build time); otherwise a
+    ValueError is raised.
 
     Raises
 
-    ValueError – if the requested shape exceeds ULAB_MAX_DIMS.
+    TypeError – if seed is not None, an integer, or a tuple of
+    integers.
 
-    TypeError – if size is neither None nor a tuple.
+    ValueError – if seed is None and no default seed is configured.
     """
     def __init__(self, seed: int | tuple[int, ...] | None = None) -> None: ...
     def normal(self, loc: float = 0.0, scale: float = 1.0, size: int | tuple[int, ...] | None = None) -> float | ndarray:
         """
         Draw samples from a normal (Gaussian) distribution.
-
         Parameters
 
         loc – the mean (centre) of the distribution.
@@ -56,7 +48,6 @@ class Generator:
 
         TypeError – if size is neither None, an integer, nor a
         tuple.
-
         Samples are generated using the Box-Muller transform.
         """
         ...
@@ -64,7 +55,6 @@ class Generator:
         """
         Draw samples from the uniform distribution over the half-open interval
         [0.0, 1.0).
-
         Parameters
 
         size – the shape of the output. If an integer, a one-dimensional
@@ -95,7 +85,6 @@ class Generator:
         """
         Draw samples from the uniform distribution over the half-open interval
         [low, high).
-
         Parameters
 
         low – the lower bound (inclusive) of the distribution.

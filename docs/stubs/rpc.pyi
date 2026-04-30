@@ -2,19 +2,7 @@
 from typing import Any, Optional, Union, Tuple, List
 
 class rpc:
-    """
-    Sends a stream of payloads to a remote rpc.stream_reader. Should be called from inside an
-    rpc_slave callback (or directly after a successful rpc_master.call) once both sides have
-    synchronized.
-
-    call_back – callable invoked with no arguments that returns the next bytes or
-    memoryview payload to send.
-
-    write_timeout_ms – milliseconds to wait when sending each payload.
-
-    Returns on any error. To cancel, raise an exception inside call_back; the remote side will
-    timeout.
-    """
+    """Creates an rpc object. Not meant to be used directly."""
     def __init__(self) -> None: ...
     def get_bytes(self, buff: bytearray | memoryview, timeout_ms: int) -> Optional[bytes]:
         """
@@ -33,7 +21,6 @@ class rpc:
         Receives a stream of payloads from a remote rpc.stream_writer. Should be called from inside an
         rpc_slave callback (or directly after a successful rpc_master.call) once both sides have
         synchronized.
-
         call_back – callable invoked once per received payload as call_back(data) where
         data is a memoryview. Return value is ignored.
 
@@ -41,7 +28,6 @@ class rpc:
         the reader. Higher values increase throughput at the cost of memory.
 
         read_timeout_ms – milliseconds to wait per payload.
-
         Returns on any error. To cancel, raise an exception inside call_back; the remote side will
         timeout.
         """
@@ -51,12 +37,10 @@ class rpc:
         Sends a stream of payloads to a remote rpc.stream_reader. Should be called from inside an
         rpc_slave callback (or directly after a successful rpc_master.call) once both sides have
         synchronized.
-
         call_back – callable invoked with no arguments that returns the next bytes or
         memoryview payload to send.
 
         write_timeout_ms – milliseconds to wait when sending each payload.
-
         Returns on any error. To cancel, raise an exception inside call_back; the remote side will
         timeout.
         """
@@ -71,7 +55,6 @@ class rpc_can_master:
     sample_point – Tseg1/Tseg2 sample-point percentage (e.g. 50.0, 62.5, 75, 87.5).
 
     can_bus – CAN peripheral number.
-
     Master and slave message_id and bit_rate must match. The bus must be terminated with
     120 ohms.
     """
@@ -88,7 +71,6 @@ class rpc_i2c_master:
     rate – I2C bus clock frequency in Hz.
 
     i2c_bus – I2C peripheral number.
-
     Master and slave addresses must match. External pull-ups are required on SCL and SDA, and both
     devices must share a common ground.
     """
@@ -103,29 +85,11 @@ class rpc_i2c_slave:
     def __init__(self, slave_addr: int = 0x12, i2c_bus: int = 2) -> None: ...
 
 class rpc_master:
-    """
-    Executes a remote call on the slave device.
-
-    name – string name of the remote function or method to execute.
-
-    data – bytes-like object passed as the argument to the remote function.
-
-    send_timeout – milliseconds to wait while connecting to the slave and starting execution
-    of the remote function. Once the master begins sending the argument this no longer applies;
-    the library allows up to 5 seconds for the argument transfer.
-
-    recv_timeout – milliseconds to wait for the slave to begin returning a response. Once
-    the master begins receiving the response this no longer applies; the library allows up to
-    5 seconds for the response transfer.
-
-    Returns a memoryview of the response on success, an empty bytes() if the remote name
-    does not exist on the slave, or None on communication failure.
-    """
+    """Creates an rpc_master object. Not meant to be used directly."""
     def __init__(self) -> None: ...
     def call(self, name: str, data: bytes = bytes(), send_timeout: int = 1000, recv_timeout: int = 1000) -> Optional[memoryview]:
         """
         Executes a remote call on the slave device.
-
         name – string name of the remote function or method to execute.
 
         data – bytes-like object passed as the argument to the remote function.
@@ -137,26 +101,17 @@ class rpc_master:
         recv_timeout – milliseconds to wait for the slave to begin returning a response. Once
         the master begins receiving the response this no longer applies; the library allows up to
         5 seconds for the response transfer.
-
         Returns a memoryview of the response on success, an empty bytes() if the remote name
         does not exist on the slave, or None on communication failure.
         """
         ...
 
 class rpc_slave:
-    """
-    Runs the rpc slave dispatch loop. Does not return except by exception raised from a callback.
-
-    recv_timeout – milliseconds to wait for a command from the master before retrying.
-
-    send_timeout – milliseconds to wait for the master to acknowledge the response before
-    returning to receive.
-    """
+    """Creates an rpc_slave object. Not meant to be used directly."""
     def __init__(self) -> None: ...
     def loop(self, recv_timeout: int = 1000, send_timeout: int = 1000) -> None:
         """
         Runs the rpc slave dispatch loop. Does not return except by exception raised from a callback.
-
         recv_timeout – milliseconds to wait for a command from the master before retrying.
 
         send_timeout – milliseconds to wait for the master to acknowledge the response before
@@ -198,7 +153,6 @@ class rpc_spi_master:
     clk_phase – sample data on the first (0) or second (1) clock edge.
 
     spi_bus – SPI peripheral number.
-
     Master and slave settings must match. Connect CS, SCLK, MOSI, MISO directly. Both devices must
     share a common ground.
     """
@@ -221,7 +175,6 @@ class rpc_uart_master:
     baudrate – serial baud rate.
 
     uart_port – UART peripheral number.
-
     Master and slave baud rates must match. Connect master TX to slave RX and master RX to slave
     TX. Both devices must share a common ground.
     """

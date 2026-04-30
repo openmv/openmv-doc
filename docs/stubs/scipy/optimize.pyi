@@ -5,7 +5,6 @@ def bisect(f: Callable[[float], float], a: float, b: float, *, xtol: float = xto
     """
     Find a root of f in the bracket [a, b] using the bisection
     method. f must change sign on the interval.
-
     Parameters
 
     f – callable taking a single float and returning a float.
@@ -35,7 +34,6 @@ def curve_fit(f: Callable[..., float], xdata: ndarray | list | tuple, ydata: nda
     placeholder: it accepts and validates its arguments but always returns
     None. Prefer fmin() or external libraries until this routine
     is implemented.
-
     Parameters
 
     f – model callable f(x, *params) -> float.
@@ -51,7 +49,6 @@ def fmin(f: Callable[[float], float], x0: float, *, xatol: float = xtolerance, f
     """
     Find the position of a local minimum of the scalar function f
     using the downhill simplex (Nelder-Mead) method.
-
     Parameters
 
     f – callable taking a single float and returning a float.
@@ -75,7 +72,6 @@ def newton(f: Callable[[float], float], x0: float, *, tol: float = xtolerance, r
     """
     Find a zero of the real-valued, scalar function f by the
     Newton-Raphson (secant) method.
-
     Parameters
 
     f – callable taking a single float and returning a float.

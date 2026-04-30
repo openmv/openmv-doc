@@ -4,8 +4,12 @@ import image
 
 class Mjpeg:
     """
-    Finalizes the mjpeg recording. Must be called once recording is
-    complete to make the file viewable.
+    Create a Mjpeg object which you can add frames to.
+    path is the file system path to save the mjpeg recording to.
+    width is the horizontal resolution of the mjpeg file. Defaults to the
+    main framebuffer width when not specified.
+    height is the vertical resolution of the mjpeg file. Defaults to the
+    main framebuffer height when not specified.
     """
     def __init__(self, path: str, width: int | None = None, height: int | None = None) -> None: ...
     def add_frame(self, image: image.Image, roi: Tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0, quality: int = 90) -> None:
@@ -14,30 +18,23 @@ class Mjpeg:
         scaled while preserving aspect ratio to the resolution specified when
         the file was created. Any image format is accepted; this method
         decompresses, scales/converts, and re-compresses as needed.
-
         roi is the region-of-interest rectangle tuple (x, y, w, h) of
         image to copy. Defaults to the whole image.
-
         rgb_channel is the RGB channel (0=R, 1=G, 2=B) to extract from an
         RGB565 source image and render in grayscale. -1 (default) disables
         channel extraction.
-
         alpha (0-255) controls how much of the source image to blend into
         the destination. 255 is opaque; lower values blend with a black
         background; 0 results in a black frame.
-
         color_palette is either a color palette enum (e.g.
         image.PALETTE_RAINBOW) or a 256-pixel RGB565 image used as a color
         lookup table on the grayscale value of the source image. Applied after
         rgb_channel extraction.
-
         alpha_palette is a 256-pixel grayscale image used as an alpha
         lookup table modulating alpha per source pixel based on its
         grayscale value. 255 is opaque; 0 is transparent. Applied
         after rgb_channel extraction.
-
         hint is a logical OR of:
-
         image.AREA: Use area scaling when downscaling.
 
         image.BILINEAR: Use bilinear scaling.
@@ -67,7 +64,6 @@ class Mjpeg:
         image.ROTATE_180: Rotate by 180 degrees (HMIRROR | VFLIP).
 
         image.ROTATE_270: Rotate by 270 degrees (HMIRROR | TRANSPOSE).
-
         quality (0-100) is the JPEG compression quality used for non-JPEG
         source images.
         """

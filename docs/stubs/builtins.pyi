@@ -279,7 +279,6 @@ class KeyboardInterrupt(Exception):
     """
     Raised when the user interrupts program execution, usually by pressing
     Ctrl+C on the REPL.
-
     See also in the context of soft_bricking.
     """
     ...
@@ -314,10 +313,8 @@ class SystemExit(Exception):
     """
     Raised by sys.exit() to request interpreter termination.  Unlike
     most exceptions, it does not produce a traceback when uncaught.
-
     On non-embedded ports (i.e. Windows and Unix), an unhandled SystemExit
     exits the MicroPython process in a similar way to CPython.
-
     On embedded ports, an unhandled SystemExit currently causes a
     soft_reset of MicroPython.
     """
@@ -384,14 +381,6 @@ class frozenset:
     def __init__(self, iterable: Iterable[Any] = ()) -> None: ...
 
 class int:
-    """
-    In MicroPython, byteorder parameter must be positional (this is
-    compatible with CPython).
-
-    The optional signed kwarg from CPython is not supported.
-    MicroPython currently converts negative integers as signed,
-    and positive as unsigned. (Details.)
-    """
     def __init__(self, x: str | bytes | int | float = 0, base: int = 10) -> None: ...
     def from_bytes(self, bytes: bytes, byteorder: str) -> int:
         """
@@ -403,7 +392,6 @@ class int:
         """
         In MicroPython, byteorder parameter must be positional (this is
         compatible with CPython).
-
         The optional signed kwarg from CPython is not supported.
         MicroPython currently converts negative integers as signed,
         and positive as unsigned. (Details.)

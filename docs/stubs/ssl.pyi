@@ -32,14 +32,12 @@ def wrap_socket(sock: Any, server_side: bool = False, key: bytes | None = None, 
     method on that context object.  The arguments sock, server_side and server_hostname are
     passed through unchanged to the method call.  The argument do_handshake is passed through as
     do_handshake_on_connect.  The remaining arguments have the following behaviour:
-
     cert_reqs determines whether the peer (server or client) must present a valid certificate.
     Note that for mbedtls based ports, ssl.CERT_NONE and ssl.CERT_OPTIONAL will not
     validate any certificate, only ssl.CERT_REQUIRED will.
 
     cadata is a bytes object containing the CA certificate chain (in DER format) that will
     validate the peer’s certificate.  Currently only a single DER-encoded certificate is supported.
-
     Depending on the underlying module implementation in a particular
     MicroPython port, some or all keyword arguments above may be not supported.
     """
@@ -47,19 +45,14 @@ def wrap_socket(sock: Any, server_side: bool = False, key: bytes | None = None, 
 
 class SSLContext:
     """
-    Set or get the behaviour for verification of peer certificates.  Must be one of the
-    CERT_* constants.
-
-    ssl.CERT_REQUIRED requires the device’s date/time to be properly set, e.g. using
-    mpremote rtc –set <mpremote_command_rtc> or ntptime, and server_hostname
-    must be specified when on the client side.
+    Create a new SSLContext instance.  The protocol argument must be one of the PROTOCOL_*
+    constants.
     """
     def __init__(self, protocol: int, /) -> None: ...
     verify_mode: Any
     """
     Set or get the behaviour for verification of peer certificates.  Must be one of the
     CERT_* constants.
-
     ssl.CERT_REQUIRED requires the device’s date/time to be properly set, e.g. using
     mpremote rtc –set <mpremote_command_rtc> or ntptime, and server_hostname
     must be specified when on the client side.
@@ -72,7 +65,6 @@ class SSLContext:
         Load a private key and the corresponding certificate.  The certfile is a string
         with the file path of the certificate.  The keyfile is a string with the file path
         of the private key.
-
         Difference to CPython
 
         MicroPython extension: certfile and keyfile can be bytes objects instead of
@@ -98,7 +90,6 @@ class SSLContext:
         and returns an instance of ssl.SSLSocket, wrapping the underlying stream.
         The returned object has the usual stream interface methods like
         read(), write(), etc.
-
         server_side selects whether the wrapped socket is on the server or client side.
         A server-side SSL socket should be created from a normal socket returned from
         accept() on a non-SSL listening server socket.
@@ -117,7 +108,6 @@ class SSLContext:
 
         client_id is a MicroPython-specific extension argument used only when implementing a DTLS
         Server. See dtls for details.
-
         Some implementations of ssl module do NOT validate server certificates,
         which makes an SSL connection established prone to man-in-the-middle attacks.
 

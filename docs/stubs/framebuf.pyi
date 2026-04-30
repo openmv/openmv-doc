@@ -39,35 +39,32 @@ RGB565: int
 
 class FrameBuffer:
     """
-    Draw another FrameBuffer on top of the current one at the given coordinates.
-    If key is specified then it should be a color integer and the
-    corresponding color will be considered transparent: all pixels with that
-    color value will not be drawn. (If the palette is specified then the key
-    is compared to the value from palette, not to the value directly from
-    fbuf.)
+    Construct a FrameBuffer object.  The parameters are:
 
-    fbuf can be another FrameBuffer instance, or a tuple or list of the form:
+    buffer is an object with a buffer protocol which must be large
+    enough to contain every pixel defined by the width, height and
+    format of the FrameBuffer.
 
-    (buffer, width, height, format)
+    width is the width of the FrameBuffer in pixels
 
-    or:
+    height is the height of the FrameBuffer in pixels
 
-    (buffer, width, height, format, stride)
+    format specifies the type of pixel used in the FrameBuffer;
+    permissible values are listed under Constants below. These set the
+    number of bits used to encode a color value and the layout of these
+    bits in buffer.
+    Where a color value c is passed to a method, c is a small integer
+    with an encoding that is dependent on the format of the FrameBuffer.
 
-    This matches the signature of the FrameBuffer constructor, and the elements
-    of the tuple/list are the same as the arguments to the constructor except that
-    the buffer here can be read-only.
+    stride is the number of pixels between each horizontal line
+    of pixels in the FrameBuffer. This defaults to width but may
+    need adjustments when implementing a FrameBuffer within another
+    larger FrameBuffer or screen. The buffer size must accommodate
+    an increased step size.
 
-    The palette argument enables blitting between FrameBuffers with differing
-    formats. Typical usage is to render a monochrome or grayscale glyph/icon to
-    a color display. The palette is a FrameBuffer instance whose format is
-    that of the current FrameBuffer. The palette height is one pixel and its
-    pixel width is the number of colors in the source FrameBuffer. The palette
-    for an N-bit source needs 2**N pixels; the palette for a monochrome source
-    would have 2 pixels representing background and foreground colors. The
-    application assigns a color to each pixel in the palette. The color of the
-    current pixel will be that of that palette pixel whose x position is the
-    color of the corresponding source pixel.
+    One must specify valid buffer, width, height, format and
+    optionally stride.  Invalid buffer size or dimensions may lead to
+    unexpected errors.
     """
     def __init__(self, buffer: Any, width: int, height: int, format: int, stride: int | None = None, /) -> None: ...
     def blit(self, fbuf: FrameBuffer | Tuple, x: int, y: int, key: int = -1, palette: FrameBuffer | None = None) -> None:
@@ -78,19 +75,13 @@ class FrameBuffer:
         color value will not be drawn. (If the palette is specified then the key
         is compared to the value from palette, not to the value directly from
         fbuf.)
-
         fbuf can be another FrameBuffer instance, or a tuple or list of the form:
-
         (buffer, width, height, format)
-
         or:
-
         (buffer, width, height, format, stride)
-
         This matches the signature of the FrameBuffer constructor, and the elements
         of the tuple/list are the same as the arguments to the constructor except that
         the buffer here can be read-only.
-
         The palette argument enables blitting between FrameBuffers with differing
         formats. Typical usage is to render a monochrome or grayscale glyph/icon to
         a color display. The palette is a FrameBuffer instance whose format is
@@ -108,10 +99,8 @@ class FrameBuffer:
         Draw an ellipse at the given location. Radii xr and yr define the
         geometry; equal values cause a circle to be drawn. The c parameter
         defines the color.
-
         The optional f parameter can be set to True to fill the ellipse.
         Otherwise just a one pixel outline is drawn.
-
         The optional m parameter enables drawing to be restricted to certain
         quadrants of the ellipse. The LS four bits determine which quadrants are
         to be drawn, with bit 0 specifying Q1, b1 Q2, b2 Q3 and b3 Q4. Quadrants
@@ -149,10 +138,8 @@ class FrameBuffer:
         """
         Given a list of coordinates, draw an arbitrary (convex or concave) closed
         polygon at the given x, y location using the given color.
-
         The coords must be specified as a array of integers, e.g.
         array('h', [x0, y0, x1, y1, ... xn, yn]).
-
         The optional f parameter can be set to True to fill the polygon.
         Otherwise just a one pixel outline is drawn.
         """
@@ -160,7 +147,6 @@ class FrameBuffer:
     def rect(self, x: int, y: int, w: int, h: int, c: int, f: bool = False) -> None:
         """
         Draw a rectangle at the given location, size and color.
-
         The optional f parameter can be set to True to fill the rectangle.
         Otherwise just a one pixel outline is drawn.
         """

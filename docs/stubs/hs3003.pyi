@@ -4,8 +4,15 @@ import machine
 
 class HS3003:
     """
-    Trigger a measurement and return the temperature in degrees Celsius,
-    computed as (raw >> 2) / 16383 * 165 - 40.
+    Construct an HS3003 instance.
+    bus
+
+    A configured machine.I2C bus the sensor is attached to.
+
+    address
+
+    7-bit I2C address of the device. Defaults to 0x44, the factory
+    address used by all HS3003 parts.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x44) -> None: ...
     def humidity(self) -> float:

@@ -27,15 +27,11 @@ def addLevelName(level: int, name: str) -> None:
 def basicConfig(filename: str | None = None, filemode: str = 'a', format: str | None = None, datefmt: str | None = None, level: int = WARNING, stream=None, encoding: str = 'UTF-8', force: bool = False) -> None:
     """
     Configure the root logger with a single handler.
-
     If filename is supplied a FileHandler is created using filemode
     and encoding; otherwise a StreamHandler writing to stream
     (defaulting to sys.stderr) is used.
-
     format and datefmt are passed through to a new Formatter.
-
     level sets both the handler’s level and the root logger’s level.
-
     If the root logger already has handlers this function is a no-op unless
     force is True, in which case the existing handlers are closed and
     replaced.
@@ -98,8 +94,12 @@ class FileHandler:
 
 class Formatter:
     """
-    Render record. If the template uses asctime,
-    formatTime() is invoked first to populate record.asctime.
+    Renders LogRecord instances to strings.
+    fmt is a printf-style template. Recognised keys are %(name)s,
+    %(message)s, %(msecs)d, %(asctime)s, and %(levelname)s.
+    When unset it defaults to "%(levelname)s:%(name)s:%(message)s".
+    datefmt is the time.strftime template used to render
+    %(asctime)s. Defaults to "%Y-%m-%d %H:%M:%S".
     """
     def __init__(self, fmt: str | None = None, datefmt: str | None = None) -> None: ...
     def format(self, record: LogRecord) -> str:
@@ -119,21 +119,12 @@ class Formatter:
         ...
 
 class Handler:
-    """
-    Release resources held by the handler. Called by shutdown and by
-    FileHandler when it is closed.
-    """
+    """Base class for all handlers. Sub-classes implement emit()."""
     def __init__(self, level: int = NOTSET) -> None: ...
     formatter: Any
-    """
-    Release resources held by the handler. Called by shutdown and by
-    FileHandler when it is closed.
-    """
+    """The active Formatter, or None."""
     level: Any
-    """
-    Release resources held by the handler. Called by shutdown and by
-    FileHandler when it is closed.
-    """
+    """The handler’s threshold level."""
     def close(self) -> None:
         """
         Release resources held by the handler. Called by shutdown and by
@@ -152,45 +143,25 @@ class Handler:
 
 class LogRecord:
     """
-    Initialise the record with the given values and capture the current
-    time.
+    Container for the data passed from a Logger to its handlers. Instances
+    are populated through set(); logger implementations reuse a single
+    record per logger to reduce allocations.
     """
     def __init__(self) -> None: ...
     asctime: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """Human-readable timestamp; populated lazily by Formatter."""
     ct: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """Creation time as returned by time.time()."""
     levelname: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """Textual level name."""
     levelno: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """Numeric level of this record."""
     message: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """The fully-formatted log message."""
     msecs: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """Millisecond component of ct."""
     name: Any
-    """
-    Initialise the record with the given values and capture the current
-    time.
-    """
+    """The originating logger’s name."""
     def set(self, name: str, level: int, message: str) -> None:
         """
         Initialise the record with the given values and capture the current
@@ -199,14 +170,23 @@ class LogRecord:
         ...
 
 class Logger:
-    """Return True if any handlers are attached to this logger."""
+    """
+    A named logger. Construct loggers via getLogger rather than directly,
+    so that getLogger can return the same instance for the same name.
+    """
     def __init__(self, name: str, level: int = NOTSET) -> None: ...
     handlers: Any
-    """Return True if any handlers are attached to this logger."""
+    """
+    The list of Handler instances attached to this logger. When empty,
+    messages are dispatched to the root logger’s handlers.
+    """
     level: Any
-    """Return True if any handlers are attached to this logger."""
+    """
+    The configured numeric level. 0 (NOTSET) means
+    “inherit”.
+    """
     name: Any
-    """Return True if any handlers are attached to this logger."""
+    """The logger’s dotted name."""
     def addHandler(self, handler: Handler) -> None:
         """Attach handler to this logger."""
         ...
@@ -260,12 +240,15 @@ class Logger:
         ...
 
 class StreamHandler:
-    """Flush the underlying stream when it exposes a flush method."""
+    """
+    Handler that writes formatted records, followed by self.terminator
+    ("\n" by default), to stream. stream defaults to sys.stderr.
+    """
     def __init__(self, stream=None) -> None: ...
     stream: Any
-    """Flush the underlying stream when it exposes a flush method."""
+    """The destination stream object."""
     terminator: Any
-    """Flush the underlying stream when it exposes a flush method."""
+    """String appended after every formatted record. Defaults to "\n"."""
     def close(self) -> None:
         """Flush the underlying stream when it exposes a flush method."""
         ...

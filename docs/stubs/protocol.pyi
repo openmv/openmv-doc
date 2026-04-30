@@ -31,23 +31,14 @@ def init(crc: bool = True, seq: bool = True, ack: bool = True, events: bool = Tr
     Initialize the protocol stack and register the default logical data
     channels (stdin, stdout, stream and, if compiled in,
     profile). Raises RuntimeError if initialization fails.
-
     crc enables CRC validation on protocol frames.
-
     seq enables sequence number tracking.
-
     ack enables per-frame acknowledgements.
-
     events enables channel event notifications.
-
     max_payload is the maximum payload size in bytes.
-
     rtx_retries is the number of retransmission attempts.
-
     rtx_timeout_ms is the retransmission timeout in milliseconds.
-
     lock_interval_ms is the minimum lock interval in milliseconds.
-
     poll_ms is the polling interval in milliseconds (0 disables timer
     polling).
     """
@@ -66,15 +57,11 @@ def register(name: str, backend: object, flags: int = 0) -> ProtocolChannel:
     capabilities; protocol.CHANNEL_FLAG_READ, protocol.CHANNEL_FLAG_WRITE
     and protocol.CHANNEL_FLAG_LOCK are added to flags automatically
     when the corresponding methods are implemented.
-
     name is the channel name as a string. Truncated to the firmware’s
     channel-name buffer size.
-
     backend is the Python object implementing the backend interface.
-
     flags is additional channel flag bits (see the CHANNEL_FLAG_*
     constants).
-
     Raises RuntimeError if the channel cannot be registered (e.g. no
     free channel slots).
     """
@@ -82,8 +69,15 @@ def register(name: str, backend: object, flags: int = 0) -> ProtocolChannel:
 
 class CBORChannel:
     """
-    Backend interface method. Decodes a CBOR update list and applies
-    values to matching named fields, invoking on_write for each.
+    A higher-level Python backend (provided by the frozen protocol
+    package) that serializes named fields to CBOR using SenML-compatible
+    integer keys. Supports display widgets (label, depth) and
+    interactive controls (toggle, slider, select) with
+    on_read/on_write callbacks.
+    on_read is an optional callable on_read(channel) invoked before
+    the channel is serialized for the host. Use it to refresh field values.
+    on_write is an optional callable on_write(channel, name, value)
+    invoked when the host writes a new value for a named field.
     """
     def __init__(self, on_read: Callable | None = None, on_write: Callable | None = None) -> None: ...
     def __getitem__(self, name: str) -> object:
@@ -103,27 +97,17 @@ class CBORChannel:
     def add(self, name: str, type: str, value: Any = None, unit: str | None = None, min: int | float | None = None, max: int | float | None = None, step: int | float | None = None, options: list | None = None, width: int | None = None, height: int | None = None) -> None:
         """
         Add a named field to the channel.
-
         name is the display name; must be unique within this channel.
-
         type is the widget type: "label", "toggle", "slider",
         "select", or "depth".
-
         value is the initial value. The default depends on type.
-
         unit is the unit string for label/slider (e.g. "Cel",
         "%RH").
-
         min is the minimum value (slider range or depth range).
-
         max is the maximum value (slider range or depth range).
-
         step is the step size (slider).
-
         options is the list of option strings (select).
-
         width is the pixel width (depth).
-
         height is the pixel height (depth).
         """
         ...
@@ -151,31 +135,23 @@ class CBORChannel:
 
 class ProtocolChannel:
     """
-    Send a channel event notification to the host.
-
-    event is the event identifier (integer).
-
-    wait_ack if True blocks until the host acknowledges the event.
-
-    Raises RuntimeError if sending the event fails.
+    Handle returned by protocol.register. Instances are not constructed
+    directly.
     """
     def __init__(self) -> None: ...
     def send_event(self, event: int, wait_ack: bool = False) -> None:
         """
         Send a channel event notification to the host.
-
         event is the event identifier (integer).
-
         wait_ack if True blocks until the host acknowledges the event.
-
         Raises RuntimeError if sending the event fails.
         """
         ...
 
 class backend:
     """
-    For transport channels, return True if the underlying transport is
-    currently connected.
+    Channel backend object passed to protocol.register. The methods below
+    describe the optional interface a Python backend may implement.
     """
     def __init__(self) -> None: ...
 

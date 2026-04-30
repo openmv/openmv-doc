@@ -258,6 +258,503 @@ def devices() -> List[int]:
 
 class CSI:
     """
+    Create an object to talk with a camera sensor. On boards with multiple sensors, the particular
+    CSI object may be selected by passing a cid like csi.LEPTON to select a FLIR Lepton sensor
+    module. If cid is -1 the primary sensor is selected (typically a color camera module on
+    multi-sensor boards).
+    If delays is False then all settling time delays in the csi driver are disabled. By
+    default the sensor driver delays after reset / mode change to prevent corrupt frames being
+    returned by CSI.snapshot. Disabling delays lets you batch updates and apply a single delay at
+    the end before calling CSI.snapshot.
+    If fflush is False then automatic framebuffer flushing mentioned in CSI.framebuffers
+    is disabled. This removes any time limit on frames in the frame buffer fifo.
+    stream selects whether this CSI is the stream source sent to the IDE. If None (default)
+    the CSI becomes the stream source only if it is the primary (non-auxiliary) sensor. Pass
+    True to force this CSI to be the stream source, or any false value to leave the existing
+    stream source unchanged.
+    Methods
+
+
+
+    reset(hard: bool = True) -> None
+
+    Initializes the camera sensor. Performs a hardware reset by toggling the RESET signal GPIO
+    to the camera module if hard is True. hard should be set to false when resetting
+    auxiliary camera sensors that share the same RESET signal GPIO as the primary module.
+
+
+
+    shutdown(enable: bool) -> None
+
+    Puts the camera into a lower power mode than sleep (but the camera must be reset on being
+    woken up).
+
+
+
+    sleep(enable: bool) -> None
+
+    Puts the camera to sleep if enable is True. Otherwise, wakes it back up.
+
+
+
+    flush() -> None
+
+    Copies the current frame buffer contents to the IDE preview. Call this after the last
+    CSI.snapshot if the script terminates so the IDE shows the last frame.
+
+
+
+    snapshot(time: int = -1, frames: int = -1, blocking: bool = True, image: image.Image | None = None) -> image.Image | None
+
+    Takes a picture using the camera and returns an image.Image object.
+
+    If time and/or frames is passed snapshot will block for that many time
+    milliseconds and/or frames captured from the camera. Both arguments may be used at the
+    same time. After time and/or frames has passed snapshot will return None.
+
+    blocking may be False to enable non-blocking behavior which will cause snapshot to
+    return None when the next image from the camera is not ready versus waiting.
+
+    image may be another image.Image object to update with the new image captured from the
+    camera instead of returning a new image.Image object. The previous image contents are
+    overwritten via a deep copy.
+
+    If CSI.auto_rotation is enabled this method will return an already-rotated image.Image.
+
+
+
+    width() -> int
+
+    Returns the sensor resolution width.
+
+
+
+    height() -> int
+
+    Returns the sensor resolution height.
+
+
+
+    cid() -> int
+
+    Returns the camera module chip ID. Compare against any of csi.OV2640, csi.OV5640,
+    csi.OV7670, csi.OV7690, csi.OV7725, csi.OV9650, csi.MT9V022, csi.MT9V024,
+    csi.MT9V032, csi.MT9V034, csi.MT9M114, csi.BOSON320, csi.BOSON640, csi.LEPTON,
+    csi.HM01B0, csi.HM0360, csi.GC2145, csi.GENX320ES, csi.GENX320, csi.PAG7920,
+    csi.PAG7936, csi.PAJ6100, csi.FROGEYE2020, or csi.SOFTCSI.
+
+
+
+    readable() -> bool
+
+    Returns True if there is an image ready to be returned by CSI.snapshot so a call to
+    snapshot will not block.
+
+
+
+    pixformat(pixformat: int | None = None) -> int | None
+
+    Sets the pixel format for the camera module to one of csi.GRAYSCALE, csi.RGB565,
+    csi.BAYER, csi.YUV422, or csi.JPEG (only on the OV2640/OV5640).
+
+    Returns the current pixformat if called with no arguments.
+
+
+
+    framesize(framesize: int | Tuple[int, int] | None = None) -> int | None
+
+    Sets the frame size for the camera module to one of the size constants (e.g. csi.QVGA,
+    csi.VGA, csi.HD, etc. — see the constants section).
+
+    Alternatively, you may pass a custom framesize as a (w, h) tuple. When CSI.snapshot is
+    called the custom framesize will be evaluated against DMA rules. Generally framesizes need
+    to be a multiple of 8 pixels and/or 16 bytes.
+
+    Returns the current framesize if called with no arguments.
+
+
+
+    framerate(rate: int | None = None) -> int | None
+
+    Sets the frame rate in Hz for the camera module.
+
+    Returns the current framerate if called with no arguments.
+
+    CSI.framerate works by dropping frames received by the camera module to keep the frame
+    rate at or below the rate specified. By default the camera will run at the maximum frame
+    rate. If implemented for the particular camera sensor CSI.framerate will also reduce
+    the camera sensor frame rate internally to save power and improve image quality by
+    increasing the sensor exposure. CSI.framerate may conflict with CSI.auto_exposure on
+    some cameras.
+
+
+
+    window(roi: Tuple[int, int] | Tuple[int, int, int, int] | None = None) -> Tuple[int, int, int, int] | None
+
+    Sets the resolution of the camera to a sub-region of the current resolution. roi is a
+    (x, y, w, h) tuple. You may also pass (w, h) and the window will be centered.
+
+    Returns the current (x, y, w, h) tuple if called with no arguments.
+
+
+
+    gainceiling(gainceiling: int) -> bool
+
+    Set the camera image gainceiling to one of 2, 4, 8, 16, 32, 64, or 128.
+
+    Returns True on success and False on failure.
+
+
+
+    brightness(brightness: int) -> bool
+
+    Set the camera image brightness.
+
+    Returns True on success and False on failure.
+
+
+
+    contrast(contrast: int) -> bool
+
+    Set the camera image contrast.
+
+    Returns True on success and False on failure.
+
+
+
+    saturation(saturation: int) -> bool
+
+    Set the camera image saturation.
+
+    Returns True on success and False on failure.
+
+
+
+    quality(quality: int) -> bool
+
+    Set the camera image JPEG compression quality. 0 - 100.
+
+    Returns True on success and False on failure.
+
+    Only for the OV2640/OV5640 cameras.
+
+
+
+    colorbar(enable: bool) -> bool
+
+    Turns color bar mode on (True) or off (False). Defaults to off.
+
+    Returns True on success and False on failure.
+
+
+
+    auto_gain(enable: bool, gain_db: float | None = None, gain_db_ceiling: float | None = None) -> None
+
+    enable turns auto gain control on (True) or off (False). The camera starts up
+    with auto gain control on.
+
+    If enable is False you may set a fixed gain in decibels with gain_db.
+
+    If enable is True you may set the maximum gain ceiling in decibels with
+    gain_db_ceiling for the automatic gain control algorithm.
+
+    You need to turn off white balance too if you want to track colors.
+
+
+
+    gain_db() -> float
+
+    Returns the current camera gain value in decibels.
+
+
+
+    auto_exposure(enable: bool, exposure_us: int = -1) -> None
+
+    enable turns auto exposure control on (True) or off (False). The camera starts
+    up with auto exposure control on.
+
+    If enable is False you may set a fixed exposure time in microseconds with
+    exposure_us.
+
+    Camera auto exposure algorithms are pretty conservative about how much they adjust the
+    exposure value by and will generally avoid changing the exposure value by much. Instead,
+    they change the gain value a lot to deal with changing lighting.
+
+
+
+    exposure_us() -> int
+
+    Returns the current camera exposure value in microseconds.
+
+
+
+    auto_whitebal(enable: bool, rgb_gain_db: Tuple[float, float, float] | None = None) -> None
+
+    enable turns auto white balance on (True) or off (False). The camera starts up
+    with auto white balance on.
+
+    If enable is False you may set a fixed gain in decibels for the red, green, and blue
+    channels respectively with rgb_gain_db.
+
+    You need to turn off gain control too if you want to track colors.
+
+
+
+    rgb_gain_db() -> Tuple[float, float, float]
+
+    Returns a tuple (r, g, b) of the current camera red, green, and blue gain values in
+    decibels.
+
+
+
+    auto_blc(enable: bool, regs: List[int] | None = None) -> None
+
+    Sets the auto black-level calibration (BLC) on the camera.
+
+    enable pass True or False to turn BLC on or off. You typically always want this
+    on.
+
+    regs if disabled then you can manually set the BLC register values from a previous call
+    to CSI.blc_regs.
+
+
+
+    blc_regs() -> List[int]
+
+    Returns the sensor BLC registers as a list of integers. For use with CSI.auto_blc.
+
+
+
+    hmirror(enable: bool | None = None) -> bool | None
+
+    Turns horizontal mirror mode on (True) or off (False). Defaults to off.
+
+    Returns the current setting if called with no arguments.
+
+
+
+    vflip(enable: bool | None = None) -> bool | None
+
+    Turns vertical flip mode on (True) or off (False). Defaults to off.
+
+    Returns the current setting if called with no arguments.
+
+
+
+    transpose(enable: bool | None = None) -> bool | None
+
+    Turns transpose mode on (True) or off (False). Defaults to off.
+
+    vflip=False, hmirror=False, transpose=False -> 0 degree rotation
+
+    vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
+
+    vflip=True,  hmirror=True,  transpose=False -> 180 degree rotation
+
+    vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
+
+    Returns the current setting if called with no arguments.
+
+
+
+    auto_rotation(enable: bool | None = None) -> bool | None
+
+    Turns auto rotation mode on (True) or off (False). Defaults to off.
+
+    Returns the current setting if called with no arguments.
+
+    This method only works when the OpenMV Cam has an imu installed and is enabled
+    automatically.
+
+
+
+    framebuffers(count: int | None = None) -> int | None
+
+    Sets the number of frame buffers used to receive image data. By default the OpenMV Cam will
+    try to allocate the maximum number of frame buffers it can. Reallocation occurs whenever
+    CSI.pixformat, CSI.framesize, or CSI.window are called.
+
+    count of 1 (single buffer), 2 (double buffer), or 3 (triple buffer) selects the
+    corresponding capture mode. Pass 4 or greater to put the driver into video FIFO mode where
+    count buffers are queued — useful for video recording to an SD card. On frame drop, all
+    frame buffers except the active one are cleared so CSI.snapshot always returns a recent
+    frame.
+
+    Returns the current count if called with no arguments.
+
+
+
+    special_effect(effect: int) -> bool
+
+    Sets the special digital effect (one of csi.NORMAL or csi.NEGATIVE).
+
+    Returns True on success and False on failure.
+
+
+
+    lens_correction(enable: bool, radi: int, coef: int) -> bool
+
+    enable True to enable, False to disable.
+    radi integer radius of pixels to correct.
+    coef power of correction.
+
+    Returns True on success and False on failure.
+
+
+
+    vsync_callback(cb: Callable[[int], None] | None = None) -> Callable[[int], None] | None
+
+    Registers callback cb to be executed (in interrupt context) whenever the camera module
+    generates a new frame (but before the frame is received).
+
+    cb takes one argument and is passed the current state of the vsync pin after changing.
+
+    Returns the registered callback if called with no arguments. Pass any non-callable to clear
+    the callback.
+
+
+
+    frame_callback(cb: Callable[[], None] | None = None) -> Callable[[], None] | None
+
+    Registers callback cb to be executed (in interrupt context) whenever the camera module
+    generates a new frame and the frame is ready to be read via CSI.snapshot.
+
+    cb takes no arguments. Use this to schedule reading a frame later with
+    micropython.schedule().
+
+    Returns the registered callback if called with no arguments. Pass any non-callable to clear
+    the callback.
+
+
+
+    ioctl(request: int, *args) -> Any
+
+    Executes a sensor-specific request. The first argument is one of the IOCTL_* constants;
+    additional arguments and return value depend on the request.
+
+    csi.IOCTL_SET_READOUT_WINDOW — Pass an (x, y, w, h) or (w, h) tuple/list to set
+    the readout window of the sensor. Increases frame rate at the cost of field-of-view.
+
+    csi.IOCTL_GET_READOUT_WINDOW — Returns the current readout window as (x, y, w, h).
+
+    csi.IOCTL_SET_TRIGGERED_MODE — Pass True/False to set triggered mode (MT9V034).
+
+    csi.IOCTL_GET_TRIGGERED_MODE — Returns the current triggered mode state.
+
+    csi.IOCTL_SET_FOV_WIDE — Pass True/False to enable CSI.framesize to optimize
+    for field-of-view over FPS.
+
+    csi.IOCTL_GET_FOV_WIDE — Returns the current FOV-wide state.
+
+    csi.IOCTL_SET_NIGHT_MODE — Pass True/False to enable night mode (OV7725, OV5640).
+
+    csi.IOCTL_GET_NIGHT_MODE — Returns the current night mode state.
+
+    csi.IOCTL_TRIGGER_AUTO_FOCUS — Trigger auto focus on the OV5640 FPC module.
+
+    csi.IOCTL_PAUSE_AUTO_FOCUS — Pause auto focus on the OV5640 FPC module.
+
+    csi.IOCTL_RESET_AUTO_FOCUS — Reset auto focus on the OV5640 FPC module.
+
+    csi.IOCTL_WAIT_ON_AUTO_FOCUS — Wait for auto focus to finish (OV5640 FPC). Optional
+    second argument is the timeout in ms (default 5000).
+
+    csi.IOCTL_LEPTON_GET_WIDTH — Returns the FLIR Lepton image width in pixels.
+
+    csi.IOCTL_LEPTON_GET_HEIGHT — Returns the FLIR Lepton image height in pixels.
+
+    csi.IOCTL_LEPTON_GET_RADIOMETRY — Returns the FLIR Lepton type (radiometric or not).
+
+    csi.IOCTL_LEPTON_GET_REFRESH — Returns the FLIR Lepton refresh rate in Hz.
+
+    csi.IOCTL_LEPTON_GET_RESOLUTION — Returns the FLIR Lepton ADC resolution in bits.
+
+    csi.IOCTL_LEPTON_RUN_COMMAND — Pass a 16-bit value as the FLIR Lepton SDK command.
+
+    csi.IOCTL_LEPTON_SET_ATTRIBUTE — Pass the 16-bit attribute id and a bytes/bytearray
+    payload (multiple of 16 bits) as defined by the FLIR Lepton SDK.
+
+    csi.IOCTL_LEPTON_GET_ATTRIBUTE — Pass the 16-bit attribute id and a 16-bit-word count.
+    Returns a bytearray.
+
+    csi.IOCTL_LEPTON_GET_FPA_TEMP — Returns the FLIR Lepton FPA temp in Celsius.
+
+    csi.IOCTL_LEPTON_GET_AUX_TEMP — Returns the FLIR Lepton AUX temp in Celsius.
+
+    csi.IOCTL_LEPTON_SET_MODE — Pass measurement_enabled and optionally
+    high_temp_enabled to switch the Lepton between AGC and direct-temperature output.
+
+    csi.IOCTL_LEPTON_GET_MODE — Returns (measurement_enabled, high_temp_enabled).
+
+    csi.IOCTL_LEPTON_SET_RANGE — Pass (min_celsius, max_celsius) to set the temperature
+    range mapped to 0..255 when measurement mode is enabled.
+
+    csi.IOCTL_LEPTON_GET_RANGE — Returns the (min, max) temperature range in Celsius.
+
+    csi.IOCTL_HIMAX_MD_ENABLE — Pass True/False to enable HM01B0 motion detection.
+
+    csi.IOCTL_HIMAX_MD_WINDOW — Pass (x, y, w, h) or (w, h) to set the HM01B0 motion
+    detection window.
+
+    csi.IOCTL_HIMAX_MD_THRESHOLD — Pass a 0-255 threshold for HM01B0 motion detection.
+
+    csi.IOCTL_HIMAX_MD_CLEAR — Clears the HM01B0 motion detection interrupt.
+
+    csi.IOCTL_HIMAX_OSC_ENABLE — Pass True/False to enable the HM01B0 oscillator.
+
+    csi.IOCTL_GET_RGB_STATS — Returns (r, gb, gr, b) RGB statistics from the sensor.
+
+    csi.IOCTL_GENX320_SET_BIASES — Pass a GENX320_BIASES_* constant to apply a bias
+    preset.
+
+    csi.IOCTL_GENX320_SET_BIAS — Pass a GENX320_BIAS_* constant and an integer value to
+    set a single bias.
+
+    csi.IOCTL_GENX320_SET_AFK — Pass enable (and optionally freq_low_hz,
+    freq_high_hz) to control the anti-flicker filter.
+
+    csi.IOCTL_GENX320_SET_STC — Pass a GENX320_STC_* constant (and optionally up to two
+    further arguments) to control spatio-temporal contrast filtering.
+
+    csi.IOCTL_GENX320_SET_MODE — Pass a GENX320_MODE_* constant. For event mode, pass
+    the row-axis length of the event ndarray as the second argument.
+
+    csi.IOCTL_GENX320_READ_EVENTS — Pass a uint16 ndarray of shape (EVT_res, 6) (with
+    EVT_res a power of two between 1024 and 65536). The columns are
+    [0] event type (csi.PIX_OFF_EVENT/csi.PIX_ON_EVENT/trigger), [1] seconds,
+    [2] milliseconds, [3] microseconds, [4] x coordinate, [5] y coordinate.
+    Returns the number of events written.
+
+    csi.IOCTL_GENX320_CALIBRATE — Pass an integer iteration count and a sigma float to turn
+    off pixels outside sigma standard deviations of the normal distribution. Returns the
+    number of pixels disabled.
+
+    csi.IOCTL_GENX320_READ_EVENTS_RAW — Returns an image.Image containing the raw event
+    frame from the GENX320.
+
+
+
+    color_palette(palette: int | None = None) -> int | None
+
+    Sets the color palette to use for things like FLIR Lepton grayscale to RGB565 conversion or
+    GENX320 event visualization. One of image.PALETTE_RAINBOW, image.PALETTE_IRONBOW,
+    and (when supported) image.PALETTE_DEPTH, image.PALETTE_EVT_DARK, or
+    image.PALETTE_EVT_LIGHT.
+
+    Returns the current setting if called with no arguments.
+
+
+
+    __write_reg(address: int, value: int) -> None
+
+    Write value to the camera register at address.
+
+    See the camera data sheet for register info.
+
+
+
+    __read_reg(address: int) -> int
+
     Read the camera register at address.
 
     See the camera data sheet for register info.
@@ -266,24 +763,20 @@ class CSI:
     def __read_reg(self, address: int) -> int:
         """
         Read the camera register at address.
-
         See the camera data sheet for register info.
         """
         ...
     def __write_reg(self, address: int, value: int) -> None:
         """
         Write value to the camera register at address.
-
         See the camera data sheet for register info.
         """
         ...
     def auto_blc(self, enable: bool, regs: List[int] | None = None) -> None:
         """
         Sets the auto black-level calibration (BLC) on the camera.
-
         enable pass True or False to turn BLC on or off. You typically always want this
         on.
-
         regs if disabled then you can manually set the BLC register values from a previous call
         to CSI.blc_regs.
         """
@@ -292,10 +785,8 @@ class CSI:
         """
         enable turns auto exposure control on (True) or off (False). The camera starts
         up with auto exposure control on.
-
         If enable is False you may set a fixed exposure time in microseconds with
         exposure_us.
-
         Camera auto exposure algorithms are pretty conservative about how much they adjust the
         exposure value by and will generally avoid changing the exposure value by much. Instead,
         they change the gain value a lot to deal with changing lighting.
@@ -305,21 +796,16 @@ class CSI:
         """
         enable turns auto gain control on (True) or off (False). The camera starts up
         with auto gain control on.
-
         If enable is False you may set a fixed gain in decibels with gain_db.
-
         If enable is True you may set the maximum gain ceiling in decibels with
         gain_db_ceiling for the automatic gain control algorithm.
-
         You need to turn off white balance too if you want to track colors.
         """
         ...
     def auto_rotation(self, enable: bool | None = None) -> Optional[bool]:
         """
         Turns auto rotation mode on (True) or off (False). Defaults to off.
-
         Returns the current setting if called with no arguments.
-
         This method only works when the OpenMV Cam has an imu installed and is enabled
         automatically.
         """
@@ -328,10 +814,8 @@ class CSI:
         """
         enable turns auto white balance on (True) or off (False). The camera starts up
         with auto white balance on.
-
         If enable is False you may set a fixed gain in decibels for the red, green, and blue
         channels respectively with rgb_gain_db.
-
         You need to turn off gain control too if you want to track colors.
         """
         ...
@@ -341,7 +825,6 @@ class CSI:
     def brightness(self, brightness: int) -> bool:
         """
         Set the camera image brightness.
-
         Returns True on success and False on failure.
         """
         ...
@@ -360,21 +843,18 @@ class CSI:
         GENX320 event visualization. One of image.PALETTE_RAINBOW, image.PALETTE_IRONBOW,
         and (when supported) image.PALETTE_DEPTH, image.PALETTE_EVT_DARK, or
         image.PALETTE_EVT_LIGHT.
-
         Returns the current setting if called with no arguments.
         """
         ...
     def colorbar(self, enable: bool) -> bool:
         """
         Turns color bar mode on (True) or off (False). Defaults to off.
-
         Returns True on success and False on failure.
         """
         ...
     def contrast(self, contrast: int) -> bool:
         """
         Set the camera image contrast.
-
         Returns True on success and False on failure.
         """
         ...
@@ -391,10 +871,8 @@ class CSI:
         """
         Registers callback cb to be executed (in interrupt context) whenever the camera module
         generates a new frame and the frame is ready to be read via CSI.snapshot.
-
         cb takes no arguments. Use this to schedule reading a frame later with
         micropython.schedule().
-
         Returns the registered callback if called with no arguments. Pass any non-callable to clear
         the callback.
         """
@@ -404,22 +882,18 @@ class CSI:
         Sets the number of frame buffers used to receive image data. By default the OpenMV Cam will
         try to allocate the maximum number of frame buffers it can. Reallocation occurs whenever
         CSI.pixformat, CSI.framesize, or CSI.window are called.
-
         count of 1 (single buffer), 2 (double buffer), or 3 (triple buffer) selects the
         corresponding capture mode. Pass 4 or greater to put the driver into video FIFO mode where
         count buffers are queued — useful for video recording to an SD card. On frame drop, all
         frame buffers except the active one are cleared so CSI.snapshot always returns a recent
         frame.
-
         Returns the current count if called with no arguments.
         """
         ...
     def framerate(self, rate: int | None = None) -> Optional[int]:
         """
         Sets the frame rate in Hz for the camera module.
-
         Returns the current framerate if called with no arguments.
-
         CSI.framerate works by dropping frames received by the camera module to keep the frame
         rate at or below the rate specified. By default the camera will run at the maximum frame
         rate. If implemented for the particular camera sensor CSI.framerate will also reduce
@@ -432,11 +906,9 @@ class CSI:
         """
         Sets the frame size for the camera module to one of the size constants (e.g. csi.QVGA,
         csi.VGA, csi.HD, etc. — see the constants section).
-
         Alternatively, you may pass a custom framesize as a (w, h) tuple. When CSI.snapshot is
         called the custom framesize will be evaluated against DMA rules. Generally framesizes need
         to be a multiple of 8 pixels and/or 16 bytes.
-
         Returns the current framesize if called with no arguments.
         """
         ...
@@ -446,7 +918,6 @@ class CSI:
     def gainceiling(self, gainceiling: int) -> bool:
         """
         Set the camera image gainceiling to one of 2, 4, 8, 16, 32, 64, or 128.
-
         Returns True on success and False on failure.
         """
         ...
@@ -456,7 +927,6 @@ class CSI:
     def hmirror(self, enable: bool | None = None) -> Optional[bool]:
         """
         Turns horizontal mirror mode on (True) or off (False). Defaults to off.
-
         Returns the current setting if called with no arguments.
         """
         ...
@@ -464,7 +934,6 @@ class CSI:
         """
         Executes a sensor-specific request. The first argument is one of the IOCTL_* constants;
         additional arguments and return value depend on the request.
-
         csi.IOCTL_SET_READOUT_WINDOW — Pass an (x, y, w, h) or (w, h) tuple/list to set
         the readout window of the sensor. Increases frame rate at the cost of field-of-view.
 
@@ -571,7 +1040,6 @@ class CSI:
         enable True to enable, False to disable.
         radi integer radius of pixels to correct.
         coef power of correction.
-
         Returns True on success and False on failure.
         """
         ...
@@ -579,16 +1047,13 @@ class CSI:
         """
         Sets the pixel format for the camera module to one of csi.GRAYSCALE, csi.RGB565,
         csi.BAYER, csi.YUV422, or csi.JPEG (only on the OV2640/OV5640).
-
         Returns the current pixformat if called with no arguments.
         """
         ...
     def quality(self, quality: int) -> bool:
         """
         Set the camera image JPEG compression quality. 0 - 100.
-
         Returns True on success and False on failure.
-
         Only for the OV2640/OV5640 cameras.
         """
         ...
@@ -614,7 +1079,6 @@ class CSI:
     def saturation(self, saturation: int) -> bool:
         """
         Set the camera image saturation.
-
         Returns True on success and False on failure.
         """
         ...
@@ -630,32 +1094,26 @@ class CSI:
     def snapshot(self, time: int = -1, frames: int = -1, blocking: bool = True, image: image.Image | None = None) -> Optional[image.Image]:
         """
         Takes a picture using the camera and returns an image.Image object.
-
         If time and/or frames is passed snapshot will block for that many time
         milliseconds and/or frames captured from the camera. Both arguments may be used at the
         same time. After time and/or frames has passed snapshot will return None.
-
         blocking may be False to enable non-blocking behavior which will cause snapshot to
         return None when the next image from the camera is not ready versus waiting.
-
         image may be another image.Image object to update with the new image captured from the
         camera instead of returning a new image.Image object. The previous image contents are
         overwritten via a deep copy.
-
         If CSI.auto_rotation is enabled this method will return an already-rotated image.Image.
         """
         ...
     def special_effect(self, effect: int) -> bool:
         """
         Sets the special digital effect (one of csi.NORMAL or csi.NEGATIVE).
-
         Returns True on success and False on failure.
         """
         ...
     def transpose(self, enable: bool | None = None) -> Optional[bool]:
         """
         Turns transpose mode on (True) or off (False). Defaults to off.
-
         vflip=False, hmirror=False, transpose=False -> 0 degree rotation
 
         vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
@@ -663,14 +1121,12 @@ class CSI:
         vflip=True,  hmirror=True,  transpose=False -> 180 degree rotation
 
         vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
-
         Returns the current setting if called with no arguments.
         """
         ...
     def vflip(self, enable: bool | None = None) -> Optional[bool]:
         """
         Turns vertical flip mode on (True) or off (False). Defaults to off.
-
         Returns the current setting if called with no arguments.
         """
         ...
@@ -678,9 +1134,7 @@ class CSI:
         """
         Registers callback cb to be executed (in interrupt context) whenever the camera module
         generates a new frame (but before the frame is received).
-
         cb takes one argument and is passed the current state of the vsync pin after changing.
-
         Returns the registered callback if called with no arguments. Pass any non-callable to clear
         the callback.
         """
@@ -692,7 +1146,6 @@ class CSI:
         """
         Sets the resolution of the camera to a sub-region of the current resolution. roi is a
         (x, y, w, h) tuple. You may also pass (w, h) and the window will be centered.
-
         Returns the current (x, y, w, h) tuple if called with no arguments.
         """
         ...

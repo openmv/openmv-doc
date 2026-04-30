@@ -5,7 +5,6 @@ def erf(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise Gauss error function,
     erf(x) = (2 / sqrt(pi)) * integral(exp(-t**2), 0, x).
-
     Parameters
 
     x – a scalar, scalar-valued iterable, or
@@ -21,7 +20,6 @@ def erfc(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise complementary error function, erfc(x) = 1 - erf(x),
     computed in a way that retains accuracy for large x.
-
     Parameters
 
     x – a scalar, scalar-valued iterable, or
@@ -36,7 +34,6 @@ def erfc(x: ndarray | Iterable[float] | float) -> ndarray:
 def gamma(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise Gamma function.
-
     Parameters
 
     x – a scalar, scalar-valued iterable, or
@@ -52,7 +49,6 @@ def gammaln(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise natural logarithm of the absolute value of the Gamma
     function.
-
     Parameters
 
     x – a scalar, scalar-valued iterable, or

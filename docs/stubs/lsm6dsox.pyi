@@ -4,8 +4,52 @@ import machine
 
 class LSM6DSOX:
     """
-    Return the acceleration vector (x, y, z) in units of standard
-    gravity (1 g = 9.81 m/s²).
+    Construct an LSM6DSOX instance. The bus type is auto-detected: if
+    bus exposes readfrom_mem it is treated as a machine.I2C,
+    otherwise it is treated as a machine.SPI and cs must be
+    supplied. The chip is soft-reset, the requested ODR and scale are
+    programmed, and an MLC UCF file is loaded if provided.
+    bus
+
+    Either a configured machine.I2C or machine.SPI
+    bus.
+
+    cs
+
+    Chip-select machine.Pin used in SPI mode. Required when
+    bus is an SPI instance, ignored otherwise.
+
+    address
+
+    7-bit I2C address of the device. Defaults to 0x6A; some boards
+    strap the SDO pin high which selects 0x6B.
+
+    gyro_odr
+
+    Gyroscope output data rate in Hz. Must be one of 0 (off),
+    1.6, 3.33, 6.66, 12.5, 26, 52, 104,
+    208, 416 or 888.
+
+    accel_odr
+
+    Accelerometer output data rate in Hz. Same set of values as
+    gyro_odr.
+
+    gyro_scale
+
+    Gyroscope full-scale range in degrees-per-second. Must be one of
+    250, 500, 1000 or 2000.
+
+    accel_scale
+
+    Accelerometer full-scale range in g. Must be one of 2, 4,
+    8 or 16.
+
+    ucf
+
+    Optional path to an ST Unico-GUI .ucf register-dump file. If
+    supplied the file is parsed and applied to the MLC during
+    construction by way of load_mlc().
     """
     def __init__(self, bus: machine.I2C | machine.SPI, cs: machine.Pin | None = None, address: int = 0x6A, gyro_odr: float = 104, accel_odr: float = 104, gyro_scale: int = 2000, accel_scale: int = 4, ucf: str | None = None) -> None: ...
     def accel(self) -> tuple[float, float, float]:
@@ -35,7 +79,6 @@ class LSM6DSOX:
     def pedometer_config(self, enable: bool = True, debounce: int = 10, int1_enable: bool = False, int2_enable: bool = False) -> None:
         """
         Configure the embedded pedometer.
-
         enable
 
         Enables or disables step detection on the embedded function block.

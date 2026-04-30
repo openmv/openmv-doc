@@ -3,13 +3,8 @@ from typing import Any, Optional, Union, Tuple, List
 
 class TFP410:
     """
-    Registers a callback function that will be called whenever the connection
-    state of an external display changes. The new connection state (bool) is
-    passed as the only argument to callback.
-
-    Pass None as callback to disable the hotplug callback.
-
-    While a callback is registered, do not call TFP410.isconnected().
+    Initializes the TFP410 DVI/HDMI controller chip.
+    i2c_addr is the I2C address of the TFP410.
     """
     def __init__(self, *, i2c_addr: int = 0x3F) -> None: ...
     def hotplug_callback(self, callback: Callable[[bool], None] | None) -> None:
@@ -17,9 +12,7 @@ class TFP410:
         Registers a callback function that will be called whenever the connection
         state of an external display changes. The new connection state (bool) is
         passed as the only argument to callback.
-
         Pass None as callback to disable the hotplug callback.
-
         While a callback is registered, do not call TFP410.isconnected().
         """
         ...

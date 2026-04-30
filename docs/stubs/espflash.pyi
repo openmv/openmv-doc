@@ -4,18 +4,24 @@ import machine
 
 class ESPFlash:
     """
-    Send a FLASH_END command that instructs the ROM bootloader to
-    reboot the ESP32 and run the freshly flashed firmware. No response is
-    read.
+    Construct an ESPFlash object that drives the ESP32 ROM bootloader.
+    reset is a machine.Pin instance connected to the ESP32 RESET line, configured as an output.
+
+    gpio0 is a machine.Pin instance connected to the ESP32 GPIO0 line, configured as an output.
+
+    uart is a machine.UART instance connected to the ESP32 UART0 pins. It must be initialised at 115200 baud with a non-zero read timeout.
+
+    log_enabled enables verbose logging of the SLIP frames exchanged with the bootloader. Useful for debugging only.
+    The constructor will attempt to import hashlib. If hashlib.md5 is
+    available, the running MD5 digest used by ESPFlash.flash_verify_file()
+    will be computed automatically while writing.
     """
     def __init__(self, reset: 'machine.Pin', gpio0: 'machine.Pin', uart: 'machine.UART', log_enabled: bool = False) -> None: ...
     def bootloader(self, retry: int = 6) -> bool:
         """
         Drive RESET and GPIO0 to enter the ESP32 ROM download mode and
         synchronise with the bootloader.
-
         retry is the number of reset/sync attempts before giving up.
-
         Returns True on success, otherwise raises an Exception.
         """
         ...
@@ -28,10 +34,8 @@ class ESPFlash:
     def flash_config(self, flash_size: int = 2 * 1024 * 1024) -> None:
         """
         Configure the SPI flash parameters.
-
         flash_size is the total flash size in bytes, typically the value
         returned by flash_read_size().
-
         Block, sector and page sizes are fixed at 64 KiB, 4 KiB and 256 bytes
         respectively.
         """
@@ -39,7 +43,6 @@ class ESPFlash:
     def flash_read_size(self) -> int:
         """
         Read the SPI flash JEDEC ID and return the flash size in bytes.
-
         Raises an Exception if the reported size bits are out of the
         expected 0x12-0x19 range.
         """
@@ -47,7 +50,6 @@ class ESPFlash:
     def flash_verify_file(self, path: str, digest: bytes | None = None, offset: int = 0) -> None:
         """
         Verify the contents of flash against a firmware file.
-
         path is the filesystem path of the reference firmware binary;
         its size determines the number of bytes to verify.
 
@@ -57,7 +59,6 @@ class ESPFlash:
 
         offset is the flash offset in bytes at which verification
         starts.
-
         Raises an Exception if no digest is available or if the flash
         contents do not match the reference digest.
         """
@@ -65,12 +66,10 @@ class ESPFlash:
     def flash_write_file(self, path: str, blksize: int = 0x1000) -> None:
         """
         Write a firmware image to flash starting at offset 0.
-
         path is the filesystem path of the firmware binary to flash.
 
         blksize is the size in bytes of each data block sent to the
         bootloader. Must be a multiple of the sector size.
-
         The last block is padded with 0xFF to a full blksize. If MD5
         support is available, the running MD5 digest is updated during the
         write so that flash_verify_file() can be called without arguments.
@@ -86,13 +85,11 @@ class ESPFlash:
     def set_baudrate(self, baudrate: int, timeout: int = 350) -> None:
         """
         Change the bootloader UART baudrate.
-
         baudrate is the new baudrate to switch to. If different from the
         currently active baudrate, a CHANGE_BAUDRATE command is issued
         to the bootloader before the local UART is reconfigured.
 
         timeout is reserved and currently unused.
-
         Has no effect if the underlying UART object does not implement an
         init() method.
         """

@@ -6,7 +6,6 @@ def quad(f: Callable[[float], float], a: float, b: float, *, order: int = 5, eps
     Integrate f from a to b using an Adaptive Gauss-Kronrod
     (G10, K21) quadrature. This is the recommended general-purpose
     integrator.
-
     Parameters
 
     f – callable taking a single float and returning a float.
@@ -32,7 +31,6 @@ def romberg(f: Callable[[float], float], a: float, b: float, *, steps: int = 100
     suited to integrands with continuous derivatives. Note that
     scipy.integrate.romberg is deprecated in CPython since SciPy
     1.12.0; prefer quad() for new code.
-
     Parameters
 
     f – callable taking a single float and returning a float.
@@ -56,7 +54,6 @@ def simpson(f: Callable[[float], float], a: float, b: float, *, steps: int = 100
     CPython’s scipy.integrate.simpson this function takes a callable
     and chooses the sample spacing internally rather than taking an array
     of pre-computed function values.
-
     Parameters
 
     f – callable taking a single float and returning a float.
@@ -81,7 +78,6 @@ def tanhsinh(f: Callable[[float], float], a: float, b: float, *, levels: int = 6
     to use when the integrand has singularities or infinite derivatives
     at the endpoints, and it is the only routine in this submodule that
     accepts infinite integration limits (e.g. -np.inf, np.inf).
-
     Parameters
 
     f – callable taking a single float and returning a float.

@@ -16,7 +16,6 @@ def settime() -> None:
     """
     Fetch the current time using time() and set the on-board RTC
     accordingly via machine.RTC.
-
     Note that MicroPython has no time-zone support: the RTC is always set in
     UTC.
     """
@@ -25,11 +24,9 @@ def time() -> int:
     """
     Query the configured NTP server (host) and return the current UTC time
     as an integer number of seconds since the MicroPython epoch.
-
     The MicroPython epoch is detected at runtime using time.gmtime(). Both
     the 1970 (Unix) and 2000 epochs are supported; any other epoch raises
     Exception.
-
     Network errors propagate to the caller; the underlying socket is always
     closed before returning.
     """

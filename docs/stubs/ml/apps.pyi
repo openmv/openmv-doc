@@ -4,22 +4,32 @@ import ml
 import numpy
 
 class MicroSpeech:
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """
+    Creates a MicroSpeech object.
+    preprocessor is the audio preprocessor ml.Model. If None, /rom/audio_preprocessor.tflite
+    is loaded.
+    micro_speech is the speech recognition ml.Model. If None, /rom/micro_speech.tflite
+    is loaded.
+    labels is a list of label strings matching the model output categories. If None, the labels
+    are taken from micro_speech.labels.
+    Any additional keyword arguments are forwarded to audio.init() (the audio peripheral is
+    initialized with channels=1, frequency=16000, and samples=320).
+    """
     def __init__(self, preprocessor: ml.Model = None, micro_speech: ml.Model = None, labels: list[str] = None, **kwargs) -> None: ...
     _AUDIO_FREQUENCY: Any
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """Audio sample rate in Hz (16000)."""
     _AVERAGE_WINDOW_SAMPLES: Any
     """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
     _CATEGORY_COUNT: Any
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """Number of output categories (4)."""
     _SAMPLES_PER_STEP: Any
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """Audio samples per 10 ms step (160)."""
     _SLICE_COUNT: Any
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """Number of spectrogram slices stored (49)."""
     _SLICE_SIZE: Any
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """Number of features per spectrogram slice (40)."""
     _SLICE_TIME_MS: Any
-    """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
+    """Time span of one slice in milliseconds (30)."""
     def audio_callback(self, buf: bytes) -> None:
         """
         Internal audio streaming callback. Appends new samples from buf into the rolling audio
@@ -33,19 +43,15 @@ class MicroSpeech:
         Listens for a spoken word and returns a tuple of (label, average_scores) once a label whose
         averaged score is above threshold and is contained in filter is detected. Calls
         MicroSpeech.start_audio_streaming if not already streaming.
-
         timeout is the maximum time in milliseconds to listen. If 0, listens indefinitely until
         a word is recognized. If -1, runs in non-blocking mode and returns immediately with
         (None, average_scores) if no word is recognized; audio streaming is left running. For any
         positive value, listens for that many milliseconds and then returns (None, average_scores)
         on timeout.
-
         callback is an optional callable invoked as callback(label, average_scores) when a word
         is recognized instead of returning. Combined with timeout=0, this allows continuous
         recognition.
-
         threshold is the minimum averaged confidence required to accept a recognition.
-
         filter is the list of label strings to accept. Recognitions outside this list are ignored.
         """
         ...

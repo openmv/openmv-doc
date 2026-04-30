@@ -2,19 +2,36 @@
 from typing import Any, Optional, Union, Tuple, List
 
 FILTERS_MAX: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+Constant value that reads the maximum number of supported receive filters
+for this hardware controller.
+Note that some controllers may have more complex hardware restrictions on the
+number of filters in use (for example, counting Standard and Extended ID
+filters independently.) In these cases CAN.set_filters may raise a
+ValueError even when the FILTERS_MAX limit is not exceeded.
+"""
 FLAG_EXT_ID: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+If set, indicates a Message identifier is Extended (29-bit). If not set,
+indicates a message identifier is Standard (11-bit).
+"""
 FLAG_RTR: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""Indicates a message is a remote transmission request."""
 FLAG_UNORDERED: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+If set in the flags argument of CAN.send(), indicates that it’s
+OK if messages with the same CAN ID are sent in any order onto the bus.
+Otherwise trying to queue multiple messages with the same ID may result in
+CAN.send() failing if the controller hardware can’t enforce ordering.
+This flag is never set on received messages, and is ignored by
+CAN.set_filters().
+"""
 IRQ_RX: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""IRQ event triggers. Used with CAN.irq() and machine_can_irq_flags."""
 IRQ_STATE: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""IRQ event triggers. Used with CAN.irq() and machine_can_irq_flags."""
 IRQ_TX: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""IRQ event triggers. Used with CAN.irq() and machine_can_irq_flags."""
 IRQ_TX_FAILED: int
 """Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
 IRQ_TX_IDX_MASK: int
@@ -22,35 +39,73 @@ IRQ_TX_IDX_MASK: int
 IRQ_TX_IDX_SHIFT: int
 """Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
 MODE_LOOPBACK: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+A testing mode. The CAN controller is still connected to the external bus,
+but will also receive its own transmitted messages and ignore any ACK errors.
+"""
 MODE_NORMAL: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+The controller is active as a standard CAN network node (will acknowledge
+valid messages and may transmit errors depending on its current State
+<can-states>).
+"""
 MODE_SILENT: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+CAN controller receives messages but does not interact with the CAN bus
+(including sending ACKs, errors, etc.)
+"""
 MODE_SILENT_LOOPBACK: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+A testing mode that does not require a CAN transceiver to be connected at
+all. The CAN controller receives its own transmitted messages without
+interacting with the CAN bus at all. The CAN TX and RX pins remain idle.
+"""
 MODE_SLEEP: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+CAN controller is asleep in a low power mode. Depending on the controller,
+this may support waking the controller and transitioning to CAN.MODE_NORMAL
+if CAN traffic is received.
+"""
 RECV_ERR_FULL: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""The hardware FIFO where this message was received is full, and additional incoming messages may be lost."""
 RECV_ERR_OVERRUN: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""The hardware FIFO where this message was received is full, and one or more incoming messages has been lost."""
 STATE_ACTIVE: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+The controller is active and TEC and REC error counters are both below the
+warning threshold of 96. See CAN.get_counters().
+"""
 STATE_BUS_OFF: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+The controller is in the Bus-Off state, meaning TEC error counter is
+greater than 255. The CAN controller will not interact with the bus in this
+state, and needs to be restarted via CAN.restart() to continue.
+"""
 STATE_PASSIVE: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+The controller is in the “Error Passive” state meaning it no longer transmits active
+errors to the bus, but it is otherwise functional. This state is entered when at
+least one of the TEC and REC error counters is 128 or greater, but
+TEC is less than 255. See CAN.get_counters().
+"""
 STATE_STOPPED: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""The controller has not been initialised."""
 STATE_WARNING: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+The controller is active but at last one of the TEC and REC error counters
+are between 96 and 127. See CAN.get_counters().
+"""
 TX_QUEUE_LEN: int
-"""Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+"""
+Maximum number of CAN messages which can be queued in the outgoing hardware
+message queue of the controller. The “transmit buffer indexes” used by
+CAN.send(), CAN.cancel_send() and machine_can_irq_flags
+will be in this range.
+"""
 DOWN: int
-"""Select the IRQ trigger event.  (Supported on MIMXRT)"""
+"""Select the counting direction."""
 FALLING: int
-"""Select the IRQ trigger event.  (Supported on MIMXRT)"""
+"""Select the pulse edge. (Supported on ESP32)"""
 IRQ_INDEX: int
 """Select the IRQ trigger event.  (Supported on MIMXRT)"""
 IRQ_MATCH: int
@@ -62,9 +117,9 @@ IRQ_ROLL_OVER: int
 IRQ_ROLL_UNDER: int
 """Select the IRQ trigger event.  (Supported on MIMXRT)"""
 RISING: int
-"""Select the IRQ trigger event.  (Supported on MIMXRT)"""
+"""Select the pulse edge. (Supported on ESP32)"""
 UP: int
-"""Select the IRQ trigger event.  (Supported on MIMXRT)"""
+"""Select the counting direction."""
 IRQ_INDEX: int
 """Select the IRQ trigger event.  (Supported on MIMXRT)"""
 IRQ_MATCH: int
@@ -90,25 +145,37 @@ IRQ_WRITE_REQ: int
 MONO: int
 """for initialising the I2S bus format to mono"""
 RX: int
-"""for initialising the I2S bus format to mono"""
+"""for initialising the I2S bus mode to receive"""
 STEREO: int
-"""for initialising the I2S bus format to mono"""
+"""for initialising the I2S bus format to stereo"""
 TX: int
-"""for initialising the I2S bus format to mono"""
+"""for initialising the I2S bus mode to transmit"""
 ALT: int
-"""Selects the IRQ trigger type."""
+"""Selects the pin mode."""
 ALT_OPEN_DRAIN: int
-"""Selects the IRQ trigger type."""
+"""Selects the pin mode."""
 ANALOG: int
-"""Selects the IRQ trigger type."""
+"""Selects the pin mode."""
 DRIVE_0: int
-"""Selects the IRQ trigger type."""
+"""
+Selects the pin drive strength.  A port may define additional drive
+constants with increasing number corresponding to increasing drive
+strength.
+"""
 DRIVE_1: int
-"""Selects the IRQ trigger type."""
+"""
+Selects the pin drive strength.  A port may define additional drive
+constants with increasing number corresponding to increasing drive
+strength.
+"""
 DRIVE_2: int
-"""Selects the IRQ trigger type."""
+"""
+Selects the pin drive strength.  A port may define additional drive
+constants with increasing number corresponding to increasing drive
+strength.
+"""
 IN: int
-"""Selects the IRQ trigger type."""
+"""Selects the pin mode."""
 IRQ_FALLING: int
 """Selects the IRQ trigger type."""
 IRQ_HIGH_LEVEL: int
@@ -118,36 +185,45 @@ IRQ_LOW_LEVEL: int
 IRQ_RISING: int
 """Selects the IRQ trigger type."""
 OPEN_DRAIN: int
-"""Selects the IRQ trigger type."""
+"""Selects the pin mode."""
 OUT: int
-"""Selects the IRQ trigger type."""
+"""Selects the pin mode."""
 PULL_DOWN: int
-"""Selects the IRQ trigger type."""
+"""
+Selects whether there is a pull up/down resistor.  Use the value
+None for no pull.
+"""
 PULL_HOLD: int
-"""Selects the IRQ trigger type."""
+"""
+Selects whether there is a pull up/down resistor.  Use the value
+None for no pull.
+"""
 PULL_UP: int
-"""Selects the IRQ trigger type."""
+"""
+Selects whether there is a pull up/down resistor.  Use the value
+None for no pull.
+"""
 ALARM0: int
 """irq trigger source"""
 CONTROLLER: int
-"""set the first bit to be the least significant bit"""
+"""for initialising the SPI bus to controller; this is only used for the WiPy"""
 LSB: int
 """set the first bit to be the least significant bit"""
 MSB: int
-"""set the first bit to be the least significant bit"""
+"""set the first bit to be the most significant bit"""
 LSB: int
 """set the first bit to be the least significant bit"""
 MSB: int
-"""set the first bit to be the least significant bit"""
+"""set the first bit to be the most significant bit"""
 ONE_SHOT: int
 """Timer operating mode."""
 PERIODIC: int
 """Timer operating mode."""
 CTS: int
 """
-IRQ trigger sources.
+Flow control options.
 
-Availability: renesas-ra, stm32, esp32, rp2040, mimxrt, samd, cc3200, alif.
+Availability: esp32, mimxrt, renesas-ra, rp2, stm32, alif.
 """
 IRQ_BREAK: int
 """
@@ -175,9 +251,9 @@ Availability: renesas-ra, stm32, esp32, rp2040, mimxrt, samd, cc3200, alif.
 """
 RTS: int
 """
-IRQ trigger sources.
+Flow control options.
 
-Availability: renesas-ra, stm32, esp32, rp2040, mimxrt, samd, cc3200, alif.
+Availability: esp32, mimxrt, renesas-ra, rp2, stm32, alif.
 """
 DEEPSLEEP: int
 """IRQ wake values."""
@@ -225,20 +301,16 @@ def bitstream(pin: Pin, encoding: int, timing: tuple, data: bytes, /) -> None:
     Transmits data by bit-banging the specified pin. The encoding argument
     specifies how the bits are encoded, and timing is an encoding-specific timing
     specification.
-
     The supported encodings are:
-
     0 for “high low” pulse duration modulation. This will transmit 0 and
     1 bits as timed pulses, starting with the most significant bit.
     The timing must be a four-tuple of nanoseconds in the format
     (high_time_0, low_time_0, high_time_1, low_time_1). For example,
     (400, 850, 800, 450) is the timing specification for WS2812 RGB LEDs
     at 800kHz.
-
     The accuracy of the timing varies between ports. On Cortex M0 at 48MHz, it is
     at best +/- 120ns, however on faster MCUs (ESP8266, ESP32, STM32, Pyboard), it
     will be closer to +/-30ns.
-
     For controlling WS2812 / NeoPixel strips, see the neopixel
     module for a higher-level API.
     """
@@ -247,7 +319,6 @@ def bootloader(value: int | None = None, /) -> None:
     """
     Reset the device and enter its bootloader.  This is typically used to put the
     device into a state where it can be programmed with new firmware.
-
     Some ports support passing in an optional value argument which can control
     which bootloader to enter, what to pass to it, or other things.
     """
@@ -255,17 +326,13 @@ def bootloader(value: int | None = None, /) -> None:
 def deepsleep(time_ms: int | None = None, /) -> None:
     """
     Stops execution in an attempt to enter a low power state.
-
     If time_ms is specified then this will be the maximum time in milliseconds that
     the sleep will last for.  Otherwise the sleep can last indefinitely.
-
     With or without a timeout, execution may resume at any time if there are events
     that require processing.  Such events, or wake sources, should be configured before
     sleeping, like Pin change or RTC timeout.
-
     The precise behaviour and power-saving capabilities of lightsleep and deepsleep is
     highly dependent on the underlying hardware, but the general properties are:
-
     A lightsleep has full RAM and state retention.  Upon wake execution is resumed
     from the point where the sleep was requested, with all subsystems operational.
 
@@ -294,7 +361,6 @@ def enable_irq(state: int) -> None:
 def freq(hz: int | None = None, /) -> int:
     """
     Returns the CPU frequency in hertz.
-
     On some ports this can also be used to set the CPU frequency by passing in hz.
     """
     ...
@@ -304,7 +370,6 @@ def idle() -> None:
     during short or long periods. Peripherals continue working and execution
     resumes as soon as any interrupt is triggered, or at most one millisecond
     after the CPU was paused.
-
     It is recommended to call this function inside any tight loop that is
     continuously checking for an external change (i.e. polling). This will reduce
     power consumption without significantly impacting performance. To reduce
@@ -315,17 +380,13 @@ def idle() -> None:
 def lightsleep(time_ms: int | None = None, /) -> None:
     """
     Stops execution in an attempt to enter a low power state.
-
     If time_ms is specified then this will be the maximum time in milliseconds that
     the sleep will last for.  Otherwise the sleep can last indefinitely.
-
     With or without a timeout, execution may resume at any time if there are events
     that require processing.  Such events, or wake sources, should be configured before
     sleeping, like Pin change or RTC timeout.
-
     The precise behaviour and power-saving capabilities of lightsleep and deepsleep is
     highly dependent on the underlying hardware, but the general properties are:
-
     A lightsleep has full RAM and state retention.  Upon wake execution is resumed
     from the point where the sleep was requested, with all subsystems operational.
 
@@ -359,12 +420,10 @@ def time_pulse_us(pin: Pin, pulse_level: int, timeout_us: int = 1000000, /) -> i
     Time a pulse on the given pin, and return the duration of the pulse in
     microseconds.  The pulse_level argument should be 0 to time a low pulse
     or 1 to time a high pulse.
-
     If the current input value of the pin is different to pulse_level,
     the function first (*) waits until the pin input becomes equal to pulse_level,
     then (**) times the duration that the pin is equal to pulse_level.
     If the pin is already equal to pulse_level then timing starts straight away.
-
     The function will return -2 if there was timeout waiting for condition marked
     (*) above, and -1 if there was timeout during the main measurement, marked (**)
     above. The timeout is the same for both cases and given by timeout_us (which
@@ -382,6 +441,48 @@ def unique_id() -> bytes:
 
 class ADC:
     """
+    Access the ADC associated with a source identified by id.  This
+    id may be an integer (usually specifying a channel number), a
+    Pin object, or other value supported by the
+    underlying machine.
+    If additional keyword-arguments are given then they will configure
+    various aspects of the ADC.  If not given, these settings will take
+    previous or default values.  The settings are:
+    sample_ns is the sampling time in nanoseconds.
+
+    atten specifies the input attenuation.
+    Methods
+
+
+
+    init(*, sample_ns: int = ..., atten: int = ...) -> None
+
+    Apply the given settings to the ADC.  Only those arguments that are
+    specified will be changed.  See the ADC constructor above for what the
+    arguments are.
+
+
+
+    block() -> ADCBlock
+
+    Return the ADCBlock instance associated with
+    this ADC object.
+
+    This method only exists if the port supports the
+    ADCBlock class.
+
+
+
+    read_u16() -> int
+
+    Take an analog reading and return an integer in the range 0-65535.
+    The return value represents the raw reading taken by the ADC, scaled
+    such that the minimum value is 0 and the maximum value is 65535.
+
+
+
+    read_uv() -> int
+
     Take an analog reading and return an integer value with units of
     microvolts.  It is up to the particular port whether or not this value
     is calibrated, and how calibration is done.
@@ -391,7 +492,6 @@ class ADC:
         """
         Return the ADCBlock instance associated with
         this ADC object.
-
         This method only exists if the port supports the
         ADCBlock class.
         """
@@ -420,6 +520,28 @@ class ADC:
 
 class ADCBlock:
     """
+    Access the ADC peripheral identified by id, which may be an integer
+    or string.
+    The bits argument, if given, sets the resolution in bits of the
+    conversion process.  If not specified then the previous or default
+    resolution is used.
+    Methods
+
+
+
+    init(*, bits: int = ...) -> None
+
+    Configure the ADC peripheral.  bits will set the resolution of the
+    conversion process.
+
+
+
+    connect(channel: int, *, sample_ns: int = ..., atten: int = ...) -> ADC
+
+    connect(source: Pin, *, sample_ns: int = ..., atten: int = ...) -> 'ADC'
+
+    connect(channel: int, source: Pin, *, sample_ns: int = ..., atten: int = ...) -> 'ADC'
+
     Connect up a channel on the ADC peripheral so it is ready for sampling,
     and return an ADC object that represents that connection.
 
@@ -442,18 +564,13 @@ class ADCBlock:
         """
         Connect up a channel on the ADC peripheral so it is ready for sampling,
         and return an ADC object that represents that connection.
-
         The channel argument must be an integer, and source must be an object
         (for example a Pin) which can be connected up for sampling.
-
         If only channel is given then it is configured for sampling.
-
         If only source is given then that object is connected to a default
         channel ready for sampling.
-
         If both channel and source are given then they are connected together
         and made ready for sampling.
-
         Any additional keyword arguments are used to configure the returned ADC object,
         via its init method.
         """
@@ -466,22 +583,617 @@ class ADCBlock:
         ...
 
 class CAN:
-    """Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags."""
+    """
+    Construct a CAN controller object of the given id:
+    id identifies a particular CAN controller object; it is board and port specific.
+
+    All other arguments are passed to CAN.init(). At least one argument (bitrate)
+    must be provided.
+    Future versions of this class may also accept port-specific keyword arguments
+    here which configure the hardware. Currently no such keyword arguments are
+    implemented.
+    Example
+
+    Construct and initialise CAN controller 1 with bitrate 500kbps:
+
+    from machine import CAN
+    can = CAN(1, 500_000)
+
+    Add a table of port-specific keyword arguments here, once they exist
+
+    Methods
+
+
+
+    init(bitrate: int, mode: int = CAN.MODE_NORMAL, sample_point: int = 75, sjw: int = 1, tseg1: int | None = None, tseg2: int | None = None) -> None
+
+    Initialise the CAN bus with the given parameters:
+
+    bitrate is the desired bus bit rate in bits per second.
+
+    mode is one of the values shown under can-modes, indicating the
+    desired mode of operation. The default is “normal” operation on the bus.
+
+    The next parameters are optional and relate to CAN bit timings. In most cases
+    you can leave these parameters set to the default values:
+
+    sample_point is an integer percentage of the data bit time. It
+    specifies the position of the bit sample with respect to the whole nominal
+    bit time. The CAN driver will calculate parameters accordingly. This
+    parameter is ignored if tseg1 and tseg2 are set.
+
+    sjw is the resynchronisation jump width in units of time quanta for
+    nominal bits; it can be a value between 1 and 4 inclusive for classic CAN.
+
+    tseg1 defines the location of the sample point in units of time quanta
+    for nominal bits; it can be a value between 1 and 16 inclusive for classic
+    CAN. This is the sum of the Prop_Seg and Phase_Seg1 phases as
+    defined in the ISO-11898 standard. If this value is set then tseg2
+    must also be set and sample_point is ignored.
+
+    tseg2 defines the location of the transmit point in units of the time
+    quanta for nominal bits; it can be a value between 1 and 8 inclusive for
+    classic CAN. This corresponds to Phase_Seg2 in the ISO-11898 standard.
+    If this value is set then tseg1 must also be set.
+
+    If these arguments are specified then the CAN controller is configured
+    correctly for the desired bitrate and the specified total number of time
+    quanta per bit. The tseg1 and tseg2 values override the
+    sample_point argument if all of these are supplied.
+
+    Individual controller hardware may have additional restrictions on
+    valid values for these parameters, and will raise a ValueError
+    if a given value is not supported.
+
+    Specific controller hardware may accept additional optional
+    keyword parameters for hardware-specific features such as oversampling.
+
+
+
+    set_filters(filters: list | tuple | None) -> None
+
+    Set receive filters in the CAN controller. filters can be:
+
+    None to accept all incoming messages, or
+
+    [] or () to disable all message receiving, or
+
+    An iterable of one or more items defining the filter criteria. Each item
+    should be a tuple or list with three elements:
+
+    identifier is a CAN identifier (int).
+
+    bit_mask is a bit mask for bits in the CAN identifier field (int).
+
+    flags is an integer with zero or more of the bits defined in
+    can-flags set. This specifies properties that the incoming message needs
+    to match. Not all controllers support filtering on all flags, a
+    ValueError is raised if an unsupported flag is requested.
+
+    Incoming messages are accepted if the bits masked in bit_mask match between
+    the message identifier and the filter identifier value, and flags set in the
+    filter match the incoming message.
+
+    If the CAN.FLAG_EXT_ID bit is set in flags, the filter matches Extended
+    CAN IDs only. If the CAN.FLAG_EXT_ID bit is not set, the filter matches
+    Standard CAN IDs only.
+
+    All filters are ORed together in the controller. Passing an empty list or
+    tuple for the filters argument means that no messages will be received.
+
+    Some CAN controllers require each filter to be associated with only one
+    receive FIFO. In these cases, the filter items in the argument are allocated
+    round-robin to the available FIFOs. This driver does not distinguish between
+    FIFOs in the receive IRQ.
+
+    If the caller passes an iterable with more items than
+    CAN.FILTERS_MAX, ValueError will be raised.
+
+    If either the identifier or the bit_mask is out of range
+    for the specified ID type, a ValueError with reason “invalid id”
+    will be raised.
+
+    Examples
+
+    Receive all incoming messages:
+
+    can.set_filters(None)
+
+    Receive messages with Standard ID values 0x301 and 0x700 only:
+
+    can.set_filters(((0x301, 0x7FF, 0),
+    (0x700, 0x7FF, 0)))
+
+    Receive messages with Standard ID values in range 0x300-0x3FF, and Extended
+    ID value 0x50700 only:
+
+    can.set_filters(((0x300, 0x700, 0),
+    (0x50700, 0x1FFF_FFFF, CAN.FLAG_EXT_ID)))
+
+
+
+    FILTERS_MAX: int
+
+    Constant value that reads the maximum number of supported receive filters
+    for this hardware controller.
+
+    Note that some controllers may have more complex hardware restrictions on the
+    number of filters in use (for example, counting Standard and Extended ID
+    filters independently.) In these cases CAN.set_filters may raise a
+    ValueError even when the FILTERS_MAX limit is not exceeded.
+
+
+
+    send(id: int, data: bytes, flags: int = 0) -> int | None
+
+    Copy a new CAN message into the controller’s hardware transmit queue to be
+    sent onto the bus. The transmit queue is a priority queue sorted on CAN
+    identifier priority (lower numeric identifiers have higher priority).
+
+    id is an integer CAN identifier value.
+
+    data is a bytes object (or similar) containing the CAN message data,
+    or describing a Remote Transmission Request (see below).
+
+    flags is an integer with zero or more of the bits defined in
+    can-flags set, specifying properties of the outgoing CAN message
+    (Extended ID, Remote Transmission Request, etc.)
+
+    If the message is successfully queued for transmit onto the bus, the function
+    returns an integer in the range 0 to CAN.TX_QUEUE_LEN (exclusive). This
+    value is the transmit buffer index where the message is queued to send, and
+    can be used by the CAN.cancel_send function and in CAN.IRQ_TX events.
+
+    If the queue is full then the send will fail and None is returned.
+
+    The send can also fail and return None if the provided id value has
+    equal priority to an existing message in the transmit queue and the CAN
+    controller hardware cannot guarantee that messages with the same ID will be
+    sent onto the bus in the same order they were added to the queue. To queue
+    the message anyway, pass the value CAN.FLAG_UNORDERED flag in
+    the flags argument. This flag indicates that it’s OK to send messages with
+    the same CAN ID onto the bus in any order.
+
+    If the controller is in the “Bus Off” error state or disabled then calling
+    this function will raise an OSError.
+
+    This intentionally low-level implementation is designed so the
+    caller can establish a software queue of outgoing messages.
+
+    The CAN “transmit queue” is not a FIFO queue, it is priority
+    ordered, and although it can hold up to CAN.TX_QUEUE_LEN
+    items there may be other hardware restrictions on messages
+    which can be queued at the same time.
+
+    Remote Transmission Requests
+
+    If the bit CAN.FLAG_RTR is set in the flags argument then the controller
+    will send a Remote Transmission Request instead of a message. In this case
+    the contents of the data argument is ignored. The controller will send
+    a request where the DLC length field is equal to the length of the
+    data argument.
+
+    Examples
+
+    Attempt to send a message with three byte payload 0a0b0c and Standard ID 0x200:
+
+    can.send(0x200, b"\x0a\x0b\x0c", 0)
+
+    Attempt to send a message with an empty payload and Extended ID 0x180008.
+    Indicate that the controller can send messages with this ID in any order, in
+    case other messages are already queued to send with the same ID:
+
+    can.send(0x180008, b"", can.FLAG_EXT_ID | can.FLAG_UNORDERED)
+
+    Attempt to send a Remote Transmission Request with length 8 bytes and Standard ID 0x555:
+
+    can.send(0x555, b" " * 8, can.FLAG_RTR)
+
+
+
+    recv(arg: list | None = None) -> list | None
+
+    Return a CAN message that has been received by the controller, according to
+    filters set by CAN.set_filters().
+
+    This function takes a single optional argument, if provided then it must be a
+    list of at least 4 elements where the second element is a memoryview object
+    that refers to a bytearray or similar object that has enough capacity to hold
+    any received CAN message (8 bytes for CAN Classic, 64 bytes for CAN FD). The
+    provided list will be returned as a successful result, and avoids memory
+    allocation inside the function.
+
+    If no messages have been received by the CAN controller, this function
+    returns None.
+
+    CAN.set_filters must be called before any messages can be received by
+    the controller. To receive all messages, call set_filters(None).
+
+    If a message has been received by the CAN controller, this function returns a
+    list with 4 elements:
+
+    Index 0 is the CAN ID of the received message, as an integer.
+
+    Index 1 is a memoryview that provides access to the received message data.
+
+    If arg is not provided then this is a memoryview holding the bytes
+    which were received. This memoryview is backed by a newly allocated
+    bytearray large enough to hold any received CAN message. This allows
+    the result to be safely reused as a future arg, to save memory allocations.
+
+    If arg is provided then the provided memoryview will be resized to
+    hold exactly the bytes which were received. The caller is responsible for
+    making sure the backing object for the memoryview can hold a CAN
+    message of any length.
+
+    Index 2 is an integer with zero or more of the bits defined in
+    can-flags set. It indicates metadata about the received message.
+
+    Index 3 is an integer with zero or more of the bits defined in
+    can-recv-errors set. Any non-zero value indicates potential issues when
+    receiving CAN messages. These flags are reset inside the controller each
+    time this function returns.
+
+    Remote Transmission Requests
+
+    If a Remote Transmission Request is received then the bit CAN.FLAG_RTR
+    will be set in Index 2 and the memoryview at Index 1 will contain all
+    zeroes, with a length equal to the DLC field of the received request.
+
+    Example
+
+    can.set_filters(None)   # receive all
+    while True:
+    res = can.recv()
+    if res:
+    can_id, data, flags, errs = res
+    print("Received", hex(can_id), data.hex(), hex(flags), hex(errs))
+    else:
+    time.sleep_ms(1)  # not a good pattern, use the irq instead!
+
+
+
+    irq(handler: Callable[[CAN], None] | None = None, trigger: int = 0, hard: bool = False) -> None
+
+    Sets an interrupt handler function to be called when one or more of the
+    events flagged in trigger has occurred.
+
+    handler is a function to be called when the interrupt event
+    triggers.  The handler must take exactly one argument which is the
+    CAN instance.
+
+    trigger configures the event(s) which can generate an interrupt.
+    Possible values are a mask of one or more of the following:
+
+    CAN.IRQ_RX event occurs after the CAN controller has received
+    at least one message into its RX FIFO (meaning that CAN.recv()
+    will return successfully).
+
+    CAN.IRQ_TX event occurs after the CAN controller has either
+    successfully sent a message onto the CAN bus or failed to send a
+    message. This trigger has additional requirements for the handler, see
+    machine_can_irq_flags for details.
+
+    CAN.IRQ_STATE event occurs when the CAN controller has transitioned
+    into a more severe error state. Call CAN.state() to get the
+    updated state.
+
+    hard if True, a hard interrupt is used. This reduces the delay between
+    the CAN controller event and the handler being called. Hard interrupt
+    handlers may not allocate memory; see isr_rules.
+
+    Returns an irq object. If called with no arguments then a previously-configured
+    irq object is returned.
+
+    See machine_can_irq_flags for an example.
+
+
+
+    cancel_send(index: int) -> bool
+
+    Request the CAN controller to cancel sending a message onto the bus.
+
+    Argument index identifies a single transmit buffer. It should be an
+    integer in the range 0 to CAN.TX_QUEUE_LEN (exclusive). Generally
+    this will be a value previously returned by CAN.send().
+
+    The result is True if a message was pending transmission in this buffer
+    and transmission was cancelled.
+
+    The result is False otherwise (either no message was pending transmission
+    in this buffer, or transmission succeeded already).
+
+    The IRQ event CAN.IRQ_TX should be used to determine if a message
+    was definitely sent or not, but note there are potential race conditions if a
+    transmission is cancelled and then the same buffer is used to send another
+    message (especially if the CAN controller IRQ is not “hard”).
+
+
+
+    state() -> int
+
+    Returns an integer value indicating the current state of the controller.
+    The value will be one of the values defined in can-states.
+
+    Lower severity error states may automatically clear if the bus recovers, but
+    the CAN.STATE_BUS_OFF state can only be recovered by calling
+    CAN.restart().
+
+
+
+    get_counters(list: list | None = None, /) -> list
+
+    Returns controller’s error counter values. The result is a list of eight
+    values. If the optional list parameter is specified then the provided
+    list object is updated and returned as the result, to avoid an allocation.
+
+    The list items are:
+
+    TEC (Transmit Error Counter) value
+
+    REC (Receive Error Counter) value
+
+    Number of times the controller entered the Warning state from the Active state.
+
+    Number of times the controller entered the Error Passive state from the Warning state.
+
+    Number of times the controller entered the Bus Off state from the Error Passive state.
+
+    Total number of pending TX messages in the hardware queue.
+
+    Total number of pending RX messages in the hardware queue.
+
+    Number of times an RX overrun occurred.
+
+    Depending on the controller, these values may overflow back to 0 after
+    a certain value.
+
+    If a controller doesn’t support a particular counter, it will return
+    None for that list element.
+
+
+
+    get_timings(list: list | None = None, /) -> list
+
+    Returns a list of elements indicating the current timings configured in the
+    CAN controller. This can be used to verify timings for debugging purposes.
+    The result is a list of six values. If the optional list parameter is
+    specified then the provided list object is updated and returned as the
+    result, to avoid an allocation.
+
+    The list items are:
+
+    Exact bitrate used by the controller. May vary from bitrate argument
+    passed to CAN.init() due to quantisation to meet hardware
+    constraints.
+
+    Resynchronisation jump width (SJW) in units of time quanta for nominal
+    bits. Has the same meaning as the sjw parameter of CAN.init().
+
+    Location of the sample point in units of time quanta for nominal bits. Has
+    the same meaning as the tseg1 parameter of CAN.init().
+
+    Location of the transmit point in units of time quanta for nominal bits.
+    Has the same meaning as the tseg2 parameter of CAN.init().
+
+    CAN FD timing information. None for controllers which don’t support CAN
+    FD, or if CAN FD is not initialised. Otherwise, a nested list of four
+    elements corresponding to the items above but applicable to the CAN FD BRS
+    feature.
+
+    Optional controller-specific timing information. Depending on the
+    controller this will either be None if controller doesn’t report any,
+    or it will be a constant length list whose elements are specific to a
+    particular hardware controller.
+
+    If CAN.init() has not been called then this function
+    still returns a result, but the result depends on the controller
+    internals and may not be accurate.
+
+
+
+    restart() -> None
+
+    Causes the controller to exit STATE_BUS_OFF without clearing any other
+    internal state. Also clears some of the error counters (always the number
+    of times each error state has been entered, possibly TEC and REC depending
+    on the controller.)
+
+    Calling this function also cancels any messages waiting to be sent. No
+    IRQ_TX interrupts are delivered for these messages.
+
+    Note that this function may or may not cause the controller to exit the
+    “Error Passive” state, depending whether the controller hardware zeroes
+    TEC and REC or not.
+
+
+
+    deinit() -> None
+
+    De-initialises a previously active CAN instance. All pending messages
+    (transmit and receive) are dropped and the controller stops interacting on
+    the bus. To use this instance again, call CAN.init().
+
+    No IRQ_TX or IRQ_RX interrupts are called in response to calling this
+    function.
+
+    See also CAN.restart().
+
+    Constants
+
+
+
+    TX_QUEUE_LEN: int
+
+    Maximum number of CAN messages which can be queued in the outgoing hardware
+    message queue of the controller. The “transmit buffer indexes” used by
+    CAN.send(), CAN.cancel_send() and machine_can_irq_flags
+    will be in this range.
+    Modes
+
+    These values represent controller modes of operation, as passed to CAN.init(). Not all controllers may support all modes.
+
+    Changing the mode of a running controller requires calling CAN.deinit() and then calling CAN.init() again with the new mode.
+
+
+
+    MODE_NORMAL: int
+
+    The controller is active as a standard CAN network node (will acknowledge
+    valid messages and may transmit errors depending on its current State
+    <can-states>).
+
+
+
+    MODE_SLEEP: int
+
+    CAN controller is asleep in a low power mode. Depending on the controller,
+    this may support waking the controller and transitioning to CAN.MODE_NORMAL
+    if CAN traffic is received.
+
+
+
+    MODE_LOOPBACK: int
+
+    A testing mode. The CAN controller is still connected to the external bus,
+    but will also receive its own transmitted messages and ignore any ACK errors.
+
+
+
+    MODE_SILENT: int
+
+    CAN controller receives messages but does not interact with the CAN bus
+    (including sending ACKs, errors, etc.)
+
+
+
+    MODE_SILENT_LOOPBACK: int
+
+    A testing mode that does not require a CAN transceiver to be connected at
+    all. The CAN controller receives its own transmitted messages without
+    interacting with the CAN bus at all. The CAN TX and RX pins remain idle.
+    States
+
+    These values are returned by CAN.state() and reflect the error state of the CAN controller:
+
+
+
+    STATE_STOPPED: int
+
+    The controller has not been initialised.
+
+
+
+    STATE_ACTIVE: int
+
+    The controller is active and TEC and REC error counters are both below the
+    warning threshold of 96. See CAN.get_counters().
+
+
+
+    STATE_WARNING: int
+
+    The controller is active but at last one of the TEC and REC error counters
+    are between 96 and 127. See CAN.get_counters().
+
+
+
+    STATE_PASSIVE: int
+
+    The controller is in the “Error Passive” state meaning it no longer transmits active
+    errors to the bus, but it is otherwise functional. This state is entered when at
+    least one of the TEC and REC error counters is 128 or greater, but
+    TEC is less than 255. See CAN.get_counters().
+
+
+
+    STATE_BUS_OFF: int
+
+    The controller is in the Bus-Off state, meaning TEC error counter is
+    greater than 255. The CAN controller will not interact with the bus in this
+    state, and needs to be restarted via CAN.restart() to continue.
+    Message Flags
+
+    These values represent metadata about a CAN message. Functions
+    CAN.send(), CAN.recv(), and CAN.set_filters() either
+    accept or return an integer value made up of zero or more of these flags bitwise
+    ORed together.
+
+
+
+    FLAG_RTR: int
+
+    Indicates a message is a remote transmission request.
+
+
+
+    FLAG_EXT_ID: int
+
+    If set, indicates a Message identifier is Extended (29-bit). If not set,
+    indicates a message identifier is Standard (11-bit).
+
+
+
+    FLAG_UNORDERED: int
+
+    If set in the flags argument of CAN.send(), indicates that it’s
+    OK if messages with the same CAN ID are sent in any order onto the bus.
+
+    Otherwise trying to queue multiple messages with the same ID may result in
+    CAN.send() failing if the controller hardware can’t enforce ordering.
+
+    This flag is never set on received messages, and is ignored by
+    CAN.set_filters().
+    Receive Error Flags
+
+    The result of CAN.recv() includes an integer value made up of zero or
+    more of these flags bitwise ORed together. If set, these flags indicate
+    potential general issues with receiving CAN messages.
+
+
+
+    RECV_ERR_FULL: int
+
+    The hardware FIFO where this message was received is full, and additional incoming messages may be lost.
+
+
+
+    RECV_ERR_OVERRUN: int
+
+    The hardware FIFO where this message was received is full, and one or more incoming messages has been lost.
+    IRQ values
+
+
+
+    IRQ_RX: int
+
+    IRQ_TX: int
+
+    IRQ_STATE: int
+
+    IRQ event triggers. Used with CAN.irq() and machine_can_irq_flags.
+
+
+
+    IRQ_TX_FAILED: int
+
+    IRQ_TX_IDX_SHIFT: int
+
+    IRQ_TX_IDX_MASK: int
+
+    Additional IRQ event flags for CAN.IRQ_TX. See machine_can_irq_flags.
+    """
     def __init__(self, id: int, *args, **kwargs) -> None: ...
     def cancel_send(self, index: int) -> bool:
         """
         Request the CAN controller to cancel sending a message onto the bus.
-
         Argument index identifies a single transmit buffer. It should be an
         integer in the range 0 to CAN.TX_QUEUE_LEN (exclusive). Generally
         this will be a value previously returned by CAN.send().
-
         The result is True if a message was pending transmission in this buffer
         and transmission was cancelled.
-
         The result is False otherwise (either no message was pending transmission
         in this buffer, or transmission succeeded already).
-
         The IRQ event CAN.IRQ_TX should be used to determine if a message
         was definitely sent or not, but note there are potential race conditions if a
         transmission is cancelled and then the same buffer is used to send another
@@ -493,10 +1205,8 @@ class CAN:
         De-initialises a previously active CAN instance. All pending messages
         (transmit and receive) are dropped and the controller stops interacting on
         the bus. To use this instance again, call CAN.init().
-
         No IRQ_TX or IRQ_RX interrupts are called in response to calling this
         function.
-
         See also CAN.restart().
         """
         ...
@@ -523,10 +1233,8 @@ class CAN:
         Total number of pending RX messages in the hardware queue.
 
         Number of times an RX overrun occurred.
-
         Depending on the controller, these values may overflow back to 0 after
         a certain value.
-
         If a controller doesn’t support a particular counter, it will return
         None for that list element.
         """
@@ -538,9 +1246,7 @@ class CAN:
         The result is a list of six values. If the optional list parameter is
         specified then the provided list object is updated and returned as the
         result, to avoid an allocation.
-
         The list items are:
-
         Exact bitrate used by the controller. May vary from bitrate argument
         passed to CAN.init() due to quantisation to meet hardware
         constraints.
@@ -563,7 +1269,6 @@ class CAN:
         controller this will either be None if controller doesn’t report any,
         or it will be a constant length list whose elements are specific to a
         particular hardware controller.
-
         If CAN.init() has not been called then this function
         still returns a result, but the result depends on the controller
         internals and may not be accurate.
@@ -572,15 +1277,12 @@ class CAN:
     def init(self, bitrate: int, mode: int = CAN.MODE_NORMAL, sample_point: int = 75, sjw: int = 1, tseg1: int | None = None, tseg2: int | None = None) -> None:
         """
         Initialise the CAN bus with the given parameters:
-
         bitrate is the desired bus bit rate in bits per second.
 
         mode is one of the values shown under can-modes, indicating the
         desired mode of operation. The default is “normal” operation on the bus.
-
         The next parameters are optional and relate to CAN bit timings. In most cases
         you can leave these parameters set to the default values:
-
         sample_point is an integer percentage of the data bit time. It
         specifies the position of the bit sample with respect to the whole nominal
         bit time. The CAN driver will calculate parameters accordingly. This
@@ -599,16 +1301,13 @@ class CAN:
         quanta for nominal bits; it can be a value between 1 and 8 inclusive for
         classic CAN. This corresponds to Phase_Seg2 in the ISO-11898 standard.
         If this value is set then tseg1 must also be set.
-
         If these arguments are specified then the CAN controller is configured
         correctly for the desired bitrate and the specified total number of time
         quanta per bit. The tseg1 and tseg2 values override the
         sample_point argument if all of these are supplied.
-
         Individual controller hardware may have additional restrictions on
         valid values for these parameters, and will raise a ValueError
         if a given value is not supported.
-
         Specific controller hardware may accept additional optional
         keyword parameters for hardware-specific features such as oversampling.
         """
@@ -617,7 +1316,6 @@ class CAN:
         """
         Sets an interrupt handler function to be called when one or more of the
         events flagged in trigger has occurred.
-
         handler is a function to be called when the interrupt event
         triggers.  The handler must take exactly one argument which is the
         CAN instance.
@@ -641,10 +1339,8 @@ class CAN:
         hard if True, a hard interrupt is used. This reduces the delay between
         the CAN controller event and the handler being called. Hard interrupt
         handlers may not allocate memory; see isr_rules.
-
         Returns an irq object. If called with no arguments then a previously-configured
         irq object is returned.
-
         See machine_can_irq_flags for an example.
         """
         ...
@@ -652,23 +1348,18 @@ class CAN:
         """
         Return a CAN message that has been received by the controller, according to
         filters set by CAN.set_filters().
-
         This function takes a single optional argument, if provided then it must be a
         list of at least 4 elements where the second element is a memoryview object
         that refers to a bytearray or similar object that has enough capacity to hold
         any received CAN message (8 bytes for CAN Classic, 64 bytes for CAN FD). The
         provided list will be returned as a successful result, and avoids memory
         allocation inside the function.
-
         If no messages have been received by the CAN controller, this function
         returns None.
-
         CAN.set_filters must be called before any messages can be received by
         the controller. To receive all messages, call set_filters(None).
-
         If a message has been received by the CAN controller, this function returns a
         list with 4 elements:
-
         Index 0 is the CAN ID of the received message, as an integer.
 
         Index 1 is a memoryview that provides access to the received message data.
@@ -690,13 +1381,11 @@ class CAN:
         can-recv-errors set. Any non-zero value indicates potential issues when
         receiving CAN messages. These flags are reset inside the controller each
         time this function returns.
-
         Remote Transmission Requests
 
         If a Remote Transmission Request is received then the bit CAN.FLAG_RTR
         will be set in Index 2 and the memoryview at Index 1 will contain all
         zeroes, with a length equal to the DLC field of the received request.
-
         Example
 
         can.set_filters(None)   # receive all
@@ -715,10 +1404,8 @@ class CAN:
         internal state. Also clears some of the error counters (always the number
         of times each error state has been entered, possibly TEC and REC depending
         on the controller.)
-
         Calling this function also cancels any messages waiting to be sent. No
         IRQ_TX interrupts are delivered for these messages.
-
         Note that this function may or may not cause the controller to exit the
         “Error Passive” state, depending whether the controller hardware zeroes
         TEC and REC or not.
@@ -729,7 +1416,6 @@ class CAN:
         Copy a new CAN message into the controller’s hardware transmit queue to be
         sent onto the bus. The transmit queue is a priority queue sorted on CAN
         identifier priority (lower numeric identifiers have higher priority).
-
         id is an integer CAN identifier value.
 
         data is a bytes object (or similar) containing the CAN message data,
@@ -738,14 +1424,11 @@ class CAN:
         flags is an integer with zero or more of the bits defined in
         can-flags set, specifying properties of the outgoing CAN message
         (Extended ID, Remote Transmission Request, etc.)
-
         If the message is successfully queued for transmit onto the bus, the function
         returns an integer in the range 0 to CAN.TX_QUEUE_LEN (exclusive). This
         value is the transmit buffer index where the message is queued to send, and
         can be used by the CAN.cancel_send function and in CAN.IRQ_TX events.
-
         If the queue is full then the send will fail and None is returned.
-
         The send can also fail and return None if the provided id value has
         equal priority to an existing message in the transmit queue and the CAN
         controller hardware cannot guarantee that messages with the same ID will be
@@ -753,18 +1436,14 @@ class CAN:
         the message anyway, pass the value CAN.FLAG_UNORDERED flag in
         the flags argument. This flag indicates that it’s OK to send messages with
         the same CAN ID onto the bus in any order.
-
         If the controller is in the “Bus Off” error state or disabled then calling
         this function will raise an OSError.
-
         This intentionally low-level implementation is designed so the
         caller can establish a software queue of outgoing messages.
-
         The CAN “transmit queue” is not a FIFO queue, it is priority
         ordered, and although it can hold up to CAN.TX_QUEUE_LEN
         items there may be other hardware restrictions on messages
         which can be queued at the same time.
-
         Remote Transmission Requests
 
         If the bit CAN.FLAG_RTR is set in the flags argument then the controller
@@ -772,7 +1451,6 @@ class CAN:
         the contents of the data argument is ignored. The controller will send
         a request where the DLC length field is equal to the length of the
         data argument.
-
         Examples
 
         Attempt to send a message with three byte payload 0a0b0c and Standard ID 0x200:
@@ -793,7 +1471,6 @@ class CAN:
     def set_filters(self, filters: list | tuple | None) -> None:
         """
         Set receive filters in the CAN controller. filters can be:
-
         None to accept all incoming messages, or
 
         [] or () to disable all message receiving, or
@@ -809,30 +1486,23 @@ class CAN:
         can-flags set. This specifies properties that the incoming message needs
         to match. Not all controllers support filtering on all flags, a
         ValueError is raised if an unsupported flag is requested.
-
         Incoming messages are accepted if the bits masked in bit_mask match between
         the message identifier and the filter identifier value, and flags set in the
         filter match the incoming message.
-
         If the CAN.FLAG_EXT_ID bit is set in flags, the filter matches Extended
         CAN IDs only. If the CAN.FLAG_EXT_ID bit is not set, the filter matches
         Standard CAN IDs only.
-
         All filters are ORed together in the controller. Passing an empty list or
         tuple for the filters argument means that no messages will be received.
-
         Some CAN controllers require each filter to be associated with only one
         receive FIFO. In these cases, the filter items in the argument are allocated
         round-robin to the available FIFOs. This driver does not distinguish between
         FIFOs in the receive IRQ.
-
         If the caller passes an iterable with more items than
         CAN.FILTERS_MAX, ValueError will be raised.
-
         If either the identifier or the bit_mask is out of range
         for the specified ID type, a ValueError with reason “invalid id”
         will be raised.
-
         Examples
 
         Receive all incoming messages:
@@ -855,7 +1525,6 @@ class CAN:
         """
         Returns an integer value indicating the current state of the controller.
         The value will be one of the values defined in can-states.
-
         Lower severity error states may automatically clear if the bus recovers, but
         the CAN.STATE_BUS_OFF state can only be recovered by calling
         CAN.restart().
@@ -863,7 +1532,184 @@ class CAN:
         ...
 
 class Counter:
-    """Select the IRQ trigger event.  (Supported on MIMXRT)"""
+    """
+    Returns the singleton Counter object for the the given id. Values of id
+    depend on a particular port and its hardware. Values 0, 1, etc. are commonly
+    used to select hardware block #0, #1, etc.
+    Additional arguments are passed to the init() method described below,
+    and will cause the Counter instance to be re-initialised and reset.
+    On ESP32, the id corresponds to a PCNT unit.
+    Methods
+
+
+
+    init(src: Pin | None = None, *, edge: int = RISING, direction: int = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None
+
+    Initialise and reset the Counter with the given parameters:
+
+    src specifies the input pin as a machine.Pin object.
+    May be omitted on ports that have a predefined pin for a given hardware
+    block.
+
+    Additional keyword-only parameters that may be supported by a port are:
+
+    edge specifies the edge to count. Either Counter.RISING (the default)
+    or Counter.FALLING. (Supported on ESP32)
+
+    direction specifies the direction to count. Either Counter.UP (the
+    default) or Counter.DOWN. (Supported on ESP32 and MIMXRT)
+    A machine.Pin object as parameter argument specifies a
+    pin which controls the counting direction. Low: Count up, High: Count down.
+    (Supported on MIMXRT)
+
+    filter_ns specifies a minimum period of time in nanoseconds that the
+    source signal needs to be stable for a pulse to be counted. Implementations
+    should use the longest filter supported by the hardware that is less than
+    or equal to this value. The default is 0 (no filter). (Supported on ESP32 and MIMXRT)
+
+    max Specify the upper counting range. The position counter will count up
+    from a min start value up to max, then roll over to the init value and
+    increase the cycles counter by one. When counting down, the cycles counter
+    decreases at the transition from min to max. The range is reset by defining
+    both max and min to 0. The default value is the hardware’s counter range.
+    (Supported by MIMXRT and the ESP32 PCNT module)
+
+    min Specify the lower counting range. The default value is 0.
+    (Supported by MIMXRT and the ESP32 PCNT module)
+
+    index A Pin specifier telling to which pin the index pulse is connected.
+    At a rising slope of the index pulse the pulse counter is reset to the min value and
+    the cycles counter is increased or decreased by one, depending on the counting direction.
+    A value of None disables the index
+    input. (Supported on MIMXRT)
+
+    reset A Pin specifier telling to which pin the reset pulse is connected.
+    At a rising slope of the reset pulse the counter is set to the init
+    value, but the cycles counter is not changed. A value of None disables the reset input.
+    (Supported on MIMXRT)
+
+    match Set the counter value at which the interrupt IRQ_MATCH shall trigger.
+    The value is not checked for being in the bounds of the counter range. This option
+    if equivalent to the threshold options of the ESP32 PCNT module.
+    A value of None resets the match value and disables the IRQ_MATCH interrupt.
+    (Supported on MIMXRT)
+
+    match_pin A Pin specifier telling to which pin the match output is connected.
+    This output will have a high level as long as the counter matches the
+    match value. The signal is generated by the encoder logic and requires no
+    further software support. The pulse width is defined by the input signal frequency
+    and can be very short, like 20ns, or stay, if the counter stops at the match value.
+    A value of None disables the match output. (Supported on MIMXRT)
+
+
+
+    deinit() -> None
+
+    Stops the Counter, disabling any interrupts and releasing hardware resources.
+    A Soft Reset should deinitialize all Counter objects.
+
+
+
+    value(value: int | None = None, /) -> int
+
+    Get, and optionally set, the counter value as a signed integer.
+    Implementations must aim to do the get and set atomically (i.e. without
+    leading to skipped counts).
+
+    This counter value could exceed the range of a small integer, which
+    means that calling Counter.value() could cause a heap allocation, but
+    implementations should aim to ensure that internal state only uses small
+    integers and therefore will not allocate until the user calls
+    Counter.value().
+
+    For example, on ESP32, the internal state counts overflows of the hardware
+    counter (every 32000 counts), which means that it will not exceed the small
+    integer range until 2**30 * 32000 counts (slightly over 1 year at 1MHz).
+
+    In general, it is recommended that you should use Counter.value(0) to reset
+    the counter (i.e. to measure the counts since the last call), and this will
+    avoid this problem.
+
+
+
+    cycles(value: int | None = None, /) -> int
+
+    Get or set the current cycles counter of the counter as signed 16 bit integer.
+    The value represents the overflow or underflow events of the count range.
+    With no arguments the actual cycles counter value is returned.
+    With a single value argument the cycles counter is set to that value. The
+    base counter is not changed. The method returns the previous value.
+    (Supported on MIMXRT)
+
+
+
+    irq(handler: Callable[[Counter], None] | None = None, trigger: int = 0, hard: bool = False) -> None
+
+    Specifies, that the handler is called when the respective event happens.
+
+    event may be:
+
+    Counter.IRQ_RESET Triggered with a transition at the reset input.
+
+    Counter.IRQ_INDEX Triggered with a transition at the index input.
+
+    Counter.IRQ_MATCH Triggered when the positions counter matches the match value. For fast signals,
+    the actual position counter value when retrieved in the callback may be different from the trigger value.
+
+    Counter.IRQ_ROLL_OVER Triggered when the position counter rolls over from the highest
+    to the lowest value.
+
+    Counter.IRQ_ROLL_UNDER Triggered when the position counter rolls under from the lowest
+    to the highest value.
+
+    The callback function handler receives a single argument, which is the Counter object. All
+    events share the same callback. The event which triggers the callback can be identified
+    with the irq.flags() method. The argument hard specifies, whether the callback is called
+    as a hard interrupt or as regular scheduled function. Hard interrupts have always a short latency,
+    but are limited in that they must not allocate memory. Regular scheduled functions are not limited
+    in what can be used, but depending on the load of the device execution may be delayed.
+    Under low load, the difference in latency is minor.
+
+    The default arguments values are handler=None, trigger=0, hard=False. The callback will be
+    disabled, when called with handler=None.
+
+    The position match event is triggered as long as the position and match value are identical.
+    Therefore the position match callback is run in a one-shot fashion, and has to be enabled
+    again when the position has changed. It will be enabled by re-defining the trigger with either
+    Counter.irq() or irq().trigger(). For ESP32, Counter interrupts are handled
+    by the PCNT. (Supported on MIMXRT)
+    Constants
+
+
+
+    RISING: int
+
+    FALLING: int
+
+    Select the pulse edge. (Supported on ESP32)
+
+
+
+    UP: int
+
+    DOWN: int
+
+    Select the counting direction.
+
+
+
+    IRQ_RESET: int
+
+    IRQ_INDEX: int
+
+    IRQ_MATCH: int
+
+    IRQ_ROLL_OVER: int
+
+    IRQ_ROLL_UNDER: int
+
+    Select the IRQ trigger event.  (Supported on MIMXRT)
+    """
     def __init__(self, id: int, src: Pin | None = None, *, edge: int = RISING, direction: int = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None: ...
     def cycles(self, value: int | None = None, /) -> int:
         """
@@ -884,13 +1730,10 @@ class Counter:
     def init(self, src: Pin | None = None, *, edge: int = RISING, direction: int = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None:
         """
         Initialise and reset the Counter with the given parameters:
-
         src specifies the input pin as a machine.Pin object.
         May be omitted on ports that have a predefined pin for a given hardware
         block.
-
         Additional keyword-only parameters that may be supported by a port are:
-
         edge specifies the edge to count. Either Counter.RISING (the default)
         or Counter.FALLING. (Supported on ESP32)
 
@@ -943,7 +1786,6 @@ class Counter:
     def irq(self, handler: Callable[[Counter], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Specifies, that the handler is called when the respective event happens.
-
         event may be:
 
         Counter.IRQ_RESET Triggered with a transition at the reset input.
@@ -958,7 +1800,6 @@ class Counter:
 
         Counter.IRQ_ROLL_UNDER Triggered when the position counter rolls under from the lowest
         to the highest value.
-
         The callback function handler receives a single argument, which is the Counter object. All
         events share the same callback. The event which triggers the callback can be identified
         with the irq.flags() method. The argument hard specifies, whether the callback is called
@@ -966,10 +1807,8 @@ class Counter:
         but are limited in that they must not allocate memory. Regular scheduled functions are not limited
         in what can be used, but depending on the load of the device execution may be delayed.
         Under low load, the difference in latency is minor.
-
         The default arguments values are handler=None, trigger=0, hard=False. The callback will be
         disabled, when called with handler=None.
-
         The position match event is triggered as long as the position and match value are identical.
         Therefore the position match callback is run in a one-shot fashion, and has to be enabled
         again when the position has changed. It will be enabled by re-defining the trigger with either
@@ -982,17 +1821,14 @@ class Counter:
         Get, and optionally set, the counter value as a signed integer.
         Implementations must aim to do the get and set atomically (i.e. without
         leading to skipped counts).
-
         This counter value could exceed the range of a small integer, which
         means that calling Counter.value() could cause a heap allocation, but
         implementations should aim to ensure that internal state only uses small
         integers and therefore will not allocate until the user calls
         Counter.value().
-
         For example, on ESP32, the internal state counts overflows of the hardware
         counter (every 32000 counts), which means that it will not exceed the small
         integer range until 2**30 * 32000 counts (slightly over 1 year at 1MHz).
-
         In general, it is recommended that you should use Counter.value(0) to reset
         the counter (i.e. to measure the counts since the last call), and this will
         avoid this problem.
@@ -1000,7 +1836,158 @@ class Counter:
         ...
 
 class Encoder:
-    """Select the IRQ trigger event.  (Supported on MIMXRT)"""
+    """
+    Returns the singleton Encoder object for the the given id. Values of id
+    depend on a particular port and its hardware. Values 0, 1, etc. are commonly
+    used to select hardware block #0, #1, etc.
+    Additional arguments are passed to the init() method described below,
+    and will cause the Encoder instance to be re-initialised and reset.
+    On ESP32, the id corresponds to a PCNT unit.
+    Methods
+
+
+
+    init(phase_a: Pin | None = None, phase_b: Pin | None = None, *, filter_ns: int = 0, phases: int = 1, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None
+
+    Initialise and reset the Encoder with the given parameters:
+
+    phase_a specifies the first input pin as a
+    machine.Pin object.
+
+    phase_b specifies the second input pin as a
+    machine.Pin object.
+
+    These pins may be omitted on ports that have predefined pins for a given
+    hardware block.
+
+    Additional keyword-only parameters that may be supported by a port are:
+
+    filter_ns specifies a minimum period of time in nanoseconds that the
+    source signal needs to be stable for a pulse to be counted. Implementations
+    should use the longest filter supported by the hardware that is less than
+    or equal to this value. The default is 0 (no filter). (Supported on ESP32 and MIMXRT)
+
+    phases specifies the number of signal edges to count and thus the
+    granularity of the decoding. e.g. 4 phases corresponds to “4x quadrature
+    decoding”, and will result in four counts per pulse. Ports may support
+    either 1, 2, or 4 phases and the default is 1 phase. (Supported on ESP32 and MIMXRT)
+
+    max Specify the upper counting range. The position counter will count up
+    from a min start value up to max, then roll over to the init value and
+    increase the cycles counter by one. When counting down, the cycles counter
+    decreases at the transition from min to max. The range is reset by defining
+    both max and min to 0. The default value is the hardware’s counter range.
+    (Supported by MIMXRT and the ESP32 PCNT module)
+
+    min. Specify the lower counting range. The default value is 0.
+    (Supported by MIMXRT and the ESP32 PCNT module)
+
+    index A Pin specifier telling to which pin the index pulse is connected.
+    At a rising slope of the index pulse the encoder counter is set to the min value
+    and the cycles counter is increased or decreased by one, depending on
+    the input levels. A value of None disables the index input.
+    (Supported on MIMXRT)
+
+    reset A Pin specifier telling to which pin the reset pulse is connected.
+    At a rising slope of the reset pulse the position counter is set to the init
+    value, but the cycles counter is not changed. A value of None disables the reset input.
+    (Supported on MIMXRT)
+
+    match Set the counter value at which the interrupt IRQ_MATCH shall trigger.
+    The value is not checked for being in the bounds of the counter range. This option
+    if equivalent to the threshold options of the ESP32 PCNT module.
+    A value of None resets the match value and disables the IRQ_MATCH interrupt.
+    (Supported on MIMXRT)
+
+    match_pin A Pin specifier telling to which pin the match output is connected.
+    This output will have a high level as long as the position counter matches the
+    match value. The signal is generated by the encoder logic and requires no
+    further software support. The pulse width is defined by the input signal frequency
+    and can be very short, like 20ns, or stay, if the counter stops at the match position.
+    A value of None disables the match output. (Supported on MIMXRT)
+
+
+
+    deinit() -> None
+
+    Stops the Encoder, disabling any interrupts and releasing hardware resources.
+    A Soft Reset should deinitialize all Encoder objects.
+
+
+
+    value(value: int | None = None, /) -> int
+
+    Get, and optionally set, the encoder value as a signed integer.
+    Implementations should aim to do the get and set atomically.
+
+    See machine.Counter.value() for details about overflow of this value.
+
+
+
+    cycles(value: int | None = None, /) -> int
+
+    Get or set the current cycles counter of the counter as signed 16 bit integer.
+    The value represents the overflow or underflow events of the count range.
+    With no arguments the actual cycles counter value is returned.
+    With a single value argument the cycles counter is set to that value. The
+    base counter is not changed. The method returns the previous value.
+    (Supported on MIMXRT)
+
+
+
+    irq(handler: Callable[[Encoder], None] | None = None, trigger: int = 0, hard: bool = False) -> None
+
+    Specifies, that the handler is called when the respective event happens.
+
+    event may be:
+
+    Encoder.IRQ_RESET Triggered with a transition at the reset input.
+
+    Encoder.IRQ_INDEX Triggered with a transition at the index input.
+
+    Encoder.IRQ_MATCH Triggered when the position counter matches the match value. For fast signals,
+    the actual position counter value when retrieved in the callback may be different from the trigger value.
+
+    Encoder.IRQ_ROLL_OVER Triggered when the position counter rolls over from the highest
+    to the lowest value.
+
+    Encoder.IRQ_ROLL_UNDER Triggered when the position counter rolls under from the lowest
+    to the highest value.
+
+    The callback function handler receives a single argument, which is the Encoder object. All
+    events share the same callback. The event which triggers the callback can be identified
+    with the irq.flags() method. The argument hard specifies, whether the callback is called
+    as a hard interrupt or as regular scheduled function. Hard interrupts have always a short latency,
+    but are limited in that they must not allocate memory. Regular scheduled functions are not limited
+    in what can be used, but depending on the load of the device execution may be delayed.
+    Under low load, the difference in latency is minor.
+
+    The default arguments values are trigger=0, handler=None, hard=False. The callback will be
+    disabled, when called with handler=None.
+
+    The position match event is triggered as long as the position and match value are identical.
+    Therefore the position match callback is run in a one-shot fashion, and has to be enabled
+    again when the position has changed. It will be enabled by re-defining the trigger with either
+    Encoder.irq() or irq().trigger(). For ESP32, Encoder interrupts are handled
+    by the PCNT unit.
+
+    (Supported on MIMXRT)
+    Constants
+
+
+
+    IRQ_RESET: int
+
+    IRQ_INDEX: int
+
+    IRQ_MATCH: int
+
+    IRQ_ROLL_OVER: int
+
+    IRQ_ROLL_UNDER: int
+
+    Select the IRQ trigger event.  (Supported on MIMXRT)
+    """
     def __init__(self, id: int, phase_a: Pin | None = None, phase_b: Pin | None = None, *, filter_ns: int = 0, phases: int = 1, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None: ...
     def cycles(self, value: int | None = None, /) -> int:
         """
@@ -1021,18 +2008,14 @@ class Encoder:
     def init(self, phase_a: Pin | None = None, phase_b: Pin | None = None, *, filter_ns: int = 0, phases: int = 1, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None:
         """
         Initialise and reset the Encoder with the given parameters:
-
         phase_a specifies the first input pin as a
         machine.Pin object.
 
         phase_b specifies the second input pin as a
         machine.Pin object.
-
         These pins may be omitted on ports that have predefined pins for a given
         hardware block.
-
         Additional keyword-only parameters that may be supported by a port are:
-
         filter_ns specifies a minimum period of time in nanoseconds that the
         source signal needs to be stable for a pulse to be counted. Implementations
         should use the longest filter supported by the hardware that is less than
@@ -1081,7 +2064,6 @@ class Encoder:
     def irq(self, handler: Callable[[Encoder], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Specifies, that the handler is called when the respective event happens.
-
         event may be:
 
         Encoder.IRQ_RESET Triggered with a transition at the reset input.
@@ -1096,7 +2078,6 @@ class Encoder:
 
         Encoder.IRQ_ROLL_UNDER Triggered when the position counter rolls under from the lowest
         to the highest value.
-
         The callback function handler receives a single argument, which is the Encoder object. All
         events share the same callback. The event which triggers the callback can be identified
         with the irq.flags() method. The argument hard specifies, whether the callback is called
@@ -1104,16 +2085,13 @@ class Encoder:
         but are limited in that they must not allocate memory. Regular scheduled functions are not limited
         in what can be used, but depending on the load of the device execution may be delayed.
         Under low load, the difference in latency is minor.
-
         The default arguments values are trigger=0, handler=None, hard=False. The callback will be
         disabled, when called with handler=None.
-
         The position match event is triggered as long as the position and match value are identical.
         Therefore the position match callback is run in a one-shot fashion, and has to be enabled
         again when the position has changed. It will be enabled by re-defining the trigger with either
         Encoder.irq() or irq().trigger(). For ESP32, Encoder interrupts are handled
         by the PCNT unit.
-
         (Supported on MIMXRT)
         """
         ...
@@ -1121,13 +2099,169 @@ class Encoder:
         """
         Get, and optionally set, the encoder value as a signed integer.
         Implementations should aim to do the get and set atomically.
-
         See machine.Counter.value() for details about overflow of this value.
         """
         ...
 
 class I2C:
     """
+    Construct and return a new I2C object using the following parameters:
+    id identifies a particular I2C peripheral.  Allowed values for
+    depend on the particular port/board
+
+    scl should be a pin object specifying the pin to use for SCL.
+
+    sda should be a pin object specifying the pin to use for SDA.
+
+    freq should be an integer which sets the maximum frequency
+    for SCL.
+
+    timeout is the maximum time in microseconds to allow for I2C
+    transactions.  This parameter is not allowed on some ports.
+    Note that some ports/boards will have default values of scl and sda
+    that can be changed in this constructor.  Others will have fixed values
+    of scl and sda that cannot be changed.
+    General Methods
+
+
+
+    init(scl: Pin, sda: Pin, *, freq: int = 400000) -> None
+
+    Initialise the I2C bus with the given arguments:
+
+    scl is a pin object for the SCL line
+
+    sda is a pin object for the SDA line
+
+    freq is the SCL clock rate
+
+    In the case of hardware I2C the actual clock frequency may be lower than the
+    requested frequency. This is dependent on the platform hardware. The actual
+    rate may be determined by printing the I2C object.
+
+
+
+    scan() -> List[int]
+
+    Scan all I2C addresses between 0x08 and 0x77 inclusive and return a list of
+    those that respond.  A device responds if it pulls the SDA line low after
+    its address (including a write bit) is sent on the bus.
+    Primitive I2C operations
+
+    The following methods implement the primitive I2C controller bus operations and can
+    be combined to make any I2C transaction.  They are provided if you need more
+    control over the bus, otherwise the standard methods (see below) can be used.
+
+    These methods are only available on the machine.SoftI2C class.
+
+
+
+    start() -> None
+
+    Generate a START condition on the bus (SDA transitions to low while SCL is high).
+
+
+
+    stop() -> None
+
+    Generate a STOP condition on the bus (SDA transitions to high while SCL is high).
+
+
+
+    readinto(buf: bytearray, nack: bool = True, /) -> None
+
+    Reads bytes from the bus and stores them into buf.  The number of bytes
+    read is the length of buf.  An ACK will be sent on the bus after
+    receiving all but the last byte.  After the last byte is received, if nack
+    is true then a NACK will be sent, otherwise an ACK will be sent (and in this
+    case the peripheral assumes more bytes are going to be read in a later call).
+
+
+
+    write(buf: bytes) -> int
+
+    Write the bytes from buf to the bus.  Checks that an ACK is received
+    after each byte and stops transmitting the remaining bytes if a NACK is
+    received.  The function returns the number of ACKs that were received.
+    Standard bus operations
+
+    The following methods implement the standard I2C controller read and write
+    operations that target a given peripheral device.
+
+
+
+    readfrom(addr: int, nbytes: int, stop: bool = True, /) -> bytes
+
+    Read nbytes from the peripheral specified by addr.
+    If stop is true then a STOP condition is generated at the end of the transfer.
+    Returns a bytes object with the data read.
+
+
+
+    readfrom_into(addr: int, buf: bytearray, stop: bool = True, /) -> None
+
+    Read into buf from the peripheral specified by addr.
+    The number of bytes read will be the length of buf.
+    If stop is true then a STOP condition is generated at the end of the transfer.
+
+    The method returns None.
+
+
+
+    writeto(addr: int, buf: bytes, stop: bool = True, /) -> int
+
+    Write the bytes from buf to the peripheral specified by addr.  If a
+    NACK is received following the write of a byte from buf then the
+    remaining bytes are not sent.  If stop is true then a STOP condition is
+    generated at the end of the transfer, even if a NACK is received.
+    The function returns the number of ACKs that were received.
+
+
+
+    writevto(addr: int, vector: tuple | list, stop: bool = True, /) -> int
+
+    Write the bytes contained in vector to the peripheral specified by addr.
+    vector should be a tuple or list of objects with the buffer protocol.
+    The addr is sent once and then the bytes from each object in vector
+    are written out sequentially.  The objects in vector may be zero bytes
+    in length in which case they don’t contribute to the output.
+
+    If a NACK is received following the write of a byte from one of the
+    objects in vector then the remaining bytes, and any remaining objects,
+    are not sent.  If stop is true then a STOP condition is generated at
+    the end of the transfer, even if a NACK is received.  The function
+    returns the number of ACKs that were received.
+    Memory operations
+
+    Some I2C devices act as a memory device (or set of registers) that can be read
+    from and written to.  In this case there are two addresses associated with an
+    I2C transaction: the peripheral address and the memory address.  The following
+    methods are convenience functions to communicate with such devices.
+
+
+
+    readfrom_mem(addr: int, memaddr: int, nbytes: int, *, addrsize: int = 8) -> bytes
+
+    Read nbytes from the peripheral specified by addr starting from the memory
+    address specified by memaddr.
+    The argument addrsize specifies the address size in bits.
+    Returns a bytes object with the data read.
+
+
+
+    readfrom_mem_into(addr: int, memaddr: int, buf: bytearray, *, addrsize: int = 8) -> None
+
+    Read into buf from the peripheral specified by addr starting from the
+    memory address specified by memaddr.  The number of bytes read is the
+    length of buf.
+    The argument addrsize specifies the address size in bits.
+
+    The method returns None.
+
+
+
+    writeto_mem(addr: int, memaddr: int, buf: bytes, *, addrsize: int = 8) -> None
+
     Write buf to the peripheral specified by addr starting from the
     memory address specified by memaddr.
     The argument addrsize specifies the address size in bits.
@@ -1138,7 +2272,6 @@ class I2C:
     def init(self, scl: Pin, sda: Pin, *, freq: int = 400000) -> None:
         """
         Initialise the I2C bus with the given arguments:
-
         scl is a pin object for the SCL line
 
         sda is a pin object for the SDA line
@@ -1162,7 +2295,6 @@ class I2C:
         Read into buf from the peripheral specified by addr.
         The number of bytes read will be the length of buf.
         If stop is true then a STOP condition is generated at the end of the transfer.
-
         The method returns None.
         """
         ...
@@ -1180,7 +2312,6 @@ class I2C:
         memory address specified by memaddr.  The number of bytes read is the
         length of buf.
         The argument addrsize specifies the address size in bits.
-
         The method returns None.
         """
         ...
@@ -1227,7 +2358,6 @@ class I2C:
         Write buf to the peripheral specified by addr starting from the
         memory address specified by memaddr.
         The argument addrsize specifies the address size in bits.
-
         The method returns None.
         """
         ...
@@ -1238,7 +2368,6 @@ class I2C:
         The addr is sent once and then the bytes from each object in vector
         are written out sequentially.  The objects in vector may be zero bytes
         in length in which case they don’t contribute to the output.
-
         If a NACK is received following the write of a byte from one of the
         objects in vector then the remaining bytes, and any remaining objects,
         are not sent.  If stop is true then a STOP condition is generated at
@@ -1248,10 +2377,129 @@ class I2C:
         ...
 
 class I2CTarget:
-    """IRQ trigger sources."""
+    """
+    Construct and return a new I2CTarget object using the following parameters:
+    id identifies a particular I2C peripheral.  Allowed values depend on the
+    particular port/board.  Some ports have a default in which case this parameter
+    can be omitted.
+
+    addr is the I2C address of the target.
+
+    addrsize is the number of bits in the I2C target address.  Valid values
+    are 7 and 10.
+
+    mem is an object with the buffer protocol that is writable.  If not
+    specified then there is no backing memory and data must be read/written
+    using the I2CTarget.readinto() and I2CTarget.write() methods.
+
+    mem_addrsize is the number of bits in the memory address.  Valid values
+    are 0, 8, 16, 24 and 32.
+
+    scl is a pin object specifying the pin to use for SCL.
+
+    sda is a pin object specifying the pin to use for SDA.
+    Note that some ports/boards will have default values of scl and sda
+    that can be changed in this constructor.  Others will have fixed values
+    of scl and sda that cannot be changed.
+    General Methods
+
+
+
+    deinit() -> None
+
+    Deinitialise the I2C target.  After this method is called the hardware will no
+    longer respond to requests on the I2C bus, and no other methods can be called.
+
+
+
+    readinto(buf: bytearray) -> int
+
+    Read into the given buffer any pending bytes written by the I2C controller.
+    Returns the number of bytes read.
+
+
+
+    write(buf: bytes) -> int
+
+    Write out the bytes from the given buffer, to be passed to the I2C controller
+    after it sends a read request.  Returns the number of bytes written.  Most ports
+    only accept one byte at a time to this method.
+
+
+
+    irq(handler: Callable[[I2CTarget], None] | None = None, trigger: int = IRQ_END_READ | IRQ_END_WRITE, hard: bool = False) -> None
+
+    Configure an IRQ handler to be called when an event occurs.  The possible events are
+    given by the following constants, which can be or’d together and passed to the trigger
+    argument:
+
+    IRQ_ADDR_MATCH_READ indicates that the target was addressed by a
+    controller for a read transaction.
+
+    IRQ_ADDR_MATCH_WRITE indicates that the target was addressed by a
+    controller for a write transaction.
+
+    IRQ_READ_REQ indicates that the controller is requesting data, and this
+    request must be satisfied by calling I2CTarget.write with the data to be
+    passed back to the controller.
+
+    IRQ_WRITE_REQ indicates that the controller has written data, and the
+    data must be read by calling I2CTarget.readinto.
+
+    IRQ_END_READ indicates that the controller has finished a read transaction.
+
+    IRQ_END_WRITE indicates that the controller has finished a write transaction.
+
+    Not all triggers are available on all ports.  If a port has the constant then that
+    event is available.
+
+    Note the following restrictions:
+
+    IRQ_ADDR_MATCH_READ, IRQ_ADDR_MATCH_WRITE, IRQ_READ_REQ and
+    IRQ_WRITE_REQ must be handled by a hard IRQ callback (with the hard argument
+    set to True).  This is because these events have very strict timing requirements
+    and must usually be satisfied synchronously with the hardware event.
+
+    IRQ_END_READ and IRQ_END_WRITE may be handled by either a soft or hard
+    IRQ callback (although note that all events must be registered with the same handler,
+    so if any events need a hard callback then all events must be hard).
+
+    If a memory buffer has been supplied in the constructor then IRQ_END_WRITE
+    is not emitted for the transaction that writes the memory address.  This is to
+    allow IRQ_END_READ and IRQ_END_WRITE to function correctly as soft IRQ
+    callbacks, where the IRQ handler may be called quite some time after the actual
+    hardware event.
+
+
+
+    memaddr
+
+    The integer value of the most recent memory address that was selected by the I2C
+    controller (only valid if mem was specified in the constructor).
+    Constants
+
+
+
+    IRQ_ADDR_MATCH_READ: int
+
+    IRQ_ADDR_MATCH_WRITE: int
+
+    IRQ_READ_REQ: int
+
+    IRQ_WRITE_REQ: int
+
+    IRQ_END_READ: int
+
+    IRQ_END_WRITE: int
+
+    IRQ trigger sources.
+    """
     def __init__(self, id: int, addr: int, *, addrsize: int = 7, mem: bytearray | None = None, mem_addrsize: int = 8, scl: Pin | None = None, sda: Pin | None = None) -> None: ...
     memaddr: Any
-    """IRQ trigger sources."""
+    """
+    The integer value of the most recent memory address that was selected by the I2C
+    controller (only valid if mem was specified in the constructor).
+    """
     def deinit(self) -> None:
         """
         Deinitialise the I2C target.  After this method is called the hardware will no
@@ -1263,7 +2511,6 @@ class I2CTarget:
         Configure an IRQ handler to be called when an event occurs.  The possible events are
         given by the following constants, which can be or’d together and passed to the trigger
         argument:
-
         IRQ_ADDR_MATCH_READ indicates that the target was addressed by a
         controller for a read transaction.
 
@@ -1280,12 +2527,9 @@ class I2CTarget:
         IRQ_END_READ indicates that the controller has finished a read transaction.
 
         IRQ_END_WRITE indicates that the controller has finished a write transaction.
-
         Not all triggers are available on all ports.  If a port has the constant then that
         event is available.
-
         Note the following restrictions:
-
         IRQ_ADDR_MATCH_READ, IRQ_ADDR_MATCH_WRITE, IRQ_READ_REQ and
         IRQ_WRITE_REQ must be handled by a hard IRQ callback (with the hard argument
         set to True).  This is because these events have very strict timing requirements
@@ -1317,7 +2561,106 @@ class I2CTarget:
         ...
 
 class I2S:
-    """for initialising the I2S bus format to mono"""
+    """
+    Construct an I2S object of the given id:
+    id identifies a particular I2S bus; it is board and port specific
+    Keyword-only parameters that are supported on all ports:
+    sck is a pin object for the serial clock line
+
+    ws is a pin object for the word select line
+
+    sd is a pin object for the serial data line
+
+    mck is a pin object for the master clock line;
+    master clock frequency is sampling rate * 256
+
+    mode specifies receive or transmit
+
+    bits specifies sample size (bits), 16 or 32
+
+    format specifies channel format, STEREO or MONO
+
+    rate specifies audio sampling rate (Hz);
+    this is the frequency of the ws signal
+
+    ibuf specifies internal buffer length (bytes)
+    For all ports, DMA runs continuously in the background and allows user applications to perform other operations while
+    sample data is transferred between the internal buffer and the I2S peripheral unit.
+    Increasing the size of the internal buffer has the potential to increase the time that user applications can perform non-I2S operations
+    before underflow (e.g. write method) or overflow (e.g. readinto method).
+    Methods
+
+
+
+    init(*, sck: Pin, ws: Pin, sd: Pin, mck: Pin | None = None, mode: int, bits: int, format: int, rate: int, ibuf: int) -> None
+
+    see Constructor for argument descriptions
+
+
+
+    deinit() -> None
+
+    Deinitialize the I2S bus
+
+
+
+    readinto(buf: bytearray) -> int
+
+    Read audio samples into the buffer specified by buf.  buf must support the buffer protocol, such as bytearray or array.
+    “buf” byte ordering is little-endian.  For Stereo format, left channel sample precedes right channel sample. For Mono format,
+    the left channel sample data is used.
+    Returns number of bytes read
+
+
+
+    write(buf: bytes) -> int
+
+    Write audio samples contained in buf. buf must support the buffer protocol, such as bytearray or array.
+    “buf” byte ordering is little-endian.  For Stereo format, left channel sample precedes right channel sample. For Mono format,
+    the sample data is written to both the right and left channels.
+    Returns number of bytes written
+
+
+
+    irq(handler: Callable[[I2S], None]) -> None
+
+    Set a callback. handler is called when buf is emptied (write method) or becomes full (readinto method).
+    Setting a callback changes the write and readinto methods to non-blocking operation.
+    handler is called in the context of the MicroPython scheduler.
+
+
+
+    static shift(*, buf: bytearray, bits: int, shift: int) -> None
+
+    bitwise shift of all samples contained in buf. bits specifies sample size in bits. shift specifies the number of bits to shift each sample.
+    Positive for left shift, negative for right shift.
+    Typically used for volume control.  Each bit shift changes sample volume by 6dB.
+    Constants
+
+
+
+    RX: int
+
+    for initialising the I2S bus mode to receive
+
+
+
+    TX: int
+
+    for initialising the I2S bus mode to transmit
+
+
+
+    STEREO: int
+
+    for initialising the I2S bus format to stereo
+
+
+
+    MONO: int
+
+    for initialising the I2S bus format to mono
+    """
     def __init__(self, id: int, *, sck: Pin, ws: Pin, sd: Pin, mck: Pin | None = None, mode: int, bits: int, format: int, rate: int, ibuf: int) -> None: ...
     def deinit(self) -> None:
         """Deinitialize the I2S bus"""
@@ -1358,6 +2701,40 @@ class I2S:
 
 class LED:
     """
+    Access the LED associated with a source identified by pin_name. This
+    pin_name may be a string (usually specifying a color), a
+    Pin object, or other value supported by the
+    underlying machine.
+    Methods
+
+
+
+    boardname() -> str
+
+    Returns the name of the board.
+
+
+
+    on() -> None
+
+    Turns the LED on.
+
+
+
+    off() -> None
+
+    Turns the LED off.
+
+
+
+    toggle() -> None
+
+    Toggles the LED state.
+
+
+
+    value(v: int | None = None) -> int | None
+
     If v is given, sets the LED to the given value. If v is not given,
     returns the current LED value.
     """
@@ -1383,6 +2760,65 @@ class LED:
 
 class PWM:
     """
+    Construct and return a new PWM object using the following parameters:
+    dest is the entity on which the PWM is output, which is usually a
+    machine.Pin object, but a port may allow other values,
+    like integers.
+
+    freq should be an integer which sets the frequency in Hz for the
+    PWM cycle.
+
+    duty_u16 sets the duty cycle as a ratio duty_u16 / 65535.
+
+    duty_ns sets the pulse width in nanoseconds.
+
+    invert  inverts the respective output if the value is True
+    Setting freq may affect other PWM objects if the objects share the same
+    underlying PWM generator (this is hardware specific).
+    Only one of duty_u16 and duty_ns should be specified at a time.
+    invert is available only on the alif, esp32, mimxrt, nrf, rp2, samd, stm32 and zephyr ports.
+    Methods
+
+
+
+    init(*, freq: int = ..., duty_u16: int = ..., duty_ns: int = ...) -> None
+
+    Modify settings for the PWM object.  See the above constructor for details
+    about the parameters.
+
+
+
+    deinit() -> None
+
+    Disable the PWM output.
+
+
+
+    freq(value: int | None = None, /) -> int | None
+
+    Get or set the current frequency of the PWM output.
+
+    With no arguments the frequency in Hz is returned.
+
+    With a single value argument the frequency is set to that value in Hz.  The
+    method may raise a ValueError if the frequency is outside the valid range.
+
+
+
+    duty_u16(value: int | None = None, /) -> int | None
+
+    Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
+    value in the range 0 to 65535 inclusive.
+
+    With no arguments the duty cycle is returned.
+
+    With a single value argument the duty cycle is set to that value, measured
+    as the ratio value / 65535.
+
+
+
+    duty_ns(value: int | None = None, /) -> int | None
+
     Get or set the current pulse width of the PWM output, as a value in nanoseconds.
 
     With no arguments the pulse width in nanoseconds is returned.
@@ -1396,9 +2832,7 @@ class PWM:
     def duty_ns(self, value: int | None = None, /) -> Optional[int]:
         """
         Get or set the current pulse width of the PWM output, as a value in nanoseconds.
-
         With no arguments the pulse width in nanoseconds is returned.
-
         With a single value argument the pulse width is set to that value.
         """
         ...
@@ -1406,9 +2840,7 @@ class PWM:
         """
         Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
         value in the range 0 to 65535 inclusive.
-
         With no arguments the duty cycle is returned.
-
         With a single value argument the duty cycle is set to that value, measured
         as the ratio value / 65535.
         """
@@ -1416,9 +2848,7 @@ class PWM:
     def freq(self, value: int | None = None, /) -> Optional[int]:
         """
         Get or set the current frequency of the PWM output.
-
         With no arguments the frequency in Hz is returned.
-
         With a single value argument the frequency is set to that value in Hz.  The
         method may raise a ValueError if the frequency is outside the valid range.
         """
@@ -1431,7 +2861,290 @@ class PWM:
         ...
 
 class Pin:
-    """Selects the IRQ trigger type."""
+    """
+    Access the pin peripheral (GPIO pin) associated with the given id.  If
+    additional arguments are given in the constructor then they are used to initialise
+    the pin.  Any settings that are not specified will remain in their previous state.
+    The arguments are:
+    id is mandatory and can be an arbitrary object.  Among possible value
+    types are: int (an internal Pin identifier), str (a Pin name), and tuple
+    (pair of [port, pin]).
+
+    mode specifies the pin mode, which can be one of:
+
+    Pin.IN - Pin is configured for input.  If viewed as an output the pin
+    is in high-impedance state.
+
+    Pin.OUT - Pin is configured for (normal) output.
+
+    Pin.OPEN_DRAIN - Pin is configured for open-drain output. Open-drain
+    output works in the following way: if the output value is set to 0 the pin
+    is active at a low level; if the output value is 1 the pin is in a high-impedance
+    state.  Not all ports implement this mode, or some might only on certain pins.
+
+    Pin.ALT - Pin is configured to perform an alternative function, which is
+    port specific.  For a pin configured in such a way any other Pin methods
+    (except Pin.init()) are not applicable (calling them will lead to undefined,
+    or a hardware-specific, result).  Not all ports implement this mode.
+
+    Pin.ALT_OPEN_DRAIN - The Same as Pin.ALT, but the pin is configured as
+    open-drain.  Not all ports implement this mode.
+
+    Pin.ANALOG - Pin is configured for analog input, see the ADC class.
+
+    pull specifies if the pin has a (weak) pull resistor attached, and can be
+    one of:
+
+    None - No pull up or down resistor.
+
+    Pin.PULL_UP - Pull up resistor enabled.
+
+    Pin.PULL_DOWN - Pull down resistor enabled.
+
+    value is valid only for Pin.OUT and Pin.OPEN_DRAIN modes and specifies initial
+    output pin value if given, otherwise the state of the pin peripheral remains
+    unchanged.
+
+    drive specifies the output power of the pin and can be one of: Pin.DRIVE_0,
+    Pin.DRIVE_1, etc., increasing in drive strength.  The actual current driving
+    capabilities are port dependent.  Not all ports implement this argument.
+
+    alt specifies an alternate function for the pin and the values it can take are
+    port dependent.  This argument is valid only for Pin.ALT and Pin.ALT_OPEN_DRAIN
+    modes.  It may be used when a pin supports more than one alternate function.  If only
+    one pin alternate function is supported the this argument is not required.  Not all
+    ports implement this argument.
+    As specified above, the Pin class allows to set an alternate function for a particular
+    pin, but it does not specify any further operations on such a pin.  Pins configured in
+    alternate-function mode are usually not used as GPIO but are instead driven by other
+    hardware peripherals.  The only operation supported on such a pin is re-initialising,
+    by calling the constructor or Pin.init() method.  If a pin that is configured in
+    alternate-function mode is re-initialised with Pin.IN, Pin.OUT, or
+    Pin.OPEN_DRAIN, the alternate function will be removed from the pin.
+    Methods
+
+
+
+    init(mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1) -> None
+
+    Re-initialise the pin using the given parameters.  Only those arguments that
+    are specified will be set.  The rest of the pin peripheral state will remain
+    unchanged.  See the constructor documentation for details of the arguments.
+
+    Returns None.
+
+
+
+    value(x: Any | None = None, /) -> int | None
+
+    This method allows to set and get the value of the pin, depending on whether
+    the argument x is supplied or not.
+
+    If the argument is omitted then this method gets the digital logic level of
+    the pin, returning 0 or 1 corresponding to low and high voltage signals
+    respectively.  The behaviour of this method depends on the mode of the pin:
+
+    Pin.IN - The method returns the actual input value currently present
+    on the pin.
+
+    Pin.OUT - The behaviour and return value of the method is undefined.
+
+    Pin.OPEN_DRAIN - If the pin is in state ‘0’ then the behaviour and
+    return value of the method is undefined.  Otherwise, if the pin is in
+    state ‘1’, the method returns the actual input value currently present
+    on the pin.
+
+    If the argument is supplied then this method sets the digital logic level of
+    the pin.  The argument x can be anything that converts to a boolean.
+    If it converts to True, the pin is set to state ‘1’, otherwise it is set
+    to state ‘0’.  The behaviour of this method depends on the mode of the pin:
+
+    Pin.IN - The value is stored in the output buffer for the pin.  The
+    pin state does not change, it remains in the high-impedance state.  The
+    stored value will become active on the pin as soon as it is changed to
+    Pin.OUT or Pin.OPEN_DRAIN mode.
+
+    Pin.OUT - The output buffer is set to the given value immediately.
+
+    Pin.OPEN_DRAIN - If the value is ‘0’ the pin is set to a low voltage
+    state.  Otherwise the pin is set to high-impedance state.
+
+    When setting the value this method returns None.
+
+
+
+    __call__(x: Any | None = None, /) -> int | None
+
+    Pin objects are callable.  The call method provides a (fast) shortcut to set
+    and get the value of the pin.  It is equivalent to Pin.value([x]).
+    See Pin.value() for more details.
+
+
+
+    on() -> None
+
+    Set pin to “1” output level.
+
+
+
+    off() -> None
+
+    Set pin to “0” output level.
+
+
+
+    irq(handler: Callable[[Pin], None] | None = None, trigger: int = Pin.IRQ_FALLING | Pin.IRQ_RISING, *, priority: int = 1, wake: int | None = None, hard: bool = False) -> None
+
+    Configure an interrupt handler to be called when the trigger source of the
+    pin is active.  If the pin mode is Pin.IN then the trigger source is
+    the external value on the pin.  If the pin mode is Pin.OUT then the
+    trigger source is the output buffer of the pin.  Otherwise, if the pin mode
+    is Pin.OPEN_DRAIN then the trigger source is the output buffer for
+    state ‘0’ and the external pin value for state ‘1’.
+
+    The arguments are:
+
+    handler is an optional function to be called when the interrupt
+    triggers. The handler must take exactly one argument which is the
+    Pin instance.
+
+    trigger configures the event which can generate an interrupt.
+    Possible values are:
+
+    Pin.IRQ_FALLING interrupt on falling edge.
+
+    Pin.IRQ_RISING interrupt on rising edge.
+
+    Pin.IRQ_LOW_LEVEL interrupt on low level.
+
+    Pin.IRQ_HIGH_LEVEL interrupt on high level.
+
+    These values can be OR’ed together to trigger on multiple events.
+
+    priority sets the priority level of the interrupt.  The values it
+    can take are port-specific, but higher values always represent higher
+    priorities.
+
+    wake selects the power mode in which this interrupt can wake up the
+    system.  It can be machine.IDLE, machine.SLEEP or machine.DEEPSLEEP.
+    These values can also be OR’ed together to make a pin generate interrupts in
+    more than one power mode.
+
+    hard if true a hardware interrupt is used. This reduces the delay
+    between the pin change and the handler being called. Hard interrupt
+    handlers may not allocate memory; see isr_rules.
+    Not all ports support this argument.
+
+    This method returns a callback object.
+
+    The following methods are not part of the core Pin API and only implemented on certain ports.
+
+
+
+    low() -> None
+
+    Set pin to “0” output level.
+
+    Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
+
+
+
+    high() -> None
+
+    Set pin to “1” output level.
+
+    Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
+
+
+
+    mode(mode: int | None = None, /) -> int | None
+
+    Get or set the pin mode.
+    See the constructor documentation for details of the mode argument.
+
+    Availability: cc3200, stm32 ports.
+
+
+
+    pull(pull: int | None = None, /) -> int | None
+
+    Get or set the pin pull state.
+    See the constructor documentation for details of the pull argument.
+
+    Availability: cc3200, stm32 ports.
+
+
+
+    drive(drive: int | None = None, /) -> int | None
+
+    Get or set the pin drive strength.
+    See the constructor documentation for details of the drive argument.
+
+    Availability: cc3200 port.
+
+
+
+    toggle() -> None
+
+    Toggle output pin from “0” to “1” or vice-versa.
+
+    Availability: cc3200, esp32, esp8266, mimxrt, rp2, samd, alif ports.
+    Constants
+
+    The following constants are used to configure the pin objects.  Note that
+    not all constants are available on all ports.
+
+
+
+    IN: int
+
+    OUT: int
+
+    OPEN_DRAIN: int
+
+    ALT: int
+
+    ALT_OPEN_DRAIN: int
+
+    ANALOG: int
+
+    Selects the pin mode.
+
+
+
+    PULL_UP: int
+
+    PULL_DOWN: int
+
+    PULL_HOLD: int
+
+    Selects whether there is a pull up/down resistor.  Use the value
+    None for no pull.
+
+
+
+    DRIVE_0: int
+
+    DRIVE_1: int
+
+    DRIVE_2: int
+
+    Selects the pin drive strength.  A port may define additional drive
+    constants with increasing number corresponding to increasing drive
+    strength.
+
+
+
+    IRQ_FALLING: int
+
+    IRQ_RISING: int
+
+    IRQ_LOW_LEVEL: int
+
+    IRQ_HIGH_LEVEL: int
+
+    Selects the IRQ trigger type.
+    """
     def __init__(self, id: int | str, mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1) -> None: ...
     def __call__(self, x: Any | None = None, /) -> Optional[int]:
         """
@@ -1444,14 +3157,12 @@ class Pin:
         """
         Get or set the pin drive strength.
         See the constructor documentation for details of the drive argument.
-
         Availability: cc3200 port.
         """
         ...
     def high(self) -> None:
         """
         Set pin to “1” output level.
-
         Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
         """
         ...
@@ -1460,7 +3171,6 @@ class Pin:
         Re-initialise the pin using the given parameters.  Only those arguments that
         are specified will be set.  The rest of the pin peripheral state will remain
         unchanged.  See the constructor documentation for details of the arguments.
-
         Returns None.
         """
         ...
@@ -1472,9 +3182,7 @@ class Pin:
         trigger source is the output buffer of the pin.  Otherwise, if the pin mode
         is Pin.OPEN_DRAIN then the trigger source is the output buffer for
         state ‘0’ and the external pin value for state ‘1’.
-
         The arguments are:
-
         handler is an optional function to be called when the interrupt
         triggers. The handler must take exactly one argument which is the
         Pin instance.
@@ -1505,14 +3213,12 @@ class Pin:
         between the pin change and the handler being called. Hard interrupt
         handlers may not allocate memory; see isr_rules.
         Not all ports support this argument.
-
         This method returns a callback object.
         """
         ...
     def low(self) -> None:
         """
         Set pin to “0” output level.
-
         Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
         """
         ...
@@ -1520,7 +3226,6 @@ class Pin:
         """
         Get or set the pin mode.
         See the constructor documentation for details of the mode argument.
-
         Availability: cc3200, stm32 ports.
         """
         ...
@@ -1534,14 +3239,12 @@ class Pin:
         """
         Get or set the pin pull state.
         See the constructor documentation for details of the pull argument.
-
         Availability: cc3200, stm32 ports.
         """
         ...
     def toggle(self) -> None:
         """
         Toggle output pin from “0” to “1” or vice-versa.
-
         Availability: cc3200, esp32, esp8266, mimxrt, rp2, samd, alif ports.
         """
         ...
@@ -1549,11 +3252,9 @@ class Pin:
         """
         This method allows to set and get the value of the pin, depending on whether
         the argument x is supplied or not.
-
         If the argument is omitted then this method gets the digital logic level of
         the pin, returning 0 or 1 corresponding to low and high voltage signals
         respectively.  The behaviour of this method depends on the mode of the pin:
-
         Pin.IN - The method returns the actual input value currently present
         on the pin.
 
@@ -1563,12 +3264,10 @@ class Pin:
         return value of the method is undefined.  Otherwise, if the pin is in
         state ‘1’, the method returns the actual input value currently present
         on the pin.
-
         If the argument is supplied then this method sets the digital logic level of
         the pin.  The argument x can be anything that converts to a boolean.
         If it converts to True, the pin is set to state ‘1’, otherwise it is set
         to state ‘0’.  The behaviour of this method depends on the mode of the pin:
-
         Pin.IN - The value is stored in the output buffer for the pin.  The
         pin state does not change, it remains in the high-impedance state.  The
         stored value will become active on the pin as soon as it is changed to
@@ -1578,13 +3277,120 @@ class Pin:
 
         Pin.OPEN_DRAIN - If the value is ‘0’ the pin is set to a low voltage
         state.  Otherwise the pin is set to high-impedance state.
-
         When setting the value this method returns None.
         """
         ...
 
 class RTC:
-    """irq trigger source"""
+    """
+    Create an RTC object. See init for parameters of initialization.
+    Methods
+
+
+
+    datetime(datetimetuple: tuple | None = None, /) -> tuple | None
+
+    Get or set the date and time of the RTC.
+
+    With no arguments, this method returns an 8-tuple with the current
+    date and time.  With 1 argument (being an 8-tuple) it sets the date
+    and time.
+
+    The 8-tuple has the following format:
+
+    (year, month, day, weekday, hours, minutes, seconds, subseconds)
+
+    The meaning of the subseconds field is hardware dependent.
+
+
+
+    init(datetime: tuple) -> None
+
+    Initialise the RTC. Datetime is a tuple of the form:
+
+    (year, month, day, hour, minute, second, microsecond, tzinfo)
+
+    All eight arguments must be present. The microsecond and tzinfo
+    values are currently ignored but might be used in the future.
+
+    Availability: CC3200, ESP32, MIMXRT, SAMD. The rtc.init() method on
+    the stm32 and renesas-ra ports just (re-)starts the RTC and does not
+    accept arguments.
+
+
+
+    now() -> tuple
+
+    Get get the current datetime tuple.
+
+    Availability: WiPy.
+
+
+
+    deinit() -> None
+
+    Resets the RTC to the time of January 1, 2015 and starts running it again.
+
+
+
+    alarm(id: int, time: int | tuple, *, repeat: bool = False) -> None
+
+    Set the RTC alarm. Time might be either a millisecond value to program the alarm to
+    current time + time_in_ms in the future, or a datetimetuple. If the time passed is in
+    milliseconds, repeat can be set to True to make the alarm periodic.
+
+
+
+    alarm_left(alarm_id: int = 0) -> int
+
+    Get the number of milliseconds left before the alarm expires.
+
+
+
+    alarm_cancel(alarm_id: int = 0) -> None
+
+    Cancel a running alarm.
+
+    The mimxrt port also exposes this function as RTC.cancel(alarm_id=0), but this is
+    scheduled to be removed in MicroPython 2.0.
+
+
+
+    irq(*, trigger: int, handler: Callable[[RTC], None] | None = None, wake: int = machine.IDLE) -> None
+
+    Create an irq object triggered by a real time clock alarm.
+
+    trigger must be RTC.ALARM0
+
+    handler is the function to be called when the callback is triggered.
+
+    wake specifies the sleep mode from where this interrupt can wake
+    up the system.
+
+
+
+    memory(data: bytes | None = None, /) -> bytes | None
+
+    RTC.memory(data) will write data to the RTC memory, where data is any
+    object which supports the buffer protocol (including bytes, bytearray,
+    memoryview and array.array). RTC.memory() reads RTC memory and returns
+    a bytes object.
+
+    Data written to RTC user memory is persistent across restarts, including
+    soft_reset and machine.deepsleep().
+
+    The maximum length of RTC user memory is 2048 bytes by default on esp32,
+    and 492 bytes on esp8266.
+
+    Availability: esp32, esp8266 ports.
+    Constants
+
+
+
+    ALARM0: int
+
+    irq trigger source
+    """
     def __init__(self, id: int = 0, datetime: tuple | None = None) -> None: ...
     def alarm(self, id: int, time: int | tuple, *, repeat: bool = False) -> None:
         """
@@ -1596,7 +3402,6 @@ class RTC:
     def alarm_cancel(self, alarm_id: int = 0) -> None:
         """
         Cancel a running alarm.
-
         The mimxrt port also exposes this function as RTC.cancel(alarm_id=0), but this is
         scheduled to be removed in MicroPython 2.0.
         """
@@ -1607,15 +3412,11 @@ class RTC:
     def datetime(self, datetimetuple: tuple | None = None, /) -> Optional[tuple]:
         """
         Get or set the date and time of the RTC.
-
         With no arguments, this method returns an 8-tuple with the current
         date and time.  With 1 argument (being an 8-tuple) it sets the date
         and time.
-
         The 8-tuple has the following format:
-
         (year, month, day, weekday, hours, minutes, seconds, subseconds)
-
         The meaning of the subseconds field is hardware dependent.
         """
         ...
@@ -1625,12 +3426,9 @@ class RTC:
     def init(self, datetime: tuple) -> None:
         """
         Initialise the RTC. Datetime is a tuple of the form:
-
         (year, month, day, hour, minute, second, microsecond, tzinfo)
-
         All eight arguments must be present. The microsecond and tzinfo
         values are currently ignored but might be used in the future.
-
         Availability: CC3200, ESP32, MIMXRT, SAMD. The rtc.init() method on
         the stm32 and renesas-ra ports just (re-)starts the RTC and does not
         accept arguments.
@@ -1639,7 +3437,6 @@ class RTC:
     def irq(self, *, trigger: int, handler: Callable[[RTC], None] | None = None, wake: int = machine.IDLE) -> None:
         """
         Create an irq object triggered by a real time clock alarm.
-
         trigger must be RTC.ALARM0
 
         handler is the function to be called when the callback is triggered.
@@ -1654,26 +3451,122 @@ class RTC:
         object which supports the buffer protocol (including bytes, bytearray,
         memoryview and array.array). RTC.memory() reads RTC memory and returns
         a bytes object.
-
         Data written to RTC user memory is persistent across restarts, including
         soft_reset and machine.deepsleep().
-
         The maximum length of RTC user memory is 2048 bytes by default on esp32,
         and 492 bytes on esp8266.
-
         Availability: esp32, esp8266 ports.
         """
         ...
     def now(self) -> tuple:
         """
         Get get the current datetime tuple.
-
         Availability: WiPy.
         """
         ...
 
 class SPI:
-    """set the first bit to be the least significant bit"""
+    """
+    Construct an SPI object on the given bus, id. Values of id depend
+    on a particular port and its hardware. Values 0, 1, etc. are commonly used
+    to select hardware SPI block #0, #1, etc.
+    With no additional parameters, the SPI object is created but not
+    initialised (it has the settings from the last initialisation of
+    the bus, if any).  If extra arguments are given, the bus is initialised.
+    See init for parameters of initialisation.
+    Methods
+
+
+
+    init(baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple = (SCK, MOSI, MISO)) -> None
+
+    Initialise the SPI bus with the given parameters:
+
+    baudrate is the SCK clock rate.
+
+    polarity can be 0 or 1, and is the level the idle clock line sits at.
+
+    phase can be 0 or 1 to sample data on the first or second clock edge
+    respectively.
+
+    bits is the width in bits of each transfer. Only 8 is guaranteed to be supported by all hardware.
+
+    firstbit can be SPI.MSB or SPI.LSB.
+
+    sck, mosi, miso are pins (machine.Pin) objects to use for bus signals. For most
+    hardware SPI blocks (as selected by id parameter to the constructor), pins are fixed
+    and cannot be changed. In some cases, hardware blocks allow 2-3 alternative pin sets for
+    a hardware SPI block. Arbitrary pin assignments are possible only for a bitbanging SPI driver
+    (id = -1).
+
+    pins - WiPy port doesn’t sck, mosi, miso arguments, and instead allows to
+    specify them as a tuple of pins parameter.
+
+    In the case of hardware SPI the actual clock frequency may be lower than the
+    requested baudrate. This is dependent on the platform hardware. The actual
+    rate may be determined by printing the SPI object.
+
+
+
+    deinit() -> None
+
+    Turn off the SPI bus.
+
+
+
+    read(nbytes: int, write: int = 0x00) -> bytes
+
+    Read a number of bytes specified by nbytes while continuously writing
+    the single byte given by write.
+    Returns a bytes object with the data that was read.
+
+
+
+    readinto(buf: bytearray, write: int = 0x00) -> None
+
+    Read into the buffer specified by buf while continuously writing the
+    single byte given by write.
+    Returns None.
+
+
+
+    write(buf: bytes) -> None
+
+    Write the bytes contained in buf.
+    Returns None.
+
+
+
+    write_readinto(write_buf: bytes, read_buf: bytearray) -> None
+
+    Write the bytes from write_buf while reading into read_buf.  The
+    buffers can be the same or different, but both buffers must have the
+    same length.
+    Returns None.
+    Constants
+
+
+
+    CONTROLLER: int
+
+    for initialising the SPI bus to controller; this is only used for the WiPy
+
+
+
+    MSB: int
+
+    SoftSPI.MSB: int
+
+    set the first bit to be the most significant bit
+
+
+
+    LSB: int
+
+    SoftSPI.LSB: int
+
+    set the first bit to be the least significant bit
+    """
     def __init__(self, id: int, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple | None = None) -> None: ...
     def deinit(self) -> None:
         """Turn off the SPI bus."""
@@ -1681,7 +3574,6 @@ class SPI:
     def init(self, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple = (SCK, MOSI, MISO)) -> None:
         """
         Initialise the SPI bus with the given parameters:
-
         baudrate is the SCK clock rate.
 
         polarity can be 0 or 1, and is the level the idle clock line sits at.
@@ -1701,7 +3593,6 @@ class SPI:
 
         pins - WiPy port doesn’t sck, mosi, miso arguments, and instead allows to
         specify them as a tuple of pins parameter.
-
         In the case of hardware SPI the actual clock frequency may be lower than the
         requested baudrate. This is dependent on the platform hardware. The actual
         rate may be determined by printing the SPI object.
@@ -1737,7 +3628,54 @@ class SPI:
         ...
 
 class Signal:
-    """Deactivate signal."""
+    """
+    Create a Signal object. There’re two ways to create it:
+    By wrapping existing Pin object - universal method which works for
+    any board.
+
+    By passing required Pin parameters directly to Signal constructor,
+    skipping the need to create intermediate Pin object. Available on
+    many, but not all boards.
+    The arguments are:
+    pin_obj is existing Pin object.
+
+    pin_arguments are the same arguments as can be passed to Pin constructor.
+
+    invert - if True, the signal will be inverted (active low).
+    Methods
+
+
+
+    value(x: Any | None = None, /) -> int | None
+
+    This method allows to set and get the value of the signal, depending on whether
+    the argument x is supplied or not.
+
+    If the argument is omitted then this method gets the signal level, 1 meaning
+    signal is asserted (active) and 0 - signal inactive.
+
+    If the argument is supplied then this method sets the signal level. The
+    argument x can be anything that converts to a boolean. If it converts
+    to True, the signal is active, otherwise it is inactive.
+
+    Correspondence between signal being active and actual logic level on the
+    underlying pin depends on whether signal is inverted (active-low) or not.
+    For non-inverted signal, active status corresponds to logical 1, inactive -
+    to logical 0. For inverted/active-low signal, active status corresponds
+    to logical 0, while inactive - to logical 1.
+
+
+
+    on() -> None
+
+    Activate signal.
+
+
+
+    off() -> None
+
+    Deactivate signal.
+    """
     def __init__(self, pin_obj: Pin, invert: bool = False) -> None: ...
     def off(self) -> None:
         """Deactivate signal."""
@@ -1749,14 +3687,11 @@ class Signal:
         """
         This method allows to set and get the value of the signal, depending on whether
         the argument x is supplied or not.
-
         If the argument is omitted then this method gets the signal level, 1 meaning
         signal is asserted (active) and 0 - signal inactive.
-
         If the argument is supplied then this method sets the signal level. The
         argument x can be anything that converts to a boolean. If it converts
         to True, the signal is active, otherwise it is inactive.
-
         Correspondence between signal being active and actual logic level on the
         underlying pin depends on whether signal is inverted (active-low) or not.
         For non-inverted signal, active status corresponds to logical 1, inactive -
@@ -1768,7 +3703,6 @@ class Signal:
 class SoftI2C:
     """
     Construct a new software I2C object.  The parameters are:
-
     scl should be a pin object specifying the pin to use for SCL.
 
     sda should be a pin object specifying the pin to use for SDA.
@@ -1791,7 +3725,86 @@ class SoftSPI:
     def __init__(self, baudrate: int = 500000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None: ...
 
 class Timer:
-    """Timer operating mode."""
+    """
+    Construct a new Timer object with the given id.
+    On ports which support virtual timers the id parameter is optional - the
+    default value is -1 which constructs a virtual timer.
+    On ports which support hardware timers, setting the id parameter to a
+    non-negative integer determines which timer to use.
+    id shall not be passed as a keyword argument.
+    Any additional parameters are handled the same as Timer.init().
+    Methods
+
+
+
+    init(*, mode: int = Timer.PERIODIC, freq: int = -1, period: int = -1, callback: Callable[[Timer], None] | None = None, hard: bool = True) -> None
+
+    Initialise the timer. Example:
+
+    def mycallback(t):
+    pass
+
+    # periodic at 1kHz
+    tim.init(mode=Timer.PERIODIC, freq=1000, callback=mycallback)
+
+    # periodic with 100ms period
+    tim.init(period=100, callback=mycallback)
+
+    # one shot firing after 1000ms
+    tim.init(mode=Timer.ONE_SHOT, period=1000, callback=mycallback)
+
+    Keyword arguments:
+
+    mode can be one of:
+
+    Timer.ONE_SHOT - The timer runs once until the configured
+    period of the channel expires.
+
+    Timer.PERIODIC - The timer runs periodically at the configured
+    frequency of the channel.
+
+    freq - The timer frequency, in units of Hz.  The upper bound of
+    the frequency is dependent on the port.  When both the freq and
+    period arguments are given, freq has a higher priority and
+    period is ignored.
+
+    period - The timer period, in milliseconds.
+
+    callback - The callable to call upon expiration of the timer period.
+    The callback must take one argument, which is passed the Timer object.
+
+    The callback argument shall be specified. Otherwise an exception
+    will occur upon timer expiration:
+    TypeError: 'NoneType' object isn't callable
+
+    hard can be one of:
+
+    True - The callback will be executed in hard interrupt context,
+    which minimises delay and jitter but is subject to the limitations
+    described in isr_rules. Not all ports support hard interrupts,
+    see the port documentation for more information.
+
+    False - The callback will be scheduled as a soft interrupt,
+    allowing it to allocate but possibly also introducing
+    garbage-collection delays and jitter.
+
+    The default value of this parameter is port-specific for historical reasons.
+
+
+
+    deinit() -> None
+
+    Deinitialises the timer. Stops the timer, and disables the timer peripheral.
+    Constants
+
+
+
+    ONE_SHOT: int
+
+    PERIODIC: int
+
+    Timer operating mode.
+    """
     def __init__(self, id: int, /, *, mode: int = PERIODIC, freq: int = -1, period: int = -1, callback: Callable[[Timer], None] | None = None, hard: bool = True) -> None: ...
     def deinit(self) -> None:
         """Deinitialises the timer. Stops the timer, and disables the timer peripheral."""
@@ -1799,7 +3812,6 @@ class Timer:
     def init(self, *, mode: int = Timer.PERIODIC, freq: int = -1, period: int = -1, callback: Callable[[Timer], None] | None = None, hard: bool = True) -> None:
         """
         Initialise the timer. Example:
-
         def mycallback(t):
         pass
 
@@ -1811,9 +3823,7 @@ class Timer:
 
         # one shot firing after 1000ms
         tim.init(mode=Timer.ONE_SHOT, period=1000, callback=mycallback)
-
         Keyword arguments:
-
         mode can be one of:
 
         Timer.ONE_SHOT - The timer runs once until the configured
@@ -1853,6 +3863,351 @@ class Timer:
 
 class UART:
     """
+    Construct a UART object of the given id.
+    Methods
+
+
+
+    init(baudrate: int = 9600, bits: int = 8, parity: int | None = None, stop: int = 1, *, tx: Pin | None = None, rx: Pin | None = None, rts: Pin | None = None, cts: Pin | None = None, txbuf: int | None = None, rxbuf: int | None = None, timeout: int | None = None, timeout_char: int | None = None, invert: int = 0, flow: int = 0) -> None
+
+    Initialise the UART bus with the given parameters:
+
+    baudrate is the clock rate.
+
+    bits is the number of bits per character, 7, 8 or 9.
+
+    parity is the parity, None, 0 (even) or 1 (odd).
+
+    stop is the number of stop bits, 1 or 2.
+
+    Additional keyword-only parameters that may be supported by a port are:
+
+    tx specifies the TX pin to use.
+
+    rx specifies the RX pin to use.
+
+    rts specifies the RTS (output) pin to use for hardware receive flow control.
+
+    cts specifies the CTS (input) pin to use for hardware transmit flow control.
+
+    txbuf specifies the length in characters of the TX buffer.
+
+    rxbuf specifies the length in characters of the RX buffer.
+
+    timeout specifies the time to wait for the first character (in ms).
+
+    timeout_char specifies the time to wait between characters (in ms).
+
+    invert specifies which lines to invert.
+
+    0 will not invert lines (idle state of both lines is logic high).
+
+    UART.INV_TX will invert TX line (idle state of TX line now logic low).
+
+    UART.INV_RX will invert RX line (idle state of RX line now logic low).
+
+    UART.INV_TX | UART.INV_RX will invert both lines (idle state at logic low).
+
+    flow specifies which hardware flow control signals to use. The value
+    is a bitmask.
+
+    0 will ignore hardware flow control signals.
+
+    UART.RTS will enable receive flow control by using the RTS output pin to
+    signal if the receive FIFO has sufficient space to accept more data.
+
+    UART.CTS will enable transmit flow control by pausing transmission when the
+    CTS input pin signals that the receiver is running low on buffer space.
+
+    UART.RTS | UART.CTS will enable both, for full hardware flow control.
+
+    It is possible to call init() multiple times on the same object in
+    order to reconfigure  UART on the fly. That allows using single UART
+    peripheral to serve different devices attached to different GPIO pins.
+    Only one device can be served at a time in that case.
+    Also do not call deinit() as it will prevent calling init()
+    again.
+
+
+
+    deinit() -> None
+
+    Turn off the UART bus.
+
+    You will not be able to call init() on the object after deinit().
+    A new instance needs to be created in that case.
+
+
+
+    any() -> int
+
+    Returns an integer counting the number of characters that can be read without
+    blocking.  It will return 0 if there are no characters available and a positive
+    number if there are characters.  The method may return 1 even if there is more
+    than one character available for reading.
+
+    For more sophisticated querying of available characters use select.poll:
+
+    poll = select.poll()
+    poll.register(uart, select.POLLIN)
+    poll.poll(timeout)
+
+
+
+    read(nbytes: int | None = None, /) -> bytes | None
+
+    Read characters.  If nbytes is specified then read at most that many bytes,
+    otherwise read as much data as possible. It may return sooner if a timeout
+    is reached. The timeout is configurable in the constructor.
+
+    Return value: a bytes object containing the bytes read in.  Returns None
+    on timeout.
+
+
+
+    readinto(buf: bytearray, nbytes: int | None = None, /) -> int | None
+
+    Read bytes into the buf.  If nbytes is specified then read at most
+    that many bytes.  Otherwise, read at most len(buf) bytes. It may return
+    sooner if a timeout is reached. The timeout is configurable in the constructor.
+
+    Return value: number of bytes read and stored into buf or None on
+    timeout.
+
+
+
+    readline() -> bytes | None
+
+    Read a line, ending in a newline character. It may return sooner if a timeout
+    is reached. The timeout is configurable in the constructor.
+
+    Return value: the line read or None on timeout.
+
+
+
+    write(buf: bytes) -> int | None
+
+    Write the buffer of bytes to the bus.
+
+    Return value: number of bytes written or None on timeout.
+
+
+
+    sendbreak() -> None
+
+    Send a break condition on the bus. This drives the bus low for a duration
+    longer than required for a normal transmission of a character.
+
+
+
+    flush() -> None
+
+    Waits until all data has been sent. In case of a timeout, an exception is raised. The timeout
+    duration depends on the tx buffer size and the baud rate. Unless flow control is enabled, a timeout
+    should not occur.
+
+    For the esp8266 and nrf ports the call returns while the last byte is sent.
+    If required, a one character wait time has to be added in the calling script.
+
+    Availability: rp2, esp32, esp8266, mimxrt, cc3200, stm32, nrf ports, renesas-ra
+
+
+
+    txdone() -> bool
+
+    Tells whether all data has been sent or no data transfer is happening. In this case,
+    it returns True. If a data transmission is ongoing it returns False.
+
+    For the esp8266 and nrf ports the call may return True even if the last byte
+    of a transfer is still being sent. If required, a one character wait time has to be
+    added in the calling script.
+
+    Availability: rp2, esp32, esp8266, mimxrt, cc3200, stm32, nrf ports, renesas-ra, alif
+
+
+
+    irq(handler: Callable[[UART], None] | None = None, trigger: int = 0, hard: bool = False) -> None
+
+    Configure an interrupt handler to be called when a UART event occurs.
+
+    The arguments are:
+
+    handler is an optional function to be called when the interrupt event
+    triggers.  The handler must take exactly one argument which is the
+    UART instance.
+
+    trigger configures the event(s) which can generate an interrupt.
+    Possible values are a mask of one or more of the following:
+
+    UART.IRQ_RXIDLE interrupt after receiving at least one character
+    and then the RX line goes idle.
+
+    UART.IRQ_RX interrupt after each received character.
+
+    UART.IRQ_TXIDLE interrupt after or while the last character(s) of
+    a message are or have been sent.
+
+    UART.IRQ_BREAK interrupt when a break state is detected at RX
+
+    hard if true a hardware interrupt is used.  This reduces the delay
+    between the pin change and the handler being called. Hard interrupt
+    handlers may not allocate memory; see isr_rules.
+
+    Returns an irq object.
+
+    Due to limitations of the hardware not all trigger events are available on all ports.
+
+    Availability of triggers
+
+
+
+
+
+
+
+
+
+
+
+    Port / Trigger
+
+    IRQ_RXIDLE
+
+    IRQ_RX
+
+    IRQ_TXIDLE
+
+    IRQ_BREAK
+
+    CC3200
+
+
+
+    yes
+
+
+
+
+
+    ESP32
+
+    yes
+
+    yes
+
+
+
+    yes
+
+    MIMXRT
+
+    yes
+
+
+
+    yes
+
+
+
+    NRF
+
+
+
+    yes
+
+    yes
+
+
+
+    RENESAS-RA
+
+    yes
+
+    yes
+
+
+
+
+
+    RP2
+
+    yes
+
+
+
+    yes
+
+    yes
+
+    SAMD
+
+    yes
+
+    yes
+
+    yes
+
+
+
+    STM32
+
+    yes
+
+    yes
+
+
+
+
+
+    alif
+
+    yes
+
+    yes
+
+    yes
+
+
+
+    The ESP32 port does not support the option hard=True. It uses Timer(0)
+    for UART.IRQ_RXIDLE, so this timer cannot be used for other means.
+
+    The rp2 port’s UART.IRQ_TXIDLE is only triggered when the message
+    is longer than 5 characters and the trigger happens when still 5 characters
+    are to be sent.
+
+    The rp2 port’s UART.IRQ_BREAK needs receiving valid characters for triggering
+    again.
+
+    The SAMD port’s UART.IRQ_TXIDLE is triggered while the last character is sent.
+
+    On STM32F4xx MCU’s, using the trigger UART.IRQ_RXIDLE the handler will be called once
+    after the first character and then after the end of the message, when the line is
+    idle.
+
+    Availability: cc3200, esp32, mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif.
+    Constants
+
+
+
+    RTS: int
+
+    CTS: int
+
+    Flow control options.
+
+    Availability: esp32, mimxrt, renesas-ra, rp2, stm32, alif.
+
+
+
+    IRQ_RXIDLE: int
+
+    IRQ_RX: int
+
+    IRQ_TXIDLE: int
+
+    IRQ_BREAK: int
+
     IRQ trigger sources.
 
     Availability: renesas-ra, stm32, esp32, rp2040, mimxrt, samd, cc3200, alif.
@@ -1864,9 +4219,7 @@ class UART:
         blocking.  It will return 0 if there are no characters available and a positive
         number if there are characters.  The method may return 1 even if there is more
         than one character available for reading.
-
         For more sophisticated querying of available characters use select.poll:
-
         poll = select.poll()
         poll.register(uart, select.POLLIN)
         poll.poll(timeout)
@@ -1875,7 +4228,6 @@ class UART:
     def deinit(self) -> None:
         """
         Turn off the UART bus.
-
         You will not be able to call init() on the object after deinit().
         A new instance needs to be created in that case.
         """
@@ -1885,17 +4237,14 @@ class UART:
         Waits until all data has been sent. In case of a timeout, an exception is raised. The timeout
         duration depends on the tx buffer size and the baud rate. Unless flow control is enabled, a timeout
         should not occur.
-
         For the esp8266 and nrf ports the call returns while the last byte is sent.
         If required, a one character wait time has to be added in the calling script.
-
         Availability: rp2, esp32, esp8266, mimxrt, cc3200, stm32, nrf ports, renesas-ra
         """
         ...
     def init(self, baudrate: int = 9600, bits: int = 8, parity: int | None = None, stop: int = 1, *, tx: Pin | None = None, rx: Pin | None = None, rts: Pin | None = None, cts: Pin | None = None, txbuf: int | None = None, rxbuf: int | None = None, timeout: int | None = None, timeout_char: int | None = None, invert: int = 0, flow: int = 0) -> None:
         """
         Initialise the UART bus with the given parameters:
-
         baudrate is the clock rate.
 
         bits is the number of bits per character, 7, 8 or 9.
@@ -1903,9 +4252,7 @@ class UART:
         parity is the parity, None, 0 (even) or 1 (odd).
 
         stop is the number of stop bits, 1 or 2.
-
         Additional keyword-only parameters that may be supported by a port are:
-
         tx specifies the TX pin to use.
 
         rx specifies the RX pin to use.
@@ -1944,7 +4291,6 @@ class UART:
         CTS input pin signals that the receiver is running low on buffer space.
 
         UART.RTS | UART.CTS will enable both, for full hardware flow control.
-
         It is possible to call init() multiple times on the same object in
         order to reconfigure  UART on the fly. That allows using single UART
         peripheral to serve different devices attached to different GPIO pins.
@@ -1956,9 +4302,7 @@ class UART:
     def irq(self, handler: Callable[[UART], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Configure an interrupt handler to be called when a UART event occurs.
-
         The arguments are:
-
         handler is an optional function to be called when the interrupt event
         triggers.  The handler must take exactly one argument which is the
         UART instance.
@@ -1979,11 +4323,8 @@ class UART:
         hard if true a hardware interrupt is used.  This reduces the delay
         between the pin change and the handler being called. Hard interrupt
         handlers may not allocate memory; see isr_rules.
-
         Returns an irq object.
-
         Due to limitations of the hardware not all trigger events are available on all ports.
-
         Availability of triggers
 
 
@@ -2093,9 +4434,6 @@ class UART:
         yes
 
         yes
-
-
-
         The ESP32 port does not support the option hard=True. It uses Timer(0)
         for UART.IRQ_RXIDLE, so this timer cannot be used for other means.
 
@@ -2111,7 +4449,6 @@ class UART:
         On STM32F4xx MCU’s, using the trigger UART.IRQ_RXIDLE the handler will be called once
         after the first character and then after the end of the message, when the line is
         idle.
-
         Availability: cc3200, esp32, mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif.
         """
         ...
@@ -2120,7 +4457,6 @@ class UART:
         Read characters.  If nbytes is specified then read at most that many bytes,
         otherwise read as much data as possible. It may return sooner if a timeout
         is reached. The timeout is configurable in the constructor.
-
         Return value: a bytes object containing the bytes read in.  Returns None
         on timeout.
         """
@@ -2130,7 +4466,6 @@ class UART:
         Read bytes into the buf.  If nbytes is specified then read at most
         that many bytes.  Otherwise, read at most len(buf) bytes. It may return
         sooner if a timeout is reached. The timeout is configurable in the constructor.
-
         Return value: number of bytes read and stored into buf or None on
         timeout.
         """
@@ -2139,7 +4474,6 @@ class UART:
         """
         Read a line, ending in a newline character. It may return sooner if a timeout
         is reached. The timeout is configurable in the constructor.
-
         Return value: the line read or None on timeout.
         """
         ...
@@ -2153,24 +4487,31 @@ class UART:
         """
         Tells whether all data has been sent or no data transfer is happening. In this case,
         it returns True. If a data transmission is ongoing it returns False.
-
         For the esp8266 and nrf ports the call may return True even if the last byte
         of a transfer is still being sent. If required, a one character wait time has to be
         added in the calling script.
-
         Availability: rp2, esp32, esp8266, mimxrt, cc3200, stm32, nrf ports, renesas-ra, alif
         """
         ...
     def write(self, buf: bytes) -> Optional[int]:
         """
         Write the buffer of bytes to the bus.
-
         Return value: number of bytes written or None on timeout.
         """
         ...
 
 class WDT:
     """
+    Create a WDT object and start it. The timeout must be given in milliseconds.
+    Once it is running the timeout cannot be changed and the WDT cannot be stopped either.
+    Notes: On the esp8266 a timeout cannot be specified, it is determined by the underlying system.
+    On rp2040 devices, the maximum timeout is 8388 ms.
+    Methods
+
+
+
+    feed() -> None
+
     Feed the WDT to prevent it from resetting the system. The application
     should place this call in a sensible place ensuring that the WDT is
     only fed after verifying that everything is functioning correctly.

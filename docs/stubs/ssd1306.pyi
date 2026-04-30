@@ -42,28 +42,35 @@ SET_VCOM_DESEL: int
 
 class SSD1306:
     """
-    Draw a string using the built-in 8x8 font.
+    Base class for SSD1306 OLED displays. Subclasses must initialize
+    self.framebuf and provide write_cmd, write_data,
+    write_framebuf and poweron methods.
+    Arguments:
+    width – Display width in pixels.
 
-    string – Text to draw.
+    height – Display height in pixels (must be a multiple of 8).
 
-    x – Starting column coordinate.
+    external_vcc – True if an external VCC source is used,
+    False to enable the internal charge pump.
+    Instance attributes:
+    width – Display width in pixels.
 
-    y – Starting row coordinate.
+    height – Display height in pixels.
 
-    col – Foreground color (default 1).
+    external_vcc – External VCC flag.
+
+    pages – Number of 8-pixel-tall pages (height // 8).
     """
     def __init__(self, width: int, height: int, external_vcc: bool) -> None: ...
     def contrast(self, contrast: int) -> None:
         """
         Set the display contrast.
-
         contrast – Contrast value in the range 0–255.
         """
         ...
     def fill(self, col: int) -> None:
         """
         Fill the entire framebuffer with a single color.
-
         col – Color value (0 for off, 1 for on).
         """
         ...
@@ -77,7 +84,6 @@ class SSD1306:
     def invert(self, invert: int) -> None:
         """
         Invert the display colors.
-
         invert – 0 for normal output, 1 for inverted
         output. Only the least significant bit is used.
         """
@@ -85,7 +91,6 @@ class SSD1306:
     def pixel(self, x: int, y: int, col: int) -> None:
         """
         Set the color of a single pixel.
-
         x – Column coordinate.
 
         y – Row coordinate.
@@ -101,7 +106,6 @@ class SSD1306:
         Shift the framebuffer contents by the given offsets. Pixels
         shifted out of bounds are lost; vacated pixels are left
         untouched.
-
         dx – Horizontal shift in pixels.
 
         dy – Vertical shift in pixels.
@@ -113,7 +117,6 @@ class SSD1306:
     def text(self, string: str, x: int, y: int, col: int = 1) -> None:
         """
         Draw a string using the built-in 8x8 font.
-
         string – Text to draw.
 
         x – Starting column coordinate.
@@ -125,7 +128,20 @@ class SSD1306:
         ...
 
 class SSD1306_I2C:
-    """Send a buffer of pixel data to the display over I2C."""
+    """
+    I2C-connected SSD1306 driver. Inherits from SSD1306.
+    Arguments:
+    width – Display width in pixels.
+
+    height – Display height in pixels.
+
+    i2c – An initialized machine.I2C (or compatible) object.
+
+    addr – 7-bit I2C device address (default 0x3C).
+
+    external_vcc – True for external VCC, False to use
+    the internal charge pump.
+    """
     def __init__(self, width: int, height: int, i2c: machine.I2C, addr: int = 0x3C, external_vcc: bool = False) -> None: ...
     def write_cmd(self, cmd: int) -> None:
         """Send a single command byte to the display over I2C."""
@@ -135,7 +151,25 @@ class SSD1306_I2C:
         ...
 
 class SSD1306_SPI:
-    """Toggle the reset line to power the display on."""
+    """
+    SPI-connected SSD1306 driver. Inherits from SSD1306.
+    Uses a fixed SPI clock rate of 10 MHz.
+    Arguments:
+    width – Display width in pixels.
+
+    height – Display height in pixels.
+
+    spi – A pyb.SPI (or compatible) object.
+
+    dc – Data/command select pin.
+
+    res – Reset pin.
+
+    cs – Chip-select pin.
+
+    external_vcc – True for external VCC, False to use
+    the internal charge pump.
+    """
     def __init__(self, width: int, height: int, spi: machine.SPI, dc: machine.Pin, res: machine.Pin, cs: machine.Pin, external_vcc: bool = False) -> None: ...
     def poweron(self) -> None:
         """Toggle the reset line to power the display on."""

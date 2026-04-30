@@ -4,9 +4,23 @@ import machine
 
 class LPS22H:
     """
-    Return an estimated altitude in metres derived from the current
-    pressure and temperature readings using the international barometric
-    formula referenced to a sea-level pressure of 1013.25 hPa.
+    Construct an LPS22H instance and configure the device with BDU enabled
+    and the low-pass filter active.
+    bus
+
+    A configured machine.I2C bus the sensor is attached to.
+
+    address
+
+    7-bit I2C address of the device. Defaults to 0x5C; some boards
+    strap the SDO pin high which selects 0x5D.
+
+    oneshot
+
+    If True, the device starts in one-shot mode and each call to
+    pressure() or temperature() triggers a fresh conversion
+    and waits for it to finish. If False, the ODR is set to 1 Hz and
+    readings return the most recent continuous sample.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x5C, oneshot: bool = False) -> None: ...
     def altitude(self) -> float:

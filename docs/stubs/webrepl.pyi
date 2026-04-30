@@ -31,7 +31,6 @@ def accept_conn(listen_sock) -> bool:
     is rejected and False is returned. On a successful upgrade, the
     resulting WebSocket is wrapped with _webrepl._webrepl and attached as
     the duplicated terminal.
-
     This is exposed primarily so callers can supply it as the
     accept_handler argument to start.
     """
@@ -55,13 +54,10 @@ def server_handshake(cl) -> bool:
 def start(port: int = 8266, password: str | None = None, accept_handler=accept_conn) -> None:
     """
     Start the WebREPL listener.
-
     If password is None, the password is loaded from webrepl_cfg.py
     (created by webrepl_setup). When webrepl_cfg cannot be imported a
     warning is printed and the server is not started.
-
     port selects the TCP port to listen on.
-
     accept_handler is the callable invoked when a new TCP client connects.
     The default is accept_conn, which performs the WebSocket handshake on a
     background socket callback. Pass None to run the server in foreground

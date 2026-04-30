@@ -15,9 +15,16 @@ fields.
 
 class VL53L1X:
     """
-    Trigger a register read of RESULT__RANGE_STATUS (0x0089) and
-    return the final crosstalk-corrected range, in millimetres, of the
-    single-zone detector SD0 as an int.
+    Construct a VL53L1X driver instance.
+    bus is a configured machine.I2C bus object used to
+    communicate with the sensor.
+
+    address is the 7-bit I2C address of the device. Defaults to 0x29.
+    The constructor performs a soft reset, verifies the chip model ID, writes
+    the default configuration block to the device, and applies the start-up
+    register fix-up that the ST API performs on the first ranging start. The
+    call blocks for ~200 ms while the sensor settles. Raises RuntimeError
+    if the model ID register does not return the expected value 0xEACC.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x29) -> None: ...
     def read(self) -> int:

@@ -27,16 +27,13 @@ def sub(regex_str: str, replace: str | Callable, string: str, count: int = 0, fl
     """
     Compile regex_str and search for it in string, replacing all matches
     with replace, and returning the new string.
-
     replace can be a string or a function.  If it is a string then escape
     sequences of the form \<number> and \g<number> can be used to
     expand to the corresponding group (or an empty string for unmatched groups).
     If replace is a function then it must take a single argument (the match)
     and should return a replacement string.
-
     If count is specified and non-zero then substitution will stop after
     this many substitutions are made.  The flags argument is ignored.
-
     Note: availability of this function depends on MicroPython port.
     """
     ...
@@ -48,7 +45,6 @@ class match:
         Return the index in the original string of the start or end of the
         substring group that was matched.  index defaults to the entire
         group, otherwise it will select a group.
-
         Note: availability of these methods depends on MicroPython port.
         """
         ...
@@ -61,14 +57,12 @@ class match:
     def groups(self) -> Tuple[str, ...]:
         """
         Return a tuple containing all the substrings of the groups of the match.
-
         Note: availability of this method depends on MicroPython port.
         """
         ...
     def span(self, index: int = 0) -> Tuple[int, int]:
         """
         Returns the 2-tuple (match.start(index), match.end(index)).
-
         Note: availability of this method depends on MicroPython port.
         """
         ...
@@ -77,7 +71,6 @@ class match:
         Return the index in the original string of the start or end of the
         substring group that was matched.  index defaults to the entire
         group, otherwise it will select a group.
-
         Note: availability of these methods depends on MicroPython port.
         """
         ...
@@ -90,13 +83,11 @@ class regex:
         and sub().
         Using methods is (much) more efficient if the same regex is applied to
         multiple strings.
-
         The optional second parameter pos gives an index in the string where the
         search is to start; it defaults to 0. This is not completely equivalent
         to slicing the string; the '^' pattern character matches at the real
         beginning of the string and at positions just after a newline, but not
         necessarily at the index where the search is to start.
-
         The optional parameter endpos limits how far the string will be searched;
         it will be as if the string is endpos characters long, so only the
         characters from pos to endpos - 1 will be searched for a match.
@@ -108,13 +99,11 @@ class regex:
         and sub().
         Using methods is (much) more efficient if the same regex is applied to
         multiple strings.
-
         The optional second parameter pos gives an index in the string where the
         search is to start; it defaults to 0. This is not completely equivalent
         to slicing the string; the '^' pattern character matches at the real
         beginning of the string and at positions just after a newline, but not
         necessarily at the index where the search is to start.
-
         The optional parameter endpos limits how far the string will be searched;
         it will be as if the string is endpos characters long, so only the
         characters from pos to endpos - 1 will be searched for a match.
@@ -133,13 +122,11 @@ class regex:
         and sub().
         Using methods is (much) more efficient if the same regex is applied to
         multiple strings.
-
         The optional second parameter pos gives an index in the string where the
         search is to start; it defaults to 0. This is not completely equivalent
         to slicing the string; the '^' pattern character matches at the real
         beginning of the string and at positions just after a newline, but not
         necessarily at the index where the search is to start.
-
         The optional parameter endpos limits how far the string will be searched;
         it will be as if the string is endpos characters long, so only the
         characters from pos to endpos - 1 will be searched for a match.

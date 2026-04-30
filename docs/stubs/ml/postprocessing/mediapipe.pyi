@@ -8,16 +8,11 @@ class BlazeFace:
     Create a BlazeFace post-processor. Uses an anchor grid of
     [(16, 2), (8, 6)] with score outputs [1, 2] and box outputs
     [0, 3].
-
     threshold Score threshold for detections.
-
     anchors Optional pre-built anchor array; generated automatically if
     None.
-
     nms_threshold IoU threshold for non-maximum suppression.
-
     nms_sigma Sigma for soft-NMS score decay.
-
     Returns [((x, y, w, h), score, keypoints)] from __call__, where
     keypoints is a list of (x, y) points.
     """
@@ -27,16 +22,11 @@ class BlazePalm:
     """
     Create a BlazePalm post-processor. Uses an anchor grid of
     [(24, 2), (12, 6)] with score outputs [0] and box outputs [1].
-
     threshold Score threshold for detections.
-
     anchors Optional pre-built anchor array; generated automatically if
     None.
-
     nms_threshold IoU threshold for non-maximum suppression.
-
     nms_sigma Sigma for soft-NMS score decay.
-
     Returns [((x, y, w, h), score, keypoints)] from __call__, where
     keypoints is a list of (x, y) points.
     """
@@ -45,13 +35,9 @@ class BlazePalm:
 class FaceLandmarks:
     """
     Create a FaceLandmarks post-processor.
-
     threshold Score threshold (after sigmoid) for accepting a detection.
-
     nms_threshold IoU threshold for non-maximum suppression.
-
     nms_sigma Sigma for soft-NMS score decay.
-
     Returns ((x, y, w, h), score, keypoints) from __call__, where
     keypoints is a list of (x, y, z) points.
     """
@@ -60,13 +46,9 @@ class FaceLandmarks:
 class HandLandmarks:
     """
     Create a HandLandmarks post-processor.
-
     threshold Score threshold for accepting a detection.
-
     nms_threshold IoU threshold for non-maximum suppression.
-
     nms_sigma Sigma for soft-NMS score decay.
-
     Returns [[((x, y, w, h), score, keypoints)]] from __call__, with
     one inner list per handedness class (left=0, right=1). keypoints is a
     list of (x, y, z) points. Empty class lists are preserved so each
@@ -77,14 +59,10 @@ class HandLandmarks:
 class MoveNet:
     """
     Create a MoveNet post-processor.
-
     threshold Per-keypoint confidence threshold; keypoints below this
     value are excluded from the bounding box and mean score.
-
     nms_threshold IoU threshold for non-maximum suppression.
-
     nms_sigma Sigma for soft-NMS score decay.
-
     Returns ((x, y, w, h), score, keypoints) from __call__, where
     keypoints is a list of (x, y, score) points in input pixel
     coordinates.
@@ -93,8 +71,17 @@ class MoveNet:
 
 class mediapipe_detection_postprocess:
     """
-    Decode and add bounding boxes from a single (score, cords) output
-    pair into the supplied NMS accumulator.
+    Create a generic Mediapipe detection post-processor.
+    threshold Score threshold applied to raw logits before sigmoid.
+    anchors Optional pre-built anchor array of shape (N, 2) containing
+    (cx, cy) centers normalized to [0, 1]. If None, anchors are
+    generated from anchor_grid.
+    anchor_grid List of (grid_size, scales) tuples used to generate
+    anchors when anchors is None.
+    scores List of model output indices that contain score tensors.
+    cords List of model output indices that contain box/keypoint tensors.
+    nms_threshold IoU threshold for non-maximum suppression.
+    nms_sigma Sigma for soft-NMS score decay.
     """
     def __init__(self, threshold: float = 0.6, anchors: ndarray | None = None, anchor_grid: list[tuple[int, int]] | None = None, scores: list[int] = [], cords: list[int] = [], nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:

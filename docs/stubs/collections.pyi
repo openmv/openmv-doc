@@ -10,7 +10,6 @@ def namedtuple(name: str, fields: str | Sequence[str]) -> type:
     specifying field names. For compatibility with CPython it can also be a
     a string with space-separated field named (but this is less efficient).
     Example of use:
-
     from collections import namedtuple
 
     MyTuple = namedtuple("MyTuple", ("id", "name"))
@@ -23,25 +22,31 @@ def namedtuple(name: str, fields: str | Sequence[str]) -> type:
 
 class OrderedDict:
     """
-    Remove and return a (key, value) pair from the dictionary.
-    Pairs are returned in LIFO order.
+    dict type subclass which remembers and preserves the order of keys
+    added. Accepts the same constructor forms as dict (an iterable of
+    (key, value) pairs, another mapping, or keyword arguments). When ordered dict is iterated over, keys/items are returned in
+    the order they were added:
+    from collections import OrderedDict
 
-    Difference to CPython
-
-    OrderedDict.popitem() does not support the last=False argument and
-    will always remove and return the last item if present.
-
-    A workaround for this is to use pop(<first_key>) to remove the first item:
-
-    first_key = next(iter(d))
-    d.pop(first_key)
+    # To make benefit of ordered keys, OrderedDict should be initialized
+    # from sequence of (key, value) pairs.
+    d = OrderedDict([("z", 1), ("a", 2)])
+    # More items can be added as usual
+    d["w"] = 5
+    d["b"] = 3
+    for k, v in d.items():
+    print(k, v)
+    Output:
+    z 1
+    a 2
+    w 5
+    b 3
     """
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
     def popitem(self) -> Tuple:
         """
         Remove and return a (key, value) pair from the dictionary.
         Pairs are returned in LIFO order.
-
         Difference to CPython
 
         OrderedDict.popitem() does not support the last=False argument and
@@ -56,10 +61,20 @@ class OrderedDict:
 
 class deque:
     """
-    Extend the deque by appending all the items from iterable to
-    the right of the deque.
-    Raises IndexError if overflow checking is enabled and there is
-    no more room in the deque.
+    Deques (double-ended queues) are a list-like container that support O(1)
+    appends and pops from either side of the deque.  New deques are created
+    using the following arguments:
+    iterable is an iterable used to populate the deque when it is
+    created.  It can be an empty tuple or list to create a deque that
+    is initially empty.
+
+    maxlen must be specified and the deque will be bounded to this
+    maximum length.  Once the deque is full, any new items added will
+    discard items from the opposite end.
+
+    The optional flags can be 1 to check for overflow when adding items.
+    Deque objects support bool, len, iteration and subscript load and store.
+    They also have the following methods:
     """
     def __init__(self, iterable: Iterable, maxlen: int, flags: int = 0) -> None: ...
     def append(self, x: Any) -> None:

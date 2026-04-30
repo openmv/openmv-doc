@@ -261,14 +261,12 @@ YUV422: int
 def __read_reg(address: int) -> int:
     """
     Read camera register at address.
-
     See the camera data sheet for register info.
     """
     ...
 def __write_reg(address: int, value: int) -> None:
     """
     Write value to camera register at address.
-
     See the camera data sheet for register info.
     """
     ...
@@ -288,7 +286,6 @@ def disable_delays(disable: bool | None = None) -> Optional[bool]:
     """
     If disable is True then disable all settling time delays in the
     sensor module.
-
     If called with no arguments returns True if delays are disabled.
     """
     ...
@@ -296,7 +293,6 @@ def disable_full_flush(disable: bool | None = None) -> Optional[bool]:
     """
     If disable is True then automatic framebuffer flushing on frame
     drop is disabled.
-
     If called with no arguments returns True if automatic flushing is
     disabled.
     """
@@ -378,7 +374,6 @@ def ioctl(request: int, *args: Any) -> Any:
     Executes a sensor specific method. request is one of the
     IOCTL_* constants documented below. The remaining arguments and the
     return value depend on request:
-
     sensor.IOCTL_SET_READOUT_WINDOW - Pass a rect tuple (x, y, w, h) or a size tuple (w, h).
 
     sensor.IOCTL_GET_READOUT_WINDOW - Returns the current readout window rect tuple (x, y, w, h).
@@ -456,9 +451,7 @@ def reset() -> None:
 def set_auto_blc(enable: int, regs: List[int] | None = None) -> None:
     """
     Sets the auto black level calibration (BLC) control on the camera.
-
     enable is 1 to enable or 0 to disable.
-
     regs if disabled, you can manually set the BLC register values via the
     values previously read from sensor.get_blc_regs(). The list length must
     match the sensor’s BLC register count.
@@ -467,7 +460,6 @@ def set_auto_blc(enable: int, regs: List[int] | None = None) -> None:
 def set_auto_exposure(enable: int, exposure_us: int = -1) -> None:
     """
     enable turns auto exposure control on (1) or off (0).
-
     If enable is 0 you may set a fixed exposure time in microseconds
     with exposure_us. exposure_us is a keyword-only argument.
     """
@@ -475,12 +467,9 @@ def set_auto_exposure(enable: int, exposure_us: int = -1) -> None:
 def set_auto_gain(enable: int, gain_db: float | None = None, gain_db_ceiling: float | None = None) -> None:
     """
     enable turns auto gain control on (1) or off (0).
-
     If enable is 0 you may set a fixed gain in decibels with gain_db.
-
     If enable is non-zero you may set the maximum gain ceiling in decibels
     with gain_db_ceiling for the automatic gain control algorithm.
-
     gain_db and gain_db_ceiling are keyword-only arguments.
     """
     ...
@@ -493,7 +482,6 @@ def set_auto_rotation(enable: bool) -> None:
 def set_auto_whitebal(enable: int, rgb_gain_db: Tuple[float, float, float] | None = None) -> None:
     """
     enable turns auto white balance on (1) or off (0).
-
     If enable is 0 you may set a fixed gain in decibels for the red,
     green, and blue channels respectively with rgb_gain_db.
     rgb_gain_db is a keyword-only argument.
@@ -530,16 +518,13 @@ def set_frame_callback(cb: Callable[[], None] | None) -> None:
     Registers callback cb to be executed (in interrupt context) whenever
     the camera module generates a new frame and the frame is ready to be read
     via sensor.snapshot().
-
     cb takes no arguments.
-
     Pass a non-callable (e.g. None) to unregister.
     """
     ...
 def set_framebuffers(count: int) -> None:
     """
     Sets the number of frame buffers used to receive image data.
-
     count may be 1 (single buffer), 2 (double buffer), 3
     (triple buffer), or 4 or greater to put the sensor driver into video
     FIFO mode where received frames are stored in a FIFO of count buffers.
@@ -568,14 +553,12 @@ def set_lens_correction(enable: bool, radi: int, coef: int) -> bool:
     enable True to enable, False to disable.
     radi integer radius of pixels to correct.
     coef power of correction.
-
     Returns True on success.
     """
     ...
 def set_pixformat(pixformat: int) -> None:
     """
     Sets the pixel format for the camera module. pixformat is one of:
-
     sensor.BINARY
 
     sensor.GRAYSCALE
@@ -610,7 +593,6 @@ def set_special_effect(sde: int) -> bool:
 def set_transpose(enable: bool) -> None:
     """
     Turns transpose mode on (True) or off (False). Defaults to off.
-
     vflip=False, hmirror=False, transpose=False -> 0 degree rotation
 
     vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
@@ -627,9 +609,7 @@ def set_vsync_callback(cb: Callable[[int], None] | None) -> None:
     """
     Registers callback cb to be executed (in interrupt context) whenever
     the camera module generates a new frame (but before the frame is received).
-
     cb takes one argument: the current state of the vsync pin after changing.
-
     Pass a non-callable (e.g. None) to unregister.
     """
     ...
@@ -637,7 +617,6 @@ def set_windowing(roi: Tuple[int, int] | Tuple[int, int, int, int] | List[int]) 
     """
     Sets the resolution of the camera to a sub-resolution inside of the current
     resolution.
-
     roi is a rect tuple/list (x, y, w, h). You may also pass (w, h)
     and the roi will be centered on the frame. The arguments may also be
     passed unpacked as positional integers.
@@ -653,10 +632,8 @@ def skip_frames(n: int | None = None, time: int = 300) -> None:
     """
     Skips n frames or time milliseconds (whichever is specified) to let
     the camera image stabilize after changing camera settings.
-
     If neither n nor time is specified this method skips frames for
     300 milliseconds.
-
     If both are specified this method skips n frames but will timeout
     after time milliseconds.
     """
@@ -667,7 +644,6 @@ def sleep(enable: bool) -> None:
 def snapshot() -> image.Image:
     """
     Takes a picture using the camera and returns an image.Image object.
-
     If sensor.set_auto_rotation() is enabled this method returns a new
     already rotated image.Image object.
     """

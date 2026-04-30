@@ -3,18 +3,15 @@ from typing import Any, Optional, Union, Tuple, List
 
 class Motor:
     """
-    Set the motor speed and direction.
-
-    pwm: Signed duty cycle in the range -100 to 100. Positive
-    values drive the motor forward, negative values drive it in reverse.
-    The absolute value is applied as the PWM duty cycle percentage to the
-    power pin.
+    Construct a DC motor controller bound to one of the two TB6612 channels.
+    channel: Motor channel number. 1 uses direction pins P3/P2
+    and PWM pin P7 (timer 4, channel 1). 2 uses direction pins
+    P1/P0 and PWM pin P8 (timer 4, channel 2).
     """
     def __init__(self, channel: int) -> None: ...
     def set_speed(self, pwm: int) -> None:
         """
         Set the motor speed and direction.
-
         pwm: Signed duty cycle in the range -100 to 100. Positive
         values drive the motor forward, negative values drive it in reverse.
         The absolute value is applied as the PWM duty cycle percentage to the
@@ -24,13 +21,18 @@ class Motor:
 
 class Stepper:
     """
-    Advance the stepper by num phase transitions, applying the next
-    phase from phase_list() and waiting the configured inter-step
-    delay (via pyb.udelay) between transitions.
+    Construct a 4-wire stepper motor controller. Initializes direction pins
+    P3, P2, P1, P0 and the two PWM power channels on P7 and
+    P8, then applies the requested speed and power.
+    stepnumber: Number of full steps per revolution of the connected
+    stepper motor. Used together with rpms to compute the inter-step
+    delay.
 
-    num: Number of phase steps to advance. Each call to step
-    advances exactly this many phases; direction is fixed (the underlying
-    phase generator only iterates forward).
+    rpms: Target rotation speed in revolutions per minute. Forwarded to
+    set_speed().
+
+    power: PWM duty cycle percentage (0-100) applied to both power
+    channels. Forwarded to set_power().
     """
     def __init__(self, stepnumber: int = 200, rpms: int = 2, power: int = 50) -> None: ...
     def phase_list(self) -> Generator[tuple[int, int, int, int], None, None]:
@@ -44,14 +46,12 @@ class Stepper:
     def set_power(self, power: int) -> None:
         """
         Set the PWM duty cycle applied to both power channels.
-
         power: Duty cycle percentage in the range 0 to 100.
         """
         ...
     def set_speed(self, rpms: int) -> None:
         """
         Update the stepping speed.
-
         rpms: Target rotation speed in revolutions per minute. The
         per-half-step delay (in microseconds) is recomputed as
         1000000 / (rpms * stepnumber) / 2.
@@ -62,7 +62,6 @@ class Stepper:
         Advance the stepper by num phase transitions, applying the next
         phase from phase_list() and waiting the configured inter-step
         delay (via pyb.udelay) between transitions.
-
         num: Number of phase steps to advance. Each call to step
         advances exactly this many phases; direction is fixed (the underlying
         phase generator only iterates forward).

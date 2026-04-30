@@ -5,7 +5,6 @@ def sosfilt(sos: ndarray, x: ndarray, *, zi: ndarray | None = None) -> ndarray |
     """
     Filter the one-dimensional, uniformly sampled data x using the
     cascaded second-order sections in sos.
-
     Parameters
 
     sos – an array-like of shape (n_sections, 6) giving the

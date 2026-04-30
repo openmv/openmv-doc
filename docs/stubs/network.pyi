@@ -8,21 +8,21 @@ SEC_NONE: int
 SEC_PAP: int
 """The type of connection security."""
 802_1X: int
-"""Setup in firmware update mode."""
+"""Network is secured with WPA/WPA2 Enterprise."""
 MODE_AP: int
-"""Setup in firmware update mode."""
+"""Start in access point mode (i.e. become the network)."""
 MODE_BSP: int
-"""Setup in firmware update mode."""
+"""Init BSP."""
 MODE_FIRMWARE: int
 """Setup in firmware update mode."""
 MODE_P2P: int
-"""Setup in firmware update mode."""
+"""Start in wifi-direct mode."""
 MODE_STA: int
-"""Setup in firmware update mode."""
+"""Start in station mode (i.e. connect to a network)."""
 OPEN: int
-"""Setup in firmware update mode."""
+"""For connecting to an open wifi network."""
 WPA_PSK: int
-"""Setup in firmware update mode."""
+"""For connecting to a WPA/PSK based password protected network."""
 PM_NONE: int
 """
 Allowed values for the WLAN.config(pm=...) network interface parameter:
@@ -64,11 +64,9 @@ def country(code: str | None = None) -> Optional[str]:
     """
     Get or set the two-letter ISO 3166-1 Alpha-2 country code to be used for
     radio compliance.
-
     If the code parameter is provided, the country will be set to this value.
     If the function is called without parameters, it returns the current
     country.
-
     The default code "XX" represents the “worldwide” region.
     """
     ...
@@ -76,28 +74,23 @@ def hostname(name: str | None = None) -> Optional[str]:
     """
     Get or set the hostname that will identify this device on the network. It will
     be used by all interfaces.
-
     This hostname is used for:
 
     Sending to the DHCP server in the client request. (If using DHCP)
 
     Broadcasting via mDNS. (If enabled)
-
     If the name parameter is provided, the hostname will be set to this value.
     If the function is called without parameters, it returns the current
     hostname.
-
     A change in hostname is typically only applied during connection. For DHCP
     this is because the hostname is part of the DHCP client request, and the
     implementation of mDNS in most ports only initialises the hostname once
     during connection. For this reason, you must set the hostname before
     activating/connecting your network interfaces.
-
     The length of the hostname is limited to 32 characters.
     MicroPython ports may choose to set a lower
     limit for memory reasons. If the given name does not fit, a ValueError
     is raised.
-
     The default hostname is typically the name of the board.
     """
     ...
@@ -106,7 +99,6 @@ def ipconfig(param: str) -> Any:
     Get or set global IP-configuration parameters.
     Supported parameters are the following (availability of a particular
     parameter depends on the port and the specific network interface):
-
     dns Get/set DNS server. This method can support both, IPv4 and
     IPv6 addresses.
 
@@ -119,11 +111,9 @@ def ipconfig(param: str) -> Any:
 def phy_mode(mode: int | None = None) -> Optional[int]:
     """
     Get or set the PHY mode.
-
     If the mode parameter is provided, the PHY mode will be set to this value.
     If the function is called without parameters, it returns the current PHY
     mode.
-
     The possible modes are defined as constants:
 
     MODE_11B – IEEE 802.11b,
@@ -131,26 +121,15 @@ def phy_mode(mode: int | None = None) -> Optional[int]:
     MODE_11G – IEEE 802.11g,
 
     MODE_11N – IEEE 802.11n.
-
     Availability: ESP8266.
     """
     ...
 
 class AbstractNIC:
     """
-    Get or set general network interface parameters. These methods allow to work
-    with additional parameters beyond standard IP configuration (as dealt with by
-    ipconfig()). These include network-specific and hardware-specific
-    parameters. For setting parameters, the keyword argument
-    syntax should be used, and multiple parameters can be set at once. For
-    querying, a parameter name should be quoted as a string, and only one
-    parameter can be queried at a time:
-
-    # Set WiFi access point name (formally known as SSID) and WiFi channel
-    ap.config(ssid='My AP', channel=11)
-    # Query params one by one
-    print(ap.config('ssid'))
-    print(ap.config('channel'))
+    Instantiate a network interface object. Parameters are network interface
+    dependent. If there are more than one interface of the same type, the first
+    parameter should be id.
     """
     def __init__(self, id: int | None = None, *args: Any, **kwargs: Any) -> None: ...
     def active(self, is_active: bool | None = None, /) -> bool:
@@ -171,7 +150,6 @@ class AbstractNIC:
         syntax should be used, and multiple parameters can be set at once. For
         querying, a parameter name should be quoted as a string, and only one
         parameter can be queried at a time:
-
         # Set WiFi access point name (formally known as SSID) and WiFi channel
         ap.config(ssid='My AP', channel=11)
         # Query params one by one
@@ -192,7 +170,6 @@ class AbstractNIC:
         specify alternative service identifier types; b) provide additional
         connection parameters. For various medium types, there are different
         sets of predefined/recommended parameters, among them:
-
         WiFi: bssid keyword to connect to a specific BSSID (MAC address)
         """
         ...
@@ -202,12 +179,10 @@ class AbstractNIC:
     def ifconfig(self, config: Tuple[str, str, str, str] | None = None) -> Optional[Tuple[str, str, str, str]]:
         """
         This function is deprecated, use ipconfig() instead.
-
         Get/set IP-level network interface parameters: IP address, subnet mask,
         gateway and DNS server. When called with no arguments, this method returns
         a 4-tuple with the above information. To set the above values, pass a
         4-tuple with the required information.  For example:
-
         nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
         """
         ...
@@ -216,7 +191,6 @@ class AbstractNIC:
         Get or set interface-specific IP-configuration interface parameters.
         Supported parameters are the following (availability of a particular
         parameter depends on the port and the specific network interface):
-
         dhcp4 (True/False) obtain an IPv4 address, gateway and dns
         server via DHCP. This method does not block and wait for an address
         to be obtained. To check if an address was obtained, use the read-only
@@ -266,10 +240,8 @@ class AbstractNIC:
         list of tuples with discovered service parameters. For various
         network media, there are different variants of predefined/
         recommended tuple formats, among them:
-
         WiFi: (ssid, bssid, channel, RSSI, security, hidden). There
         may be further fields, specific to a particular device.
-
         The function may accept additional keyword arguments to filter scan
         results (e.g. scan for a particular service, on a particular channel,
         for services of a particular set, etc.), and to affect scan
@@ -283,10 +255,8 @@ class AbstractNIC:
         argument the return value describes the network link status.  Otherwise
         param should be a string naming the particular status parameter to
         retrieve.
-
         The return types and values are dependent on the network
         medium/technology.  Some of the parameters that may be supported are:
-
         WiFi STA: use 'rssi' to retrieve the RSSI of the AP signal
 
         WiFi AP: use 'stations' to retrieve a list of all the STAs
@@ -297,23 +267,22 @@ class AbstractNIC:
 
 class LAN:
     """
-    Sets or gets parameters of the LAN interface. The only parameter that can be
-    retrieved is the MAC address, using:
+    Create a LAN driver object, initialise the LAN module using the given
+    PHY driver name, and return the LAN object.
+    Arguments are:
+    id is the number of the Ethernet port, either 0 or 1.
 
-    mac = LAN.config("mac")
+    phy_type is the name of the PHY driver. For most board the on-board PHY has to be used and
+    is the default. Suitable values are port specific.
 
-    The parameters that can be set are:
+    phy_addr specifies the address of the PHY interface. As with phy_type, the hardwired value has
+    to be used for most boards and that value is the default.
 
-    trace=n sets trace levels; suitable values are:
-
-    2: trace TX
-
-    4: trace RX
-
-    8: full trace
-
-    low_power=bool sets or clears low power mode, valid values being False
-    or True.
+    ref_clk_mode specifies, whether the data clock is provided by the Ethernet controller or
+    the PHY interface.
+    The default value is the one that matches the board. If set to LAN.OUT or Pin.OUT
+    or True, the clock is driven by the Ethernet controller, if set to LAN.IN
+    or Pin.IN or False, the clock is driven by the PHY interface.
     """
     def __init__(self, id: int, *, phy_type: int = ..., phy_addr: int = ..., ref_clk_mode: int = ...) -> None: ...
     def active(self, state: bool | None = None) -> bool:
@@ -327,11 +296,8 @@ class LAN:
         """
         Sets or gets parameters of the LAN interface. The only parameter that can be
         retrieved is the MAC address, using:
-
         mac = LAN.config("mac")
-
         The parameters that can be set are:
-
         trace=n sets trace levels; suitable values are:
 
         2: trace TX
@@ -347,11 +313,8 @@ class LAN:
     def ifconfig(self, config: Tuple[str, str, str, str] | None = None) -> Optional[Tuple[str, str, str, str]]:
         """
         Get/set IP address, subnet mask, gateway and DNS.
-
         When called with no arguments, this method returns a 4-tuple with the above information.
-
         To set the above values, pass a 4-tuple with the required information.  For example:
-
         nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
         """
         ...
@@ -366,13 +329,18 @@ class LAN:
         ...
 
 class PPP:
-    """The type of connection security."""
+    """
+    Create a PPP driver object.
+    Arguments are:
+    stream is any object that supports the stream protocol, but is most commonly a
+    machine.UART instance.  This stream object must have an irq() method
+    and an IRQ_RXIDLE constant, for use by PPP.connect.
+    """
     def __init__(self, stream: Any) -> None: ...
     def config(self, config_parameters: str | Any) -> Any:
         """
         Sets or gets parameters of the PPP interface. The only parameter that can be
         retrieved and set is the underlying stream, using:
-
         stream = PPP.config("stream")
         PPP.config(stream=stream)
         """
@@ -380,19 +348,16 @@ class PPP:
     def connect(self, security: int = SEC_NONE, user: str | None = None, key: str | None = None) -> None:
         """
         Initiate a PPP connection with the given parameters:
-
         security is the type of security, either PPP.SEC_NONE, PPP.SEC_PAP,
         or PPP.SEC_CHAP.
 
         user is an optional user name to use with the security mode.
 
         key is an optional password to use with the security mode.
-
         When this method is called the underlying stream has its interrupt configured to call
         PPP.poll via stream.irq(ppp.poll, stream.IRQ_RXIDLE).  This makes sure the
         stream is polled, and data passed up the PPP stack, wheverver data becomes available
         on the stream.
-
         The connection proceeds asynchronously, in the background.
         """
         ...
@@ -416,7 +381,6 @@ class PPP:
         Poll the underlying stream for data, and pass it up the PPP stack.
         This is called automatically if the stream is a UART with a RXIDLE interrupt,
         so it’s not usually necessary to call it manually.
-
         The optional irq_arg argument is ignored, this argument exists only so this
         function is compatible with the machine.UART.irq() handler argument.
         """
@@ -426,7 +390,253 @@ class PPP:
         ...
 
 class WINC:
-    """Setup in firmware update mode."""
+    """
+    Creates a winc driver object and connects to the wifi shield which uses
+    I/O pins P0, P1, P2, P3, P6, P7, and P8.
+    mode controls the mode the WINC module works in:
+    network.WINC.MODE_STATION
+
+    The module connects to an access point as a client. This is the default mode.
+
+    network.WINC.MODE_AP
+
+    The module will create an AP (Access Point) and accept connections from a client.
+
+    The start_ap() method must be called after setting AP mode to configure the AP.
+
+    Also, the WINC1500 has some limitations in its AP implementation:
+
+    Only one client can connect at a time.
+
+    Only OPEN or WEP security are supported.
+
+    There’s a bug in the WiFi Module FW, when the client disconnects any bound sockets are lost (they just stop working). As a workaround, set a timeout for the server socket to force it to raise an exception and then reopen it (See the example script).
+
+    network.WINC.MODE_FIRMWARE:
+
+    This mode enables WiFi module firmware update.
+    mode can also be network.STA_IF (station aka client, connects to upstream WiFi access
+    points) and and network.AP_IF (access point, allows other WiFi clients to
+    connect). Availability of the methods below depends on interface type.
+    For example, only STA interface may WLAN.connect() to an access point.
+    Methods
+
+
+
+    active(is_active: bool | None = None) -> bool
+
+    Activate (“up”) or deactivate (“down”) network interface, if boolean
+    argument is passed. Otherwise, query current state if no argument is
+    provided. Most other methods require active interface.
+
+
+
+    connect(ssid: str, key: str | None = None, security: int = WPA_PSK, channel: int = 1) -> None
+
+    Connect to a wifi network with ssid ssid using key key with
+    security security and channel channel.
+
+    After connecting to the network use the usocket module to open TCP/UDP
+    ports to send and receive data.
+
+    This method takes a little while to return.
+
+
+
+    start_ap(ssid: str, key: str | None = None, security: int = OPEN, channel: int = 1) -> None
+
+    When running in AP mode this method must be called after creating
+    a WINC object to configure and start the AP .
+
+    ssid: The AP SSID (must be set).
+
+    key: The AP encryption key. A Key is required only if security is WEP.
+
+    security: AP security mode (only OPEN or WEP are supported).
+
+    channel: WiFi channel, change this if you have another AP running at the same channel.
+
+
+
+    disconnect() -> None
+
+    Disconnect from the wifi network.
+
+
+
+    isconnected() -> bool
+
+    Returns True if connected to an access point and an IP address has been
+    obtained.
+
+
+
+    connected_sta() -> List[str]
+
+    This method returns a list containing the connected client’s IP adress.
+
+
+
+    wait_for_sta(timeout: int) -> List[str]
+
+    This method blocks and waits for a client to connect. If timeout is 0
+    this will block forever. This method returns a list containing the
+    connected client’s IP adress.
+
+
+
+    ifconfig(config: Tuple[str, str, str, str] | None = None) -> Tuple[str, str, str, str]
+
+    Returns a tuple containing:
+
+    [0]: IP Address String (XXX.XXX.XXX.XXX)
+
+    [1]: Subnet Address String (XXX.XXX.XXX.XXX)
+
+    [2]: Gateway String (XXX.XXX.XXX.XXX)
+
+    [3]: DNS Address String (XXX.XXX.XXX.XXX)
+
+    While connected to the network.
+
+    You may optionally pass a tuple/list of the ip_addr, subnet_addr,
+    gateway_addr, and dns_addr strings in ipv4 (XXX.XXX.XXX.XXX) format
+    to set a static IP address versus an address obtained through DHCP (which happens by default).
+
+    Example usage:
+
+    wlan = network.WINC()
+    wlan.ifconfig(('192.168.1.100', '255.255.255.0', '192.168.1.1', '192.168.1.1'))
+    wlan.connect(SSID, key=KEY, security=wlan.WPA_PSK)
+
+
+
+    netinfo() -> Tuple[int, int, str, str, str]
+
+    Returns a tuple containing:
+
+    [0]: RSSI - received signal strength indicator (int)
+
+    [1]: Authorization Type (see constants)
+
+    [2]: Set Service Identifier String (SSID)
+
+    [3]: MAC Address String (XX:XX:XX:XX:XX:XX) (BSSID)
+
+    [4]: IP Address String (XXX.XXX.XXX.XXX)
+
+    While connected to the network.
+
+
+
+    scan() -> List[Tuple[str, str, int, int, int, int]]
+
+    Returns a list containing:
+
+    [0]: Set Service Identifier String (SSID)
+
+    [1]: MAC Address String (XX:XX:XX:XX:XX:XX) (BSSID)
+
+    [2]: Channel Number (int)
+
+    [3]: RSSI - received signal strength indicator (int)
+
+    [4]: Authorization Type (see constants)
+
+    [5]: 1 (int)
+
+    You don’t need to be connected to call this.
+
+
+
+    rssi() -> int
+
+    Returns the received signal strength indicator (int) of the currently
+    connected network.
+
+
+
+    fw_version() -> Tuple[int, int, int, int, int, int, int]
+
+    Returns a tuple containing the wifi shield firmware version number.
+
+    [0]: Firmware Major Version Number (int)
+
+    [1]: Firmware Minor Version Number (int)
+
+    [2]: Firmware Patch Version Number (int)
+
+    [3]: Driver Major Version Number (int)
+
+    [4]: Driver Minor Version Number (int)
+
+    [5]: Driver Patch Version Number (int)
+
+    [6]: Hardware Revision Number - Chip ID (int)
+
+
+
+    fw_dump(path: str) -> None
+
+    Dumps the wifi shield firmware to a binary file at path. You must
+    have put the module into firmware mode to use this.
+
+
+
+    fw_update(path: str) -> None
+
+    Programs the wifi shield with binary image found at path. You must
+    have put the module into firmware mode to use this.
+    Constants
+
+
+
+    OPEN: int
+
+    For connecting to an open wifi network.
+
+
+
+    WPA_PSK: int
+
+    For connecting to a WPA/PSK based password protected network.
+
+
+
+    802_1X: int
+
+    Network is secured with WPA/WPA2 Enterprise.
+
+
+
+    MODE_STA: int
+
+    Start in station mode (i.e. connect to a network).
+
+
+
+    MODE_AP: int
+
+    Start in access point mode (i.e. become the network).
+
+
+
+    MODE_P2P: int
+
+    Start in wifi-direct mode.
+
+
+
+    MODE_BSP: int
+
+    Init BSP.
+
+
+
+    MODE_FIRMWARE: int
+
+    Setup in firmware update mode.
+    """
     def __init__(self, mode: int = MODE_STATION) -> None: ...
     def active(self, is_active: bool | None = None) -> bool:
         """
@@ -439,10 +649,8 @@ class WINC:
         """
         Connect to a wifi network with ssid ssid using key key with
         security security and channel channel.
-
         After connecting to the network use the usocket module to open TCP/UDP
         ports to send and receive data.
-
         This method takes a little while to return.
         """
         ...
@@ -467,7 +675,6 @@ class WINC:
     def fw_version(self) -> Tuple[int, int, int, int, int, int, int]:
         """
         Returns a tuple containing the wifi shield firmware version number.
-
         [0]: Firmware Major Version Number (int)
 
         [1]: Firmware Minor Version Number (int)
@@ -486,7 +693,6 @@ class WINC:
     def ifconfig(self, config: Tuple[str, str, str, str] | None = None) -> Tuple[str, str, str, str]:
         """
         Returns a tuple containing:
-
         [0]: IP Address String (XXX.XXX.XXX.XXX)
 
         [1]: Subnet Address String (XXX.XXX.XXX.XXX)
@@ -494,15 +700,11 @@ class WINC:
         [2]: Gateway String (XXX.XXX.XXX.XXX)
 
         [3]: DNS Address String (XXX.XXX.XXX.XXX)
-
         While connected to the network.
-
         You may optionally pass a tuple/list of the ip_addr, subnet_addr,
         gateway_addr, and dns_addr strings in ipv4 (XXX.XXX.XXX.XXX) format
         to set a static IP address versus an address obtained through DHCP (which happens by default).
-
         Example usage:
-
         wlan = network.WINC()
         wlan.ifconfig(('192.168.1.100', '255.255.255.0', '192.168.1.1', '192.168.1.1'))
         wlan.connect(SSID, key=KEY, security=wlan.WPA_PSK)
@@ -517,7 +719,6 @@ class WINC:
     def netinfo(self) -> Tuple[int, int, str, str, str]:
         """
         Returns a tuple containing:
-
         [0]: RSSI - received signal strength indicator (int)
 
         [1]: Authorization Type (see constants)
@@ -527,7 +728,6 @@ class WINC:
         [3]: MAC Address String (XX:XX:XX:XX:XX:XX) (BSSID)
 
         [4]: IP Address String (XXX.XXX.XXX.XXX)
-
         While connected to the network.
         """
         ...
@@ -540,7 +740,6 @@ class WINC:
     def scan(self) -> List[Tuple[str, str, int, int, int, int]]:
         """
         Returns a list containing:
-
         [0]: Set Service Identifier String (SSID)
 
         [1]: MAC Address String (XX:XX:XX:XX:XX:XX) (BSSID)
@@ -552,7 +751,6 @@ class WINC:
         [4]: Authorization Type (see constants)
 
         [5]: 1 (int)
-
         You don’t need to be connected to call this.
         """
         ...
@@ -560,7 +758,6 @@ class WINC:
         """
         When running in AP mode this method must be called after creating
         a WINC object to configure and start the AP .
-
         ssid: The AP SSID (must be set).
 
         key: The AP encryption key. A Key is required only if security is WEP.
@@ -580,15 +777,11 @@ class WINC:
 
 class WLAN:
     """
-    Allowed values for the WLAN.config(pm=...) network interface parameter:
-
-    PM_PERFORMANCE: enable WiFi power management to balance power
-    savings and WiFi performance
-
-    PM_POWERSAVE: enable WiFi power management with additional power
-    savings and reduced WiFi performance
-
-    PM_NONE: disable wifi power management
+    Create a WLAN network interface object. Supported interfaces are
+    network.WLAN.IF_STA (station aka client, connects to upstream WiFi access
+    points) and network.WLAN.IF_AP (access point, allows other WiFi clients to
+    connect). Availability of the methods below depends on interface type.
+    For example, only STA interface may WLAN.connect() to an access point.
     """
     def __init__(self, interface_id: int) -> None: ...
     def active(self, is_active: bool | None = None) -> bool:
@@ -606,20 +799,13 @@ class WLAN:
         parameters. For setting parameters, keyword argument syntax should be used,
         multiple parameters can be set at once. For querying, parameters name should
         be quoted as a string, and only one parameter can be queries at time:
-
         # Set WiFi access point name (formally known as SSID) and WiFi channel
         ap.config(ssid='My AP', channel=11)
         # Query params one by one
         print(ap.config('ssid'))
         print(ap.config('channel'))
-
         Following are commonly supported parameters (availability of a specific parameter
         depends on network technology type, driver, and MicroPython port).
-
-
-
-
-
         Parameter
 
         Description
@@ -682,7 +868,6 @@ class WLAN:
         gateway and DNS server. When called with no arguments, this method returns
         a 4-tuple with the above information. To set the above values, pass a
         4-tuple with the required information.  For example:
-
         nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
         """
         ...
@@ -698,17 +883,12 @@ class WLAN:
         Scan for the available wireless networks.
         Hidden networks – where the SSID is not broadcast – will also be scanned
         if the WLAN interface allows it.
-
         Scanning is only possible on STA interface. Returns list of tuples with
         the information about WiFi access points:
-
         (ssid, bssid, channel, RSSI, security, hidden)
-
         bssid is hardware address of an access point, in binary form, returned as
         bytes object. You can use binascii.hexlify() to convert it to ASCII form.
-
         There are five values for security:
-
         0 – open
 
         1 – WEP
@@ -718,9 +898,7 @@ class WLAN:
         3 – WPA2-PSK
 
         4 – WPA/WPA2-PSK
-
         and two for hidden:
-
         0 – visible
 
         1 – hidden
@@ -729,10 +907,8 @@ class WLAN:
     def status(self, param: str | None = None) -> Any:
         """
         Return the current status of the wireless connection.
-
         When called with no argument the return value describes the network link status.
         The possible statuses are defined as constants in the network module:
-
         STAT_IDLE – no connection and no activity,
 
         STAT_CONNECTING – connecting in progress,
@@ -744,15 +920,12 @@ class WLAN:
         STAT_CONNECT_FAIL – failed due to other problems,
 
         STAT_GOT_IP – connection successful.
-
         When called with one argument param should be a string naming the status
         parameter to retrieve, and different parameters are supported depending on the
         mode the WiFi is in.
-
         In STA mode, passing 'rssi' returns a signal strength indicator value, whose
         format varies depending on the port (this is available on all ports that support
         WiFi network interfaces, except for CC3200).
-
         In AP mode, passing 'stations' returns a list of connected WiFi stations
         (this is available on all ports that support WiFi network interfaces, except for
         CC3200).  The format of the station information entries varies across ports,

@@ -3,76 +3,54 @@ from typing import Any, Optional, Union, Tuple, List
 
 class Model:
     """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
+    Loads a TensorFlow Lite model from path into memory and prepares it for inference. path
+    may be a file on the filesystem or the name of a model built into the firmware image.
+    postprocess is an optional post-processing callable invoked by Model.predict after
+    inference. It receives (model, inputs, outputs) and may return any value (e.g. a list of
+    bounding boxes). When provided, the post-processor receives the raw model output tensors
+    (un-dequantized) for performance.
+    On construction, the wrapper additionally attempts to load a .txt file with the same base
+    name as path; if found, each line is loaded into Model.labels. Otherwise Model.labels
+    is None.
     """
     def __init__(self, path: str, postprocess: object = None) -> None: ...
     input_dtype: Any
     """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
+    A list of single-character strings giving the dtype of each input tensor:
+    'b' (int8), 'B' (uint8), 'h' (int16), 'H' (uint16), 'f' (float32).
     """
     input_scale: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """A list of floats giving the quantization scale of each input tensor."""
     input_shape: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """A list of tuples giving the shape of each input tensor."""
     input_zero_point: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """A list of ints giving the quantization zero point of each input tensor."""
     labels: Any
     """
     List of label strings loaded from the .txt file alongside the model, or None if no such
     file exists.
     """
     len: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """The size of the loaded model in bytes."""
     output_dtype: Any
     """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
+    A list of single-character strings giving the dtype of each output tensor:
+    'b' (int8), 'B' (uint8), 'h' (int16), 'H' (uint16), 'f' (float32).
     """
     output_scale: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """A list of floats giving the quantization scale of each output tensor."""
     output_shape: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """A list of tuples giving the shape of each output tensor."""
     output_zero_point: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """A list of ints giving the quantization zero point of each output tensor."""
     postprocess: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """The post-processing callable supplied to the constructor, or None."""
     ram: Any
-    """
-    List of label strings loaded from the .txt file alongside the model, or None if no such
-    file exists.
-    """
+    """The amount of RAM used by the model’s tensor arena, in bytes."""
     def predict(self, inputs: list, *, callback: object = None) -> list:
         """
         Runs inference on the model and returns the output tensors.
-
         inputs is a list with one entry per model input tensor. Each entry may be:
-
         An ndarray whose shape matches the corresponding entry in Model.input_shape. Values
         are quantized using the input tensor’s scale and zero point (float32 inputs are passed
         through unchanged).
@@ -82,11 +60,9 @@ class Model:
 
         A callable. It will be invoked with (bytearray, shape, dtype) and is expected to fill
         the bytearray with the input tensor data.
-
         callback is an optional per-call post-processing callable. When supplied, it overrides
         the postprocess set on the constructor for this call only. The callback receives
         (model, inputs, outputs) and its return value is returned by predict.
-
         Returns a list of ndarray outputs, one per model output tensor. If no post-processor is
         active the outputs are dequantized to float32; if a post-processor is active the raw
         output tensors (using each tensor’s native dtype) are passed to it instead.

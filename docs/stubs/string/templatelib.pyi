@@ -2,106 +2,54 @@
 from typing import Any, Optional, Union, Tuple, List
 
 class Interpolation:
-    """The format specification string if present, otherwise an empty string."""
+    """
+    Represents an interpolated expression within a template string. All
+    arguments can be passed as keyword arguments.
+    """
     def __init__(self, value: Any, expression: str = '', conversion: str | None = None, format_spec: str = '') -> None: ...
     conversion: Any
-    """The format specification string if present, otherwise an empty string."""
+    """
+    The conversion specifier ('s' or 'r') if present, otherwise None.
+    Note that MicroPython does not support the 'a' conversion.
+    """
     expression: Any
-    """The format specification string if present, otherwise an empty string."""
+    """
+    The string representation of the expression as it appeared in the
+    template string.
+    """
     format_spec: Any
     """The format specification string if present, otherwise an empty string."""
     value: Any
-    """The format specification string if present, otherwise an empty string."""
+    """The evaluated value of the interpolated expression."""
 
 class Template:
     """
-    Concatenate two templates. Returns a new Template combining
-    the strings and interpolations from both templates.
-
-    Raises
-
-    TypeError – if other is not a Template
-
-    Template concatenation with str is prohibited to avoid ambiguity
-    about whether the string should be treated as a literal or interpolation:
-
-    t1 = t"Hello "
-    t2 = t"World"
-    result = t1 + t2  # Valid
-
-    # TypeError: cannot concatenate str to Template
-    result = t1 + "World"
+    Represents a template string. Template objects are typically created by
+    t-string syntax (t"...") but can also be constructed directly using
+    the constructor.
     """
     def __init__(self, *args) -> None: ...
     interpolations: Any
     """
-    Concatenate two templates. Returns a new Template combining
-    the strings and interpolations from both templates.
-
-    Raises
-
-    TypeError – if other is not a Template
-
-    Template concatenation with str is prohibited to avoid ambiguity
-    about whether the string should be treated as a literal or interpolation:
-
-    t1 = t"Hello "
-    t2 = t"World"
-    result = t1 + t2  # Valid
-
-    # TypeError: cannot concatenate str to Template
-    result = t1 + "World"
+    A tuple of Interpolation objects representing the interpolated
+    expressions.
     """
     strings: Any
-    """
-    Concatenate two templates. Returns a new Template combining
-    the strings and interpolations from both templates.
-
-    Raises
-
-    TypeError – if other is not a Template
-
-    Template concatenation with str is prohibited to avoid ambiguity
-    about whether the string should be treated as a literal or interpolation:
-
-    t1 = t"Hello "
-    t2 = t"World"
-    result = t1 + t2  # Valid
-
-    # TypeError: cannot concatenate str to Template
-    result = t1 + "World"
-    """
+    """A tuple of string literals that appear between interpolations."""
     values: Any
     """
-    Concatenate two templates. Returns a new Template combining
-    the strings and interpolations from both templates.
-
-    Raises
-
-    TypeError – if other is not a Template
-
-    Template concatenation with str is prohibited to avoid ambiguity
-    about whether the string should be treated as a literal or interpolation:
-
-    t1 = t"Hello "
-    t2 = t"World"
-    result = t1 + t2  # Valid
-
-    # TypeError: cannot concatenate str to Template
-    result = t1 + "World"
+    A read-only property that returns a tuple containing the value
+    attribute from each interpolation in the template.
     """
     def __add__(self, other: Template) -> Template:
         """
         Concatenate two templates. Returns a new Template combining
         the strings and interpolations from both templates.
-
         Raises
 
         TypeError – if other is not a Template
-
         Template concatenation with str is prohibited to avoid ambiguity
         about whether the string should be treated as a literal or interpolation:
-
         t1 = t"Hello "
         t2 = t"World"
         result = t1 + t2  # Valid

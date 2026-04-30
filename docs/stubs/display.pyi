@@ -6,7 +6,6 @@ import machine
 FHD: int
 """
 1920x1080 resolution for framesize.
-
 Use a refresh of 30 Hz with this setting. The STM32H7 is not capable of
 driving 1080p at 60 Hz.
 """
@@ -48,7 +47,11 @@ XGA: int
 """1024x768 resolution for framesize."""
 
 class DACBacklight:
-    """Sets the backlight strength from 0-100."""
+    """
+    Creates a DAC-driven backlight controller.
+    channel specifies the DAC channel (or GPIO pin) to use.
+    bits specifies the DAC resolution.
+    """
     def __init__(self, channel: int, bits: int = 8) -> None: ...
     def backlight(self, value: int) -> None:
         """Sets the backlight strength from 0-100."""
@@ -59,15 +62,30 @@ class DACBacklight:
 
 class DSIDisplay:
     """
-    Send a driver-specific ioctl cmd with optional arg to the display. Raises ValueError
-    if the display does not support ioctl.
+    framesize One of the standard supported resolutions (e.g. display.FWVGA).
+
+    refresh Sets the screen refresh rate in hertz. Valid range is 30 to 120. This controls the DSI LCD clock.
+
+    display_on Enables the display.
+
+    triple_buffer Allocates three framebuffers to allow tear-free display updates. Required for vertical
+    flipping in write().
+
+    portrait Swap the framesize width and height.
+
+    channel The virtual MIPI DSI channel to use to talk to the display.
+
+    controller Pass the controller chip class here to initialize it along with the display. E.g.
+    display.ST7701() which is a standard display controller for MIPI DSI displays.
+
+    backlight Specify a backlight controller module to use. By default the backlight will be
+    controlled via a GPIO pin.
     """
     def __init__(self, framesize: int = FWVGA, *, refresh: int = 60, display_on: bool = True, triple_buffer: bool = True, portrait: bool = False, channel: int = 0, controller: Any | None = None, backlight: Any | None = None) -> None: ...
     def backlight(self, value: int | None = None) -> int:
         """
         Sets the LCD backlight dimming value, 0 (off) to 100 (on). Pass no arguments to get the
         current backlight value.
-
         Unless a DACBacklight or PWMBacklight controller is passed to the constructor, the
         backlight is controlled as a GPIO pin and will only go from 0 (off) to non-zero (on).
         """
@@ -78,18 +96,14 @@ class DSIDisplay:
     def bus_read(self, cmd: int, len: int, args: int | bytes | None = None, *, dcs: bool = False) -> bytes:
         """
         Read len bytes from the display using DSI command cmd.
-
         args is an optional integer or buffer containing command parameters.
-
         dcs if True sends the command as a DCS (Display Command Set) packet.
         """
         ...
     def bus_write(self, cmd: int, args: int | bytes | None = None, *, dcs: bool = False) -> None:
         """
         Send DSI command cmd to the display.
-
         args is an optional integer or buffer containing command parameters.
-
         dcs if True sends the command as a DCS (Display Command Set) packet.
         """
         ...
@@ -99,7 +113,6 @@ class DSIDisplay:
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the LCD framebuffer to black.
-
         display_off if True turns off the display logic instead of clearing the framebuffer.
         """
         ...
@@ -130,34 +143,24 @@ class DSIDisplay:
     def write(self, image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: Tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0) -> None:
         """
         Displays an image whose top-left corner starts at location x, y.
-
         image may be a path string instead of an image object to automatically load the image from
         disk. E.g. write("test.jpg").
-
         x_scale controls how much the displayed image is scaled by in the x direction (float). If this
         value is negative the image will be flipped horizontally. If y_scale is not specified then it
         will match x_scale to maintain the aspect ratio.
-
         y_scale controls how much the displayed image is scaled by in the y direction (float). If this
         value is negative the image will be flipped vertically. Vertical flip requires
         triple_buffer=True. If x_scale is not specified then it will match y_scale.
-
         roi is the region-of-interest rectangle tuple (x, y, w, h) of the image to display.
-
         rgb_channel is the RGB channel (0=R, 1=G, 2=B) to extract from an RGB565 image and render on
         the display in grayscale. -1 disables extraction. Valid range is -1 to 2.
-
         alpha controls how opaque the image is. 255 displays an opaque image, lower values blend
         toward black, and 0 produces a fully black image. Valid range is 0 to 255.
-
         color_palette may be a color palette enum or a 256 pixel RGB565 image to use as a color
         lookup table on the grayscale value of the input image. Applied after rgb_channel extraction.
-
         alpha_palette may be a 256 pixel grayscale image used as an alpha lookup table that
         modulates alpha per input pixel grayscale value. Applied after rgb_channel extraction.
-
         hint is a logical OR of the flags:
-
         image.AREA: Use area scaling when downscaling versus the default of nearest neighbor.
 
         image.BILINEAR: Use bilinear scaling versus the default of nearest neighbor scaling.
@@ -192,12 +195,11 @@ class DSIDisplay:
 
 class DisplayData:
     """
-    Registers callback to be called when a CEC frame addressed to dst_addr
-    is received. The callback is invoked with two arguments: the source address as
-    an int and the frame payload as a bytes object.
+    cec set to True to enable CEC communication with an external display.
 
-    Pass None as callback to disable reception. While a callback is
-    registered, do not call DisplayData.receive_frame().
+    ddc set to True to enable DDC communication with an external display.
+
+    ddc_addr I2C address of the external display EEPROM.
     """
     def __init__(self, *, cec: bool = False, ddc: bool = False, ddc_addr: int = 0x50) -> None: ...
     def display_id(self) -> bytes:
@@ -212,7 +214,6 @@ class DisplayData:
         Registers callback to be called when a CEC frame addressed to dst_addr
         is received. The callback is invoked with two arguments: the source address as
         an int and the frame payload as a bytes object.
-
         Pass None as callback to disable reception. While a callback is
         registered, do not call DisplayData.receive_frame().
         """
@@ -231,7 +232,13 @@ class DisplayData:
         ...
 
 class PWMBacklight:
-    """Sets the backlight strength from 0-100."""
+    """
+    Creates a PWM-driven backlight controller.
+    pin specifies the Pin to use.
+    timer specifies the Timer number to use.
+    channel specifies the Timer channel to use.
+    frequency specifies the PWM frequency in Hz.
+    """
     def __init__(self, pin: machine.Pin, timer: int = 3, channel: int = 3, frequency: int = 200) -> None: ...
     def backlight(self, value: int) -> None:
         """Sets the backlight strength from 0-100."""
@@ -242,69 +249,29 @@ class PWMBacklight:
 
 class RGBDisplay:
     """
-    Displays an image whose top-left corner starts at location x, y. A path string may
-    also be passed instead of an image object to automatically load the image from disk.
+    framesize One of the standard supported resolutions (see the display module constants).
 
-    x_scale controls how much the displayed image is scaled by in the x direction. If this value
-    is negative the image will be flipped horizontally. If y_scale is not specified it will
-    match x_scale to maintain the aspect ratio.
+    refresh Sets the screen refresh rate in hertz (30-120). This controls the RGB LCD pixel clock.
 
-    y_scale controls how much the displayed image is scaled by in the y direction. If this value
-    is negative the image will be flipped vertically (requires triple buffering). If x_scale is
-    not specified it will match y_scale to maintain the aspect ratio.
+    display_on Enables the display. Pass False when the 24-bit parallel LCD output is shared
+    by multiple devices (e.g. the TFP410 chip for driving HDMI displays) to keep the display off
+    while still driving the data bus.
 
-    roi is the region-of-interest rectangle tuple (x, y, w, h) of the image to display.
+    triple_buffer If True, makes updates to the screen non-blocking at the cost of 3x the
+    display size in RAM.
 
-    rgb_channel is the RGB channel (0=R, 1=G, 2=B) to extract from an RGB565 image and render in
-    grayscale. -1 disables channel extraction.
+    portrait Swaps the framesize width and height.
 
-    alpha controls how opaque the image is, from 0 (fully transparent / black) to 255 (opaque).
+    controller Pass a controller chip class instance to initialize it along with the display.
 
-    color_palette an RGB565 image of 256 pixels total used as a color lookup table on the
-    grayscale value of the input image. Applied after rgb_channel extraction. May also be a
-    palette enum (e.g. image.PALETTE_RAINBOW).
-
-    alpha_palette a GRAYSCALE image of 256 pixels total used as a per-pixel alpha lookup table
-    on the grayscale value of the input image. Applied after rgb_channel extraction.
-
-    hint is a logical OR of the flags:
-
-    image.AREA: Use area scaling when downscaling instead of nearest neighbor.
-
-    image.BILINEAR: Use bilinear scaling instead of nearest neighbor.
-
-    image.BICUBIC: Use bicubic scaling instead of nearest neighbor.
-
-    image.CENTER: Center the image on the display (applied after scaling).
-
-    image.HMIRROR: Horizontally mirror the image.
-
-    image.VFLIP: Vertically flip the image.
-
-    image.TRANSPOSE: Transpose the image (swap x/y).
-
-    image.EXTRACT_RGB_CHANNEL_FIRST: Do rgb_channel extraction before scaling.
-
-    image.APPLY_COLOR_PALETTE_FIRST: Apply color_palette before scaling.
-
-    image.SCALE_ASPECT_KEEP: Scale the image to fit inside the display.
-
-    image.SCALE_ASPECT_EXPAND: Scale the image to fill the display (cropping).
-
-    image.SCALE_ASPECT_IGNORE: Scale the image to fill the display (stretching).
-
-    image.ROTATE_90: Rotate by 90 degrees (VFLIP | TRANSPOSE).
-
-    image.ROTATE_180: Rotate by 180 degrees (HMIRROR | VFLIP).
-
-    image.ROTATE_270: Rotate by 270 degrees (HMIRROR | TRANSPOSE).
+    backlight Pass a backlight controller module instance to use. By default the backlight will
+    be controlled via a GPIO pin.
     """
     def __init__(self, framesize: int = display.FWVGA, refresh: int = 60, display_on: bool = True, triple_buffer: bool = True, portrait: bool = False, controller: object | None = None, backlight: object | None = None) -> None: ...
     def backlight(self, value: int | None = None) -> int:
         """
         Sets the LCD backlight dimming value, from 0 (off) to 100 (on). Pass no arguments to get the
         current backlight value.
-
         Unless a DACBacklight or PWMBacklight controller was passed to the constructor, the
         backlight is controlled as a GPIO pin and will only go from 0 (off) to non-zero (on).
         """
@@ -318,7 +285,6 @@ class RGBDisplay:
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the LCD screen to black.
-
         display_off if True, turns off the display logic instead of clearing the framebuffer to
         black. You should also turn off the backlight after this to ensure the screen goes black, as
         many displays are white when only the backlight is on.
@@ -346,31 +312,22 @@ class RGBDisplay:
         """
         Displays an image whose top-left corner starts at location x, y. A path string may
         also be passed instead of an image object to automatically load the image from disk.
-
         x_scale controls how much the displayed image is scaled by in the x direction. If this value
         is negative the image will be flipped horizontally. If y_scale is not specified it will
         match x_scale to maintain the aspect ratio.
-
         y_scale controls how much the displayed image is scaled by in the y direction. If this value
         is negative the image will be flipped vertically (requires triple buffering). If x_scale is
         not specified it will match y_scale to maintain the aspect ratio.
-
         roi is the region-of-interest rectangle tuple (x, y, w, h) of the image to display.
-
         rgb_channel is the RGB channel (0=R, 1=G, 2=B) to extract from an RGB565 image and render in
         grayscale. -1 disables channel extraction.
-
         alpha controls how opaque the image is, from 0 (fully transparent / black) to 255 (opaque).
-
         color_palette an RGB565 image of 256 pixels total used as a color lookup table on the
         grayscale value of the input image. Applied after rgb_channel extraction. May also be a
         palette enum (e.g. image.PALETTE_RAINBOW).
-
         alpha_palette a GRAYSCALE image of 256 pixels total used as a per-pixel alpha lookup table
         on the grayscale value of the input image. Applied after rgb_channel extraction.
-
         hint is a logical OR of the flags:
-
         image.AREA: Use area scaling when downscaling instead of nearest neighbor.
 
         image.BILINEAR: Use bilinear scaling instead of nearest neighbor.
@@ -405,15 +362,36 @@ class RGBDisplay:
 
 class SPIDisplay:
     """
-    Issues a controller-specific ioctl cmd with optional arg. Raises
-    ValueError if the underlying display does not support ioctl.
+    width SPI LCD width in pixels (1..32767).
+
+    height SPI LCD height in pixels (1..32767).
+
+    refresh LCD refresh rate in hertz (1..120). Controls the SPI clock rate.
+
+    bgr set to True to swap the red and blue channels.
+
+    byte_swap set to True to swap RGB565 pixel bytes sent to the LCD.
+
+    hmirror set to True to horizontally mirror the display output.
+
+    vflip set to True to vertically flip the display output.
+
+    triple_buffer if True makes updates to the screen non-blocking at the cost of 3X
+    the display size in RAM. Default depends on the board (on for boards with SDRAM).
+
+    controller keyword-only. Pass a controller chip class instance to initialize it
+    along with the display. When provided, the controller’s init, display_on,
+    display_off, and ram_write methods (if present) are invoked instead of the
+    built-in commands.
+
+    backlight keyword-only. Pass a backlight controller module to use. By default
+    the backlight is controlled via a GPIO pin.
     """
     def __init__(self, width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool = ..., *, controller: object | None = None, backlight: object | None = None) -> None: ...
     def backlight(self, value: int | None = None) -> Optional[int]:
         """
         With value, sets the backlight intensity (0=off..100=full). Without arguments,
         returns the current backlight value.
-
         Unless a DACBacklight or PWMBacklight controller is passed at construction,
         the backlight is driven as a GPIO pin and only goes from 0 (off) to non-zero (on).
         """
@@ -441,7 +419,6 @@ class SPIDisplay:
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the LCD screen to black.
-
         display_off if True, turns off the display logic instead of clearing the
         framebuffer. The backlight should also be disabled afterwards.
         """
@@ -471,30 +448,21 @@ class SPIDisplay:
         """
         Displays image with its top-left corner at (x, y). A path string may be
         passed in place of an image to load and draw it in one step.
-
         x_scale x-axis scale factor. Negative values flip horizontally. If y_scale
         is omitted it follows x_scale to preserve aspect ratio.
-
         y_scale y-axis scale factor. Negative values flip vertically (requires
         triple_buffer=True). If x_scale is omitted it follows y_scale.
-
         roi region-of-interest rectangle (x, y, w, h) of the source image to draw.
-
         rgb_channel RGB channel to extract from an RGB565 source image (0=R, 1=G, 2=B,
         -1=all). Range: -1..2.
-
         alpha opacity of the image. 0 is fully transparent (black), 255 is opaque.
         Range: 0..255.
-
         color_palette color palette enum (e.g. image.PALETTE_RAINBOW) or a 256-pixel
         RGB565 image used as a color lookup table on the grayscale value of the source.
         Applied after rgb_channel extraction.
-
         alpha_palette 256-pixel grayscale image used as a per-pixel alpha lookup table
         modulating alpha based on source grayscale value.
-
         hint logical OR of the flags:
-
         image.AREA: Use area scaling when downscaling.
 
         image.BILINEAR: Use bilinear scaling.
@@ -528,36 +496,36 @@ class SPIDisplay:
         ...
 
 class SSD1351:
-    """Set command lock command (0xFD)."""
+    """Creates an SSD1351 display controller object."""
     def __init__(self) -> None: ...
     CLOCK_DIV: Any
-    """Set command lock command (0xFD)."""
+    """Set front clock divider / oscillator frequency command (0xB3)."""
     COMMAND_LOCK: Any
     """Set command lock command (0xFD)."""
     CONTRAST_ABC: Any
-    """Set command lock command (0xFD)."""
+    """Set contrast for color A, B, C command (0xC1)."""
     CONTRAST_MASTER: Any
-    """Set command lock command (0xFD)."""
+    """Master contrast current control command (0xC7)."""
     DISPLAY_ENHANCEMENT: Any
-    """Set command lock command (0xFD)."""
+    """Display enhancement command (0xB2)."""
     DISPLAY_OFF: Any
-    """Set command lock command (0xFD)."""
+    """Set sleep mode on / display off command (0xAE)."""
     DISPLAY_OFFSET: Any
-    """Set command lock command (0xFD)."""
+    """Set display offset command (0xA2)."""
     DISPLAY_ON: Any
-    """Set command lock command (0xFD)."""
+    """Set sleep mode off / display on command (0xAF)."""
     MUX_RATIO: Any
-    """Set command lock command (0xFD)."""
+    """Set MUX ratio command (0xCA)."""
     PRECHARGE: Any
-    """Set command lock command (0xFD)."""
+    """Set phase length / precharge command (0xB1)."""
     PRECHARGE2: Any
-    """Set command lock command (0xFD)."""
+    """Set second precharge period command (0xB6)."""
     PRECHARGE_LEVEL: Any
-    """Set command lock command (0xFD)."""
+    """Set precharge voltage level command (0xBB)."""
     SET_REMAP: Any
-    """Set command lock command (0xFD)."""
+    """Set re-map / dual COM line mode command (0xA0)."""
     WRITE_RAM: Any
-    """Set command lock command (0xFD)."""
+    """Write to display RAM command (0x5C)."""
     def display_off(self, display_controller: display.SPIDisplay) -> None:
         """
         Issues the display-off command (SSD1351.DISPLAY_OFF) on the display controller bus.
@@ -584,68 +552,70 @@ class SSD1351:
         ...
 
 class ST7701:
-    """Set display on (0x29)."""
+    """
+    Creates a controller object. Pass it as the controller argument to
+    DSIDisplay() which will invoke ST7701.init() automatically.
+    """
     def __init__(self) -> None: ...
     DCS_EXIT_SLEEP_MODE: Any
-    """Set display on (0x29)."""
+    """Exit sleep mode (0x11)."""
     DCS_SET_DISPLAY_ON: Any
     """Set display on (0x29)."""
     DCS_SOFT_RESET: Any
-    """Set display on (0x29)."""
+    """Soft reset (0x01)."""
     DSI_CMD2_BK0_INVSEL: Any
-    """Set display on (0x29)."""
+    """Inversion select (0xC2)."""
     DSI_CMD2_BK0_LNESET: Any
-    """Set display on (0x29)."""
+    """Display line setting (0xC0)."""
     DSI_CMD2_BK0_NVGAMCTRL: Any
-    """Set display on (0x29)."""
+    """Negative voltage gamma control (0xB1)."""
     DSI_CMD2_BK0_PORCTRL: Any
-    """Set display on (0x29)."""
+    """Porch control (0xC1)."""
     DSI_CMD2_BK0_PVGAMCTRL: Any
-    """Set display on (0x29)."""
+    """Positive voltage gamma control (0xB0)."""
     DSI_CMD2_BK0_SEL: Any
-    """Set display on (0x29)."""
+    """Bank 0 select value (0x10)."""
     DSI_CMD2_BK1_CCCTRL: Any
-    """Set display on (0x29)."""
+    """Charge control (0xE3)."""
     DSI_CMD2_BK1_DGMLUTR: Any
-    """Set display on (0x29)."""
+    """Digital gamma LUT (0xB9)."""
     DSI_CMD2_BK1_MIPISET1: Any
-    """Set display on (0x29)."""
+    """MIPI setting 1 (0xD0)."""
     DSI_CMD2_BK1_NRCTRL: Any
-    """Set display on (0x29)."""
+    """Noise reduction control (0xE1)."""
     DSI_CMD2_BK1_PWCTLR1: Any
-    """Set display on (0x29)."""
+    """Power control 1 (0xB7)."""
     DSI_CMD2_BK1_PWCTLR2: Any
-    """Set display on (0x29)."""
+    """Power control 2 (0xB8)."""
     DSI_CMD2_BK1_SECTRL: Any
-    """Set display on (0x29)."""
+    """Setting control (0xE0)."""
     DSI_CMD2_BK1_SEL: Any
-    """Set display on (0x29)."""
+    """Bank 1 select value (0x11)."""
     DSI_CMD2_BK1_SKCTRL: Any
-    """Set display on (0x29)."""
+    """Skew control (0xE4)."""
     DSI_CMD2_BK1_SPD1: Any
-    """Set display on (0x29)."""
+    """Source pre-drive 1 (0xC1)."""
     DSI_CMD2_BK1_SPD2: Any
-    """Set display on (0x29)."""
+    """Source pre-drive 2 (0xC2)."""
     DSI_CMD2_BK1_SRPCTRL: Any
-    """Set display on (0x29)."""
+    """Source pre-charge control (0xE2)."""
     DSI_CMD2_BK1_TESTCMD: Any
-    """Set display on (0x29)."""
+    """Test command (0xB3)."""
     DSI_CMD2_BK1_VCOM: Any
-    """Set display on (0x29)."""
+    """VCOM set (0xB1)."""
     DSI_CMD2_BK1_VGHSS: Any
-    """Set display on (0x29)."""
+    """VGH set (0xB2)."""
     DSI_CMD2_BK1_VGLS: Any
-    """Set display on (0x29)."""
+    """VGL set (0xB5)."""
     DSI_CMD2_BK1_VRHS: Any
-    """Set display on (0x29)."""
+    """VRH set (0xB0)."""
     DSI_CMD2_BKX_SEL: Any
-    """Set display on (0x29)."""
+    """Command 2 bank select register (0xFF)."""
     DSI_CMD2_BKX_SEL_NONE: Any
-    """Set display on (0x29)."""
+    """Bank disable value (0x00)."""
     def init(self, dc: display.DSIDisplay, dt: Any) -> None:
         """
         Initializes the display.
-
         dc is the display controller object that must provide bus_write()
         and bus_read() methods (typically a display.DSIDisplay instance).
 
@@ -659,17 +629,13 @@ class ST7701:
 
 class TVDisplay:
     """
-    Generic ioctl entry point.
-
-    Pass display.IOCTL_CHANNEL as cmd to set or get the wireless TV shield broadcast channel.
-    With a second argument (1-8) the channel is set; with no second argument the current channel
-    is returned. The default is channel 8.
+    triple_buffer If True then makes updates to the screen non-blocking at the cost of 3X the
+    display size in RAM. The default is board-dependent.
     """
     def __init__(self, triple_buffer: bool = True) -> None: ...
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the screen to black.
-
         display_off is accepted for API compatibility with other display classes and is ignored.
         """
         ...
@@ -682,7 +648,6 @@ class TVDisplay:
     def ioctl(self, cmd: int, *args) -> object:
         """
         Generic ioctl entry point.
-
         Pass display.IOCTL_CHANNEL as cmd to set or get the wireless TV shield broadcast channel.
         With a second argument (1-8) the channel is set; with no second argument the current channel
         is returned. The default is channel 8.
@@ -700,27 +665,19 @@ class TVDisplay:
     def write(self, image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: Tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 256, color_palette: int | 'image.Image' | None = None, alpha_palette: 'image.Image' | None = None, hint: int = 0) -> None:
         """
         Displays an image whose top-left corner starts at location x, y.
-
         x_scale controls how much the displayed image is scaled by in the x direction (float). If this
         value is negative the image will be flipped horizontally.
-
         y_scale controls how much the displayed image is scaled by in the y direction (float). If this
         value is negative the image will be flipped vertically.
-
         roi is the region-of-interest rectangle tuple (x, y, w, h) of the image to display.
-
         rgb_channel is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image and render
         on the display.
-
         alpha controls how opaque the image is. A value of 256 displays an opaque image while a
         value lower than 256 produces a black transparent image. 0 results in a perfectly black image.
-
         color_palette if not -1 can be a color palette enum or a 256 pixel in total RGB565
         image to use as a color lookup table on the grayscale value of the input image.
-
         alpha_palette if not -1 can be a 256 pixel in total GRAYSCALE image to use as an alpha
         palette which modulates the alpha value of the input image at a per-pixel level.
-
         hint can be a logical OR of the flags defined in the image module (e.g. image.BILINEAR,
         image.CENTER, image.SCALE_ASPECT_KEEP, etc.). See display.SPIDisplay.write for the full list.
         """

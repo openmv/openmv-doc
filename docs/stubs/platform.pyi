@@ -12,7 +12,6 @@ def platform() -> str:
     """
     Returns a string identifying the underlying platform. This string is composed
     of several substrings in the following order, delimited by dashes (-):
-
     the name of the platform system (e.g. Unix, Windows or MicroPython)
 
     the MicroPython version
@@ -23,7 +22,6 @@ def platform() -> str:
 
     the concatenation of the name of the libc that MicroPython is linked to
     and its corresponding version.
-
     For example, this could be
     "MicroPython-1.20.0-xtensa-IDFv4.2.4-with-newlib3.0.0".
     """
@@ -33,7 +31,6 @@ def processor() -> str:
     Returns a string with a detailed name of the processor, if one is available.
     If no name for the processor is known, it will return an empty string
     instead.
-
     This is currently available only on RISC-V targets (both 32 and 64 bits).
     """
     ...

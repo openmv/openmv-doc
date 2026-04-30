@@ -5,7 +5,6 @@ def dumps(value: Any, /) -> bytes:
     """
     Convert the given value to binary format and return a corresponding bytes
     object.
-
     Currently, code objects are the only supported values that can be converted.
     """
     ...
