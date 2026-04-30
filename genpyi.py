@@ -69,10 +69,24 @@ def run_sphinx(docs_dir):
         doctree = app.env.get_doctree(docname)
         for node in doctree.findall(addnodes.desc):
             objtype = node.get("objtype", "")
+            # Extract this node's own docstring only -- stop at the first
+            # nested desc (method/attribute) so a class's docstring doesn't
+            # absorb its members' bodies.
             doc = ""
-            for content in node.findall(addnodes.desc_content):
-                doc = content.astext().strip()
-            for sig_node in node.findall(addnodes.desc_signature):
+            for child in node.children:
+                if isinstance(child, addnodes.desc_content):
+                    parts = []
+                    for sub in child.children:
+                        if isinstance(sub, addnodes.desc):
+                            break
+                        text = sub.astext().strip()
+                        if text:
+                            parts.append(text)
+                    doc = "\n".join(parts).strip()
+                    break
+            for sig_node in node.children:
+                if not isinstance(sig_node, addnodes.desc_signature):
+                    continue
                 module = sig_node.get("module", "")
                 fullname = sig_node.get("fullname", "")
                 if not fullname:
