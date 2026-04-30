@@ -1,0 +1,48 @@
+:mod:`hs3003` --- HS3003 humidity/temperature sensor
+====================================================
+
+.. module:: hs3003
+   :synopsis: Renesas HS3003 humidity and temperature sensor driver
+
+Driver for the Renesas HS3003 high-accuracy relative humidity and
+temperature sensor over I2C. A single I2C transaction triggers a new
+measurement and reads back four bytes containing both the humidity and
+temperature samples; the driver scales the raw counts into engineering
+units.
+
+Example::
+
+    import time
+    from machine import Pin, I2C
+    from hs3003 import HS3003
+
+    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    hts = HS3003(bus)
+
+    while True:
+        print("rH: %.2f%% T: %.2fC" % (hts.humidity(), hts.temperature()))
+        time.sleep_ms(100)
+
+Classes
+-------
+
+.. class:: HS3003(bus: machine.I2C, address: int = 0x44)
+
+   Construct an ``HS3003`` instance.
+
+   ``bus``
+      A configured :py:class:`machine.I2C` bus the sensor is attached to.
+
+   ``address``
+      7-bit I2C address of the device. Defaults to ``0x44``, the factory
+      address used by all HS3003 parts.
+
+   .. method:: humidity() -> float
+
+      Trigger a measurement and return the relative humidity in percent
+      (``%RH``), computed as ``(raw & 0x3FFF) / 16383 * 100``.
+
+   .. method:: temperature() -> float
+
+      Trigger a measurement and return the temperature in degrees Celsius,
+      computed as ``(raw >> 2) / 16383 * 165 - 40``.
