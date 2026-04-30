@@ -52,7 +52,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: I2C(id, *, scl, sda, freq=400000, timeout=50000)
+.. class:: I2C(id: int, *, scl: Pin = ..., sda: Pin = ..., freq: int = 400000, timeout: int = 50000)
 
    Construct and return a new I2C object using the following parameters:
 
@@ -69,8 +69,134 @@ Constructors
    that can be changed in this constructor.  Others will have fixed values
    of *scl* and *sda* that cannot be changed.
 
+   General Methods
+   ---------------
+
+   .. method:: init(scl: Pin, sda: Pin, *, freq: int = 400000) -> None
+
+     Initialise the I2C bus with the given arguments:
+
+        - *scl* is a pin object for the SCL line
+        - *sda* is a pin object for the SDA line
+        - *freq* is the SCL clock rate
+
+      In the case of hardware I2C the actual clock frequency may be lower than the
+      requested frequency. This is dependent on the platform hardware. The actual
+      rate may be determined by printing the I2C object.
+
+   .. method:: scan() -> List[int]
+
+      Scan all I2C addresses between 0x08 and 0x77 inclusive and return a list of
+      those that respond.  A device responds if it pulls the SDA line low after
+      its address (including a write bit) is sent on the bus.
+
+   Primitive I2C operations
+   ------------------------
+
+   The following methods implement the primitive I2C controller bus operations and can
+   be combined to make any I2C transaction.  They are provided if you need more
+   control over the bus, otherwise the standard methods (see below) can be used.
+
+   These methods are only available on the `machine.SoftI2C` class.
+
+   .. method:: start() -> None
+
+      Generate a START condition on the bus (SDA transitions to low while SCL is high).
+
+   .. method:: stop() -> None
+
+      Generate a STOP condition on the bus (SDA transitions to high while SCL is high).
+
+   .. method:: readinto(buf: bytearray, nack: bool = True, /) -> None
+
+      Reads bytes from the bus and stores them into *buf*.  The number of bytes
+      read is the length of *buf*.  An ACK will be sent on the bus after
+      receiving all but the last byte.  After the last byte is received, if *nack*
+      is true then a NACK will be sent, otherwise an ACK will be sent (and in this
+      case the peripheral assumes more bytes are going to be read in a later call).
+
+   .. method:: write(buf: bytes) -> int
+
+      Write the bytes from *buf* to the bus.  Checks that an ACK is received
+      after each byte and stops transmitting the remaining bytes if a NACK is
+      received.  The function returns the number of ACKs that were received.
+
+   Standard bus operations
+   -----------------------
+
+   The following methods implement the standard I2C controller read and write
+   operations that target a given peripheral device.
+
+   .. method:: readfrom(addr: int, nbytes: int, stop: bool = True, /) -> bytes
+
+      Read *nbytes* from the peripheral specified by *addr*.
+      If *stop* is true then a STOP condition is generated at the end of the transfer.
+      Returns a `bytes` object with the data read.
+
+   .. method:: readfrom_into(addr: int, buf: bytearray, stop: bool = True, /) -> None
+
+      Read into *buf* from the peripheral specified by *addr*.
+      The number of bytes read will be the length of *buf*.
+      If *stop* is true then a STOP condition is generated at the end of the transfer.
+
+      The method returns ``None``.
+
+   .. method:: writeto(addr: int, buf: bytes, stop: bool = True, /) -> int
+
+      Write the bytes from *buf* to the peripheral specified by *addr*.  If a
+      NACK is received following the write of a byte from *buf* then the
+      remaining bytes are not sent.  If *stop* is true then a STOP condition is
+      generated at the end of the transfer, even if a NACK is received.
+      The function returns the number of ACKs that were received.
+
+   .. method:: writevto(addr: int, vector: tuple | list, stop: bool = True, /) -> int
+
+      Write the bytes contained in *vector* to the peripheral specified by *addr*.
+      *vector* should be a tuple or list of objects with the buffer protocol.
+      The *addr* is sent once and then the bytes from each object in *vector*
+      are written out sequentially.  The objects in *vector* may be zero bytes
+      in length in which case they don't contribute to the output.
+
+      If a NACK is received following the write of a byte from one of the
+      objects in *vector* then the remaining bytes, and any remaining objects,
+      are not sent.  If *stop* is true then a STOP condition is generated at
+      the end of the transfer, even if a NACK is received.  The function
+      returns the number of ACKs that were received.
+
+   Memory operations
+   -----------------
+
+   Some I2C devices act as a memory device (or set of registers) that can be read
+   from and written to.  In this case there are two addresses associated with an
+   I2C transaction: the peripheral address and the memory address.  The following
+   methods are convenience functions to communicate with such devices.
+
+   .. method:: readfrom_mem(addr: int, memaddr: int, nbytes: int, *, addrsize: int = 8) -> bytes
+
+      Read *nbytes* from the peripheral specified by *addr* starting from the memory
+      address specified by *memaddr*.
+      The argument *addrsize* specifies the address size in bits.
+      Returns a `bytes` object with the data read.
+
+   .. method:: readfrom_mem_into(addr: int, memaddr: int, buf: bytearray, *, addrsize: int = 8) -> None
+
+      Read into *buf* from the peripheral specified by *addr* starting from the
+      memory address specified by *memaddr*.  The number of bytes read is the
+      length of *buf*.
+      The argument *addrsize* specifies the address size in bits.
+
+      The method returns ``None``.
+
+   .. method:: writeto_mem(addr: int, memaddr: int, buf: bytes, *, addrsize: int = 8) -> None
+
+      Write *buf* to the peripheral specified by *addr* starting from the
+      memory address specified by *memaddr*.
+      The argument *addrsize* specifies the address size in bits.
+
+      The method returns ``None``.
+
 .. _machine.SoftI2C:
-.. class:: SoftI2C(scl, sda, *, freq=400000, timeout=50000)
+.. class:: SoftI2C(scl: Pin, sda: Pin, *, freq: int = 400000, timeout: int = 50000)
 
    Construct a new software I2C object.  The parameters are:
 
@@ -81,129 +207,3 @@ Constructors
       - *timeout* is the maximum time in microseconds to wait for clock
         stretching (SCL held low by another device on the bus), after
         which an ``OSError(ETIMEDOUT)`` exception is raised.
-
-General Methods
----------------
-
-.. method:: I2C.init(scl, sda, *, freq=400000)
-
-  Initialise the I2C bus with the given arguments:
-
-     - *scl* is a pin object for the SCL line
-     - *sda* is a pin object for the SDA line
-     - *freq* is the SCL clock rate
-
-   In the case of hardware I2C the actual clock frequency may be lower than the
-   requested frequency. This is dependent on the platform hardware. The actual
-   rate may be determined by printing the I2C object.
-
-.. method:: I2C.scan()
-
-   Scan all I2C addresses between 0x08 and 0x77 inclusive and return a list of
-   those that respond.  A device responds if it pulls the SDA line low after
-   its address (including a write bit) is sent on the bus.
-
-Primitive I2C operations
-------------------------
-
-The following methods implement the primitive I2C controller bus operations and can
-be combined to make any I2C transaction.  They are provided if you need more
-control over the bus, otherwise the standard methods (see below) can be used.
-
-These methods are only available on the `machine.SoftI2C` class.
-
-.. method:: I2C.start()
-
-   Generate a START condition on the bus (SDA transitions to low while SCL is high).
-
-.. method:: I2C.stop()
-
-   Generate a STOP condition on the bus (SDA transitions to high while SCL is high).
-
-.. method:: I2C.readinto(buf, nack=True, /)
-
-   Reads bytes from the bus and stores them into *buf*.  The number of bytes
-   read is the length of *buf*.  An ACK will be sent on the bus after
-   receiving all but the last byte.  After the last byte is received, if *nack*
-   is true then a NACK will be sent, otherwise an ACK will be sent (and in this
-   case the peripheral assumes more bytes are going to be read in a later call).
-
-.. method:: I2C.write(buf)
-
-   Write the bytes from *buf* to the bus.  Checks that an ACK is received
-   after each byte and stops transmitting the remaining bytes if a NACK is
-   received.  The function returns the number of ACKs that were received.
-
-Standard bus operations
------------------------
-
-The following methods implement the standard I2C controller read and write
-operations that target a given peripheral device.
-
-.. method:: I2C.readfrom(addr, nbytes, stop=True, /)
-
-   Read *nbytes* from the peripheral specified by *addr*.
-   If *stop* is true then a STOP condition is generated at the end of the transfer.
-   Returns a `bytes` object with the data read.
-
-.. method:: I2C.readfrom_into(addr, buf, stop=True, /)
-
-   Read into *buf* from the peripheral specified by *addr*.
-   The number of bytes read will be the length of *buf*.
-   If *stop* is true then a STOP condition is generated at the end of the transfer.
-
-   The method returns ``None``.
-
-.. method:: I2C.writeto(addr, buf, stop=True, /)
-
-   Write the bytes from *buf* to the peripheral specified by *addr*.  If a
-   NACK is received following the write of a byte from *buf* then the
-   remaining bytes are not sent.  If *stop* is true then a STOP condition is
-   generated at the end of the transfer, even if a NACK is received.
-   The function returns the number of ACKs that were received.
-
-.. method:: I2C.writevto(addr, vector, stop=True, /)
-
-   Write the bytes contained in *vector* to the peripheral specified by *addr*.
-   *vector* should be a tuple or list of objects with the buffer protocol.
-   The *addr* is sent once and then the bytes from each object in *vector*
-   are written out sequentially.  The objects in *vector* may be zero bytes
-   in length in which case they don't contribute to the output.
-
-   If a NACK is received following the write of a byte from one of the
-   objects in *vector* then the remaining bytes, and any remaining objects,
-   are not sent.  If *stop* is true then a STOP condition is generated at
-   the end of the transfer, even if a NACK is received.  The function
-   returns the number of ACKs that were received.
-
-Memory operations
------------------
-
-Some I2C devices act as a memory device (or set of registers) that can be read
-from and written to.  In this case there are two addresses associated with an
-I2C transaction: the peripheral address and the memory address.  The following
-methods are convenience functions to communicate with such devices.
-
-.. method:: I2C.readfrom_mem(addr, memaddr, nbytes, *, addrsize=8)
-
-   Read *nbytes* from the peripheral specified by *addr* starting from the memory
-   address specified by *memaddr*.
-   The argument *addrsize* specifies the address size in bits.
-   Returns a `bytes` object with the data read.
-
-.. method:: I2C.readfrom_mem_into(addr, memaddr, buf, *, addrsize=8)
-
-   Read into *buf* from the peripheral specified by *addr* starting from the
-   memory address specified by *memaddr*.  The number of bytes read is the
-   length of *buf*.
-   The argument *addrsize* specifies the address size in bits.
-
-   The method returns ``None``.
-
-.. method:: I2C.writeto_mem(addr, memaddr, buf, *, addrsize=8)
-
-   Write *buf* to the peripheral specified by *addr* starting from the
-   memory address specified by *memaddr*.
-   The argument *addrsize* specifies the address size in bits.
-
-   The method returns ``None``.

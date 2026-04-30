@@ -1,0 +1,96 @@
+:mod:`bmi270` --- BMI270 6-axis IMU
+===================================
+
+.. module:: bmi270
+   :synopsis: Bosch BMI270 6-axis inertial measurement unit driver
+
+Driver for the Bosch BMI270 low-power 6-axis inertial measurement unit
+(3-axis accelerometer plus 3-axis gyroscope) over I2C. The driver performs
+the full BMI270 initialisation sequence on construction --- soft reset,
+power-save disable, configuration-blob upload and status verification ---
+before configuring the requested output data rates and full-scale ranges.
+
+The class can optionally be linked to an external `bmm150.BMM150`
+magnetometer instance so that callers may treat a BMI270 + BMM150 pair as
+a single 9-axis device through the :meth:`magnet` method.
+
+.. note::
+
+   SPI mode is not supported by this driver; passing a non-I2C bus raises
+   ``ValueError``.
+
+Example::
+
+    import time
+    from machine import Pin, I2C
+    from bmi270 import BMI270
+
+    imu = BMI270(I2C(1, scl=Pin(15), sda=Pin(14)))
+
+    while True:
+        print("Accelerometer: x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*imu.accel()))
+        print("Gyroscope:     x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*imu.gyro()))
+        time.sleep_ms(100)
+
+Classes
+-------
+
+.. class:: BMI270(bus: machine.I2C, cs: machine.Pin | None = None, address: int = 0x68, gyro_odr: float = 100, gyro_scale: int = 2000, accel_odr: float = 100, accel_scale: int = 4, bmm_magnet: BMM150 | None = None)
+
+   Construct a ``BMI270`` instance and run the full configuration-load
+   initialisation sequence. Raises ``OSError`` if the chip ID does not
+   match or if the load sequence fails.
+
+   ``bus``
+      A configured :py:class:`machine.I2C` bus the sensor is attached to.
+
+   ``cs``
+      Reserved for SPI mode. Must be left as ``None``; SPI is not
+      currently implemented.
+
+   ``address``
+      7-bit I2C address of the device. Defaults to ``0x68``; some boards
+      strap the SDO pin high which selects ``0x69``.
+
+   ``gyro_odr``
+      Gyroscope output data rate in Hz. Must be one of
+      ``0.78``, ``1.5``, ``3.1``, ``6.25``, ``12.5``, ``25``, ``50``,
+      ``100``, ``200``, ``400``, ``800`` or ``1200``.
+
+   ``gyro_scale``
+      Gyroscope full-scale range in degrees-per-second. Must be one of
+      ``125``, ``250``, ``500``, ``1000`` or ``2000``.
+
+   ``accel_odr``
+      Accelerometer output data rate in Hz. Same set of values as
+      ``gyro_odr``.
+
+   ``accel_scale``
+      Accelerometer full-scale range in g. Must be one of ``2``, ``4``,
+      ``8`` or ``16``.
+
+   ``bmm_magnet``
+      Optional `bmm150.BMM150` instance. When provided, the
+      :meth:`magnet` method delegates to it; otherwise :meth:`magnet`
+      returns zeros.
+
+   .. method:: reset() -> None
+
+      Issue the BMI270 soft-reset command. After calling this the device
+      must be re-initialised before further use.
+
+   .. method:: gyro() -> tuple[float, float, float]
+
+      Return the gyroscope vector ``(x, y, z)`` in degrees per second,
+      scaled according to ``gyro_scale``.
+
+   .. method:: accel() -> tuple[float, float, float]
+
+      Return the acceleration vector ``(x, y, z)`` in units of standard
+      gravity (1 g = 9.81 m/s²), scaled according to ``accel_scale``.
+
+   .. method:: magnet() -> tuple[float, float, float]
+
+      If a ``bmm_magnet`` was supplied at construction, return the latest
+      magnetometer reading from that device. Otherwise return
+      ``(0.0, 0.0, 0.0)``.

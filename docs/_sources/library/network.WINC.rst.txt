@@ -18,7 +18,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: WINC([mode=MODE_STATION])
+.. class:: WINC(mode: int = MODE_STATION) -> None
 
    Creates a winc driver object and connects to the wifi shield which uses
    I/O pins P0, P1, P2, P3, P6, P7, and P8.
@@ -57,13 +57,13 @@ Constructors
    Methods
    -------
 
-   .. method:: active([is_active])
+   .. method:: active(is_active: Optional[bool] = None) -> bool
 
       Activate ("up") or deactivate ("down") network interface, if boolean
       argument is passed. Otherwise, query current state if no argument is
       provided. Most other methods require active interface.
 
-   .. method:: connect(ssid, [key=None, [security=WPA_PSK, [channel=1]]])
+   .. method:: connect(ssid: str, key: Optional[str] = None, security: int = WPA_PSK, channel: int = 1) -> None
 
       Connect to a wifi network with ssid ``ssid`` using key ``key`` with
       security ``security`` and channel ``channel``.
@@ -75,7 +75,7 @@ Constructors
 
          This method takes a little while to return.
 
-   .. method:: start_ap(ssid, [key=None, [security=OPEN, [channel=1]]])
+   .. method:: start_ap(ssid: str, key: Optional[str] = None, security: int = OPEN, channel: int = 1) -> None
 
       When running in AP mode this method must be called after creating
       a WINC object to configure and start the AP .
@@ -85,26 +85,26 @@ Constructors
       * security: AP security mode (only OPEN or WEP are supported).
       * channel: WiFi channel, change this if you have another AP running at the same channel.
 
-   .. method:: disconnect()
+   .. method:: disconnect() -> None
 
       Disconnect from the wifi network.
 
-   .. method:: isconnected()
+   .. method:: isconnected() -> bool
 
       Returns True if connected to an access point and an IP address has been
       obtained.
 
-   .. method:: connected_sta()
+   .. method:: connected_sta() -> List[str]
 
       This method returns a list containing the connected client's IP adress.
 
-   .. method:: wait_for_sta(timeout)
+   .. method:: wait_for_sta(timeout: int) -> List[str]
 
       This method blocks and waits for a client to connect. If timeout is 0
       this will block forever. This method returns a list containing the
       connected client's IP adress.
 
-   .. method:: ifconfig([ip_addr, subnet_addr, gateway_addr, dns_addr])
+   .. method:: ifconfig(config: Optional[Tuple[str, str, str, str]] = None) -> Tuple[str, str, str, str]
 
       Returns a tuple containing:
 
@@ -125,7 +125,7 @@ Constructors
          wlan.ifconfig(('192.168.1.100', '255.255.255.0', '192.168.1.1', '192.168.1.1'))
          wlan.connect(SSID, key=KEY, security=wlan.WPA_PSK)
 
-   .. method:: netinfo()
+   .. method:: netinfo() -> Tuple[int, int, str, str, str]
 
       Returns a tuple containing:
 
@@ -137,7 +137,7 @@ Constructors
 
       While connected to the network.
 
-   .. method:: scan()
+   .. method:: scan() -> List[Tuple[str, str, int, int, int, int]]
 
       Returns a list containing:
 
@@ -150,12 +150,12 @@ Constructors
 
       You don't need to be connected to call this.
 
-   .. method:: rssi()
+   .. method:: rssi() -> int
 
       Returns the received signal strength indicator (int) of the currently
       connected network.
 
-   .. method:: fw_version()
+   .. method:: fw_version() -> Tuple[int, int, int, int, int, int, int]
 
       Returns a tuple containing the wifi shield firmware version number.
 
@@ -167,12 +167,12 @@ Constructors
          * [5]: Driver Patch Version Number (int)
          * [6]: Hardware Revision Number - Chip ID (int)
 
-   .. method:: fw_dump(path)
+   .. method:: fw_dump(path: str) -> None
 
       Dumps the wifi shield firmware to a binary file at ``path``. You must
       have put the module into firmware mode to use this.
 
-   .. method:: fw_update(path)
+   .. method:: fw_update(path: str) -> None
 
       Programs the wifi shield with binary image found at ``path``. You must
       have put the module into firmware mode to use this.
@@ -181,33 +181,41 @@ Constructors
    ---------
 
    .. data:: OPEN
+      :type: int
 
       For connecting to an open wifi network.
 
    .. data:: WPA_PSK
+      :type: int
 
       For connecting to a WPA/PSK based password protected network.
 
    .. data:: 802_1X
+      :type: int
 
       Network is secured with WPA/WPA2 Enterprise.
 
    .. data:: MODE_STA
+      :type: int
 
       Start in station mode (i.e. connect to a network).
 
    .. data:: MODE_AP
+      :type: int
 
       Start in access point mode (i.e. become the network).
 
    .. data:: MODE_P2P
+      :type: int
 
       Start in wifi-direct mode.
 
    .. data:: MODE_BSP
+      :type: int
 
       Init BSP.
 
    .. data:: MODE_FIRMWARE
+      :type: int
 
       Setup in firmware update mode.

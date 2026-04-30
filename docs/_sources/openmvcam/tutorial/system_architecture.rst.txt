@@ -44,7 +44,7 @@ So, even if we have DRAM it would be hard to leverage using MicroPython's heap.
 
 Next, there's a larger memory segment for the frame buffer to store images in.
 On the bottom of the frame buffer new images are stored when functions like
-`sensor.snapshot()` are called. Any unused space in the frame buffer is then
+`csi.CSI.snapshot()` are called. Any unused space in the frame buffer is then
 available to be used as a "frame buffer stack" that builds from the top of the
 frame buffer down. This memory architecture design is what allows a lot of our
 computer vision methods to execute without having to allocate large data
@@ -65,7 +65,7 @@ Now while this works great it means you can only have one big image in the frame
 buffer in RAM. As the MicroPython heap is optimized for small objects storing
 large 100KB images in it doesn't make sense. To enable more images to fit in RAM
 we allow the frame buffer stack to be used for secondary image storage using
-`sensor.alloc_extra_fb()`. By allocating a secondary frame buffer on the
+``image.Image()`` with a custom buffer. By allocating a secondary frame buffer on the
 frame buffer stack you can now have two or more images in RAM at the cost
 of reducing memory space for more complex algorithms (like AprilTags).
 

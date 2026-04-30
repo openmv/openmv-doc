@@ -6,8 +6,6 @@
 
 This module implements a pseudo-random number generator (PRNG).
 
-|see_cpython_module| :mod:`python:random` .
-
 .. note::
 
    The following notation is used for intervals:
@@ -31,17 +29,17 @@ This module implements a pseudo-random number generator (PRNG).
 Functions for integers
 ----------------------
 
-.. function:: getrandbits(n)
+.. function:: getrandbits(n: int) -> int
 
     Return an integer with *n* random bits (0 <= n <= 32).
 
-.. function:: randint(a, b)
+.. function:: randint(a: int, b: int) -> int
 
     Return a random integer in the range [*a*, *b*].
 
-.. function:: randrange(stop)
-              randrange(start, stop)
-              randrange(start, stop[, step])
+.. function:: randrange(stop: int) -> int
+              randrange(start: int, stop: int) -> int
+              randrange(start: int, stop: int, step: int) -> int
 
     The first form returns a random integer from the range [0, *stop*).
     The second form returns a random integer from the range [*start*, *stop*).
@@ -53,11 +51,11 @@ Functions for integers
 Functions for floats
 --------------------
 
-.. function:: random()
+.. function:: random() -> float
 
     Return a random floating point number in the range [0.0, 1.0).
 
-.. function:: uniform(a, b)
+.. function:: uniform(a: float, b: float) -> float
 
     Return a random floating point number N such that *a* <= N <= *b* for *a* <= *b*,
     and *b* <= N <= *a* for *b* < *a*.
@@ -66,7 +64,7 @@ Functions for floats
 Other Functions
 ---------------
 
-.. function:: seed(n=None, /)
+.. function:: seed(n: Optional[int] = None, /) -> None
 
     Initialise the random number generator module with the seed *n* which should
     be an integer.  When no argument (or ``None``) is passed in it will (if
@@ -76,7 +74,7 @@ Other Functions
     The ``None`` case only works if ``MICROPY_PY_RANDOM_SEED_INIT_FUNC`` is
     enabled by the port, otherwise it raises ``ValueError``.
 
-.. function:: choice(sequence)
+.. function:: choice(sequence: Any) -> Any
 
     Chooses and returns one item at random from *sequence* (tuple, list or
     any object that supports the subscript operation).

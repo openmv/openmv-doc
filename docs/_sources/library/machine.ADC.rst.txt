@@ -21,7 +21,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: ADC(id, *, sample_ns, atten)
+.. class:: ADC(id: int | Pin, *, sample_ns: int = ..., atten: int = ...)
 
    Access the ADC associated with a source identified by *id*.  This
    *id* may be an integer (usually specifying a channel number), a
@@ -36,31 +36,31 @@ Constructors
 
      - *atten* specifies the input attenuation.
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: ADC.init(*, sample_ns, atten)
+   .. method:: init(*, sample_ns: int = ..., atten: int = ...) -> None
 
-   Apply the given settings to the ADC.  Only those arguments that are
-   specified will be changed.  See the ADC constructor above for what the
-   arguments are.
+      Apply the given settings to the ADC.  Only those arguments that are
+      specified will be changed.  See the ADC constructor above for what the
+      arguments are.
 
-.. method:: ADC.block()
+   .. method:: block() -> ADCBlock
 
-   Return the :ref:`ADCBlock <machine.ADCBlock>` instance associated with
-   this ADC object.
+      Return the :ref:`ADCBlock <machine.ADCBlock>` instance associated with
+      this ADC object.
 
-   This method only exists if the port supports the
-   :ref:`ADCBlock <machine.ADCBlock>` class.
+      This method only exists if the port supports the
+      :ref:`ADCBlock <machine.ADCBlock>` class.
 
-.. method:: ADC.read_u16()
+   .. method:: read_u16() -> int
 
-   Take an analog reading and return an integer in the range 0-65535.
-   The return value represents the raw reading taken by the ADC, scaled
-   such that the minimum value is 0 and the maximum value is 65535.
+      Take an analog reading and return an integer in the range 0-65535.
+      The return value represents the raw reading taken by the ADC, scaled
+      such that the minimum value is 0 and the maximum value is 65535.
 
-.. method:: ADC.read_uv()
+   .. method:: read_uv() -> int
 
-   Take an analog reading and return an integer value with units of
-   microvolts.  It is up to the particular port whether or not this value
-   is calibrated, and how calibration is done.
+      Take an analog reading and return an integer value with units of
+      microvolts.  It is up to the particular port whether or not this value
+      is calibrated, and how calibration is done.

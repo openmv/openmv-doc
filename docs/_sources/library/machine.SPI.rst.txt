@@ -58,7 +58,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: SPI(id, ...)
+.. class:: SPI(id: int, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple | None = None)
 
    Construct an SPI object on the given bus, *id*. Values of *id* depend
    on a particular port and its hardware. Values 0, 1, etc. are commonly used
@@ -69,79 +69,82 @@ Constructors
    the bus, if any).  If extra arguments are given, the bus is initialised.
    See ``init`` for parameters of initialisation.
 
+   Methods
+   -------
+
+   .. method:: init(baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple = (SCK, MOSI, MISO)) -> None
+
+      Initialise the SPI bus with the given parameters:
+
+        - ``baudrate`` is the SCK clock rate.
+        - ``polarity`` can be 0 or 1, and is the level the idle clock line sits at.
+        - ``phase`` can be 0 or 1 to sample data on the first or second clock edge
+          respectively.
+        - ``bits`` is the width in bits of each transfer. Only 8 is guaranteed to be supported by all hardware.
+        - ``firstbit`` can be ``SPI.MSB`` or ``SPI.LSB``.
+        - ``sck``, ``mosi``, ``miso`` are pins (machine.Pin) objects to use for bus signals. For most
+          hardware SPI blocks (as selected by ``id`` parameter to the constructor), pins are fixed
+          and cannot be changed. In some cases, hardware blocks allow 2-3 alternative pin sets for
+          a hardware SPI block. Arbitrary pin assignments are possible only for a bitbanging SPI driver
+          (``id`` = -1).
+        - ``pins`` - WiPy port doesn't ``sck``, ``mosi``, ``miso`` arguments, and instead allows to
+          specify them as a tuple of ``pins`` parameter.
+
+      In the case of hardware SPI the actual clock frequency may be lower than the
+      requested baudrate. This is dependent on the platform hardware. The actual
+      rate may be determined by printing the SPI object.
+
+   .. method:: deinit() -> None
+
+      Turn off the SPI bus.
+
+   .. method:: read(nbytes: int, write: int = 0x00) -> bytes
+
+       Read a number of bytes specified by ``nbytes`` while continuously writing
+       the single byte given by ``write``.
+       Returns a ``bytes`` object with the data that was read.
+
+   .. method:: readinto(buf: bytearray, write: int = 0x00) -> None
+
+       Read into the buffer specified by ``buf`` while continuously writing the
+       single byte given by ``write``.
+       Returns ``None``.
+
+   .. method:: write(buf: bytes) -> None
+
+       Write the bytes contained in ``buf``.
+       Returns ``None``.
+
+   .. method:: write_readinto(write_buf: bytes, read_buf: bytearray) -> None
+
+       Write the bytes from ``write_buf`` while reading into ``read_buf``.  The
+       buffers can be the same or different, but both buffers must have the
+       same length.
+       Returns ``None``.
+
+   Constants
+   ---------
+
+   .. data:: CONTROLLER
+      :type: int
+
+      for initialising the SPI bus to controller; this is only used for the WiPy
+
+   .. data:: MSB
+             SoftSPI.MSB
+      :type: int
+
+      set the first bit to be the most significant bit
+
+   .. data:: LSB
+             SoftSPI.LSB
+      :type: int
+
+      set the first bit to be the least significant bit
+
 .. _machine.SoftSPI:
-.. class:: SoftSPI(baudrate=500000, *, polarity=0, phase=0, bits=8, firstbit=MSB, sck=None, mosi=None, miso=None)
+.. class:: SoftSPI(baudrate: int = 500000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None)
 
    Construct a new software SPI object.  Additional parameters must be
    given, usually at least *sck*, *mosi* and *miso*, and these are used
    to initialise the bus.  See `SPI.init` for a description of the parameters.
-
-Methods
--------
-
-.. method:: SPI.init(baudrate=1000000, *, polarity=0, phase=0, bits=8, firstbit=SPI.MSB, sck=None, mosi=None, miso=None, pins=(SCK, MOSI, MISO))
-
-   Initialise the SPI bus with the given parameters:
-
-     - ``baudrate`` is the SCK clock rate.
-     - ``polarity`` can be 0 or 1, and is the level the idle clock line sits at.
-     - ``phase`` can be 0 or 1 to sample data on the first or second clock edge
-       respectively.
-     - ``bits`` is the width in bits of each transfer. Only 8 is guaranteed to be supported by all hardware.
-     - ``firstbit`` can be ``SPI.MSB`` or ``SPI.LSB``.
-     - ``sck``, ``mosi``, ``miso`` are pins (machine.Pin) objects to use for bus signals. For most
-       hardware SPI blocks (as selected by ``id`` parameter to the constructor), pins are fixed
-       and cannot be changed. In some cases, hardware blocks allow 2-3 alternative pin sets for
-       a hardware SPI block. Arbitrary pin assignments are possible only for a bitbanging SPI driver
-       (``id`` = -1).
-     - ``pins`` - WiPy port doesn't ``sck``, ``mosi``, ``miso`` arguments, and instead allows to
-       specify them as a tuple of ``pins`` parameter.
-
-   In the case of hardware SPI the actual clock frequency may be lower than the
-   requested baudrate. This is dependent on the platform hardware. The actual
-   rate may be determined by printing the SPI object.
-
-.. method:: SPI.deinit()
-
-   Turn off the SPI bus.
-
-.. method:: SPI.read(nbytes, write=0x00)
-
-    Read a number of bytes specified by ``nbytes`` while continuously writing
-    the single byte given by ``write``.
-    Returns a ``bytes`` object with the data that was read.
-
-.. method:: SPI.readinto(buf, write=0x00)
-
-    Read into the buffer specified by ``buf`` while continuously writing the
-    single byte given by ``write``.
-    Returns ``None``.
-
-.. method:: SPI.write(buf)
-
-    Write the bytes contained in ``buf``.
-    Returns ``None``.
-
-.. method:: SPI.write_readinto(write_buf, read_buf)
-
-    Write the bytes from ``write_buf`` while reading into ``read_buf``.  The
-    buffers can be the same or different, but both buffers must have the
-    same length.
-    Returns ``None``.
-
-Constants
----------
-
-.. data:: SPI.CONTROLLER
-
-   for initialising the SPI bus to controller; this is only used for the WiPy
-
-.. data:: SPI.MSB
-          SoftSPI.MSB
-
-   set the first bit to be the most significant bit
-
-.. data:: SPI.LSB
-          SoftSPI.LSB
-
-   set the first bit to be the least significant bit

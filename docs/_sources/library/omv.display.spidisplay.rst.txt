@@ -1,162 +1,140 @@
 .. currentmodule:: display
-.. _display.SPIDisplay:
 
 class SPIDisplay -- SPI Display Driver
 ======================================
 
 The `SPIDisplay` class is used for driving SPI LCDs.
 
-Example usage for driving the 128x160 LCD shield::
-
-    import sensor, display
-
-    # Setup camera.
-    sensor.reset()
-    sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.LCD)
-    sensor.skip_frames()
-    lcd = display.SPIDisplay()
-
-    # Show image.
-    while(True):
-        lcd.write(sensor.snapshot())
-
 Constructors
 ------------
 
-.. class:: SPIDisplay(width=128, height=160, refresh=60, bgr=False, byte_swap=False, hmirror=False, vflip=True, triple_buffer, controller, backlight)
+.. class:: SPIDisplay(width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool = ..., *, controller: Optional[object] = None, backlight: Optional[object] = None)
 
-    ``width`` SPI LCD width. By default this is 128 to match the OpenMV 128x160 LCD shield.
+    ``width`` SPI LCD width in pixels (1..32767).
 
-    ``height`` SPI LCD height. By default this is 160 to match the OpenMV 128x160 LCD shield.
+    ``height`` SPI LCD height in pixels (1..32767).
 
-    ``refresh`` Sets the LCD refresh rate in hertz. This controls the SPI LCD shield clock.
+    ``refresh`` LCD refresh rate in hertz (1..120). Controls the SPI clock rate.
 
     ``bgr`` set to True to swap the red and blue channels.
-    This argument allows you to use our driver with more types of displays.
 
     ``byte_swap`` set to True to swap RGB565 pixel bytes sent to the LCD.
-    This argument allows you to use our driver with more types of displays.
 
     ``hmirror`` set to True to horizontally mirror the display output.
-    This argument allows you to use our driver with more types of displays.
 
-    ``vflip``  set to True to vertically flip the display output.
-    This argument allows you to use our driver with more types of displays.
+    ``vflip`` set to True to vertically flip the display output.
 
-    ``triple_buffer`` If True then makes updates to the screen non-blocking at the cost of 3X the
-    display size in RAM. This is on by default for OpenMV Cam boards with SDRAM.
+    ``triple_buffer`` if True makes updates to the screen non-blocking at the cost of 3X
+    the display size in RAM. Default depends on the board (on for boards with SDRAM).
 
-    ``controller`` Pass the controller chip class here to initialize it along with the display.
+    ``controller`` keyword-only. Pass a controller chip class instance to initialize it
+    along with the display. When provided, the controller's ``init``, ``display_on``,
+    ``display_off``, and ``ram_write`` methods (if present) are invoked instead of the
+    built-in commands.
 
-    ``backlight`` specify a backlight controller module to use. By default the backlight will be
-    controlled via a GPIO pin.
+    ``backlight`` keyword-only. Pass a backlight controller module to use. By default
+    the backlight is controlled via a GPIO pin.
 
-    .. note::
+   .. method:: width() -> int
 
-        Uses pins P0, P2, P3, P6, P7, and P8.
+      Returns the width of the screen.
 
-Methods
--------
+   .. method:: height() -> int
 
-.. method:: SPIDisplay.deinit() -> None
+      Returns the height of the screen.
 
-   Releases the I/O pins and RAM used by the class. This is called automatically on destruction.
+   .. method:: refresh() -> int
 
-.. method:: SPIDisplay.width() -> int
+      Returns the refresh rate.
 
-   Returns the width of the screen.
+   .. method:: bgr() -> bool
 
-.. method:: SPIDisplay.height() -> int
+      Returns whether the red and blue channels are swapped.
 
-   Returns the height of the screen.
+   .. method:: byte_swap() -> bool
 
-.. method:: SPIDisplay.refresh() -> int
+      Returns whether RGB565 pixels are sent byte-reversed.
 
-   Returns the refresh rate.
+   .. method:: triple_buffer() -> bool
 
-.. method:: SPIDisplay.bgr() -> bool
+      Returns whether triple buffering is enabled.
 
-   Returns if the red and blue channels are swapped.
+   .. method:: framesize() -> int
 
-.. method:: SPIDisplay.byte_swap() -> bool
+      Returns the configured framesize identifier.
 
-   Returns if the RGB565 pixels are displayed byte reversed.
+   .. method:: write(image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: Optional[Tuple[int, int, int, int]] = None, rgb_channel: int = -1, alpha: int = 255, color_palette: Optional[Union[int, image.Image]] = None, alpha_palette: Optional[image.Image] = None, hint: int = 0) -> None
 
-.. method:: SPIDisplay.triple_buffer() -> bool
+      Displays ``image`` with its top-left corner at ``(x, y)``. A path string may be
+      passed in place of an image to load and draw it in one step.
 
-   Returns if triple buffering is enabled.
+      ``x_scale`` x-axis scale factor. Negative values flip horizontally. If ``y_scale``
+      is omitted it follows ``x_scale`` to preserve aspect ratio.
 
-.. method:: SPIDisplay.write(image:image.Image, x=0, y=0, x_scale=1.0, y_scale=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel=-1, alpha=256, color_palette=None, alpha_palette=None, hint=0)
+      ``y_scale`` y-axis scale factor. Negative values flip vertically (requires
+      ``triple_buffer=True``). If ``x_scale`` is omitted it follows ``y_scale``.
 
-   Displays an ``image`` whose top-left corner starts at location x, y.
+      ``roi`` region-of-interest rectangle ``(x, y, w, h)`` of the source image to draw.
 
-   You may also pass a path instead of an image object for this method to automatically load the image
-   from disk and draw it in one step. E.g. ``write("test.jpg")``.
+      ``rgb_channel`` RGB channel to extract from an RGB565 source image (0=R, 1=G, 2=B,
+      -1=all). Range: -1..2.
 
-   ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+      ``alpha`` opacity of the image. 0 is fully transparent (black), 255 is opaque.
+      Range: 0..255.
 
-   ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+      ``color_palette`` color palette enum (e.g. `image.PALETTE_RAINBOW`) or a 256-pixel
+      RGB565 image used as a color lookup table on the grayscale value of the source.
+      Applied after ``rgb_channel`` extraction.
 
-   ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the image to display. This
-   allows you to extract just the pixels in the ROI to scale.
+      ``alpha_palette`` 256-pixel grayscale image used as a per-pixel alpha lookup table
+      modulating ``alpha`` based on source grayscale value.
 
-   ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-   and to render on the display. For example, if you pass ``rgb_channel=1`` this will
-   extract the green channel of the RGB565 image and display that in grayscale.
+      ``hint`` logical OR of the flags:
 
-   ``alpha`` controls how opaque the image is. A value of 256 displays an opaque image while a
-   value lower than 256 produces a black transparent image. 0 results in a perfectly black image.
+         * `image.AREA`: Use area scaling when downscaling.
+         * `image.BILINEAR`: Use bilinear scaling.
+         * `image.BICUBIC`: Use bicubic scaling.
+         * `image.CENTER`: Center the image on the display (after scaling).
+         * `image.HMIRROR`: Horizontally mirror the image.
+         * `image.VFLIP`: Vertically flip the image.
+         * `image.TRANSPOSE`: Transpose the image (swap x/y).
+         * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply ``rgb_channel`` extraction before scaling.
+         * `image.APPLY_COLOR_PALETTE_FIRST`: Apply ``color_palette`` before scaling.
+         * `image.SCALE_ASPECT_KEEP`: Scale to fit inside the display.
+         * `image.SCALE_ASPECT_EXPAND`: Scale to fill the display (cropping).
+         * `image.SCALE_ASPECT_IGNORE`: Scale to fill the display (stretching).
+         * `image.ROTATE_90`: Rotate by 90 degrees (``VFLIP | TRANSPOSE``).
+         * `image.ROTATE_180`: Rotate by 180 degrees (``HMIRROR | VFLIP``).
+         * `image.ROTATE_270`: Rotate by 270 degrees (``HMIRROR | TRANSPOSE``).
 
-   ``color_palette`` if not ``-1`` can be an a color palette enum or
-   a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-   whatever the input image is. This is applied after ``rgb_channel`` extraction if used.
+   .. method:: clear(display_off: bool = False) -> None
 
-   ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-   palette which modulates the ``alpha`` value of the input image being displayed at a pixel pixel
-   level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-   A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-   more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
+      Clears the LCD screen to black.
 
-   ``hint`` can be a logical OR of the flags:
+      ``display_off`` if True, turns off the display logic instead of clearing the
+      framebuffer. The backlight should also be disabled afterwards.
 
-      * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-      * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-      * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
-      * `image.HMIRROR`: Horizontally mirror the image.
-      * `image.VFLIP`: Vertically flip the image.
-      * `image.TRANSPOSE`: Transpose the image (swap x/y).
-      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
-      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+   .. method:: backlight(value: Optional[int] = None) -> Optional[int]
 
-.. method:: SPIDisplay.clear(display_off=False) -> None
+      With ``value``, sets the backlight intensity (0=off..100=full). Without arguments,
+      returns the current backlight value.
 
-   Clears the lcd screen to black.
+      Unless a `DACBacklight` or `PWMBacklight` controller is passed at construction,
+      the backlight is driven as a GPIO pin and only goes from 0 (off) to non-zero (on).
 
-   ``display_off`` if True instead turns off the display logic versus clearing the frame LCD
-   frame buffer to black. You should also turn off the backlight too after this to ensure the
-   screen goes to black as many displays are white when only the backlight is on.
+   .. method:: bus_write(cmd: int, args: Optional[Union[int, bytes]] = None, *, dcs: bool = False) -> None
 
-.. method:: SPIDisplay.backlight(value:Optional[int]=None) -> int
+      Sends ``cmd`` to the display over the SPI bus, optionally followed by ``args``
+      (an int byte or a buffer of bytes). ``dcs`` selects DCS framing when supported by
+      the controller.
 
-   Sets the lcd backlight dimming value. 0 (off) to 100 (on).
+   .. method:: bus_read(cmd: int, len: int, args: Optional[Union[int, bytes]] = None, *, dcs: bool = False) -> bytearray
 
-   Note that unless you pass `DACBacklight` or `PWMBacklight` the backlight will be controlled
-   as a GPIO pin and will only go from 0 (off) to !0 (on).
+      Sends ``cmd`` over the SPI bus and reads ``len`` bytes back, returning them as a
+      ``bytearray``. ``args`` is optionally written before the read (an int byte or a
+      buffer of bytes). ``dcs`` selects DCS framing when supported by the controller.
 
-   Pass no arguments to get the state of the backlight value.
+   .. method:: ioctl(cmd: int, arg: Optional[object] = None) -> object
 
-.. method:: SPIDisplay.bus_write(cmd:int, args=None) -> None
-
-   Send the SPI Display ``cmd`` with ``args``.
+      Issues a controller-specific ioctl ``cmd`` with optional ``arg``. Raises
+      ``ValueError`` if the underlying display does not support ioctl.

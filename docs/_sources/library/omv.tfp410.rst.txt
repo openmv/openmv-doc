@@ -1,34 +1,32 @@
 :mod:`tfp410` --- DVI/HDMI Controller
 =====================================
 
-.. module:: TFP410
+.. module:: tfp410
    :synopsis: DVI/HDMI Controller
 
-DVI/HDMI Controller for the OpenMV Pure Thermal.
+The ``tfp410`` module provides a driver for the TFP410 DVI/HDMI serializer used to
+drive an external DVI/HDMI display via a 24-bit parallel LCD bus.
 
-.. note::
 
-   This will be refactored to be under the display module soon.
+class TFP410 -- DVI/HDMI Controller
+-----------------------------------
 
-Constructors
-------------
+.. class:: TFP410(*, i2c_addr: int=0x3F)
 
-.. class:: tfp410.TFP410(i2c_addr=0x3F)
+   Initializes the TFP410 DVI/HDMI controller chip.
 
-   Initializes the TFP410 DVI/HDMI controller chip to drive an external DVI/HDMI display via
-   a 24-bit parallel LCD bus. You just need to create this object to initialize the display.
+   ``i2c_addr`` is the I2C address of the TFP410.
 
-Methods
--------
+   .. method:: isconnected() -> bool
 
-.. method:: TFP410.isconnected() -> bool
+      Returns ``True`` if an external display is connected, ``False`` otherwise.
 
-   Returns if an external display is connected.
+   .. method:: hotplug_callback(callback: Optional[Callable[[bool], None]]) -> None
 
-.. method:: TFP410.hotplug_callback(callback) -> None
+      Registers a ``callback`` function that will be called whenever the connection
+      state of an external display changes. The new connection state (``bool``) is
+      passed as the only argument to ``callback``.
 
-   Registers a ``callback`` function that be called whenever the state
-   of an external display being connected changes. The new state will be passed as an argument.
+      Pass ``None`` as ``callback`` to disable the hotplug callback.
 
-   If you use this method do not call `TFP410.isconnected()` anymore until the callback is
-   disabled by pass ``None`` as the callback for this method.
+      While a callback is registered, do not call `TFP410.isconnected()`.

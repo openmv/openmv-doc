@@ -28,7 +28,7 @@ For example::
 Constructors
 ------------
 
-.. class:: FrameBuffer(buffer, width, height, format, stride=width, /)
+.. class:: FrameBuffer(buffer: Any, width: int, height: int, format: int, stride: int | None = None, /)
 
     Construct a FrameBuffer object.  The parameters are:
 
@@ -53,105 +53,106 @@ Constructors
     optionally *stride*.  Invalid *buffer* size or dimensions may lead to
     unexpected errors.
 
-Drawing primitive shapes
-------------------------
+   .. method:: fill(c: int) -> None
 
-The following methods draw shapes onto the FrameBuffer.
+      Fill the entire FrameBuffer with the specified color.
 
-.. method:: FrameBuffer.fill(c)
+   .. method:: pixel(x: int, y: int, c: Optional[int] = None) -> Optional[int]
 
-    Fill the entire FrameBuffer with the specified color.
+      If *c* is not given, get the color value of the specified pixel.
+      If *c* is given, set the specified pixel to the given color.
 
-.. method:: FrameBuffer.pixel(x, y[, c])
+   .. method:: hline(x: int, y: int, w: int, c: int) -> None
+               vline(x: int, y: int, h: int, c: int) -> None
+               line(x1: int, y1: int, x2: int, y2: int, c: int) -> None
 
-    If *c* is not given, get the color value of the specified pixel.
-    If *c* is given, set the specified pixel to the given color.
+      Draw a line from a set of coordinates using the given color and
+      a thickness of 1 pixel. The `line` method draws the line up to
+      a second set of coordinates whereas the `hline` and `vline`
+      methods draw horizontal and vertical lines respectively up to
+      a given length.
 
-.. method:: FrameBuffer.hline(x, y, w, c)
-.. method:: FrameBuffer.vline(x, y, h, c)
-.. method:: FrameBuffer.line(x1, y1, x2, y2, c)
+   .. method:: rect(x: int, y: int, w: int, h: int, c: int, f: bool = False) -> None
 
-    Draw a line from a set of coordinates using the given color and
-    a thickness of 1 pixel. The `line` method draws the line up to
-    a second set of coordinates whereas the `hline` and `vline`
-    methods draw horizontal and vertical lines respectively up to
-    a given length.
+      Draw a rectangle at the given location, size and color.
 
-.. method:: FrameBuffer.rect(x, y, w, h, c[, f])
+      The optional *f* parameter can be set to ``True`` to fill the rectangle.
+      Otherwise just a one pixel outline is drawn.
 
-    Draw a rectangle at the given location, size and color.
+   .. method:: ellipse(x: int, y: int, xr: int, yr: int, c: int, f: bool = False, m: int = 0) -> None
 
-    The optional *f* parameter can be set to ``True`` to fill the rectangle.
-    Otherwise just a one pixel outline is drawn.
+      Draw an ellipse at the given location. Radii *xr* and *yr* define the
+      geometry; equal values cause a circle to be drawn. The *c* parameter
+      defines the color.
 
-.. method:: FrameBuffer.ellipse(x, y, xr, yr, c[, f, m])
+      The optional *f* parameter can be set to ``True`` to fill the ellipse.
+      Otherwise just a one pixel outline is drawn.
 
-    Draw an ellipse at the given location. Radii *xr* and *yr* define the
-    geometry; equal values cause a circle to be drawn. The *c* parameter
-    defines the color.
+      The optional *m* parameter enables drawing to be restricted to certain
+      quadrants of the ellipse. The LS four bits determine which quadrants are
+      to be drawn, with bit 0 specifying Q1, b1 Q2, b2 Q3 and b3 Q4. Quadrants
+      are numbered counterclockwise with Q1 being top right.
 
-    The optional *f* parameter can be set to ``True`` to fill the ellipse.
-    Otherwise just a one pixel outline is drawn.
+   .. method:: poly(x: int, y: int, coords: Any, c: int, f: bool = False) -> None
 
-    The optional *m* parameter enables drawing to be restricted to certain
-    quadrants of the ellipse. The LS four bits determine which quadrants are
-    to be drawn, with bit 0 specifying Q1, b1 Q2, b2 Q3 and b3 Q4. Quadrants
-    are numbered counterclockwise with Q1 being top right.
+      Given a list of coordinates, draw an arbitrary (convex or concave) closed
+      polygon at the given x, y location using the given color.
 
-.. method:: FrameBuffer.poly(x, y, coords, c[, f])
+      The *coords* must be specified as a :mod:`array` of integers, e.g.
+      ``array('h', [x0, y0, x1, y1, ... xn, yn])``.
 
-    Given a list of coordinates, draw an arbitrary (convex or concave) closed
-    polygon at the given x, y location using the given color.
+      The optional *f* parameter can be set to ``True`` to fill the polygon.
+      Otherwise just a one pixel outline is drawn.
 
-    The *coords* must be specified as a :mod:`array` of integers, e.g.
-    ``array('h', [x0, y0, x1, y1, ... xn, yn])``.
+   .. method:: text(s: str, x: int, y: int, c: int = 1) -> None
 
-    The optional *f* parameter can be set to ``True`` to fill the polygon.
-    Otherwise just a one pixel outline is drawn.
+      Write text to the FrameBuffer using the coordinates as the upper-left
+      corner of the text. The color of the text can be defined by the optional
+      argument but is otherwise a default value of 1. All characters have
+      dimensions of 8x8 pixels and there is currently no way to change the font.
 
-Drawing text
-------------
+   .. method:: scroll(xstep: int, ystep: int) -> None
 
-.. method:: FrameBuffer.text(s, x, y[, c])
+      Shift the contents of the FrameBuffer by the given vector. This may
+      leave a footprint of the previous colors in the FrameBuffer.
 
-    Write text to the FrameBuffer using the the coordinates as the upper-left
-    corner of the text. The color of the text can be defined by the optional
-    argument but is otherwise a default value of 1. All characters have
-    dimensions of 8x8 pixels and there is currently no way to change the font.
+   .. method:: blit(fbuf: Union[FrameBuffer, Tuple], x: int, y: int, key: int = -1, palette: Optional[FrameBuffer] = None) -> None
 
+      Draw another FrameBuffer on top of the current one at the given coordinates.
+      If *key* is specified then it should be a color integer and the
+      corresponding color will be considered transparent: all pixels with that
+      color value will not be drawn. (If the *palette* is specified then the *key*
+      is compared to the value from *palette*, not to the value directly from
+      *fbuf*.)
 
-Other methods
--------------
+      *fbuf* can be another FrameBuffer instance, or a tuple or list of the form::
 
-.. method:: FrameBuffer.scroll(xstep, ystep)
+          (buffer, width, height, format)
 
-    Shift the contents of the FrameBuffer by the given vector. This may
-    leave a footprint of the previous colors in the FrameBuffer.
+      or::
 
-.. method:: FrameBuffer.blit(fbuf, x, y, key=-1, palette=None)
+          (buffer, width, height, format, stride)
 
-    Draw another FrameBuffer on top of the current one at the given coordinates.
-    If *key* is specified then it should be a color integer and the
-    corresponding color will be considered transparent: all pixels with that
-    color value will not be drawn. (If the *palette* is specified then the *key*
-    is compared to the value from *palette*, not to the value directly from
-    *fbuf*.)
+      This matches the signature of the FrameBuffer constructor, and the elements
+      of the tuple/list are the same as the arguments to the constructor except that
+      the *buffer* here can be read-only.
 
-    The *palette* argument enables blitting between FrameBuffers with differing
-    formats. Typical usage is to render a monochrome or grayscale glyph/icon to
-    a color display. The *palette* is a FrameBuffer instance whose format is
-    that of the current FrameBuffer. The *palette* height is one pixel and its
-    pixel width is the number of colors in the source FrameBuffer. The *palette*
-    for an N-bit source needs 2**N pixels; the *palette* for a monochrome source
-    would have 2 pixels representing background and foreground colors. The
-    application assigns a color to each pixel in the *palette*. The color of the
-    current pixel will be that of that *palette* pixel whose x position is the
-    color of the corresponding source pixel.
+      The *palette* argument enables blitting between FrameBuffers with differing
+      formats. Typical usage is to render a monochrome or grayscale glyph/icon to
+      a color display. The *palette* is a FrameBuffer instance whose format is
+      that of the current FrameBuffer. The *palette* height is one pixel and its
+      pixel width is the number of colors in the source FrameBuffer. The *palette*
+      for an N-bit source needs 2**N pixels; the *palette* for a monochrome source
+      would have 2 pixels representing background and foreground colors. The
+      application assigns a color to each pixel in the *palette*. The color of the
+      current pixel will be that of that *palette* pixel whose x position is the
+      color of the corresponding source pixel.
 
 Constants
 ---------
 
 .. data:: framebuf.MONO_VLSB
+   :type: int
 
     Monochrome (1-bit) color format
     This defines a mapping where the bits in a byte are vertically mapped with
@@ -161,6 +162,7 @@ Constants
     at locations starting at the leftmost edge, 8 pixels lower.
 
 .. data:: framebuf.MONO_HLSB
+   :type: int
 
     Monochrome (1-bit) color format
     This defines a mapping where the bits in a byte are horizontally mapped.
@@ -170,6 +172,7 @@ Constants
     pixel lower.
 
 .. data:: framebuf.MONO_HMSB
+   :type: int
 
     Monochrome (1-bit) color format
     This defines a mapping where the bits in a byte are horizontally mapped.
@@ -179,17 +182,21 @@ Constants
     pixel lower.
 
 .. data:: framebuf.RGB565
+   :type: int
 
     Red Green Blue (16-bit, 5+6+5) color format
 
 .. data:: framebuf.GS2_HMSB
+   :type: int
 
     Grayscale (2-bit) color format
 
 .. data:: framebuf.GS4_HMSB
+   :type: int
 
     Grayscale (4-bit) color format
 
 .. data:: framebuf.GS8
+   :type: int
 
     Grayscale (8-bit) color format

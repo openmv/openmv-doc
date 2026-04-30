@@ -12,26 +12,32 @@ direct access to peripheral registers.
 Memory access
 -------------
 
-The module exposes three objects used for raw memory access.
+The module exposes three subscriptable objects used for raw memory access.
+Each behaves like a sparse array indexed by byte address: ``value = memN[addr]``
+reads, ``memN[addr] = value`` writes. The address is always a byte address,
+regardless of the access width.
+
+These memory objects can be used in combination with the peripheral register
+constants below to read and write MCU hardware peripheral registers, as well
+as any other location in the SoC's address space.
 
 .. data:: mem8
 
-    Read/write 8 bits of memory.
+   Subscriptable 8-bit memory accessor. ``mem8[addr]`` reads an ``int`` in the
+   range 0-255 from the byte at ``addr``; ``mem8[addr] = value`` writes the
+   low 8 bits of ``value``. ``addr`` may be any byte-aligned address.
 
 .. data:: mem16
 
-    Read/write 16 bits of memory.
+   Subscriptable 16-bit (halfword) memory accessor. ``mem16[addr]`` reads an
+   ``int`` in the range 0-65535; ``mem16[addr] = value`` writes the low 16
+   bits. ``addr`` must be aligned to 2 bytes.
 
 .. data:: mem32
 
-    Read/write 32 bits of memory.
-
-Use subscript notation ``[...]`` to index these objects with the address of
-interest.
-
-These memory objects can be used in combination with the peripheral register
-constants to read and write registers of the MCU hardware peripherals, as well
-as all other areas of address space.
+   Subscriptable 32-bit (word) memory accessor. ``mem32[addr]`` reads an
+   ``int`` in the range 0-0xFFFFFFFF; ``mem32[addr] = value`` writes the low
+   32 bits. ``addr`` must be aligned to 4 bytes.
 
 
 Peripheral register constants
@@ -42,22 +48,27 @@ files, and the constants available depend on the microcontroller series that is
 being compiled for.  Examples of some constants include:
 
 .. data:: GPIOA
+   :type: int
 
     Base address of the GPIOA peripheral.
 
 .. data:: GPIOB
+   :type: int
 
     Base address of the GPIOB peripheral.
 
 .. data:: GPIO_BSRR
+   :type: int
 
     Offset of the GPIO bit set/reset register.
 
 .. data:: GPIO_IDR
+   :type: int
 
     Offset of the GPIO input data register.
 
 .. data:: GPIO_ODR
+   :type: int
 
     Offset of the GPIO output data register.
 
@@ -85,19 +96,19 @@ Functions specific to STM32WBxx MCUs
 These functions are available on STM32WBxx microcontrollers, and interact with
 the second CPU, the RF core.
 
-.. function:: rfcore_status()
+.. function:: rfcore_status() -> int
 
     Returns the status of the second CPU as an integer (the first word of device
     info table).
 
-.. function:: rfcore_fw_version(id)
+.. function:: rfcore_fw_version(id: int) -> Tuple[int, int, int, int, int]
 
     Get the version of the firmware running on the second CPU.  Pass in 0 for
     *id* to get the FUS version, and 1 to get the WS version.
 
     Returns a 5-tuple with the full version number.
 
-.. function:: rfcore_sys_hci(ogf, ocf, data, timeout_ms=0)
+.. function:: rfcore_sys_hci(ogf: int, ocf: int, data: bytes, timeout_ms: int = 0) -> bytes
 
     Execute a HCI command on the SYS channel.  The execution is synchronous.
 
@@ -109,7 +120,7 @@ Functions specific to STM32WLxx MCUs
 These functions are available on STM32WLxx microcontrollers, and interact with
 the integrated "SUBGHZ" radio modem peripheral.
 
-.. function:: subghz_cs(level)
+.. function:: subghz_cs(level: bool) -> None
 
    Sets the internal SPI CS pin attached to the radio peripheral. The ``level``
    argument is active-low: a truthy value means "CS pin high" and de-asserts the
@@ -118,7 +129,7 @@ the integrated "SUBGHZ" radio modem peripheral.
    The internal-only SPI bus corresponding to this CS signal can be instantiated
    using :ref:`machine.SPI()<machine.SPI>` ``id`` value ``"SUBGHZ"``.
 
-.. function:: subghz_irq(handler)
+.. function:: subghz_irq(handler: Optional[Callable[..., Any]]) -> None
 
    Sets the internal SUBGHZ radio interrupt handler to the provided
    function. The handler function is called as a "hard" interrupt in response to
@@ -132,7 +143,7 @@ the integrated "SUBGHZ" radio modem peripheral.
    code should call ``subghz_irq()`` to set the handler again. This has the side
    effect of re-enabling the IRQ.
 
-.. function:: subghz_is_busy()
+.. function:: subghz_is_busy() -> bool
 
    Return a ``bool`` corresponding to the internal "RFBUSYS" signal from the
    radio peripheral. Before sending a new command to the radio over SPI then

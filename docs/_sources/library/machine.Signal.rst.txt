@@ -74,8 +74,8 @@ different way.
 Constructors
 ------------
 
-.. class:: Signal(pin_obj, invert=False)
-           Signal(pin_arguments..., *, invert=False)
+.. class:: Signal(pin_obj: Pin, invert: bool = False)
+           Signal(pin_arguments..., *, invert: bool = False)
 
    Create a Signal object. There're two ways to create it:
 
@@ -93,31 +93,31 @@ Constructors
 
      - ``invert`` - if True, the signal will be inverted (active low).
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: Signal.value([x])
+   .. method:: value(x: Any | None = None, /) -> int | None
 
-   This method allows to set and get the value of the signal, depending on whether
-   the argument ``x`` is supplied or not.
+      This method allows to set and get the value of the signal, depending on whether
+      the argument ``x`` is supplied or not.
 
-   If the argument is omitted then this method gets the signal level, 1 meaning
-   signal is asserted (active) and 0 - signal inactive.
+      If the argument is omitted then this method gets the signal level, 1 meaning
+      signal is asserted (active) and 0 - signal inactive.
 
-   If the argument is supplied then this method sets the signal level. The
-   argument ``x`` can be anything that converts to a boolean. If it converts
-   to ``True``, the signal is active, otherwise it is inactive.
+      If the argument is supplied then this method sets the signal level. The
+      argument ``x`` can be anything that converts to a boolean. If it converts
+      to ``True``, the signal is active, otherwise it is inactive.
 
-   Correspondence between signal being active and actual logic level on the
-   underlying pin depends on whether signal is inverted (active-low) or not.
-   For non-inverted signal, active status corresponds to logical 1, inactive -
-   to logical 0. For inverted/active-low signal, active status corresponds
-   to logical 0, while inactive - to logical 1.
+      Correspondence between signal being active and actual logic level on the
+      underlying pin depends on whether signal is inverted (active-low) or not.
+      For non-inverted signal, active status corresponds to logical 1, inactive -
+      to logical 0. For inverted/active-low signal, active status corresponds
+      to logical 0, while inactive - to logical 1.
 
-.. method:: Signal.on()
+   .. method:: on() -> None
 
-   Activate signal.
+      Activate signal.
 
-.. method:: Signal.off()
+   .. method:: off() -> None
 
-   Deactivate signal.
+      Deactivate signal.

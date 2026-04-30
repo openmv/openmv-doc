@@ -8,20 +8,21 @@ The ``fir`` module is used for controlling the thermal sensors.
 
 Example usage::
 
-    import sensor, fir
+    import csi, fir
 
     # Setup camera.
-    sensor.reset()
-    sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.QVGA)
-    sensor.skip_frames()
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
+    csi0.snapshot(time=2000)
     fir.init()
 
     # Show image.
     while(True):
-        img = sensor.snapshot()
+        img = csi0.snapshot()
         ta, ir, to_min, to_max = fir.read_ir()
-        fir.draw_ir(image, ir)
+        fir.draw_ir(img, ir)
         print("====================")
         print("Ambient temperature: %0.2f" % ta)
         print("Min temperature seen: %0.2f" % to_min)
@@ -30,318 +31,196 @@ Example usage::
 Functions
 ---------
 
-.. function:: init(type=-1, refresh:Optional[int]=None, resolution:Optional[int]=None) -> None
+.. function:: init(type:int=-1, refresh:Optional[int]=None, resolution:Optional[int]=None) -> None
 
-   Initializes an attached thermopile shield using I/O pins P4 and P5.
+   Initializes an attached thermal sensor.
 
-   ``type`` indicates the type of thermopile shield:
+   ``type`` indicates the type of thermal sensor:
 
-      * `fir.FIR_NONE`: 0 pixels.
-      * `fir.FIR_SHIELD`: 16x4 pixels.
+      * `fir.FIR_SHIELD`: 16x4 pixels (MLX90621).
       * `fir.FIR_MLX90621`: 16x4 pixels.
       * `fir.FIR_MLX90640`: 32x24 pixels.
       * `fir.FIR_MLX90641`: 16x12 pixels.
       * `fir.FIR_AMG8833`: 8x8 pixels.
 
-   By default type is ``-1`` which will cause `fir.init()` to automatically scan and initialize an
-   attached thermal sensor based on the I2C address. Note that `fir.FIR_MLX90640` and
-   `fir.FIR_MLX90641` have the same I2C address so you must pass `fir.FIR_MLX90641` to type
+   By default ``type`` is ``-1`` which causes `fir.init()` to automatically scan and initialize an
+   attached thermal sensor based on its I2C address. Note that `fir.FIR_MLX90640` and
+   `fir.FIR_MLX90641` share the same I2C address so you must pass `fir.FIR_MLX90641` to ``type``
    to initialize it specifically.
 
-   ``refresh`` is the thermopile sensor power-of-2 refresh rate in Hz:
+   ``refresh`` is the thermal sensor refresh rate in Hz:
 
-      * `fir.FIR_NONE`: N/A
-      * `fir.FIR_SHIELD`: Defaults to 64 Hz. Can be 1 Hz, 2 Hz, 4 Hz, 8 Hz, 16 Hz, 32 Hz, 64 Hz, 128 Hz, 256 Hz, or 512 Hz. Note that a higher refresh rate lowers the accuracy and vice-versa.
-      * `fir.FIR_MLX90621`: Defaults to 64 Hz. Can be 1 Hz, 2 Hz, 4 Hz, 8 Hz, 16 Hz, 32 Hz, 64 Hz, 128 Hz, 256 Hz, or 512 Hz. Note that a higher refresh rate lowers the accuracy and vice-versa.
-      * `fir.FIR_MLX90640`: Defaults to 32 Hz. Can be 1 Hz, 2 Hz, 4 Hz, 8 Hz, 16 Hz, 32 Hz, or 64 Hz. Note that a higher refresh rate lowers the accuracy and vice-versa.
-      * `fir.FIR_MLX90641`: Defaults to 32 Hz. Can be 1 Hz, 2 Hz, 4 Hz, 8 Hz, 16 Hz, 32 Hz, or 64 Hz. Note that a higher refresh rate lowers the accuracy and vice-versa.
-      * `fir.FIR_AMG8833`: 10 Hz
+      * `fir.FIR_MLX90621`: Defaults to 64 Hz. Can be 1, 2, 4, 8, 16, 32, 64, 128, 256, or 512 Hz.
+      * `fir.FIR_MLX90640`: Defaults to 32 Hz. Can be 1, 2, 4, 8, 16, 32, or 64 Hz.
+      * `fir.FIR_MLX90641`: Defaults to 32 Hz. Can be 1, 2, 4, 8, 16, 32, or 64 Hz.
+      * `fir.FIR_AMG8833`: Fixed at 10 Hz.
 
-   ``resolution`` is the thermopile sensor measurement resolution:
+   A higher refresh rate lowers the accuracy and vice-versa.
 
-      * `fir.FIR_NONE`: N/A
-      * `fir.FIR_SHIELD`: Defaults to 18-bits. Can be 15-bits, 16-bits, 17-bits, or 18-bits. Note that a higher resolution lowers the maximum temperature range and vice-versa.
-      * `fir.FIR_MLX90621`: Defaults to 18-bits. Can be 15-bits, 16-bits, 17-bits, or 18-bits. Note that a higher resolution lowers the maximum temperature range and vice-versa.
-      * `fir.FIR_MLX90640`: Defaults to 19-bits. Can be 16-bits, 17-bits, 18-bits, or 19-bits. Note that a higher resolution lowers the maximum temperature range and vice-versa.
-      * `fir.FIR_MLX90641`: Defaults to 19-bits. Can be 16-bits, 17-bits, 18-bits, or 19-bits. Note that a higher resolution lowers the maximum temperature range and vice-versa.
-      * `fir.FIR_AMG8833`: 12-bits.
+   ``resolution`` is the thermal sensor measurement resolution in bits:
 
-   For the `fir.FIR_SHIELD` and `fir.FIR_MLX90621`:
+      * `fir.FIR_MLX90621`: Defaults to 18. Can be 15, 16, 17, or 18.
+      * `fir.FIR_MLX90640`: Defaults to 19. Can be 16, 17, 18, or 19.
+      * `fir.FIR_MLX90641`: Defaults to 19. Can be 16, 17, 18, or 19.
+      * `fir.FIR_AMG8833`: Fixed at 12.
 
-      * 15-bits -> Max of ~950C.
-      * 16-bits -> Max of ~750C.
-      * 17-bits -> Max of ~600C.
-      * 18-bits -> Max of ~450C.
-
-   For the `fir.FIR_MLX90640` and `fir.FIR_MLX90641`:
-
-      * 16-bits -> Max of ~750C.
-      * 17-bits -> Max of ~600C.
-      * 18-bits -> Max of ~450C.
-      * 19-bits -> Max of ~300C.
-
-   For the `fir.FIR_AMG8833`:
-
-      * Max of ~80C.
+   A higher resolution lowers the maximum temperature range and vice-versa.
 
 .. function:: deinit() -> None
 
-   Deinitializes the thermal sensor freeing up resources.
+   Deinitializes the thermal sensor and frees up resources.
 
 .. function:: width() -> int
 
-   Returns the width (horizontal resolution) of the thermal sensor in-use:
-
-      * `fir.FIR_NONE`: 0 pixels.
-      * `fir.FIR_SHIELD`: 16 pixels.
-      * `fir.FIR_MLX90621`: 16 pixels.
-      * `fir.FIR_MLX90640`: 32 pixels.
-      * `fir.FIR_MLX90641`: 16 pixels.
-      * `fir.FIR_AMG8833`: 8 pixels.
+   Returns the horizontal resolution (in pixels) of the thermal sensor in-use.
 
 .. function:: height() -> int
 
-   Returns the height (vertical resolution) of the thermal sensor in-use:
-
-      * `fir.FIR_NONE`: 0 pixels.
-      * `fir.FIR_SHIELD`: 4 pixels.
-      * `fir.FIR_MLX90621`: 4 pixels.
-      * `fir.FIR_MLX90640`: 24 pixels.
-      * `fir.FIR_MLX90641`: 12 pixels.
-      * `fir.FIR_AMG8833`: 8 pixels.
+   Returns the vertical resolution (in pixels) of the thermal sensor in-use.
 
 .. function:: type() -> int
 
-   Returns the type of the thermal sensor in-use:
-
-      * `fir.FIR_NONE`
-      * `fir.FIR_SHIELD`
-      * `fir.FIR_MLX90621`
-      * `fir.FIR_MLX90640`
-      * `fir.FIR_MLX90641`
-      * `fir.FIR_AMG8833`
+   Returns the type of the thermal sensor in-use. One of `fir.FIR_MLX90621`,
+   `fir.FIR_MLX90640`, `fir.FIR_MLX90641`, or `fir.FIR_AMG8833`.
 
 .. function:: refresh() -> int
 
-   Returns the current refresh rate set during `fir.init()` call.
+   Returns the current refresh rate (Hz) set during the `fir.init()` call.
 
 .. function:: resolution() -> int
 
-   Returns the current resolution set during the `fir.init()` call.
+   Returns the current resolution (bits) set during the `fir.init()` call.
 
 .. function:: read_ta() -> float
 
-   Returns the ambient temperature (i.e. sensor temperature).
+   Returns the ambient temperature (i.e. sensor temperature) in celsius as a float.
 
-   Example::
+.. function:: read_ir(hmirror:bool=False, vflip:bool=False, transpose:bool=False, timeout:int=-1) -> Tuple[float, List[float], float, float]
 
-      ta = fir.read_ta()
+   Returns a 4-tuple ``(ta, ir, to_min, to_max)`` containing the ambient temperature, a flat
+   ``width * height`` list of float temperatures, the minimum temperature seen, and the maximum
+   temperature seen. All values are in celsius.
 
-   The value returned is a float that represents the temperature in celsius.
+   ``hmirror`` if True horizontally mirrors the ``ir`` array.
 
-.. function:: read_ir(hmirror=False, vflip=False, transpose=False, timeout=-1)
+   ``vflip`` if True vertically flips the ``ir`` array.
 
-   Returns a tuple containing the ambient temperature (i.e. sensor temperature),
-   the temperature list (width * height), the minimum temperature seen, and
-   the maximum temperature seen.
+   ``transpose`` if True transposes the ``ir`` array (swaps width and height).
 
-   ``hmirror`` if set to True horizontally mirrors the ``ir`` array.
+   ``timeout`` if not -1, the number of milliseconds to wait for a new frame.
 
-   ``vflip`` if set to True vertically flips the ``ir`` array.
+.. function:: draw_ir(image:image.Image, ir:List[float], x:int=0, y:int=0, x_scale:Optional[float]=None, y_scale:Optional[float]=None, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:Optional[int]=image.PALETTE_RAINBOW, alpha_palette:Optional[int]=None, hint:int=0, scale:Optional[Tuple[float,float]]=None) -> None
 
-   ``transpose`` if set to True transposes the ``ir`` array.
+   Draws the ``ir`` array onto ``image`` with its top-left corner at ``(x, y)``.
 
-   ``timeout`` if not -1 then how many milliseconds to wait for the new frame.
+   ``ir`` is the flat ``width * height`` temperature list returned by `fir.read_ir()`.
 
-   If you want to rotate an image by multiples of 90 degrees pass the following::
+   ``x_scale`` controls how much the rendered image is scaled in the x direction. A negative value
+   flips horizontally. If unspecified, matches ``y_scale`` to maintain aspect ratio.
 
-      * vflip=False, hmirror=False, transpose=False -> 0 degree rotation
-      * vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
-      * vflip=True,  hmirror=True,  transpose=False -> 180 degree rotation
-      * vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
+   ``y_scale`` controls how much the rendered image is scaled in the y direction. A negative value
+   flips vertically. If unspecified, matches ``x_scale`` to maintain aspect ratio.
 
-   Example::
+   ``roi`` is the region-of-interest rectangle ``(x, y, w, h)`` of the source IR data to draw.
 
-      ta, ir, to_min, to_max = fir.read_ir()
+   ``rgb_channel`` is the RGB channel (0=R, 1=G, 2=B) to render onto the destination image when the
+   destination is RGB565. ``-1`` (default) renders all channels.
 
-   The values returned are floats that represent the temperature in celsius.
+   ``alpha`` controls how much of the source image to blend into the destination (0-255). 255 is
+   fully opaque; 0 results in no modification.
 
-   .. note::
+   ``color_palette`` is a color palette enum (e.g. `image.PALETTE_RAINBOW`, `image.PALETTE_IRONBOW`)
+   or a 256-pixel RGB565 image used as a lookup table on the grayscale source value.
 
-      ``ir`` is a (width * height) list of floats (4-bytes each).
+   ``alpha_palette`` is a 256-pixel GRAYSCALE image used as an alpha lookup table that modulates
+   ``alpha`` per source pixel value.
 
-.. function:: draw_ir(image:image.Image, ir, x:Optional[int]=None, y:Optional[int]=None, x_scale=1.0, y_scale=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel=-1, alpha=128, color_palette=image.PALETTE_RAINBOW, alpha_palette=-1, hint=0, scale=Optional[Tuple[float, float]]) -> None
+   ``hint`` is a logical OR of:
 
-   Draws an ``ir`` array on ``image`` whose top-left corner starts at location x, y. This method
-   automatically handles rendering the image passed into the correct pixel format for the destination
-   image while also handling clipping seamlessly.
-
-   ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
-
-   ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
-
-   ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the source image to draw. This
-   allows you to extract just the pixels in the ROI to scale and draw on the destination image.
-
-   ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-   and to render onto the destination image. For example, if you pass ``rgb_channel=1`` this will
-   extract the green channel of the source RGB565 image and draw that in grayscale on the
-   destination image.
-
-   ``alpha`` controls how much of the source image to blend into the destination image. A value of
-   255 draws an opaque source image while a value lower than 255 produces a blend between the source
-   and destination image. 0 results in no modification to the destination image.
-
-   ``color_palette`` if not ``-1`` can be an a color palette enum or
-   a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-   whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
-
-   ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-   palette which modulates the ``alpha`` value of the source image being drawn at a pixel pixel
-   level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-   A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-   more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
-
-   ``hint`` can be a logical OR of the flags:
-
-      * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-      * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-      * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
-      * `image.HMIRROR`: Horizontally mirror the image.
-      * `image.VFLIP`: Vertically flip the image.
-      * `image.TRANSPOSE`: Transpose the image (swap x/y).
-      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
+      * `image.AREA`: Use area scaling when downscaling.
+      * `image.BILINEAR`: Use bilinear scaling.
+      * `image.BICUBIC`: Use bicubic scaling.
+      * `image.CENTER`: Center the image on the destination.
+      * `image.HMIRROR`: Horizontally mirror.
+      * `image.VFLIP`: Vertically flip.
+      * `image.TRANSPOSE`: Transpose (swap x/y).
+      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply rgb_channel extraction before scaling.
       * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+      * `image.SCALE_ASPECT_KEEP`: Fit inside the destination keeping aspect ratio.
+      * `image.SCALE_ASPECT_EXPAND`: Fill the destination keeping aspect ratio (crops).
+      * `image.SCALE_ASPECT_IGNORE`: Fill the destination ignoring aspect ratio (stretches).
+      * `image.ROTATE_90`: Rotate by 90 degrees.
+      * `image.ROTATE_180`: Rotate by 180 degrees.
+      * `image.ROTATE_270`: Rotate by 270 degrees.
 
-   ``scale`` is a two value tuple which controls the min and max temperature (in celsius) to scale
-   the ``ir`` image. By default it's equal to the image ``ir`` min and ``ir`` max.
+   ``scale`` is a 2-tuple ``(min, max)`` controlling the min/max temperature (in celsius) used to
+   scale the ``ir`` array. Defaults to the actual ``ir`` min and max.
 
-   If x/y are not specified the image will be centered in the field of view. If x_scale/y_scale or
-   x_size/y_size are not specified the ``ir`` array will be scaled to fit on the ``image``.
+.. function:: snapshot(hmirror:bool=False, vflip:bool=False, transpose:bool=False, x_scale:Optional[float]=None, y_scale:Optional[float]=None, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:Optional[int]=image.PALETTE_RAINBOW, alpha_palette:Optional[int]=None, hint:int=0, scale:Optional[Tuple[float,float]]=None, pixformat:int=image.RGB565, copy_to_fb:bool=False, timeout:int=-1) -> image.Image
 
-   .. note::
+   Captures a frame from the thermal sensor and returns it as an `image.Image`. Works similarly to
+   `sensor.snapshot()`. If ``copy_to_fb`` is False the new image is allocated on the MicroPython
+   heap (which is limited); set ``copy_to_fb`` to True to write the result into the frame buffer
+   instead.
 
-      To handle a transposed ``ir`` array `read_ir` remembers if it was called with ``transposed``
-      ``True``. This is then passed to ``draw_ir`` internally.
+   ``hmirror`` if True horizontally mirrors the new image.
 
-.. function:: snapshot(hmirror=False, vflip=False, transpose=False, x_scale=1.0, y_scale=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel=-1, alpha=128, color_palette=image.PALETTE_RAINBOW, alpha_palette=None, hint=0, scale:Optional[Tuple[float, float]]=None, pixformat=image.RGB565, copy_to_fb=False, timeout=-1) -> image.Image
+   ``vflip`` if True vertically flips the new image.
 
-   Works like `sensor.snapshot()` and returns an `image` object that is either
-   `image.GRAYSCALE` (grayscale) or `image.RGB565` (color). If ``copy_to_fb`` is False then
-   the new image is allocated on the MicroPython heap. However, the MicroPython heap is limited
-   and may not have space to store the new image if exhausted. Instead, set ``copy_to_fb`` to
-   True to set the frame buffer to the new image making this function work just like `sensor.snapshot()`.
+   ``transpose`` if True transposes the new image.
 
-   ``hmirror`` if set to True horizontally mirrors the new image.
+   ``x_scale`` controls how much the new image is scaled in the x direction. A negative value flips
+   horizontally. If unspecified, matches ``y_scale`` to maintain aspect ratio.
 
-   ``vflip`` if set to True vertically flips the new image.
+   ``y_scale`` controls how much the new image is scaled in the y direction. A negative value flips
+   vertically. If unspecified, matches ``x_scale`` to maintain aspect ratio.
 
-   ``transpose`` if set to True transposes the new image.
+   ``roi`` is the region-of-interest rectangle ``(x, y, w, h)`` of the source IR data to draw.
 
-   If you want to rotate an image by multiples of 90 degrees pass the following::
+   ``rgb_channel`` is the RGB channel (0=R, 1=G, 2=B) to render. ``-1`` (default) renders all channels.
 
-      * vflip=False, hmirror=False, transpose=False -> 0 degree rotation
-      * vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
-      * vflip=True,  hmirror=True,  transpose=False -> 180 degree rotation
-      * vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
+   ``alpha`` controls how much of the source image is blended (0-255). 255 is fully opaque.
 
-   ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+   ``color_palette`` is a color palette enum or a 256-pixel RGB565 image used as a lookup table on
+   the grayscale source value.
 
-   ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+   ``alpha_palette`` is a 256-pixel GRAYSCALE image used as an alpha lookup table.
 
-   ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the source image to draw. This
-   allows you to extract just the pixels in the ROI to scale and draw on the destination image.
+   ``hint`` is a logical OR of the same flags accepted by `fir.draw_ir()`.
 
-   ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-   and to render onto the destination image. For example, if you pass ``rgb_channel=1`` this will
-   extract the green channel of the source RGB565 image and draw that in grayscale on the
-   destination image.
+   ``scale`` is a 2-tuple ``(min, max)`` controlling the min/max temperature (in celsius) used to
+   scale the IR array. Defaults to the actual IR min and max.
 
-   ``alpha`` controls how much of the source image to blend into the destination image. A value of
-   255 draws an opaque source image while a value lower than 255 produces a blend between the source
-   and destination image. 0 results in no modification to the destination image.
+   ``pixformat`` controls the output pixel format. Must be `image.GRAYSCALE` or `image.RGB565`.
 
-   ``color_palette`` if not ``-1`` can be an a color palette enum or
-   a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-   whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
+   ``copy_to_fb`` if True writes the result into the frame buffer instead of allocating on the heap.
 
-   ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-   palette which modulates the ``alpha`` value of the source image being drawn at a pixel pixel
-   level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-   A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-   more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
-
-   ``hint`` can be a logical OR of the flags:
-
-      * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-      * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-      * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
-      * `image.HMIRROR`: Horizontally mirror the image.
-      * `image.VFLIP`: Vertically flip the image.
-      * `image.TRANSPOSE`: Transpose the image (swap x/y).
-      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
-      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
-
-   ``scale`` is a two value tuple which controls the min and max temperature (in celsius) to scale
-   the ``ir`` image. By default it's equal to the image ``ir`` min and ``ir`` max.
-
-   ``pixformat`` if specified controls the final image pixel format.
-
-   ``timeout`` if not -1 then how many milliseconds to wait for the new frame.
-
-   Returns an image object.
+   ``timeout`` if not -1, the number of milliseconds to wait for a new frame.
 
 Constants
 ---------
 
-.. data:: FIR_NONE
-   :type: int
-
-   No FIR sensor type.
-
 .. data:: FIR_SHIELD
    :type: int
 
-   The OpenMV Cam Thermopile Shield Type (MLX90621).
+   The OpenMV Cam Thermopile Shield (MLX90621). Alias for `fir.FIR_MLX90621`.
 
 .. data:: FIR_MLX90621
    :type: int
 
-   FIR_MLX90621 FIR sensor.
+   MLX90621 thermal sensor (16x4).
 
 .. data:: FIR_MLX90640
    :type: int
 
-   FIR_MLX90640 FIR sensor.
+   MLX90640 thermal sensor (32x24).
 
 .. data:: FIR_MLX90641
    :type: int
 
-   FIR_MLX90640 FIR sensor.
+   MLX90641 thermal sensor (16x12).
 
 .. data:: FIR_AMG8833
    :type: int
 
-   FIR_AMG8833 FIR sensor.
+   AMG8833 thermal sensor (8x8).

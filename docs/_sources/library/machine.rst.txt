@@ -11,34 +11,31 @@ and unrestricted access to and control of hardware blocks on a system
 malfunction, lockups, crashes of your board, and in extreme cases, hardware
 damage.
 
-.. _machine_callbacks:
-
-A note of callbacks used by functions and class methods of :mod:`machine` module:
-all these callbacks should be considered as executing in an interrupt context.
-This is true for both physical devices with IDs >= 0 and "virtual" devices
-with negative IDs like -1 (these "virtual" devices are still thin shims on
-top of real hardware and real hardware interrupts). See :ref:`isr_rules`.
-
 Memory access
 -------------
 
-The module exposes three objects used for raw memory access.
+The module exposes three subscriptable objects used for raw memory access.
+Each behaves like a sparse array indexed by byte address: ``value = memN[addr]``
+reads, ``memN[addr] = value`` writes. The address is always a byte address,
+regardless of the access width.
 
 .. data:: mem8
 
-    Read/write 8 bits of memory.
+   Subscriptable 8-bit memory accessor. ``mem8[addr]`` reads an ``int`` in the
+   range 0-255 from the byte at ``addr``; ``mem8[addr] = value`` writes the
+   low 8 bits of ``value``. ``addr`` must be aligned to 1 byte (any address).
 
 .. data:: mem16
 
-    Read/write 16 bits of memory.
+   Subscriptable 16-bit (halfword) memory accessor. ``mem16[addr]`` reads an
+   ``int`` in the range 0-65535; ``mem16[addr] = value`` writes the low 16
+   bits. ``addr`` must be aligned to 2 bytes.
 
 .. data:: mem32
 
-    Read/write 32 bits of memory.
-
-Use subscript notation ``[...]`` to index these objects with the address of
-interest. Note that the address is the byte address, regardless of the size of
-memory being accessed.
+   Subscriptable 32-bit (word) memory accessor. ``mem32[addr]`` reads an
+   ``int`` in the range 0-0xFFFFFFFF; ``mem32[addr] = value`` writes the low
+   32 bits. ``addr`` must be aligned to 4 bytes.
 
 Example use (registers are specific to an stm32 microcontroller):
 
@@ -60,21 +57,21 @@ Example use (registers are specific to an stm32 microcontroller):
 Reset related functions
 -----------------------
 
-.. function:: reset()
+.. function:: reset() -> None
 
    :ref:`Hard resets <hard_reset>` the device in a manner similar to pushing the
    external RESET button.
 
-.. function:: soft_reset()
+.. function:: soft_reset() -> None
 
    Performs a :ref:`soft reset <soft_reset>` of the interpreter, deleting all
    Python objects and resetting the Python heap.
 
-.. function:: reset_cause()
+.. function:: reset_cause() -> int
 
    Get the reset cause. See :ref:`constants <machine_constants>` for the possible return values.
 
-.. function:: bootloader([value])
+.. function:: bootloader(value: int | None = None, /) -> None
 
    Reset the device and enter its bootloader.  This is typically used to put the
    device into a state where it can be programmed with new firmware.
@@ -101,14 +98,14 @@ and then re-enabled to their previous state.  For example::
     # Enable interrupts
     machine.enable_irq(state)
 
-.. function:: disable_irq()
+.. function:: disable_irq() -> int
 
    Disable interrupt requests.
    Returns the previous IRQ state which should be considered an opaque value.
    This return value should be passed to the `enable_irq()` function to restore
    interrupts to their original state, before `disable_irq()` was called.
 
-.. function:: enable_irq(state)
+.. function:: enable_irq(state: int) -> None
 
    Re-enable interrupt requests.
    The *state* parameter should be the value that was returned from the most
@@ -117,13 +114,13 @@ and then re-enabled to their previous state.  For example::
 Power related functions
 -----------------------
 
-.. function:: freq([hz])
+.. function:: freq(hz: int | None = None, /) -> int
 
     Returns the CPU frequency in hertz.
 
     On some ports this can also be used to set the CPU frequency by passing in *hz*.
 
-.. function:: idle()
+.. function:: idle() -> None
 
    Gates the clock to the CPU, useful to reduce power consumption at any time
    during short or long periods. Peripherals continue working and execution
@@ -136,12 +133,12 @@ Power related functions
    power consumption further then see the :func:`lightsleep`,
    :func:`time.sleep()` and :func:`time.sleep_ms()` functions.
 
-.. function:: sleep()
+.. function:: sleep() -> None
 
    .. note:: This function is deprecated, use :func:`lightsleep()` instead with no arguments.
 
-.. function:: lightsleep([time_ms])
-              deepsleep([time_ms])
+.. function:: lightsleep(time_ms: int | None = None, /) -> None
+              deepsleep(time_ms: int | None = None, /) -> None
 
    Stops execution in an attempt to enter a low power state.
 
@@ -167,14 +164,14 @@ Power related functions
 Miscellaneous functions
 -----------------------
 
-.. function:: unique_id()
+.. function:: unique_id() -> bytes
 
    Returns a byte string with a unique identifier of a board/SoC. It will vary
    from a board/SoC instance to another, if underlying hardware allows. Length
    varies by hardware (so use substring of a full value if you expect a short
    ID). In some MicroPython ports, ID corresponds to the network MAC address.
 
-.. function:: time_pulse_us(pin, pulse_level, timeout_us=1000000, /)
+.. function:: time_pulse_us(pin: Pin, pulse_level: int, timeout_us: int = 1000000, /) -> int
 
    Time a pulse on the given *pin*, and return the duration of the pulse in
    microseconds.  The *pulse_level* argument should be 0 to time a low pulse
@@ -190,7 +187,7 @@ Miscellaneous functions
    above. The timeout is the same for both cases and given by *timeout_us* (which
    is in microseconds).
 
-.. function:: bitstream(pin, encoding, timing, data, /)
+.. function:: bitstream(pin: Pin, encoding: int, timing: tuple, data: bytes, /) -> None
 
    Transmits *data* by bit-banging the specified *pin*. The *encoding* argument
    specifies how the bits are encoded, and *timing* is an encoding-specific timing
@@ -220,6 +217,7 @@ Constants
 .. data:: machine.IDLE
           machine.SLEEP
           machine.DEEPSLEEP
+   :type: int
 
     IRQ wake values.
 
@@ -228,12 +226,14 @@ Constants
           machine.WDT_RESET
           machine.DEEPSLEEP_RESET
           machine.SOFT_RESET
+   :type: int
 
     Reset causes.
 
 .. data:: machine.WLAN_WAKE
           machine.PIN_WAKE
           machine.RTC_WAKE
+   :type: int
 
     Wake-up reasons.
 
@@ -248,13 +248,16 @@ Classes
    machine.LED.rst
    machine.ADC.rst
    machine.ADCBlock.rst
-   machine.CAN.rst
    machine.PWM.rst
    machine.UART.rst
    machine.SPI.rst
    machine.I2C.rst
    machine.I2CTarget.rst
    machine.I2S.rst
+   machine.CAN.rst
    machine.RTC.rst
    machine.Timer.rst
    machine.WDT.rst
+   machine.SDCard.rst
+   machine.Counter.rst
+   machine.Encoder.rst

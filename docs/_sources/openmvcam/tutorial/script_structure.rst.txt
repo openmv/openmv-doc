@@ -39,21 +39,22 @@ Here's an example of this::
     #
     # Welcome to the OpenMV IDE! Click on the green run arrow button below to run the script!
 
-    import sensor, image, time
+    import csi, image, time
 
     ### One time setup
 
-    sensor.reset()                      # Reset and initialize the sensor.
-    sensor.set_pixformat(sensor.RGB565) # Set pixel format to RGB565 (or GRAYSCALE)
-    sensor.set_framesize(sensor.QVGA)   # Set frame size to QVGA (320x240)
-    sensor.skip_frames(time = 2000)     # Wait for settings take effect.
+    csi0 = csi.CSI()                    # Create a CSI object for the camera.
+    csi0.reset()                        # Reset and initialize the sensor.
+    csi0.pixformat(csi.RGB565)          # Set pixel format to RGB565 (or GRAYSCALE)
+    csi0.framesize(csi.QVGA)            # Set frame size to QVGA (320x240)
+    csi0.snapshot(time=2000)            # Wait for settings take effect.
     clock = time.clock()                # Create a clock object to track the FPS.
 
     ### Infinite loop
 
     while(True):
         clock.tick()                    # Update the FPS clock.
-        img = sensor.snapshot()         # Take a picture and return the image.
+        img = csi0.snapshot()           # Take a picture and return the image.
         print(clock.fps())              # Note: OpenMV Cam runs about half as fast when connected
                                         # to the IDE. The FPS should increase once disconnected.
 

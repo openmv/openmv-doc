@@ -19,7 +19,7 @@ Example usage, for a board with built-in LAN support::
 Constructors
 ------------
 
-.. class:: LAN(id, *, phy_type=<board_default>, phy_addr=<board_default>, ref_clk_mode=<board_default>)
+.. class:: LAN(id: int, *, phy_type: int = ..., phy_addr: int = ..., ref_clk_mode: int = ...) -> None
 
    Create a LAN driver object, initialise the LAN module using the given
    PHY driver name, and return the LAN object.
@@ -37,51 +37,48 @@ Constructors
        or ``True``, the clock is driven by the Ethernet controller, if set to ``LAN.IN``
        or ``Pin.IN`` or ``False``, the clock is driven by the PHY interface.
 
-Methods
--------
+   .. method:: active(state: Optional[bool] = None) -> bool
 
-.. method:: LAN.active([state])
+      With a parameter, it sets the interface active if *state* is true, otherwise it
+      sets it inactive.
+      Without a parameter, it returns the state.
 
-   With a parameter, it sets the interface active if *state* is true, otherwise it
-   sets it inactive.
-   Without a parameter, it returns the state.
+   .. method:: isconnected() -> bool
 
-.. method:: LAN.isconnected()
+      Returns ``True`` if the physical Ethernet link is connected and up.
+      Returns ``False`` otherwise.
 
-   Returns ``True`` if the physical Ethernet link is connected and up.
-   Returns ``False`` otherwise.
+   .. method:: status() -> int
 
-.. method:: LAN.status()
+      Returns the LAN status.
 
-   Returns the LAN status.
+   .. method:: ifconfig(config: Optional[Tuple[str, str, str, str]] = None) -> Optional[Tuple[str, str, str, str]]
 
-.. method:: LAN.ifconfig([(ip, subnet, gateway, dns)])
+      Get/set IP address, subnet mask, gateway and DNS.
 
-   Get/set IP address, subnet mask, gateway and DNS.
+      When called with no arguments, this method returns a 4-tuple with the above information.
 
-   When called with no arguments, this method returns a 4-tuple with the above information.
+      To set the above values, pass a 4-tuple with the required information.  For example::
 
-   To set the above values, pass a 4-tuple with the required information.  For example::
+       nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
 
-    nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
+   .. method:: config(config_parameters: Union[str, Any]) -> Any
 
-.. method:: LAN.config(config_parameters)
+      Sets or gets parameters of the LAN interface. The only parameter that can be
+      retrieved is the MAC address, using::
 
-   Sets or gets parameters of the LAN interface. The only parameter that can be
-   retrieved is the MAC address, using::
+         mac = LAN.config("mac")
 
-      mac = LAN.config("mac")
+      The parameters that can be set are:
 
-   The parameters that can be set are:
+       - ``trace=n`` sets trace levels; suitable values are:
 
-    - ``trace=n`` sets trace levels; suitable values are:
+           - 2: trace TX
+           - 4: trace RX
+           - 8: full trace
 
-        - 2: trace TX
-        - 4: trace RX
-        - 8: full trace
-
-    - ``low_power=bool`` sets or clears low power mode, valid values being ``False``
-      or ``True``.
+       - ``low_power=bool`` sets or clears low power mode, valid values being ``False``
+         or ``True``.
 
 
 Specific LAN class implementations

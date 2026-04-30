@@ -7,7 +7,7 @@
 Functions
 ---------
 
-.. function:: const(expr)
+.. function:: const(expr: int) -> int
 
    Used to declare that the expression is a constant so that the compiler can
    optimise it.  The use of this function should be as follows::
@@ -27,7 +27,7 @@ Functions
    written which run under both CPython and MicroPython, by following the above
    pattern.
 
-.. function:: opt_level([level])
+.. function:: opt_level(level: Optional[int] = None) -> Optional[int]
 
    If *level* is given then this function sets the optimisation level for subsequent
    compilation of scripts, and returns ``None``.  Otherwise it returns the current
@@ -45,7 +45,7 @@ Functions
 
    The default optimisation level is usually level 0.
 
-.. function:: alloc_emergency_exception_buf(size)
+.. function:: alloc_emergency_exception_buf(size: int) -> None
 
    Allocate *size* bytes of RAM for the emergency exception buffer (a good
    size is around 100 bytes).  The buffer is used to create exceptions in cases
@@ -56,7 +56,7 @@ Functions
    (eg ``boot.py`` or ``main.py``) and then the emergency exception buffer will be active
    for all the code following it.
 
-.. function:: mem_info([verbose])
+.. function:: mem_info(verbose: Optional[Any] = None) -> None
 
    Print information about currently used memory.  If the *verbose* argument
    is given then extra information is printed.
@@ -65,7 +65,7 @@ Functions
    includes the amount of stack and heap used.  In verbose mode it prints out
    the entire heap indicating which blocks are used and which are free.
 
-.. function:: qstr_info([verbose])
+.. function:: qstr_info(verbose: Optional[Any] = None) -> None
 
    Print information about currently interned strings.  If the *verbose*
    argument is given then extra information is printed.
@@ -74,15 +74,15 @@ Functions
    includes the number of interned strings and the amount of RAM they use.  In
    verbose mode it prints out the names of all RAM-interned strings.
 
-.. function:: stack_use()
+.. function:: stack_use() -> int
 
    Return an integer representing the current amount of stack that is being
    used.  The absolute value of this is not particularly useful, rather it
    should be used to compute differences in stack usage at different points.
 
-.. function:: heap_lock()
-.. function:: heap_unlock()
-.. function:: heap_locked()
+.. function:: heap_lock() -> None
+              heap_unlock() -> int
+              heap_locked() -> int
 
    Lock or unlock the heap.  When locked no memory allocation can occur and a
    `MemoryError` will be raised if any heap allocation is attempted.
@@ -102,7 +102,7 @@ Functions
    Note: `heap_locked()` is not enabled on most ports by default,
    requires ``MICROPY_PY_MICROPYTHON_HEAP_LOCKED``.
 
-.. function:: kbd_intr(chr)
+.. function:: kbd_intr(chr: int) -> None
 
    Set the character that will raise a `KeyboardInterrupt` exception.  By
    default this is set to 3 during script execution, corresponding to Ctrl-C.
@@ -113,7 +113,7 @@ Functions
    incoming stream of characters that is usually used for the REPL, in case
    that stream is used for other purposes.
 
-.. function:: schedule(func, arg)
+.. function:: schedule(func: Callable[[Any], Any], arg: Any) -> None
 
    Schedule the function *func* to be executed "very soon".  The function
    is passed the value *arg* as its single argument.  "Very soon" means that
@@ -130,6 +130,11 @@ Functions
      a critical region but they will not be executed until that region
      is exited.  An example of a critical region is a preempting interrupt
      handler (an IRQ).
+   - Inside native code functions, scheduled functions are not called unless
+     the native code calls a function that specifically does so.
+   - Certain functions including ``poll.poll``, ``poll.ipoll``,
+     ``time.sleep`` and ``time.sleep_ms`` (including zero-duration sleeps)
+     will call scheduled functions.
 
    A use for this function is to schedule a callback from a preempting IRQ.
    Such an IRQ puts restrictions on the code that runs in the IRQ (for example
@@ -159,8 +164,8 @@ Functions
 Classes
 -------
 
-.. class:: RingIO(size)
-.. class:: RingIO(buffer)
+.. class:: RingIO(size: int)
+           RingIO(buffer: Union[bytes, bytearray, memoryview])
    :noindex:
 
    Provides a fixed-size ringbuffer for bytes with a stream interface. Can be
@@ -183,11 +188,11 @@ Classes
    (or vice versa). This does not hold if you try to eg. write to a single instance
    from both IRQ and non-IRQ code, this would often cause data corruption.
 
-    .. method:: RingIO.any()
+    .. method:: RingIO.any() -> int
 
         Returns an integer counting the number of characters that can be read.
 
-    .. method:: RingIO.read([nbytes])
+    .. method:: RingIO.read(nbytes: Optional[int] = None) -> bytes
 
         Read available characters. This is a non-blocking function. If ``nbytes``
         is specified then read at most that many bytes, otherwise read as much
@@ -196,7 +201,7 @@ Classes
         Return value: a bytes object containing the bytes read. Will be
         zero-length bytes object if no data is available.
 
-    .. method:: RingIO.readline([nbytes])
+    .. method:: RingIO.readline(nbytes: Optional[int] = None) -> bytes
 
         Read a line, ending in a newline character or return if one exists in
         the buffer, else return available bytes in buffer. If ``nbytes`` is
@@ -204,7 +209,7 @@ Classes
 
         Return value: a bytes object containing the line read.
 
-    .. method:: RingIO.readinto(buf[, nbytes])
+    .. method:: RingIO.readinto(buf: Union[bytearray, memoryview], nbytes: Optional[int] = None) -> int
 
         Read available bytes into the provided ``buf``.  If ``nbytes`` is
         specified then read at most that many bytes.  Otherwise, read at
@@ -212,14 +217,14 @@ Classes
 
         Return value: Integer count of the number of bytes read into ``buf``.
 
-    .. method:: RingIO.write(buf)
+    .. method:: RingIO.write(buf: Union[bytes, bytearray, memoryview]) -> int
 
         Non-blocking write of bytes from ``buf`` into the ringbuffer, limited
         by the available space in the ringbuffer.
 
         Return value: Integer count of bytes written.
 
-    .. method:: RingIO.close()
+    .. method:: RingIO.close() -> None
 
         No-op provided as part of standard :std:term:`stream` interface. Has no effect
         on data in the ringbuffer.

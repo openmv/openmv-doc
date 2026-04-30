@@ -1,48 +1,43 @@
 .. currentmodule:: display
-.. _display.DisplayData:
 
 class DisplayData -- Display Data
 =================================
 
-The `DisplayData` class is used for getting information about the attached DisplayPort/HDMI Display.
+The `DisplayData` class provides access to display data channels (CEC/DDC) for an
+attached DisplayPort/HDMI display.
 
 Constructors
 ------------
 
-.. class:: display.DisplayData(cec=False, ddc=False, ddc_addr=0x50)
+.. class:: DisplayData(*, cec: bool = False, ddc: bool = False, ddc_addr: int = 0x50)
 
-    ``cec`` Pass `True` to enable CEC communication to an external display (if possible).
+    ``cec`` set to ``True`` to enable CEC communication with an external display.
 
-    ``ddc`` Pass `True` to enable DDC communication to an external display (if possible).
+    ``ddc`` set to ``True`` to enable DDC communication with an external display.
 
-    ``ddc_addr`` The I2C address to use to talk to the external display EEPROM.
+    ``ddc_addr`` I2C address of the external display EEPROM.
 
-Methods
--------
+   .. method:: display_id() -> bytes
 
-.. method:: DisplayData.display_id() -> int
+       Returns the external display EDID data as a ``bytes`` object. EDID headers and
+       checksums are verified and all sections are concatenated into a single ``bytes``
+       object. Raises ``OSError`` on failure.
 
-   Returns the external display EDID data as a bytes()
-   object. Verifying the EDID headers, checksums, and concatenating all sections into one bytes()
-   object is done for you. You may then parse this information by `following this guide <https://en.wikipedia.org/wiki/Extended_Display_Identification_Data>`__.
+   .. method:: send_frame(dst_addr: int, src_addr: int, data: bytes) -> None
 
-.. method:: DisplayData.send_frame(dst_addr, src_addr, bytes)
+       Sends a CEC frame to ``dst_addr`` from ``src_addr`` containing ``data``. Raises
+       ``OSError`` on failure.
 
-   Sends a packet on the HDMI-CEC bus to ``dst_addr`` with source ``src_addr`` and data ``bytes``.
+   .. method:: receive_frame(dst_addr: int, *, timeout: int = 1000) -> tuple[int, bytes]
 
-.. method:: DisplayData.receive_frame(dst_addr, timeout=1000)
+       Waits up to ``timeout`` milliseconds for a CEC frame addressed to ``dst_addr``.
+       Returns a tuple of ``(src_addr, data)``. Raises ``OSError`` on timeout or failure.
 
-   Waits ``timeout`` milliseconds to receive an HDMI-CEC
-   frame for address ``dst_addr``. Returns True if the received frame was for ``dst_addr`` and False
-   if not. On timeout throws an `OSError` Exception.
+   .. method:: frame_callback(callback: Callable[[int, bytes], None] | None, dst_addr: int) -> None
 
-.. method:: DisplayData.frame_callback(callback, dst_addr)
+       Registers ``callback`` to be called when a CEC frame addressed to ``dst_addr``
+       is received. The callback is invoked with two arguments: the source address as
+       an ``int`` and the frame payload as a ``bytes`` object.
 
-   Registers a ``callback`` which will be called on reception of an
-   HDMI-CEC frame. The callback will receive two arguments of the frame src_addr as an int and
-   payload as a `bytes()` object.
-
-   ``dst_addr`` sets the filter address to listen to on the CEC bus.
-
-   If you use this method do not call `DisplayData.receive_frame()` anymore until the callback is
-   disabled by passing ``None`` as the callback for this method.
+       Pass ``None`` as ``callback`` to disable reception. While a callback is
+       registered, do not call `DisplayData.receive_frame()`.

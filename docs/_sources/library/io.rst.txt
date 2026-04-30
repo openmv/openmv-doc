@@ -4,10 +4,10 @@
 .. module:: io
    :synopsis: input/output streams
 
-|see_cpython_module| :mod:`python:io`.
-
 This module contains additional types of :std:term:`stream` (file-like) objects
-and helper functions.
+and helper functions.  It exposes the :func:`open` builtin along with
+in-memory text and binary buffers (:class:`StringIO`, :class:`BytesIO`)
+that implement the standard ``read``/``write``/``seek`` stream interface.
 
 Conceptual hierarchy
 --------------------
@@ -77,7 +77,7 @@ to implement, or subclass, a stream class in pure Python.
 Functions
 ---------
 
-.. function:: open(name, mode='r', **kwargs)
+.. function:: open(name: str, mode: str = 'r', **kwargs) -> Any
 
     Open a file. Builtin ``open()`` function is aliased to this function.
     All ports (which provide access to file system) are required to support
@@ -86,8 +86,8 @@ Functions
 Classes
 -------
 
-.. class:: StringIO([string])
-.. class:: BytesIO([string])
+.. class:: StringIO(string: str = "")
+           BytesIO(string: bytes = b"")
 
     In-memory file-like objects for input/output. `StringIO` is used for
     text-mode I/O (similar to a normal file opened with "t" modifier).
@@ -99,13 +99,12 @@ Classes
     ``close()`` are available on these objects, and additionally, a
     following method:
 
-    .. method:: getvalue()
+    .. method:: getvalue() -> Any
 
         Get the current contents of the underlying buffer which holds data.
 
-.. class:: StringIO(alloc_size)
-    :noindex:
-.. class:: BytesIO(alloc_size)
+.. class:: StringIO(alloc_size: int)
+           BytesIO(alloc_size: int)
     :noindex:
 
     Create an empty `StringIO`/`BytesIO` object, preallocated to hold up

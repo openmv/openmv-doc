@@ -8,23 +8,33 @@ The ``tof`` module is used for controlling the time-of-flight sensor.
 
 Example usage::
 
-    import sensor, tof
+    import csi, tof
 
     # Setup camera.
-    sensor.reset()
-    sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.QVGA)
-    sensor.skip_frames()
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
+    csi0.snapshot(time=2000)
     tof.init()
 
     # Show image.
     while(True):
-        img = sensor.snapshot()
+        img = csi0.snapshot()
         depth, depth_min, depth_max = tof.read_depth()
         tof.draw_depth(image, depth)
         print("====================")
         print("Min depth in mm seen: %0.2f" % depth_min)
         print("Max depth in mm seen: %0.2f" % depth_max)
+
+If you want to rotate the depth array/image by multiples of 90 degrees pass the
+following ``hmirror``/``vflip``/``transpose`` combinations to `read_depth`,
+`draw_depth`, or `snapshot`:
+
+   * ``vflip=False, hmirror=False, transpose=False`` -> 0 degree rotation
+   * ``vflip=True,  hmirror=False, transpose=True``  -> 90 degree rotation
+   * ``vflip=True,  hmirror=True,  transpose=False`` -> 180 degree rotation
+   * ``vflip=False, hmirror=True,  transpose=True``  -> 270 degree rotation
 
 Functions
 ---------
@@ -33,25 +43,16 @@ Functions
 
    Initializes an onboard depth sensor.
 
-   ``type`` indicates the type of thermopile shield:
+   ``type`` indicates the type of TOF sensor:
 
-      * `tof.TOF_NONE`: 0 pixels.
       * `tof.TOF_VL53LX`: 8x8 pixels.
 
-   By default type is ``-1`` which will cause `tof.init()` to automatically scan and initialize an
-   attached thermal sensor based on the I2C address.
+   By default ``type`` is ``-1`` which causes `tof.init()` to automatically scan
+   and initialize an attached TOF sensor based on the I2C address.
 
-.. function:: reset(type:int=-1) -> None
+.. function:: reset() -> None
 
-   Re-initializes an onboard depth sensor.
-
-   ``type`` indicates the type of thermopile shield:
-
-      * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53LX`: 8x8 pixels.
-
-   By default type is ``-1`` which will cause `tof.init()` to automatically scan and initialize an
-   attached thermal sensor based on the I2C address.
+   Resets the depth sensor state.
 
 .. function:: deinit() -> None
 
@@ -59,214 +60,143 @@ Functions
 
 .. function:: width() -> int
 
-   Returns the width (horizontal resolution) of the depth sensor in-use:
-
-      * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53LX`: 8 pixels.
+   Returns the width (horizontal resolution) of the depth sensor in-use.
+   Raises a ``RuntimeError`` if the sensor is not initialized.
 
 .. function:: height() -> int
 
-   Returns the height (vertical resolution) of the depth sensor in-use:
-
-      * `tof.TOF_NONE`: 0 pixels.
-      * `tof.TOF_VL53LX`: 8 pixels.
+   Returns the height (vertical resolution) of the depth sensor in-use.
+   Raises a ``RuntimeError`` if the sensor is not initialized.
 
 .. function:: type() -> int
 
    Returns the type of the depth sensor in-use:
 
-      * `tof.TOF_NONE`
       * `tof.TOF_VL53LX`
+
+   Raises a ``RuntimeError`` if the sensor is not initialized.
 
 .. function:: refresh() -> int
 
-   Returns the refresh rate of the depth sensor in-use:
+   Returns the refresh rate (in Hz) of the depth sensor in-use:
 
-      * `tof.TOF_NONE`: 0 Hz.
       * `tof.TOF_VL53LX`: 15 Hz.
 
-.. function:: read_depth(hmirror:bool=False, vflip:bool=False, transpose:bool=False, timeout:int=-1)
+   Raises a ``RuntimeError`` if the sensor is not initialized.
 
-   Returns a tuple containing the depth list (width * height),
+.. function:: read_depth(hmirror:bool=False, vflip:bool=False, transpose:bool=False, timeout:int=100) -> Tuple[List[float], float, float]
+
+   Returns a tuple containing the depth list (``width * height`` floats in mm),
    the minimum depth seen, and the maximum depth seen.
 
-   ``hmirror`` if set to True horizontally mirrors the ``depth`` array.
+   ``hmirror`` if ``True`` horizontally mirrors the depth array.
 
-   ``vflip`` if set to True vertically flips the ``depth`` array.
+   ``vflip`` if ``True`` vertically flips the depth array.
 
-   ``transpose`` if set to True transposes the ``depth`` array.
+   ``transpose`` if ``True`` transposes the depth array.
 
-   ``timeout`` if not -1 then how many milliseconds to wait for the new frame.
+   ``timeout`` how many milliseconds to wait for the new frame before raising
+   a ``RuntimeError``. If ``0`` waits forever.
 
-   If you want to rotate an image by multiples of 90 degrees pass the following::
+.. function:: draw_depth(image:image.Image, depth:List[float], x:int=0, y:int=0, x_scale:Optional[float]=None, y_scale:Optional[float]=None, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:int=image.PALETTE_DEPTH, alpha_palette:Optional[int]=None, hint:int=0, scale:Optional[Tuple[float, float]]=None) -> None
 
-      * vflip=False, hmirror=False, transpose=False -> 0 degree rotation
-      * vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
-      * vflip=True,  hmirror=True,  transpose=False -> 180 degree rotation
-      * vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
+   Draws a ``depth`` array (as returned by `read_depth`) onto ``image`` whose
+   top-left corner starts at location ``x``, ``y``.
 
-   Example::
+   ``x_scale`` controls how much the displayed image is scaled by in the x
+   direction (float). If this value is negative the image will be flipped
+   horizontally. If unspecified it matches ``y_scale`` to maintain aspect ratio.
 
-      depth, to_min, to_max = tof.read_depth()
+   ``y_scale`` controls how much the displayed image is scaled by in the y
+   direction (float). If this value is negative the image will be flipped
+   vertically. If unspecified it matches ``x_scale`` to maintain aspect ratio.
 
-   The values returned are floats that represent the depth in mm.
+   ``roi`` is the region-of-interest rectangle tuple ``(x, y, w, h)`` of the
+   source depth array to draw.
 
-   .. note::
+   ``rgb_channel`` is the RGB channel (0=R, 1=G, 2=B) to extract from the
+   source. ``-1`` (default) uses all channels.
 
-      ``depth`` is a (width * height) list of floats (4-bytes each).
+   ``alpha`` controls how much of the source is blended into the destination
+   image. ``255`` is opaque, ``0`` results in no modification. Range: 0-255.
 
-.. function:: draw_depth(image:image.Image, tof, x:Optional[int]=None, y:Optional[int]=None, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=128, color_palette=image.PALETTE_DEPTH, alpha_palette=-1, hint:int=0, scale=Optional[Tuple[float, float]]) -> None
+   ``color_palette`` is a color palette enum (e.g. `image.PALETTE_DEPTH`,
+   `image.PALETTE_RAINBOW`) or a 256-pixel RGB565 image used as a color lookup
+   table on the grayscale depth value.
 
-   Draws an ``depth`` array on ``image`` whose top-left corner starts at location x, y. This method
-   automatically handles rendering the image passed into the correct pixel format for the destination
-   image while also handling clipping seamlessly.
+   ``alpha_palette`` if not ``None`` is a 256-pixel GRAYSCALE image used as an
+   alpha lookup table modulating ``alpha`` per pixel.
 
-   ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+   ``hint`` is a logical OR of `image` flags such as `image.BILINEAR`,
+   `image.BICUBIC`, `image.AREA`, `image.CENTER`, `image.HMIRROR`,
+   `image.VFLIP`, `image.TRANSPOSE`, `image.EXTRACT_RGB_CHANNEL_FIRST`,
+   `image.APPLY_COLOR_PALETTE_FIRST`, `image.SCALE_ASPECT_KEEP`,
+   `image.SCALE_ASPECT_EXPAND`, `image.SCALE_ASPECT_IGNORE`,
+   `image.ROTATE_90`, `image.ROTATE_180`, `image.ROTATE_270`.
 
-   ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
-
-   ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the source image to draw. This
-   allows you to extract just the pixels in the ROI to scale and draw on the destination image.
-
-   ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-   and to render onto the destination image. For example, if you pass ``rgb_channel=1`` this will
-   extract the green channel of the source RGB565 image and draw that in grayscale on the
-   destination image.
-
-   ``alpha`` controls how much of the source image to blend into the destination image. A value of
-   255 draws an opaque source image while a value lower than 255 produces a blend between the source
-   and destination image. 0 results in no modification to the destination image.
-
-   ``color_palette`` if not ``-1`` can be an a color palette enum or
-   a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-   whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
-
-   ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-   palette which modulates the ``alpha`` value of the source image being drawn at a pixel pixel
-   level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-   A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-   more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
-
-   ``hint`` can be a logical OR of the flags:
-
-      * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-      * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-      * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
-      * `image.HMIRROR`: Horizontally mirror the image.
-      * `image.VFLIP`: Vertically flip the image.
-      * `image.TRANSPOSE`: Transpose the image (swap x/y).
-      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
-      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
-
-   ``scale`` is a two value tuple which controls the min and max depth (in mm) to scale
-   the ``depth`` image. By default it's equal to the image ``depth`` min and ``depth`` max.
-
-   If x/y are not specified the image will be centered in the field of view. If x_scale/y_scale or
-   x_size/y_size are not specified the ``depth`` array will be scaled to fit on the ``image``.
+   ``scale`` is a two-value tuple ``(min, max)`` controlling the min and max
+   depth (in mm) used to scale the depth image. Defaults to the depth array's
+   actual min and max.
 
    .. note::
 
-      To handle a transposed ``depth`` array `read_depth` remembers if it was called with ``transposed``
-      ``True``. This is then passed to ``draw_depth`` internally.
+      `read_depth` remembers if it was called with ``transpose=True`` and
+      ``draw_depth`` uses that internally to size the source array.
 
-.. function:: snapshot(hmirror:bool=False, vflip:bool=False, transpose:bool=False, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=128, color_palette=image.PALETTE_DEPTH, alpha_palette=None, hint:int=0, scale:Optional[Tuple[float, float]]=None, pixformat:int=image.RGB565, copy_to_fb:bool=False, timeout:int=-1) -> image.Image
+.. function:: snapshot(hmirror:bool=False, vflip:bool=False, transpose:bool=False, x_scale:Optional[float]=None, y_scale:Optional[float]=None, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:int=image.PALETTE_DEPTH, alpha_palette:Optional[int]=None, hint:int=0, scale:Optional[Tuple[float, float]]=None, pixformat:int=image.RGB565, copy_to_fb:bool=False, timeout:int=100) -> image.Image
 
-   Works like `sensor.snapshot()` and returns an `image` object that is either
-   `image.GRAYSCALE` (grayscale) or `image.RGB565` (color). If ``copy_to_fb`` is False then
-   the new image is allocated on the MicroPython heap. However, the MicroPython heap is limited
-   and may not have space to store the new image if exhausted. Instead, set ``copy_to_fb`` to
-   True to set the frame buffer to the new image making this function work just like `sensor.snapshot()`.
+   Reads a frame from the depth sensor and returns a new `image.Image` object
+   that is either `image.GRAYSCALE` or `image.RGB565`.
 
-   ``hmirror`` if set to True horizontally mirrors the new image.
+   ``hmirror`` if ``True`` horizontally mirrors the new image.
 
-   ``vflip`` if set to True vertically flips the new image.
+   ``vflip`` if ``True`` vertically flips the new image.
 
-   ``transpose`` if set to True transposes the new image.
+   ``transpose`` if ``True`` transposes the new image.
 
-   If you want to rotate an image by multiples of 90 degrees pass the following::
+   ``x_scale`` controls how much the image is scaled in the x direction
+   (float). Negative values flip horizontally. If unspecified it matches
+   ``y_scale``.
 
-      * vflip=False, hmirror=False, transpose=False -> 0 degree rotation
-      * vflip=True,  hmirror=False, transpose=True  -> 90 degree rotation
-      * vflip=True,  hmirror=True,  transpose=False -> 180 degree rotation
-      * vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
+   ``y_scale`` controls how much the image is scaled in the y direction
+   (float). Negative values flip vertically. If unspecified it matches
+   ``x_scale``.
 
-   ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+   ``roi`` is the region-of-interest rectangle tuple ``(x, y, w, h)`` of the
+   source to extract.
 
-   ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+   ``rgb_channel`` is the RGB channel (0=R, 1=G, 2=B) to extract. ``-1``
+   (default) uses all channels.
 
-   ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the source image to draw. This
-   allows you to extract just the pixels in the ROI to scale and draw on the destination image.
+   ``alpha`` controls source-to-destination blending. ``255`` is opaque, ``0``
+   leaves the destination unchanged. Range: 0-255.
 
-   ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-   and to render onto the destination image. For example, if you pass ``rgb_channel=1`` this will
-   extract the green channel of the source RGB565 image and draw that in grayscale on the
-   destination image.
+   ``color_palette`` is a color palette enum (e.g. `image.PALETTE_DEPTH`) or a
+   256-pixel RGB565 image used as a color lookup table.
 
-   ``alpha`` controls how much of the source image to blend into the destination image. A value of
-   255 draws an opaque source image while a value lower than 255 produces a blend between the source
-   and destination image. 0 results in no modification to the destination image.
+   ``alpha_palette`` if not ``None`` is a 256-pixel GRAYSCALE image used as an
+   alpha lookup table.
 
-   ``color_palette`` if not ``-1`` can be an a color palette enum or
-   a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-   whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
+   ``hint`` is a logical OR of `image` scaling/orientation flags (see
+   `draw_depth`).
 
-   ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-   palette which modulates the ``alpha`` value of the source image being drawn at a pixel pixel
-   level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-   A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-   more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
+   ``scale`` is a two-value tuple ``(min, max)`` controlling the min and max
+   depth (in mm) used to scale the image. Defaults to the frame's actual
+   min/max.
 
-   ``hint`` can be a logical OR of the flags:
+   ``pixformat`` controls the final image pixel format. Must be
+   `image.GRAYSCALE` or `image.RGB565`.
 
-      * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-      * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-      * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
-      * `image.HMIRROR`: Horizontally mirror the image.
-      * `image.VFLIP`: Vertically flip the image.
-      * `image.TRANSPOSE`: Transpose the image (swap x/y).
-      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
-      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+   ``copy_to_fb`` if ``True`` writes the new image into the frame buffer
+   instead of allocating it on the MicroPython heap.
 
-   ``scale`` is a two value tuple which controls the min and max depth (in mm) to scale
-   the ``depth`` image. By default it's equal to the image ``depth`` min and ``depth`` max.
-
-   ``pixformat`` if specified controls the final image pixel format.
-
-   ``timeout`` if not -1 then how many milliseconds to wait for the new frame.
-
-   Returns an image object.
+   ``timeout`` how many milliseconds to wait for the new frame before raising
+   a ``RuntimeError``. If ``0`` waits forever.
 
 Constants
 ---------
 
-.. data:: TOF_NONE
-   :type: int
-
-   No TOF sensor type.
-
 .. data:: TOF_VL53LX
    :type: int
 
-   VL53L5CX or VL53L8CX TOF sensor.
+   VL53L5CX or VL53L8CX TOF sensor (8x8 pixels).

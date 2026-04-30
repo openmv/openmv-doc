@@ -42,7 +42,7 @@ Usage Model::
 Constructors
 ------------
 
-.. class:: Pin(id, mode=-1, pull=-1, *, value=None, drive=0, alt=-1)
+.. class:: Pin(id: int | str, mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1)
 
    Access the pin peripheral (GPIO pin) associated with the given ``id``.  If
    additional arguments are given in the constructor then they are used to initialise
@@ -105,178 +105,182 @@ Constructors
    alternate-function mode is re-initialised with ``Pin.IN``, ``Pin.OUT``, or
    ``Pin.OPEN_DRAIN``, the alternate function will be removed from the pin.
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: Pin.init(mode=-1, pull=-1, *, value=None, drive=0, alt=-1)
+   .. method:: init(mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1) -> None
 
-   Re-initialise the pin using the given parameters.  Only those arguments that
-   are specified will be set.  The rest of the pin peripheral state will remain
-   unchanged.  See the constructor documentation for details of the arguments.
+      Re-initialise the pin using the given parameters.  Only those arguments that
+      are specified will be set.  The rest of the pin peripheral state will remain
+      unchanged.  See the constructor documentation for details of the arguments.
 
-   Returns ``None``.
+      Returns ``None``.
 
-.. method:: Pin.value([x])
+   .. method:: value(x: Any | None = None, /) -> int | None
 
-   This method allows to set and get the value of the pin, depending on whether
-   the argument ``x`` is supplied or not.
+      This method allows to set and get the value of the pin, depending on whether
+      the argument ``x`` is supplied or not.
 
-   If the argument is omitted then this method gets the digital logic level of
-   the pin, returning 0 or 1 corresponding to low and high voltage signals
-   respectively.  The behaviour of this method depends on the mode of the pin:
+      If the argument is omitted then this method gets the digital logic level of
+      the pin, returning 0 or 1 corresponding to low and high voltage signals
+      respectively.  The behaviour of this method depends on the mode of the pin:
 
-     - ``Pin.IN`` - The method returns the actual input value currently present
-       on the pin.
-     - ``Pin.OUT`` - The behaviour and return value of the method is undefined.
-     - ``Pin.OPEN_DRAIN`` - If the pin is in state '0' then the behaviour and
-       return value of the method is undefined.  Otherwise, if the pin is in
-       state '1', the method returns the actual input value currently present
-       on the pin.
+        - ``Pin.IN`` - The method returns the actual input value currently present
+          on the pin.
+        - ``Pin.OUT`` - The behaviour and return value of the method is undefined.
+        - ``Pin.OPEN_DRAIN`` - If the pin is in state '0' then the behaviour and
+          return value of the method is undefined.  Otherwise, if the pin is in
+          state '1', the method returns the actual input value currently present
+          on the pin.
 
-   If the argument is supplied then this method sets the digital logic level of
-   the pin.  The argument ``x`` can be anything that converts to a boolean.
-   If it converts to ``True``, the pin is set to state '1', otherwise it is set
-   to state '0'.  The behaviour of this method depends on the mode of the pin:
+      If the argument is supplied then this method sets the digital logic level of
+      the pin.  The argument ``x`` can be anything that converts to a boolean.
+      If it converts to ``True``, the pin is set to state '1', otherwise it is set
+      to state '0'.  The behaviour of this method depends on the mode of the pin:
 
-     - ``Pin.IN`` - The value is stored in the output buffer for the pin.  The
-       pin state does not change, it remains in the high-impedance state.  The
-       stored value will become active on the pin as soon as it is changed to
-       ``Pin.OUT`` or ``Pin.OPEN_DRAIN`` mode.
-     - ``Pin.OUT`` - The output buffer is set to the given value immediately.
-     - ``Pin.OPEN_DRAIN`` - If the value is '0' the pin is set to a low voltage
-       state.  Otherwise the pin is set to high-impedance state.
+        - ``Pin.IN`` - The value is stored in the output buffer for the pin.  The
+          pin state does not change, it remains in the high-impedance state.  The
+          stored value will become active on the pin as soon as it is changed to
+          ``Pin.OUT`` or ``Pin.OPEN_DRAIN`` mode.
+        - ``Pin.OUT`` - The output buffer is set to the given value immediately.
+        - ``Pin.OPEN_DRAIN`` - If the value is '0' the pin is set to a low voltage
+          state.  Otherwise the pin is set to high-impedance state.
 
-   When setting the value this method returns ``None``.
+      When setting the value this method returns ``None``.
 
-.. method:: Pin.__call__([x])
+   .. method:: __call__(x: Any | None = None, /) -> int | None
 
-   Pin objects are callable.  The call method provides a (fast) shortcut to set
-   and get the value of the pin.  It is equivalent to Pin.value([x]).
-   See :meth:`Pin.value` for more details.
+      Pin objects are callable.  The call method provides a (fast) shortcut to set
+      and get the value of the pin.  It is equivalent to Pin.value([x]).
+      See :meth:`Pin.value` for more details.
 
-.. method:: Pin.on()
+   .. method:: on() -> None
 
-   Set pin to "1" output level.
+      Set pin to "1" output level.
 
-.. method:: Pin.off()
+   .. method:: off() -> None
 
-   Set pin to "0" output level.
+      Set pin to "0" output level.
 
-.. method:: Pin.irq(handler=None, trigger=(Pin.IRQ_FALLING | Pin.IRQ_RISING), *, priority=1, wake=None, hard=False)
+   .. method:: irq(handler: Callable[[Pin], None] | None = None, trigger: int = (Pin.IRQ_FALLING | Pin.IRQ_RISING), *, priority: int = 1, wake: int | None = None, hard: bool = False) -> None
 
-   Configure an interrupt handler to be called when the trigger source of the
-   pin is active.  If the pin mode is ``Pin.IN`` then the trigger source is
-   the external value on the pin.  If the pin mode is ``Pin.OUT`` then the
-   trigger source is the output buffer of the pin.  Otherwise, if the pin mode
-   is ``Pin.OPEN_DRAIN`` then the trigger source is the output buffer for
-   state '0' and the external pin value for state '1'.
+      Configure an interrupt handler to be called when the trigger source of the
+      pin is active.  If the pin mode is ``Pin.IN`` then the trigger source is
+      the external value on the pin.  If the pin mode is ``Pin.OUT`` then the
+      trigger source is the output buffer of the pin.  Otherwise, if the pin mode
+      is ``Pin.OPEN_DRAIN`` then the trigger source is the output buffer for
+      state '0' and the external pin value for state '1'.
 
-   The arguments are:
+      The arguments are:
 
-     - ``handler`` is an optional function to be called when the interrupt
-       triggers. The handler must take exactly one argument which is the
-       ``Pin`` instance.
+        - ``handler`` is an optional function to be called when the interrupt
+          triggers. The handler must take exactly one argument which is the
+          ``Pin`` instance.
 
-     - ``trigger`` configures the event which can generate an interrupt.
-       Possible values are:
+        - ``trigger`` configures the event which can generate an interrupt.
+          Possible values are:
 
-       - ``Pin.IRQ_FALLING`` interrupt on falling edge.
-       - ``Pin.IRQ_RISING`` interrupt on rising edge.
-       - ``Pin.IRQ_LOW_LEVEL`` interrupt on low level.
-       - ``Pin.IRQ_HIGH_LEVEL`` interrupt on high level.
+          - ``Pin.IRQ_FALLING`` interrupt on falling edge.
+          - ``Pin.IRQ_RISING`` interrupt on rising edge.
+          - ``Pin.IRQ_LOW_LEVEL`` interrupt on low level.
+          - ``Pin.IRQ_HIGH_LEVEL`` interrupt on high level.
 
-       These values can be OR'ed together to trigger on multiple events.
+          These values can be OR'ed together to trigger on multiple events.
 
-     - ``priority`` sets the priority level of the interrupt.  The values it
-       can take are port-specific, but higher values always represent higher
-       priorities.
+        - ``priority`` sets the priority level of the interrupt.  The values it
+          can take are port-specific, but higher values always represent higher
+          priorities.
 
-     - ``wake`` selects the power mode in which this interrupt can wake up the
-       system.  It can be ``machine.IDLE``, ``machine.SLEEP`` or ``machine.DEEPSLEEP``.
-       These values can also be OR'ed together to make a pin generate interrupts in
-       more than one power mode.
+        - ``wake`` selects the power mode in which this interrupt can wake up the
+          system.  It can be ``machine.IDLE``, ``machine.SLEEP`` or ``machine.DEEPSLEEP``.
+          These values can also be OR'ed together to make a pin generate interrupts in
+          more than one power mode.
 
-     - ``hard`` if true a hardware interrupt is used. This reduces the delay
-       between the pin change and the handler being called. Hard interrupt
-       handlers may not allocate memory; see :ref:`isr_rules`.
-       Not all ports support this argument.
+        - ``hard`` if true a hardware interrupt is used. This reduces the delay
+          between the pin change and the handler being called. Hard interrupt
+          handlers may not allocate memory; see :ref:`isr_rules`.
+          Not all ports support this argument.
 
-   This method returns a callback object.
+      This method returns a callback object.
 
-The following methods are not part of the core Pin API and only implemented on certain ports.
+   The following methods are not part of the core Pin API and only implemented on certain ports.
 
-.. method:: Pin.low()
+   .. method:: low() -> None
 
-   Set pin to "0" output level.
+      Set pin to "0" output level.
 
-   Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
+      Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
 
-.. method:: Pin.high()
+   .. method:: high() -> None
 
-   Set pin to "1" output level.
+      Set pin to "1" output level.
 
-   Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
+      Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
 
-.. method:: Pin.mode([mode])
+   .. method:: mode(mode: int | None = None, /) -> int | None
 
-   Get or set the pin mode.
-   See the constructor documentation for details of the ``mode`` argument.
+      Get or set the pin mode.
+      See the constructor documentation for details of the ``mode`` argument.
 
-   Availability: cc3200, stm32 ports.
+      Availability: cc3200, stm32 ports.
 
-.. method:: Pin.pull([pull])
+   .. method:: pull(pull: int | None = None, /) -> int | None
 
-   Get or set the pin pull state.
-   See the constructor documentation for details of the ``pull`` argument.
+      Get or set the pin pull state.
+      See the constructor documentation for details of the ``pull`` argument.
 
-   Availability: cc3200, stm32 ports.
+      Availability: cc3200, stm32 ports.
 
-.. method:: Pin.drive([drive])
+   .. method:: drive(drive: int | None = None, /) -> int | None
 
-   Get or set the pin drive strength.
-   See the constructor documentation for details of the ``drive`` argument.
+      Get or set the pin drive strength.
+      See the constructor documentation for details of the ``drive`` argument.
 
-   Availability: cc3200 port.
+      Availability: cc3200 port.
 
-.. method:: Pin.toggle()
+   .. method:: toggle() -> None
 
-   Toggle output pin from "0" to "1" or vice-versa.
+      Toggle output pin from "0" to "1" or vice-versa.
 
-   Availability: cc3200, esp32, esp8266, mimxrt, rp2, samd, alif ports.
+      Availability: cc3200, esp32, esp8266, mimxrt, rp2, samd, alif ports.
 
-Constants
----------
+   Constants
+   ---------
 
-The following constants are used to configure the pin objects.  Note that
-not all constants are available on all ports.
+   The following constants are used to configure the pin objects.  Note that
+   not all constants are available on all ports.
 
-.. data:: Pin.IN
-          Pin.OUT
-          Pin.OPEN_DRAIN
-          Pin.ALT
-          Pin.ALT_OPEN_DRAIN
-          Pin.ANALOG
+   .. data:: IN
+             OUT
+             OPEN_DRAIN
+             ALT
+             ALT_OPEN_DRAIN
+             ANALOG
+      :type: int
 
-   Selects the pin mode.
+      Selects the pin mode.
 
-.. data:: Pin.PULL_UP
-          Pin.PULL_DOWN
-          Pin.PULL_HOLD
+   .. data:: PULL_UP
+             PULL_DOWN
+             PULL_HOLD
+      :type: int
 
-   Selects whether there is a pull up/down resistor.  Use the value
-   ``None`` for no pull.
+      Selects whether there is a pull up/down resistor.  Use the value
+      ``None`` for no pull.
 
-.. data:: Pin.DRIVE_0
-          Pin.DRIVE_1
-          Pin.DRIVE_2
+   .. data:: DRIVE_0
+             DRIVE_1
+             DRIVE_2
+      :type: int
 
-   Selects the pin drive strength.  A port may define additional drive
-   constants with increasing number corresponding to increasing drive
-   strength.
+      Selects the pin drive strength.  A port may define additional drive
+      constants with increasing number corresponding to increasing drive
+      strength.
 
-.. data:: Pin.IRQ_FALLING
-          Pin.IRQ_RISING
-          Pin.IRQ_LOW_LEVEL
-          Pin.IRQ_HIGH_LEVEL
+   .. data:: IRQ_FALLING
+             IRQ_RISING
+             IRQ_LOW_LEVEL
+             IRQ_HIGH_LEVEL
+      :type: int
 
-   Selects the IRQ trigger type.
+      Selects the IRQ trigger type.

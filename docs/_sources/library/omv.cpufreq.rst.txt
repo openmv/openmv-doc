@@ -6,24 +6,21 @@
 
 The ``cpufreq`` module is used to get/set the CPU frequency to save power.
 
-.. note::
-
-   This module is not supported on the OpenMV Cam M4 because the CPU frequency,
-   for various reasons, cannot be set independently of peripherals.
-
 Functions
 ---------
 
 .. function:: set_frequency(supported_frequency:int) -> None
 
-   Sets the CPU frequency to a supported frequency in MHz. Peripherals
-   frequencies are not changed. Only the CPU performance.
+   Sets the CPU frequency to a ``supported_frequency`` in MHz. Peripheral
+   frequencies are not changed, only the CPU clock. Raises ``OSError`` if
+   ``supported_frequency`` is not in the list returned by
+   `cpufreq.get_supported_frequencies`.
 
 .. function:: get_current_frequencies() -> Tuple[int, int, int, int]
 
-   Returns (cpu_clk_in_mhz, hclk_in_mhz, pclk1_in_mhz, pclk2_in_mhz).
+   Returns a 4-tuple ``(cpu_clk_in_mhz, hclk_in_mhz, pclk1_in_mhz, pclk2_in_mhz)``
+   with the current CPU and bus clock frequencies in MHz.
 
 .. function:: get_supported_frequencies() -> List[int]
 
-   Returns the supported CPU frequencies [120, 144, 168, 192, 216] on the
-   OpenMV Cam M7 and [60/50, 120/100, 240/200, 480/400] on the OpenMV Cam H7 Rev V/XY silicon in MHz.
+   Returns a list of supported CPU frequencies in MHz.

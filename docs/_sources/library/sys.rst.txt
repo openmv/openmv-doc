@@ -4,12 +4,14 @@
 .. module:: sys
    :synopsis: system specific functions
 
-|see_cpython_module| :mod:`python:sys`.
+This module provides access to interpreter-specific variables and functions,
+including command-line arguments, the module search path, standard streams,
+and information about the running implementation.
 
 Functions
 ---------
 
-.. function:: exit(retval=0, /)
+.. function:: exit(retval: object = 0, /) -> NoReturn
 
    Terminate current program with a given exit code. Underlyingly, this
    function raises a `SystemExit` exception. If an argument is given, its
@@ -18,7 +20,7 @@ Functions
    On embedded ports (i.e. all ports but Windows and Unix), an unhandled
    `SystemExit` currently causes a :ref:`soft_reset` of MicroPython.
 
-.. function:: atexit(func)
+.. function:: atexit(func: Optional[Callable[[], None]]) -> Optional[Callable[[], None]]
 
    Register *func* to be called upon termination.  *func* must be a callable
    that takes no arguments, or ``None`` to disable the call.  The ``atexit``
@@ -31,7 +33,7 @@ Functions
       This function is a MicroPython extension intended to provide similar
       functionality to the :mod:`atexit` module in CPython.
 
-.. function:: print_exception(exc, file=sys.stdout, /)
+.. function:: print_exception(exc: BaseException, file: Any = sys.stdout, /) -> None
 
    Print exception with a traceback to a file-like object *file* (or
    `sys.stdout` by default).
@@ -46,7 +48,7 @@ Functions
       positional; further arguments are not supported. CPython-compatible
       ``traceback`` module can be found in `micropython-lib`.
 
-.. function:: settrace(tracefunc)
+.. function:: settrace(tracefunc: Optional[Callable]) -> None
 
    Enable tracing of bytecode execution.  For details see the `CPython
    documentation <https://docs.python.org/3/library/sys.html#sys.settrace>`_.
@@ -59,14 +61,17 @@ Constants
 ---------
 
 .. data:: argv
+   :type: list[str]
 
    A mutable list of arguments the current program was started with.
 
 .. data:: byteorder
+   :type: str
 
    The byte order of the system (``"little"`` or ``"big"``).
 
 .. data:: implementation
+   :type: object
 
    Object with information about the current Python implementation. For
    MicroPython, it has following attributes:
@@ -112,6 +117,7 @@ Constants
       bare minimum is implemented in MicroPython.
 
 .. data:: maxsize
+   :type: int
 
    Maximum value which a native integer type can hold on the current platform,
    or maximum value representable by MicroPython integer type, if it's smaller
@@ -137,11 +143,13 @@ Constants
         # "> 32", "> 64" style of comparisons.
 
 .. data:: modules
+   :type: dict
 
    Dictionary of loaded modules. On some ports, it may not include builtin
    modules.
 
 .. data:: path
+   :type: list[str]
 
    A mutable list of directories to search for imported modules.
 
@@ -154,6 +162,7 @@ Constants
       ``.frozen``, instead it will continue with the next entry in ``sys.path``.
 
 .. data:: platform
+   :type: str
 
    The platform that MicroPython is running on. For OS/RTOS ports, this is
    usually an identifier of the OS, e.g. ``"linux"``. For baremetal ports it
@@ -164,23 +173,28 @@ Constants
 
 .. data:: ps1
           ps2
+   :type: str
 
    Mutable attributes holding strings, which are used for the REPL prompt.  The defaults
    give the standard Python prompt of ``>>>`` and ``...``.
 
 .. data:: stderr
+   :type: object
 
    Standard error :std:term:`stream`.
 
 .. data:: stdin
+   :type: object
 
    Standard input :std:term:`stream`.
 
 .. data:: stdout
+   :type: object
 
    Standard output :std:term:`stream`.
 
 .. data:: tracebacklimit
+   :type: int
 
    A mutable attribute holding an integer value which is the maximum number of traceback
    entries to store in an exception.  Set to 0 to disable adding tracebacks.  Defaults
@@ -189,10 +203,12 @@ Constants
    Note: this is not available on all ports.
 
 .. data:: version
+   :type: str
 
    Python language version that this implementation conforms to, as a string.
 
 .. data:: version_info
+   :type: tuple
 
    Python language version that this implementation conforms to, as a tuple of ints.
 

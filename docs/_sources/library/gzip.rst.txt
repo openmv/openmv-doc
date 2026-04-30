@@ -4,11 +4,11 @@
 .. module:: gzip
    :synopsis: gzip compression & decompression
 
-|see_cpython_module| :mod:`python:gzip`.
-
 This module allows compression and decompression of binary data with the
 `DEFLATE algorithm <https://en.wikipedia.org/wiki/DEFLATE>`_ used by the gzip
-file format.
+file format.  It provides one-shot :func:`compress`/:func:`decompress`
+helpers and a streaming :class:`GzipFile` wrapper around an underlying
+file or stream object.
 
 .. note:: Prefer to use :class:`deflate.DeflateIO` instead of the functions in this
    module as it provides a streaming interface to compression and decompression
@@ -31,22 +31,22 @@ file format.
 Functions
 ---------
 
-.. function:: open(filename, mode, /)
+.. function:: open(filename: str, mode: str, /) -> GzipFile
 
    Wrapper around built-in :func:`open` returning a GzipFile instance.
 
-.. function:: decompress(data, /)
+.. function:: decompress(data: bytes, /) -> bytes
 
    Decompresses *data* into a bytes object.
 
-.. function:: compress(data, /)
+.. function:: compress(data: bytes, /) -> bytes
 
    Compresses *data* into a bytes object.
 
 Classes
 -------
 
-.. class:: GzipFile(*, fileobj, mode)
+.. class:: GzipFile(*, fileobj, mode: str)
 
    This class can be used to wrap a *fileobj* which is any
    :term:`stream-like <stream>` object such as a file, socket, or stream

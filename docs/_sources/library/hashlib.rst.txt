@@ -4,11 +4,11 @@
 .. module:: hashlib
    :synopsis: hashing algorithms
 
-|see_cpython_module| :mod:`python:hashlib`.
-
-This module implements binary data hashing algorithms. The exact inventory
-of available algorithms depends on a board. Among the algorithms which may
-be implemented:
+This module implements binary data hashing algorithms.  Each algorithm is
+exposed as a class whose instances accept incremental data via
+:meth:`update` and produce a fixed-size digest via :meth:`digest`.  The
+exact inventory of available algorithms depends on the board.  Among the
+algorithms which may be implemented:
 
 * SHA256 - The current generation, modern hashing algorithm (of SHA2 series).
   It is suitable for cryptographically-secure purposes. Included in the
@@ -27,31 +27,36 @@ be implemented:
 Constructors
 ------------
 
-.. class:: hashlib.sha256([data])
+.. class:: hashlib.sha256(data: bytes = b"")
 
     Create an SHA256 hasher object and optionally feed ``data`` into it.
 
-.. class:: hashlib.sha1([data])
+.. class:: hashlib.sha1(data: bytes = b"")
 
     Create an SHA1 hasher object and optionally feed ``data`` into it.
 
-.. class:: hashlib.md5([data])
+.. class:: hashlib.md5(data: bytes = b"")
 
     Create an MD5 hasher object and optionally feed ``data`` into it.
 
 Methods
 -------
 
-.. method:: hash.update(data)
+.. class:: hash
 
-   Feed more binary data into hash.
+   Hasher object returned by `hashlib.sha256()`, `hashlib.sha1()`, or
+   `hashlib.md5()`.
 
-.. method:: hash.digest()
+   .. method:: update(data: bytes) -> None
 
-   Return hash for all data passed through hash, as a bytes object. After this
-   method is called, more data cannot be fed into the hash any longer.
+      Feed more binary data into hash.
 
-.. method:: hash.hexdigest()
+   .. method:: digest() -> bytes
 
-   This method is NOT implemented. Use ``binascii.hexlify(hash.digest())``
-   to achieve a similar effect.
+      Return hash for all data passed through hash, as a bytes object. After this
+      method is called, more data cannot be fed into the hash any longer.
+
+   .. method:: hexdigest() -> str
+
+      This method is NOT implemented. Use ``binascii.hexlify(hash.digest())``
+      to achieve a similar effect.

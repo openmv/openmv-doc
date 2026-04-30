@@ -51,7 +51,7 @@ usrsw.h for an example of using this.
 Constructors
 ------------
 
-.. class:: ExtInt(pin, mode, pull, callback)
+.. class:: ExtInt(pin: Union[int, str, Pin], mode: int, pull: int, callback: Callable[[int], None])
 
    Create an ExtInt object:
 
@@ -69,46 +69,49 @@ Constructors
        triggered the interrupt.
 
 
-Class methods
--------------
+   Class methods
+   -------------
 
-.. classmethod:: ExtInt.regs()
+   .. classmethod:: regs() -> None
 
-   Dump the values of the EXTI registers.
-
-
-Methods
--------
-
-.. method:: ExtInt.disable()
-
-   Disable the interrupt associated with the ExtInt object.
-   This could be useful for debouncing.
-
-.. method:: ExtInt.enable()
-
-   Enable a disabled interrupt.
-
-.. method:: ExtInt.line()
-
-   Return the line number that the pin is mapped to.
-
-.. method:: ExtInt.swint()
-
-   Trigger the callback from software.
+      Dump the values of the EXTI registers.
 
 
-Constants
----------
+   Methods
+   -------
 
-.. data:: ExtInt.IRQ_FALLING
+   .. method:: disable() -> None
 
-   interrupt on a falling edge
+      Disable the interrupt associated with the ExtInt object.
+      This could be useful for debouncing.
 
-.. data:: ExtInt.IRQ_RISING
+   .. method:: enable() -> None
 
-   interrupt on a rising edge
+      Enable a disabled interrupt.
 
-.. data:: ExtInt.IRQ_RISING_FALLING
+   .. method:: line() -> int
 
-   interrupt on a rising or falling edge
+      Return the line number that the pin is mapped to.
+
+   .. method:: swint() -> None
+
+      Trigger the callback from software.
+
+
+   Constants
+   ---------
+
+   .. data:: IRQ_FALLING
+      :type: int
+
+      interrupt on a falling edge
+
+   .. data:: IRQ_RISING
+      :type: int
+
+      interrupt on a rising edge
+
+   .. data:: IRQ_RISING_FALLING
+      :type: int
+
+      interrupt on a rising or falling edge

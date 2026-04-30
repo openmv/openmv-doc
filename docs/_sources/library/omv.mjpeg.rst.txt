@@ -4,24 +4,19 @@
 .. module:: mjpeg
    :synopsis: mjpeg recording
 
-The ``mjpeg`` module is used for mjpeg recording.
-
-class Mjpeg -- Mjpeg recorder
------------------------------
-
-You can use the mjpeg module to record large video clips. Note that mjpeg files save
-compressed image data. So, they are best for recording long video clips that
-you want to share. Use `gif` for short clips.
+The ``mjpeg`` module is used for mjpeg recording. Use it to record long video
+clips as compressed image data. Use `gif` for short clips.
 
 Example usage::
 
-    import sensor, mjpeg, time
+    import csi, mjpeg, time
 
     # Setup camera.
-    sensor.reset()
-    sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.QVGA)
-    sensor.skip_frames()
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
+    csi0.snapshot(time=2000)
     c = time.clock()
 
     # Create the mjpeg object.
@@ -30,114 +25,107 @@ Example usage::
     # Add frames.
     for i in range(100):
         c.tick()
-        m.add_frame(sensor.snapshot())
+        m.add_frame(csi0.snapshot())
 
     # Finalize.
     m.close()
 
-Constructors
-~~~~~~~~~~~~
 
-.. class:: Mjpeg(filename:str, width:Optional[int]=None, height:Optional[int]=None)
+class Mjpeg -- Mjpeg recorder
+-----------------------------
 
-   Create a Mjpeg object which you can add frames to. ``filename`` is the path to
-   save the mjpeg recording to.
+.. class:: Mjpeg(path:str, width:Optional[int]=None, height:Optional[int]=None)
 
-   ``width`` is automatically set equal to the image sensor horizontal resolution
-   unless explicitly overridden.
+   Create a Mjpeg object which you can add frames to.
 
-   ``height`` is automatically set equal to the image sensor vertical resolution
-   unless explicitly overridden.
+   ``path`` is the file system path to save the mjpeg recording to.
 
-   Methods
-   ~~~~~~~
+   ``width`` is the horizontal resolution of the mjpeg file. Defaults to the
+   main framebuffer width when not specified.
+
+   ``height`` is the vertical resolution of the mjpeg file. Defaults to the
+   main framebuffer height when not specified.
 
    .. method:: is_closed() -> bool
 
-      Return True if the file was closed. You cannot write more data to a closed file.
+      Returns ``True`` if the file has been closed. No more data can be written
+      to a closed file.
 
    .. method:: width() -> int
 
-      Returns the width (horizontal resolution) for the mjpeg file.
+      Returns the horizontal resolution of the mjpeg file.
 
    .. method:: height() -> int
 
-      Returns the height (vertical resolution) for the mjpeg file.
+      Returns the vertical resolution of the mjpeg file.
 
    .. method:: count() -> int
 
-      Returns the number of frames in the mjpeg file.
+      Returns the number of frames written to the mjpeg file.
 
    .. method:: size() -> int
 
-      Returns the file size in bytes of the mjpeg so far. This value is updated after adding frames.
+      Returns the size of the mjpeg file in bytes.
 
-   .. method:: add_frame(image:image.Image, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel=-1, alpha=256, color_palette=None, alpha_palette=None, hint=0, quality=90)
+   .. method:: add_frame(image:image.Image, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:Optional[image.Image]=None, alpha_palette:Optional[image.Image]=None, hint:int=0, quality:int=90) -> None
 
-      Add an image to the mjpeg recording. The added image is automatically scaled up/down while
-      preserving the aspect-ratio to the resolution specified when the mjpeg file was created.
+      Append ``image`` to the mjpeg recording. The image is automatically
+      scaled while preserving aspect ratio to the resolution specified when
+      the file was created. Any image format is accepted; this method
+      decompresses, scales/converts, and re-compresses as needed.
 
-      ``image`` can be any image format. Even PNG images or JPEG images at the wrong resolution.
-      This method will automatically decompress, scale/convert, and re-compress images for the file.
+      ``roi`` is the region-of-interest rectangle tuple ``(x, y, w, h)`` of
+      ``image`` to copy. Defaults to the whole image.
 
-      ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the image. This
-      allows you to extract just the pixels in the ROI. By default this is the whole image.
+      ``rgb_channel`` is the RGB channel (0=R, 1=G, 2=B) to extract from an
+      RGB565 source image and render in grayscale. ``-1`` (default) disables
+      channel extraction.
 
-      ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-      and to render onto the destination. For example, if you pass ``rgb_channel=1`` this will
-      extract the green channel of the source RGB565 image and draw that in grayscale on the
-      destination.
+      ``alpha`` (0-255) controls how much of the source image to blend into
+      the destination. ``255`` is opaque; lower values blend with a black
+      background; ``0`` results in a black frame.
 
-      ``alpha`` controls how much of the source image to blend into the destination. A value of
-      255 draws an opaque source image while a value lower than 255 produces a blend between the source
-      and destination (which is a black background in this case). 0 results in a black image.
+      ``color_palette`` is either a color palette enum (e.g.
+      `image.PALETTE_RAINBOW`) or a 256-pixel RGB565 image used as a color
+      lookup table on the grayscale value of the source image. Applied after
+      ``rgb_channel`` extraction.
 
-      ``color_palette`` if not ``-1`` can be an a color palette enum or
-      a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-      whatever the source image is. This is applied after ``rgb_channel`` extraction if used.
+      ``alpha_palette`` is a 256-pixel grayscale image used as an alpha
+      lookup table modulating ``alpha`` per source pixel based on its
+      grayscale value. ``255`` is opaque; ``0`` is transparent. Applied
+      after ``rgb_channel`` extraction.
 
-      ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-      palette which modulates the ``alpha`` value of the source image being drawn at a pixel pixel
-      level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-      A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-      more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
+      ``hint`` is a logical OR of:
 
-      ``hint`` can be a logical OR of the flags:
-
-         * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-         * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-         * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-         * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
+         * `image.AREA`: Use area scaling when downscaling.
+         * `image.BILINEAR`: Use bilinear scaling.
+         * `image.BICUBIC`: Use bicubic scaling.
+         * `image.CENTER`: Center the image on the destination.
          * `image.HMIRROR`: Horizontally mirror the image.
          * `image.VFLIP`: Vertically flip the image.
          * `image.TRANSPOSE`: Transpose the image (swap x/y).
-         * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
-         * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-         * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-         * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-         * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-         * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-         * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-         * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+         * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply ``rgb_channel`` before scaling.
+         * `image.APPLY_COLOR_PALETTE_FIRST`: Apply ``color_palette`` before scaling.
+         * `image.SCALE_ASPECT_KEEP`: Scale to fit inside the destination.
+         * `image.SCALE_ASPECT_EXPAND`: Scale to fill the destination (crops).
+         * `image.SCALE_ASPECT_IGNORE`: Scale to fill the destination (stretches).
+         * `image.ROTATE_90`: Rotate by 90 degrees (``VFLIP | TRANSPOSE``).
+         * `image.ROTATE_180`: Rotate by 180 degrees (``HMIRROR | VFLIP``).
+         * `image.ROTATE_270`: Rotate by 270 degrees (``HMIRROR | TRANSPOSE``).
 
-      ``quality`` is the compression quality (0-100) (int) to be used for non-JPEG images.
+      ``quality`` (0-100) is the JPEG compression quality used for non-JPEG
+      source images.
 
-      Returns the object.
-
-   .. method:: write(image:image.Image, quality=90, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel=-1, alpha=256, color_palette=None, alpha_palette=None, hint=0)
+   .. method:: write(image:image.Image, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:Optional[image.Image]=None, alpha_palette:Optional[image.Image]=None, hint:int=0, quality:int=90) -> None
 
       Alias for `Mjpeg.add_frame()`.
 
-   .. method:: sync()
+   .. method:: sync() -> None
 
-      Flushes the mjpeg file to disk but keeps the file open for writing more data. You should call
-      flush periodically ensure that the file is saved to disk.
+      Flushes the mjpeg file to disk while keeping it open for further
+      writes. Call periodically to ensure data is saved.
 
-      Returns the object.
+   .. method:: close() -> None
 
-   .. method:: close()
-
-      Finalizes the mjpeg recording. This method must be called once the recording
-      is complete to make the file viewable.
-
-      Returns the object.
+      Finalizes the mjpeg recording. Must be called once recording is
+      complete to make the file viewable.

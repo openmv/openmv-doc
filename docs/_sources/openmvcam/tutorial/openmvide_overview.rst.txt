@@ -167,7 +167,7 @@ What makes OpenMV IDE special is the integrated frame buffer viewer. This let's
 you easily see what your OpenMV Cam is looking at while working on your code.
 
 The frame buffer viewer displays whatever was in your OpenMV Cam's frame buffer
-previously when `sensor.snapshot()` is called. Anyway, we'll talk more about
+previously when `csi.CSI.snapshot()` is called. Anyway, we'll talk more about
 that later. For now, here's what you need to know about the frame buffer
 viewer:
 

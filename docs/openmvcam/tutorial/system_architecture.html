@@ -1,12 +1,12 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en">
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>7. System Architecture &mdash; MicroPython 1.26 documentation</title>
+  <title>7. System Architecture &mdash; MicroPython 1.28 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d5a28fe3" />
@@ -16,13 +16,13 @@
     <link rel="shortcut icon" href="../../_static/openmv.ico"/>
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=04b33afa"></script>
-      <script src="../../_static/doctools.js?v=888ff710"></script>
-      <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+      <script src="../../_static/documentation_options.js?v=3011ec97"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="8. Releasing your OpenMV Cam Scripts for Production" href="production.html" />
+    <link rel="next" title="8. numpy / scipy on the OpenMV Cam" href="numpy/index.html" />
     <link rel="prev" title="6.1.4. UART Control" href="uart_control.html" /> 
 </head>
 
@@ -49,7 +49,7 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../../library/index.html">MicroPython libraries</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">MicroPython language and implementation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../develop/index.html">MicroPython Internals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../license.html">MicroPython license information</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../quickref.html">Quick reference for the openmvcam</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../general.html">General information about the openmvcam</a></li>
@@ -64,8 +64,9 @@
 <li class="toctree-l4"><a class="reference internal" href="#memory-architecture">7.1. Memory Architecture</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="production.html">8. Releasing your OpenMV Cam Scripts for Production</a></li>
-<li class="toctree-l3"><a class="reference internal" href="more_information.html">9. More Information</a></li>
+<li class="toctree-l3"><a class="reference internal" href="numpy/index.html">8. numpy / scipy on the OpenMV Cam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="production.html">9. Releasing your OpenMV Cam Scripts for Production</a></li>
+<li class="toctree-l3"><a class="reference internal" href="more_information.html">10. More Information</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../quickref.html#general-openmv-cams-board-control">General OpenMV Cams Board Control</a></li>
@@ -101,7 +102,7 @@
            <div itemprop="articleBody">
              
   <section id="system-architecture">
-<h1><span class="section-number">7. </span>System Architecture<a class="headerlink" href="#system-architecture" title="Permalink to this heading">¶</a></h1>
+<h1><span class="section-number">7. </span>System Architecture<a class="headerlink" href="#system-architecture" title="Link to this heading"></a></h1>
 <p>Thanks for reading what of the tuturial has been completed so far. It probably
 won’t ever be done. Anyway, I’d like to discuss the system architecture quickly.</p>
 <p>First, the OpenMV Cam is based off of the STM32 Microcontroller architecture because the
@@ -121,7 +122,7 @@ and slow SDR DRAM for now we haven’t added it as our internal SRAM is way fast
 As production volumes go up and technology improves hopefully we’ll be able to
 have more memory while still keeping the OpenMV Cam simple to use.</p>
 <section id="memory-architecture">
-<h2><span class="section-number">7.1. </span>Memory Architecture<a class="headerlink" href="#memory-architecture" title="Permalink to this heading">¶</a></h2>
+<h2><span class="section-number">7.1. </span>Memory Architecture<a class="headerlink" href="#memory-architecture" title="Link to this heading"></a></h2>
 <p>Given the above memory architecture limitations we built all of our code to run
 inside of the STM32 microcontroller memory. However, the STM32 doesn’t have one
 large contigous memory map. It features different segments of RAM for different
@@ -137,7 +138,7 @@ allow it to be arbitrarily large (e.g. in the megabyte range) like heaps on PCs.
 So, even if we have DRAM it would be hard to leverage using MicroPython’s heap.</p>
 <p>Next, there’s a larger memory segment for the frame buffer to store images in.
 On the bottom of the frame buffer new images are stored when functions like
-<a class="reference internal" href="../../library/omv.sensor.html#sensor.snapshot" title="sensor.snapshot"><code class="xref any py py-func docutils literal notranslate"><span class="pre">sensor.snapshot()</span></code></a> are called. Any unused space in the frame buffer is then
+<a class="reference internal" href="../../library/omv.csi.html#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">csi.CSI.snapshot()</span></code></a> are called. Any unused space in the frame buffer is then
 available to be used as a “frame buffer stack” that builds from the top of the
 frame buffer down. This memory architecture design is what allows a lot of our
 computer vision methods to execute without having to allocate large data
@@ -155,7 +156,7 @@ after any computer vision algorithms finish executing.</p>
 buffer in RAM. As the MicroPython heap is optimized for small objects storing
 large 100KB images in it doesn’t make sense. To enable more images to fit in RAM
 we allow the frame buffer stack to be used for secondary image storage using
-<a class="reference internal" href="../../library/omv.sensor.html#sensor.alloc_extra_fb" title="sensor.alloc_extra_fb"><code class="xref any py py-func docutils literal notranslate"><span class="pre">sensor.alloc_extra_fb()</span></code></a>. By allocating a secondary frame buffer on the
+<code class="docutils literal notranslate"><span class="pre">image.Image()</span></code> with a custom buffer. By allocating a secondary frame buffer on the
 frame buffer stack you can now have two or more images in RAM at the cost
 of reducing memory space for more complex algorithms (like AprilTags).</p>
 <p>So, that’s the memory architecture. And… we allow images to be stored in
@@ -170,14 +171,14 @@ everything in a large DRAM. But, now you know why this isn’t the case.</p>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="uart_control.html" class="btn btn-neutral float-left" title="6.1.4. UART Control" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="production.html" class="btn btn-neutral float-right" title="8. Releasing your OpenMV Cam Scripts for Production" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="numpy/index.html" class="btn btn-neutral float-right" title="8. numpy / scipy on the OpenMV Cam" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2025, Damien P. George, Paul Sokolovsky, and contributors.
-      <span class="lastupdated">Last updated on 29 Apr 2026.
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2026, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 30 Apr 2026.
       </span></p>
   </div>
 

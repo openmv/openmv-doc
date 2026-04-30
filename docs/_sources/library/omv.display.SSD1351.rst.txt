@@ -1,35 +1,104 @@
 .. currentmodule:: display
-.. _display.SSD1351:
 
 class SSD1351 -- Display Controller
 ===================================
 
-The `SSD1351` class is used to initialize the LCD screen controller.
+The `SSD1351` class is used to initialize the SSD1351 OLED display controller. Pass an instance
+of this class as the ``controller`` argument to the `SPIDisplay()` class constructor.
 
 Constructors
 ------------
 
-.. class:: display.SSD1351()
+.. class:: SSD1351()
 
-   Creates a controller object to initialize the SSD1351 display controller which typically powers
-   SPI displays. This class should be passed as the ``controller`` argument to the `SPIDisplay()`
-   class constructor which will take care of calling the `SSD1351.init()` method for you.
+   Creates an SSD1351 display controller object.
 
-Methods
--------
+   .. method:: init(display_controller: display.SPIDisplay) -> None
 
-.. method:: SSD1351.init(display_controller) -> None
+      Initializes the display controller. ``display_controller`` must provide a
+      `display.SPIDisplay.bus_write()` method. Called by the parent display driver.
 
-   Initializes the display using the display controller which must provide `display.SPIDisplay.bus_write()` method.
+   .. method:: ram_write(display_controller: display.SPIDisplay) -> None
 
-.. method:: SSD1351.ram_write(display_controller) -> None
+      Issues the write-to-RAM command (`SSD1351.WRITE_RAM`) on the display controller bus.
+      ``display_controller`` must provide a `display.SPIDisplay.bus_write()` method.
 
-   Returns the command to write to display ram. Called by display controller.
+   .. method:: display_on(display_controller: display.SPIDisplay) -> None
 
-.. method:: SSD1351.display_on(display_controller) -> None
+      Issues the display-on command (`SSD1351.DISPLAY_ON`) on the display controller bus.
+      ``display_controller`` must provide a `display.SPIDisplay.bus_write()` method.
 
-   Returns the command to turn the display on. Called by display controller.
+   .. method:: display_off(display_controller: display.SPIDisplay) -> None
 
-.. method:: SSD1351.display_off(display_controller) -> None
+      Issues the display-off command (`SSD1351.DISPLAY_OFF`) on the display controller bus.
+      ``display_controller`` must provide a `display.SPIDisplay.bus_write()` method.
 
-   Returns the command to turn the display off. Called by display controller.
+   .. attribute:: SSD1351.WRITE_RAM
+      :type: int
+
+      Write to display RAM command (``0x5C``).
+
+   .. attribute:: SSD1351.SET_REMAP
+      :type: int
+
+      Set re-map / dual COM line mode command (``0xA0``).
+
+   .. attribute:: SSD1351.DISPLAY_OFFSET
+      :type: int
+
+      Set display offset command (``0xA2``).
+
+   .. attribute:: SSD1351.DISPLAY_OFF
+      :type: int
+
+      Set sleep mode on / display off command (``0xAE``).
+
+   .. attribute:: SSD1351.DISPLAY_ON
+      :type: int
+
+      Set sleep mode off / display on command (``0xAF``).
+
+   .. attribute:: SSD1351.PRECHARGE
+      :type: int
+
+      Set phase length / precharge command (``0xB1``).
+
+   .. attribute:: SSD1351.DISPLAY_ENHANCEMENT
+      :type: int
+
+      Display enhancement command (``0xB2``).
+
+   .. attribute:: SSD1351.CLOCK_DIV
+      :type: int
+
+      Set front clock divider / oscillator frequency command (``0xB3``).
+
+   .. attribute:: SSD1351.PRECHARGE2
+      :type: int
+
+      Set second precharge period command (``0xB6``).
+
+   .. attribute:: SSD1351.PRECHARGE_LEVEL
+      :type: int
+
+      Set precharge voltage level command (``0xBB``).
+
+   .. attribute:: SSD1351.CONTRAST_ABC
+      :type: int
+
+      Set contrast for color A, B, C command (``0xC1``).
+
+   .. attribute:: SSD1351.CONTRAST_MASTER
+      :type: int
+
+      Master contrast current control command (``0xC7``).
+
+   .. attribute:: SSD1351.MUX_RATIO
+      :type: int
+
+      Set MUX ratio command (``0xCA``).
+
+   .. attribute:: SSD1351.COMMAND_LOCK
+      :type: int
+
+      Set command lock command (``0xFD``).

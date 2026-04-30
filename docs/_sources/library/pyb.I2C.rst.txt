@@ -58,7 +58,7 @@ Master also has other methods::
 Constructors
 ------------
 
-.. class:: I2C(bus, ...)
+.. class:: I2C(bus: Union[int, str], *args, **kwargs)
 
    Construct an I2C object on the given bus.  ``bus`` can be 2 or 4.
    With no additional parameters, the I2C object is created but not
@@ -75,93 +75,95 @@ Constructors
      - ``I2C(2)`` is on the Y position: ``(SCL, SDA) = (P4, P5) = (PB10, PB11)``
      - ``I2C(4)`` is on the Y position: ``(SCL, SDA) = (P7, P8) = (PD12, PD13)``
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: I2C.deinit()
+   .. method:: deinit() -> None
 
-   Turn off the I2C bus.
+      Turn off the I2C bus.
 
-.. method:: I2C.init(mode, *, addr=0x12, baudrate=400000, gencall=False, dma=False)
+   .. method:: init(mode: int, *, addr: int = 0x12, baudrate: int = 400000, gencall: bool = False, dma: bool = False) -> None
 
-  Initialise the I2C bus with the given parameters:
+     Initialise the I2C bus with the given parameters:
 
-     - ``mode`` must be either ``I2C.CONTROLLER`` or ``I2C.PERIPHERAL``
-     - ``addr`` is the 7-bit address (only sensible for a peripheral)
-     - ``baudrate`` is the SCL clock rate (only sensible for a controller)
-     - ``gencall`` is whether to support general call mode
-     - ``dma`` is whether to allow the use of DMA for the I2C transfers (note
-       that DMA transfers have more precise timing but currently do not handle bus
-       errors properly)
+        - ``mode`` must be either ``I2C.CONTROLLER`` or ``I2C.PERIPHERAL``
+        - ``addr`` is the 7-bit address (only sensible for a peripheral)
+        - ``baudrate`` is the SCL clock rate (only sensible for a controller)
+        - ``gencall`` is whether to support general call mode
+        - ``dma`` is whether to allow the use of DMA for the I2C transfers (note
+          that DMA transfers have more precise timing but currently do not handle bus
+          errors properly)
 
-   The actual clock frequency may be lower than the requested frequency.
-   This is dependent on the platform hardware. The actual rate may be determined
-   by printing the I2C object.
+      The actual clock frequency may be lower than the requested frequency.
+      This is dependent on the platform hardware. The actual rate may be determined
+      by printing the I2C object.
 
-.. method:: I2C.is_ready(addr)
+   .. method:: is_ready(addr: int) -> bool
 
-   Check if an I2C device responds to the given address.  Only valid when in controller mode.
+      Check if an I2C device responds to the given address.  Only valid when in controller mode.
 
-.. method:: I2C.mem_read(data, addr, memaddr, *, timeout=5000, addr_size=8)
+   .. method:: mem_read(data: Union[int, bytearray], addr: int, memaddr: int, *, timeout: int = 5000, addr_size: int = 8) -> bytes
 
-   Read from the memory of an I2C device:
+      Read from the memory of an I2C device:
 
-     - ``data`` can be an integer (number of bytes to read) or a buffer to read into
-     - ``addr`` is the I2C device address
-     - ``memaddr`` is the memory location within the I2C device
-     - ``timeout`` is the timeout in milliseconds to wait for the read
-     - ``addr_size`` selects width of memaddr: 8 or 16 bits
+        - ``data`` can be an integer (number of bytes to read) or a buffer to read into
+        - ``addr`` is the I2C device address
+        - ``memaddr`` is the memory location within the I2C device
+        - ``timeout`` is the timeout in milliseconds to wait for the read
+        - ``addr_size`` selects width of memaddr: 8 or 16 bits
 
-   Returns the read data.
-   This is only valid in controller mode.
+      Returns the read data.
+      This is only valid in controller mode.
 
-.. method:: I2C.mem_write(data, addr, memaddr, *, timeout=5000, addr_size=8)
+   .. method:: mem_write(data: Union[int, bytes, bytearray], addr: int, memaddr: int, *, timeout: int = 5000, addr_size: int = 8) -> None
 
-   Write to the memory of an I2C device:
+      Write to the memory of an I2C device:
 
-     - ``data`` can be an integer or a buffer to write from
-     - ``addr`` is the I2C device address
-     - ``memaddr`` is the memory location within the I2C device
-     - ``timeout`` is the timeout in milliseconds to wait for the write
-     - ``addr_size`` selects width of memaddr: 8 or 16 bits
+        - ``data`` can be an integer or a buffer to write from
+        - ``addr`` is the I2C device address
+        - ``memaddr`` is the memory location within the I2C device
+        - ``timeout`` is the timeout in milliseconds to wait for the write
+        - ``addr_size`` selects width of memaddr: 8 or 16 bits
 
-   Returns ``None``.
-   This is only valid in controller mode.
+      Returns ``None``.
+      This is only valid in controller mode.
 
-.. method:: I2C.recv(recv, addr=0x00, *, timeout=5000)
+   .. method:: recv(recv: Union[int, bytearray], addr: int = 0x00, *, timeout: int = 5000) -> bytes
 
-   Receive data on the bus:
+      Receive data on the bus:
 
-     - ``recv`` can be an integer, which is the number of bytes to receive,
-       or a mutable buffer, which will be filled with received bytes
-     - ``addr`` is the address to receive from (only required in controller mode)
-     - ``timeout`` is the timeout in milliseconds to wait for the receive
+        - ``recv`` can be an integer, which is the number of bytes to receive,
+          or a mutable buffer, which will be filled with received bytes
+        - ``addr`` is the address to receive from (only required in controller mode)
+        - ``timeout`` is the timeout in milliseconds to wait for the receive
 
-   Return value: if ``recv`` is an integer then a new buffer of the bytes received,
-   otherwise the same buffer that was passed in to ``recv``.
+      Return value: if ``recv`` is an integer then a new buffer of the bytes received,
+      otherwise the same buffer that was passed in to ``recv``.
 
-.. method:: I2C.send(send, addr=0x00, *, timeout=5000)
+   .. method:: send(send: Union[int, bytes, bytearray], addr: int = 0x00, *, timeout: int = 5000) -> None
 
-   Send data on the bus:
+      Send data on the bus:
 
-     - ``send`` is the data to send (an integer to send, or a buffer object)
-     - ``addr`` is the address to send to (only required in controller mode)
-     - ``timeout`` is the timeout in milliseconds to wait for the send
+        - ``send`` is the data to send (an integer to send, or a buffer object)
+        - ``addr`` is the address to send to (only required in controller mode)
+        - ``timeout`` is the timeout in milliseconds to wait for the send
 
-   Return value: ``None``.
+      Return value: ``None``.
 
-.. method:: I2C.scan()
+   .. method:: scan() -> List[int]
 
-   Scan all I2C addresses from 0x01 to 0x7f and return a list of those that respond.
-   Only valid when in controller mode.
+      Scan all I2C addresses from 0x01 to 0x7f and return a list of those that respond.
+      Only valid when in controller mode.
 
-Constants
----------
+   Constants
+   ---------
 
-.. data:: I2C.CONTROLLER
+   .. data:: CONTROLLER
+      :type: int
 
-   for initialising the bus to controller mode
+      for initialising the bus to controller mode
 
-.. data:: I2C.PERIPHERAL
+   .. data:: PERIPHERAL
+      :type: int
 
-   for initialising the bus to peripheral mode
+      for initialising the bus to peripheral mode

@@ -6,48 +6,52 @@
 .. module:: ml.preprocessing
     :synopsis: ML Preprocessing
 
-The `ml.preprocessing` module contains classes for preprocessing images for use with machine learning models.
+The `ml.preprocessing` module contains classes for preprocessing images for use with
+machine learning models.
 
 .. _preprocessing.Normalization:
 
 class Normalization -- Image Normalization
 ------------------------------------------
 
-The `Normalization` object is used to convert image objects to numpy ``ndarray`` objects for use with the `Model` object.
-It's automatically created by the `Model` object when an image object is passed to `predict()`. However,
-you can also manually create a `Normalization` object to control the conversion process, select an ROI, etc.
+The `Normalization` object converts `image.Image` objects into ``ndarray`` input tensors
+for use with `ml.Model.predict()`. It is automatically created by the `ml.Model` object
+when an image is passed to `ml.Model.predict()`, but may be instantiated manually to
+control the conversion (scale, mean/stdev, ROI).
 
-For example::
+.. class:: Normalization(scale: tuple[float, float] = (0.0, 1.0), mean: tuple[float, float, float] = (0.0, 0.0, 0.0), stdev: tuple[float, float, float] = (1.0, 1.0, 1.0), roi: tuple[int, int, int, int] = None)
 
-    model = ml.Model("model.tflite")
-    norm = ml.Normalization(scale=(0.0, 1.0), mean=(0.485, 0.456, 0.406), stdev=(0.229, 0.224, 0.225))
-    outputs = model.predict([norm(image)])
+   Creates a `Normalization` object.
 
-Constructors
-~~~~~~~~~~~~
+   ``scale`` is the ``(min, max)`` range of values that floating-point input tensors
+   expect after normalization (e.g. ``(0.0, 1.0)`` or ``(-1.0, 1.0)``). Ignored for
+   ``uint8`` and ``int8`` input tensors.
 
-.. class:: Normalization(scale:tuple[float, float]=(0.0, 1.0), mean:tuple[float, float, float]=(0.0, 0.0, 0.0), stdev:tuple[float, float, float]=(1.0, 1.0, 1.0), roi:tuple[int,int,int,int]=None) -> Normalization
+   ``mean`` is the per-channel mean ``(R, G, B)`` subtracted from the image after
+   scaling. For grayscale tensors the mean is reduced to a single luma value using
+   ``0.299*R + 0.587*G + 0.114*B``. Ignored for ``uint8`` and ``int8`` input tensors.
 
-   Creates a `Normalization` object which is used to convert image objects to numpy arrays for use with the
-   `predict()`. The object can also be used to select a region of interest (ROI) in the image to
-   convert to a numpy array.
+   ``stdev`` is the per-channel standard deviation ``(R, G, B)`` the image is divided
+   by after the mean is subtracted. For grayscale tensors the stdev is reduced to a
+   single luma value using ``0.299*R + 0.587*G + 0.114*B``. Ignored for ``uint8`` and
+   ``int8`` input tensors.
 
-   The Normalization object automatically converts any image type passed (including compressed images)
-   into either a single channel (grayscale) or three channel (RGB888) image which is passed to the tensor
-   input of the model. Images are centered, scaled up/down (using bilinear/area scaling), and cropped as
-   necessary to match the input tensor size of the model.
+   ``roi`` is an optional ``(x, y, w, h)`` region of interest within the input image
+   to crop. If ``None``, the full image is used. The cropped region is centered,
+   bilinearly scaled (preserving aspect ratio with black padding) to the model's
+   input tensor dimensions.
 
-   For ``uint8`` input tensors the image is directly passed ignoring scale and mean/stdev. For ``int8``
-   input tensors the image is shifted to be within the ``int8`` range from the ``uint8`` range and
-   then directly passed ignoring scale and mean/stdev. Tensors that accept either of these formats
-   can be processed more quickly than tensors that require floating point inputs.
+   .. method:: __call__(image: image.Image) -> Normalization
+               __call__(buffer: bytearray, shape: tuple[int, int, int, int], dtype: int) -> None
 
-   For floating point input tensors it's not possible to guess the correct range that the model
-   expects. While each input tensor encodes a scale and zero point value that can be used to
-   convert the input to the correct range, these values do not tell you what the range
-   of the input data should be in floating point. E.g. should image RGB values be within the range
-   of (0.0, 1.0), (-1.0, 1.0), (0.0, 255.0), and etc. before applying a scale and zero point? The
-   answer is that it depends on the model and how it was trained. So, the normalization object instead
-   allows you to directly specify the range of the input data, the mean, and the standard deviation. The
-   Grayscale or RGB88 image is then converted into a floating point tensor for the model to process
-   based on these values.
+      When called with a single `image.Image` argument, returns a new `Normalization`
+      object bound to that image. The bound object is what `ml.Model.predict()` invokes
+      internally to fill the input tensor. If ``roi`` was not set on the original
+      instance, it is initialized to the full image size.
+
+      When called with ``(buffer, shape, dtype)``, fills ``buffer`` in-place with the
+      normalized input tensor for the previously bound image. ``shape`` must be
+      ``(1, H, W, C)`` with ``C`` equal to ``1`` (grayscale) or ``3`` (RGB).
+      ``dtype`` is the ulab numpy type code (e.g. ``ord('f')`` for float32, ``ord('b')``
+      for int8, ``ord('B')`` for uint8). Float tensors apply ``scale``, ``mean``, and
+      ``stdev``; integer tensors are written directly (with an offset for ``int8``).

@@ -25,25 +25,25 @@ Constructors
 
    This constructor is deprecated and will be removed in a future version of MicroPython.
 
-.. class:: Flash(*, start=-1, len=-1)
+.. class:: Flash(*, start: int = -1, len: int = -1)
    :noindex:
 
    Create and return a block device that accesses the flash at the specified offset. The length defaults to the remaining size of the device.
 
    The *start* and *len* offsets are in bytes, and must be a multiple of the block size (typically 512 for internal flash).
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: Flash.readblocks(block_num, buf)
-            Flash.readblocks(block_num, buf, offset)
-.. method:: Flash.writeblocks(block_num, buf)
-            Flash.writeblocks(block_num, buf, offset)
-.. method:: Flash.ioctl(cmd, arg)
+   .. method:: readblocks(block_num: int, buf: bytearray) -> None
+               readblocks(block_num: int, buf: bytearray, offset: int) -> None
+               writeblocks(block_num: int, buf: Union[bytes, bytearray]) -> None
+               writeblocks(block_num: int, buf: Union[bytes, bytearray], offset: int) -> None
+               ioctl(cmd: int, arg: int) -> Optional[int]
 
-    These methods implement the simple and :ref:`extended
-    <block-device-interface>` block protocol defined by
-    :class:`vfs.AbstractBlockDev`.
+       These methods implement the simple and :ref:`extended
+       <block-device-interface>` block protocol defined by
+       :class:`vfs.AbstractBlockDev`.
 
 Hardware Note
 -------------

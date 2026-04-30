@@ -22,7 +22,7 @@ This module allows compression and decompression of binary data with the
 Classes
 -------
 
-.. class:: DeflateIO(stream, format=AUTO, wbits=0, close=False, /)
+.. class:: DeflateIO(stream: Any, format: int = AUTO, wbits: int = 0, close: bool = False, /)
 
    This class can be used to wrap a *stream* which is any
    :term:`stream-like <stream>` object such as a file, socket, or stream
@@ -72,6 +72,7 @@ Constants
           deflate.RAW
           deflate.ZLIB
           deflate.GZIP
+   :type: int
 
     Supported values for the *format* parameter.
 

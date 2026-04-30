@@ -4,15 +4,15 @@
 .. module:: json
    :synopsis: JSON encoding and decoding
 
-|see_cpython_module| :mod:`python:json`.
-
-This modules allows to convert between Python objects and the JSON
-data format.
+This module converts between Python objects and the JSON
+data format.  Use :func:`dumps`/:func:`loads` to (de)serialise to or
+from a string, or :func:`dump`/:func:`load` to read or write JSON from
+a stream such as a file or socket.
 
 Functions
 ---------
 
-.. function:: dump(obj, stream, separators=None)
+.. function:: dump(obj: Any, stream: Any, separators: Optional[Tuple[str, str]] = None) -> None
 
    Serialise *obj* to a JSON string, writing it to the given *stream*.
 
@@ -20,13 +20,13 @@ Functions
    tuple. The default is ``(', ', ': ')``. To get the most compact JSON
    representation, you should specify ``(',', ':')`` to eliminate whitespace.
 
-.. function:: dumps(obj, separators=None)
+.. function:: dumps(obj: Any, separators: Optional[Tuple[str, str]] = None) -> str
 
    Return *obj* represented as a JSON string.
 
    The arguments have the same meaning as in `dump`.
 
-.. function:: load(stream)
+.. function:: load(stream: Any) -> Any
 
    Parse the given *stream*, interpreting it as a JSON string and
    deserialising the data to a Python object.  The resulting object is
@@ -35,7 +35,7 @@ Functions
    Parsing continues until end-of-file is encountered.
    A :exc:`ValueError` is raised if the data in *stream* is not correctly formed.
 
-.. function:: loads(str)
+.. function:: loads(str: Union[str, bytes]) -> Any
 
    Parse the JSON *str* and return an object.  Raises :exc:`ValueError` if the
    string is not correctly formed.

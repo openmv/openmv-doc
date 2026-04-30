@@ -28,50 +28,50 @@ Example usage::
 Constructors
 ------------
 
-.. class:: Servo(id)
+.. class:: Servo(id: int)
 
    Create a servo object.  ``id`` is 1-3, and corresponds to pins P7 through P9.
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: Servo.angle([angle, time=0])
+   .. method:: angle(angle: Optional[int] = None, time: int = 0) -> Optional[int]
 
-   If no arguments are given, this function returns the current angle.
+      If no arguments are given, this function returns the current angle.
 
-   If arguments are given, this function sets the angle of the servo:
+      If arguments are given, this function sets the angle of the servo:
 
-     - ``angle`` is the angle to move to in degrees.
-     - ``time`` is the number of milliseconds to take to get to the specified
-       angle.  If omitted, then the servo moves as quickly as possible to its
-       new position.
+        - ``angle`` is the angle to move to in degrees.
+        - ``time`` is the number of milliseconds to take to get to the specified
+          angle.  If omitted, then the servo moves as quickly as possible to its
+          new position.
 
-.. method:: Servo.speed([speed, time=0])
+   .. method:: speed(speed: Optional[int] = None, time: int = 0) -> Optional[int]
 
-   If no arguments are given, this function returns the current speed.
+      If no arguments are given, this function returns the current speed.
 
-   If arguments are given, this function sets the speed of the servo:
+      If arguments are given, this function sets the speed of the servo:
 
-     - ``speed`` is the speed to change to, between -100 and 100.
-     - ``time`` is the number of milliseconds to take to get to the specified
-       speed.  If omitted, then the servo accelerates as quickly as possible.
+        - ``speed`` is the speed to change to, between -100 and 100.
+        - ``time`` is the number of milliseconds to take to get to the specified
+          speed.  If omitted, then the servo accelerates as quickly as possible.
 
-.. method:: Servo.pulse_width([value])
+   .. method:: pulse_width(value: Optional[int] = None) -> Optional[int]
 
-   If no arguments are given, this function returns the current raw pulse-width
-   value.
+      If no arguments are given, this function returns the current raw pulse-width
+      value.
 
-   If an argument is given, this function sets the raw pulse-width value.
+      If an argument is given, this function sets the raw pulse-width value.
 
-.. method:: Servo.calibration([pulse_min, pulse_max, pulse_centre, [pulse_angle_90, pulse_speed_100]])
+   .. method:: calibration(pulse_min: Optional[int] = None, pulse_max: Optional[int] = None, pulse_centre: Optional[int] = None, pulse_angle_90: Optional[int] = None, pulse_speed_100: Optional[int] = None) -> Optional[Tuple[int, int, int, int, int]]
 
-   If no arguments are given, this function returns the current calibration
-   data, as a 5-tuple.
+      If no arguments are given, this function returns the current calibration
+      data, as a 5-tuple.
 
-   If arguments are given, this function sets the timing calibration:
+      If arguments are given, this function sets the timing calibration:
 
-     - ``pulse_min`` is the minimum allowed pulse width.
-     - ``pulse_max`` is the maximum allowed pulse width.
-     - ``pulse_centre`` is the pulse width corresponding to the centre/zero position.
-     - ``pulse_angle_90`` is the pulse width corresponding to 90 degrees.
-     - ``pulse_speed_100`` is the pulse width corresponding to a speed of 100.
+        - ``pulse_min`` is the minimum allowed pulse width.
+        - ``pulse_max`` is the maximum allowed pulse width.
+        - ``pulse_centre`` is the pulse width corresponding to the centre/zero position.
+        - ``pulse_angle_90`` is the pulse width corresponding to 90 degrees.
+        - ``pulse_speed_100`` is the pulse width corresponding to a speed of 100.

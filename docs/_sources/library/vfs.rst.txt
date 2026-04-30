@@ -18,7 +18,7 @@ programs.  Ports that have this functionality provide the :func:`mount` and
 :func:`umount` functions, and possibly various filesystem implementations
 represented by VFS classes.
 
-.. function:: mount(fsobj, mount_point, *, readonly)
+.. function:: mount(fsobj: Any, mount_point: str, *, readonly: bool = False) -> None
 
     Mount the filesystem object *fsobj* at the location in the VFS given by the
     *mount_point* string.  *fsobj* can be a a VFS object that has a ``mount()``
@@ -34,7 +34,7 @@ represented by VFS classes.
 
     Will raise ``OSError(EPERM)`` if *mount_point* is already mounted.
 
-.. function:: mount()
+.. function:: mount() -> List[Tuple[Any, str]]
     :noindex:
 
     With no arguments to :func:`mount`, return a list of tuples representing
@@ -42,7 +42,7 @@ represented by VFS classes.
     
     The returned list has the form *[(fsobj, mount_point), ...]*.
 
-.. function:: umount(mount_point)
+.. function:: umount(mount_point: Union[str, Any]) -> None
 
     Unmount a filesystem. *mount_point* can be a string naming the mount location,
     or a previously-mounted filesystem object.  During the unmount process the
@@ -50,17 +50,17 @@ represented by VFS classes.
 
     Will raise ``OSError(EINVAL)`` if *mount_point* is not found.
 
-.. class:: VfsFat(block_dev)
+.. class:: VfsFat(block_dev: AbstractBlockDev)
 
     Create a filesystem object that uses the FAT filesystem format.  Storage of
     the FAT filesystem is provided by *block_dev*.
     Objects created by this constructor can be mounted using :func:`mount`.
 
-    .. staticmethod:: mkfs(block_dev)
+    .. staticmethod:: mkfs(block_dev: AbstractBlockDev) -> None
 
         Build a FAT filesystem on *block_dev*.
 
-.. class:: VfsLfs1(block_dev, readsize=32, progsize=32, lookahead=32)
+.. class:: VfsLfs1(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32)
 
     Create a filesystem object that uses the `littlefs v1 filesystem format`_.
     Storage of the littlefs filesystem is provided by *block_dev*, which must
@@ -69,14 +69,14 @@ represented by VFS classes.
 
     See :ref:`filesystem` for more information.
 
-    .. staticmethod:: mkfs(block_dev, readsize=32, progsize=32, lookahead=32)
+    .. staticmethod:: mkfs(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32) -> None
 
         Build a Lfs1 filesystem on *block_dev*.
 
     .. note:: There are reports of littlefs v1 failing in certain situations,
               for details see `littlefs issue 347`_.
 
-.. class:: VfsLfs2(block_dev, readsize=32, progsize=32, lookahead=32, mtime=True)
+.. class:: VfsLfs2(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32, mtime: bool = True)
 
     Create a filesystem object that uses the `littlefs v2 filesystem format`_.
     Storage of the littlefs filesystem is provided by *block_dev*, which must
@@ -93,14 +93,14 @@ represented by VFS classes.
 
     See :ref:`filesystem` for more information.
 
-    .. staticmethod:: mkfs(block_dev, readsize=32, progsize=32, lookahead=32)
+    .. staticmethod:: mkfs(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32) -> None
 
         Build a Lfs2 filesystem on *block_dev*.
 
     .. note:: There are reports of littlefs v2 failing in certain situations,
               for details see `littlefs issue 295`_.
 
-.. class:: VfsPosix(root=None)
+.. class:: VfsPosix(root: Optional[str] = None)
 
     Create a filesystem object that accesses the host POSIX filesystem.
     If *root* is specified then it should be a path in the host filesystem to use
@@ -143,13 +143,16 @@ Some filesystems (such as littlefs) that require more control over write
 operations, for example writing to sub-block regions without erasing, may require
 that the block device supports the extended interface.
 
-.. class:: AbstractBlockDev(...)
+.. class:: AbstractBlockDev
 
-    Construct a block device object.  The parameters to the constructor are
-    dependent on the specific block device.
+    Documentation template for the block-device protocol. MicroPython does
+    not actually expose this class — it is shown here only to document the
+    methods a user-defined block-device class must implement. Constructor
+    arguments are entirely up to the implementation (typically things like
+    flash bus, chip-select pin, sector size, etc.).
 
-    .. method:: readblocks(block_num, buf)
-                readblocks(block_num, buf, offset)
+    .. method:: readblocks(block_num: int, buf: bytearray) -> None
+                readblocks(block_num: int, buf: bytearray, offset: int) -> None
 
         The first form reads aligned, multiples of blocks.
         Starting at the block given by the index *block_num*, read blocks from
@@ -163,8 +166,8 @@ that the block device supports the extended interface.
         of *offset*, read bytes from the device into *buf* (an array of bytes).
         The number of bytes to read is given by the length of *buf*.
 
-    .. method:: writeblocks(block_num, buf)
-                writeblocks(block_num, buf, offset)
+    .. method:: writeblocks(block_num: int, buf: bytes) -> None
+                writeblocks(block_num: int, buf: bytes, offset: int) -> None
 
         The first form writes aligned, multiples of blocks, and requires that the
         blocks that are written to be first erased (if necessary) by this method.
@@ -184,7 +187,7 @@ that the block device supports the extended interface.
         Note that implementations must never implicitly erase blocks if the offset
         argument is specified, even if it is zero.
 
-    .. method:: ioctl(op, arg)
+    .. method:: ioctl(op: int, arg: int) -> Optional[int]
 
         Control the block device and query its parameters.  The operation to
         perform is given by *op* which is one of the following integers:

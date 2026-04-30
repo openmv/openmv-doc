@@ -4,134 +4,126 @@
 .. module:: ft5x06
    :synopsis: Touch Screen Driver
 
-Touch Screen Driver for the OpenMV Pure Thermal.
+The ``ft5x06`` module provides a driver for the FT5x06 capacitive touch screen
+controller used on the OpenMV Pure Thermal.
 
-.. note::
 
-   This will be refactored to be under the display module soon.
+class FT5X06 -- Touch Screen Controller
+---------------------------------------
 
-Constructors
-------------
+.. class:: FT5X06(i2c_addr: int = 0x38)
 
-.. class:: ft5x06.FT5X06(i2c_addr=0x38)
+   Creates a touch screen controller object.
 
-   Creates a touch screen controller object
+   ``i2c_addr`` is the I2C address of the FT5x06 controller.
 
-Methods
--------
+   .. method:: get_gesture() -> int
 
-.. method:: FT5X06.get_gesture()
+      Returns the current gesture. The return value is one of the
+      ``ft5x06.GESTURE_*`` constants.
 
-   This is one of LCD_GESTURE_*.
+      When a callback is registered via `FT5X06.touch_callback()` this method
+      should only be called from within the callback.
 
-   When a callback is enabled for the touch screen this method should not be called anymore except
-   inside of the callback.
+   .. method:: get_points() -> int
 
-.. method:: FT5X06.get_points()
+      Returns the current number of touch points (0-5).
 
-   This returns the current number of touch points (0-5).
+      When a callback is registered via `FT5X06.touch_callback()` this method
+      should only be called from within the callback.
 
-   When a callback is enabled for the touch screen this method should not be called anymore except
-   inside of the callback.
+   .. method:: get_point_flag(index: int) -> int
 
-.. method:: FT5X06.get_point_flag(index)
+      Returns the current state of the touch point at ``index`` (0-4). The return
+      value is one of the ``ft5x06.FLAG_*`` constants.
 
-   This returns the current touch point state of the point at ``index``.
+      When a callback is registered via `FT5X06.touch_callback()` this method
+      should only be called from within the callback.
 
-   This is one of LCD_FLAG_*.
+   .. method:: get_point_id(index: int) -> int
 
-   When a callback is enabled for the touch screen this method should not be called anymore except
-   inside of the callback.
+      Returns the id of the touch point at ``index`` (0-4). The id is a numeric
+      value that allows tracking a touch point across updates as points are added
+      and removed.
 
-.. method:: FT5X06.get_point_id(index)
+      When a callback is registered via `FT5X06.touch_callback()` this method
+      should only be called from within the callback.
 
-   This returns the current touch point ``id`` of the point at ``index``.
+   .. method:: get_point_x(index: int) -> int
 
-   The touch point ``id`` is a numeric value that allows you to track a touch point as it may move
-   around in list of touch points returned as points are added and removed.
+      Returns the x pixel position of the touch point at ``index`` (0-4).
 
-   When a callback is enabled for the touch screen this method should not be called anymore except
-   inside of the callback.
+      When a callback is registered via `FT5X06.touch_callback()` this method
+      should only be called from within the callback.
 
-.. method:: FT5X06.get_point_x(index)
+   .. method:: get_point_y(index: int) -> int
 
-   This returns the current touch point x position of the point at ``index``.
+      Returns the y pixel position of the touch point at ``index`` (0-4).
 
-   This is the x pixel position of the touch point on the screen.
+      When a callback is registered via `FT5X06.touch_callback()` this method
+      should only be called from within the callback.
 
-   When a callback is enabled for the touch screen this method should not be called anymore except
-   inside of the callback.
+   .. method:: touch_callback(callback: object) -> None
 
-.. method:: FT5X06.get_point_y(index)
+      Registers ``callback`` to be invoked on a touch event. The callback receives
+      one argument: the current number of touch points (0-5).
 
-   This returns the current touch point y position of the point at ``index``.
+      Pass ``None`` as ``callback`` to disable the callback. While a callback is
+      registered, do not call `FT5X06.update_points()` outside of the callback.
 
-   This is the y pixel position of the touch point on the screen.
+   .. method:: update_points() -> int
 
-   When a callback is enabled for the touch screen this method should not be called anymore except
-   inside of the callback.
-
-.. method:: FT5X06.touch_callback(callback)
-
-   This method registers a callback which will receive the number of touch
-   points (0-5) when a touch event happens.
-
-   If you use this method do not call `FT5X06.update_points()` anymore until the callback is
-   disabled by pass ``None`` as the callback for this method.
-
-.. method:: FT5X06.update_points()
-
-   This function reads the touch screen state and returns the number of touch points (0-5).
+      Reads the touch screen state and returns the number of touch points (0-5).
 
 Constants
 ---------
 
-.. data:: LCD_GESTURE_MOVE_UP
+.. data:: ft5x06.GESTURE_MOVE_UP
    :type: int
 
    Touch screen move up gesture.
 
-.. data:: LCD_GESTURE_MOVE_LEFT
+.. data:: ft5x06.GESTURE_MOVE_LEFT
    :type: int
 
    Touch screen move left gesture.
 
-.. data:: LCD_GESTURE_MOVE_DOWN
+.. data:: ft5x06.GESTURE_MOVE_DOWN
    :type: int
 
    Touch screen move down gesture.
 
-.. data:: LCD_GESTURE_MOVE_RIGHT
+.. data:: ft5x06.GESTURE_MOVE_RIGHT
    :type: int
 
    Touch screen move right gesture.
 
-.. data:: LCD_GESTURE_ZOOM_IN
+.. data:: ft5x06.GESTURE_ZOOM_IN
    :type: int
 
    Touch screen zoom in gesture.
 
-.. data:: LCD_GESTURE_ZOOM_OUT
+.. data:: ft5x06.GESTURE_ZOOM_OUT
    :type: int
 
    Touch screen zoom out gesture.
 
-.. data:: LCD_GESTURE_NONE
+.. data:: ft5x06.GESTURE_NONE
    :type: int
 
-   Touch screen no gesture.
+   No gesture.
 
-.. data:: LCD_FLAG_PRESSED
+.. data:: ft5x06.FLAG_PRESSED
    :type: int
 
    Touch point is pressed.
 
-.. data:: LCD_FLAG_RELEASED
+.. data:: ft5x06.FLAG_RELEASED
    :type: int
 
    Touch point is released.
 
-.. data:: LCD_FLAG_MOVED
+.. data:: ft5x06.FLAG_MOVED
    :type: int
 
    Touch point is moved.

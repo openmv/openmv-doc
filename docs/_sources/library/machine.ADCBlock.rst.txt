@@ -22,7 +22,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: ADCBlock(id, *, bits)
+.. class:: ADCBlock(id: int | str, *, bits: int = ...)
 
    Access the ADC peripheral identified by *id*, which may be an integer
    or string.
@@ -31,31 +31,31 @@ Constructors
    conversion process.  If not specified then the previous or default
    resolution is used.
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: ADCBlock.init(*, bits)
+   .. method:: init(*, bits: int = ...) -> None
 
-   Configure the ADC peripheral.  *bits* will set the resolution of the
-   conversion process.
+      Configure the ADC peripheral.  *bits* will set the resolution of the
+      conversion process.
 
-.. method:: ADCBlock.connect(channel, *, ...)
-            ADCBlock.connect(source, *, ...)
-            ADCBlock.connect(channel, source, *, ...)
+   .. method:: connect(channel: int, *, sample_ns: int = ..., atten: int = ...) -> ADC
+               connect(source: Pin, *, sample_ns: int = ..., atten: int = ...) -> "ADC"
+               connect(channel: int, source: Pin, *, sample_ns: int = ..., atten: int = ...) -> "ADC"
 
-   Connect up a channel on the ADC peripheral so it is ready for sampling,
-   and return an :ref:`ADC <machine.ADC>` object that represents that connection.
+      Connect up a channel on the ADC peripheral so it is ready for sampling,
+      and return an :ref:`ADC <machine.ADC>` object that represents that connection.
 
-   The *channel* argument must be an integer, and *source* must be an object
-   (for example a :ref:`Pin <machine.Pin>`) which can be connected up for sampling.
+      The *channel* argument must be an integer, and *source* must be an object
+      (for example a :ref:`Pin <machine.Pin>`) which can be connected up for sampling.
 
-   If only *channel* is given then it is configured for sampling.
+      If only *channel* is given then it is configured for sampling.
 
-   If only *source* is given then that object is connected to a default
-   channel ready for sampling.
+      If only *source* is given then that object is connected to a default
+      channel ready for sampling.
 
-   If both *channel* and *source* are given then they are connected together
-   and made ready for sampling.
+      If both *channel* and *source* are given then they are connected together
+      and made ready for sampling.
 
-   Any additional keyword arguments are used to configure the returned ADC object,
-   via its :meth:`init <machine.ADC.init>` method.
+      Any additional keyword arguments are used to configure the returned ADC object,
+      via its :meth:`init <machine.ADC.init>` method.

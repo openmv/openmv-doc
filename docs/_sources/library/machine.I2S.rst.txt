@@ -75,7 +75,7 @@ asyncio::
 Constructor
 -----------
 
-.. class:: I2S(id, *, sck, ws, sd, mck=None, mode, bits, format, rate, ibuf)
+.. class:: I2S(id: int, *, sck: Pin, ws: Pin, sd: Pin, mck: Pin | None = None, mode: int, bits: int, format: int, rate: int, ibuf: int)
 
    Construct an I2S object of the given id:
 
@@ -100,60 +100,64 @@ Constructor
    Increasing the size of the internal buffer has the potential to increase the time that user applications can perform non-I2S operations
    before underflow (e.g. ``write`` method) or overflow (e.g. ``readinto`` method).
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: I2S.init(sck, ...)
+   .. method:: init(*, sck: Pin, ws: Pin, sd: Pin, mck: Pin | None = None, mode: int, bits: int, format: int, rate: int, ibuf: int) -> None
 
-  see Constructor for argument descriptions
+     see Constructor for argument descriptions
 
-.. method:: I2S.deinit()
+   .. method:: deinit() -> None
 
-  Deinitialize the I2S bus
+     Deinitialize the I2S bus
 
-.. method::  I2S.readinto(buf)
+   .. method::  readinto(buf: bytearray) -> int
 
-  Read audio samples into the buffer specified by ``buf``.  ``buf`` must support the buffer protocol, such as bytearray or array.
-  "buf" byte ordering is little-endian.  For Stereo format, left channel sample precedes right channel sample. For Mono format,
-  the left channel sample data is used.
-  Returns number of bytes read
+     Read audio samples into the buffer specified by ``buf``.  ``buf`` must support the buffer protocol, such as bytearray or array.
+     "buf" byte ordering is little-endian.  For Stereo format, left channel sample precedes right channel sample. For Mono format,
+     the left channel sample data is used.
+     Returns number of bytes read
 
-.. method::  I2S.write(buf)
+   .. method::  write(buf: bytes) -> int
 
-  Write audio samples contained in ``buf``. ``buf`` must support the buffer protocol, such as bytearray or array.
-  "buf" byte ordering is little-endian.  For Stereo format, left channel sample precedes right channel sample. For Mono format,
-  the sample data is written to both the right and left channels.
-  Returns number of bytes written
+     Write audio samples contained in ``buf``. ``buf`` must support the buffer protocol, such as bytearray or array.
+     "buf" byte ordering is little-endian.  For Stereo format, left channel sample precedes right channel sample. For Mono format,
+     the sample data is written to both the right and left channels.
+     Returns number of bytes written
 
-.. method::  I2S.irq(handler)
+   .. method::  irq(handler: Callable[[I2S], None]) -> None
 
-  Set a callback. ``handler`` is called when ``buf`` is emptied (``write`` method) or becomes full (``readinto`` method).
-  Setting a callback changes the ``write`` and ``readinto`` methods to non-blocking operation.
-  ``handler`` is called in the context of the MicroPython scheduler.
+     Set a callback. ``handler`` is called when ``buf`` is emptied (``write`` method) or becomes full (``readinto`` method).
+     Setting a callback changes the ``write`` and ``readinto`` methods to non-blocking operation.
+     ``handler`` is called in the context of the MicroPython scheduler.
 
-.. staticmethod::  I2S.shift(*, buf, bits, shift)
+   .. staticmethod::  shift(*, buf: bytearray, bits: int, shift: int) -> None
 
-  bitwise shift of all samples contained in ``buf``. ``bits`` specifies sample size in bits. ``shift`` specifies the number of bits to shift each sample.
-  Positive for left shift, negative for right shift.
-  Typically used for volume control.  Each bit shift changes sample volume by 6dB.
+     bitwise shift of all samples contained in ``buf``. ``bits`` specifies sample size in bits. ``shift`` specifies the number of bits to shift each sample.
+     Positive for left shift, negative for right shift.
+     Typically used for volume control.  Each bit shift changes sample volume by 6dB.
 
-Constants
----------
+   Constants
+   ---------
 
-.. data:: I2S.RX
+   .. data:: RX
+      :type: int
 
-   for initialising the I2S bus ``mode`` to receive
+      for initialising the I2S bus ``mode`` to receive
 
-.. data:: I2S.TX
+   .. data:: TX
+      :type: int
 
-   for initialising the I2S bus ``mode`` to transmit
+      for initialising the I2S bus ``mode`` to transmit
 
-.. data:: I2S.STEREO
+   .. data:: STEREO
+      :type: int
 
-   for initialising the I2S bus ``format`` to stereo
+      for initialising the I2S bus ``format`` to stereo
 
-.. data:: I2S.MONO
+   .. data:: MONO
+      :type: int
 
-   for initialising the I2S bus ``format`` to mono
+      for initialising the I2S bus ``format`` to mono
 
 

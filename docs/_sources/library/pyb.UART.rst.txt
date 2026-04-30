@@ -45,7 +45,7 @@ Earlier versions use ``uart.send`` and ``uart.recv``.
 Constructors
 ------------
 
-.. class:: UART(bus, ...)
+.. class:: UART(bus: Union[int, str], *args, **kwargs)
 
    Construct a UART object on the given bus.  ``bus`` can be 1/3.
    With no additional parameters, the UART object is created but not
@@ -62,102 +62,103 @@ Constructors
      - ``UART(1)``: ``(TX, RX) = (P1, P0) = (PB14, PB15)``
      - ``UART(3)``: ``(TX, RX) = (P4, P5) = (PB10, PB11)``
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: UART.init(baudrate, bits=8, parity=None, stop=1, \*, timeout=1000, flow=0, timeout_char=0, read_buf_len=64)
+   .. method:: init(baudrate: int, bits: int = 8, parity: Optional[int] = None, stop: int = 1, *, timeout: int = 1000, flow: int = 0, timeout_char: int = 0, read_buf_len: int = 64) -> None
 
-   Initialise the UART bus with the given parameters:
+      Initialise the UART bus with the given parameters:
 
-     - ``baudrate`` is the clock rate.
-     - ``bits`` is the number of bits per character, 7, 8 or 9.
-     - ``parity`` is the parity, ``None``, 0 (even) or 1 (odd).
-     - ``stop`` is the number of stop bits, 1 or 2.
-     - ``flow`` sets the flow control type. Can be 0, ``UART.RTS``, ``UART.CTS``
-       or ``UART.RTS | UART.CTS``.
-     - ``timeout`` is the timeout in milliseconds to wait for writing/reading the first character.
-     - ``timeout_char`` is the timeout in milliseconds to wait between characters while writing or reading.
-     - ``read_buf_len`` is the character length of the read buffer (0 to disable).
+        - ``baudrate`` is the clock rate.
+        - ``bits`` is the number of bits per character, 7, 8 or 9.
+        - ``parity`` is the parity, ``None``, 0 (even) or 1 (odd).
+        - ``stop`` is the number of stop bits, 1 or 2.
+        - ``flow`` sets the flow control type. Can be 0, ``UART.RTS``, ``UART.CTS``
+          or ``UART.RTS | UART.CTS``.
+        - ``timeout`` is the timeout in milliseconds to wait for writing/reading the first character.
+        - ``timeout_char`` is the timeout in milliseconds to wait between characters while writing or reading.
+        - ``read_buf_len`` is the character length of the read buffer (0 to disable).
 
-   This method will raise an exception if the baudrate could not be set within
-   5% of the desired value.
+      This method will raise an exception if the baudrate could not be set within
+      5% of the desired value.
 
-   *Note:* with parity=None, only 8 and 9 bits are supported.  With parity enabled,
-   only 7 and 8 bits are supported.
+      *Note:* with parity=None, only 8 and 9 bits are supported.  With parity enabled,
+      only 7 and 8 bits are supported.
 
-.. method:: UART.deinit()
+   .. method:: deinit() -> None
 
-   Turn off the UART bus.
+      Turn off the UART bus.
 
-.. method:: UART.any()
+   .. method:: any() -> int
 
-   Returns the number of bytes waiting (may be 0).
+      Returns the number of bytes waiting (may be 0).
 
-.. method:: UART.read([nbytes])
+   .. method:: read(nbytes: Optional[int] = None) -> Optional[bytes]
 
-   Read characters.  If ``nbytes`` is specified then read at most that many bytes.
-   If ``nbytes`` are available in the buffer, returns immediately, otherwise returns
-   when sufficient characters arrive or the timeout elapses.
+      Read characters.  If ``nbytes`` is specified then read at most that many bytes.
+      If ``nbytes`` are available in the buffer, returns immediately, otherwise returns
+      when sufficient characters arrive or the timeout elapses.
 
-   If ``nbytes`` is not given then the method reads as much data as possible.  It
-   returns after the timeout has elapsed.
+      If ``nbytes`` is not given then the method reads as much data as possible.  It
+      returns after the timeout has elapsed.
 
-   *Note:* for 9 bit characters each character takes two bytes, ``nbytes`` must
-   be even, and the number of characters is ``nbytes/2``.
+      *Note:* for 9 bit characters each character takes two bytes, ``nbytes`` must
+      be even, and the number of characters is ``nbytes/2``.
 
-   Return value: a bytes object containing the bytes read in.  Returns ``None``
-   on timeout.
+      Return value: a bytes object containing the bytes read in.  Returns ``None``
+      on timeout.
 
-.. method:: UART.readchar()
+   .. method:: readchar() -> int
 
-   Receive a single character on the bus.
+      Receive a single character on the bus.
 
-   Return value: The character read, as an integer.  Returns -1 on timeout.
+      Return value: The character read, as an integer.  Returns -1 on timeout.
 
-.. method:: UART.readinto(buf[, nbytes])
+   .. method:: readinto(buf: bytearray, nbytes: Optional[int] = None) -> Optional[int]
 
-   Read bytes into the ``buf``.  If ``nbytes`` is specified then read at most
-   that many bytes.  Otherwise, read at most ``len(buf)`` bytes.
+      Read bytes into the ``buf``.  If ``nbytes`` is specified then read at most
+      that many bytes.  Otherwise, read at most ``len(buf)`` bytes.
 
-   Return value: number of bytes read and stored into ``buf`` or ``None`` on
-   timeout.
+      Return value: number of bytes read and stored into ``buf`` or ``None`` on
+      timeout.
 
-.. method:: UART.readline()
+   .. method:: readline() -> Optional[bytes]
 
-   Read a line, ending in a newline character. If such a line exists, return is
-   immediate. If the timeout elapses, all available data is returned regardless
-   of whether a newline exists.
+      Read a line, ending in a newline character. If such a line exists, return is
+      immediate. If the timeout elapses, all available data is returned regardless
+      of whether a newline exists.
 
-   Return value: the line read or ``None`` on timeout if no data is available.
+      Return value: the line read or ``None`` on timeout if no data is available.
 
-.. method:: UART.write(buf)
+   .. method:: write(buf: Union[bytes, bytearray, str]) -> Optional[int]
 
-   Write the buffer of bytes to the bus.  If characters are 7 or 8 bits wide
-   then each byte is one character.  If characters are 9 bits wide then two
-   bytes are used for each character (little endian), and ``buf`` must contain
-   an even number of bytes.
+      Write the buffer of bytes to the bus.  If characters are 7 or 8 bits wide
+      then each byte is one character.  If characters are 9 bits wide then two
+      bytes are used for each character (little endian), and ``buf`` must contain
+      an even number of bytes.
 
-   Return value: number of bytes written. If a timeout occurs and no bytes
-   were written returns ``None``.
+      Return value: number of bytes written. If a timeout occurs and no bytes
+      were written returns ``None``.
 
-.. method:: UART.writechar(char)
+   .. method:: writechar(char: int) -> None
 
-   Write a single character on the bus.  ``char`` is an integer to write.
-   Return value: ``None``. See note below if CTS flow control is used.
+      Write a single character on the bus.  ``char`` is an integer to write.
+      Return value: ``None``. See note below if CTS flow control is used.
 
-.. method:: UART.sendbreak()
+   .. method:: sendbreak() -> None
 
-   Send a break condition on the bus.  This drives the bus low for a duration
-   of 13 bits.
-   Return value: ``None``.
+      Send a break condition on the bus.  This drives the bus low for a duration
+      of 13 bits.
+      Return value: ``None``.
 
-Constants
----------
+   Constants
+   ---------
 
-.. data:: UART.RTS
-          UART.CTS
+   .. data:: RTS
+             CTS
+      :type: int
 
-   to select the flow control type.
+      to select the flow control type.
 
 Flow Control
 ------------

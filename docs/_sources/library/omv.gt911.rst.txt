@@ -1,51 +1,73 @@
-:mod:`gt911` --- Touch Screen Driver
-====================================
+:mod:`gt911` --- GT911 5-Point Capacitive Touch Controller
+==========================================================
 
 .. module:: gt911
-   :synopsis: Touch Screen Driver
+   :synopsis: GT911 5-Point Capacitive Touch Controller driver.
 
-Basic polling mode example usage::
 
-    import time
-    from gt911 import GT911
-    from machine import I2C
-    # Note use pin numbers or names not Pin objects because the
-    # driver needs to change pin directions to reset the controller.
-    touch = GT911(I2C(1, freq=400_000), reset_pin="P1", irq_pin="P2", touch_points=5)
-    while True:
-       n, points = touch.read_points()
-       for i in range(0, n):
-          print(f"id {points[i][3]} x {points[i][0]} y {points[i][1]} size {points[i][2]}")
-       time.sleep_ms(100)
+class GT911 -- 5-Point Capacitive Touch Controller
+--------------------------------------------------
 
-Constructors
-------------
+.. class:: GT911(bus: machine.I2C, reset_pin: int | str, irq_pin: int | str, address: int = _DEFAULT_ADDR, width: int = 800, height: int = 480, touch_points: int = 1, reverse_x: bool = False, reverse_y: bool = False, reverse_axis: bool = True, sito: bool = True, refresh_rate: int = 240, touch_callback: Callable | None = None)
 
-.. class:: gt911.GT911(bus:int, reset_pin, irq_pin, address=0x5D, width=800, height=480, touch_points=1, reserve_x=False, reserve_y=False, reverse_axis=True, stio=True, refresh_rate=240, touch_callback=None)
+   Creates a GT911 touch screen controller object.
 
-   Creates a touch screen controller object. You should initialize it according to the example above.
+   ``bus`` is the ``machine.I2C`` bus object the GT911 is attached to.
 
-Methods
--------
+   ``reset_pin`` is the pin number or name (not a ``Pin`` object) connected
+   to the GT911 reset line. The driver needs to change pin direction during
+   reset.
 
-.. method:: GT911._read_reg(reg:int, size=1, buf=None)
+   ``irq_pin`` is the pin number or name (not a ``Pin`` object) connected to
+   the GT911 interrupt line. The driver needs to change pin direction during
+   reset.
 
-   Reads a register value.
+   ``address`` is the I2C address of the controller. Defaults to
+   `gt911._DEFAULT_ADDR`.
 
-.. method:: GT911._write_reg(reg:int, val:int, size=1)
+   ``width`` is the touch panel resolution along the X axis in pixels.
 
-   Writes a register value.
+   ``height`` is the touch panel resolution along the Y axis in pixels.
 
-.. method:: GT911.read_id() -> int
+   ``touch_points`` is the maximum number of simultaneous touch points to
+   report (1 to 5).
 
-   Returns the ID of the gt911 chip.
+   ``reverse_x`` if True flips the X axis.
 
-.. method:: GT911.read_points()
+   ``reverse_y`` if True flips the Y axis.
 
-   Returns a tuple containing the count of points an array of point tuples. Each point tuple has
-   an x[0], y[1], size[2], and id[3]. x/y are the position on screen. Size is the amount of pressure
-   applied. And id is a unique id per point which should correlate to the same point over reads.
+   ``reverse_axis`` if True swaps the X and Y axes.
 
-.. method:: GT911.reset() -> None
+   ``sito`` enables the controller's Single-Input-Touch-Output mode when True.
 
-   Resets the gt911 chip.
+   ``refresh_rate`` is the touch report rate in Hz.
+
+   ``touch_callback`` is an optional callable invoked on the falling edge of
+   the IRQ pin when a touch event occurs. Pass ``None`` to use polling mode.
+
+   .. method:: read_id() -> bytes
+
+      Returns 4 bytes containing the GT911 product ID.
+
+   .. method:: read_points() -> tuple
+
+      Returns a tuple ``(n, points)`` where ``n`` is the number of active touch
+      points and ``points`` is a list of 5 ``array("H", ...)`` entries. Each
+      entry contains ``[x, y, size, id]``: ``x`` and ``y`` are the screen
+      coordinates, ``size`` is the touch pressure, and ``id`` is a unique
+      tracking ID that remains stable for a given finger across reads.
+
+      Only the first ``n`` entries of ``points`` contain valid data.
+
+   .. method:: reset() -> None
+
+      Resets the GT911 controller and re-arms the IRQ handler if a
+      ``touch_callback`` was supplied.
+
+Constants
+---------
+
+.. data:: gt911._DEFAULT_ADDR
+   :type: int
+
+   Default I2C address (``0x5D``) of the GT911 controller.

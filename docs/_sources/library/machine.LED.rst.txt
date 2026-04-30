@@ -21,33 +21,33 @@ Example usage::
 Constructors
 ------------
 
-.. class:: LED(pin_name) -> LED
+.. class:: LED(pin_name: str | Pin) -> LED
 
    Access the LED associated with a source identified by *pin_name*. This
    ``pin_name`` may be a string (usually specifying a color), a
    :ref:`Pin <machine.Pin>` object, or other value supported by the
    underlying machine.
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: LED.boardname() -> str
+   .. method:: boardname() -> str
 
-   Returns the name of the board.
+      Returns the name of the board.
 
-.. method:: LED.on() -> None
+   .. method:: on() -> None
 
-   Turns the LED on.
+      Turns the LED on.
 
-.. method:: LED.() -> None
+   .. method:: off() -> None
 
-   Turns the LED off.
+      Turns the LED off.
 
-.. method:: LED.toggle() -> None
+   .. method:: toggle() -> None
 
-   Toggles the LED state.
+      Toggles the LED state.
 
-.. method:: LED.value(v=None) -> int
+   .. method:: value(v: int | None = None) -> int | None
 
-   If ``v`` is given, sets the LED to the given value. If ``v`` is not given,
-   returns the current LED value.
+      If ``v`` is given, sets the LED to the given value. If ``v`` is not given,
+      returns the current LED value.

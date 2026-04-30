@@ -12,6 +12,7 @@ Classes
 .. toctree::
    :maxdepth: 1
 
+   omv.tv.rst
    omv.display.spidisplay.rst
    omv.display.rgbdisplay.rst
    omv.display.dsidisplay.rst
@@ -118,3 +119,8 @@ Constants
 
       Use a ``refresh`` of 30 Hz with this setting. The STM32H7 is not capable of
       driving 1080p at 60 Hz.
+
+.. data:: IOCTL_CHANNEL
+   :type: int
+
+   ``ioctl`` selector for setting the TV display channel (TVDisplay only).

@@ -32,7 +32,7 @@ Example usage::
 Functions
 ---------
 
-.. function:: new_service_callback(ns_callback)
+.. function:: new_service_callback(ns_callback: Callable[[str, int], Any]) -> None
 
     Set the new service callback.
 
@@ -46,7 +46,7 @@ Functions
 Endpoint class
 --------------
 
-.. class:: Endpoint(name, callback, src=ENDPOINT_ADDR_ANY, dest=ENDPOINT_ADDR_ANY)
+.. class:: Endpoint(name: str, callback: Callable[[int, bytes], Any], src: int = ENDPOINT_ADDR_ANY, dest: int = ENDPOINT_ADDR_ANY)
 
    Construct a new RPMsg Endpoint. An endpoint is a bidirectional communication
    channel between two cores.
@@ -63,31 +63,33 @@ Endpoint class
           source address. If the endpoint is registered locally, before the announcement, the
           destination address will be assigned by the library when the endpoint is bound.
 
-.. method:: Endpoint.deinit()
+   .. method:: deinit() -> None
 
-   Destroy the endpoint and release all of its resources.
+      Destroy the endpoint and release all of its resources.
 
-.. method:: Endpoint.is_ready()
+   .. method:: is_ready() -> bool
 
-   Returns True if the endpoint is ready to send (i.e., has both a source and destination addresses)
+      Returns True if the endpoint is ready to send (i.e., has both a source and destination addresses)
 
-.. method:: Endpoint.send(src=-1, dest=-1, timeout=-1)
+   .. method:: send(buffer: bytes, *, src: int = -1, dest: int = -1, timeout: int = -1) -> int
 
-   Send a message to the remote processor over this endpoint.
+      Send a message to the remote processor over this endpoint.
 
-   Arguments are:
+      Arguments are:
 
-        - *src* is the source endpoint address of the message. If none is provided, the
-          source address the endpoint is bound to is used.
-        - *dest* is the destination endpoint address of the message. If none is provided,
-          the destination address the endpoint is bound to is used.
-        - *timeout* specifies the time in milliseconds to wait for a free buffer. By default
-          the function is blocking.
+           - *buffer* is the message payload (any object supporting the buffer protocol,
+             e.g. ``bytes``, ``bytearray``, or ``str``).
+           - *src* is the source endpoint address of the message. If none is provided, the
+             source address the endpoint is bound to is used.
+           - *dest* is the destination endpoint address of the message. If none is provided,
+             the destination address the endpoint is bound to is used.
+           - *timeout* specifies the time in milliseconds to wait for a free buffer. By default
+             the function is blocking.
 
 RemoteProc class
 ----------------
 
-.. class:: RemoteProc(entry)
+.. class:: RemoteProc(entry: Union[str, int])
 
    The RemoteProc object provides processor Life Cycle Management (LCM) support, such as
    loading firmware, starting and stopping a remote core.
@@ -96,20 +98,20 @@ RemoteProc class
    loaded from file to its target memory, or an entry point address, in which case the
    firmware must be loaded already at the given address.
 
-.. method:: RemoteProc.start()
+   .. method:: start() -> None
 
-   Starts the remote processor.
+      Starts the remote processor.
 
-.. method:: RemoteProc.stop()
+   .. method:: stop() -> None
 
-   Stops the remote processor. The exact behavior is platform-dependent. On the STM32H7 for
-   example it's not possible to stop and then restart the Cortex-M4 core, so a complete
-   system reset is performed on a call to this function.
+      Stops the remote processor. The exact behavior is platform-dependent. On the STM32H7 for
+      example it's not possible to stop and then restart the Cortex-M4 core, so a complete
+      system reset is performed on a call to this function.
 
-.. method:: RemoteProc.shutdown()
+   .. method:: shutdown() -> None
 
-   Shutdown stops the remote processor and releases all of its resources. The exact behavior
-   is platform-dependent, however typically it disables power and clocks to the remote core.
-   This function is also used as the finaliser (i.e., called when ``RemoteProc`` object is
-   collected). Note that on the STM32H7, it's not possible to stop and then restart the
-   Cortex-M4 core, so a complete system reset is performed on a call to this function.
+      Shutdown stops the remote processor and releases all of its resources. The exact behavior
+      is platform-dependent, however typically it disables power and clocks to the remote core.
+      This function is also used as the finaliser (i.e., called when ``RemoteProc`` object is
+      collected). Note that on the STM32H7, it's not possible to stop and then restart the
+      Cortex-M4 core, so a complete system reset is performed on a call to this function.

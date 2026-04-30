@@ -180,46 +180,49 @@ Following are encoding examples for various field types:
 Module contents
 ---------------
 
-.. class:: struct(addr, descriptor, layout_type=NATIVE, /)
+.. class:: struct(addr: int, descriptor: dict, layout_type: int = NATIVE, /)
 
    Instantiate a "foreign data structure" object based on structure address in
    memory, descriptor (encoded as a dictionary), and layout type (see below).
 
 .. data:: LITTLE_ENDIAN
+   :type: int
 
    Layout type for a little-endian packed structure. (Packed means that every
    field occupies exactly as many bytes as defined in the descriptor, i.e.
    the alignment is 1).
 
 .. data:: BIG_ENDIAN
+   :type: int
 
    Layout type for a big-endian packed structure.
 
 .. data:: NATIVE
+   :type: int
 
    Layout type for a native structure - with data endianness and alignment
    conforming to the ABI of the system on which MicroPython runs.
 
-.. function:: sizeof(struct, layout_type=NATIVE, /)
+.. function:: sizeof(struct: Union[dict, Any], layout_type: int = NATIVE, /) -> int
 
    Return size of data structure in bytes. The *struct* argument can be
    either a structure class or a specific instantiated structure object
    (or its aggregate field).
 
-.. function:: addressof(obj)
+.. function:: addressof(obj: Any) -> int
 
    Return address of an object. Argument should be bytes, bytearray or
    other object supporting buffer protocol (and address of this buffer
    is what actually returned).
 
-.. function:: bytes_at(addr, size)
+.. function:: bytes_at(addr: int, size: int) -> bytes
 
    Capture memory at the given address and size as bytes object. As bytes
    object is immutable, memory is actually duplicated and copied into
    bytes object, so if memory contents change later, created object
    retains original value.
 
-.. function:: bytearray_at(addr, size)
+.. function:: bytearray_at(addr: int, size: int) -> bytearray
 
    Capture memory at the given address and size as bytearray object.
    Unlike bytes_at() function above, memory is captured by reference,
@@ -234,22 +237,26 @@ Module contents
           INT32
           UINT64
           INT64
+   :type: int
 
    Integer types for structure descriptors. Constants for 8, 16, 32,
    and 64 bit types are provided, both signed and unsigned.
 
 .. data:: FLOAT32
           FLOAT64
+   :type: int
 
    Floating-point types for structure descriptors.
 
 .. data:: VOID
+   :type: int
 
    ``VOID`` is an alias for ``UINT8``, and is provided to conveniently define
    C's void pointers: ``(uctypes.PTR, uctypes.VOID)``.
 
 .. data:: PTR
           ARRAY
+   :type: int
 
    Type constants for pointers and arrays. Note that there is no explicit
    constant for structures, it's implicit: an aggregate type without ``PTR``

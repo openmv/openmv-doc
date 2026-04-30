@@ -4,15 +4,15 @@
 .. module:: binascii
    :synopsis: binary/ASCII conversions
 
-|see_cpython_module| :mod:`python:binascii`.
-
 This module implements conversions between binary data and various
-encodings of it in ASCII form (in both directions).
+encodings of it in ASCII form (in both directions).  It provides
+hex-string, base64, and CRC-32 helpers commonly used when transmitting
+binary data over text-only channels.
 
 Functions
 ---------
 
-.. function:: hexlify(data, [sep])
+.. function:: hexlify(data: bytes, sep: Union[str, bytes, None] = None) -> bytes
 
    Convert the bytes in the *data* object to a hexadecimal representation.
    Returns a bytes object.
@@ -20,24 +20,24 @@ Functions
    If the additional argument *sep* is supplied it is used as a separator
    between hexadecimal values.
 
-.. function:: unhexlify(data)
+.. function:: unhexlify(data: Union[str, bytes]) -> bytes
 
    Convert hexadecimal data to binary representation. Returns bytes string.
    (i.e. inverse of hexlify)
 
-.. function:: a2b_base64(data)
+.. function:: a2b_base64(data: Union[str, bytes]) -> bytes
 
    Decode base64-encoded data, ignoring invalid characters in the input.
    Conforms to `RFC 2045 s.6.8 <https://tools.ietf.org/html/rfc2045#section-6.8>`_.
    Returns a bytes object.
 
-.. function:: b2a_base64(data, *, newline=True)
+.. function:: b2a_base64(data: bytes, *, newline: bool = True) -> bytes
 
    Encode binary data in base64 format, as in `RFC 3548
    <https://tools.ietf.org/html/rfc3548.html>`_. Returns the encoded data
    followed by a newline character if newline is true, as a bytes object.
 
-.. function:: crc32(data, [value])
+.. function:: crc32(data: bytes, value: int = 0) -> int
 
    Compute CRC-32, the 32-bit checksum of *data*, starting with an initial CRC
    of *value*. The default initial CRC is zero. The algorithm is consistent

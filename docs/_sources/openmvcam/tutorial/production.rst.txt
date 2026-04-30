@@ -52,7 +52,7 @@ scripts from the flash and/or sd card you can do so.
 
 .. note::
 
-   Only the a frozn ``boot.py`` and ``main.py`` will override MicroPython's default search paths. For
+   Only a frozen ``boot.py`` and ``main.py`` will override MicroPython's default search paths. For
    any imported scripts/modules a matching script/module will override any other scripts/modules
    frozen in the firmware. This allows you to quickly test changes in scripts/modules without having
    to deploy a new firmware. To disable this behavior clean the ``sys`` module search path.   

@@ -1,18 +1,17 @@
 .. currentmodule:: display
-.. _display.PWMBacklight:
 
 class PWMBacklight -- PWM Backlight
 ===================================
 
-The `PWMBacklight` class is used to control a screen backlight.
+The `PWMBacklight` class controls a screen backlight via a PWM timer channel. Pass an instance
+as the ``backlight`` argument to any display constructor that accepts a backlight controller.
 
 Constructors
 ------------
 
-.. class:: display.PWMBacklight(pin, timer=3, channel=3, frequency=200)
+.. class:: PWMBacklight(pin: machine.Pin, timer: int = 3, channel: int = 3, frequency: int = 200)
 
-   Creates a backlight object to initialize the display backlight. This class should be passed as
-   the ``backlight`` argument to any display object constructor which can use a backlight controller.
+   Creates a PWM-driven backlight controller.
 
    ``pin`` specifies the Pin to use.
 
@@ -20,17 +19,12 @@ Constructors
 
    ``channel`` specifies the Timer channel to use.
 
-   ``frequency`` specifies the PWM frequency.
+   ``frequency`` specifies the PWM frequency in Hz.
 
-Methods
--------
+   .. method:: deinit() -> None
 
-.. method:: PWMBacklight.deinit() -> None
+      Deinitializes the backlight controller.
 
-   Deinitializes the backlight controller.
+   .. method:: backlight(value: int) -> None
 
-.. method:: PWMBacklight.backlight(value:Optional[int]=None) -> int
-
-   Sets the backlight strength from 0-100. Note that a linear pwm duty cycle on the backlight output
-   will not necessary result in a linear brightness change on the screen. Typically there's
-   a small region where the screen brightness will change drastically.
+      Sets the backlight strength from 0-100.

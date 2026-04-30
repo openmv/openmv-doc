@@ -6,6 +6,7 @@
 
 The ``gif`` module is used for gif recording.
 
+
 class Gif -- Gif recorder
 -------------------------
 
@@ -15,60 +16,52 @@ you want to share. Use `mjpeg` for long clips.
 
 Example usage::
 
-    import sensor, gif
+    import csi, gif
 
     # Setup camera.
-    sensor.reset()
-    sensor.set_pixformat(sensor.GRAYSCALE)
-    sensor.set_framesize(sensor.QQVGA)
-    sensor.skip_frames()
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.GRAYSCALE)
+    csi0.framesize(csi.QQVGA)
+    csi0.snapshot(time=2000)
 
     # Create the gif object.
     g = gif.Gif("example.gif")
 
     # Add frames.
     for i in range(100):
-        g.add_frame(sensor.snapshot())
+        g.add_frame(csi0.snapshot())
 
     # Finalize.
     g.close()
 
-Constructors
-~~~~~~~~~~~~
+.. class:: Gif(filename:str, width:Optional[int]=None, height:Optional[int]=None, color:Optional[bool]=None, loop:bool=True)
 
-.. class:: Gif(filename:str, width:Optional[int]=None, height:Optional[int]=None, color:Optional[bool]=None, loop=True)
+   Creates a Gif object which frames can be added to. ``filename`` is the path
+   to save the gif recording to.
 
-   Create a Gif object which you can add frames to. ``filename`` is the path to
-   save the gif recording to.
+   ``width`` defaults to the main framebuffer horizontal resolution.
 
-   ``width`` is automatically set equal to the image sensor horizontal resolution
-   unless explicitly overridden.
+   ``height`` defaults to the main framebuffer vertical resolution.
 
-   ``height`` is automatically set equal to the image sensor vertical resolution
-   unless explicitly overridden.
+   ``color`` defaults to the main framebuffer color mode:
 
-   ``color`` is automatically set equal to the image sensor color mode
-   unless explicitly overridden:
-
-     - False for color results in a `sensor.GRAYSCALE` 7-bit per pixel gif.
-     - True for color results in a `sensor.RGB565` 7-bit per pixel gif.
+     - False results in a `sensor.GRAYSCALE` 7-bit per pixel gif.
+     - True results in a `sensor.RGB565` 7-bit per pixel gif.
 
    ``loop`` when True results in the gif automatically looping on playback.
 
-   Methods
-   ~~~~~~~
-
    .. method:: width() -> int
 
-      Returns the width (horizontal resolution) for the gif object.
+      Returns the width (horizontal resolution) of the gif.
 
    .. method:: height() -> int
 
-      Returns the height (vertical resolution) for the gif object.
+      Returns the height (vertical resolution) of the gif.
 
    .. method:: format() -> int
 
-      Returns `sensor.RGB565` if color is True or `sensor.GRAYSCALE` if not.
+      Returns `sensor.RGB565` if color is True or `sensor.GRAYSCALE` otherwise.
 
    .. method:: size() -> int
 
@@ -76,16 +69,15 @@ Constructors
 
    .. method:: loop() -> bool
 
-      Returns if the gif object had loop set in its constructor.
+      Returns whether the gif object was constructed with ``loop`` enabled.
 
-   .. method:: add_frame(image:image.Image, delay=10) -> None
+   .. method:: add_frame(image:image.Image, delay:int=10) -> None
 
-      Add an image to the gif recording. The image width, height, and color mode,
-      must be equal to the same width, height, and color modes used in the constructor
-      for the gif.
+      Adds an image to the gif recording. The image width, height, and color mode
+      must match the values used in the constructor.
 
       ``delay`` is the number of centi-seconds to wait before displaying this frame
-      after the previous frame (if not the first frame).
+      after the previous frame.
 
    .. method:: close() -> None
 

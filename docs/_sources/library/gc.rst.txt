@@ -4,25 +4,28 @@
 .. module:: gc
    :synopsis: control the garbage collector
 
-|see_cpython_module| :mod:`python:gc`.
+This module provides an interface to the heap garbage collector: enabling
+or disabling automatic collection, forcing an immediate collection, querying
+the amount of allocated and free heap memory, and tuning the allocation
+threshold that triggers collection.
 
 Functions
 ---------
 
-.. function:: enable()
+.. function:: enable() -> None
 
    Enable automatic garbage collection.
 
-.. function:: disable()
+.. function:: disable() -> None
 
    Disable automatic garbage collection.  Heap memory can still be allocated,
    and garbage collection can still be initiated manually using :meth:`gc.collect`.
 
-.. function:: collect()
+.. function:: collect() -> None
 
    Run a garbage collection.
 
-.. function:: mem_alloc()
+.. function:: mem_alloc() -> int
 
    Return the number of bytes of heap RAM that are allocated by Python code.
 
@@ -31,7 +34,7 @@ Functions
 
       This function is MicroPython extension.
 
-.. function:: mem_free()
+.. function:: mem_free() -> int
 
    Return the number of bytes of heap RAM that is available for Python
    code to allocate, or -1 if this amount is not known.
@@ -41,7 +44,7 @@ Functions
 
       This function is MicroPython extension.
 
-.. function:: threshold([amount])
+.. function:: threshold(amount: Optional[int] = None) -> Optional[int]
 
    Set or query the additional GC allocation threshold. Normally, a collection
    is triggered only when a new allocation cannot be satisfied, i.e. on an

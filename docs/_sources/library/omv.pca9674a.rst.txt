@@ -6,30 +6,27 @@
 
 8-bit I/O expander.
 
+
 class PCA9674A -- 8-bit I/O expander
-====================================
+------------------------------------
 
-The `PCA9674A` class is used to initialize the I/O expander.
+.. class:: PCA9674A(bus: machine.I2C, irq_pin: str, address: int = 63, callback: Callable | None = None)
 
-Constructors
-------------
+   Creates an interface to the I/O expander.
 
-.. class:: pca9674a.PCA9674A(bus:int, irq_pin:str, address:int=63, callback=None)
+   - ``bus`` is the :class:`machine.I2C` bus the expander is connected to.
+   - ``irq_pin`` is the pin label connected to the expander's IRQ output.
+   - ``address`` is the I2C address of the expander.
+   - ``callback`` is invoked on the falling edge of ``irq_pin`` when any pin state changes.
 
-   Creates an interface to talk to the I/O expander on I2C bus number ``bus`` using IRQ pin ``irq_pin``. The address
-   to use can be set with ``address``. ``callback`` is called on any pin state changing.
+   .. method:: write(value: int) -> None
 
-Methods
--------
+      Writes the 8-bit ``value`` to the I/O expander pins.
 
-.. method:: PCA9674A.write(value:int) -> None
+   .. method:: read() -> int
 
-   Writes the 8-bit ``value`` to the I/O expander pins. 
+      Returns the 8-bit value of the I/O expander pins.
 
-.. method:: PCA9674A.read() -> int
+   .. method:: reset() -> None
 
-   Returns an 8-bit value representing the pins of the I/O expander.
-
-.. method:: PCA9674A.reset() -> None
-
-   Resets and initializes the I/O expander.
+      Resets and re-initializes the I/O expander, and re-attaches the IRQ ``callback`` if one was provided.

@@ -18,7 +18,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: WDT(id=0, timeout=5000)
+.. class:: WDT(id: int = 0, timeout: int = 5000)
 
    Create a WDT object and start it. The timeout must be given in milliseconds.
    Once it is running the timeout cannot be changed and the WDT cannot be stopped either.
@@ -26,11 +26,11 @@ Constructors
    Notes: On the esp8266 a timeout cannot be specified, it is determined by the underlying system.
    On rp2040 devices, the maximum timeout is 8388 ms.
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: WDT.feed()
+   .. method:: feed() -> None
 
-   Feed the WDT to prevent it from resetting the system. The application
-   should place this call in a sensible place ensuring that the WDT is
-   only fed after verifying that everything is functioning correctly.
+      Feed the WDT to prevent it from resetting the system. The application
+      should place this call in a sensible place ensuring that the WDT is
+      only fed after verifying that everything is functioning correctly.

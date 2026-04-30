@@ -4,8 +4,6 @@
 .. module:: zlib
    :synopsis: zlib compression & decompression
 
-|see_cpython_module| :mod:`python:zlib`.
-
 This module allows compression and decompression of binary data with the
 `DEFLATE algorithm <https://en.wikipedia.org/wiki/DEFLATE>`_
 (commonly used in the zlib library and gzip archiver).
@@ -33,7 +31,7 @@ This module allows compression and decompression of binary data with the
 Functions
 ---------
 
-.. function:: decompress(data, wbits=15, /)
+.. function:: decompress(data: bytes, wbits: int = 15, /) -> bytes
 
    Decompresses *data* into a bytes object.
 
@@ -53,7 +51,7 @@ Functions
    If the data to be decompressed requires a larger window size, it will
    fail during decompression.
 
-.. function:: compress(data, wbits=15, /)
+.. function:: compress(data: bytes, wbits: int = 15, /) -> bytes
 
    Compresses *data* into a bytes object.
 

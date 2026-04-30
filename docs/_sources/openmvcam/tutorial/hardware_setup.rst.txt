@@ -98,7 +98,7 @@ Cam. However, you may get a few different errors your first time:
             plugged into your computer may fail. Just try again and it should
             work the second time.
 
-.. note:
+.. note::
 
     We've built in a ton of features into OpenMV IDE to recover your OpenMV
     Cam's firmware. Please do not give up if you encounter problems initially

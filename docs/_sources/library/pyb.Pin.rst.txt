@@ -64,159 +64,169 @@ gpio pins.
 Constructors
 ------------
 
-.. class:: Pin(id, ...)
+.. class:: Pin(id: Union[str, Pin], *args, **kwargs)
 
    Create a new Pin object associated with the id.  If additional arguments are given,
    they are used to initialise the pin.  See :meth:`pin.init`.
 
-Class methods
--------------
+   Class methods
+   -------------
 
-.. classmethod:: Pin.debug([state])
+   .. classmethod:: debug(state: Optional[bool] = None) -> Optional[bool]
 
-   Get or set the debugging state (``True`` or ``False`` for on or off).
+      Get or set the debugging state (``True`` or ``False`` for on or off).
 
-.. classmethod:: Pin.dict([dict])
+   .. classmethod:: dict(dict: Optional[dict] = None) -> Optional[dict]
 
-   Get or set the pin mapper dictionary.
+      Get or set the pin mapper dictionary.
 
-.. classmethod:: Pin.mapper([fun])
+   .. classmethod:: mapper(fun: Optional[Callable[[str], Pin]] = None) -> Optional[Callable[[str], Pin]]
 
-   Get or set the pin mapper function.
+      Get or set the pin mapper function.
 
 
-Methods
--------
+   Methods
+   -------
 
-.. method:: Pin.init(mode, pull=Pin.PULL_NONE, *, value=None, alt=-1)
+   .. method:: init(mode: int, pull: int = Pin.PULL_NONE, *, value: Optional[int] = None, alt: Union[int, str] = -1) -> None
 
-   Initialise the pin:
+      Initialise the pin:
 
-     - *mode* can be one of:
+        - *mode* can be one of:
 
-        - ``Pin.IN`` - configure the pin for input;
-        - ``Pin.OUT_PP`` - configure the pin for output, with push-pull control;
-        - ``Pin.OUT_OD`` - configure the pin for output, with open-drain control;
-        - ``Pin.ALT`` - configure the pin for alternate function, input or output;
-        - ``Pin.AF_PP`` - configure the pin for alternate function, push-pull;
-        - ``Pin.AF_OD`` - configure the pin for alternate function, open-drain;
-        - ``Pin.ANALOG`` - configure the pin for analog.
+           - ``Pin.IN`` - configure the pin for input;
+           - ``Pin.OUT_PP`` - configure the pin for output, with push-pull control;
+           - ``Pin.OUT_OD`` - configure the pin for output, with open-drain control;
+           - ``Pin.ALT`` - configure the pin for alternate function, input or output;
+           - ``Pin.AF_PP`` - configure the pin for alternate function, push-pull;
+           - ``Pin.AF_OD`` - configure the pin for alternate function, open-drain;
+           - ``Pin.ANALOG`` - configure the pin for analog.
 
-     - *pull* can be one of:
+        - *pull* can be one of:
 
-        - ``Pin.PULL_NONE`` - no pull up or down resistors;
-        - ``Pin.PULL_UP`` - enable the pull-up resistor;
-        - ``Pin.PULL_DOWN`` - enable the pull-down resistor.
+           - ``Pin.PULL_NONE`` - no pull up or down resistors;
+           - ``Pin.PULL_UP`` - enable the pull-up resistor;
+           - ``Pin.PULL_DOWN`` - enable the pull-down resistor.
 
-       When a pin has the ``Pin.PULL_UP`` or ``Pin.PULL_DOWN`` pull-mode enabled,
-       that pin has an effective 40k Ohm resistor pulling it to 3V3 or GND
-       respectively (except pin Y5 which has 11k Ohm resistors).
+          When a pin has the ``Pin.PULL_UP`` or ``Pin.PULL_DOWN`` pull-mode enabled,
+          that pin has an effective 40k Ohm resistor pulling it to 3V3 or GND
+          respectively (except pin Y5 which has 11k Ohm resistors).
 
-     - *value* if not None will set the port output value before enabling the pin.
+        - *value* if not None will set the port output value before enabling the pin.
 
-     - *alt* can be used when mode is ``Pin.ALT`` , ``Pin.AF_PP`` or ``Pin.AF_OD`` to
-       set the index or name of one of the alternate functions associated with a pin.
-       This arg was previously called *af* which can still be used if needed.
+        - *alt* can be used when mode is ``Pin.ALT`` , ``Pin.AF_PP`` or ``Pin.AF_OD`` to
+          set the index or name of one of the alternate functions associated with a pin.
+          This arg was previously called *af* which can still be used if needed.
 
-   Returns: ``None``.
+      Returns: ``None``.
 
-.. method:: Pin.value([value])
+   .. method:: value(value: Optional[Any] = None) -> Optional[int]
 
-   Get or set the digital logic level of the pin:
+      Get or set the digital logic level of the pin:
 
-     - With no argument, return 0 or 1 depending on the logic level of the pin.
-     - With ``value`` given, set the logic level of the pin.  ``value`` can be
-       anything that converts to a boolean.  If it converts to ``True``, the pin
-       is set high, otherwise it is set low.
+        - With no argument, return 0 or 1 depending on the logic level of the pin.
+        - With ``value`` given, set the logic level of the pin.  ``value`` can be
+          anything that converts to a boolean.  If it converts to ``True``, the pin
+          is set high, otherwise it is set low.
 
-.. method:: Pin.__str__()
+   .. method:: __str__() -> str
 
-   Return a string describing the pin object.
+      Return a string describing the pin object.
 
-.. method:: Pin.af()
+   .. method:: af() -> int
 
-   Returns the currently configured alternate-function of the pin. The
-   integer returned will match one of the allowed constants for the af
-   argument to the init function.
+      Returns the currently configured alternate-function of the pin. The
+      integer returned will match one of the allowed constants for the af
+      argument to the init function.
 
-.. method:: Pin.af_list()
+   .. method:: af_list() -> List[PinAF]
 
-   Returns an array of alternate functions available for this pin.
+      Returns an array of alternate functions available for this pin.
 
-.. method:: Pin.gpio()
+   .. method:: gpio() -> int
 
-   Returns the base address of the GPIO block associated with this pin.
+      Returns the base address of the GPIO block associated with this pin.
 
-.. method:: Pin.mode()
+   .. method:: mode() -> int
 
-   Returns the currently configured mode of the pin. The integer returned
-   will match one of the allowed constants for the mode argument to the init
-   function.
+      Returns the currently configured mode of the pin. The integer returned
+      will match one of the allowed constants for the mode argument to the init
+      function.
 
-.. method:: Pin.name()
+   .. method:: name() -> str
 
-   Get the pin name.
+      Get the pin name.
 
-.. method:: Pin.names()
+   .. method:: names() -> List[str]
 
-   Returns the cpu and board names for this pin.
+      Returns the cpu and board names for this pin.
 
-.. method:: Pin.pin()
+   .. method:: pin() -> int
 
-   Get the pin number.
+      Get the pin number.
 
-.. method:: Pin.port()
+   .. method:: port() -> int
 
-   Get the pin port.
+      Get the pin port.
 
-.. method:: Pin.pull()
+   .. method:: pull() -> int
 
-    Returns the currently configured pull of the pin. The integer returned
-    will match one of the allowed constants for the pull argument to the init
-    function.
+       Returns the currently configured pull of the pin. The integer returned
+       will match one of the allowed constants for the pull argument to the init
+       function.
 
-Constants
----------
+   Constants
+   ---------
 
-.. data:: Pin.ALT
+   .. data:: ALT
+      :type: int
 
-   initialise the pin to alternate-function mode for input or output
+      initialise the pin to alternate-function mode for input or output
 
-.. data:: Pin.AF_OD
+   .. data:: AF_OD
+      :type: int
 
-   initialise the pin to alternate-function mode with an open-drain drive
+      initialise the pin to alternate-function mode with an open-drain drive
 
-.. data:: Pin.AF_PP
+   .. data:: AF_PP
+      :type: int
 
-   initialise the pin to alternate-function mode with a push-pull drive
+      initialise the pin to alternate-function mode with a push-pull drive
 
-.. data:: Pin.ANALOG
+   .. data:: ANALOG
+      :type: int
 
-   initialise the pin to analog mode
+      initialise the pin to analog mode
 
-.. data:: Pin.IN
+   .. data:: IN
+      :type: int
 
-   initialise the pin to input mode
+      initialise the pin to input mode
 
-.. data:: Pin.OUT_OD
+   .. data:: OUT_OD
+      :type: int
 
-   initialise the pin to output mode with an open-drain drive
+      initialise the pin to output mode with an open-drain drive
 
-.. data:: Pin.OUT_PP
+   .. data:: OUT_PP
+      :type: int
 
-   initialise the pin to output mode with a push-pull drive
+      initialise the pin to output mode with a push-pull drive
 
-.. data:: Pin.PULL_DOWN
+   .. data:: PULL_DOWN
+      :type: int
 
-   enable the pull-down resistor on the pin
+      enable the pull-down resistor on the pin
 
-.. data:: Pin.PULL_NONE
+   .. data:: PULL_NONE
+      :type: int
 
-   don't enable any pull up or down resistors on the pin
+      don't enable any pull up or down resistors on the pin
 
-.. data:: Pin.PULL_UP
+   .. data:: PULL_UP
+      :type: int
 
-   enable the pull-up resistor on the pin
+      enable the pull-up resistor on the pin
 
 class PinAF -- Pin Alternate Functions
 ======================================
@@ -251,20 +261,24 @@ or::
 Methods
 -------
 
-.. method:: pinaf.__str__()
+.. class:: pinaf
 
-   Return a string describing the alternate function.
+   Pin alternate function object returned by :meth:`Pin.af_list`.
 
-.. method:: pinaf.index()
+   .. method:: __str__() -> str
 
-   Return the alternate function index.
+      Return a string describing the alternate function.
 
-.. method:: pinaf.name()
+   .. method:: index() -> int
 
-   Return the name of the alternate function.
+      Return the alternate function index.
 
-.. method:: pinaf.reg()
+   .. method:: name() -> str
 
-   Return the base register associated with the peripheral assigned to this
-   alternate function. For example, if the alternate function were TIM2_CH3
-   this would return stm.TIM2
+      Return the name of the alternate function.
+
+   .. method:: reg() -> int
+
+      Return the base register associated with the peripheral assigned to this
+      alternate function. For example, if the alternate function were TIM2_CH3
+      this would return stm.TIM2

@@ -4,20 +4,28 @@
 .. module:: pyb
    :synopsis: functions related to the board
 
+.. note::
+
+   The ``pyb`` module is deprecated and has been for a long time. Use
+   the cross-port :mod:`machine` module (see :doc:`machine`) for new
+   code. ``pyb`` is retained for backwards compatibility with older
+   OpenMV / pyboard scripts but no new features will be added, and it
+   may be removed on future board builds.
+
 The ``pyb`` module contains specific functions related to the board.
 
 Time related functions
 ----------------------
 
-.. function:: delay(ms)
+.. function:: delay(ms: int) -> None
 
    Delay for the given number of milliseconds.
 
-.. function:: udelay(us)
+.. function:: udelay(us: int) -> None
 
    Delay for the given number of microseconds.
 
-.. function:: millis()
+.. function:: millis() -> int
 
    Returns the number of milliseconds since the board was last reset.
 
@@ -29,7 +37,7 @@ Time related functions
    function will pause for the duration of the "sleeping" state. This
    will affect the outcome of :meth:`pyb.elapsed_millis()`.
 
-.. function:: micros()
+.. function:: micros() -> int
 
    Returns the number of microseconds since the board was last reset.
 
@@ -41,7 +49,7 @@ Time related functions
    function will pause for the duration of the "sleeping" state. This
    will affect the outcome of :meth:`pyb.elapsed_micros()`.
 
-.. function:: elapsed_millis(start)
+.. function:: elapsed_millis(start: int) -> int
 
    Returns the number of milliseconds which have elapsed since ``start``.
 
@@ -54,7 +62,7 @@ Time related functions
        while pyb.elapsed_millis(start) < 1000:
            # Perform some operation
 
-.. function:: elapsed_micros(start)
+.. function:: elapsed_micros(start: int) -> int
 
    Returns the number of microseconds which have elapsed since ``start``.
 
@@ -71,16 +79,16 @@ Time related functions
 Reset related functions
 -----------------------
 
-.. function:: hard_reset()
+.. function:: hard_reset() -> None
 
    Resets the OpenMV Cam in a manner similar to pushing the external RESET
    button.
 
-.. function:: bootloader()
+.. function:: bootloader() -> None
 
    Activate the bootloader without BOOT\* pins.
 
-.. function:: fault_debug(value)
+.. function:: fault_debug(value: bool) -> None
 
    Enable or disable hard-fault debugging.  A hard-fault is when there is a fatal
    error in the underlying system, like an invalid memory access.
@@ -96,14 +104,14 @@ Reset related functions
 Interrupt related functions
 ---------------------------
 
-.. function:: disable_irq()
+.. function:: disable_irq() -> bool
 
    Disable interrupt requests.
    Returns the previous IRQ state: ``False``/``True`` for disabled/enabled IRQs
    respectively.  This return value can be passed to enable_irq to restore
    the IRQ to its original state.
 
-.. function:: enable_irq(state=True)
+.. function:: enable_irq(state: bool = True) -> None
 
    Enable interrupt requests.
    If ``state`` is ``True`` (the default value) then IRQs are enabled.
@@ -111,10 +119,48 @@ Interrupt related functions
    this function is to pass it the value returned by ``disable_irq`` to
    exit a critical section.
 
+.. function:: freq(sysclk: Optional[int] = None, hclk: Optional[int] = None, pclk1: Optional[int] = None, pclk2: Optional[int] = None) -> Optional[Tuple[int, int, int, int]]
+
+   If given no arguments, returns a tuple of clock frequencies:
+   (sysclk, hclk, pclk1, pclk2).
+   These correspond to:
+
+    - sysclk: frequency of the CPU
+    - hclk: frequency of the AHB bus, core memory and DMA
+    - pclk1: frequency of the APB1 bus
+    - pclk2: frequency of the APB2 bus
+
+   If given any arguments then the function sets the frequency of the CPU,
+   and the buses if additional arguments are given.  Frequencies are given in
+   Hz.  Eg freq(120000000) sets sysclk (the CPU frequency) to 120MHz.  Note that
+   not all values are supported and the largest supported frequency not greater
+   than the given value will be selected.
+
+   Supported sysclk frequencies are (in MHz): 8, 16, 24, 30, 32, 36, 40, 42, 48,
+   54, 56, 60, 64, 72, 84, 96, 108, 120, 144, 168.
+
+   The maximum frequency of hclk is 168MHz, of pclk1 is 42MHz, and of pclk2 is
+   84MHz.  Be sure not to set frequencies above these values.
+
+   The hclk, pclk1 and pclk2 frequencies are derived from the sysclk frequency
+   using a prescaler (divider).  Supported prescalers for hclk are: 1, 2, 4, 8,
+   16, 64, 128, 256, 512.  Supported prescalers for pclk1 and pclk2 are: 1, 2,
+   4, 8.  A prescaler will be chosen to best match the requested frequency.
+
+   A sysclk frequency of
+   8MHz uses the HSE (external crystal) directly and 16MHz uses the HSI
+   (internal oscillator) directly.  The higher frequencies use the HSE to
+   drive the PLL (phase locked loop), and then use the output of the PLL.
+
+   Note that if you change the frequency while the USB is enabled then the USB
+   may become unreliable. It is best to change the frequency in :ref:`boot.py`,
+   before the USB peripheral is started. Also note that sysclk frequencies below
+   36MHz do not allow the USB to function correctly.
+
 Power related functions
 -----------------------
 
-.. function:: wfi()
+.. function:: wfi() -> None
 
    Wait for an internal or external interrupt.
 
@@ -124,7 +170,7 @@ Power related functions
    occurs once every millisecond (1000Hz) so this function will block for
    at most 1ms.
 
-.. function:: stop()
+.. function:: stop() -> None
 
    Put the OpenMV Cam in a "sleeping" state.
 
@@ -134,7 +180,7 @@ Power related functions
 
    See :meth:`rtc.wakeup` to configure a real-time-clock wakeup event.
 
-.. function:: standby()
+.. function:: standby() -> None
 
    Put the OpenMV Cam into a "deep sleep" state.
 
@@ -147,24 +193,24 @@ Power related functions
 Miscellaneous functions
 -----------------------
 
-.. function:: have_cdc()
+.. function:: have_cdc() -> bool
 
    Return True if USB is connected as a serial device, False otherwise.
 
    .. note:: This function is deprecated.  Use pyb.USB_VCP().isconnected() instead.
 
-.. function:: hid((buttons, x, y, z))
+.. function:: hid(data: Tuple[int, int, int, int]) -> None
 
    Takes a 4-tuple (or list) and sends it to the USB host (the PC) to
    signal a HID mouse-motion event.
 
    .. note:: This function is deprecated.  Use :meth:`pyb.USB_HID.send()` instead.
 
-.. function:: info([dump_alloc_table])
+.. function:: info(dump_alloc_table: Optional[bool] = None) -> None
 
    Print out lots of information about the board.
 
-.. function:: main(filename)
+.. function:: main(filename: str) -> None
 
    Set the filename of the main script to run after :ref:`boot.py` is finished.
    If this function is not called then the default file :ref:`main.py` will be
@@ -172,7 +218,7 @@ Miscellaneous functions
 
    It only makes sense to call this function from within boot.py.
 
-.. function:: mount(device, mountpoint, *, readonly=False, mkfs=False)
+.. function:: mount(device: Any, mountpoint: str, *, readonly: bool = False, mkfs: bool = False) -> None
 
    .. note:: This function is deprecated. Mounting and unmounting devices should
       be performed by :meth:`vfs.mount` and :meth:`vfs.umount` instead.
@@ -205,23 +251,23 @@ Miscellaneous functions
    If ``mkfs`` is ``True``, then a new filesystem is created if one does not
    already exist.
 
-.. function:: repl_uart(uart)
+.. function:: repl_uart(uart: Optional[UART] = None) -> Optional[UART]
 
    Get or set the UART object where the REPL is repeated on.
 
-.. function:: rng()
+.. function:: rng() -> int
 
    Return a 30-bit hardware generated random number.
 
-.. function:: sync()
+.. function:: sync() -> None
 
    Sync all file systems.
 
-.. function:: unique_id()
+.. function:: unique_id() -> bytes
 
    Returns a string of 12 bytes (96 bits), which is the unique ID of the MCU.
 
-.. function:: usb_mode([modestr], port=-1, vid=0xf055, pid=-1, msc=(), hid=pyb.hid_mouse, high_speed=False)
+.. function:: usb_mode(modestr: Optional[str] = None, port: int = -1, vid: int = 0xf055, pid: int = -1, msc: Tuple = (), hid: Tuple = pyb.hid_mouse, high_speed: bool = False) -> Optional[str]
 
    If called with no arguments, return the current USB mode as a string.
 
@@ -265,6 +311,7 @@ Constants
 
 .. data:: pyb.hid_mouse
           pyb.hid_keyboard
+   :type: tuple
 
    A tuple of (subclass, protocol, max packet length, polling interval, report
    descriptor) to set appropriate values for a USB mouse or keyboard.

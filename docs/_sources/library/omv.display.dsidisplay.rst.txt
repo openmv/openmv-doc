@@ -1,34 +1,23 @@
 .. currentmodule:: display
-.. _display.DSIDisplay:
 
 class DSIDisplay -- DSI Display Driver
 ======================================
 
-The `DSIDisplay` class is used for driving MIPI LCDs.
-
-Example usage for driving the 800x480 MIPI LCD::
-
-    import sensor, display
-
-    # Setup camera.
-    sensor.reset()
-    sensor.set_pixformat(sensor.RGB565)
-    sensor.set_framesize(sensor.LCD)
-    sensor.skip_frames()
-    lcd = display.DSIDisplay(controller=display.ST7701())
-
-    # Show image.
-    while(True):
-        lcd.write(sensor.snapshot())
+The `DSIDisplay` class is used for driving MIPI DSI LCDs.
 
 Constructors
 ------------
 
-.. class:: display.DSIDisplay(framesize=FWVGA, refresh=60, portrait=False, channel=0, controller, backlight)
+.. class:: DSIDisplay(framesize:int=FWVGA, *, refresh:int=60, display_on:bool=True, triple_buffer:bool=True, portrait:bool=False, channel:int=0, controller: Any | None=None, backlight: Any | None=None)
 
-    ``framesize`` One of the standard supported resolutions.
+    ``framesize`` One of the standard supported resolutions (e.g. `display.FWVGA`).
 
-    ``refresh`` Sets the screen refresh rate in hertz. This controls the DSI LCD clock.
+    ``refresh`` Sets the screen refresh rate in hertz. Valid range is 30 to 120. This controls the DSI LCD clock.
+
+    ``display_on`` Enables the display.
+
+    ``triple_buffer`` Allocates three framebuffers to allow tear-free display updates. Required for vertical
+    flipping in `write()`.
 
     ``portrait`` Swap the framesize width and height.
 
@@ -37,102 +26,119 @@ Constructors
     ``controller`` Pass the controller chip class here to initialize it along with the display. E.g.
     `display.ST7701()` which is a standard display controller for MIPI DSI displays.
 
-    ``backlight`` specify a backlight controller module to use. By default the backlight will be
+    ``backlight`` Specify a backlight controller module to use. By default the backlight will be
     controlled via a GPIO pin.
 
-Methods
--------
+   .. method:: deinit() -> None
 
-.. method:: DSIDisplay.deinit() -> None
+      Releases the I/O pins and RAM used by the class. This is called automatically on destruction.
 
-   Releases the I/O pins and RAM used by the class. This is called automatically on destruction.
+   .. method:: width() -> int
 
-.. method:: DSIDisplay.width() -> int
+      Returns the width of the screen.
 
-   Returns the width of the screen.
+   .. method:: height() -> int
 
-.. method:: DSIDisplay.height() -> int
+      Returns the height of the screen.
 
-   Returns the height of the screen.
+   .. method:: triple_buffer() -> int
 
-.. method:: DSIDisplay.refresh() -> int
+      Returns whether triple buffering is enabled.
 
-   Returns the refresh rate.
+   .. method:: bgr() -> int
 
-.. method:: DSIDisplay.write(image, x=0, y=0, x_scale=1.0, y_scale=1.0, roi=None, rgb_channel=-1, alpha=256, color_palette=None, alpha_palette=None) -> None
+      Returns whether the display expects BGR ordered pixels.
 
-   Displays an ``image`` whose top-left corner starts at location x, y.
+   .. method:: byte_swap() -> int
 
-   You may also pass a path instead of an image object for this method to automatically load the image
-   from disk and draw it in one step. E.g. ``write("test.jpg")``.
+      Returns whether the display expects byte-swapped pixels.
 
-   ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
-   value is negative the image will be flipped horizontally. Note that if ``y_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+   .. method:: framesize() -> int
 
-   ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
-   value is negative the image will be flipped vertically. Note that if ``x_scale`` is not specified
-   then it will match ``x_scale`` to maintain the aspect ratio.
+      Returns the framesize constant the display was initialized with.
 
-   ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the image to display. This
-   allows you to extract just the pixels in the ROI to scale.
+   .. method:: refresh() -> int
 
-   ``rgb_channel`` is the RGB channel (0=R, G=1, B=2) to extract from an RGB565 image (if passed)
-   and to render on the display. For example, if you pass ``rgb_channel=1`` this will
-   extract the green channel of the RGB565 image and display that in grayscale.
+      Returns the refresh rate in hertz.
 
-   ``alpha`` controls how opaque the image is. A value of 256 displays an opaque image while a
-   value lower than 256 produces a black transparent image. 0 results in a perfectly black image.
+   .. method:: write(image:image.Image, x:int=0, y:int=0, x_scale:float=1.0, y_scale:float=1.0, roi:Optional[Tuple[int,int,int,int]]=None, rgb_channel:int=-1, alpha:int=255, color_palette:Optional[image.Image]=None, alpha_palette:Optional[image.Image]=None, hint:int=0) -> None
 
-   ``color_palette`` if not ``-1`` can be an a color palette enum or
-   a 256 pixel in total RGB565 image to use as a color lookup table on the grayscale value of
-   whatever the input image is. This is applied after ``rgb_channel`` extraction if used.
+      Displays an ``image`` whose top-left corner starts at location ``x``, ``y``.
 
-   ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as a alpha
-   palette which modulates the ``alpha`` value of the input image being displayed at a pixel pixel
-   level allowing you to precisely control the alpha value of pixels based on their grayscale value.
-   A pixel value of 255 in the alpha lookup table is opaque which anything less than 255 becomes
-   more transparent until 0. This is applied after ``rgb_channel`` extraction if used.
+      ``image`` may be a path string instead of an image object to automatically load the image from
+      disk. E.g. ``write("test.jpg")``.
 
-   ``hint`` can be a logical OR of the flags:
+      ``x_scale`` controls how much the displayed image is scaled by in the x direction (float). If this
+      value is negative the image will be flipped horizontally. If ``y_scale`` is not specified then it
+      will match ``x_scale`` to maintain the aspect ratio.
 
-      * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
-      * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
-      * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
-      * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
-      * `image.HMIRROR`: Horizontally mirror the image.
-      * `image.VFLIP`: Vertically flip the image.
-      * `image.TRANSPOSE`: Transpose the image (swap x/y).
-      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
-      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
-      * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
-      * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping)
-      * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
-      * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
-      * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
-      * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
+      ``y_scale`` controls how much the displayed image is scaled by in the y direction (float). If this
+      value is negative the image will be flipped vertically. Vertical flip requires
+      ``triple_buffer=True``. If ``x_scale`` is not specified then it will match ``y_scale``.
 
-.. method:: DSIDisplay.clear(display_off=False) -> None
+      ``roi`` is the region-of-interest rectangle tuple (x, y, w, h) of the image to display.
 
-   Clears the lcd screen to black.
+      ``rgb_channel`` is the RGB channel (0=R, 1=G, 2=B) to extract from an RGB565 image and render on
+      the display in grayscale. ``-1`` disables extraction. Valid range is -1 to 2.
 
-   ``display_off`` if True instead turns off the display logic versus clearing the frame LCD
-   frame buffer to black. You should also turn off the backlight too after this to ensure the
-   screen goes to black as many displays are white when only the backlight is on.
+      ``alpha`` controls how opaque the image is. 255 displays an opaque image, lower values blend
+      toward black, and 0 produces a fully black image. Valid range is 0 to 255.
 
-.. method:: DSIDisplay.backlight(value:Optional[int]=None) -> int
+      ``color_palette`` may be a color palette enum or a 256 pixel RGB565 image to use as a color
+      lookup table on the grayscale value of the input image. Applied after ``rgb_channel`` extraction.
 
-   Sets the lcd backlight dimming value. 0 (off) to 100 (on).
+      ``alpha_palette`` may be a 256 pixel grayscale image used as an alpha lookup table that
+      modulates ``alpha`` per input pixel grayscale value. Applied after ``rgb_channel`` extraction.
 
-   Note that unless you pass `DACBacklight` or `PWMBacklight` the backlight will be controlled
-   as a GPIO pin and will only go from 0 (off) to !0 (on).
+      ``hint`` is a logical OR of the flags:
 
-   Pass no arguments to get the state of the backlight value.
+         * `image.AREA`: Use area scaling when downscaling versus the default of nearest neighbor.
+         * `image.BILINEAR`: Use bilinear scaling versus the default of nearest neighbor scaling.
+         * `image.BICUBIC`: Use bicubic scaling versus the default of nearest neighbor scaling.
+         * `image.CENTER`: Center the image being drawn on the display. This is applied after scaling.
+         * `image.HMIRROR`: Horizontally mirror the image.
+         * `image.VFLIP`: Vertically flip the image.
+         * `image.TRANSPOSE`: Transpose the image (swap x/y).
+         * `image.EXTRACT_RGB_CHANNEL_FIRST`: Do rgb_channel extraction before scaling.
+         * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
+         * `image.SCALE_ASPECT_KEEP`: Scale the image being drawn to fit inside the display.
+         * `image.SCALE_ASPECT_EXPAND`: Scale the image being drawn to fill the display (results in cropping).
+         * `image.SCALE_ASPECT_IGNORE`: Scale the image being drawn to fill the display (results in stretching).
+         * `image.ROTATE_90`: Rotate the image by 90 degrees (this is just VFLIP | TRANSPOSE).
+         * `image.ROTATE_180`: Rotate the image by 180 degrees (this is just HMIRROR | VFLIP).
+         * `image.ROTATE_270`: Rotate the image by 270 degrees (this is just HMIRROR | TRANSPOSE).
 
-.. method:: DSIDisplay.bus_write(cmd:int, args=None, dcs=False) -> None
+   .. method:: clear(display_off:bool=False) -> None
 
-   Send the DSI Display ``cmd`` with ``args``.
+      Clears the LCD framebuffer to black.
 
-.. method:: DSIDisplay.bus_read(cmd:int, len:int, args=None, dcs=False) -> bytes
+      ``display_off`` if True turns off the display logic instead of clearing the framebuffer.
 
-   Read ``len`` using ``cmd`` with ``args`` from the DSI Display.
+   .. method:: backlight(value:Optional[int]=None) -> int
+
+      Sets the LCD backlight dimming value, 0 (off) to 100 (on). Pass no arguments to get the
+      current backlight value.
+
+      Unless a `DACBacklight` or `PWMBacklight` controller is passed to the constructor, the
+      backlight is controlled as a GPIO pin and will only go from 0 (off) to non-zero (on).
+
+   .. method:: bus_write(cmd:int, args: int | bytes | None = None, *, dcs:bool=False) -> None
+
+      Send DSI command ``cmd`` to the display.
+
+      ``args`` is an optional integer or buffer containing command parameters.
+
+      ``dcs`` if True sends the command as a DCS (Display Command Set) packet.
+
+   .. method:: bus_read(cmd:int, len:int, args: int | bytes | None = None, *, dcs:bool=False) -> bytes
+
+      Read ``len`` bytes from the display using DSI command ``cmd``.
+
+      ``args`` is an optional integer or buffer containing command parameters.
+
+      ``dcs`` if True sends the command as a DCS (Display Command Set) packet.
+
+   .. method:: ioctl(cmd:int, arg: Any | None = None) -> Any
+
+      Send a driver-specific ioctl ``cmd`` with optional ``arg`` to the display. Raises ``ValueError``
+      if the display does not support ioctl.

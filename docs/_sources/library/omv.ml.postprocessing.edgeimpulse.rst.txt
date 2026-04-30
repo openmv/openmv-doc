@@ -6,25 +6,37 @@
 .. module:: ml.postprocessing.edgeimpulse
     :synopsis: Edge Impulse
 
-The `ml.postprocessing.edgeimpulse` module contains classes for Edge Impulse.
+The ``ml.postprocessing.edgeimpulse`` module contains post-processing classes
+for Edge Impulse models.
+
 
 class Fomo -- Fast Objects More Objects
 ---------------------------------------
 
-Used to post-process FOMO model output.
+Post-processor for FOMO (Fast Objects More Objects) model output.
 
-Constructors
-~~~~~~~~~~~~
+.. class:: Fomo(threshold: float = 0.4, w_scale: float = 1.414214, h_scale: float = 1.414214, nms_threshold: float = 0.1, nms_sigma: float = 0.001)
 
-.. class:: Fomo(threshold:float=0.4, w_scale:float=1.414214, h_scale:float=1.414214, nms_threshold:float=0.1, nms_sigma:float=0.1) -> Fomo
+    Creates a FOMO post-processor.
 
-    Create a FOMO postprocessor.
+    ``threshold`` minimum score required for a detection to be kept.
 
-    ``threshold`` The threshold to use for postprocessing.
+    ``w_scale`` horizontal scale factor applied to the grid cell width before
+    non-max-suppression. Larger values cause neighboring cells to be merged
+    into a single detection.
 
-    ``w/h_scale`` Are used to control how much grid cell sizes are scaled by on return. Making this larger helps join
-    cells close by each other into one cell during non-max-suppression. 
+    ``h_scale`` vertical scale factor applied to the grid cell height before
+    non-max-suppression. Larger values cause neighboring cells to be merged
+    into a single detection.
 
-    This post-processor returns a list of rect ``[x, y, w, h]`` and score tuples for each class in the model output.
-    E.g. ``[[((x, y, w, h), score)]]``. Note that empty class list are included in the output to ensure the position
-    of each class list in the output matches the position of the class index in the model output.
+    ``nms_threshold`` IoU threshold passed to non-max-suppression.
+
+    ``nms_sigma`` sigma value passed to non-max-suppression (soft-NMS).
+
+    .. method:: __call__(model: ml.Model, inputs: list, outputs: list) -> list
+
+        Invoked by ``ml.Model.predict()`` with the model, its inputs, and its raw
+        outputs. Returns a list of per-class detection lists. Each detection is a
+        ``((x, y, w, h), score)`` tuple. Empty class lists are included so that
+        the position of each list in the output matches the class index in the
+        model output. Returns an empty tuple when nothing is detected.
