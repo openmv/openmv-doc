@@ -4,46 +4,82 @@ on:
   push:
     branches:
       - master
+    tags:
+      - "v*"
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-         submodules: 'true'
+        submodules: 'true'
+        fetch-depth: 0
 
-    - uses: ammaraskar/sphinx-action@master
+    - uses: actions/setup-python@v5
       with:
-        pre-build-command: "rm micropython/docs/requirements.txt && pip install sphinx -U && pip install sphinx_rtd_theme -U && pip install sphinx"
-        docs-folder: "micropython/docs/"
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install -U sphinx sphinx_rtd_theme sphinxcontrib.jquery
+
+    - name: Build docs
+      working-directory: micropython/docs
+      run: python -m sphinx -b html -d build/doctrees . build/html
+
+    - name: Generate Python stubs
+      run: |
+        python genpyi.py \
+          --docs-dir micropython/docs/build/html/_sources/library/ \
+          --pyi-dir micropython/docs/build/stubs
+
+    - name: Determine deploy target
+      id: target
+      run: |
+        if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+          echo "dest=docs" >> "$GITHUB_OUTPUT"
+          echo "is_tag=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "dest=docs/dev" >> "$GITHUB_OUTPUT"
+          echo "is_tag=false" >> "$GITHUB_OUTPUT"
+        fi
 
     - uses: actions/upload-artifact@v4
       with:
         name: html
         path: micropython/docs/build/html/
 
-    - name: Commit documentation changes
+    - uses: actions/upload-artifact@v4
+      with:
+        name: stubs
+        path: micropython/docs/build/stubs/
+
+    - name: Sync built docs into repository
       run: |
-        git clone https://github.com/openmv/openmv-doc.git
-        cp -r micropython/docs/build/html/* docs/
-        cd docs
-        touch .nojekyll
+        DEST="${{ steps.target.outputs.dest }}"
+        git fetch origin master
+        git checkout master
+        git pull --ff-only origin master
+        mkdir -p "$DEST"
+        cp -r micropython/docs/build/html/* "$DEST/"
+        rm -rf "$DEST/stubs"
+        cp -r micropython/docs/build/stubs "$DEST/stubs"
+        touch "$DEST/.nojekyll"
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add .
-        git commit -m "Update documentation" -a || true
-        # The above command will fail if no changes were present, so we ignore that.
+        git add "$DEST"
+        git commit -m "Update $DEST" -a || true
+        # Commit fails if no changes; ignore.
 
     - name: Push documentation changes
       uses: ad-m/github-push-action@master
       with:
         branch: master
-        directory: docs
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Pushes to another repository
+    - name: Push docs to qt-creator (release tag only)
+      if: steps.target.outputs.is_tag == 'true'
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
