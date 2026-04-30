@@ -34,17 +34,6 @@ jobs:
           --docs-dir micropython/docs/build/html/_sources/library/ \
           --pyi-dir micropython/docs/build/stubs
 
-    - name: Determine deploy target
-      id: target
-      run: |
-        if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
-          echo "dest=docs" >> "$GITHUB_OUTPUT"
-          echo "is_tag=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "dest=docs/dev" >> "$GITHUB_OUTPUT"
-          echo "is_tag=false" >> "$GITHUB_OUTPUT"
-        fi
-
     - uses: actions/upload-artifact@v4
       with:
         name: html
@@ -57,19 +46,14 @@ jobs:
 
     - name: Sync built docs into repository
       run: |
-        DEST="${{ steps.target.outputs.dest }}"
-        git fetch origin master
-        git checkout master
-        git pull --ff-only origin master
-        mkdir -p "$DEST"
-        cp -r micropython/docs/build/html/* "$DEST/"
-        rm -rf "$DEST/stubs"
-        cp -r micropython/docs/build/stubs "$DEST/stubs"
-        touch "$DEST/.nojekyll"
+        cp -r micropython/docs/build/html/* docs/
+        rm -rf docs/stubs
+        cp -r micropython/docs/build/stubs docs/stubs
+        touch docs/.nojekyll
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
-        git add "$DEST"
-        git commit -m "Update $DEST" -a || true
+        git add docs
+        git commit -m "Update documentation" -a || true
         # Commit fails if no changes; ignore.
 
     - name: Push documentation changes
@@ -78,8 +62,8 @@ jobs:
         branch: master
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Push docs to qt-creator (release tag only)
-      if: steps.target.outputs.is_tag == 'true'
+    - name: Pushes to another repository
+      if: startsWith(github.ref, 'refs/tags/v')
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
