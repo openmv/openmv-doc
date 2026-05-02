@@ -98,14 +98,14 @@ Constructors
       Stops the Encoder, disabling any interrupts and releasing hardware resources.
       A Soft Reset should deinitialize all Encoder objects.
 
-   .. method:: value(value: int | None = None, /) -> int
+   .. method:: value(value: int = ..., /) -> int
 
       Get, and optionally set, the encoder value as a signed integer.
       Implementations should aim to do the get and set atomically.
 
       See :meth:`machine.Counter.value` for details about overflow of this value.
 
-   .. method:: cycles(value: int | None = None, /) -> int
+   .. method:: cycles(value: int = ..., /) -> int
 
       Get or set the current cycles counter of the counter as signed 16 bit integer.
       The value represents the overflow or underflow events of the count range.

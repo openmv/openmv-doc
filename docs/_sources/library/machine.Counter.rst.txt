@@ -96,7 +96,7 @@ Constructors
       Stops the Counter, disabling any interrupts and releasing hardware resources.
       A Soft Reset should deinitialize all Counter objects.
 
-   .. method:: value(value: int | None = None, /) -> int
+   .. method:: value(value: int = ..., /) -> int
 
       Get, and optionally set, the counter value as a signed integer.
       Implementations must aim to do the get and set atomically (i.e. without
@@ -116,7 +116,7 @@ Constructors
       the counter (i.e. to measure the counts since the last call), and this will
       avoid this problem.
 
-   .. method:: cycles(value: int | None = None, /) -> int
+   .. method:: cycles(value: int = ..., /) -> int
 
       Get or set the current cycles counter of the counter as signed 16 bit integer.
       The value represents the overflow or underflow events of the count range.

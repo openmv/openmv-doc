@@ -315,7 +315,7 @@ def bitstream(pin: Pin, encoding: int, timing: tuple, data: bytes, /) -> None:
     module for a higher-level API.
     """
     ...
-def bootloader(value: int | None = None, /) -> None:
+def bootloader(value: int = ..., /) -> None:
     """
     Reset the device and enter its bootloader.  This is typically used to put the
     device into a state where it can be programmed with new firmware.
@@ -323,7 +323,7 @@ def bootloader(value: int | None = None, /) -> None:
     which bootloader to enter, what to pass to it, or other things.
     """
     ...
-def deepsleep(time_ms: int | None = None, /) -> None:
+def deepsleep(time_ms: int = ..., /) -> None:
     """
     Stops execution in an attempt to enter a low power state.
     If time_ms is specified then this will be the maximum time in milliseconds that
@@ -358,7 +358,7 @@ def enable_irq(state: int) -> None:
     recent call to the disable_irq() function.
     """
     ...
-def freq(hz: int | None = None, /) -> int:
+def freq(hz: int = ..., /) -> int:
     """
     Returns the CPU frequency in hertz.
     On some ports this can also be used to set the CPU frequency by passing in hz.
@@ -377,7 +377,7 @@ def idle() -> None:
     time.sleep() and time.sleep_ms() functions.
     """
     ...
-def lightsleep(time_ms: int | None = None, /) -> None:
+def lightsleep(time_ms: int = ..., /) -> None:
     """
     Stops execution in an attempt to enter a low power state.
     If time_ms is specified then this will be the maximum time in milliseconds that
@@ -1610,7 +1610,7 @@ class Counter:
 
 
 
-    value(value: int | None = None, /) -> int
+    value(value: int = ..., /) -> int
 
     Get, and optionally set, the counter value as a signed integer.
     Implementations must aim to do the get and set atomically (i.e. without
@@ -1632,7 +1632,7 @@ class Counter:
 
 
 
-    cycles(value: int | None = None, /) -> int
+    cycles(value: int = ..., /) -> int
 
     Get or set the current cycles counter of the counter as signed 16 bit integer.
     The value represents the overflow or underflow events of the count range.
@@ -1711,7 +1711,7 @@ class Counter:
     Select the IRQ trigger event.  (Supported on MIMXRT)
     """
     def __init__(self, id: int, src: Pin | None = None, *, edge: int = RISING, direction: int = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None: ...
-    def cycles(self, value: int | None = None, /) -> int:
+    def cycles(self, value: int = ..., /) -> int:
         """
         Get or set the current cycles counter of the counter as signed 16 bit integer.
         The value represents the overflow or underflow events of the count range.
@@ -1816,7 +1816,7 @@ class Counter:
         by the PCNT. (Supported on MIMXRT)
         """
         ...
-    def value(self, value: int | None = None, /) -> int:
+    def value(self, value: int = ..., /) -> int:
         """
         Get, and optionally set, the counter value as a signed integer.
         Implementations must aim to do the get and set atomically (i.e. without
@@ -1915,7 +1915,7 @@ class Encoder:
 
 
 
-    value(value: int | None = None, /) -> int
+    value(value: int = ..., /) -> int
 
     Get, and optionally set, the encoder value as a signed integer.
     Implementations should aim to do the get and set atomically.
@@ -1924,7 +1924,7 @@ class Encoder:
 
 
 
-    cycles(value: int | None = None, /) -> int
+    cycles(value: int = ..., /) -> int
 
     Get or set the current cycles counter of the counter as signed 16 bit integer.
     The value represents the overflow or underflow events of the count range.
@@ -1989,7 +1989,7 @@ class Encoder:
     Select the IRQ trigger event.  (Supported on MIMXRT)
     """
     def __init__(self, id: int, phase_a: Pin | None = None, phase_b: Pin | None = None, *, filter_ns: int = 0, phases: int = 1, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None: ...
-    def cycles(self, value: int | None = None, /) -> int:
+    def cycles(self, value: int = ..., /) -> int:
         """
         Get or set the current cycles counter of the counter as signed 16 bit integer.
         The value represents the overflow or underflow events of the count range.
@@ -2095,7 +2095,7 @@ class Encoder:
         (Supported on MIMXRT)
         """
         ...
-    def value(self, value: int | None = None, /) -> int:
+    def value(self, value: int = ..., /) -> int:
         """
         Get, and optionally set, the encoder value as a signed integer.
         Implementations should aim to do the get and set atomically.
@@ -2733,7 +2733,7 @@ class LED:
 
 
 
-    value(v: int | None = None) -> int | None
+    value(v: int = ...) -> int | None
 
     If v is given, sets the LED to the given value. If v is not given,
     returns the current LED value.
@@ -2751,7 +2751,7 @@ class LED:
     def toggle(self) -> None:
         """Toggles the LED state."""
         ...
-    def value(self, v: int | None = None) -> Optional[int]:
+    def value(self, v: int = ...) -> Optional[int]:
         """
         If v is given, sets the LED to the given value. If v is not given,
         returns the current LED value.
@@ -2794,7 +2794,7 @@ class PWM:
 
 
 
-    freq(value: int | None = None, /) -> int | None
+    freq(value: int = ..., /) -> int | None
 
     Get or set the current frequency of the PWM output.
 
@@ -2805,7 +2805,7 @@ class PWM:
 
 
 
-    duty_u16(value: int | None = None, /) -> int | None
+    duty_u16(value: int = ..., /) -> int | None
 
     Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
     value in the range 0 to 65535 inclusive.
@@ -2817,7 +2817,7 @@ class PWM:
 
 
 
-    duty_ns(value: int | None = None, /) -> int | None
+    duty_ns(value: int = ..., /) -> int | None
 
     Get or set the current pulse width of the PWM output, as a value in nanoseconds.
 
@@ -2829,14 +2829,14 @@ class PWM:
     def deinit(self) -> None:
         """Disable the PWM output."""
         ...
-    def duty_ns(self, value: int | None = None, /) -> Optional[int]:
+    def duty_ns(self, value: int = ..., /) -> Optional[int]:
         """
         Get or set the current pulse width of the PWM output, as a value in nanoseconds.
         With no arguments the pulse width in nanoseconds is returned.
         With a single value argument the pulse width is set to that value.
         """
         ...
-    def duty_u16(self, value: int | None = None, /) -> Optional[int]:
+    def duty_u16(self, value: int = ..., /) -> Optional[int]:
         """
         Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
         value in the range 0 to 65535 inclusive.
@@ -2845,7 +2845,7 @@ class PWM:
         as the ratio value / 65535.
         """
         ...
-    def freq(self, value: int | None = None, /) -> Optional[int]:
+    def freq(self, value: int = ..., /) -> Optional[int]:
         """
         Get or set the current frequency of the PWM output.
         With no arguments the frequency in Hz is returned.
@@ -2935,7 +2935,7 @@ class Pin:
 
 
 
-    value(x: Any | None = None, /) -> int | None
+    value(x: Any = ..., /) -> int | None
 
     This method allows to set and get the value of the pin, depending on whether
     the argument x is supplied or not.
@@ -2973,7 +2973,7 @@ class Pin:
 
 
 
-    __call__(x: Any | None = None, /) -> int | None
+    __call__(x: Any = ..., /) -> int | None
 
     Pin objects are callable.  The call method provides a (fast) shortcut to set
     and get the value of the pin.  It is equivalent to Pin.value([x]).
@@ -3057,7 +3057,7 @@ class Pin:
 
 
 
-    mode(mode: int | None = None, /) -> int | None
+    mode(mode: int = ..., /) -> int | None
 
     Get or set the pin mode.
     See the constructor documentation for details of the mode argument.
@@ -3066,7 +3066,7 @@ class Pin:
 
 
 
-    pull(pull: int | None = None, /) -> int | None
+    pull(pull: int = ..., /) -> int | None
 
     Get or set the pin pull state.
     See the constructor documentation for details of the pull argument.
@@ -3075,7 +3075,7 @@ class Pin:
 
 
 
-    drive(drive: int | None = None, /) -> int | None
+    drive(drive: int = ..., /) -> int | None
 
     Get or set the pin drive strength.
     See the constructor documentation for details of the drive argument.
@@ -3146,14 +3146,14 @@ class Pin:
     Selects the IRQ trigger type.
     """
     def __init__(self, id: int | str, mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1) -> None: ...
-    def __call__(self, x: Any | None = None, /) -> Optional[int]:
+    def __call__(self, x: Any = ..., /) -> Optional[int]:
         """
         Pin objects are callable.  The call method provides a (fast) shortcut to set
         and get the value of the pin.  It is equivalent to Pin.value([x]).
         See Pin.value() for more details.
         """
         ...
-    def drive(self, drive: int | None = None, /) -> Optional[int]:
+    def drive(self, drive: int = ..., /) -> Optional[int]:
         """
         Get or set the pin drive strength.
         See the constructor documentation for details of the drive argument.
@@ -3222,7 +3222,7 @@ class Pin:
         Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
         """
         ...
-    def mode(self, mode: int | None = None, /) -> Optional[int]:
+    def mode(self, mode: int = ..., /) -> Optional[int]:
         """
         Get or set the pin mode.
         See the constructor documentation for details of the mode argument.
@@ -3235,7 +3235,7 @@ class Pin:
     def on(self) -> None:
         """Set pin to “1” output level."""
         ...
-    def pull(self, pull: int | None = None, /) -> Optional[int]:
+    def pull(self, pull: int = ..., /) -> Optional[int]:
         """
         Get or set the pin pull state.
         See the constructor documentation for details of the pull argument.
@@ -3248,7 +3248,7 @@ class Pin:
         Availability: cc3200, esp32, esp8266, mimxrt, rp2, samd, alif ports.
         """
         ...
-    def value(self, x: Any | None = None, /) -> Optional[int]:
+    def value(self, x: Any = ..., /) -> Optional[int]:
         """
         This method allows to set and get the value of the pin, depending on whether
         the argument x is supplied or not.
@@ -3288,7 +3288,7 @@ class RTC:
 
 
 
-    datetime(datetimetuple: tuple | None = None, /) -> tuple | None
+    datetime(datetimetuple: tuple = ..., /) -> tuple | None
 
     Get or set the date and time of the RTC.
 
@@ -3369,7 +3369,7 @@ class RTC:
 
 
 
-    memory(data: bytes | None = None, /) -> bytes | None
+    memory(data: bytes = ..., /) -> bytes | None
 
     RTC.memory(data) will write data to the RTC memory, where data is any
     object which supports the buffer protocol (including bytes, bytearray,
@@ -3409,7 +3409,7 @@ class RTC:
     def alarm_left(self, alarm_id: int = 0) -> int:
         """Get the number of milliseconds left before the alarm expires."""
         ...
-    def datetime(self, datetimetuple: tuple | None = None, /) -> Optional[tuple]:
+    def datetime(self, datetimetuple: tuple = ..., /) -> Optional[tuple]:
         """
         Get or set the date and time of the RTC.
         With no arguments, this method returns an 8-tuple with the current
@@ -3445,7 +3445,7 @@ class RTC:
         up the system.
         """
         ...
-    def memory(self, data: bytes | None = None, /) -> Optional[bytes]:
+    def memory(self, data: bytes = ..., /) -> Optional[bytes]:
         """
         RTC.memory(data) will write data to the RTC memory, where data is any
         object which supports the buffer protocol (including bytes, bytearray,
@@ -3646,7 +3646,7 @@ class Signal:
 
 
 
-    value(x: Any | None = None, /) -> int | None
+    value(x: Any = ..., /) -> int | None
 
     This method allows to set and get the value of the signal, depending on whether
     the argument x is supplied or not.
@@ -3683,7 +3683,7 @@ class Signal:
     def on(self) -> None:
         """Activate signal."""
         ...
-    def value(self, x: Any | None = None, /) -> Optional[int]:
+    def value(self, x: Any = ..., /) -> Optional[int]:
         """
         This method allows to set and get the value of the signal, depending on whether
         the argument x is supplied or not.

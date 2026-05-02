@@ -71,7 +71,7 @@ Reset related functions
 
    Get the reset cause. See :ref:`constants <machine_constants>` for the possible return values.
 
-.. function:: bootloader(value: int | None = None, /) -> None
+.. function:: bootloader(value: int = ..., /) -> None
 
    Reset the device and enter its bootloader.  This is typically used to put the
    device into a state where it can be programmed with new firmware.
@@ -114,7 +114,7 @@ and then re-enabled to their previous state.  For example::
 Power related functions
 -----------------------
 
-.. function:: freq(hz: int | None = None, /) -> int
+.. function:: freq(hz: int = ..., /) -> int
 
     Returns the CPU frequency in hertz.
 
@@ -137,8 +137,8 @@ Power related functions
 
    .. note:: This function is deprecated, use :func:`lightsleep()` instead with no arguments.
 
-.. function:: lightsleep(time_ms: int | None = None, /) -> None
-              deepsleep(time_ms: int | None = None, /) -> None
+.. function:: lightsleep(time_ms: int = ..., /) -> None
+              deepsleep(time_ms: int = ..., /) -> None
 
    Stops execution in an attempt to enter a low power state.
 

@@ -24,7 +24,7 @@ Constructors
    Methods
    -------
 
-   .. method:: datetime(datetimetuple: tuple | None = None, /) -> tuple | None
+   .. method:: datetime(datetimetuple: tuple = ..., /) -> tuple | None
 
       Get or set the date and time of the RTC.
 
@@ -87,7 +87,7 @@ Constructors
          - ``wake`` specifies the sleep mode from where this interrupt can wake
            up the system.
 
-   .. method:: memory(data: bytes | None = None, /) -> bytes | None
+   .. method:: memory(data: bytes = ..., /) -> bytes | None
 
       ``RTC.memory(data)`` will write *data* to the RTC memory, where *data* is any
       object which supports the buffer protocol (including `bytes`, `bytearray`,

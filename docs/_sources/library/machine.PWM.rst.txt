@@ -54,7 +54,7 @@ Constructors
 
       Disable the PWM output.
 
-   .. method:: freq(value: int | None = None, /) -> int | None
+   .. method:: freq(value: int = ..., /) -> int | None
 
       Get or set the current frequency of the PWM output.
 
@@ -63,7 +63,7 @@ Constructors
       With a single *value* argument the frequency is set to that value in Hz.  The
       method may raise a ``ValueError`` if the frequency is outside the valid range.
 
-   .. method:: duty_u16(value: int | None = None, /) -> int | None
+   .. method:: duty_u16(value: int = ..., /) -> int | None
 
       Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
       value in the range 0 to 65535 inclusive.
@@ -73,7 +73,7 @@ Constructors
       With a single *value* argument the duty cycle is set to that value, measured
       as the ratio ``value / 65535``.
 
-   .. method:: duty_ns(value: int | None = None, /) -> int | None
+   .. method:: duty_ns(value: int = ..., /) -> int | None
 
       Get or set the current pulse width of the PWM output, as a value in nanoseconds.
 

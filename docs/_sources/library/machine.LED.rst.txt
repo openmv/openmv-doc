@@ -47,7 +47,7 @@ Constructors
 
       Toggles the LED state.
 
-   .. method:: value(v: int | None = None) -> int | None
+   .. method:: value(v: int = ...) -> int | None
 
       If ``v`` is given, sets the LED to the given value. If ``v`` is not given,
       returns the current LED value.

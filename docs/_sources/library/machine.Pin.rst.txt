@@ -116,7 +116,7 @@ Constructors
 
       Returns ``None``.
 
-   .. method:: value(x: Any | None = None, /) -> int | None
+   .. method:: value(x: Any = ..., /) -> int | None
 
       This method allows to set and get the value of the pin, depending on whether
       the argument ``x`` is supplied or not.
@@ -148,7 +148,7 @@ Constructors
 
       When setting the value this method returns ``None``.
 
-   .. method:: __call__(x: Any | None = None, /) -> int | None
+   .. method:: __call__(x: Any = ..., /) -> int | None
 
       Pin objects are callable.  The call method provides a (fast) shortcut to set
       and get the value of the pin.  It is equivalent to Pin.value([x]).
@@ -217,21 +217,21 @@ Constructors
 
       Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
 
-   .. method:: mode(mode: int | None = None, /) -> int | None
+   .. method:: mode(mode: int = ..., /) -> int | None
 
       Get or set the pin mode.
       See the constructor documentation for details of the ``mode`` argument.
 
       Availability: cc3200, stm32 ports.
 
-   .. method:: pull(pull: int | None = None, /) -> int | None
+   .. method:: pull(pull: int = ..., /) -> int | None
 
       Get or set the pin pull state.
       See the constructor documentation for details of the ``pull`` argument.
 
       Availability: cc3200, stm32 ports.
 
-   .. method:: drive(drive: int | None = None, /) -> int | None
+   .. method:: drive(drive: int = ..., /) -> int | None
 
       Get or set the pin drive strength.
       See the constructor documentation for details of the ``drive`` argument.

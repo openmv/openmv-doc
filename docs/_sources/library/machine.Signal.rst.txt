@@ -96,7 +96,7 @@ Constructors
    Methods
    -------
 
-   .. method:: value(x: Any | None = None, /) -> int | None
+   .. method:: value(x: Any = ..., /) -> int | None
 
       This method allows to set and get the value of the signal, depending on whether
       the argument ``x`` is supplied or not.
