@@ -17,14 +17,13 @@ The OpenMV Cam documentation.
 
 ## How to build
 
-Install Sphinx, and optionally (for the RTD-styling), sphinx_rtd_theme, preferably in a virtualenv:
+Install Sphinx and the Shibuya theme (the docs use Shibuya for the HTML output), preferably in a virtualenv:
 
-     pip install sphinx
-     pip install sphinx_rtd_theme
+     pip install -r micropython/docs/requirements.txt
 
 In `/`, build the docs:
 
-     make.py
+     ./make.py
 
 You'll find the index page at `micropython/docs/_build/html/index.html`.
 
