@@ -3,7 +3,7 @@ MicroPython license information
 
 The MIT License (MIT)
 
-Copyright (c) 2013-2026 Damien P. George, Paul Sokolovsky, OpenMV LLC, and others
+Copyright (c) 2013-2026 by OpenMV, Damien P. George, and others
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
