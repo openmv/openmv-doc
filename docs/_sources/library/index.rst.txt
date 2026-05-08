@@ -1,7 +1,7 @@
 .. _micropython_lib:
 
-MicroPython libraries
-=====================
+OpenMV MicroPython libraries
+============================
 
 .. warning::
 

@@ -1,5 +1,5 @@
-MicroPython license information
-===============================
+OpenMV MicroPython license information
+======================================
 
 The MIT License (MIT)
 

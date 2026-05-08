@@ -324,7 +324,10 @@ the live image::
 
     # Visualization parameters.
     n = len(model.labels)
-    model_class_colors = [(int(255 * i // n), int(255 * (n - i - 1) // n), 255) for i in range(n)]
+    model_class_colors = [
+        (int(255 * i // n), int(255 * (n - i - 1) // n), 255)
+        for i in range(n)
+    ]
 
     clock = time.clock()
     while True:
