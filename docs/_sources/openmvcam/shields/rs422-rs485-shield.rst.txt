@@ -72,8 +72,7 @@ Pin reference
    cover the RS-422 A/B pair and two cover the RS-422 Y/Z pair (which
    doubles as the RS-485 A/B termination), four jumpers in total.
 
-About RS-422 and RS-485
------------------------
+.. rubric:: About RS-422 and RS-485
 
 Both standards send serial data as a balanced (differential) signal
 over twisted pairs for long-distance, noise-tolerant links:
@@ -87,8 +86,7 @@ over twisted pairs for long-distance, noise-tolerant links:
   but physically the same Y/Z lines on this shield. Up to thirty-two
   nodes can share the bus and any of them can drive it.
 
-How the shield supports both
-----------------------------
+.. rubric:: How the shield supports both
 
 The shield carries two THVD1426 transceivers, each able to handle
 either standard:
@@ -121,6 +119,12 @@ The terminal-block labels reflect the dual mapping:
 
 Usage
 -----
+
+.. note::
+
+   The ``UART(3)`` peripheral number below follows the STM32 mapping.
+   On another processor the bus wired to these pins may be different
+   — check your board's reference.
 
 Talk to a differential serial peer on P4 (TX) / P5 (RX)::
 

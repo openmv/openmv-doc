@@ -11,6 +11,10 @@ The CAN Shield gives the OpenMV Cam a CAN-bus link via a DB9 connector, with an 
 For full datasheet, photos, and ordering see the
 `CAN Shield product page <https://openmv.io/products/can-shield>`_.
 
+.. note::
+
+   Not supported on the OpenMV Cam RT1062.
+
 Highlights
 ----------
 
@@ -66,6 +70,12 @@ Pin reference
 
 Usage
 -----
+
+.. note::
+
+   The ``CAN(1)`` peripheral number below follows the STM32 mapping.
+   On another processor the bus wired to these pins may be different
+   — check your board's reference.
 
 Send and receive frames on the CAN bus at 1 Mb/s::
 

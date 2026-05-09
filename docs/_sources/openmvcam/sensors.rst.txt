@@ -14,10 +14,10 @@ does, key specs, and the MicroPython API for driving it.
        <div class="omv-grid cols-3">
 
          <a class="omv-card board" href="sensors/ps5520.html">
-           <div class="board-thumb"><img src="../_images/ps5520-hero.jpg" alt="PS5520 5-MP HDR Camera"></div>
+           <div class="board-thumb"><img src="../_images/ps5520-hero.jpg" alt="PS5520 5MP HDR Camera"></div>
            <div class="board-body">
-             <h4>PS5520 5-MP HDR Camera</h4>
-             <p>5-MP HDR sensor with high dynamic range.</p>
+             <h4>PS5520 5MP HDR Camera</h4>
+             <p>5MP HDR sensor with high dynamic range.</p>
              <span class="card-arrow">Explore →</span>
            </div>
          </a>
@@ -35,7 +35,7 @@ does, key specs, and the MicroPython API for driving it.
            <div class="board-thumb"><img src="../_images/multispectral-thermal-ov5640-hero.jpg" alt="Multispectral Thermal (OV5640)"></div>
            <div class="board-body">
              <h4>Multispectral Thermal (OV5640)</h4>
-             <p>5-MP rolling-shutter colour + FLIR Lepton thermal on one module.</p>
+             <p>5MP rolling-shutter colour + FLIR Lepton thermal on one module.</p>
              <span class="card-arrow">Explore →</span>
            </div>
          </a>
@@ -89,7 +89,7 @@ does, key specs, and the MicroPython API for driving it.
            <div class="board-thumb"><img src="../_images/ov5640-hero.jpg" alt="OV5640 FPC Camera Module"></div>
            <div class="board-body">
              <h4>OV5640 FPC Camera Module</h4>
-             <p>5-MP rolling-shutter colour sensor with autofocus.</p>
+             <p>5MP rolling-shutter colour sensor with autofocus.</p>
              <span class="card-arrow">Explore →</span>
            </div>
          </a>

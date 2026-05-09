@@ -30,7 +30,7 @@
       <strong>OpenMV MicroPython</strong>
     </a>
     <div class="sy-head-nav" id="head-nav">
-      <nav class="sy-head-links"><ul><li class="link"><a href="../../index.html">Home</a></li><li class="link"><a href="../tutorial/index.html">Tutorial</a></li><li class="link"><a href="../quickref.html">Boards</a></li><li class="link"><a href="../shields.html">Shields</a></li><li class="link"><a href="../sensors.html">Sensors</a></li><li class="link"><a href="../../library/index.html">Library</a></li></ul></nav>
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../index.html">Home</a></li><li class="link"><a href="../tutorial/index.html">Tutorial</a></li><li class="link"><a href="../../library/index.html">Libraries</a></li><li class="link"><a href="../quickref.html">Boards</a></li><li class="link"><a href="../shields.html">Shields</a></li><li class="link"><a href="../sensors.html">Sensors</a></li><li class="link"><a href="../../reference/index.html">Language</a></li><li class="link"><a href="../../genrst/index.html">CPython</a></li><li class="link"><a href="../../develop/index.html">Internals</a></li><li class="link"><a href="../../license.html">License</a></li></ul></nav>
       <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
   <input type="text" name="q" placeholder="Search" />
   <kbd>/</kbd>
@@ -247,25 +247,39 @@ from the backlight; the backlight is then permanently on.</p>
 it to <a class="reference internal" href="../../library/omv.display.spidisplay.html#display.SPIDisplay" title="display.SPIDisplay"><code class="xref py py-class docutils literal notranslate"><span class="pre">display.SPIDisplay</span></code></a> through its <code class="docutils literal notranslate"><span class="pre">backlight</span></code> argument —
 <a class="reference internal" href="../../library/omv.display.spidisplay.html#display.SPIDisplay" title="display.SPIDisplay"><code class="xref py py-class docutils literal notranslate"><span class="pre">SPIDisplay</span></code></a> calls <code class="docutils literal notranslate"><span class="pre">backlight(value)</span></code> on the object
 whenever it needs to update the level:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">display</span>
-</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span><span class="p">,</span> <span class="n">PWM</span>
-</span><span data-line="3">
-</span><span data-line="4">
-</span><span data-line="5"><span class="k">class</span><span class="w"> </span><span class="nc">PWMBacklight</span><span class="p">:</span>
-</span><span data-line="6"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Drives a backlight pin with machine.PWM (0–100 %).&quot;&quot;&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">display</span>
+</span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="5"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span><span class="p">,</span> <span class="n">PWM</span>
+</span><span data-line="6">
 </span><span data-line="7">
-</span><span data-line="8">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
-</span><span data-line="9">        <span class="bp">self</span><span class="o">.</span><span class="n">_pwm</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="n">pin</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="8"><span class="k">class</span><span class="w"> </span><span class="nc">PWMBacklight</span><span class="p">:</span>
+</span><span data-line="9"><span class="w">    </span><span class="sd">&quot;&quot;&quot;Drives a backlight pin with machine.PWM (0–100 %).&quot;&quot;&quot;</span>
 </span><span data-line="10">
-</span><span data-line="11">    <span class="k">def</span><span class="w"> </span><span class="nf">backlight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-</span><span data-line="12">        <span class="bp">self</span><span class="o">.</span><span class="n">_pwm</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="mi">65535</span> <span class="o">/</span> <span class="mi">100</span><span class="p">))</span>
+</span><span data-line="11">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pin</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mi">200</span><span class="p">):</span>
+</span><span data-line="12">        <span class="bp">self</span><span class="o">.</span><span class="n">_pwm</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="n">pin</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 </span><span data-line="13">
-</span><span data-line="14">    <span class="k">def</span><span class="w"> </span><span class="nf">deinit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="15">        <span class="bp">self</span><span class="o">.</span><span class="n">_pwm</span><span class="o">.</span><span class="n">deinit</span><span class="p">()</span>
+</span><span data-line="14">    <span class="k">def</span><span class="w"> </span><span class="nf">backlight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+</span><span data-line="15">        <span class="bp">self</span><span class="o">.</span><span class="n">_pwm</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="mi">65535</span> <span class="o">/</span> <span class="mi">100</span><span class="p">))</span>
 </span><span data-line="16">
-</span><span data-line="17">
-</span><span data-line="18"><span class="n">lcd</span> <span class="o">=</span> <span class="n">display</span><span class="o">.</span><span class="n">SPIDisplay</span><span class="p">(</span><span class="n">backlight</span><span class="o">=</span><span class="n">PWMBacklight</span><span class="p">(</span><span class="s2">&quot;P5&quot;</span><span class="p">))</span>
-</span><span data-line="19"><span class="n">lcd</span><span class="o">.</span><span class="n">backlight</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>  <span class="c1"># 0–100</span>
+</span><span data-line="17">    <span class="k">def</span><span class="w"> </span><span class="nf">deinit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="18">        <span class="bp">self</span><span class="o">.</span><span class="n">_pwm</span><span class="o">.</span><span class="n">deinit</span><span class="p">()</span>
+</span><span data-line="19">
+</span><span data-line="20">
+</span><span data-line="21"><span class="n">csi0</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="22"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="23"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="24"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">((</span><span class="mi">128</span><span class="p">,</span> <span class="mi">160</span><span class="p">))</span>
+</span><span data-line="25">
+</span><span data-line="26"><span class="n">lcd</span> <span class="o">=</span> <span class="n">display</span><span class="o">.</span><span class="n">SPIDisplay</span><span class="p">(</span><span class="n">backlight</span><span class="o">=</span><span class="n">PWMBacklight</span><span class="p">(</span><span class="s2">&quot;P5&quot;</span><span class="p">))</span>
+</span><span data-line="27"><span class="n">lcd</span><span class="o">.</span><span class="n">backlight</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span>  <span class="c1"># 0–100</span>
+</span><span data-line="28"><span class="n">clock</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+</span><span data-line="29">
+</span><span data-line="30"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="31">    <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+</span><span data-line="32">    <span class="n">lcd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(),</span> <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">CENTER</span> <span class="o">|</span> <span class="n">image</span><span class="o">.</span><span class="n">SCALE_ASPECT_KEEP</span><span class="p">)</span>
+</span><span data-line="33">    <span class="nb">print</span><span class="p">(</span><span class="n">clock</span><span class="o">.</span><span class="n">fps</span><span class="p">())</span>
 </span></pre></div>
 </div>
 </section>
@@ -299,7 +313,7 @@ whenever it needs to update the level:</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

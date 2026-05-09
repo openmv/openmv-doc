@@ -31,7 +31,7 @@ Highlights
   framebuffers and large ROMFS assets.
 * Hardware **JPEG encoder/decoder**.
 * **22‑pin Arducam‑compatible camera flex connector** (``J6``)
-  — driver support for **OV5640** (5 MP), **OV7670**, **GC2145**,
+  — driver support for **OV5640** (5MP), **OV7670**, **GC2145**,
   **HM01B0**, and **HM0360** sensor modules.
 * **MIPI‑DSI display connector** (``J5``) for the **Arduino Giga
   Display Shield** (480×800 capacitive touch panel) plus an LTDC

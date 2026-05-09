@@ -5,7 +5,7 @@ The OpenMV Pure Thermal is a full‑system thermal imaging board built
 around the STMicroelectronics STM32H743 (Cortex‑M7 @ 480 MHz) with
 64 MB of external SDRAM, 32 MB of QSPI flash, a hardware JPEG codec,
 a 4.3" 800×480 IPS capacitive touchscreen, an HDMI output, a FLIR®
-Lepton® thermal socket, and a 5 MP OV5640 visible‑light camera. It
+Lepton® thermal socket, and a 5MP OV5640 visible‑light camera. It
 also packs Wi‑Fi, a microSD socket, a laser rangefinder, a buzzer,
 and a high‑power white illuminator.
 
@@ -25,7 +25,7 @@ Highlights
 * **64 MB external SDRAM** (~400 MB/s) plus **1 MB internal SRAM**.
 * **2 MB internal flash** + **32 MB external QSPI flash** (~50 MB/s
   read).
-* **OV5640** 5 MP rolling‑shutter visible‑light sensor.
+* **OV5640** 5MP rolling‑shutter visible‑light sensor.
 * **FLIR® Lepton® socket** — accepts any Lepton 1/2/2.5/3/3.5 module,
   radiometric or non‑radiometric, with per‑pixel temperature in
   degrees Celsius.

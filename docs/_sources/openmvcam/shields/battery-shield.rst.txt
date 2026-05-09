@@ -16,8 +16,7 @@ Highlights
 
 * 1.8-5.5 V DC barrel jack input for battery deployments
 * 6-36 V wide input with reverse-voltage and surge protection
-* 0-6 V ADC input on P6 for battery-voltage monitoring
-* Up to 800 mA draw from the battery input
+* 0-6 V ADC input on P6 for monitoring the DC barrel jack voltage
 
 Pinout
 ------
@@ -33,8 +32,8 @@ Pin reference
    :header: "Pin", "Function"
    :widths: 20, 80
 
-   "P6",        "0–6 V ADC input (level-shifted to 0–2.8 V on P6) for battery-voltage monitoring"
-   "BARREL in", "1.8–5.5 V battery input on the DC barrel jack"
+   "P6",        "0–6 V ADC input (level-shifted to 0–2.8 V on P6) for monitoring the DC barrel jack voltage"
+   "BARREL in", "1.8–5.5 V input on the DC barrel jack"
    "PWR in",    "6–36 V wide input on the terminal block (reverse-voltage tolerant)"
    "RAW out",   "3.5 V at up to 800 mA — direct from the barrel jack"
    "VIN out",   "5.6 V at up to 600 mA — regulated from the wide input via OR'ing diode"
@@ -43,26 +42,30 @@ Pin reference
 
 .. note::
 
-   The battery-monitor tap on P6 can be disconnected via the on-board
-   solder bridge if you'd rather use the pin for something else.
+   The barrel-jack voltage divider feeds P6 through a 0-ohm resistor
+   on the back of the shield. Remove the resistor to free P6 for
+   unrelated use.
+
+.. note::
+
+   A single 0-ohm resistor on the back of the shield selects whether
+   the DC barrel jack feeds RAW out (default) or VIN out — move the
+   resistor to the other pad pair to switch. Useful for legacy
+   OpenMV Cams that take their power on VIN rather than RAW.
 
 Usage
 -----
 
-Read the attached battery's voltage on P6 (the shield level-shifts
+Read the DC barrel jack voltage on P6 (the shield level-shifts
 0–6 V down to 0–2.8 V before driving the pin)::
 
     from machine import ADC
     import time
 
-    bat = ADC("P6")
+    barrel = ADC("P6")
 
     while True:
         # 0–6 V on the input scaled to 0–2.8 V on P6
-        v = bat.read_u16() * 2.8 / 65535
-        print("Battery:", v * (6.0 / 2.8), "V")
+        v = barrel.read_u16() * 2.8 / 65535
+        print("Barrel jack:", v * (6.0 / 2.8), "V")
         time.sleep_ms(500)
-
-.. warning::
-
-   This page is under construction.

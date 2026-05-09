@@ -1,7 +1,7 @@
 Gigabit PoE Shield
 ==================
 
-The Gigabit PoE Shield gives OpenMV Cams with on-board Ethernet a single-cable power-and-network connection over 802.3af PoE, while sustaining gigabit link speeds for high-bitrate streaming.
+The Gigabit PoE Shield is a 10/100/1000 Mb/s Ethernet shield with 802.3af Power-over-Ethernet for OpenMV Cams that have an on-board Ethernet PHY. One cable to a PoE switch carries both power and the network link.
 
 .. image:: ../gigabit-poe-shield-hero.jpg
     :alt: Gigabit PoE Shield
@@ -11,15 +11,16 @@ The Gigabit PoE Shield gives OpenMV Cams with on-board Ethernet a single-cable p
 For full datasheet, photos, and ordering see the
 `Gigabit PoE Shield product page <https://openmv.io/products/gigabit-poe-shield>`_.
 
+.. note::
+
+   Supported only on the OpenMV Cam RT1062 and N6.
+
 Highlights
 ----------
 
-* 10/100/1000 Mb/s Gigabit Ethernet
-* IEEE 802.3af PoE delivering up to ~6 W to the camera
-* 1500 V isolated design
-* Peak UDP transmit performance over 500 Mb/s
-* Ideal-OR'ing diode for stacking with dual-header shields
-* Compatible with the OpenMV N6 and RT1062
+* 10/100/1000 Mb/s Gigabit Ethernet with IEEE 802.3af PoE
+* Up to ~6 W to the camera via 5.6 V VIN
+* 1500 V isolated design — stacks with dual-header shields via on-board OR'ing diode
 
 Pinout
 ------
@@ -53,6 +54,14 @@ speeds, and Pairs C and D carry the additional gigabit-only pairs.
    "3.3V rail",        "Powers the shield's on-board electronics"
    "GND rail",         "Common ground"
 
+.. note::
+
+   The DC and DD pairs are tied to the camera through 0-ohm resistors
+   on the back of the shield. Remove them to free P15–P18 (the
+   gigabit-only pins on cams like the OpenMV N6) for unrelated use —
+   the shield then drops to 10/100 Ethernet since the gigabit pairs
+   are no longer connected.
+
 Usage
 -----
 
@@ -68,7 +77,3 @@ automatically once the link comes up::
     while not lan.isconnected():
         time.sleep(1)
     print("Ethernet IP:", lan.ipconfig("addr4")[0])
-
-.. warning::
-
-   This page is under construction.

@@ -30,7 +30,7 @@
       <strong>OpenMV MicroPython</strong>
     </a>
     <div class="sy-head-nav" id="head-nav">
-      <nav class="sy-head-links"><ul><li class="link"><a href="../../index.html">Home</a></li><li class="link"><a href="../tutorial/index.html">Tutorial</a></li><li class="link"><a href="../quickref.html">Boards</a></li><li class="link"><a href="../shields.html">Shields</a></li><li class="link"><a href="../sensors.html">Sensors</a></li><li class="link"><a href="../../library/index.html">Library</a></li></ul></nav>
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../index.html">Home</a></li><li class="link"><a href="../tutorial/index.html">Tutorial</a></li><li class="link"><a href="../../library/index.html">Libraries</a></li><li class="link"><a href="../quickref.html">Boards</a></li><li class="link"><a href="../shields.html">Shields</a></li><li class="link"><a href="../sensors.html">Sensors</a></li><li class="link"><a href="../../reference/index.html">Language</a></li><li class="link"><a href="../../genrst/index.html">CPython</a></li><li class="link"><a href="../../develop/index.html">Internals</a></li><li class="link"><a href="../../license.html">License</a></li></ul></nav>
       <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
   <input type="text" name="q" placeholder="Search" />
   <kbd>/</kbd>
@@ -166,8 +166,7 @@ data-aria-dark="Switch to auto color mode">
 <ul class="simple">
 <li><p>1.8-5.5 V DC barrel jack input for battery deployments</p></li>
 <li><p>6-36 V wide input with reverse-voltage and surge protection</p></li>
-<li><p>0-6 V ADC input on P6 for battery-voltage monitoring</p></li>
-<li><p>Up to 800 mA draw from the battery input</p></li>
+<li><p>0-6 V ADC input on P6 for monitoring the DC barrel jack voltage</p></li>
 </ul>
 </section>
 <section id="pinout">
@@ -190,10 +189,10 @@ data-aria-dark="Switch to auto color mode">
 </thead>
 <tbody>
 <tr class="row-even"><td><p>P6</p></td>
-<td><p>0–6 V ADC input (level-shifted to 0–2.8 V on P6) for battery-voltage monitoring</p></td>
+<td><p>0–6 V ADC input (level-shifted to 0–2.8 V on P6) for monitoring the DC barrel jack voltage</p></td>
 </tr>
 <tr class="row-odd"><td><p>BARREL in</p></td>
-<td><p>1.8–5.5 V battery input on the DC barrel jack</p></td>
+<td><p>1.8–5.5 V input on the DC barrel jack</p></td>
 </tr>
 <tr class="row-even"><td><p>PWR in</p></td>
 <td><p>6–36 V wide input on the terminal block (reverse-voltage tolerant)</p></td>
@@ -215,29 +214,33 @@ data-aria-dark="Switch to auto color mode">
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The battery-monitor tap on P6 can be disconnected via the on-board
-solder bridge if you’d rather use the pin for something else.</p>
+<p>The barrel-jack voltage divider feeds P6 through a 0-ohm resistor
+on the back of the shield. Remove the resistor to free P6 for
+unrelated use.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A single 0-ohm resistor on the back of the shield selects whether
+the DC barrel jack feeds RAW out (default) or VIN out — move the
+resistor to the other pad pair to switch. Useful for legacy
+OpenMV Cams that take their power on VIN rather than RAW.</p>
 </div>
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
-<p>Read the attached battery’s voltage on P6 (the shield level-shifts
+<p>Read the DC barrel jack voltage on P6 (the shield level-shifts
 0–6 V down to 0–2.8 V before driving the pin):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADC</span>
 </span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="3">
-</span><span data-line="4"><span class="n">bat</span> <span class="o">=</span> <span class="n">ADC</span><span class="p">(</span><span class="s2">&quot;P6&quot;</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">barrel</span> <span class="o">=</span> <span class="n">ADC</span><span class="p">(</span><span class="s2">&quot;P6&quot;</span><span class="p">)</span>
 </span><span data-line="5">
 </span><span data-line="6"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
 </span><span data-line="7">    <span class="c1"># 0–6 V on the input scaled to 0–2.8 V on P6</span>
-</span><span data-line="8">    <span class="n">v</span> <span class="o">=</span> <span class="n">bat</span><span class="o">.</span><span class="n">read_u16</span><span class="p">()</span> <span class="o">*</span> <span class="mf">2.8</span> <span class="o">/</span> <span class="mi">65535</span>
-</span><span data-line="9">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Battery:&quot;</span><span class="p">,</span> <span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">6.0</span> <span class="o">/</span> <span class="mf">2.8</span><span class="p">),</span> <span class="s2">&quot;V&quot;</span><span class="p">)</span>
+</span><span data-line="8">    <span class="n">v</span> <span class="o">=</span> <span class="n">barrel</span><span class="o">.</span><span class="n">read_u16</span><span class="p">()</span> <span class="o">*</span> <span class="mf">2.8</span> <span class="o">/</span> <span class="mi">65535</span>
+</span><span data-line="9">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Barrel jack:&quot;</span><span class="p">,</span> <span class="n">v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">6.0</span> <span class="o">/</span> <span class="mf">2.8</span><span class="p">),</span> <span class="s2">&quot;V&quot;</span><span class="p">)</span>
 </span><span data-line="10">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
 </span></pre></div>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This page is under construction.</p>
 </div>
 </section>
 </section>
@@ -270,7 +273,7 @@ solder bridge if you’d rather use the pin for something else.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

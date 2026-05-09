@@ -210,8 +210,7 @@ on each board. All the modules in *Common*, *Frozen Python helpers*, and
 *Networking helpers* (above) are available on every camera board unless
 otherwise noted.
 
-OPENMV_N6 (STM32N6)
-^^^^^^^^^^^^^^^^^^^
+.. rubric:: OPENMV_N6 (STM32N6)
 
 OpenMV N6 (STM32N6 — STMicroelectronics' first NPU-equipped MCU):
 
@@ -220,8 +219,7 @@ OpenMV N6 (STM32N6 — STMicroelectronics' first NPU-equipped MCU):
 * :mod:`ssd1306` — OLED driver
 * :mod:`tb6612` — TB6612 motor driver
 
-OPENMV_AE3 (Alif Ensemble E3)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: OPENMV_AE3 (Alif Ensemble E3)
 
 OpenMV AE3 (Alif Ensemble E3 MCU):
 
@@ -230,8 +228,7 @@ OpenMV AE3 (Alif Ensemble E3 MCU):
 * :mod:`romfs` — ROMFS helper utilities
 * :mod:`pca9674a` — PCA9674A I2C expander driver
 
-OPENMV_RT1060 (i.MX RT1060)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: OPENMV_RT1060 (i.MX RT1060)
 
 OpenMV RT1060:
 
@@ -244,8 +241,7 @@ OpenMV RT1060:
 * :mod:`tb6612` — TB6612 motor driver
 * :mod:`pca9674a` — PCA9674A I2C expander driver
 
-OPENMVPT (Pure Thermal, STM32H7 + DVI/HDMI)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: OPENMVPT (Pure Thermal, STM32H7 + DVI/HDMI)
 
 OpenMV Pure Thermal:
 
@@ -260,8 +256,7 @@ OpenMV Pure Thermal:
 * :mod:`ssd1306` — OLED driver
 * :mod:`tb6612` — TB6612 motor driver
 
-OPENMV2 / OPENMV3 / OPENMV4 / OPENMV4P (STM32)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: OPENMV2 / OPENMV3 / OPENMV4 / OPENMV4P (STM32)
 
 Legacy STM32-based OpenMV camera boards:
 
@@ -274,8 +269,7 @@ Legacy STM32-based OpenMV camera boards:
 * :mod:`ssd1306` — OLED driver
 * :mod:`tb6612` — TB6612 motor driver
 
-ARDUINO_GIGA (STM32H7 + touchscreen)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: ARDUINO_GIGA (STM32H7 + touchscreen)
 
 Arduino Giga R1 WiFi:
 
@@ -287,8 +281,7 @@ Arduino Giga R1 WiFi:
 * :mod:`gt911` — GT911 5-point capacitive touch controller
 * :mod:`ft5x06` — capacitive touchscreen driver
 
-ARDUINO_PORTENTA_H7 (STM32H7)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: ARDUINO_PORTENTA_H7 (STM32H7)
 
 Arduino Portenta H7:
 
@@ -302,8 +295,7 @@ Arduino Portenta H7:
 * :mod:`ssd1306` — OLED driver
 * :mod:`tb6612` — TB6612 motor driver
 
-ARDUINO_NICLA_VISION (STM32H7)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: ARDUINO_NICLA_VISION (STM32H7)
 
 Arduino Nicla Vision:
 
@@ -315,8 +307,7 @@ Arduino Nicla Vision:
 * :mod:`onewire` — 1-Wire bus protocol
 * :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
 
-ARDUINO_NANO_33_BLE_SENSE (Nordic nRF52840)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: ARDUINO_NANO_33_BLE_SENSE (Nordic nRF52840)
 
 Arduino Nano 33 BLE Sense — board-specific :doc:`imu <imu>` wrapper
 that selects between the LSM9DS1 (Rev 1) and BMI270 + BMM150 (Rev 2)
@@ -334,8 +325,7 @@ sensor sets, plus:
 * :mod:`ds18x20` — DS18x20 temperature sensor driver
 * :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
 
-ARDUINO_NANO_RP2040_CONNECT / RPI_PICO (RP2)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. rubric:: ARDUINO_NANO_RP2040_CONNECT / RPI_PICO (RP2)
 
 RP2040-based boards. The Arduino Nano RP2040 Connect adds a few extra
 companion-chip drivers; the Raspberry Pi Pico ships only with the core

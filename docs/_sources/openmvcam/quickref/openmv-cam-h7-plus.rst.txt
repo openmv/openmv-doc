@@ -3,7 +3,7 @@ OpenMV Cam H7 Plus
 
 The OpenMV Cam H7 Plus pairs the STMicroelectronics STM32H743
 (Cortex‑M7 @ 480 MHz) with 32 MB of external SDRAM, 32 MB of QSPI
-flash, a hardware JPEG codec, and the OV5640 5 MP camera module on a
+flash, a hardware JPEG codec, and the OV5640 5MP camera module on a
 removable carrier. The extra memory is well suited to high‑resolution
 capture and large image buffers.
 
@@ -24,7 +24,7 @@ Highlights
   internal SRAM**.
 * **2 MB internal flash** + **32 MB external QSPI flash** (~100 MB/s
   read).
-* **OV5640** 5 MP rolling‑shutter sensor.
+* **OV5640** 5MP rolling‑shutter sensor.
 * **Full‑speed USB** (12 Mb/s) — appears as VCP + USB mass storage
   to the host.
 * **microSD** socket — SD up to 2 GB, SDHC up to 32 GB, SDXC up to

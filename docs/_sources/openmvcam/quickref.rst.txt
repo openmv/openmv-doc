@@ -56,7 +56,7 @@ OpenMV cameras
            <div class="board-thumb"><img src="../_images/openmv-h7-plus-hero.jpg" alt="OpenMV H7 Plus"></div>
            <div class="board-body">
              <h4>OpenMV H7 Plus</h4>
-             <p>STM32H743 with 32 MB external SDRAM and a 5-MP OV5640 sensor.</p>
+             <p>STM32H743 with 32 MB external SDRAM and a 5MP OV5640 sensor.</p>
              <span class="card-arrow">Explore →</span>
            </div>
          </a>

@@ -16,9 +16,21 @@ BOSON640: int
 CIF: int
 """352x288 resolution for the camera sensor."""
 EXT_TRIGGER_FALLING: int
-"""External trigger falling-edge event."""
+"""
+GENX320 event type (column [0]) — the sensor’s external
+trigger pin saw a falling edge. The GENX320’s external trigger
+input is wired to the camera’s frame-sync line, also routed
+to P10 on the processor and the pin header. X/Y are
+unused.
+"""
 EXT_TRIGGER_RISING: int
-"""External trigger rising-edge event."""
+"""
+GENX320 event type (column [0]) — the sensor’s external
+trigger pin saw a rising edge. The GENX320’s external trigger
+input is wired to the camera’s frame-sync line, also routed
+to P10 on the processor and the pin header. X/Y are
+unused.
+"""
 FHD: int
 """1920x1080 resolution for the camera sensor. Only works for the OV5640 camera."""
 FROGEYE2020: int
@@ -30,37 +42,108 @@ GENX320: int
 GENX320ES: int
 """CSI.cid returns this for the GENX320 (engineering sample) camera."""
 GENX320_BIASES_ACTIVE_MARKER: int
-"""Active marker biases for the GENX320 camera sensor."""
+"""
+Tuned for tracking high-contrast blinking LEDs (active markers)
+— contrast thresholds raised so only sharp transitions trigger,
+FO and HPF cranked high to maximize bandwidth and reject slow
+ambient drift, REFR=0 so every blink edge is captured.
+"""
 GENX320_BIASES_DEFAULT: int
-"""Default biases for the GENX320 camera sensor."""
+"""
+GenX320 datasheet defaults — balanced sensitivity, noise, and
+bandwidth for general scenes.
+"""
 GENX320_BIASES_HIGH_SPEED: int
-"""High speed biases for the GENX320 camera sensor."""
+"""
+Tuned for fast-motion scenes — higher FO for wider pixel
+bandwidth, higher HPF to reject slow changes, higher REFR for
+a longer dead time after each event so the readout doesn’t
+saturate.
+"""
 GENX320_BIASES_LOW_LIGHT: int
-"""Low light biases for the GENX320 camera sensor."""
+"""
+Tuned for low-light conditions — both contrast thresholds
+loosened for higher sensitivity, FO lowered, HPF disabled so
+slow brightness changes still register.
+"""
 GENX320_BIASES_LOW_NOISE: int
-"""Low noise biases for the GENX320 camera sensor."""
+"""
+Driver default — lower sensitivity than DEFAULT (raised
+contrast thresholds) and a lower FO for less background-noise
+activity. Best for static or slow scenes where false events
+would dominate.
+"""
 GENX320_BIAS_DIFF_OFF: int
-"""Selects the GENX320 DIFF OFF bias."""
+"""
+Negative comparator contrast threshold — controls how much a
+pixel has to darken before a csi.PIX_OFF_EVENT fires. Lower
+value = more sensitive (more events).
+"""
 GENX320_BIAS_DIFF_ON: int
-"""Selects the GENX320 DIFF ON bias."""
+"""
+Positive comparator contrast threshold — controls how much a
+pixel has to brighten before a csi.PIX_ON_EVENT fires. Lower
+value = more sensitive (more events).
+"""
 GENX320_BIAS_FO: int
-"""Selects the GENX320 FO bias."""
+"""
+Pixel low-pass cut-off frequency — trades pixel bandwidth
+(speed/latency) against background-noise activity. Higher
+value = faster pixel response, more noise.
+"""
 GENX320_BIAS_HPF: int
-"""Selects the GENX320 HPF bias."""
+"""
+Pixel high-pass cut-off frequency — rejects slow brightness
+changes. Higher value = slower changes filtered out (only
+fast transitions register).
+"""
 GENX320_BIAS_REFR: int
-"""Selects the GENX320 REFR bias."""
+"""
+Pixel refractory period — dead time after a pixel emits an
+event during which it cannot fire again. Higher value =
+longer dead time, fewer events from a busy pixel.
+"""
 GENX320_MODE_EVENT: int
-"""Sets the GENX320 to event mode."""
+"""
+Event mode — bypasses the on-chip histogram and streams raw
+events into a numpy ndarray with microsecond timestamps,
+for applications that need full temporal detail rather than a
+pre-binned frame.
+"""
 GENX320_MODE_HISTO: int
-"""Sets the GENX320 to histogram mode."""
+"""
+Histogram mode — events are accumulated on-chip into per-pixel
+bins and reported as a 320x320 grayscale frame at the
+configured rate (~20-350 FPS). The cam looks like a regular
+camera, so all the standard image-processing routines work
+directly.
+"""
 GENX320_STC_DISABLE: int
-"""Disable the GENX320 STC/trail filter."""
+"""
+Disable the GENX320 STC/trail filter — every event passes
+through.
+"""
 GENX320_STC_ONLY: int
-"""Enable only the spatio-temporal contrast filter on the GENX320."""
+"""
+Keeps the second event of a burst; drops the first event
+and any later events. Takes one parameter, stc_threshold
+in milliseconds — events within that window of a prior event
+on the same pixel are considered part of the same burst.
+"""
 GENX320_STC_TRAIL: int
-"""Enable both the STC and trail filters on the GENX320."""
+"""
+Keeps the first event of a burst plus subsequent edges —
+combines csi.GENX320_STC_ONLY and csi.GENX320_STC_TRAIL_ONLY.
+Takes two parameters, stc_threshold and trail_threshold
+(both ms); the sensor requires the two to stay within roughly
+a 13:1 ratio.
+"""
 GENX320_STC_TRAIL_ONLY: int
-"""Enable only the trail filter on the GENX320."""
+"""
+Keeps the first event of a burst; drops subsequent events
+on the same pixel until trail_threshold has elapsed. Takes
+one parameter, trail_threshold in milliseconds.
+"""
 GRAYSCALE: int
 """GRAYSCALE pixel format (Y from YUV422). Each pixel is 8-bits."""
 HD: int
@@ -74,21 +157,86 @@ HQVGA: int
 HVGA: int
 """480x320 resolution for the camera sensor."""
 IOCTL_GENX320_CALIBRATE: int
-"""Automatically turns off hot pixels on the GENX320. See CSI.ioctl."""
+"""
+Automatically disables hot pixels — pixels that fire
+spuriously even on a static scene. The driver builds a
+320x320 per-pixel hit count, computes the mean and standard
+deviation, and disables any pixel whose count exceeds
+mean + sigma * stddev. Pass an event-count budget
+(events to tally before computing statistics — higher = more
+reliable estimate, slower; ~10000 is a good default) and a
+sigma float (lower = more aggressive, ~0.5 default). Returns
+the number of pixels disabled. Aim the cam at a static scene
+first so motion-driven events don’t get counted against
+pixels that are actually fine. See CSI.ioctl.
+"""
 IOCTL_GENX320_READ_EVENTS: int
-"""Populates an ndarray with event information from the GENX320. See CSI.ioctl."""
+"""
+Reads raw events into a uint16 ndarray of shape
+(EVT_res, 6) (with EVT_res matching the buffer size
+passed to csi.IOCTL_GENX320_SET_MODE). The columns are
+[0] event type (csi.PIX_OFF_EVENT, csi.PIX_ON_EVENT,
+csi.EXT_TRIGGER_RISING/FALLING,
+csi.RST_TRIGGER_RISING/FALLING), [1] seconds
+timestamp, [2] milliseconds, [3] microseconds,
+[4] X coord (0-319), [5] Y coord (0-319). Returns the
+number of events written into the buffer, leaving older rows
+beyond that count untouched. See CSI.ioctl.
+"""
 IOCTL_GENX320_READ_EVENTS_RAW: int
-"""Returns a raw event-frame image.Image from the GENX320. See CSI.ioctl."""
+"""
+Returns a raw event-frame image.Image from the GENX320,
+with the events still in the chip’s native packed encoding —
+useful if you want to forward the raw stream to a PC for
+off-line decoding rather than process it on the cam. See
+CSI.ioctl.
+"""
 IOCTL_GENX320_SET_AFK: int
-"""Sets the GENX320 anti-flicker filter. See CSI.ioctl."""
+"""
+Sets the GENX320 anti-flicker (AFK) filter, which rejects
+events from pixels toggling at a periodic frequency band
+(fluorescent lighting, LED-driven displays, etc.). Pass
+enable (1 to enable, 0 to disable) and, when enabling,
+the band edges in hertz: (enable, freq_low_hz, freq_high_hz).
+See CSI.ioctl.
+"""
 IOCTL_GENX320_SET_BIAS: int
-"""Sets a single GENX320 camera sensor bias. See CSI.ioctl."""
+"""
+Sets a single GENX320 sensor bias to a DAC value. Pass a
+GENX320_BIAS_* constant (csi.GENX320_BIAS_DIFF_OFF,
+csi.GENX320_BIAS_DIFF_ON, csi.GENX320_BIAS_FO,
+csi.GENX320_BIAS_HPF, or csi.GENX320_BIAS_REFR) and an
+integer DAC value. Each bias is independent — call this ioctl
+repeatedly to tweak only the biases you need after applying a
+preset. See CSI.ioctl.
+"""
 IOCTL_GENX320_SET_BIASES: int
-"""Sets the GENX320 sensor biases to a preset. See CSI.ioctl."""
+"""
+Sets the GENX320 sensor biases to one of the
+GENX320_BIASES_* presets. See CSI.ioctl. After
+CSI.reset the driver applies csi.GENX320_BIASES_LOW_NOISE,
+not csi.GENX320_BIASES_DEFAULT — use this ioctl to switch to
+a different preset when the application needs more sensitivity
+or bandwidth.
+"""
 IOCTL_GENX320_SET_MODE: int
-"""Sets the GENX320 camera sensor operating mode. See CSI.ioctl."""
+"""
+Sets the GENX320 operating mode. Pass csi.GENX320_MODE_HISTO
+for the on-chip event histogram (the cam behaves like a
+regular grayscale camera at the configured framerate) or
+csi.GENX320_MODE_EVENT followed by the row-axis length of
+the event ndarray (a power of two between 1024 and
+65536) for raw event streaming. See CSI.ioctl.
+"""
 IOCTL_GENX320_SET_STC: int
-"""Sets the GENX320 spatio-temporal contrast filter mode. See CSI.ioctl."""
+"""
+Sets the GENX320 spatio-temporal contrast (STC) filter mode.
+Pass a GENX320_STC_* constant
+(csi.GENX320_STC_DISABLE, csi.GENX320_STC_ONLY,
+csi.GENX320_STC_TRAIL_ONLY, csi.GENX320_STC_TRAIL)
+followed by the threshold(s) the mode requires (in
+milliseconds). See CSI.ioctl.
+"""
 IOCTL_GET_FOV_WIDE: int
 """Returns whether CSI.framesize is optimizing for field-of-view over FPS. See CSI.ioctl."""
 IOCTL_GET_NIGHT_MODE: int
@@ -196,9 +344,17 @@ PAG7936: int
 PAJ6100: int
 """CSI.cid returns this for the PAJ6100 camera."""
 PIX_OFF_EVENT: int
-"""Pixel-off event."""
+"""
+GENX320 event type (column [0]) — a pixel detected a
+brightness decrease (the negative-contrast threshold was
+crossed). Columns [4]/[5] carry the pixel’s X/Y.
+"""
 PIX_ON_EVENT: int
-"""Pixel-on event."""
+"""
+GENX320 event type (column [0]) — a pixel detected a
+brightness increase (the positive-contrast threshold was
+crossed). Columns [4]/[5] carry the pixel’s X/Y.
+"""
 QCIF: int
 """176x144 resolution for the camera sensor."""
 QHD: int
@@ -216,9 +372,17 @@ QXGA: int
 RGB565: int
 """RGB565 pixel format. Each pixel is 16-bits (5-bits red, 6-bits green, 5-bits blue)."""
 RST_TRIGGER_FALLING: int
-"""Pixel reset falling-edge event."""
+"""
+GENX320 event type (column [0]) — pixel-reset trigger,
+falling edge. X/Y are unused. Not generated by the firmware
+at this time.
+"""
 RST_TRIGGER_RISING: int
-"""Pixel reset rising-edge event."""
+"""
+GENX320 event type (column [0]) — pixel-reset trigger,
+rising edge. X/Y are unused. Not generated by the firmware
+at this time.
+"""
 SIF: int
 """352x240 resolution for the camera sensor."""
 SOFTCSI: int

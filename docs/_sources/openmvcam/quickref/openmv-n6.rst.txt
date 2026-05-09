@@ -22,7 +22,7 @@ Highlights
 * **STM32N657 Cortex‑M55** at 800 MHz (1280 DMIPS) with ARM Helium 128‑bit
   SIMD — 6.4 gigaops vector throughput.
 * **1 GHz NPU**, 600 GOPS INT8 — runs YOLOv8/YOLOv11 detection at 30 FPS.
-* **ISP** for up to 5 MP RAW Bayer, **2D GPU** for scaling and 3D rotation,
+* **ISP** for up to 5MP RAW Bayer, **2D GPU** for scaling and 3D rotation,
   **H.264 encode** to 1080p, and hardware **JPEG codec**.
 * **64 MB external SDRAM** (16‑bit @ 200 MHz DDR, 800 MB/s) plus **4.2 MB
   internal SRAM** and **32 MB octal flash** (200 MHz DDR, 400 MB/s).

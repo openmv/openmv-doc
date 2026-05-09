@@ -74,7 +74,10 @@ it to :class:`display.SPIDisplay` through its ``backlight`` argument —
 :class:`~display.SPIDisplay` calls ``backlight(value)`` on the object
 whenever it needs to update the level::
 
+    import csi
+    import time
     import display
+    import image
     from machine import Pin, PWM
 
 
@@ -91,5 +94,16 @@ whenever it needs to update the level::
             self._pwm.deinit()
 
 
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize((128, 160))
+
     lcd = display.SPIDisplay(backlight=PWMBacklight("P5"))
     lcd.backlight(50)  # 0–100
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        lcd.write(csi0.snapshot(), hint=image.CENTER | image.SCALE_ASPECT_KEEP)
+        print(clock.fps())

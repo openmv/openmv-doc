@@ -11,6 +11,10 @@ The WiFi Shield adds 2.4 GHz Wi-Fi to OpenMV Cams that don't have on-board netwo
 For full datasheet, photos, and ordering see the
 `WiFi Shield product page <https://openmv.io/products/wifi-shield-1>`_.
 
+.. note::
+
+   Supported only on the OpenMV Cam, M4, M7, H7, and H7 Plus.
+
 Highlights
 ----------
 

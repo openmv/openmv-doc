@@ -4,7 +4,7 @@ OpenMV Cam RT1062
 The OpenMV Cam RT1062 is a low‑power machine‑vision board built
 around the NXP i.MX RT1062 (Cortex‑M7 @ 600 MHz). The board pairs
 USB‑C high‑speed networking, Wi‑Fi/Bluetooth, and 10/100 Ethernet
-with an OV5640 5 MP sensor on a removable carrier. **The camera only
+with an OV5640 5MP sensor on a removable carrier. **The camera only
 draws ~30 µA from a LiPo battery in deep sleep**, which makes it well
 suited to battery‑powered projects.
 
@@ -23,7 +23,7 @@ Highlights
 * **32 MB external SDRAM** (16‑bit @ 160 MHz, 320 MB/s) plus **1 MB
   internal SRAM** and **16 MB QSPI flash** (133 MHz 4‑bit SDR,
   66 MB/s read); **4 KB EEPROM** on R6+.
-* **OV5640** 5 MP rolling‑shutter sensor.
+* **OV5640** 5MP rolling‑shutter sensor.
 * **Onboard IMU** (12‑bit 3‑axis accelerometer, ±2/4/8 g).
 * **High‑speed USB‑C** (480 Mb/s, 1.5 A current limit), **10/100 Mb/s
   Ethernet** (PoE‑capable via shield), **Wi‑Fi a/b/g/n** +

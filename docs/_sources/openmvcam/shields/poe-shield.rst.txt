@@ -1,7 +1,7 @@
 PoE Shield
 ==========
 
-The PoE Shield gives OpenMV Cams with on-board Ethernet a single-cable IP-camera deployment by delivering both power and network over 802.3af PoE. Use it when 100 Mb/s is enough; reach for the Gigabit PoE Shield when you need more bandwidth.
+The PoE Shield adds 802.3af Power-over-Ethernet to OpenMV Cams that have an on-board Ethernet PHY — one cable to a PoE switch carries both power and the network link.
 
 .. image:: ../poe-shield-hero.jpg
     :alt: PoE Shield
@@ -11,14 +11,16 @@ The PoE Shield gives OpenMV Cams with on-board Ethernet a single-cable IP-camera
 For full datasheet, photos, and ordering see the
 `PoE Shield product page <https://openmv.io/products/poe-shield>`_.
 
+.. note::
+
+   Supported only on the OpenMV Cam RT1062 and N6.
+
 Highlights
 ----------
 
 * 10/100 Mb/s Ethernet with IEEE 802.3af PoE
 * Up to 5.67 W to the camera via 5.4 V VIN
 * 1500 V isolated design — stacks with dual-header shields
-* Peak UDP transmit over 90 Mb/s
-* Compatible with the OpenMV N6 and RT1062
 
 Pinout
 ------
@@ -58,7 +60,3 @@ automatically once the link comes up::
     while not lan.isconnected():
         time.sleep(1)
     print("Ethernet IP:", lan.ipconfig("addr4")[0])
-
-.. warning::
-
-   This page is under construction.

@@ -30,7 +30,7 @@
       <strong>OpenMV MicroPython</strong>
     </a>
     <div class="sy-head-nav" id="head-nav">
-      <nav class="sy-head-links"><ul><li class="link"><a href="../../index.html">Home</a></li><li class="link"><a href="../tutorial/index.html">Tutorial</a></li><li class="link"><a href="../quickref.html">Boards</a></li><li class="link"><a href="../shields.html">Shields</a></li><li class="link"><a href="../sensors.html">Sensors</a></li><li class="link"><a href="../../library/index.html">Library</a></li></ul></nav>
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../index.html">Home</a></li><li class="link"><a href="../tutorial/index.html">Tutorial</a></li><li class="link"><a href="../../library/index.html">Libraries</a></li><li class="link"><a href="../quickref.html">Boards</a></li><li class="link"><a href="../shields.html">Shields</a></li><li class="link"><a href="../sensors.html">Sensors</a></li><li class="link"><a href="../../reference/index.html">Language</a></li><li class="link"><a href="../../genrst/index.html">CPython</a></li><li class="link"><a href="../../develop/index.html">Internals</a></li><li class="link"><a href="../../license.html">License</a></li></ul></nav>
       <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
   <input type="text" name="q" placeholder="Search" />
   <kbd>/</kbd>
@@ -191,19 +191,19 @@ data-aria-dark="Switch to auto color mode">
 </thead>
 <tbody>
 <tr class="row-even"><td><p>P1</p></td>
-<td><p>CAN TX (default)</p></td>
+<td><p>CAN TX → transceiver in (default)</p></td>
 </tr>
 <tr class="row-odd"><td><p>P2</p></td>
-<td><p>CAN TX (alternative — selectable via solder bridge)</p></td>
+<td><p>CAN TX → transceiver in (alternative)</p></td>
 </tr>
 <tr class="row-even"><td><p>P3</p></td>
-<td><p>CAN RX</p></td>
+<td><p>CAN RX ← transceiver out</p></td>
 </tr>
 <tr class="row-odd"><td><p>P4</p></td>
 <td><p>RS-232 TX → drives the line out</p></td>
 </tr>
 <tr class="row-even"><td><p>P5</p></td>
-<td><p>RS-232 RX ← receives line in</p></td>
+<td><p>RS-232 RX ← receives the line in</p></td>
 </tr>
 <tr class="row-odd"><td><p>P6</p></td>
 <td><p>Level-shifted AIN readback (0–3.3 V on P6)</p></td>
@@ -233,7 +233,7 @@ data-aria-dark="Switch to auto color mode">
 <p class="admonition-title">Note</p>
 <p>AIN is overvoltage-protected up to ±36 V and defaults to a 0–5 V
 voltage input, scaled down to 0–3.3 V on P6. Bridge the 4–20 mA
-mode shunt on the back of the shield to switch AIN to a 4–20 mA
+mode shunt on the front of the shield to switch AIN to a 4–20 mA
 current-loop input.</p>
 </div>
 <div class="admonition note">
@@ -244,13 +244,45 @@ the shield level-shifts 0–5 V on SYN down to 0–3.3 V on P10. Change
 the on-board solder jumper to flip P10 into an output, level-shifting
 0–3.3 V on P10 up to 0–5 V on SYN.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Each of P1, P2, P3, P4, P5, P6, and P10 can be reclaimed for
+unrelated use. P1, P3, P4, P5, P6, and P10 are connected by
+default — P1, P3, P6, and P10 through back-side solder jumpers,
+P4 and P5 through front-side solder jumpers. Open the jumper on
+any pin you want to free. P2 defaults to disconnected: bridge
+its back-side jumper to route CAN TX to P2 instead (and open
+P1’s back-side jumper to release P1).</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The P1/P2 split exists so the shield works across processor
+families. The OpenMV Cam IMXRT boards (RT1062) can route CAN to
+P1, so they use the default mapping. STM32 boards can’t reach
+P1 with their CAN peripheral, so bridge P2’s back-side jumper
+(and open P1’s) to use the alternative.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The CAN bus termination is connected by default — split into two
+60 Ω halves in series between CANH and CANL with a cap to ground
+at the midpoint (a 120 Ω AC-coupled split termination). Open the
+two solder pads to disconnect each half independently.</p>
+</div>
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Link to this heading">¶</a></h2>
-<p>Send and receive CAN-FD frames on P1 (TX) / P3 (RX):</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">CAN(0)</span></code> and <code class="docutils literal notranslate"><span class="pre">UART(1)</span></code> peripheral numbers below follow
+the IMXRT mapping (default P1 wiring). On another processor the
+bus wired to these pins may be different — check your board’s
+reference.</p>
+</div>
+<p>Send and receive CAN-FD frames — TX on P1 (default) or P2 (alternative), RX on P3:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAN</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">can</span> <span class="o">=</span> <span class="n">CAN</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1_000_000</span><span class="p">)</span>
+</span><span data-line="3"><span class="n">can</span> <span class="o">=</span> <span class="n">CAN</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1_000_000</span><span class="p">)</span>
 </span><span data-line="4"><span class="n">can</span><span class="o">.</span><span class="n">send</span><span class="p">([</span><span class="mh">0xDE</span><span class="p">,</span> <span class="mh">0xAD</span><span class="p">,</span> <span class="mh">0xBE</span><span class="p">,</span> <span class="mh">0xEF</span><span class="p">],</span> <span class="mh">0x123</span><span class="p">)</span>
 </span><span data-line="5"><span class="nb">print</span><span class="p">(</span><span class="n">can</span><span class="o">.</span><span class="n">recv</span><span class="p">())</span>
 </span></pre></div>
@@ -258,7 +290,7 @@ the on-board solder jumper to flip P10 into an output, level-shifting
 <p>Echo bytes over RS-232 on P4 (TX) / P5 (RX):</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">UART</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">uart</span> <span class="o">=</span> <span class="n">UART</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
+</span><span data-line="3"><span class="n">uart</span> <span class="o">=</span> <span class="n">UART</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
 </span><span data-line="4"><span class="n">uart</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;hello</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 </span><span data-line="5"><span class="nb">print</span><span class="p">(</span><span class="n">uart</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
 </span></pre></div>
@@ -285,10 +317,6 @@ camera with another device pulling SYN low:</p>
 </span><span data-line="6"><span class="n">syn</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P10&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IN</span><span class="p">)</span>
 </span><span data-line="7"><span class="n">syn</span><span class="o">.</span><span class="n">irq</span><span class="p">(</span><span class="n">on_sync</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IRQ_FALLING</span><span class="p">)</span>
 </span></pre></div>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This page is under construction.</p>
 </div>
 </section>
 </section>
@@ -321,7 +349,7 @@ camera with another device pulling SYN low:</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

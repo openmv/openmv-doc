@@ -16,8 +16,6 @@ Highlights
 
 * 6 µA standby PIR sensor for years of battery operation
 * Eight 3500 K white LEDs and eight 850 nm IR LEDs (PWM-dimmable)
-* 90 deg x 90 deg detection cone, up to 7 m range
-* Wakes the camera from deep sleep on the P11 pin
 
 Pinout
 ------
@@ -33,13 +31,30 @@ Pin reference
    :header: "Pin", "Function"
    :widths: 20, 80
 
-   "P7",        "PWM control for the white LEDs (swappable with P8 via solder bridge)"
+   "P7",        "PWM control for the white LEDs"
    "P8",        "PWM control for the 850 nm IR LEDs"
-   "P9",        "Wakeup (alternative — selectable via solder bridge)"
+   "P9",        "Wakeup (alternative)"
    "P11",       "Wakeup (default) — pulls low when the PIR detects motion"
    "RAW rail",  "Always-on power for the PIR sensor — keeps motion detection alive while the camera is in deep sleep"
    "3.3V rail", "Powers the shield's on-board electronics"
    "GND rail",  "Common ground"
+
+.. note::
+
+   Each of P7, P8, P9, and P11 can be reclaimed for unrelated use.
+   P7, P8, and P11 are connected by default through back-side solder
+   jumpers — open the jumper on any pin you want to free. P9 defaults
+   to disconnected: bridge its back-side jumper to route the wakeup
+   signal to P9 instead (and open P11's back-side jumper to release
+   P11).
+
+.. note::
+
+   P11 is the wakeup pin on all modern OpenMV Cams — leave the shield
+   on its default mapping for ``deepsleep()`` motion wake. The P9
+   alternative exists for legacy OpenMV Cams, which don't have a
+   dedicated wakeup line — P9 lands on a regular GPIO that you'd
+   poll or attach an IRQ to instead.
 
 Usage
 -----
@@ -55,13 +70,8 @@ PWM-dim the white and IR illumination LEDs::
     ir.duty_u16(16_384)  # 25% IR
 
 Wake the camera from deep sleep on motion. P11 (the default wakeup
-line) pulls low when the PIR triggers::
+line) pulls low when the PIR triggers and resets the camera::
 
-    from machine import Pin, deepsleep
+    from machine import deepsleep
 
-    Pin("P11", Pin.IN, Pin.PULL_UP).irq(trigger=Pin.IRQ_FALLING, wake=4)
     deepsleep()  # the next motion event resets the camera
-
-.. warning::
-
-   This page is under construction.
