@@ -274,6 +274,9 @@ The on‑board MP34DT05 PDM microphone is captured through
     audio.init(channels=1, frequency=16000, gain_db=24)
     audio.start_streaming(loudness)
 
+    while True:
+        pass
+
 Bluetooth LE
 ~~~~~~~~~~~~
 
@@ -509,6 +512,16 @@ When connected over USB, ``/flash`` enumerates as a USB mass‑storage
 drive on the host, letting you edit ``boot.py``, ``main.py``, and any
 other files directly. **Eject the drive before resetting the board**
 so the host flushes its cached writes.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The Nano 33 BLE Sense ships with:
+
+* ``/flash`` — **64 KB** FAT filesystem, read/write.
+
+The Nano 33 BLE Sense build does not include a ROMFS; ship Python
+modules on ``/flash`` directly.
 
 Software libraries
 ------------------

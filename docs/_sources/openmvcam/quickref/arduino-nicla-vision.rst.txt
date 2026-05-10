@@ -31,7 +31,8 @@ Highlights
   microphone** (MP34DT06JTR), and **VL53L1CB** time‑of‑flight ranger
   (up to ~4 m).
 * **Wi‑Fi b/g/n** (2.4 GHz) + **Bluetooth LE 5.1** via the Murata
-  1DX (CYW4343W) module — uses the supplied **U.FL antenna**.
+  1DX (CYW4343W) module — connects to the supplied antenna via an
+  on‑board **U.FL connector**.
 * **High‑speed USB** (480 Mb/s) over **Micro USB** through an
   external ULPI PHY (USB3320C).
 * **13 user I/O pins** on the Arduino edge headers — four digital
@@ -174,7 +175,7 @@ Recovery and debug pins
   reset.
 
 The Nicla Vision uses Arduino's standard **double‑tap reset** to
-enter the STM32H747 ROM bootloader — quickly press the reset button
+enter Arduino's bootloader — quickly press the reset button
 twice and the board enumerates as a DFU device. OpenMV IDE uses this
 mode to reflash the firmware.
 
@@ -185,7 +186,7 @@ adapter:
 
 * **P1 / P2** — internal **PMIC** I²C bus on PF0 (SDA) and PF1
   (SCL). This is ``machine.I2C(2)`` on the Nicla Vision and carries
-  the PMIC, fuel gauge, ToF, and crypto element traffic.
+  the PMIC, fuel gauge, and ToF traffic.
 * **P3** — TMS / SWDIO  (PA13)
 * **P4** — TCK / SWCLK  (PA14)
 * **P5** — NRST
@@ -234,8 +235,52 @@ The GC2145 is driven through the :doc:`/library/omv.csi` module::
     while True:
         img = cam.snapshot()
 
-The sensor is connected by a small flex cable to a connector on the
-back of the board.
+When you ask for a small framesize the GC2145 driver crops a
+proportionally small readout window from the sensor — by default
+the readout-to-output downscale ratio is capped at 3x to keep the
+frame rate up. `csi.IOCTL_SET_FOV_WIDE` raises that cap to 5x,
+which means the driver pulls from a wider area of the sensor when
+streaming small resolutions. The result is a noticeably wider field
+of view at small framesizes, at the cost of some throughput::
+
+    cam.ioctl(csi.IOCTL_SET_FOV_WIDE, True)
+    cam.ioctl(csi.IOCTL_GET_FOV_WIDE)  # returns the current setting
+
+M4 core
+~~~~~~~
+
+The Cortex‑M4 core is exposed through :doc:`openamp </library/openamp>`
+for inter‑processor communication. The OpenMV firmware runs on the
+M7 only; the M4 has no MicroPython runtime of its own, so using it
+means building a separate C firmware image and loading it from the
+filesystem via :class:`openamp.RemoteProc`.
+Pre‑built example firmware that implements a virtual UART endpoint
+is available in the
+`openamp_vuart <https://github.com/iabdalkader/openamp_vuart>`_
+repository — follow its README to build ``vuart.elf``::
+
+    import openamp
+    import time
+
+    def ept_recv_callback(src_addr, data):
+        print("Received:", data.decode())
+
+    ept = openamp.Endpoint("vuart-channel", callback=ept_recv_callback)
+
+    rproc = openamp.RemoteProc("vuart.elf")
+    rproc.start()
+
+    count = 0
+    while True:
+        if ept.is_ready():
+            ept.send("Hello World %d!" % count, timeout=1000)
+            count += 1
+        time.sleep_ms(1000)
+
+In practice this support is best treated as a demonstration of the
+openamp interface rather than a working dual‑core platform — the
+M4 cannot be reset independently of the M7, so stopping the M4
+forces a full system reboot.
 
 Microphone
 ~~~~~~~~~~
@@ -257,6 +302,9 @@ example, a simple loudness detector::
 
     audio.init(channels=1, frequency=16000, gain_db=24)
     audio.start_streaming(loudness)
+
+    while True:
+        pass
 
 IMU
 ~~~
@@ -438,7 +486,7 @@ Wi‑Fi
 
 The on‑board Murata 1DX (CYW4343W) is exposed via
 :doc:`/library/network` as a station interface. Connect the supplied
-**U.FL antenna** to the ``J6`` connector before bringing up the
+antenna to the on‑board **U.FL connector** before bringing up the
 radio::
 
     import network, time
@@ -716,7 +764,7 @@ Firmware update (DFU)
 ~~~~~~~~~~~~~~~~~~~~~
 
 The Nicla Vision uses Arduino's standard **double‑tap reset** to
-enter the STM32H747 ROM bootloader. Quickly press the reset button
+enter Arduino's bootloader. Quickly press the reset button
 twice — the board re‑enumerates over USB as a DFU device and OpenMV
 IDE can flash a new firmware image.
 
@@ -768,7 +816,25 @@ resetting the camera** so the host flushes its cached writes.
    created or modified by code running on the camera will not show
    up until the host re‑mounts the drive. If both the OS and the
    camera write the same filesystem at the same time, the OS will
-   win and overwrite changes made by the camera.
+   win and overwrite changes made by the camera. Use the SD card for
+   any data the script writes back, and remount before reading those
+   files from the host.
+
+.. note::
+
+   The user RGB LED's **red** channel may briefly light up while the
+   host is reading from or writing to the USB mass‑storage drive —
+   this is a firmware‑driven activity indicator, not a fault.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The Nicla Vision ships with:
+
+* ``/flash`` — **11 MB** FAT filesystem, read/write.
+* ``/rom`` — **4 MB** read-only memory-mapped ROMFS, used to
+  ship scripts and ML models that benefit from zero-copy mmap
+  access.
 
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~

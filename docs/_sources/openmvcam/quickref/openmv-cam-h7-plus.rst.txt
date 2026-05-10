@@ -184,6 +184,19 @@ The OV5640 is driven through the :doc:`/library/omv.csi` module::
     while True:
         img = cam.snapshot()
 
+The OV5640 has an on-board JPEG compressor. Set
+`csi.CSI.pixformat` to `csi.JPEG` and the sensor delivers
+compressed frames straight to the cam over the camera bus,
+which makes high-resolution captures practical: `csi.HD`
+(1280×720), `csi.FHD` (1920×1080), and the full 5MP
+`csi.WQXGA2` (2592×1944) all stream as JPEG. Tune the
+compression with `csi.CSI.quality` (0-100, higher = larger
+frames, more detail)::
+
+    cam.pixformat(csi.JPEG)
+    cam.framesize(csi.WQXGA2)
+    cam.quality(90)
+
 The sensor sits on a **removable module** — swap it for any of the
 other OpenMV camera modules (global shutter, thermal, higher
 resolution, etc.) without changing the rest of the board.
@@ -569,6 +582,18 @@ so the host flushes its cached writes.
    The user RGB LED's **red** channel may briefly light up while the
    host is reading from or writing to the USB mass‑storage drive — this
    is a firmware‑driven activity indicator, not a fault.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The H7 Plus ships with:
+
+* ``/flash`` — **24 MB** FAT filesystem, read/write.
+* ``/rom`` — **8 MB** read-only memory-mapped ROMFS, used to
+  ship scripts and ML models that benefit from zero-copy mmap
+  access.
+* ``/sdcard`` — full size of whatever microSD card is inserted
+  (when present), read/write.
 
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~

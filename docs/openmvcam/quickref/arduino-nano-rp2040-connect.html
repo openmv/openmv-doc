@@ -139,6 +139,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#boot-and-runtime-info">Boot and runtime info</a><ul>
 <li><a class="reference internal" href="#firmware-update-uf2">Firmware update (UF2)</a></li>
 <li><a class="reference internal" href="#filesystem-and-boot-order">Filesystem and boot order</a></li>
+<li><a class="reference internal" href="#storage-sizes">Storage sizes</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#software-libraries">Software libraries</a></li>
@@ -190,8 +191,8 @@ or earlier.</p>
 board built around the Raspberry Pi RP2040 — a dual ARM Cortex‑M0+
 running at 133 MHz with 264 KB of internal SRAM. Wireless and BLE
 come from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
-6‑axis IMU, an MP34DT06 PDM microphone, and an ATECC608A secure
-element. Compared with the OpenMV camera boards, the Nano RP2040
+6‑axis IMU and an MP34DT06 PDM microphone. Compared with the
+OpenMV camera boards, the Nano RP2040
 Connect has <strong>no on‑board image sensor</strong> — the OpenMV firmware here
 is mostly used for sensor fusion, audio capture, and wireless work.</p>
 <a class="reference internal image-reference" href="../../_images/arduino-nano-rp2040-connect-hero.jpg"><img alt="Arduino Nano RP2040 Connect" class="align-center" src="../../_images/arduino-nano-rp2040-connect-hero.jpg" style="width: 400px;" />
@@ -211,7 +212,6 @@ available for ROMFS assets and Python files.</p></li>
 the frozen <a class="reference internal" href="../../library/lsm6dsox.html#lsm6dsox.LSM6DSOX" title="lsm6dsox.LSM6DSOX"><code class="xref py py-class docutils literal notranslate"><span class="pre">lsm6dsox.LSM6DSOX</span></code></a> driver.</p></li>
 <li><p><strong>MP34DT06</strong> PDM microphone captured through PIO using
 <a class="reference internal" href="../../library/omv.audio.html"><span class="doc">audio — Audio Module</span></a>.</p></li>
-<li><p><strong>ATECC608A</strong> secure element on the same I²C bus as the IMU.</p></li>
 <li><p><strong>20 user I/O pins</strong> on the standard Nano headers — D2–D13
 (digital) plus A0–A7 (analog). Four of the analog pins (A4–A7)
 route through the NINA module’s I/O extender.</p></li>
@@ -450,7 +450,7 @@ BLE stack — bring up Wi‑Fi first, then:</p>
 <section id="imu">
 <h3>IMU<a class="headerlink" href="#imu" title="Link to this heading">¶</a></h3>
 <p>The on‑board LSM6DSOX 6‑axis accelerometer + gyroscope sits on
-<code class="docutils literal notranslate"><span class="pre">I2C0</span></code> (the same bus as the secure element). The rp2 port’s
+<code class="docutils literal notranslate"><span class="pre">I2C0</span></code>. The rp2 port’s
 <code class="docutils literal notranslate"><span class="pre">machine.I2C(0)</span></code> defaults to a different pin set, so pass the
 silkscreened <code class="docutils literal notranslate"><span class="pre">SDA</span></code>/<code class="docutils literal notranslate"><span class="pre">SCL</span></code> pads explicitly. Use the frozen
 <a class="reference internal" href="../../library/lsm6dsox.html#lsm6dsox.LSM6DSOX" title="lsm6dsox.LSM6DSOX"><code class="xref py py-class docutils literal notranslate"><span class="pre">lsm6dsox.LSM6DSOX</span></code></a> driver:</p>
@@ -483,6 +483,9 @@ silkscreened <code class="docutils literal notranslate"><span class="pre">SDA</s
 </span><span data-line="9">
 </span><span data-line="10"><span class="n">audio</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mi">16000</span><span class="p">,</span> <span class="n">gain_db</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
 </span><span data-line="11"><span class="n">audio</span><span class="o">.</span><span class="n">start_streaming</span><span class="p">(</span><span class="n">loudness</span><span class="p">)</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="14">    <span class="k">pass</span>
 </span></pre></div>
 </div>
 </section>
@@ -610,9 +613,8 @@ than what the Nano RP2040 Connect routes to its silkscreened
 works without explicit pins — using <code class="docutils literal notranslate"><span class="pre">A0</span></code>/<code class="docutils literal notranslate"><span class="pre">A1</span></code> as I²C consumes
 those pins for the bus, so you can’t simultaneously use them as ADC
 inputs.</p>
-<p>The on‑board IMU and secure element share <strong>bus 0</strong>; user I²C devices
-on the same bus must avoid the LSM6DSOX address (<code class="docutils literal notranslate"><span class="pre">0x6A</span></code>) and the
-ATECC608A address (<code class="docutils literal notranslate"><span class="pre">0x60</span></code>).</p>
+<p>The on‑board IMU sits on <strong>bus 0</strong>; user I²C devices on the same
+bus must avoid the LSM6DSOX address (<code class="docutils literal notranslate"><span class="pre">0x6A</span></code>).</p>
 </section>
 <section id="spi">
 <h3>SPI<a class="headerlink" href="#spi" title="Link to this heading">¶</a></h3>
@@ -804,6 +806,15 @@ drive on the host, letting you edit <code class="docutils literal notranslate"><
 other files directly. <strong>Eject the drive before resetting the board</strong>
 so the host flushes its cached writes.</p>
 </section>
+<section id="storage-sizes">
+<h3>Storage sizes<a class="headerlink" href="#storage-sizes" title="Link to this heading">¶</a></h3>
+<p>The Nano RP2040 Connect ships with:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> — <strong>14 MB</strong> FAT filesystem, read/write.</p></li>
+</ul>
+<p>The Nano RP2040 build does not include a ROMFS; ship Python
+modules and ML models on <code class="docutils literal notranslate"><span class="pre">/flash</span></code> directly.</p>
+</section>
 </section>
 <section id="software-libraries">
 <h2>Software libraries<a class="headerlink" href="#software-libraries" title="Link to this heading">¶</a></h2>
@@ -841,7 +852,7 @@ build.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

@@ -13,8 +13,8 @@ The Arduino Nano RP2040 Connect is a 45 × 18 mm Arduino‑Nano‑form‑factor
 board built around the Raspberry Pi RP2040 — a dual ARM Cortex‑M0+
 running at 133 MHz with 264 KB of internal SRAM. Wireless and BLE
 come from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
-6‑axis IMU, an MP34DT06 PDM microphone, and an ATECC608A secure
-element. Compared with the OpenMV camera boards, the Nano RP2040
+6‑axis IMU and an MP34DT06 PDM microphone. Compared with the
+OpenMV camera boards, the Nano RP2040
 Connect has **no on‑board image sensor** — the OpenMV firmware here
 is mostly used for sensor fusion, audio capture, and wireless work.
 
@@ -39,7 +39,6 @@ Highlights
   the frozen :class:`lsm6dsox.LSM6DSOX` driver.
 * **MP34DT06** PDM microphone captured through PIO using
   :doc:`/library/omv.audio`.
-* **ATECC608A** secure element on the same I²C bus as the IMU.
 * **20 user I/O pins** on the standard Nano headers — D2–D13
   (digital) plus A0–A7 (analog). Four of the analog pins (A4–A7)
   route through the NINA module's I/O extender.
@@ -175,7 +174,7 @@ IMU
 ~~~
 
 The on‑board LSM6DSOX 6‑axis accelerometer + gyroscope sits on
-``I2C0`` (the same bus as the secure element). The rp2 port's
+``I2C0``. The rp2 port's
 ``machine.I2C(0)`` defaults to a different pin set, so pass the
 silkscreened ``SDA``/``SCL`` pads explicitly. Use the frozen
 :class:`lsm6dsox.LSM6DSOX` driver::
@@ -209,6 +208,9 @@ The on‑board MP34DT06 PDM microphone is captured through
 
     audio.init(channels=1, frequency=16000, gain_db=24)
     audio.start_streaming(loudness)
+
+    while True:
+        pass
 
 Wi‑Fi
 ~~~~~
@@ -315,9 +317,8 @@ works without explicit pins — using ``A0``/``A1`` as I²C consumes
 those pins for the bus, so you can't simultaneously use them as ADC
 inputs.
 
-The on‑board IMU and secure element share **bus 0**; user I²C devices
-on the same bus must avoid the LSM6DSOX address (``0x6A``) and the
-ATECC608A address (``0x60``).
+The on‑board IMU sits on **bus 0**; user I²C devices on the same
+bus must avoid the LSM6DSOX address (``0x6A``).
 
 SPI
 ~~~
@@ -479,6 +480,16 @@ When connected over USB, ``/flash`` enumerates as a USB mass‑storage
 drive on the host, letting you edit ``boot.py``, ``main.py``, and any
 other files directly. **Eject the drive before resetting the board**
 so the host flushes its cached writes.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The Nano RP2040 Connect ships with:
+
+* ``/flash`` — **14 MB** FAT filesystem, read/write.
+
+The Nano RP2040 build does not include a ROMFS; ship Python
+modules and ML models on ``/flash`` directly.
 
 Software libraries
 ------------------

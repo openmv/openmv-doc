@@ -206,11 +206,21 @@ The PAG7936 is driven through the :doc:`/library/omv.csi` module::
     cam = csi.CSI()
     cam.reset()
     cam.pixformat(csi.RGB565)
-    cam.framesize(csi.HD)         # 1280×720
+    cam.framesize(csi.HD)         # 1280×800
     cam.snapshot(time=2000)       # let auto‑exposure settle
 
     while True:
         img = cam.snapshot()
+
+The PAG7936 supports triggered mode — pixel integration lines up
+exactly with each `csi.CSI.snapshot` call rather than the
+free-running frame clock, useful for syncing capture to an
+external event or another sensor. Enable it through
+`csi.CSI.ioctl` with `csi.IOCTL_SET_TRIGGERED_MODE`. Frame rate
+drops to roughly half of free-running mode because the readout no
+longer pipelines with the next frame's integration::
+
+    cam.ioctl(csi.IOCTL_SET_TRIGGERED_MODE, True)
 
 NPU
 ~~~
@@ -261,6 +271,181 @@ and draw the predictions on top of the live image::
 
         print(clock.fps(), "fps")
 
+HE core
+~~~~~~~
+
+The AE3 packages two Cortex‑M55 cores in one MCU: the
+**high-performance (HP) core** that runs the main MicroPython
+instance, the camera, the HP NPU, USB, and so on; and the
+**high-efficiency (HE) core** that sits at much lower power and
+boots into a small MicroPython instance of its own. Both cores
+share an Open-AMP / RPMsg message bus, so the HP core can
+dispatch Python functions to the HE core, get results back, and
+keep the two halves decoupled.
+
+The simplest entry point is the ``@openamp.async_remote``
+decorator. It marshals a Python function, ships it to the HE
+core, and the HE core runs it as an asyncio task. After
+registering tasks, instantiate `openamp.RemoteProc` with the
+HE firmware's flash address and call ``rproc.start()`` to boot
+the second core. With no callback, the decorated function's
+``print()`` output is forwarded over the default endpoint to
+the HP core's stdout — handy for a "hello world"::
+
+    import time
+    import openamp
+
+    @openamp.async_remote
+    async def task1(ept):
+        import asyncio
+        while True:
+            print("Hello from the HE core!")
+            await asyncio.sleep(1)
+
+    # Boot the HE core. This runs the registered tasks.
+    rproc = openamp.RemoteProc(0x80320000)
+    rproc.start()
+
+    while True:
+        print("Hello from the HP core!")
+        time.sleep(1)
+
+For bidirectional messaging, pass a callback to the decorator.
+The callback runs on the HP core whenever the HE task calls
+``ept.send()``::
+
+    import time
+    import openamp
+
+    def task_callback(src_addr, data):
+        print("HP received:", data.decode())
+
+    @openamp.async_remote(task_callback)
+    async def task1(ept):
+        import asyncio
+        count = 0
+        while True:
+            ept.send(f"count = {count}")
+            count += 1
+            await asyncio.sleep(1)
+
+    rproc = openamp.RemoteProc(0x80320000)
+    rproc.start()
+
+    while True:
+        time.sleep(1)
+
+The HE core has its own **HE NPU** (160 MHz, 46 GOPS), so it
+can run a second ML model in parallel with whatever the HP
+core's HP NPU is busy with. A useful split is to put a small
+always-on trigger / classifier model on the HE side and let
+the HP core react only when something interesting is flagged —
+keyword spotting from the on-board microphone is a good fit
+because it's continuous, low-bandwidth, and the HE core stays
+at much lower power than HP. The frozen `ml.apps.MicroSpeech`
+helper recognizes "Yes" and "No" out of the box — say the words
+loudly and clearly into the on-board mic to trigger detection::
+
+    import time
+    import openamp
+
+    def task_callback(src_addr, data):
+        print("Heard:", data.decode())
+
+    @openamp.async_remote(task_callback)
+    async def task1(ept):
+        from ml.apps import MicroSpeech
+        speech = MicroSpeech(gain_db=24)
+        while True:
+            label, scores = speech.listen(timeout=0, threshold=0.70)
+            if label:
+                ept.send(label)
+
+    rproc = openamp.RemoteProc(0x80320000)
+    rproc.start()
+
+    while True:
+        time.sleep(1)
+
+For a richer split, run BlazeFace on the HP NPU while the HE
+core handles keyword spotting in the background — the HP loop
+overlays the most recent heard keyword on the camera frame::
+
+    import csi
+    import time
+    import openamp
+    import ml
+    from ml.postprocessing.mediapipe import BlazeFace
+
+    label = None
+    label_ticks = 0
+    LABEL_HOLD_MS = 2000
+
+    def task_callback(src_addr, data):
+        global label, label_ticks
+        label = data.decode()
+        label_ticks = time.ticks_ms()
+
+    @openamp.async_remote(task_callback)
+    async def task1(ept):
+        from ml.apps import MicroSpeech
+        speech = MicroSpeech(gain_db=24)
+        while True:
+            l, scores = speech.listen(timeout=0, threshold=0.70)
+            if l:
+                ept.send(l)
+
+    # Start the HE core before initializing the camera on the HP core.
+    rproc = openamp.RemoteProc(0x80320000)
+    rproc.start()
+
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.VGA)
+    csi0.window((400, 400))
+
+    model = ml.Model("/rom/blazeface_front_128.tflite",
+                     postprocess=BlazeFace(threshold=0.4))
+
+    clock = time.clock()
+    while True:
+        clock.tick()
+        img = csi0.snapshot()
+        for r, score, keypoints in model.predict([img]):
+            ml.utils.draw_predictions(img, [r], ("face",),
+                                      ((0, 0, 255),), format=None)
+            ml.utils.draw_keypoints(img, keypoints, color=(255, 0, 0))
+        if label is not None:
+            if time.ticks_diff(time.ticks_ms(), label_ticks) < LABEL_HOLD_MS:
+                img.draw_string((4, 4), f"Heard: {label}",
+                                color=(255, 0, 0), scale=2)
+            else:
+                label = None
+        print(clock.fps(), "fps")
+
+The HE core is well suited to always-on or low-rate workloads
+that you don't want competing with the camera/NPU pipeline on
+the HP side — small ML inference, lightweight DSP on
+microphone or IMU data, and similar background jobs.
+
+A few constraints to keep in mind:
+
+* Stick to the microphone and IMU when driving peripherals from
+  the HE core — those are what the HE side is designed for. Each
+  peripheral can only be owned by one core at a time, so pick HP
+  or HE for it and stick with that for the lifetime of the
+  script.
+* Each ``@openamp.async_remote`` task body must marshal to under
+  500 bytes of mpy bytecode — keep the function small and
+  factor heavier logic into separate library modules that get
+  frozen into the firmware.
+* Imports inside the dispatched function only see modules that
+  exist on the HE core's filesystem. The HE core has its own
+  ``/rom`` ROMFS — separate from the HP core's ``/rom`` — so
+  modules and ML models you want available on HE need to be
+  baked into the HE-side ROMFS image, not the HP one.
+
 Microphone
 ~~~~~~~~~~
 
@@ -281,6 +466,9 @@ crosses a threshold::
 
     audio.init(channels=1, frequency=16000, gain_db=24)
     audio.start_streaming(loudness)
+
+    while True:
+        pass
 
 IMU
 ~~~
@@ -694,6 +882,19 @@ resetting the camera** so the host flushes its cached writes.
    The user RGB LED's **red** channel may briefly light up while the
    host is reading from or writing to the USB mass‑storage drive — this
    is a firmware‑driven activity indicator, not a fault.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The AE3 ships with:
+
+* ``/flash`` — **8 MB** FAT filesystem, read/write.
+* ``/rom`` on the HP core — **24 MB** read-only memory-mapped
+  ROMFS for scripts and data the HP core loads at startup.
+* ``/rom`` on the HE core — **1 MB** read-only ROMFS owned by
+  the HE core. Modules and ML models you want available to
+  ``@openamp.async_remote`` tasks have to be baked into this
+  image, not the HP one.
 
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~

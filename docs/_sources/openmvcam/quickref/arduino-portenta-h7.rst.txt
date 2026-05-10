@@ -6,7 +6,7 @@ around the STMicroelectronics STM32H747XI — a dual‑core SoC combining
 a Cortex‑M7 at 480 MHz with a Cortex‑M4 at 240 MHz. The OpenMV
 firmware runs entirely on the M7 core and is designed to be used with
 the **Portenta Vision Shield** (Ethernet or LoRa edition), which adds
-a Himax HM01B0 / HM0360 camera, a PDM microphone, and a microSD
+a Himax HM01B0 / HM0360 camera, dual PDM microphones, and a microSD
 slot to the base Portenta H7.
 
 .. image:: ../arduino-portenta-h7-hero.jpg
@@ -22,36 +22,25 @@ Highlights
 
 * **STMicroelectronics STM32H747XI** dual Cortex‑M7 (480 MHz) +
   Cortex‑M4 (240 MHz). OpenMV firmware runs on the M7 core only;
-  the M4 core is exposed through :doc:`/library/openamp` for
-  Inter‑Processor Communication.
+  the M4 core is exposed through :doc:`openamp </library/openamp>`
+  for Inter‑Processor Communication.
 * **8 MB external SDRAM** plus **2 MB internal flash** and **16 MB
-  external QSPI flash** — enough headroom for full‑colour VGA
-  framebuffers and large ROMFS assets.
+  external QSPI flash**.
 * Hardware **JPEG encoder/decoder**.
 * **Wi‑Fi b/g/n** (2.4 GHz) + **Bluetooth LE 5.1** via the Murata
-  1DX (CYW4343W) module — chip antenna on the module, no external
-  antenna required.
-* **High‑speed USB‑C** (480 Mb/s) through the on‑die USB HS PHY plus
-  an external USB3320 ULPI PHY.
-* **23 user I/O pins** on the Arduino MKR‑style top headers — D0–D14
-  (digital) plus A0–A7 (analog).
+  1DX (CYW4343W) module — connects to the supplied antenna via an
+  on‑board **U.FL connector**.
+* **High‑speed USB‑C** (480 Mb/s).
+* **22 user I/O pins** on the Arduino MKR‑style top headers — D0–D14
+  (digital) plus A0–A6 (analog).
 * **Two 80‑pin high‑density connectors** on the bottom expose the
   full STM32H747 fabric — DCMI, DSI, Ethernet RMII, FDCAN, SDIO,
   SAI/I²S, UARTs, additional SPI/I²C/timers, and so on. Shields
   like the Vision Shield mate to these connectors.
-* **JTAG / SWD** broken out on the bottom HD connector for advanced
+* **JTAG / SWD** broken out on the bottom HD connectors for advanced
   debug.
 * **Battery support** — 3.7 V Li‑Po JST connector plus on‑board
   charger and battery monitor.
-
-.. warning::
-
-   The Portenta H7 by itself has **no on‑board camera or microphone**
-   — those live on the Vision Shield. Without a Vision Shield (or an
-   equivalent breakout that exposes the DCMI / DFSDM lines) the
-   ``csi`` and ``audio`` modules will fail to initialise. You can
-   still use the rest of the firmware (Wi‑Fi, BLE, ML on stored
-   images, the LCD, the I/O pins, etc.).
 
 Pinout
 ------
@@ -63,74 +52,106 @@ Pinout
 Pin reference
 -------------
 
-The Portenta H7 exposes 23 Arduino‑silkscreened pins on its top
-edge headers — 15 digital and 8 analog. Many more SoC pins are
-available through the bottom **80‑pin high‑density connectors** for
-shield work; see Arduino's full pinout PDF for that mapping.
+22 user pins are exposed on the Arduino MKR‑style top edge
+headers — 15 digital (``D0``-``D14``) plus 7 analog
+(``A0``-``A6``). Many more SoC pins are available through the
+bottom **80‑pin high‑density connectors** for shield work; see
+Arduino's
+`full pinout PDF <https://docs.arduino.cc/resources/pinouts/ABX00042-full-pinout.pdf>`_
+for that mapping.
 
 .. csv-table::
    :header: "Pin name", "Reference", "Function"
    :widths: 14, 12, 74
 
-   "D0",         "3.3 V", "GPIO / PH15"
-   "D1",         "3.3 V", "TIM1 CH1 / PK1"
-   "D2",         "3.3 V", "GPIO / PJ11"
-   "D3",         "3.3 V", "GPIO / PG7"
-   "D4",         "3.3 V", "TIM3 CH2 / PC7"
-   "D5",         "3.3 V", "TIM3 CH1 / PC6"
-   "D6",         "3.3 V", "TIM1 CH1 / PA8"
-   "D7",         "3.3 V", "SPI2 NSS / TIM5 CH4 / PI0"
-   "D8",         "3.3 V", "SPI2 MOSI / PC3 (also A3 / D20)"
-   "D9",         "3.3 V", "SPI2 SCK / PI1"
-   "D10",        "3.3 V", "SPI2 MISO / PC2 (also A2)"
-   "D11",        "3.3 V", "I2C3 SDA / PH8"
-   "D12",        "3.3 V", "I2C3 SCL / PH7"
-   "D13",        "3.3 V", "UART1 RX / PA10"
-   "D14",        "3.3 V", "UART1 TX / PA9"
-   "A0",         "1.8 V", "ADC2 IN0 / PA0_C"
-   "A1",         "1.8 V", "ADC2 IN1 / PA1_C"
-   "A2",         "3.3 V", "ADC3 IN0 / PC2_C (shared with D10)"
-   "A3",         "3.3 V", "ADC3 IN1 / PC3_C (shared with D8)"
-   "A4",         "3.3 V", "ADC IN12 / PC2 (shared with D10)"
-   "A5",         "3.3 V", "ADC IN13 / PC3 (shared with D8)"
-   "A6",         "3.3 V", "ADC IN18 / DAC1 OUT / PA4 (also D21)"
-   "A7",         "3.3 V", "ADC IN3 / PA6"
+   "D0",         "3.3 V", "TIM8 CH3N"
+   "D1",         "3.3 V", "TIM1 CH1 / SPI5 NSS"
+   "D2",         "3.3 V", "TIM1 CH2 / SPI5 MISO"
+   "D3",         "3.3 V", "GPIO"
+   "D4",         "3.3 V", "TIM3 CH2 / TIM8 CH2 / USART6 RX"
+   "D5",         "3.3 V", "TIM3 CH1 / TIM8 CH1 / USART6 TX"
+   "D6",         "3.3 V", "TIM1 CH1 / I2C3 SCL"
+   "D7",         "3.3 V", "TIM5 CH4 / SPI2 NSS"
+   "D8",         "3.3 V", "SPI2 MOSI (shared with A3 / A5)"
+   "D9",         "3.3 V", "SPI2 SCK"
+   "D10",        "3.3 V", "SPI2 MISO (shared with A2 / A4)"
+   "D11",        "3.3 V", "I2C3 SDA"
+   "D12",        "3.3 V", "I2C3 SCL"
+   "D13",        "3.3 V", "USART1 RX / TIM1 CH3"
+   "D14",        "3.3 V", "USART1 TX / TIM1 CH2"
+   "A0",         "3.3 V", "ADC12 IN0 (analog only)"
+   "A1",         "3.3 V", "ADC12 IN1 (analog only)"
+   "A2",         "3.3 V", "ADC123 IN12 (analog only; shared with D10)"
+   "A3",         "3.3 V", "ADC12 IN13 (analog only; shared with D8)"
+   "A4",         "3.3 V", "ADC123 IN12 (shared with D10)"
+   "A5",         "3.3 V", "ADC12 IN13 (shared with D8)"
+   "A6",         "3.3 V", "DAC1 OUT1 / ADC12 IN18"
+   "A7",         "3.3 V", "TIM3 CH1 / ADC12 IN3 (not exposed on the headers)"
+   "D20",        "3.3 V", "alias of ``D8`` / ``A3`` / ``A5``"
+   "D21",        "3.3 V", "alias of ``A6`` — DAC1 OUT1"
    "RESET",      "3.3 V", "press the on‑board switch or pull to GND to reset"
-   "LED_RED",    "3.3 V", "RGB LED red channel (active low) / PK5"
-   "LED_GREEN",  "3.3 V", "RGB LED green channel (active low) / PK6"
-   "LED_BLUE",   "3.3 V", "RGB LED blue channel (active low) / PK7"
+   "LED_RED",    "3.3 V", "RGB LED red channel (active low)"
+   "LED_GREEN",  "3.3 V", "RGB LED green channel (active low)"
+   "LED_BLUE",   "3.3 V", "RGB LED blue channel (active low)"
 
 .. note::
 
-   ``A0`` and ``A1`` connect to the **analog‑only** ``_C`` pads on
-   the STM32H747; they are 1.8 V referenced and have no GPIO function
-   — treat them as ADC inputs only. ``A2``/``A4`` and ``A3``/``A5``
-   share their physical pins with ``D10`` and ``D8`` respectively, so
-   you cannot drive PWM or SPI on those at the same time as reading
-   them as analog.
+   ``A0``-``A3`` are **analog-only** pads on the STM32H747 with
+   no GPIO function — treat them as ADC inputs only.
+   ``A2``/``A4`` and ``A3``/``A5`` share their physical pins
+   with ``D10`` and ``D8`` respectively, so you can't drive PWM
+   or SPI on those while reading them as analog. ``A7`` lives
+   on the bottom HD connectors.
 
 Power pins
 ----------
 
-* **+5V** — switched 5 V from USB / VIN, available to power external
-  shields. Up to ~140 mA total across all I/Os.
-* **VIN** — 5 V input. Powers the board through the on‑board PMIC
-  (the same rail as USB).
-* **+3V3** — main 3.3 V rail (regulated by the PMIC's SMPS and LDOs).
+MKR header pins:
+
+* **VIN** — main system rail into the on‑board PMIC. Fed via a
+  diode from the ``+5V`` rail, the MKR ``VIN`` pin, or the bottom
+  80‑pin HD connectors.
+* **+5V** — 5 V rail fed from USB, the ESLOV connector, or the MKR
+  ``+5V`` pin itself.
+* **+3V3** — main 3.3 V rail (PMIC switching regulator output).
+* **AREF** — analog voltage reference for the ADC pins. Defaults
+  to 3.3 V; drive externally to use a different reference.
 * **GND** — common ground.
 
-Battery and HD‑connector inputs:
+Battery input:
 
-* **Li‑Po JST** on the back of the board accepts a 3.7 V Li‑Po cell.
-  The PMIC charges it from USB / VIN.
-* **VSYS / +5V / VIN** are also routed to the bottom **HD
-  connectors** so a Vision Shield or carrier can supply or sink power.
+* **Li‑Po JST** on the front of the board accepts a 3.7 V Li‑Po
+  cell. The PMIC charges it whenever ``+5V`` or ``VIN`` is
+  present.
 
-The Portenta H7 can be powered through any of three paths:
+The Portenta H7 can be powered through any of these paths:
 
 * **USB‑C** — supplies 5 V to the on‑board PMIC.
-* **VIN pin** — drive a regulated 5 V supply.
-* **Li‑Po battery** — connect to the JST on the back.
+* **ESLOV connector** — up to 5 V on ``VESLOV`` (see
+  :ref:`arduino-portenta-h7-eslov`).
+* **VIN pin** — drive a regulated 5 V supply directly.
+* **Li‑Po battery** — connect to the JST on the front.
+
+.. _arduino-portenta-h7-eslov:
+
+ESLOV connector
+~~~~~~~~~~~~~~~
+
+On the side of the board is a 5‑pin solder‑free **ESLOV**
+connector:
+
+.. csv-table::
+   :header: "Pin", "Name", "Function"
+   :widths: 8, 14, 78
+
+   "1", "VESLOV",  "5 V power output (same rail as the MKR header's ``+5V``)"
+   "2", "INT",     "external interrupt input on ``D7``"
+   "3", "SCL_EXT", "shared with the MKR header ``D12`` pad — same I²C 3 bus as the user header"
+   "4", "SDA_EXT", "shared with the MKR header ``D11`` pad — same I²C 3 bus as the user header"
+   "5", "GND",     "common ground"
+
+ESLOV's ``SCL_EXT``/``SDA_EXT`` and the MKR header's ``D12``/``D11``
+are the same pins — one I²C 3 bus exposed on two connectors.
 
 Recovery and debug pins
 -----------------------
@@ -140,24 +161,27 @@ Recovery and debug pins
   to GND or press the button to reset.
 
 The Portenta H7 uses Arduino's standard **double‑tap reset** to enter
-the STM32H747 ROM bootloader. Quickly press the reset button twice —
-the board re‑enumerates over USB as a DFU device and OpenMV IDE can
+Arduino's bootloader. Quickly press the reset button twice — the
+board re‑enumerates over USB as a DFU device and OpenMV IDE can
 flash a new firmware image.
 
-A running script can re‑enter the bootloader on demand by calling
-:func:`machine.bootloader`::
+The STM32 SWD signals are exposed on the bottom **HD connector
+J1**:
 
-    import machine
+* ``J1‑73`` — NRST
+* ``J1‑75`` — SWDIO (PA13)
+* ``J1‑77`` — SWCLK (PA14)
+* ``J1‑79`` — SWO (PB3)
 
-    machine.bootloader()
+Wire them up via a Portenta Breakout, the official Arduino debug
+adapter, or a custom carrier with a 1.27 mm header. All debug
+signals are **3.3 V referenced**.
 
-The STM32 SWD signals are exposed on the bottom **HD connector J1**
-(``J1‑75`` = SWDIO / PA13, ``J1‑77`` = SWCLK / PA14, ``J1‑79`` = SWO
-/ PB3, ``J1‑73`` = NRST). Wire them up via a Portenta Breakout, the
-official Arduino debug adapter, or a custom carrier with a 1.27 mm
-header.
+.. note::
 
-All debug signals are **3.3 V referenced**.
+   When the **Portenta Vision Shield** is attached, the same SWD/JTAG
+   signals are routed up to the standard **20‑pin ARM Cortex Debug
+   JTAG header** on the shield (1.27 mm / 0.05″ pitch).
 
 Onboard peripherals
 -------------------
@@ -174,7 +198,7 @@ through :ref:`machine.LED <machine.LED>`::
     LED("LED_GREEN").on()
     LED("LED_BLUE").on()
 
-A separate yellow **charge** LED next to the battery JST lights when
+A separate orange **charge** LED next to the battery JST lights when
 the on‑board charger is sourcing current into a connected Li‑Po; it
 is not user‑controllable.
 
@@ -198,19 +222,31 @@ attached, the Himax sensor is driven through the
 
 Two Vision Shield revisions are supported:
 
-* **HM01B0** — 320 × 320 monochrome QQVGA / QVGA, low‑power.
-* **HM0360** — 640 × 480 monochrome VGA, faster and higher resolution.
+* **HM01B0** — 320 × 320 monochrome.
+* **HM0360** — 640 × 480 monochrome.
 
-The firmware probes both at boot, so the same script runs on either
-shield as long as you stay within the lower resolution.
+.. warning::
+
+   While the Vision Shield camera is initialised, the following MKR
+   header pins are claimed by the firmware and **cannot be used**:
+
+   .. csv-table::
+      :header: "MKR pin", "Reason"
+      :widths: 18, 82
+
+      "``D1``",        "TIM1 CH1 — camera master clock"
+      "``D6``",        "TIM1 CH1 (alt) — camera master clock"
+      "``D11``",       "I²C 3 SDA — shared with the camera; bus is usable but avoid the sensor's I²C address (``0x24``)"
+      "``D12``",       "I²C 3 SCL — shared with the camera; bus is usable but avoid the sensor's I²C address (``0x24``)"
+      "``A6`` / ``D21``", "DCMI HSYNC — also disables the DAC"
+      "``A7``",        "DCMI PXCLK"
 
 Machine learning
 ~~~~~~~~~~~~~~~~
 
 :doc:`/library/omv.ml` runs quantised TFLite models on the Cortex‑M7
 with **CMSIS‑NN** kernels — fast enough for compact detectors at a
-few frames per second, and the 8 MB SDRAM gives plenty of room for
-larger model weights. Models on the read‑only ``/rom`` filesystem
+few frames per second. Models on the read‑only ``/rom`` filesystem
 load directly from flash without copying to RAM. Here's a 128×128
 BlazeFace detector overlaying the detected face and its six landmarks
 on every frame from the Vision Shield camera::
@@ -225,6 +261,7 @@ on every frame from the Vision Shield camera::
     csi0.reset()
     csi0.pixformat(csi.GRAYSCALE)
     csi0.framesize(csi.QVGA)
+    csi0.window((240, 240))
 
     # Load built-in face detection model
     model = ml.Model("/rom/blazeface_front_128.tflite", postprocess=BlazeFace(threshold=0.4))
@@ -244,11 +281,50 @@ on every frame from the Vision Shield camera::
 
         print(clock.fps(), "fps")
 
+M4 core
+~~~~~~~
+
+The Cortex‑M4 core is exposed through :doc:`openamp </library/openamp>`
+for inter‑processor communication. The OpenMV firmware runs on the
+M7 only; the M4 has no MicroPython runtime of its own, so using it
+means building a separate C firmware image and loading it from the
+filesystem via :class:`openamp.RemoteProc`.
+Pre‑built example firmware that implements a virtual UART endpoint
+is available in the
+`openamp_vuart <https://github.com/iabdalkader/openamp_vuart>`_
+repository — follow its README to build ``vuart.elf``::
+
+    import openamp
+    import time
+
+    def ept_recv_callback(src_addr, data):
+        print("Received:", data.decode())
+
+    ept = openamp.Endpoint("vuart-channel", callback=ept_recv_callback)
+
+    rproc = openamp.RemoteProc("vuart.elf")
+    rproc.start()
+
+    count = 0
+    while True:
+        if ept.is_ready():
+            ept.send("Hello World %d!" % count, timeout=1000)
+            count += 1
+        time.sleep_ms(1000)
+
+In practice this support is best treated as a demonstration of the
+openamp interface rather than a working dual‑core platform — the
+M4 cannot be reset independently of the M7, so stopping the M4
+forces a full system reboot.
+
 Microphone (Vision Shield)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Vision Shield's PDM microphone is captured through
-:doc:`/library/omv.audio` over the STM32's SAI4 peripheral::
+The Vision Shield carries **dual PDM microphones** captured
+through :doc:`/library/omv.audio` over the STM32's SAI4
+peripheral. Each buffer arrives as signed‑16‑bit PCM ``bytearray``,
+ready to feed into :doc:`ulab/numpy </library/omv.ulab.numpy>` for
+DSP — for example, a simple loudness detector::
 
     import audio
     from ulab import numpy as np
@@ -262,35 +338,23 @@ The Vision Shield's PDM microphone is captured through
     audio.init(channels=1, frequency=16000, gain_db=24)
     audio.start_streaming(loudness)
 
-microSD card (Vision Shield)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    while True:
+        pass
 
-When the Vision Shield is attached and a card is inserted, the
-firmware mounts it automatically at ``/sdcard``::
-
-    import os
-
-    for entry in os.listdir("/sdcard"):
-        print(entry)
-
-The boot directory is set to ``/sdcard`` if the card is present,
-otherwise ``/flash`` — see :ref:`Filesystem and boot order
-<arduino-portenta-h7-fs>` below.
+Pass ``channels=2`` to ``audio.init`` to receive interleaved
+samples from both mics.
 
 Battery fuel gauge
 ~~~~~~~~~~~~~~~~~~
 
-The Portenta H7 carries the same Maxim **MAX17262** ModelGauge m5
-fuel gauge as the Nicla Vision. It tracks the Li‑Po battery's
-voltage, current, temperature, and state of charge over the on‑board
-PMIC I²C bus. On the Portenta H7 that bus is **I²C 1** (the SoC's
-internal PB6/PB7 pair, also routed to the bottom HD connectors), and
-the fuel gauge sits at address ``0x36``.
+The Maxim **MAX17262** ModelGauge m5 fuel gauge tracks the Li‑Po
+battery's voltage, current, temperature, and state of charge. It
+sits on **I²C 1** at address ``0x36``.
 
-The MAX17262 has internal current sensing, so the current register
-reads out directly in microamps with no external Rsense factor.
-Reading is harmless — there's no driver shipped, but the registers
-documented in the
+The MAX17262 has **internal** current sensing, so the current
+register reads out directly in microamps with no external Rsense
+factor to apply. Reading the fuel gauge is harmless — there is no
+driver shipped, but the registers documented in the
 `MAX17262 datasheet <https://www.analog.com/media/en/technical-documentation/data-sheets/MAX17262.pdf>`_
 can be read directly::
 
@@ -360,7 +424,7 @@ charger. It sits on **I²C 1** at address ``0x08``.
 
 The most useful thing the PMIC tells you that the fuel gauge can't
 is the **charger state machine** — whether the board is currently
-running on USB / VIN, what stage of the charge cycle the Li‑Po is
+running on USB / ESLOV / VIN, what stage of the charge cycle the Li‑Po is
 in, and whether the charger is in a thermal or watchdog fault. The
 charger registers live at an offset of ``0x80`` in the PF1550's
 main I²C address space (see §22.2 of the
@@ -422,8 +486,9 @@ Wi‑Fi
 ~~~~~
 
 The on‑board Murata 1DX (CYW4343W) is exposed via
-:doc:`/library/network` as a station interface. The Portenta H7 has a
-chip antenna on top of the module — no external antenna needed::
+:doc:`/library/network` as a station interface. Connect the supplied
+antenna to the on‑board **U.FL connector** before bringing up the
+radio::
 
     import network, time
 
@@ -451,6 +516,84 @@ advertise as a peripheral and wait for a central to connect::
             await conn.disconnected()
 
     asyncio.run(run())
+
+LoRa (Vision Shield)
+~~~~~~~~~~~~~~~~~~~~
+
+The **LoRa edition** of the Vision Shield adds a Murata CMWX1ZZABZ
+LoRaWAN module wired to the Portenta H7 over UART. The ``lora``
+module wraps the AT‑command firmware and supports OTAA or ABP join,
+uplink, and downlink::
+
+    from lora import Lora
+    from lora import BAND_EU868
+    from lora import LoraErrorTimeout
+
+    lora = Lora(band=BAND_EU868, poll_ms=60000)
+    print("Device EUI:", lora.get_device_eui())
+
+    appEui = "1234567890123456"
+    appKey = "12345678901234567890123456789012"
+
+    try:
+        lora.join_OTAA(appEui, appKey)
+    except LoraErrorTimeout as e:
+        print("Join timed out — try moving near a window:", e)
+
+    lora.set_port(3)
+    lora.send_data("HeLoRA world!", True)
+
+    while True:
+        if lora.available():
+            data = lora.receive_data()
+            if data:
+                print("Port:", data["port"], "Data:", data["data"])
+        lora.poll()
+
+Use ``BAND_US915`` / ``BAND_AS923`` / ``BAND_AU915`` etc. for
+non‑EU regions, and switch to :meth:`lora.Lora.join_ABP` if your
+network server uses ABP activation.
+
+.. warning::
+
+   While the LoRa module is in use, the driver claims the following
+   MKR header pins as control lines for the Murata CMWX1ZZABZ —
+   they **cannot be used**:
+
+   .. csv-table::
+      :header: "MKR pin", "Reason"
+      :widths: 18, 82
+
+      "``D3``", "LoRa module **BOOT** pin"
+      "``D5``", "LoRa module **RST** pin"
+
+Ethernet (Vision Shield)
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The **Ethernet edition** of the Vision Shield adds an RJ45 jack with
+magnetics wired to the STM32H747's 10/100 Ethernet MAC over RMII.
+Plug in an Ethernet cable and the PHY appears as a ``LAN`` interface;
+DHCP runs automatically once the link comes up::
+
+    import network
+    import time
+
+    lan = network.LAN()
+    lan.active(True)
+    while not lan.isconnected():
+        time.sleep(1)
+    print("Ethernet IP:", lan.ipconfig("addr4")[0])
+
+microSD card (Vision Shield)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When a card is inserted it is mounted automatically at ``/sdcard`` and
+is usable through the regular file system::
+
+    import os
+
+    for entry in os.listdir("/sdcard"):
+        print(entry)
 
 Bus reference
 -------------
@@ -490,6 +633,7 @@ UART
 Bus           TX    RX
 ============  ====  ====
 UART1         D14   D13
+UART6         D5    D4
 ============  ====  ====
 
 ::
@@ -499,9 +643,6 @@ UART1         D14   D13
     uart = UART(1, baudrate=115200)
     uart.write("hello")
     uart.read(5)
-
-Additional UARTs (UART4 / UART6 / UART8) are routed to the bottom
-HD connectors — useful if you build a custom carrier board.
 
 I²C
 ~~~
@@ -520,15 +661,13 @@ I2C3          D12   D11
     i2c.scan()
     i2c.writeto(0x76, b"hi")
 
-Bus 3 is also used internally for camera control; user devices on
-the same bus must avoid the camera's I²C address (``0x24``). The
-firmware also configures an alternate camera I²C bus (**I²C 4**, on
-``PH11``/``PH12``) used by the Portenta breakout, but ``machine.I2C``
-is only wired to bus 1 (HD‑connector pins) and bus 3 (the user
-``D11``/``D12``) — bus 4 is not exposed through ``machine.I2C``.
+The ``D11``/``D12`` pads on the MKR header and the ESLOV connector's
+``SDA_EXT``/``SCL_EXT`` pins land on the same I²C 3 bus — see
+:ref:`arduino-portenta-h7-eslov` above for the ESLOV pinout.
 
 The same hardware can also be used in target (slave) mode through
-:ref:`machine.I2CTarget <machine.I2CTarget>`::
+:ref:`machine.I2CTarget <machine.I2CTarget>` to expose a memory
+region to another I²C controller::
 
     from machine import I2CTarget
 
@@ -559,51 +698,47 @@ SPI2          D8     D10    D9     D7
 ADC
 ~~~
 
-The Portenta H7 exposes eight 12‑bit ADC channels on **A0–A7**.
-``A0`` and ``A1`` are 1.8 V referenced (analog‑only ``_C`` pins);
-``A2``–``A7`` are 3.3 V referenced (and share their physical pins
-with ``D8``–``D10`` / ``D21``)::
+The Portenta H7 exposes eight 12‑bit ADC channels on **A0–A7**. All
+are **3.3 V referenced** — ``read_u16`` returns 0–65535 across
+0–3.3 V at the pin::
 
     from machine import ADC
     import time
 
-    adc = ADC("A2")
-    bat = ADC("A0")           # 1.8 V referenced
-
+    adc = ADC("A0")
     while True:
-        print("A2:", adc.read_u16() * 3.3 / 65535, "V")
-        print("A0:", bat.read_u16() * 1.8 / 65535, "V")
+        voltage = adc.read_u16() * 3.3 / 65535
+        print(voltage)
         time.sleep_ms(100)
-
-.. warning::
-
-   ``A0`` and ``A1`` are **1.8 V referenced** — driving a 3.3 V
-   signal in will saturate the converter and may damage the pin.
-   Divide higher voltages down externally.
 
 DAC
 ~~~
 
-A single 12‑bit DAC channel is exposed on **A6** (= **D21**, MCU pin
-PA4) through :class:`pyb.DAC`::
+A single 12‑bit DAC channel is exposed on **DAC1** (``A6`` /
+``D21``) through :class:`pyb.DAC`::
 
     from pyb import DAC
 
-    dac = DAC(1)
+    dac = DAC("DAC1")
     dac.write(int(0.5 * 255))   # 8‑bit output, ~1.65 V
 
 PWM
 ~~~
 
-============  =====================
+============  ============================
 Pin           Timer / channel
-============  =====================
-D1            TIM1 CH1
-D4            TIM3 CH2
-D5            TIM3 CH1
+============  ============================
+D0            TIM8 CH3N
+D1            TIM1 CH1, TIM8 CH3N
+D2            TIM1 CH2, TIM8 CH2N
+D4            TIM3 CH2, TIM8 CH2
+D5            TIM3 CH1, TIM8 CH1
 D6            TIM1 CH1
 D7            TIM5 CH4
-============  =====================
+D13           TIM1 CH3
+D14           TIM1 CH2
+A7            TIM3 CH1
+============  ============================
 
 Drive any of them via :ref:`machine.PWM <machine.PWM>`::
 
@@ -613,17 +748,20 @@ Drive any of them via :ref:`machine.PWM <machine.PWM>`::
 
 .. note::
 
-   ``D1`` and ``D6`` share TIM1 CH1, and TIM1 is taken over for the
-   **camera master clock** when the Vision Shield is initialised
-   through :doc:`/library/omv.csi` — so ``D1``/``D6`` can only be
-   used for PWM with the camera off. Use ``D4``, ``D5``, or ``D7``
-   for camera‑coexisting PWM.
+   Several pins share timer channels:
 
-   ``D0``, ``D2``, ``D3``, ``D8``, ``D9``, ``D10``, ``D11``, and
-   ``D12`` are silkscreened with PWM markings on Arduino's pinout
-   but the underlying STM32H747 alt functions for those pins are not
-   wired up by this firmware build's AF table — use one of the pins
-   above if you need :class:`machine.PWM`.
+   * **TIM1 CH1** is on ``D1`` *and* ``D6``.
+   * **TIM1 CH2** is on ``D2`` *and* ``D14``.
+   * **TIM8 CH3N** is on ``D0`` *and* ``D1``.
+
+   Pick one consumer per timer channel.
+
+.. warning::
+
+   **TIM1** is reserved for the **camera master clock** when the
+   Vision Shield is initialised through :doc:`/library/omv.csi` —
+   ``D1``, ``D2``, ``D6``, ``D13``, and ``D14`` cannot be PWM‑driven
+   while the camera is active.
 
 Software bit‑banged buses
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -708,6 +846,13 @@ enter the STM32H747 ROM bootloader. Quickly press the reset button
 twice — the board re‑enumerates over USB as a DFU device and OpenMV
 IDE can flash a new firmware image.
 
+A running script can re‑enter the bootloader on demand by calling
+:func:`machine.bootloader`::
+
+    import machine
+
+    machine.bootloader()
+
 .. _arduino-portenta-h7-fs:
 
 Filesystem and boot order
@@ -720,12 +865,8 @@ The Portenta H7 firmware mounts up to three filesystems on boot:
   first boot.
 * **microSD card** — if a Vision Shield is attached and a card is
   inserted, it is mounted at ``/sdcard``.
-* **ROMFS** — read‑only, memory‑mapped filesystem at ``/rom`` used to
-  ship large data assets (e.g. AI models) that benefit from zero‑copy
-  access. Mounted automatically by MicroPython at startup, before
-  any user Python runs. The Portenta H7 build ships with
-  micro_speech, person_detect, FOMO face detection, YOLO‑LC,
-  BlazeFace, and the standard OpenCV Haar cascades preloaded.
+* **ROMFS** — read‑only, memory‑mapped filesystem at ``/rom``
+  mounted automatically by MicroPython at startup.
 
 After mounting, the working directory is set to ``/sdcard`` when the
 card is present, otherwise ``/flash``. The interpreter then runs
@@ -739,10 +880,9 @@ scripts from that directory:
   reset the board.
 
 Dropping a ``boot.py`` or ``main.py`` onto the SD card overrides the
-copy in flash without touching it. To force the system to ignore an
-inserted SD card (for example to run the flash ``main.py`` even with
-a card present), create an empty file named ``SKIPSD`` at the root of
-``/flash``.
+copy in flash without touching it — both files are looked up in the
+boot directory (``/sdcard`` when the card is mounted, otherwise
+``/flash``).
 
 The default ``main.py`` shipped on a freshly flashed board just
 blinks the user RGB LED's **blue** channel as a heartbeat (two short
@@ -753,11 +893,43 @@ without any host attached.
 ``lib/`` subdirectories, so importable modules can live in
 ``/flash/lib``, ``/sdcard/lib``, or ``/rom/lib``.
 
+To force the system to ignore an inserted SD card (for example to run
+the flash ``main.py`` even with a card present), create an empty file
+named ``SKIPSD`` at the root of ``/flash``.
+
 When connected over USB, the boot filesystem (``/sdcard`` if a card
 is present, otherwise ``/flash``) also enumerates as a USB
 mass‑storage drive on the host, letting you edit ``boot.py``,
 ``main.py``, and any other files directly. **Eject the drive before
 resetting the board** so the host flushes its cached writes.
+
+.. note::
+
+   Because the OS treats the drive as a passive block device, files
+   created or modified by code running on the camera will not show
+   up until the host re‑mounts the drive. If both the OS and the
+   camera write the same filesystem at the same time, the OS will
+   win and overwrite changes made by the camera. Use the SD card for
+   any data the script writes back, and remount before reading those
+   files from the host.
+
+.. note::
+
+   The user RGB LED's **red** channel may briefly light up while the
+   host is reading from or writing to the USB mass‑storage drive —
+   this is a firmware‑driven activity indicator, not a fault.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The Portenta H7 ships with:
+
+* ``/flash`` — **11 MB** FAT filesystem, read/write.
+* ``/rom`` — **4 MB** read-only memory-mapped ROMFS, used to
+  ship scripts and ML models that benefit from zero-copy mmap
+  access.
+* ``/sdcard`` — full size of whatever microSD card is inserted
+  in a Vision Shield (when present), read/write.
 
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~

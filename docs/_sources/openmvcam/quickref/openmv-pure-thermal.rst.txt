@@ -243,18 +243,28 @@ The OV5640 is the primary CSI on the Pure Thermal — pass
     while True:
         img = cam.snapshot()
 
-The OV5640 module on the Pure Thermal has a voice‑coil autofocus
-actuator. Trigger it with the :meth:`~csi.CSI.ioctl` API;
-:data:`~csi.IOCTL_WAIT_ON_AUTO_FOCUS` blocks until the AF run
-finishes (or the optional timeout in milliseconds expires)::
+The OV5640 has an on-board JPEG compressor. Set
+`csi.CSI.pixformat` to `csi.JPEG` and the sensor delivers
+compressed frames straight to the cam over the camera bus,
+which makes high-resolution captures practical: `csi.HD`
+(1280×720), `csi.FHD` (1920×1080), and the full 5MP
+`csi.WQXGA2` (2592×1944) all stream as JPEG. Tune the
+compression with `csi.CSI.quality` (0-100, higher = larger
+frames, more detail)::
+
+    cam.pixformat(csi.JPEG)
+    cam.framesize(csi.WQXGA2)
+    cam.quality(90)
+
+The OV5640 has a voice-coil-actuator autofocus lens. Trigger a
+single autofocus pass via `csi.CSI.ioctl` with
+`csi.IOCTL_TRIGGER_AUTO_FOCUS` — the sensor sweeps the focus
+motor once and locks on whatever's in front of it::
 
     cam.ioctl(csi.IOCTL_TRIGGER_AUTO_FOCUS)
-    cam.ioctl(csi.IOCTL_WAIT_ON_AUTO_FOCUS, 5000)
-    img = cam.snapshot()
 
-Use :data:`~csi.IOCTL_PAUSE_AUTO_FOCUS` to freeze the lens at its
-current position and :data:`~csi.IOCTL_RESET_AUTO_FOCUS` to return to
-the factory default.
+Re-issue the ioctl any time the scene changes — the autofocus is
+one-shot, not continuous.
 
 .. note::
 
@@ -821,6 +831,18 @@ the camera** so the host flushes its cached writes.
    not show up on the host until the drive is re‑mounted. Use the SD
    card for any data the script writes back, and remount before
    reading those files from the host.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The Pure Thermal ships with:
+
+* ``/flash`` — **24 MB** FAT filesystem, read/write.
+* ``/rom`` — **8 MB** read-only memory-mapped ROMFS, used to
+  ship scripts and ML models that benefit from zero-copy mmap
+  access.
+* ``/sdcard`` — full size of whatever microSD card is inserted
+  (when present), read/write.
 
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~

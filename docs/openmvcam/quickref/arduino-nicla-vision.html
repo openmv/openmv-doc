@@ -118,6 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#onboard-peripherals">Onboard peripherals</a><ul>
 <li><a class="reference internal" href="#leds">LEDs</a></li>
 <li><a class="reference internal" href="#camera-sensor">Camera sensor</a></li>
+<li><a class="reference internal" href="#m4-core">M4 core</a></li>
 <li><a class="reference internal" href="#microphone">Microphone</a></li>
 <li><a class="reference internal" href="#imu">IMU</a></li>
 <li><a class="reference internal" href="#timeofflight-ranger">Time&#8209;of&#8209;flight ranger</a></li>
@@ -147,6 +148,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#boot-and-runtime-info">Boot and runtime info</a><ul>
 <li><a class="reference internal" href="#firmware-update-dfu">Firmware update (DFU)</a></li>
 <li><a class="reference internal" href="#filesystem-and-boot-order">Filesystem and boot order</a></li>
+<li><a class="reference internal" href="#storage-sizes">Storage sizes</a></li>
 <li><a class="reference internal" href="#hardfault-indicator">Hard&#8209;fault indicator</a></li>
 </ul>
 </li>
@@ -212,7 +214,8 @@ for the application + ROMFS).</p></li>
 microphone</strong> (MP34DT06JTR), and <strong>VL53L1CB</strong> time‑of‑flight ranger
 (up to ~4 m).</p></li>
 <li><p><strong>Wi‑Fi b/g/n</strong> (2.4 GHz) + <strong>Bluetooth LE 5.1</strong> via the Murata
-1DX (CYW4343W) module — uses the supplied <strong>U.FL antenna</strong>.</p></li>
+1DX (CYW4343W) module — connects to the supplied antenna via an
+on‑board <strong>U.FL connector</strong>.</p></li>
 <li><p><strong>High‑speed USB</strong> (480 Mb/s) over <strong>Micro USB</strong> through an
 external ULPI PHY (USB3320C).</p></li>
 <li><p><strong>13 user I/O pins</strong> on the Arduino edge headers — four digital
@@ -436,7 +439,7 @@ same pins — one I²C 1 bus exposed on two connectors.</p>
 reset.</p></li>
 </ul>
 <p>The Nicla Vision uses Arduino’s standard <strong>double‑tap reset</strong> to
-enter the STM32H747 ROM bootloader — quickly press the reset button
+enter Arduino’s bootloader — quickly press the reset button
 twice and the board enumerates as a DFU device. OpenMV IDE uses this
 mode to reflash the firmware.</p>
 <p>The STM32 SWD signals are exposed on the back of the board through
@@ -446,7 +449,7 @@ adapter:</p>
 <ul class="simple">
 <li><p><strong>P1 / P2</strong> — internal <strong>PMIC</strong> I²C bus on PF0 (SDA) and PF1
 (SCL). This is <code class="docutils literal notranslate"><span class="pre">machine.I2C(2)</span></code> on the Nicla Vision and carries
-the PMIC, fuel gauge, ToF, and crypto element traffic.</p></li>
+the PMIC, fuel gauge, and ToF traffic.</p></li>
 <li><p><strong>P3</strong> — TMS / SWDIO  (PA13)</p></li>
 <li><p><strong>P4</strong> — TCK / SWCLK  (PA14)</p></li>
 <li><p><strong>P5</strong> — NRST</p></li>
@@ -492,8 +495,52 @@ is being charged from USB / ESLOV / VIN and is not user‑controllable.</p>
 </span><span data-line="10">    <span class="n">img</span> <span class="o">=</span> <span class="n">cam</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
 </span></pre></div>
 </div>
-<p>The sensor is connected by a small flex cable to a connector on the
-back of the board.</p>
+<p>When you ask for a small framesize the GC2145 driver crops a
+proportionally small readout window from the sensor — by default
+the readout-to-output downscale ratio is capped at 3x to keep the
+frame rate up. <a class="reference internal" href="../../library/omv.csi.html#csi.IOCTL_SET_FOV_WIDE" title="csi.IOCTL_SET_FOV_WIDE"><code class="xref any py py-data docutils literal notranslate"><span class="pre">csi.IOCTL_SET_FOV_WIDE</span></code></a> raises that cap to 5x,
+which means the driver pulls from a wider area of the sensor when
+streaming small resolutions. The result is a noticeably wider field
+of view at small framesizes, at the cost of some throughput:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">cam</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">IOCTL_SET_FOV_WIDE</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">cam</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">IOCTL_GET_FOV_WIDE</span><span class="p">)</span>  <span class="c1"># returns the current setting</span>
+</span></pre></div>
+</div>
+</section>
+<section id="m4-core">
+<h3>M4 core<a class="headerlink" href="#m4-core" title="Link to this heading">¶</a></h3>
+<p>The Cortex‑M4 core is exposed through <a class="reference internal" href="../../library/openamp.html"><span class="doc">openamp</span></a>
+for inter‑processor communication. The OpenMV firmware runs on the
+M7 only; the M4 has no MicroPython runtime of its own, so using it
+means building a separate C firmware image and loading it from the
+filesystem via <a class="reference internal" href="../../library/openamp.html#openamp.RemoteProc" title="openamp.RemoteProc"><code class="xref py py-class docutils literal notranslate"><span class="pre">openamp.RemoteProc</span></code></a>.
+Pre‑built example firmware that implements a virtual UART endpoint
+is available in the
+<a class="reference external" href="https://github.com/iabdalkader/openamp_vuart">openamp_vuart</a>
+repository — follow its README to build <code class="docutils literal notranslate"><span class="pre">vuart.elf</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">openamp</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">ept_recv_callback</span><span class="p">(</span><span class="n">src_addr</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+</span><span data-line="5">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Received:&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">ept</span> <span class="o">=</span> <span class="n">openamp</span><span class="o">.</span><span class="n">Endpoint</span><span class="p">(</span><span class="s2">&quot;vuart-channel&quot;</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">ept_recv_callback</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="n">rproc</span> <span class="o">=</span> <span class="n">openamp</span><span class="o">.</span><span class="n">RemoteProc</span><span class="p">(</span><span class="s2">&quot;vuart.elf&quot;</span><span class="p">)</span>
+</span><span data-line="10"><span class="n">rproc</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="13"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="14">    <span class="k">if</span> <span class="n">ept</span><span class="o">.</span><span class="n">is_ready</span><span class="p">():</span>
+</span><span data-line="15">        <span class="n">ept</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="s2">&quot;Hello World </span><span class="si">%d</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">count</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</span><span data-line="16">        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span data-line="17">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>In practice this support is best treated as a demonstration of the
+openamp interface rather than a working dual‑core platform — the
+M4 cannot be reset independently of the M7, so stopping the M4
+forces a full system reboot.</p>
 </section>
 <section id="microphone">
 <h3>Microphone<a class="headerlink" href="#microphone" title="Link to this heading">¶</a></h3>
@@ -513,6 +560,9 @@ example, a simple loudness detector:</p>
 </span><span data-line="9">
 </span><span data-line="10"><span class="n">audio</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mi">16000</span><span class="p">,</span> <span class="n">gain_db</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
 </span><span data-line="11"><span class="n">audio</span><span class="o">.</span><span class="n">start_streaming</span><span class="p">(</span><span class="n">loudness</span><span class="p">)</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="14">    <span class="k">pass</span>
 </span></pre></div>
 </div>
 </section>
@@ -690,7 +740,7 @@ VBUS state including OVLO / UVLO / DPM), and <code class="docutils literal notra
 <h3>Wi‑Fi<a class="headerlink" href="#wifi" title="Link to this heading">¶</a></h3>
 <p>The on‑board Murata 1DX (CYW4343W) is exposed via
 <a class="reference internal" href="../../library/network.html"><span class="doc">network — network configuration</span></a> as a station interface. Connect the supplied
-<strong>U.FL antenna</strong> to the <code class="docutils literal notranslate"><span class="pre">J6</span></code> connector before bringing up the
+antenna to the on‑board <strong>U.FL connector</strong> before bringing up the
 radio:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">network</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="2">
@@ -1014,7 +1064,7 @@ periodically inside your main loop:</p>
 <section id="firmware-update-dfu">
 <h3>Firmware update (DFU)<a class="headerlink" href="#firmware-update-dfu" title="Link to this heading">¶</a></h3>
 <p>The Nicla Vision uses Arduino’s standard <strong>double‑tap reset</strong> to
-enter the STM32H747 ROM bootloader. Quickly press the reset button
+enter Arduino’s bootloader. Quickly press the reset button
 twice — the board re‑enumerates over USB as a DFU device and OpenMV
 IDE can flash a new firmware image.</p>
 <p>A running script can re‑enter the bootloader on demand by calling
@@ -1062,8 +1112,26 @@ resetting the camera</strong> so the host flushes its cached writes.</p>
 created or modified by code running on the camera will not show
 up until the host re‑mounts the drive. If both the OS and the
 camera write the same filesystem at the same time, the OS will
-win and overwrite changes made by the camera.</p>
+win and overwrite changes made by the camera. Use the SD card for
+any data the script writes back, and remount before reading those
+files from the host.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The user RGB LED’s <strong>red</strong> channel may briefly light up while the
+host is reading from or writing to the USB mass‑storage drive —
+this is a firmware‑driven activity indicator, not a fault.</p>
+</div>
+</section>
+<section id="storage-sizes">
+<h3>Storage sizes<a class="headerlink" href="#storage-sizes" title="Link to this heading">¶</a></h3>
+<p>The Nicla Vision ships with:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> — <strong>11 MB</strong> FAT filesystem, read/write.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/rom</span></code> — <strong>4 MB</strong> read-only memory-mapped ROMFS, used to
+ship scripts and ML models that benefit from zero-copy mmap
+access.</p></li>
+</ul>
 </section>
 <section id="hardfault-indicator">
 <h3>Hard‑fault indicator<a class="headerlink" href="#hardfault-indicator" title="Link to this heading">¶</a></h3>
@@ -1109,7 +1177,7 @@ modules — including which ones are unique to the Nicla Vision build.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

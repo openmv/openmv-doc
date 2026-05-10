@@ -533,6 +533,16 @@ so the host flushes its cached writes.
    host is reading from or writing to the USB mass‑storage drive — this
    is a firmware‑driven activity indicator, not a fault.
 
+Storage sizes
+~~~~~~~~~~~~~
+
+The M4 ships with:
+
+* ``/flash`` — **32 KB** FAT filesystem, read/write.
+* ``/rom`` — **128 KB** read-only memory-mapped ROMFS.
+* ``/sdcard`` — full size of whatever microSD card is inserted
+  (when present), read/write.
+
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~
 

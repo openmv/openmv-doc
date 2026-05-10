@@ -287,7 +287,7 @@ The PAG7936 is driven through the :doc:`/library/omv.csi` module::
     cam = csi.CSI()
     cam.reset()
     cam.pixformat(csi.RGB565)
-    cam.framesize(csi.HD)         # 1280×720
+    cam.framesize(csi.HD)         # 1280×800
     cam.snapshot(time=2000)       # let auto‑exposure settle
 
     while True:
@@ -296,6 +296,16 @@ The PAG7936 is driven through the :doc:`/library/omv.csi` module::
 The sensor sits on a **removable module** — swap it for any of the
 other OpenMV camera modules (global shutter, thermal, higher
 resolution, etc.) without changing the rest of the board.
+
+The PAG7936 supports triggered mode — pixel integration lines up
+exactly with each `csi.CSI.snapshot` call rather than the
+free-running frame clock, useful for syncing capture to an
+external event or another sensor. Enable it through
+`csi.CSI.ioctl` with `csi.IOCTL_SET_TRIGGERED_MODE`. Frame rate
+drops to roughly half of free-running mode because the readout no
+longer pipelines with the next frame's integration::
+
+    cam.ioctl(csi.IOCTL_SET_TRIGGERED_MODE, True)
 
 NPU
 ~~~
@@ -366,6 +376,9 @@ crosses a threshold::
 
     audio.init(channels=1, frequency=16000, gain_db=24)
     audio.start_streaming(loudness)
+
+    while True:
+        pass
 
 IMU
 ~~~
@@ -761,6 +774,18 @@ so the host flushes its cached writes.
    The user RGB LED's **red** channel may briefly light up while the
    host is reading from or writing to the USB mass‑storage drive — this
    is a firmware‑driven activity indicator, not a fault.
+
+Storage sizes
+~~~~~~~~~~~~~
+
+The N6 ships with:
+
+* ``/flash`` — **4 MB** FAT filesystem, read/write.
+* ``/rom`` — **24 MB** read-only memory-mapped ROMFS, used to
+  ship scripts and ML models that benefit from zero-copy mmap
+  access.
+* ``/sdcard`` — full size of whatever microSD card is inserted
+  (when present), read/write.
 
 Hard‑fault indicator
 ~~~~~~~~~~~~~~~~~~~~
