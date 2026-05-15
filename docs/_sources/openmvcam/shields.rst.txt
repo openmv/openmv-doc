@@ -111,6 +111,37 @@ Modern shields
      </section>
    </div>
 
+AE3 accessories
+---------------
+
+.. raw:: html
+
+   <div class="omv-cards-page">
+     <section class="omv-section">
+       <div class="omv-grid cols-4">
+
+         <a class="omv-card board" href="shields/ae3-oled-breakout.html">
+           <div class="board-thumb"><img src="../_images/ae3-oled-breakout-hero.jpg" alt="AE3 OLED Breakout"></div>
+           <div class="board-body">
+             <h4>AE3 OLED Breakout</h4>
+             <p>128×128 RGB OLED, 5‑way joystick, Qwiic, and a 10‑pin ARM SWD header.</p>
+             <span class="card-arrow">Explore →</span>
+           </div>
+         </a>
+
+         <a class="omv-card board" href="shields/ae3-battery-shield.html">
+           <div class="board-thumb"><img src="../_images/ae3-battery-shield-hero.jpg" alt="AE3 Battery Shield"></div>
+           <div class="board-body">
+             <h4>AE3 Battery Shield</h4>
+             <p>5–36 V, 1.8–5.5 V, or 3.7 V Li‑Po power for the AE3 plus an SPI microSD socket.</p>
+             <span class="card-arrow">Explore →</span>
+           </div>
+         </a>
+
+       </div>
+     </section>
+   </div>
+
 Legacy shields
 --------------
 
@@ -245,6 +276,8 @@ Legacy shields
    shields/rs422-rs485-shield.rst
    shields/driver-shield.rst
    shields/relay-shield.rst
+   shields/ae3-oled-breakout.rst
+   shields/ae3-battery-shield.rst
    shields/lcd-shield.rst
    shields/wifi-shield.rst
    shields/proto-shield.rst
