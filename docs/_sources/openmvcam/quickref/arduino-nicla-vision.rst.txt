@@ -692,6 +692,41 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 1** — wire
+the module to the silkscreened ``SCL`` / ``SDA`` pads.
+
 Timing
 ------
 

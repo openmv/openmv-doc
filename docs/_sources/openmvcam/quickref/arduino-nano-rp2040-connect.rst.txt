@@ -11,12 +11,10 @@ Arduino Nano RP2040 Connect
 
 The Arduino Nano RP2040 Connect is a 45 × 18 mm Arduino‑Nano‑form‑factor
 board built around the Raspberry Pi RP2040 — a dual ARM Cortex‑M0+
-running at 133 MHz with 264 KB of internal SRAM. Wireless and BLE
-come from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
-6‑axis IMU and an MP34DT06 PDM microphone. Compared with the
-OpenMV camera boards, the Nano RP2040
-Connect has **no on‑board image sensor** — the OpenMV firmware here
-is mostly used for sensor fusion, audio capture, and wireless work.
+running at 133 MHz with 264 KB of internal SRAM. WiFi and BLE come
+from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
+6‑axis IMU and an MP34DT06 PDM microphone. The OpenMV firmware
+drives all of these from MicroPython.
 
 .. image:: ../arduino-nano-rp2040-connect-hero.jpg
     :alt: Arduino Nano RP2040 Connect
@@ -31,29 +29,13 @@ Highlights
 
 * **Raspberry Pi RP2040** dual ARM Cortex‑M0+ at 133 MHz with **264
   KB internal SRAM**.
-* **16 MB external QSPI flash** — half the board's storage budget is
-  available for ROMFS assets and Python files.
+* **16 MB external QSPI flash**.
 * **U‑blox NINA‑W102** module providing **2.4 GHz Wi‑Fi b/g/n** and
-  **Bluetooth 4.2 (BR/EDR + LE)**, accessed over SPI from the RP2040.
-* **LSM6DSOX** 6‑axis IMU on the secondary I²C bus, exposed through
-  the frozen :class:`lsm6dsox.LSM6DSOX` driver.
-* **MP34DT06** PDM microphone captured through PIO using
-  :doc:`/library/omv.audio`.
-* **20 user I/O pins** on the standard Nano headers — D2–D13
-  (digital) plus A0–A7 (analog). Four of the analog pins (A4–A7)
-  route through the NINA module's I/O extender.
+  **Bluetooth 4.2** (BR/EDR + LE).
+* **LSM6DSOX** 6‑axis IMU and **MP34DT06** PDM microphone.
 * **Micro USB** connector for power, programming, and a CDC REPL.
-* **REC** (BOOTSEL) and **RESET** buttons for entering the RP2040 UF2
-  bootloader.
-
-.. note::
-
-   The OpenMV firmware on the Nano RP2040 Connect is a stripped‑down
-   build compared with the OpenMV camera boards: there is no
-   on‑board image sensor, no JPEG codec, and no GPU. ML / TFLite
-   inference is also not enabled in this build — use the NINA‑backed
-   networking, IMU, and PDM mic together with :mod:`ulab.numpy` for
-   on‑device DSP.
+* **22 user I/O pins** on the standard Nano headers — ``TX``/``RX``,
+  ``D2``–``D13`` (digital), ``A0``–``A7`` (analog).
 
 Pinout
 ------
@@ -69,81 +51,91 @@ Pin reference
    :header: "Pin name", "Reference", "Function"
    :widths: 14, 12, 74
 
-   "RX (D0)",    "3.3 V", "UART0 RX (Serial1) / GPIO1"
-   "TX (D1)",    "3.3 V", "UART0 TX (Serial1) / GPIO0"
-   "D2",         "3.3 V", "GPIO25"
-   "D3",         "3.3 V", "GPIO15 (PWM7‑B)"
-   "D4",         "3.3 V", "GPIO16 (PWM0‑A)"
-   "D5",         "3.3 V", "GPIO17 (PWM0‑B)"
-   "D6",         "3.3 V", "GPIO18 (PWM1‑A)"
-   "D7",         "3.3 V", "GPIO19 (PWM1‑B)"
-   "D8",         "3.3 V", "GPIO20 (PWM2‑A)"
-   "D9",         "3.3 V", "GPIO21 (PWM2‑B)"
-   "D10",        "3.3 V", "GPIO5  (SPI0 CSn / PWM2‑B)"
-   "D11",        "3.3 V", "GPIO7  (SPI0 TX  / PWM3‑B)"
-   "D12",        "3.3 V", "GPIO4  (SPI0 RX  / PWM2‑A)"
-   "D13",        "3.3 V", "GPIO6  (SPI0 SCK / LED_BUILTIN)"
-   "D14 / A0",   "3.3 V", "GPIO26 / ADC0 / I2C1 SDA"
-   "D15 / A1",   "3.3 V", "GPIO27 / ADC1 / I2C1 SCL"
-   "D16 / A2",   "3.3 V", "GPIO28 / ADC2"
-   "D17 / A3",   "3.3 V", "GPIO29 / ADC3"
-   "D18 / A4",   "3.3 V", "NINA EXT GPIO3 (extender pin, not RP2040)"
-   "D19 / A5",   "3.3 V", "NINA EXT GPIO4 (extender pin, not RP2040)"
-   "D20 / A6",   "3.3 V", "NINA EXT GPIO5 (extender pin, not RP2040)"
-   "D21 / A7",   "3.3 V", "NINA EXT GPIO6 (extender pin, not RP2040)"
-   "SDA",        "3.3 V", "I2C0 SDA / GPIO12 (separate pad on the bottom)"
-   "SCL",        "3.3 V", "I2C0 SCL / GPIO13 (separate pad on the bottom)"
+   "TX",         "3.3 V", "UART0 TX / SPI0 RX / I2C0 SDA / PWM0 A"
+   "RX",         "3.3 V", "UART0 RX / SPI0 CS / I2C0 SCL / PWM0 B"
+   "D2",         "3.3 V", "SPI1 CS / UART1 RX / I2C0 SCL / PWM4 B"
+   "D3",         "3.3 V", "SPI1 TX / UART0 RTS / I2C1 SCL / PWM7 B"
+   "D4",         "3.3 V", "SPI0 RX / UART0 TX / I2C0 SDA / PWM0 A"
+   "D5",         "3.3 V", "SPI0 CS / UART0 RX / I2C0 SCL / PWM0 B"
+   "D6",         "3.3 V", "SPI0 SCK / UART0 CTS / I2C1 SDA / PWM1 A"
+   "D7",         "3.3 V", "SPI0 TX / UART0 RTS / I2C1 SCL / PWM1 B"
+   "D8",         "3.3 V", "SPI0 RX / UART1 TX / I2C0 SDA / PWM2 A"
+   "D9",         "3.3 V", "SPI0 CS / UART1 RX / I2C0 SCL / PWM2 B"
+   "D10",        "3.3 V", "SPI0 CS / UART1 RX / I2C0 SCL / PWM2 B"
+   "D11",        "3.3 V", "SPI0 TX / UART1 RTS / I2C1 SCL / PWM3 B"
+   "D12",        "3.3 V", "SPI0 RX / UART1 TX / I2C0 SDA / PWM2 A"
+   "D13",        "3.3 V", "SPI0 SCK / UART1 CTS / I2C1 SDA / PWM3 A"
+   "D14 / A0",   "3.3 V", "ADC / SPI1 SCK / UART1 CTS / I2C1 SDA / PWM5 A"
+   "D15 / A1",   "3.3 V", "ADC / SPI1 TX / UART1 RTS / I2C1 SCL / PWM5 B"
+   "D16 / A2",   "3.3 V", "ADC / SPI1 RX / UART0 TX / I2C0 SDA / PWM6 A"
+   "D17 / A3",   "3.3 V", "ADC / SPI1 CS / UART0 RX / I2C0 SCL / PWM6 B"
+   "D18 / A4 / SDA", "3.3 V", "ADC / I2C0 SDA / SPI1 RX / UART0 TX / PWM6 A"
+   "D19 / A5 / SCL", "3.3 V", "ADC / I2C0 SCL / SPI1 CS / UART0 RX / PWM6 B"
+   "D20 / A6",       "3.3 V", "ADC / GPIO"
+   "D21 / A7",       "3.3 V", "ADC / GPIO"
    "RESET",      "3.3 V", "press the on‑board RESET button or pull to GND to reset"
-   "REC",        "3.3 V", "BOOTSEL — hold while plugging USB to enter UF2 bootloader"
-   "LED_BUILTIN","3.3 V", "Yellow LED on D13 (RP2040 GPIO6)"
-   "LED_RED",    "—",     "RGB LED red channel — driven through the NINA module"
-   "LED_GREEN",  "—",     "RGB LED green channel — driven through the NINA module"
-   "LED_BLUE",   "—",     "RGB LED blue channel — driven through the NINA module"
+   "REC",        "3.3 V", "BOOTSEL — pull high at power‑on to enter the RP2040 ROM bootloader"
+   "LED_BUILTIN","—",     "Orange user LED on ``D13``"
+   "LED_RED",    "—",     "RGB LED red channel"
+   "LED_GREEN",  "—",     "RGB LED green channel"
+   "LED_BLUE",   "—",     "RGB LED blue channel"
 
-.. note::
+.. warning::
 
-   ``A4``–``A7`` (= ``D18``–``D21``) physically connect to the
-   NINA‑W102 module's I/O extender, not directly to the RP2040.
-   They're accessed via the NINA driver, not via :class:`machine.ADC`.
-   For analog input on the RP2040 itself, use ``A0``–``A3``.
+   The Nano RP2040 Connect's I/O pins are **3.3 V only** — they
+   are **not 5 V tolerant**. Driving 5 V into them will damage
+   the RP2040.
 
 Power pins
 ----------
 
-* **VIN** — 5 – 18 V input. Powers the board through the on‑board
-  regulator.
-* **+5V** — switched 5 V from USB / VIN, available to power external
-  shields.
+* **VIN** — 4 – 20 V input. Powers the board through the on‑board
+  switching regulator. Also fed via a diode from the USB 5 V rail,
+  so USB and ``VIN`` can be present at the same time without
+  back‑driving each other.
+* **+5V** — unconnected by default.
 * **+3V3** — 3.3 V regulator output.
-* **AREF** — analog reference input.
+* **AREF** — analog reference pin. Not wired to the RP2040 on this
+  board — the ADC is always referenced to **3.3 V**.
 * **GND** — common ground.
 
 The Nano RP2040 Connect can be powered through either path:
 
 * **Micro USB** — supplies 5 V to the on‑board regulator.
-* **VIN pin** — drive a regulated 5 – 18 V supply.
+* **VIN pin** — drive a regulated 4 – 20 V supply.
+
+.. note::
+
+   A solder jumper on the bottom of the board bridges ``+5V`` to
+   the USB 5 V rail. Close it to make the ``+5V`` header pin
+   actually carry 5 V.
+
+.. note::
+
+   A normally‑closed solder jumper on the output of the on‑board
+   4–20 V switching regulator can be cut to disable the regulator,
+   so the board can be powered directly from an external 3.3 V
+   supply on ``+3V3``.
 
 Recovery and debug pins
 -----------------------
 
 * **RESET** — both an exposed pad and a momentary RESET button on
-  the top of the board, tied to the RP2040's RUN line. Pull to GND
+  the top of the board, tied to the RP2040's NRST line. Pull to GND
   or press the button to reset.
-* **REC** — BOOTSEL button. Hold REC while plugging in USB to put
-  the RP2040 into ROM bootloader mode; the board enumerates as a USB
-  mass‑storage drive named ``RPI-RP2`` and accepts a ``.uf2``
-  firmware image. OpenMV IDE uses this path to flash new firmware.
+* **REC** — exposed pad. Holding ``REC`` **high** at power‑on (or
+  while pressing RESET) puts the RP2040 into its ROM bootloader;
+  the board re‑enumerates as a USB mass‑storage drive named
+  ``RPI-RP2`` and accepts a ``.uf2`` firmware image.
 
-A running script can re‑enter the UF2 bootloader on demand by
-calling :func:`machine.bootloader`::
+The Nano RP2040 Connect uses Arduino's standard **double‑tap
+reset** to enter Arduino's bootloader. Quickly press the RESET
+button twice — the board re‑enumerates over USB as a UF2 device
+and OpenMV IDE can flash a new firmware image.
 
-    import machine
-
-    machine.bootloader()
-
-The RP2040's SWD signals are exposed on three plated pads on the back
-of the board (``SWDIO``, ``SWCLK``, ``GND``) just below the NINA
-module. They are 3.3 V referenced.
+The RP2040's SWD signals are exposed on plated pads on the back
+of the board, just below the NINA module. All debug signals are
+**3.3 V referenced**.
 
 Onboard peripherals
 -------------------
@@ -151,24 +143,70 @@ Onboard peripherals
 LEDs
 ~~~~
 
-The Nano RP2040 Connect has two indicator paths. The rp2 port does
-not expose ``machine.LED``, so use :class:`machine.Pin` for both:
+The Nano RP2040 Connect has a user RGB LED — driven through the
+silkscreened ``LED_RED``, ``LED_GREEN``, and ``LED_BLUE`` channels
+— plus a separate orange ``LED_BUILTIN`` on ``D13``. All four are
+software‑controllable through :ref:`machine.LED <machine.LED>`::
 
-* **Yellow user LED** on ``D13`` (RP2040 GPIO6) — driven directly by
-  the RP2040::
+    from machine import LED
 
-      from machine import Pin
+    LED("LED_RED").on()
+    LED("LED_GREEN").on()
+    LED("LED_BLUE").on()
+    LED("LED_BUILTIN").on()
 
-      Pin("LED_BUILTIN", Pin.OUT).on()
+A separate green **power** LED on the board lights whenever the
++3.3 V rail is up and is not user‑controllable.
 
-* **RGB LED** driven through the NINA‑W102 module's GPIO extender.
-  The named channels (``LED_RED``, ``LED_GREEN``, ``LED_BLUE``) only
-  work after the NINA module has been brought up by the network or
-  BLE stack — bring up Wi‑Fi first, then::
+Camera sensor
+~~~~~~~~~~~~~
 
-      from machine import Pin
+The OpenMV firmware on the Nano RP2040 Connect supports the
+**OmniVision OV7670** parallel CMOS sensor. The board has no
+on‑board image sensor — wire an OV7670 module to the silkscreened
+header pins listed below and drive it through the
+:doc:`/library/omv.csi` module::
 
-      Pin("LED_RED", Pin.OUT).on()
+    import csi
+
+    cam = csi.CSI()
+    cam.reset()
+    cam.pixformat(csi.RGB565)
+    cam.framesize(csi.QVGA)
+    cam.snapshot(time=2000)       # let auto‑exposure settle
+
+    while True:
+        img = cam.snapshot()
+
+.. note::
+
+   The OV7670 takes 14 pins. The firmware wires them as follows:
+
+   .. csv-table::
+      :header: "Sensor signal", "Nano RP2040 pin"
+      :widths: 30, 70
+
+      "D0",       "``D3``"
+      "D1",       "``D4``"
+      "D2",       "``D5``"
+      "D3",       "``D6``"
+      "D4",       "``D7``"
+      "D5",       "``D8``"
+      "D6",       "``D9``"
+      "D7",       "``D2``"
+      "HSYNC",    "``A1``"
+      "VSYNC",    "``A0``"
+      "PXCLK",    "``A3``"
+      "MXCLK",    "``A2``"
+      "POWER",    "``TX``"
+      "RESET",    "``RX``"
+      "SCL",      "``SDA`` (I²C 0)"
+      "SDA",      "``SCL`` (I²C 0)"
+
+   The OV7670's I²C control bus is shared with the on‑board IMU
+   and ATECC608A on I²C 0. The sensor sits at 7‑bit address
+   ``0x21`` — user devices on bus 0 must also avoid this address
+   when the camera is wired up.
 
 IMU
 ~~~
@@ -216,8 +254,7 @@ Wi‑Fi
 ~~~~~
 
 The on‑board NINA‑W102 module is exposed via :doc:`/library/network`
-as a station interface. The NINA driver uses the legacy
-``ifconfig()`` API rather than ``ipconfig()``::
+as a station interface::
 
     import network, time
 
@@ -226,7 +263,7 @@ as a station interface. The NINA driver uses the legacy
     wlan.connect("ssid", "password")
     while not wlan.isconnected():
         time.sleep(1)
-    print("Wi‑Fi config:", wlan.ifconfig())   # (ip, netmask, gw, dns)
+    print("Wi‑Fi IP:", wlan.ipconfig("addr4")[0])
 
 Bluetooth
 ~~~~~~~~~
@@ -253,8 +290,8 @@ GPIO
 ~~~~
 
 Use :ref:`machine.Pin <machine.Pin>` to read or drive any of the
-silkscreened pins. Outputs are 3.3 V CMOS. Maximum sink across all
-GPIOs and the QSPI pins is 50 mA.
+silkscreened pins. Outputs are 3.3 V CMOS, 50 mA total sink across
+all GPIOs.
 
 ::
 
@@ -268,6 +305,15 @@ GPIOs and the QSPI pins is 50 mA.
     inp = Pin("D3", Pin.IN, Pin.PULL_UP)
     print(inp.value())
 
+Any input pin can also fire an interrupt on edge transitions::
+
+    def handler(pin):
+        print("triggered:", pin)
+
+    Pin("D3", Pin.IN, Pin.PULL_UP).irq(
+        handler, Pin.IRQ_FALLING | Pin.IRQ_RISING,
+    )
+
 UART
 ~~~~
 
@@ -277,9 +323,7 @@ Bus           TX    RX
 UART0         TX    RX
 ============  ====  ====
 
-The ``TX`` and ``RX`` pads on the silkscreen are also labelled
-``D1`` and ``D0`` respectively. Inside MicroPython use the names
-``TX``/``RX`` (the names ``D0``/``D1`` are not exported)::
+Use the silkscreen names ``TX``/``RX`` with :class:`machine.UART`::
 
     from machine import UART
 
@@ -295,30 +339,50 @@ The ``TX`` and ``RX`` pads on the silkscreen are also labelled
 I²C
 ~~~
 
-============  ====  ====
-Bus           SCL   SDA
-============  ====  ====
-I2C0          SCL   SDA  (separate pads — GPIO13/GPIO12)
-I2C1          A1    A0   (also = D15/D14, GPIO27/GPIO26)
-============  ====  ====
+======  ================  ================
+Bus     SDA               SCL
+======  ================  ================
+I2C0    ``SDA`` / ``A4``  ``SCL`` / ``A5``
+I2C1    ``A0``            ``A1``
+======  ================  ================
 
-The rp2 port's ``machine.I2C(0)`` defaults to a different pin set
-than what the Nano RP2040 Connect routes to its silkscreened
-``SDA``/``SCL`` pads, so pass the pins explicitly::
+Both buses need their pins passed explicitly to
+:class:`machine.I2C`::
 
     from machine import I2C, Pin
 
-    i2c = I2C(0, scl=Pin("SCL"), sda=Pin("SDA"), freq=400_000)
-    i2c.scan()
-    i2c.writeto(0x6A, b"hi")        # LSM6DSOX is at 0x6A on bus 0
+    bus0 = I2C(0, scl=Pin("SCL"), sda=Pin("SDA"), freq=400_000)
+    bus0.scan()
 
-``I2C(1)`` is wired to ``A0``/``A1`` by ``MICROPY_HW_I2C1_*`` and
-works without explicit pins — using ``A0``/``A1`` as I²C consumes
-those pins for the bus, so you can't simultaneously use them as ADC
-inputs.
+    bus1 = I2C(1, scl=Pin("A1"),  sda=Pin("A0"),  freq=400_000)
+    bus1.scan()
 
-The on‑board IMU sits on **bus 0**; user I²C devices on the same
-bus must avoid the LSM6DSOX address (``0x6A``).
+.. note::
+
+   Two on-board chips share **bus 0** — user devices on this bus
+   must avoid their addresses:
+
+   * ``0x6A`` — LSM6DSOX IMU
+   * ``0x60`` — ATECC608A‑MAHDA‑T
+
+   Using ``A0``/``A1`` as I²C consumes them for the bus, so they
+   can't simultaneously be ADC inputs.
+
+.. note::
+
+   The ``SDA`` / ``SCL`` pads (bus 0) have on‑board pull‑up
+   resistors to 3.3 V, so no external pull‑ups are needed for
+   devices on that bus. ``A0`` / ``A1`` (bus 1) do not — add
+   external pull‑ups when using bus 1.
+
+The same hardware can also be used in target (slave) mode through
+:ref:`machine.I2CTarget <machine.I2CTarget>` to expose a memory
+region to another I²C controller::
+
+    from machine import I2CTarget
+
+    buf = bytearray(32)
+    target = I2CTarget(0, addr=0x42, mem=buf)
 
 SPI
 ~~~
@@ -329,12 +393,10 @@ Bus           MOSI   MISO   SCK    CS
 SPI0          D11    D12    D13    D10
 ============  =====  =====  =====  ====
 
-``machine.SPI(0)`` defaults to a different pin set on the RP2040
-port, so pass the silkscreened pads explicitly when creating the
-bus::
+The rp2 port doesn't pre-configure SPI0's pins on this board, so
+pass the silkscreened pads explicitly when creating the bus::
 
-    from machine import SPI
-    from machine import Pin
+    from machine import SPI, Pin
 
     spi = SPI(0, baudrate=10_000_000,
               sck=Pin("D13"), mosi=Pin("D11"), miso=Pin("D12"))
@@ -346,17 +408,22 @@ bus::
 
 .. note::
 
-   ``D13`` doubles as ``LED_BUILTIN`` — driving SPI on this bus will
-   blink the yellow user LED in time with the bus clock. That's
-   normal.
+   ``D13`` doubles as the orange ``LED_BUILTIN`` — driving SPI on
+   this bus will blink the LED in time with the bus clock.
 
-   ``machine.SPI(1)`` exists but is reserved for the NINA‑W102 module
-   (the Wi‑Fi SPI link); don't use it directly.
+.. note::
+
+   ``machine.SPI(1)`` exists but is reserved for the on-board
+   NINA‑W102 module (the Wi-Fi/BLE SPI link); don't use it directly.
+
 
 ADC
 ~~~
 
-The RP2040 has four 12‑bit ADC channels exposed on **A0–A3**::
+The RP2040 has four 12‑bit ADC channels exposed on **A0–A3**, all
+**3.3 V referenced** — ``read_u16`` returns 0–65535 across 0–3.3 V
+at the pin. The board's ``AREF`` pin is not wired, so the reference
+is always 3.3 V::
 
     from machine import ADC
     import time
@@ -370,21 +437,30 @@ The RP2040 has four 12‑bit ADC channels exposed on **A0–A3**::
 PWM
 ~~~
 
-The RP2040's PWM peripheral can drive any GPIO. The mapping below
-covers the silkscreened pins; each row is a PWM slice / channel pair.
-
-============  =====================
-Pin           Slice / channel
-============  =====================
-D3            PWM7 B
-D4            PWM0 A
-D5            PWM0 B
-D6            PWM1 A
-D7            PWM1 B
-D8            PWM2 A
-D9            PWM2 B
-D11           PWM3 B
-============  =====================
+================  =====================
+Pin               Slice / channel
+================  =====================
+TX                PWM0 A
+RX                PWM0 B
+D2                PWM4 B
+D3                PWM7 B
+D4                PWM0 A
+D5                PWM0 B
+D6                PWM1 A
+D7                PWM1 B
+D8                PWM2 A
+D9                PWM2 B
+D10               PWM2 B
+D11               PWM3 B
+D12               PWM2 A
+D13               PWM3 A
+D14 / A0          PWM5 A
+D15 / A1          PWM5 B
+D16 / A2          PWM6 A
+D17 / A3          PWM6 B
+D18 / A4 / SDA    PWM6 A
+D19 / A5 / SCL    PWM6 B
+================  =====================
 
 Drive any of them via :ref:`machine.PWM <machine.PWM>`::
 
@@ -392,11 +468,57 @@ Drive any of them via :ref:`machine.PWM <machine.PWM>`::
 
     pwm = PWM(Pin("D3"), freq=1_000, duty_u16=32768)
 
+.. note::
+
+   Several pins share PWM slice channels:
+
+   * **PWM0 A** is on ``TX`` *and* ``D4``.
+   * **PWM0 B** is on ``RX`` *and* ``D5``.
+   * **PWM2 A** is on ``D8`` *and* ``D12``.
+   * **PWM2 B** is on ``D9`` *and* ``D10``.
+   * **PWM6 A** is on ``D16``/``A2`` *and* ``D18``/``A4``/``SDA``.
+   * **PWM6 B** is on ``D17``/``A3`` *and* ``D19``/``A5``/``SCL``.
+
+   Pick one consumer per slice channel. Channels A and B inside the
+   same slice share their period (frequency) but each has its own
+   duty cycle.
+
 Software bit‑banged buses
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for an
+externally wired **AMG8833** 8×8 thermal imager. Connect the
+module to the I²C bus listed below, then read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 0** — wire
+the module to the silkscreened ``SCL`` / ``SDA`` pads. The
+sensor's 7‑bit address (``0x69``) must not be used by any other
+device on that bus.
 
 Timing
 ------
@@ -417,6 +539,26 @@ elapsed‑time measurement::
     # ...do work...
     elapsed = time.ticks_diff(time.ticks_ms(), start)
 
+Virtual timers
+~~~~~~~~~~~~~~
+
+:ref:`machine.Timer <machine.Timer>` schedules periodic or one‑shot
+callbacks without consuming a hardware timer slot. Pass ``-1`` as the
+id to use a virtual (software) timer::
+
+    from machine import Timer
+
+    one_shot = Timer(-1)
+    one_shot.init(period=5_000, mode=Timer.ONE_SHOT,
+                  callback=lambda t: print("once"))
+
+    periodic = Timer(-1)
+    periodic.init(period=2_000, mode=Timer.PERIODIC,
+                  callback=lambda t: print("tick"))
+
+Period values are in milliseconds. Call :meth:`~machine.Timer.deinit`
+to stop and release the slot.
+
 Real‑time clock
 ~~~~~~~~~~~~~~~
 
@@ -435,7 +577,8 @@ Watchdog
 ~~~~~~~~
 
 :ref:`machine.WDT <machine.WDT>` resets the board if the application
-hangs::
+hangs. Once started it can't be stopped or reconfigured — feed it
+periodically inside your main loop::
 
     from machine import WDT
 
@@ -450,11 +593,17 @@ Boot and runtime info
 Firmware update (UF2)
 ~~~~~~~~~~~~~~~~~~~~~
 
-The RP2040 enters its ROM bootloader when the **REC** (BOOTSEL)
-button is held while connecting USB — the board re‑enumerates as a
-mass‑storage drive named ``RPI-RP2``. Drop the OpenMV firmware
-``.uf2`` file onto the drive to flash. OpenMV IDE automates this
-when you ask it to update firmware.
+The Nano RP2040 Connect uses Arduino's standard **double‑tap
+reset** to enter Arduino's bootloader. Quickly press the reset
+button twice — the board re‑enumerates over USB as a UF2 device
+and OpenMV IDE can flash a new firmware image.
+
+A running script can re‑enter the bootloader on demand by calling
+:func:`machine.bootloader`::
+
+    import machine
+
+    machine.bootloader()
 
 Filesystem and boot order
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -472,14 +621,30 @@ After mounting, the interpreter then runs scripts from ``/flash``:
   ``boot.py``.
 
 The default ``main.py`` shipped on a freshly flashed board just
-blinks the yellow ``LED_BUILTIN`` as a heartbeat (two short pulses,
-short gap), so you can tell the firmware booted cleanly without any
-host attached.
+blinks the user RGB LED's **blue** channel as a heartbeat (two
+short pulses, short gap), so you can tell the firmware booted
+cleanly without any host attached.
 
 When connected over USB, ``/flash`` enumerates as a USB mass‑storage
 drive on the host, letting you edit ``boot.py``, ``main.py``, and any
 other files directly. **Eject the drive before resetting the board**
 so the host flushes its cached writes.
+
+.. note::
+
+   Because the OS treats the drive as a passive block device, files
+   created or modified by code running on the camera will not show
+   up until the host re‑mounts the drive. If both the OS and the
+   camera write the same filesystem at the same time, the OS will
+   win and overwrite changes made by the camera. Use the SD card for
+   any data the script writes back, and remount before reading those
+   files from the host.
+
+.. note::
+
+   The user RGB LED's **red** channel may briefly light up while the
+   host is reading from or writing to the USB mass‑storage drive —
+   this is a firmware‑driven activity indicator, not a fault.
 
 Storage sizes
 ~~~~~~~~~~~~~

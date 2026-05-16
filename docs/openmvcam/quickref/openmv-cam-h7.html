@@ -133,6 +133,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#adc-and-dac">ADC and DAC</a></li>
 <li><a class="reference internal" href="#pwm">PWM</a></li>
 <li><a class="reference internal" href="#software-bitbanged-buses">Software bit&#8209;banged buses</a></li>
+<li><a class="reference internal" href="#thermal-sensor-offboard">Thermal sensor (off&#8209;board)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#timing">Timing</a><ul>
@@ -173,7 +174,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/a14b3b5c18df00aa22174528af239b2a2f5e222f/docs/openmvcam/quickref/openmv-cam-h7.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/openmvcam/quickref/openmv-cam-h7.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -717,6 +718,40 @@ P7/P8/P9 with <a class="reference internal" href="../../library/pyb.Servo.html#p
 <h3>Software bit‑banged buses<a class="headerlink" href="#software-bitbanged-buses" title="Link to this heading">¶</a></h3>
 <p><a class="reference internal" href="../../library/machine.I2C.html#machine-softi2c"><span class="std std-ref">machine.SoftI2C</span></a> and <a class="reference internal" href="../../library/machine.SPI.html#machine-softspi"><span class="std std-ref">machine.SoftSPI</span></a> work on any GPIO if you need an extra bus.</p>
 </section>
+<section id="thermal-sensor-offboard">
+<h3>Thermal sensor (off‑board)<a class="headerlink" href="#thermal-sensor-offboard" title="Link to this heading">¶</a></h3>
+<p>The firmware includes the <a class="reference internal" href="../../library/omv.fir.html"><span class="doc">fir — thermal sensor driver (fir == far infrared)</span></a> driver for
+externally wired thermal imagers:</p>
+<ul class="simple">
+<li><p><strong>MLX90621</strong> — 16 × 4 IR array</p></li>
+<li><p><strong>MLX90640</strong> — 32 × 24 IR array</p></li>
+<li><p><strong>MLX90641</strong> — 16 × 12 IR array</p></li>
+<li><p><strong>AMG8833</strong> — 8 × 8 IR array</p></li>
+</ul>
+<p>Wire the module to the board’s I²C bus and read frames with
+<code class="docutils literal notranslate"><span class="pre">fir.init()</span></code> + <code class="docutils literal notranslate"><span class="pre">fir.snapshot()</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">fir</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">fir</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>                          <span class="c1"># auto‑detects the sensor</span>
+</span><span data-line="6"><span class="n">clock</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="9">    <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+</span><span data-line="10">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="11">        <span class="n">img</span> <span class="o">=</span> <span class="n">fir</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">x_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+</span><span data-line="12">                           <span class="n">color_palette</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">PALETTE_IRONBOW</span><span class="p">,</span>
+</span><span data-line="13">                           <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">BICUBIC</span><span class="p">,</span>
+</span><span data-line="14">                           <span class="n">copy_to_fb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="15">    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="16">        <span class="k">continue</span>
+</span><span data-line="17">    <span class="nb">print</span><span class="p">(</span><span class="n">clock</span><span class="o">.</span><span class="n">fps</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">fir</span></code> driver only talks to the sensor over <strong>I²C 2</strong> — wire
+the module to <code class="docutils literal notranslate"><span class="pre">P4</span></code> (SCL) and <code class="docutils literal notranslate"><span class="pre">P5</span></code> (SDA).</p>
+</section>
 </section>
 <section id="timing">
 <h2>Timing<a class="headerlink" href="#timing" title="Link to this heading">¶</a></h2>
@@ -911,7 +946,7 @@ modules — including which ones are unique to the H7 build.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 15 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

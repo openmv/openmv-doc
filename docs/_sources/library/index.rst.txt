@@ -168,6 +168,7 @@ for which boards include each one.
    stm.rst
    mimxrt.rst
    omv.alif.rst
+   ubluepy.rst
 
 Hardware drivers
 ~~~~~~~~~~~~~~~~
@@ -313,6 +314,8 @@ Arduino Nano 33 BLE Sense — board-specific :doc:`imu <imu>` wrapper
 that selects between the LSM9DS1 (Rev 1) and BMI270 + BMM150 (Rev 2)
 sensor sets, plus:
 
+* :mod:`ubluepy` — Bluetooth LE peripheral and central API on the
+  Nordic SoftDevice
 * :mod:`bmi270` — BMI270 6-axis IMU
 * :mod:`bmm150` — BMM150 3-axis magnetometer
 * :mod:`lsm9ds1` — LSM9DS1 9-axis IMU

@@ -120,12 +120,12 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#recovery-and-debug-pins">Recovery and debug pins</a></li>
 <li><a class="reference internal" href="#onboard-peripherals">Onboard peripherals</a><ul>
 <li><a class="reference internal" href="#leds">LEDs</a></li>
+<li><a class="reference internal" href="#camera-sensor">Camera sensor</a></li>
 <li><a class="reference internal" href="#imu">IMU</a></li>
 <li><a class="reference internal" href="#environmental-sensors">Environmental sensors</a></li>
 <li><a class="reference internal" href="#light-colour-proximity-gesture">Light / colour / proximity / gesture</a></li>
 <li><a class="reference internal" href="#microphone">Microphone</a></li>
-<li><a class="reference internal" href="#bluetooth-le">Bluetooth LE</a></li>
-<li><a class="reference internal" href="#external-thermal-cameras">External thermal cameras</a></li>
+<li><a class="reference internal" href="#bluetooth">Bluetooth</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#bus-reference">Bus reference</a><ul>
@@ -136,15 +136,18 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#adc">ADC</a></li>
 <li><a class="reference internal" href="#pwm">PWM</a></li>
 <li><a class="reference internal" href="#software-bitbanged-buses">Software bit&#8209;banged buses</a></li>
+<li><a class="reference internal" href="#thermal-sensor-offboard">Thermal sensor (off&#8209;board)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#timing">Timing</a><ul>
 <li><a class="reference internal" href="#time">time</a></li>
+<li><a class="reference internal" href="#virtual-timers">Virtual timers</a></li>
 <li><a class="reference internal" href="#realtime-clock">Real&#8209;time clock</a></li>
+<li><a class="reference internal" href="#watchdog">Watchdog</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#boot-and-runtime-info">Boot and runtime info</a><ul>
-<li><a class="reference internal" href="#firmware-update-dfu">Firmware update (DFU)</a></li>
+<li><a class="reference internal" href="#firmware-update">Firmware update</a></li>
 <li><a class="reference internal" href="#filesystem-and-boot-order">Filesystem and boot order</a></li>
 <li><a class="reference internal" href="#storage-sizes">Storage sizes</a></li>
 </ul>
@@ -173,7 +176,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/a14b3b5c18df00aa22174528af239b2a2f5e222f/docs/openmvcam/quickref/arduino-nano-33-ble-sense.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/openmvcam/quickref/arduino-nano-33-ble-sense.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -256,16 +259,14 @@ target. The information below is preserved for users running 4.7.0
 or earlier.</p>
 </div>
 <p>The Arduino Nano 33 BLE Sense is a 45 × 18 mm Arduino‑Nano‑form‑factor
-sensor board built around the Nordic Semiconductor nRF52840 — a
-single ARM Cortex‑M4 with FPU running at 64 MHz with 256 KB of
-internal SRAM and 1 MB of internal flash. Bluetooth LE 5.0 (and
-802.15.4) come from the SoftDevice running on the same SoC, and the
-board carries an integrated environmental and motion sensor cluster:
-9‑axis IMU, barometer, temperature / humidity, ambient light /
-colour / proximity / gesture, and a PDM microphone.</p>
-<p>The Nano 33 BLE Sense has <strong>no on‑board image sensor</strong> — the OpenMV
-firmware here is a sensors‑and‑audio build focused on the integrated
-peripherals plus support for external thermal cameras over I²C.</p>
+board built around the Nordic Semiconductor nRF52840 — a single
+ARM Cortex‑M4 with FPU running at 64 MHz with 256 KB of internal
+SRAM and 1 MB of internal flash. BLE comes from the on‑die radio,
+and the board carries a 9‑axis IMU, an LPS22HB barometer, an
+HTS221 / HS3003 temperature / humidity sensor, an APDS9960 ambient
+light / colour / proximity / gesture sensor, and an MP34DT05 PDM
+microphone. The OpenMV firmware drives all of these from
+MicroPython.</p>
 <a class="reference internal image-reference" href="../../_images/arduino-nano-33-ble-sense-hero.jpg"><img alt="Arduino Nano 33 BLE Sense" class="align-center" src="../../_images/arduino-nano-33-ble-sense-hero.jpg" style="width: 400px;" />
 </a>
 <p>For full datasheet, photos, and dimensions see the
@@ -273,36 +274,21 @@ peripherals plus support for external thermal cameras over I²C.</p>
 <section id="highlights">
 <h2>Highlights<a class="headerlink" href="#highlights" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>Nordic nRF52840</strong> Cortex‑M4 at 64 MHz with <strong>256 KB internal
-SRAM</strong> and <strong>1 MB internal flash</strong> (Softdevice s140 + OpenMV
-firmware + filesystem all share this 1 MB).</p></li>
-<li><p><strong>Bluetooth LE 5.0</strong> plus <strong>IEEE 802.15.4</strong> (Thread / Zigbee) via
-the on‑die radio and Nordic SoftDevice s140.</p></li>
-<li><p><strong>9‑axis IMU</strong> — accelerometer + gyroscope + magnetometer.
-Rev 1 boards have an STMicro <strong>LSM9DS1</strong>; Rev 2 boards have a
-Bosch <strong>BMI270</strong> plus a <strong>BMM150</strong> magnetometer. The frozen
-<code class="docutils literal notranslate"><span class="pre">imu</span></code> module probes both at boot.</p></li>
-<li><p><strong>Pressure sensor</strong> — STMicro <strong>LPS22HB</strong> barometer (260–1260 hPa).</p></li>
-<li><p><strong>Temperature / humidity</strong> — <strong>HTS221</strong> on Rev 1, <strong>HS3003</strong> on
-Rev 2.</p></li>
-<li><p><strong>Light / colour / proximity / gesture</strong> — Broadcom <strong>APDS9960</strong>.</p></li>
-<li><p><strong>MEMS microphone</strong> — STMicro <strong>MP34DT05</strong>, captured through
-<a class="reference internal" href="../../library/omv.audio.html"><span class="doc">audio — Audio Module</span></a>.</p></li>
-<li><p><strong>20 user I/O pins</strong> on the standard Nano headers — D2–D13
-(digital) plus A0–A7 (analog). Twelve PWM outputs.</p></li>
+<li><p><strong>Nordic nRF52840</strong> Cortex‑M4 with FPU at 64 MHz with <strong>256 KB
+internal SRAM</strong> and <strong>1 MB internal flash</strong>.</p></li>
+<li><p><strong>Bluetooth LE 5.0</strong> via the on‑die radio and Nordic SoftDevice
+s140.</p></li>
+<li><p><strong>9‑axis IMU</strong> — <a class="reference internal" href="../../library/lsm9ds1.html#module-lsm9ds1" title="lsm9ds1: STMicroelectronics LSM9DS1 9-axis IMU driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">LSM9DS1</span></code></a> on Rev 1,
+<a class="reference internal" href="../../library/bmi270.html#module-bmi270" title="bmi270: Bosch BMI270 6-axis inertial measurement unit driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BMI270</span></code></a> + <a class="reference internal" href="../../library/bmm150.html#module-bmm150" title="bmm150: Bosch BMM150 3-axis geomagnetic sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">BMM150</span></code></a> on Rev 2. The
+frozen <a class="reference internal" href="../../library/omv.imu.html#module-imu" title="imu: imu sensor"><code class="xref py py-mod docutils literal notranslate"><span class="pre">imu</span></code></a> driver probes both at boot.</p></li>
+<li><p><a class="reference internal" href="../../library/lps22h.html#module-lps22h" title="lps22h: LPS22HB/HH MEMS pressure and temperature sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">LPS22HB</span></code></a> barometer, <a class="reference internal" href="../../library/hts221.html#module-hts221" title="hts221: HTS221 humidity and temperature sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">HTS221</span></code></a> /
+<a class="reference internal" href="../../library/hs3003.html#module-hs3003" title="hs3003: Renesas HS3003 humidity and temperature sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">HS3003</span></code></a> temperature and humidity sensor,
+<a class="reference internal" href="../../library/omv.apds9960.html#module-apds9960" title="apds9960: APDS9960 proximity, gesture, and RGB/ambient-light sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">APDS9960</span></code></a> ambient light / colour / proximity /
+gesture sensor, and <strong>MP34DT05</strong> PDM microphone.</p></li>
 <li><p><strong>Micro USB</strong> connector for power, programming, and a CDC REPL.</p></li>
+<li><p><strong>22 user I/O pins</strong> on the standard Nano headers — <code class="docutils literal notranslate"><span class="pre">TX</span></code>/<code class="docutils literal notranslate"><span class="pre">RX</span></code>,
+<code class="docutils literal notranslate"><span class="pre">D2</span></code>–<code class="docutils literal notranslate"><span class="pre">D13</span></code> (digital), <code class="docutils literal notranslate"><span class="pre">A0</span></code>–<code class="docutils literal notranslate"><span class="pre">A7</span></code> (analog).</p></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The OpenMV firmware on the Nano 33 BLE Sense is a stripped‑down
-build compared with the OpenMV camera boards: there is no
-on‑board image sensor, no JPEG codec, no GPU, no Wi‑Fi, no
-networking stack, and no ML / TFLite inference. Bluetooth LE is
-available through the legacy <code class="docutils literal notranslate"><span class="pre">ubluepy</span></code> module (the
-modern <a class="reference internal" href="../../library/bluetooth.html#module-bluetooth" title="bluetooth: Low-level Bluetooth radio functionality"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluetooth</span></code></a> / <a class="reference internal" href="../../library/aioble.html"><span class="doc">aioble — Async BLE</span></a> APIs are not
-enabled). Use the integrated sensors together with
-<code class="xref py py-mod docutils literal notranslate"><span class="pre">ulab.numpy</span></code> for on‑device DSP and feature extraction.</p>
-</div>
 </section>
 <section id="pinout">
 <h2>Pinout<a class="headerlink" href="#pinout" title="Link to this heading">¶</a></h2>
@@ -325,117 +311,113 @@ enabled). Use the integrated sensors together with
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>RX (D0)</p></td>
+<tr class="row-even"><td><p>TX</p></td>
 <td><p>3.3 V</p></td>
-<td><p>UART1 RX (Serial1) / P1.10</p></td>
+<td><p>UART1 TX</p></td>
 </tr>
-<tr class="row-odd"><td><p>TX (D1)</p></td>
+<tr class="row-odd"><td><p>RX</p></td>
 <td><p>3.3 V</p></td>
-<td><p>UART1 TX (Serial1) / P1.03</p></td>
+<td><p>UART1 RX</p></td>
 </tr>
 <tr class="row-even"><td><p>D2</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.11</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>D3</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.12 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-even"><td><p>D4</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.15 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>D5</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.13 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-even"><td><p>D6</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.14 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>D7</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.23 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-even"><td><p>D8</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.21 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>D9</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.27 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-even"><td><p>D10</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.02 (PWM‑capable)</p></td>
+<td><p>PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>D11</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.01 / SPI0 COPI (PWM‑capable)</p></td>
+<td><p>PWM / SPI0 MOSI</p></td>
 </tr>
 <tr class="row-even"><td><p>D12</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P1.08 / SPI0 CIPO</p></td>
+<td><p>PWM / SPI0 MISO</p></td>
 </tr>
 <tr class="row-odd"><td><p>D13</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.13 / SPI0 SCK / LED_BUILTIN</p></td>
+<td><p>PWM / SPI0 SCK</p></td>
 </tr>
 <tr class="row-even"><td><p>A0</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.04 / ADC IN2</p></td>
+<td><p>ADC / PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>A1</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.05 / ADC IN3</p></td>
+<td><p>ADC / PWM</p></td>
 </tr>
 <tr class="row-even"><td><p>A2</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.30 / ADC IN6</p></td>
+<td><p>ADC / PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>A3</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.29 / ADC IN5</p></td>
+<td><p>ADC / PWM</p></td>
 </tr>
-<tr class="row-even"><td><p>A4</p></td>
+<tr class="row-even"><td><p>A4 / I2C_SDA</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.31 / ADC IN7 / I2C0 SDA</p></td>
+<td><p>ADC / PWM / I2C0 SDA</p></td>
 </tr>
-<tr class="row-odd"><td><p>A5</p></td>
+<tr class="row-odd"><td><p>A5 / I2C_SCL</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.02 / ADC IN0 / I2C0 SCL</p></td>
+<td><p>ADC / PWM / I2C0 SCL</p></td>
 </tr>
 <tr class="row-even"><td><p>A6</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.28 / ADC IN4</p></td>
+<td><p>ADC / PWM</p></td>
 </tr>
 <tr class="row-odd"><td><p>A7</p></td>
 <td><p>3.3 V</p></td>
-<td><p>P0.03 / ADC IN1</p></td>
+<td><p>ADC / PWM</p></td>
 </tr>
 <tr class="row-even"><td><p>RESET</p></td>
 <td><p>3.3 V</p></td>
 <td><p>press the on‑board RESET button or pull to GND to reset</p></td>
 </tr>
 <tr class="row-odd"><td><p>LED_BUILTIN</p></td>
-<td><p>3.3 V</p></td>
-<td><p>Yellow LED on D13 (P0.13)</p></td>
+<td><p>—</p></td>
+<td><p>Orange user LED on <code class="docutils literal notranslate"><span class="pre">D13</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p>LED_RED</p></td>
-<td><p>3.3 V</p></td>
-<td><p>RGB LED red channel (active low) / P0.24</p></td>
+<td><p>—</p></td>
+<td><p>RGB LED red channel (active low)</p></td>
 </tr>
 <tr class="row-odd"><td><p>LED_GREEN</p></td>
-<td><p>3.3 V</p></td>
-<td><p>RGB LED green channel (active low) / P0.16</p></td>
+<td><p>—</p></td>
+<td><p>RGB LED green channel (active low)</p></td>
 </tr>
 <tr class="row-even"><td><p>LED_BLUE</p></td>
-<td><p>3.3 V</p></td>
-<td><p>RGB LED blue channel (active low) / P0.06</p></td>
-</tr>
-<tr class="row-odd"><td><p>LED_PWR</p></td>
-<td><p>3.3 V</p></td>
-<td><p>Green power LED / P1.09</p></td>
+<td><p>—</p></td>
+<td><p>RGB LED blue channel (active low)</p></td>
 </tr>
 </tbody>
 </table>
@@ -451,12 +433,13 @@ nRF52840.</p>
 <h2>Power pins<a class="headerlink" href="#power-pins" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>VIN</strong> — 4.5 – 21 V input. Powers the board through the on‑board
-regulator.</p></li>
-<li><p><strong>+5V</strong> — switched 5 V from USB / VIN, available to power external
-shields. Disabled by default; cut the small <code class="docutils literal notranslate"><span class="pre">VUSB</span></code> jumper on the
-back to enable it.</p></li>
-<li><p><strong>+3V3</strong> — 3.3 V regulator output (~50 mA available for shields).</p></li>
-<li><p><strong>AREF</strong> — analog reference input.</p></li>
+regulator. Also fed via a diode from the USB 5 V rail, so USB and
+<code class="docutils literal notranslate"><span class="pre">VIN</span></code> can be present at the same time without back‑driving each
+other.</p></li>
+<li><p><strong>+5V</strong> — unconnected by default.</p></li>
+<li><p><strong>+3V3</strong> — 3.3 V regulator output.</p></li>
+<li><p><strong>AREF</strong> — analog reference pin. Not wired to the nRF52840 on
+this board — the ADC is always referenced to <strong>3.3 V</strong>.</p></li>
 <li><p><strong>GND</strong> — common ground.</p></li>
 </ul>
 <p>The Nano 33 BLE Sense can be powered through either path:</p>
@@ -464,146 +447,221 @@ back to enable it.</p></li>
 <li><p><strong>Micro USB</strong> — supplies 5 V to the on‑board regulator.</p></li>
 <li><p><strong>VIN pin</strong> — drive a regulated 4.5 – 21 V supply.</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A solder jumper on the bottom of the board labelled <code class="docutils literal notranslate"><span class="pre">VUSB</span></code>
+bridges <code class="docutils literal notranslate"><span class="pre">+5V</span></code> to the USB 5 V rail. Close it to make the
+<code class="docutils literal notranslate"><span class="pre">+5V</span></code> header pin actually carry 5 V.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A normally‑closed solder jumper on the output of the on‑board
+4.5–21 V switching regulator can be cut to disable the regulator,
+so the board can be powered directly from an external 3.3 V
+supply on <code class="docutils literal notranslate"><span class="pre">+3V3</span></code>.</p>
+</div>
 </section>
 <section id="recovery-and-debug-pins">
 <h2>Recovery and debug pins<a class="headerlink" href="#recovery-and-debug-pins" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>RESET</strong> — both an exposed pad and a momentary RESET button on
-the top of the board, tied to the nRF52840’s reset line.</p></li>
+the top of the board, tied to the nRF52840’s reset line. Pull to
+GND or press the button to reset.</p></li>
 </ul>
 <p>The Nano 33 BLE Sense uses Arduino’s standard <strong>double‑tap reset</strong>
-to enter the on‑board mass‑storage bootloader. Quickly press the
-reset button twice — the board re‑enumerates over USB as a drive
-that accepts a <code class="docutils literal notranslate"><span class="pre">.bin</span></code> firmware image, and OpenMV IDE uses this
-mode to flash.</p>
-<p>A running script can re‑enter the bootloader on demand by calling
-<a class="reference internal" href="../../library/machine.html#machine.bootloader" title="machine.bootloader"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.bootloader()</span></code></a>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">machine</span><span class="o">.</span><span class="n">bootloader</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>The nRF52840’s SWD signals are exposed on small pads on the back of
-the board (<code class="docutils literal notranslate"><span class="pre">SWDIO</span></code>, <code class="docutils literal notranslate"><span class="pre">SWCLK</span></code>, <code class="docutils literal notranslate"><span class="pre">GND</span></code>). They are 3.3 V referenced.</p>
+to enter Arduino’s bootloader. Quickly press the RESET button
+twice — the board enters bootloader mode and OpenMV IDE can flash
+a new firmware image.</p>
+<p>The nRF52840’s SWD signals are exposed on plated pads on the back
+of the board. All debug signals are <strong>3.3 V referenced</strong>.</p>
 </section>
 <section id="onboard-peripherals">
 <h2>Onboard peripherals<a class="headerlink" href="#onboard-peripherals" title="Link to this heading">¶</a></h2>
 <section id="leds">
 <h3>LEDs<a class="headerlink" href="#leds" title="Link to this heading">¶</a></h3>
-<p>The Nano 33 BLE Sense has three indicator paths. The nrf port
-exposes them through a board‑specific <code class="docutils literal notranslate"><span class="pre">LED</span></code> class addressed by
-numeric ID:</p>
-<div class="table-wrapper docutils container">
+<p>The Nano 33 BLE Sense has a user RGB LED — driven through the
+silkscreened <code class="docutils literal notranslate"><span class="pre">LED_RED</span></code>, <code class="docutils literal notranslate"><span class="pre">LED_GREEN</span></code>, and <code class="docutils literal notranslate"><span class="pre">LED_BLUE</span></code> channels
+— plus a separate orange <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> on <code class="docutils literal notranslate"><span class="pre">D13</span></code>. All four are
+software‑controllable through <a class="reference internal" href="../../library/machine.LED.html#machine-led"><span class="std std-ref">machine.LED</span></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">LED</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_RED&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="4"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_GREEN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_BLUE&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="6"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_BUILTIN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>A separate green <strong>power</strong> LED on the board lights whenever the
++3.3 V rail is up and is not user‑controllable.</p>
+</section>
+<section id="camera-sensor">
+<h3>Camera sensor<a class="headerlink" href="#camera-sensor" title="Link to this heading">¶</a></h3>
+<p>The OpenMV firmware on the Nano 33 BLE Sense supports the
+<strong>OmniVision OV7670</strong> parallel CMOS sensor. The board has no
+on‑board image sensor — wire an OV7670 module to the silkscreened
+header pins listed below and drive it through the
+<a class="reference internal" href="../../library/omv.csi.html"><span class="doc">csi — camera sensors</span></a> module:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">cam</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="4"><span class="n">cam</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">cam</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">cam</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">cam</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>       <span class="c1"># let auto‑exposure settle</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="10">    <span class="n">img</span> <span class="o">=</span> <span class="n">cam</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The OV7670 takes 14 pins. The firmware wires them as follows:</p>
+<div class="table-wrapper colwidths-given docutils container">
 <table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>LED id</p></th>
-<th class="head"><p>Channel</p></th>
+<tr class="row-odd"><th class="head"><p>Sensor signal</p></th>
+<th class="head"><p>Nano 33 BLE Sense pin</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LED(1)</span></code></p></td>
-<td><p>Red (P0.24, active low)</p></td>
+<tr class="row-even"><td><p>D0</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D10</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LED(2)</span></code></p></td>
-<td><p>Green (P0.16, active low)</p></td>
+<tr class="row-odd"><td><p>D1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TX</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">LED(3)</span></code></p></td>
-<td><p>Blue (P0.06, active low)</p></td>
+<tr class="row-even"><td><p>D2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RX</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">LED(4)</span></code></p></td>
-<td><p>Yellow <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> (P0.13, active high)</p></td>
+<tr class="row-odd"><td><p>D3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D2</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>D4</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D3</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>D5</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D5</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>D6</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D6</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>D7</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D4</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>HSYNC</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A1</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>VSYNC</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D8</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>PXCLK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A0</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>MXCLK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D9</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>POWER</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A3</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>RESET</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A2</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>SCL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A5</span></code> (I²C 0)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDA</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A4</span></code> (I²C 0)</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">board</span><span class="w"> </span><span class="kn">import</span> <span class="n">LED</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">LED</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>    <span class="c1"># yellow user LED</span>
-</span><span data-line="4"><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>    <span class="c1"># red</span>
-</span></pre></div>
+<p>The OV7670’s I²C control bus is the same external <strong>I²C 0</strong>
+exposed on <code class="docutils literal notranslate"><span class="pre">A5</span></code>/<code class="docutils literal notranslate"><span class="pre">A4</span></code>. The sensor sits at 7‑bit address
+<code class="docutils literal notranslate"><span class="pre">0x21</span></code> — user devices on that bus must avoid this address
+when the camera is wired up.</p>
 </div>
-<p>The <strong>green power LED</strong> on <code class="docutils literal notranslate"><span class="pre">P1.09</span></code> is wired in hardware to the
-3.3 V rail and is not addressable through <code class="docutils literal notranslate"><span class="pre">LED</span></code> — drive it
-directly via <a class="reference internal" href="../../library/machine.Pin.html#machine.Pin" title="machine.Pin"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.Pin</span></code></a> (alias <code class="docutils literal notranslate"><span class="pre">&quot;LED_PWR&quot;</span></code>) if you want
-to use it as an extra status indicator.</p>
 </section>
 <section id="imu">
 <h3>IMU<a class="headerlink" href="#imu" title="Link to this heading">¶</a></h3>
 <p>The 9‑axis IMU is exposed through the frozen <code class="docutils literal notranslate"><span class="pre">imu</span></code> module, which
-auto‑detects whether the board has the original LSM9DS1 (Rev 1) or
-the BMI270 + BMM150 (Rev 2) and presents a unified <code class="docutils literal notranslate"><span class="pre">IMU</span></code> class.
-Pass it the internal I²C bus the sensors share (bus 1 on
-<code class="docutils literal notranslate"><span class="pre">P0.14</span></code>/<code class="docutils literal notranslate"><span class="pre">P0.15</span></code>):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">imu</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-</span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span><span class="p">,</span> <span class="n">Pin</span>
+auto‑detects whether the board has the LSM9DS1 (Rev 1) or the
+BMI270 + BMM150 (Rev 2) and presents a unified <a class="reference internal" href="../../library/imu.html#imu.IMU" title="imu.IMU"><code class="xref py py-class docutils literal notranslate"><span class="pre">imu.IMU</span></code></a>
+class. The sensors sit on the internal I²C 1 bus (<code class="docutils literal notranslate"><span class="pre">P14</span></code> /
+<code class="docutils literal notranslate"><span class="pre">P15</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span><span class="p">,</span> <span class="n">Pin</span>
+</span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">imu</span><span class="w"> </span><span class="kn">import</span> <span class="n">IMU</span>
 </span><span data-line="4">
-</span><span data-line="5"><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">15</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">14</span><span class="p">))</span>
-</span><span data-line="6"><span class="n">sensor</span> <span class="o">=</span> <span class="n">imu</span><span class="o">.</span><span class="n">IMU</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P15&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P14&quot;</span><span class="p">))</span>
+</span><span data-line="6"><span class="n">sensor</span> <span class="o">=</span> <span class="n">IMU</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
 </span><span data-line="7">
 </span><span data-line="8"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-</span><span data-line="9">    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">accel</span><span class="p">())</span>   <span class="c1"># (x, y, z) acceleration tuple</span>
-</span><span data-line="10">    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">gyro</span><span class="p">())</span>    <span class="c1"># (x, y, z) angular‑rate tuple</span>
-</span><span data-line="11">    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">magnet</span><span class="p">())</span>  <span class="c1"># (x, y, z) magnetometer tuple</span>
+</span><span data-line="9">    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">accel</span><span class="p">())</span>     <span class="c1"># (x, y, z) in g</span>
+</span><span data-line="10">    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">gyro</span><span class="p">())</span>      <span class="c1"># (x, y, z) in deg/s</span>
+</span><span data-line="11">    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">magnet</span><span class="p">())</span>    <span class="c1"># (x, y, z) magnetometer</span>
 </span><span data-line="12">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>For direct access to a specific driver — useful when you need the
-IMU’s tap detection, FIFO, or lower‑level configuration — import
-the matching frozen driver (<a class="reference internal" href="../../library/lsm9ds1.html#module-lsm9ds1" title="lsm9ds1: STMicroelectronics LSM9DS1 9-axis IMU driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lsm9ds1</span></code></a>, <a class="reference internal" href="../../library/bmi270.html#module-bmi270" title="bmi270: Bosch BMI270 6-axis inertial measurement unit driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bmi270</span></code></a>,
-<a class="reference internal" href="../../library/bmm150.html#module-bmm150" title="bmm150: Bosch BMM150 3-axis geomagnetic sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bmm150</span></code></a>) and instantiate it on the same internal I²C bus.</p>
+<p>For direct access to features like tap detection or the FIFO,
+import the matching frozen driver (<a class="reference internal" href="../../library/lsm9ds1.html#module-lsm9ds1" title="lsm9ds1: STMicroelectronics LSM9DS1 9-axis IMU driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lsm9ds1</span></code></a>, <a class="reference internal" href="../../library/bmi270.html#module-bmi270" title="bmi270: Bosch BMI270 6-axis inertial measurement unit driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bmi270</span></code></a>,
+or <a class="reference internal" href="../../library/bmm150.html#module-bmm150" title="bmm150: Bosch BMM150 3-axis geomagnetic sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bmm150</span></code></a>) and instantiate it on the same bus.</p>
 </section>
 <section id="environmental-sensors">
 <h3>Environmental sensors<a class="headerlink" href="#environmental-sensors" title="Link to this heading">¶</a></h3>
-<p>The pressure, temperature, and humidity sensors live on the same
-internal I²C bus as the IMU (bus 1, on <code class="docutils literal notranslate"><span class="pre">P0.14</span></code>/<code class="docutils literal notranslate"><span class="pre">P0.15</span></code>). The nrf
-port’s <code class="docutils literal notranslate"><span class="pre">machine.I2C</span></code> doesn’t auto‑bind to those pins, so pass
-them explicitly:</p>
+<p>The barometer (<a class="reference internal" href="../../library/lps22h.html#module-lps22h" title="lps22h: LPS22HB/HH MEMS pressure and temperature sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">LPS22HB</span></code></a>) and temperature /
+humidity sensor (<a class="reference internal" href="../../library/hts221.html#module-hts221" title="hts221: HTS221 humidity and temperature sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">HTS221</span></code></a> on Rev 1,
+<a class="reference internal" href="../../library/hs3003.html#module-hs3003" title="hs3003: Renesas HS3003 humidity and temperature sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">HS3003</span></code></a> on Rev 2) share the same internal I²C 1 bus
+as the IMU:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span><span class="p">,</span> <span class="n">Pin</span>
 </span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">lps22h</span><span class="w"> </span><span class="kn">import</span> <span class="n">LPS22H</span>
-</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">hts221</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTS221</span>             <span class="c1"># Rev 1 (try first)</span>
-</span><span data-line="5"><span class="c1"># from hs3003 import HS3003           # Rev 2</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">15</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">14</span><span class="p">))</span>
-</span><span data-line="8"><span class="n">lps</span> <span class="o">=</span> <span class="n">LPS22H</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
-</span><span data-line="9"><span class="k">try</span><span class="p">:</span>
-</span><span data-line="10">    <span class="n">hts</span> <span class="o">=</span> <span class="n">HTS221</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
-</span><span data-line="11"><span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
-</span><span data-line="12">    <span class="kn">from</span><span class="w"> </span><span class="nn">hs3003</span><span class="w"> </span><span class="kn">import</span> <span class="n">HS3003</span>
-</span><span data-line="13">    <span class="n">hts</span> <span class="o">=</span> <span class="n">HS3003</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
-</span><span data-line="14">
-</span><span data-line="15"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-</span><span data-line="16">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pressure: </span><span class="si">%.2f</span><span class="s2"> hPa&quot;</span> <span class="o">%</span> <span class="n">lps</span><span class="o">.</span><span class="n">pressure</span><span class="p">())</span>
-</span><span data-line="17">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;temperature: </span><span class="si">%.2f</span><span class="s2"> C&quot;</span> <span class="o">%</span> <span class="n">lps</span><span class="o">.</span><span class="n">temperature</span><span class="p">())</span>
-</span><span data-line="18">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;humidity: </span><span class="si">%.2f</span><span class="s2"> </span><span class="si">%%</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">hts</span><span class="o">.</span><span class="n">humidity</span><span class="p">())</span>
-</span><span data-line="19">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">hts221</span><span class="w"> </span><span class="kn">import</span> <span class="n">HTS221</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P15&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P14&quot;</span><span class="p">))</span>
+</span><span data-line="7"><span class="n">lps</span> <span class="o">=</span> <span class="n">LPS22H</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
+</span><span data-line="8"><span class="k">try</span><span class="p">:</span>
+</span><span data-line="9">    <span class="n">hts</span> <span class="o">=</span> <span class="n">HTS221</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
+</span><span data-line="10"><span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="11">    <span class="kn">from</span><span class="w"> </span><span class="nn">hs3003</span><span class="w"> </span><span class="kn">import</span> <span class="n">HS3003</span>
+</span><span data-line="12">    <span class="n">hts</span> <span class="o">=</span> <span class="n">HS3003</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="15">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;pressure:    </span><span class="si">%.2f</span><span class="s2"> hPa&quot;</span> <span class="o">%</span> <span class="n">lps</span><span class="o">.</span><span class="n">pressure</span><span class="p">())</span>
+</span><span data-line="16">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;temperature: </span><span class="si">%.2f</span><span class="s2"> C&quot;</span>   <span class="o">%</span> <span class="n">lps</span><span class="o">.</span><span class="n">temperature</span><span class="p">())</span>
+</span><span data-line="17">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;humidity:    </span><span class="si">%.2f</span><span class="s2"> </span><span class="si">%%</span><span class="s2">&quot;</span>  <span class="o">%</span> <span class="n">hts</span><span class="o">.</span><span class="n">humidity</span><span class="p">())</span>
+</span><span data-line="18">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
 </span></pre></div>
 </div>
 </section>
 <section id="light-colour-proximity-gesture">
 <h3>Light / colour / proximity / gesture<a class="headerlink" href="#light-colour-proximity-gesture" title="Link to this heading">¶</a></h3>
-<p>The Broadcom APDS9960 supports ambient light, RGB colour,
-proximity, and gesture sensing on the same I²C bus. The frozen
-<code class="docutils literal notranslate"><span class="pre">apds9960</span></code> package wraps it:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep_ms</span>
+<p>The Broadcom <a class="reference internal" href="../../library/omv.apds9960.html#module-apds9960" title="apds9960: APDS9960 proximity, gesture, and RGB/ambient-light sensor driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">APDS9960</span></code></a> sits on the same internal
+I²C 1 bus and provides ambient light, RGB colour, proximity, and
+gesture sensing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span><span class="p">,</span> <span class="n">Pin</span>
 </span><span data-line="3"><span class="kn">from</span><span class="w"> </span><span class="nn">apds9960</span><span class="w"> </span><span class="kn">import</span> <span class="n">uAPDS9960</span> <span class="k">as</span> <span class="n">APDS9960</span>
 </span><span data-line="4">
-</span><span data-line="5"><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">15</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="mi">14</span><span class="p">))</span>
+</span><span data-line="5"><span class="n">bus</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P15&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P14&quot;</span><span class="p">))</span>
 </span><span data-line="6"><span class="n">apds</span> <span class="o">=</span> <span class="n">APDS9960</span><span class="p">(</span><span class="n">bus</span><span class="p">)</span>
-</span><span data-line="7">
-</span><span data-line="8"><span class="n">apds</span><span class="o">.</span><span class="n">enableLightSensor</span><span class="p">()</span>
+</span><span data-line="7"><span class="n">apds</span><span class="o">.</span><span class="n">enableLightSensor</span><span class="p">()</span>
+</span><span data-line="8">
 </span><span data-line="9"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-</span><span data-line="10">    <span class="n">sleep_ms</span><span class="p">(</span><span class="mi">250</span><span class="p">)</span>
-</span><span data-line="11">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ambient light:&quot;</span><span class="p">,</span> <span class="n">apds</span><span class="o">.</span><span class="n">readAmbientLight</span><span class="p">())</span>
+</span><span data-line="10">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;ambient light:&quot;</span><span class="p">,</span> <span class="n">apds</span><span class="o">.</span><span class="n">readAmbientLight</span><span class="p">())</span>
+</span><span data-line="11">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">250</span><span class="p">)</span>
 </span></pre></div>
 </div>
 </section>
 <section id="microphone">
 <h3>Microphone<a class="headerlink" href="#microphone" title="Link to this heading">¶</a></h3>
 <p>The on‑board MP34DT05 PDM microphone is captured through
-<a class="reference internal" href="../../library/omv.audio.html"><span class="doc">audio — Audio Module</span></a>:</p>
+<a class="reference internal" href="../../library/omv.audio.html"><span class="doc">audio — Audio Module</span></a>. Each buffer arrives as signed‑16‑bit PCM
+<code class="docutils literal notranslate"><span class="pre">bytearray</span></code>, ready to feed into <a class="reference internal" href="../../library/omv.ulab.numpy.html"><span class="doc">ulab/numpy</span></a>
+for DSP:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">audio</span>
 </span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">ulab</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
 </span><span data-line="3">
@@ -621,46 +679,51 @@ proximity, and gesture sensing on the same I²C bus. The frozen
 </span></pre></div>
 </div>
 </section>
-<section id="bluetooth-le">
-<h3>Bluetooth LE<a class="headerlink" href="#bluetooth-le" title="Link to this heading">¶</a></h3>
-<p>The nRF52840’s Bluetooth LE radio (running on the Nordic SoftDevice
-s140) is exposed through the legacy <code class="docutils literal notranslate"><span class="pre">ubluepy</span></code> module. Advertise as
-a peripheral with a single Service / Characteristic:</p>
+<section id="bluetooth">
+<h3>Bluetooth<a class="headerlink" href="#bluetooth" title="Link to this heading">¶</a></h3>
+<p>The nRF52840’s Bluetooth LE 5.0 radio runs on the Nordic
+SoftDevice s140 and is exposed through the legacy <a class="reference internal" href="../../library/ubluepy.html#module-ubluepy" title="ubluepy: Nordic-specific Bluetooth LE peripheral and central API"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ubluepy</span></code></a>
+module — the modern <a class="reference internal" href="../../library/bluetooth.html#module-bluetooth" title="bluetooth: Low-level Bluetooth radio functionality"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluetooth</span></code></a> / <a class="reference internal" href="../../library/aioble.html"><span class="doc">aioble — Async BLE</span></a>
+APIs are not enabled in this build. Both <strong>peripheral</strong> (GATT
+server, advertise) and <strong>central</strong> (GAP observer / scanner +
+connect) roles are available.</p>
+<p>Advertise as a peripheral with a single Environmental Sensing
+service and a notifiable temperature characteristic — the
+<code class="docutils literal notranslate"><span class="pre">event_handler</span></code> callback fires on connect, disconnect, and CCCD
+writes:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">ubluepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Service</span><span class="p">,</span> <span class="n">Characteristic</span><span class="p">,</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">Peripheral</span><span class="p">,</span> <span class="n">constants</span>
-</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">board</span><span class="w"> </span><span class="kn">import</span> <span class="n">LED</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">LED</span>
 </span><span data-line="3">
-</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">event_handler</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-</span><span data-line="5">    <span class="k">if</span> <span class="nb">id</span> <span class="o">==</span> <span class="n">constants</span><span class="o">.</span><span class="n">EVT_GAP_CONNECTED</span><span class="p">:</span>
-</span><span data-line="6">        <span class="n">LED</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>                    <span class="c1"># green LED on connect</span>
-</span><span data-line="7">    <span class="k">elif</span> <span class="nb">id</span> <span class="o">==</span> <span class="n">constants</span><span class="o">.</span><span class="n">EVT_GAP_DISCONNECTED</span><span class="p">:</span>
-</span><span data-line="8">        <span class="n">LED</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">event_handler</span><span class="p">(</span><span class="n">event_id</span><span class="p">,</span> <span class="n">handle</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+</span><span data-line="5">    <span class="k">if</span> <span class="n">event_id</span> <span class="o">==</span> <span class="n">constants</span><span class="o">.</span><span class="n">EVT_GAP_CONNECTED</span><span class="p">:</span>
+</span><span data-line="6">        <span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_GREEN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="7">    <span class="k">elif</span> <span class="n">event_id</span> <span class="o">==</span> <span class="n">constants</span><span class="o">.</span><span class="n">EVT_GAP_DISCONNECTED</span><span class="p">:</span>
+</span><span data-line="8">        <span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_GREEN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
 </span><span data-line="9">        <span class="n">periph</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span><span class="n">device_name</span><span class="o">=</span><span class="s2">&quot;Nano 33&quot;</span><span class="p">,</span> <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">svc</span><span class="p">])</span>
 </span><span data-line="10">
-</span><span data-line="11"><span class="n">svc</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;181A&quot;</span><span class="p">))</span>            <span class="c1"># Environmental Sensing</span>
-</span><span data-line="12"><span class="n">svc</span><span class="o">.</span><span class="n">addCharacteristic</span><span class="p">(</span><span class="n">Characteristic</span><span class="p">(</span><span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;2A6E&quot;</span><span class="p">),</span> <span class="n">props</span><span class="o">=</span><span class="mh">0x12</span><span class="p">))</span>   <span class="c1"># read + notify</span>
-</span><span data-line="13"><span class="n">periph</span> <span class="o">=</span> <span class="n">Peripheral</span><span class="p">()</span>
-</span><span data-line="14"><span class="n">periph</span><span class="o">.</span><span class="n">addService</span><span class="p">(</span><span class="n">svc</span><span class="p">)</span>
-</span><span data-line="15"><span class="n">periph</span><span class="o">.</span><span class="n">setConnectionHandler</span><span class="p">(</span><span class="n">event_handler</span><span class="p">)</span>
-</span><span data-line="16"><span class="n">periph</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span><span class="n">device_name</span><span class="o">=</span><span class="s2">&quot;Nano 33&quot;</span><span class="p">,</span> <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">svc</span><span class="p">])</span>
+</span><span data-line="11"><span class="n">svc</span> <span class="o">=</span> <span class="n">Service</span><span class="p">(</span><span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;181A&quot;</span><span class="p">))</span>                          <span class="c1"># Environmental Sensing</span>
+</span><span data-line="12"><span class="n">char</span> <span class="o">=</span> <span class="n">Characteristic</span><span class="p">(</span><span class="n">UUID</span><span class="p">(</span><span class="s2">&quot;2A6E&quot;</span><span class="p">),</span>                  <span class="c1"># Temperature</span>
+</span><span data-line="13">                      <span class="n">props</span><span class="o">=</span><span class="n">Characteristic</span><span class="o">.</span><span class="n">PROP_NOTIFY</span> <span class="o">|</span> <span class="n">Characteristic</span><span class="o">.</span><span class="n">PROP_READ</span><span class="p">,</span>
+</span><span data-line="14">                      <span class="n">attrs</span><span class="o">=</span><span class="n">Characteristic</span><span class="o">.</span><span class="n">ATTR_CCCD</span><span class="p">)</span>
+</span><span data-line="15"><span class="n">svc</span><span class="o">.</span><span class="n">addCharacteristic</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="n">periph</span> <span class="o">=</span> <span class="n">Peripheral</span><span class="p">()</span>
+</span><span data-line="18"><span class="n">periph</span><span class="o">.</span><span class="n">addService</span><span class="p">(</span><span class="n">svc</span><span class="p">)</span>
+</span><span data-line="19"><span class="n">periph</span><span class="o">.</span><span class="n">setConnectionHandler</span><span class="p">(</span><span class="n">event_handler</span><span class="p">)</span>
+</span><span data-line="20"><span class="n">periph</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span><span class="n">device_name</span><span class="o">=</span><span class="s2">&quot;Nano 33&quot;</span><span class="p">,</span> <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">svc</span><span class="p">])</span>
 </span></pre></div>
 </div>
-<p>The <a class="reference internal" href="../../library/aioble.html"><span class="doc">aioble — Async BLE</span></a> and <a class="reference internal" href="../../library/bluetooth.html#module-bluetooth" title="bluetooth: Low-level Bluetooth radio functionality"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluetooth</span></code></a> modules used by the
-OpenMV camera boards are <strong>not</strong> enabled in this firmware build.</p>
-</section>
-<section id="external-thermal-cameras">
-<h3>External thermal cameras<a class="headerlink" href="#external-thermal-cameras" title="Link to this heading">¶</a></h3>
-<p>The Nano 33 BLE Sense build wires <a class="reference internal" href="../../library/omv.fir.html"><span class="doc">fir — thermal sensor driver (fir == far infrared)</span></a> to the
-internal I²C 0 bus on <code class="docutils literal notranslate"><span class="pre">A4</span></code>/<code class="docutils literal notranslate"><span class="pre">A5</span></code>. Plug an MLX90621, MLX90640,
-MLX90641, or AMG8833 thermal sensor onto those pins and read frames
-with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">fir</span>
+<p>Scan for nearby advertising devices in central role:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">ubluepy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scanner</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">fir</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">fir</span><span class="o">.</span><span class="n">FIR_MLX90640</span><span class="p">)</span>
-</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-</span><span data-line="5">    <span class="n">ta</span><span class="p">,</span> <span class="n">ir</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="n">fmax</span> <span class="o">=</span> <span class="n">fir</span><span class="o">.</span><span class="n">read_ir</span><span class="p">()</span>
-</span><span data-line="6">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;scene min/max:&quot;</span><span class="p">,</span> <span class="n">fmin</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">fmax</span><span class="p">)</span>
+</span><span data-line="3"><span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">Scanner</span><span class="p">()</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="mi">1_000</span><span class="p">):</span>                  <span class="c1"># 1 second window</span>
+</span><span data-line="4">    <span class="nb">print</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">addr</span><span class="p">(),</span> <span class="n">entry</span><span class="o">.</span><span class="n">rssi</span><span class="p">(),</span> <span class="s2">&quot;dBm&quot;</span><span class="p">)</span>
 </span></pre></div>
 </div>
+<p>See the <a class="reference internal" href="../../library/ubluepy.html#module-ubluepy" title="ubluepy: Nordic-specific Bluetooth LE peripheral and central API"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ubluepy</span></code></a> reference for the full API — <a class="reference internal" href="../../library/ubluepy.html#ubluepy.UUID" title="ubluepy.UUID"><code class="xref py py-class docutils literal notranslate"><span class="pre">UUID</span></code></a>, <a class="reference internal" href="../../library/ubluepy.html#ubluepy.Service" title="ubluepy.Service"><code class="xref py py-class docutils literal notranslate"><span class="pre">Service</span></code></a>,
+<a class="reference internal" href="../../library/ubluepy.html#ubluepy.Characteristic" title="ubluepy.Characteristic"><code class="xref py py-class docutils literal notranslate"><span class="pre">Characteristic</span></code></a>,
+<a class="reference internal" href="../../library/ubluepy.html#ubluepy.Peripheral" title="ubluepy.Peripheral"><code class="xref py py-class docutils literal notranslate"><span class="pre">Peripheral</span></code></a>, <a class="reference internal" href="../../library/ubluepy.html#ubluepy.Scanner" title="ubluepy.Scanner"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scanner</span></code></a>, <a class="reference internal" href="../../library/ubluepy.html#ubluepy.ScanEntry" title="ubluepy.ScanEntry"><code class="xref py py-class docutils literal notranslate"><span class="pre">ScanEntry</span></code></a>, and
+the <a class="reference internal" href="../../library/ubluepy.html#ubluepy.constants" title="ubluepy.constants"><code class="xref py py-data docutils literal notranslate"><span class="pre">constants</span></code></a> namespace.</p>
 </section>
 </section>
 <section id="bus-reference">
@@ -668,8 +731,8 @@ with:</p>
 <section id="gpio">
 <h3>GPIO<a class="headerlink" href="#gpio" title="Link to this heading">¶</a></h3>
 <p>Use <a class="reference internal" href="../../library/machine.Pin.html#machine-pin"><span class="std std-ref">machine.Pin</span></a> to read or drive any of the
-silkscreened pins. Outputs are 3.3 V CMOS. Maximum <strong>15 mA per pin</strong>;
-maximum <strong>25 mA total</strong> across all GPIOs.</p>
+silkscreened pins. Outputs are 3.3 V CMOS — 15 mA per pin, 25 mA
+total across all GPIOs.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">out</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D2&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
@@ -679,6 +742,15 @@ maximum <strong>25 mA total</strong> across all GPIOs.</p>
 </span><span data-line="7">
 </span><span data-line="8"><span class="n">inp</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IN</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">PULL_UP</span><span class="p">)</span>
 </span><span data-line="9"><span class="nb">print</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">value</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Any input pin can also fire an interrupt on edge transitions:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">pin</span><span class="p">):</span>
+</span><span data-line="2">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;triggered:&quot;</span><span class="p">,</span> <span class="n">pin</span><span class="p">)</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IN</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">PULL_UP</span><span class="p">)</span><span class="o">.</span><span class="n">irq</span><span class="p">(</span>
+</span><span data-line="5">    <span class="n">handler</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IRQ_FALLING</span> <span class="o">|</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IRQ_RISING</span><span class="p">,</span>
+</span><span data-line="6"><span class="p">)</span>
 </span></pre></div>
 </div>
 </section>
@@ -700,9 +772,7 @@ maximum <strong>25 mA total</strong> across all GPIOs.</p>
 </tbody>
 </table>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">TX</span></code> and <code class="docutils literal notranslate"><span class="pre">RX</span></code> pads on the silkscreen are also labelled
-<code class="docutils literal notranslate"><span class="pre">D1</span></code> and <code class="docutils literal notranslate"><span class="pre">D0</span></code> respectively. Inside MicroPython use the names
-<code class="docutils literal notranslate"><span class="pre">TX</span></code>/<code class="docutils literal notranslate"><span class="pre">RX</span></code> (the names <code class="docutils literal notranslate"><span class="pre">D0</span></code>/<code class="docutils literal notranslate"><span class="pre">D1</span></code> are not exported):</p>
+<p>Use the silkscreen names <code class="docutils literal notranslate"><span class="pre">TX</span></code>/<code class="docutils literal notranslate"><span class="pre">RX</span></code> with <a class="reference internal" href="../../library/machine.UART.html#machine.UART" title="machine.UART"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.UART</span></code></a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">UART</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">uart</span> <span class="o">=</span> <span class="n">UART</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
@@ -717,34 +787,41 @@ maximum <strong>25 mA total</strong> across all GPIOs.</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Bus</p></th>
-<th class="head"><p>SCL</p></th>
 <th class="head"><p>SDA</p></th>
+<th class="head"><p>SCL</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>I2C0</p></td>
-<td><p>A5</p></td>
-<td><p>A4   (header pins)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">I2C_SDA</span></code> / <code class="docutils literal notranslate"><span class="pre">A4</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">I2C_SCL</span></code> / <code class="docutils literal notranslate"><span class="pre">A5</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p>I2C1</p></td>
-<td><p>—</p></td>
-<td><p>—    (internal — IMU, baro, env, APDS9960)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">P14</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">P15</span></code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span>
+<p>Both buses need their pins passed explicitly to
+<a class="reference internal" href="../../library/machine.I2C.html#machine.I2C" title="machine.I2C"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.I2C</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span><span class="p">,</span> <span class="n">Pin</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">i2c</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">400_000</span><span class="p">)</span>
-</span><span data-line="4"><span class="n">i2c</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
-</span><span data-line="5"><span class="n">i2c</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="mh">0x76</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;hi&quot;</span><span class="p">)</span>
+</span><span data-line="3"><span class="n">bus0</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;I2C_SCL&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;I2C_SDA&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">400_000</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">bus0</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">bus1</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P15&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P14&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">400_000</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">bus1</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
 </span></pre></div>
 </div>
-<p>Bus 1 is the <strong>internal sensor bus</strong> — it serves the IMU, barometer,
-environmental sensor, and APDS9960. <code class="docutils literal notranslate"><span class="pre">machine.I2C(1)</span></code> is what the
-frozen sensor drivers use; you can scan or talk to it from your own
-code, but be aware the addresses are already taken by the on‑board
-sensors.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Bus 1 is the internal sensor bus on <code class="docutils literal notranslate"><span class="pre">P14</span></code>/<code class="docutils literal notranslate"><span class="pre">P15</span></code> (not on the
+user headers) — it serves the IMU, barometer, environmental
+sensor, and APDS9960. The frozen sensor drivers use it directly;
+user code can scan it too but the addresses are already taken
+by the on‑board sensors.</p>
+</div>
 </section>
 <section id="spi">
 <h3>SPI<a class="headerlink" href="#spi" title="Link to this heading">¶</a></h3>
@@ -763,34 +840,35 @@ sensors.</p>
 <td><p>D11</p></td>
 <td><p>D12</p></td>
 <td><p>D13</p></td>
-<td><p>—</p></td>
+<td><p>D10</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p>The CS line is not driven by the SPI peripheral — configure
+<code class="docutils literal notranslate"><span class="pre">D10</span></code> as an output and toggle it manually around the transfer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">SPI</span><span class="p">,</span> <span class="n">Pin</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">spi</span> <span class="o">=</span> <span class="n">SPI</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">10_000_000</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">cs</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D10&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># CS is not driven by the SPI peripheral</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">spi</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></pre></div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The SCK line shares <code class="docutils literal notranslate"><span class="pre">D13</span></code> with the yellow <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> —
-running SPI will blink the LED in time with the bus clock.</p>
-</div>
-<p>The CS line is not driven by the SPI peripheral — configure any free
-GPIO as an output and toggle it manually around the transfer:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">SPI</span>
-</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="n">spi</span> <span class="o">=</span> <span class="n">SPI</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">10_000_000</span><span class="p">)</span>
-</span><span data-line="5"><span class="n">cs</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D9&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># CS is not driven by the SPI peripheral</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span><span data-line="8"><span class="n">spi</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
-</span><span data-line="9"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span></pre></div>
+<p><code class="docutils literal notranslate"><span class="pre">D13</span></code> doubles as the orange <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> — driving SPI on
+this bus will blink the LED in time with the bus clock.</p>
 </div>
 </section>
 <section id="adc">
 <h3>ADC<a class="headerlink" href="#adc" title="Link to this heading">¶</a></h3>
 <p>The nRF52840 has eight 12‑bit ADC channels (<code class="docutils literal notranslate"><span class="pre">SAADC</span></code>) exposed on
-<strong>A0–A7</strong>. <code class="docutils literal notranslate"><span class="pre">read_u16</span></code> returns 0–65535 across 0–3.3 V at the pin:</p>
+<strong>A0–A7</strong>, all <strong>3.3 V referenced</strong> — <code class="docutils literal notranslate"><span class="pre">read_u16</span></code> returns
+0–65535 across 0–3.3 V at the pin. The board’s <code class="docutils literal notranslate"><span class="pre">AREF</span></code> pin is
+not wired, so the reference is always 3.3 V:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADC</span>
 </span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="3">
@@ -804,17 +882,149 @@ GPIO as an output and toggle it manually around the transfer:</p>
 </section>
 <section id="pwm">
 <h3>PWM<a class="headerlink" href="#pwm" title="Link to this heading">¶</a></h3>
-<p>The nRF52840’s PWM peripheral can drive most user GPIOs. Drive any
-of the digital pins via <a class="reference internal" href="../../library/machine.PWM.html#machine-pwm"><span class="std std-ref">machine.PWM</span></a>:</p>
+<p>The nRF52840 exposes <strong>four PWM peripherals</strong> (<code class="docutils literal notranslate"><span class="pre">PWM0</span></code>–<code class="docutils literal notranslate"><span class="pre">PWM3</span></code>),
+each driving <strong>four channels</strong>, for <strong>16 hardware PWM slots</strong> in
+total. Unlike fixed‑function ports, the peripherals route through
+the GPIOTE matrix — <strong>any GPIO can be a PWM output</strong>, so there is
+no pin‑to‑slice mapping. The cost of that flexibility is two
+constraints baked into the silicon:</p>
+<ul class="simple">
+<li><p>All four channels inside a module share a <strong>single
+period/frequency</strong>.</p></li>
+<li><p>Each channel has its <strong>own duty cycle</strong> and polarity.</p></li>
+</ul>
+<p>Conceptually the 16 slots look like this:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Module</p></th>
+<th class="head"><p>Ch 0</p></th>
+<th class="head"><p>Ch 1</p></th>
+<th class="head"><p>Ch 2</p></th>
+<th class="head"><p>Ch 3</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>PWM0</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+</tr>
+<tr class="row-odd"><td><p>PWM1</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+</tr>
+<tr class="row-even"><td><p>PWM2</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+</tr>
+<tr class="row-odd"><td><p>PWM3</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+<td><p>duty</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Each row runs at one frequency; the four cells in a row each drive
+an independently‑chosen pin with its own duty cycle. Different
+rows can run at completely different frequencies.</p>
+<p>Drive any silkscreened pin (or the on‑board LEDs) via
+<a class="reference internal" href="../../library/machine.PWM.html#machine-pwm"><span class="std std-ref">machine.PWM</span></a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span><span class="p">,</span> <span class="n">PWM</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">pwm</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">32768</span><span class="p">)</span>
 </span></pre></div>
 </div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><strong>Auto‑allocation consumes a whole module per call.</strong> When you
+create a <code class="docutils literal notranslate"><span class="pre">PWM</span></code> without <code class="docutils literal notranslate"><span class="pre">device=</span></code>/<code class="docutils literal notranslate"><span class="pre">channel=</span></code> kwargs, the
+driver grabs the first free module and binds your pin to its
+<strong>channel 0</strong> only. The remaining three channels of that module
+sit idle and are only reachable through explicit
+<code class="docutils literal notranslate"><span class="pre">device=</span></code>/<code class="docutils literal notranslate"><span class="pre">channel=</span></code>. That caps unaided <code class="docutils literal notranslate"><span class="pre">PWM(Pin(...))</span></code>
+calls at <strong>four</strong> before the driver raises
+<code class="docutils literal notranslate"><span class="pre">ValueError:</span> <span class="pre">all</span> <span class="pre">PWM</span> <span class="pre">devices</span> <span class="pre">in</span> <span class="pre">use</span></code> — even though twelve
+slots are technically still free.</p>
+</div>
+<p>To use more than four PWMs, or to deliberately share a frequency
+across pins, pass <code class="docutils literal notranslate"><span class="pre">device</span></code> (0–3) and <code class="docutils literal notranslate"><span class="pre">channel</span></code> (0–3):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># Two PWMs on the same module → forced to share frequency,</span>
+</span><span data-line="2"><span class="c1"># but each gets its own duty cycle.</span>
+</span><span data-line="3"><span class="n">pwm_a</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="4">            <span class="n">freq</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">32768</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">pwm_b</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D5&quot;</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+</span><span data-line="6">            <span class="n">freq</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">16384</span><span class="p">)</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="c1"># A third PWM on a separate module, free to pick any frequency.</span>
+</span><span data-line="9"><span class="n">pwm_c</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D6&quot;</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="10">            <span class="n">freq</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">49152</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Duty cycle accepts <code class="docutils literal notranslate"><span class="pre">duty</span></code> (0–100%), <code class="docutils literal notranslate"><span class="pre">duty_u16</span></code> (0–65535), or
+<code class="docutils literal notranslate"><span class="pre">duty_ns</span></code>. Add <code class="docutils literal notranslate"><span class="pre">invert=1</span></code> to flip the output polarity (handy
+for the active‑low RGB LED).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Because frequency is a per‑module property, calling
+<code class="docutils literal notranslate"><span class="pre">pwm.freq(new_freq)</span></code> on <strong>any</strong> channel of a module re‑runs
+<code class="docutils literal notranslate"><span class="pre">nrfx_pwm_init</span></code> for the whole module and changes the
+frequency seen by every other channel sharing it.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Allowed frequencies span roughly <strong>4 Hz to 5.3 MHz</strong>, derived
+from the 16 MHz base clock with prescalers 1/2/4/8/16/32/64/128
+and a 15‑bit period counter. The driver picks the closest divisor
+automatically — <code class="docutils literal notranslate"><span class="pre">freq()</span></code> reports the requested value, not the
+exact achievable one.</p>
+</div>
 </section>
 <section id="software-bitbanged-buses">
 <h3>Software bit‑banged buses<a class="headerlink" href="#software-bitbanged-buses" title="Link to this heading">¶</a></h3>
 <p><a class="reference internal" href="../../library/machine.I2C.html#machine-softi2c"><span class="std std-ref">machine.SoftI2C</span></a> and <a class="reference internal" href="../../library/machine.SPI.html#machine-softspi"><span class="std std-ref">machine.SoftSPI</span></a> work on any GPIO if you need an extra bus.</p>
+</section>
+<section id="thermal-sensor-offboard">
+<h3>Thermal sensor (off‑board)<a class="headerlink" href="#thermal-sensor-offboard" title="Link to this heading">¶</a></h3>
+<p>The firmware includes the <a class="reference internal" href="../../library/omv.fir.html"><span class="doc">fir — thermal sensor driver (fir == far infrared)</span></a> driver for
+externally wired thermal imagers:</p>
+<ul class="simple">
+<li><p><strong>MLX90621</strong> — 16 × 4 IR array</p></li>
+<li><p><strong>MLX90640</strong> — 32 × 24 IR array</p></li>
+<li><p><strong>MLX90641</strong> — 16 × 12 IR array</p></li>
+<li><p><strong>AMG8833</strong> — 8 × 8 IR array</p></li>
+</ul>
+<p>Wire the module to the board’s I²C bus and read frames with
+<code class="docutils literal notranslate"><span class="pre">fir.init()</span></code> + <code class="docutils literal notranslate"><span class="pre">fir.snapshot()</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">fir</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">fir</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>                          <span class="c1"># auto‑detects the sensor</span>
+</span><span data-line="6"><span class="n">clock</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="9">    <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+</span><span data-line="10">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="11">        <span class="n">img</span> <span class="o">=</span> <span class="n">fir</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">x_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+</span><span data-line="12">                           <span class="n">color_palette</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">PALETTE_IRONBOW</span><span class="p">,</span>
+</span><span data-line="13">                           <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">BICUBIC</span><span class="p">,</span>
+</span><span data-line="14">                           <span class="n">copy_to_fb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="15">    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="16">        <span class="k">continue</span>
+</span><span data-line="17">    <span class="nb">print</span><span class="p">(</span><span class="n">clock</span><span class="o">.</span><span class="n">fps</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">fir</span></code> driver only talks to the sensor over <strong>I²C 0</strong> — wire
+the module to the <code class="docutils literal notranslate"><span class="pre">I2C_SCL</span></code> / <code class="docutils literal notranslate"><span class="pre">I2C_SDA</span></code> pads
+(<code class="docutils literal notranslate"><span class="pre">A5</span></code> / <code class="docutils literal notranslate"><span class="pre">A4</span></code>).</p>
 </section>
 </section>
 <section id="timing">
@@ -835,6 +1045,25 @@ elapsed‑time measurement:</p>
 </span></pre></div>
 </div>
 </section>
+<section id="virtual-timers">
+<h3>Virtual timers<a class="headerlink" href="#virtual-timers" title="Link to this heading">¶</a></h3>
+<p><a class="reference internal" href="../../library/machine.Timer.html#machine-timer"><span class="std std-ref">machine.Timer</span></a> schedules periodic or one‑shot
+callbacks without consuming a hardware timer slot. Pass <code class="docutils literal notranslate"><span class="pre">-1</span></code> as the
+id to use a virtual (software) timer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timer</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">one_shot</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">one_shot</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">period</span><span class="o">=</span><span class="mi">5_000</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Timer</span><span class="o">.</span><span class="n">ONE_SHOT</span><span class="p">,</span>
+</span><span data-line="5">              <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;once&quot;</span><span class="p">))</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">periodic</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">periodic</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">period</span><span class="o">=</span><span class="mi">2_000</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Timer</span><span class="o">.</span><span class="n">PERIODIC</span><span class="p">,</span>
+</span><span data-line="9">              <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;tick&quot;</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>Period values are in milliseconds. Call <a class="reference internal" href="../../library/machine.Timer.html#machine.Timer.deinit" title="machine.Timer.deinit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deinit()</span></code></a>
+to stop and release the slot.</p>
+</section>
 <section id="realtime-clock">
 <h3>Real‑time clock<a class="headerlink" href="#realtime-clock" title="Link to this heading">¶</a></h3>
 <p><a class="reference internal" href="../../library/machine.RTC.html#machine-rtc"><span class="std std-ref">machine.RTC</span></a> keeps wall‑clock time across resets.
@@ -849,24 +1078,43 @@ matters to your application:</p>
 </span></pre></div>
 </div>
 </section>
+<section id="watchdog">
+<h3>Watchdog<a class="headerlink" href="#watchdog" title="Link to this heading">¶</a></h3>
+<p><a class="reference internal" href="../../library/machine.WDT.html#machine-wdt"><span class="std std-ref">machine.WDT</span></a> resets the board if the application
+hangs. Once started it can’t be stopped or reconfigured — feed it
+periodically inside your main loop:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">WDT</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">wdt</span> <span class="o">=</span> <span class="n">WDT</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5_000</span><span class="p">)</span>   <span class="c1"># 5 second window</span>
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="c1"># ...do work...</span>
+</span><span data-line="6">    <span class="n">wdt</span><span class="o">.</span><span class="n">feed</span><span class="p">()</span>
+</span></pre></div>
+</div>
+</section>
 </section>
 <section id="boot-and-runtime-info">
 <h2>Boot and runtime info<a class="headerlink" href="#boot-and-runtime-info" title="Link to this heading">¶</a></h2>
-<section id="firmware-update-dfu">
-<h3>Firmware update (DFU)<a class="headerlink" href="#firmware-update-dfu" title="Link to this heading">¶</a></h3>
+<section id="firmware-update">
+<h3>Firmware update<a class="headerlink" href="#firmware-update" title="Link to this heading">¶</a></h3>
 <p>The Nano 33 BLE Sense uses Arduino’s standard <strong>double‑tap reset</strong>
-to enter the on‑board mass‑storage bootloader (a single contiguous
-128 KB at the top of flash, baked into the board at the factory).
-Quickly press the reset button twice — the board re‑enumerates over
-USB as a small drive named <code class="docutils literal notranslate"><span class="pre">ARDUINO</span></code> and OpenMV IDE flashes the
-firmware over that.</p>
+to enter Arduino’s bootloader. Quickly press the RESET button
+twice — the board enters bootloader mode and OpenMV IDE can flash
+a new firmware image.</p>
+<p>A running script can re‑enter the bootloader on demand by calling
+<a class="reference internal" href="../../library/machine.html#machine.bootloader" title="machine.bootloader"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.bootloader()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">machine</span><span class="o">.</span><span class="n">bootloader</span><span class="p">()</span>
+</span></pre></div>
+</div>
 </section>
 <section id="filesystem-and-boot-order">
 <h3>Filesystem and boot order<a class="headerlink" href="#filesystem-and-boot-order" title="Link to this heading">¶</a></h3>
 <p>The Nano 33 BLE Sense firmware mounts a single filesystem on boot:</p>
 <ul class="simple">
-<li><p><strong>Internal flash</strong> — 64 KB partition mounted at <code class="docutils literal notranslate"><span class="pre">/flash</span></code> and used
-as the working directory. Holds <code class="docutils literal notranslate"><span class="pre">main.py</span></code> and <code class="docutils literal notranslate"><span class="pre">README.txt</span></code> by
+<li><p><strong>Internal flash</strong> — always mounted at <code class="docutils literal notranslate"><span class="pre">/flash</span></code> and used as the
+working directory. Holds <code class="docutils literal notranslate"><span class="pre">main.py</span></code> and <code class="docutils literal notranslate"><span class="pre">README.txt</span></code> by
 default; created on the very first boot.</p></li>
 </ul>
 <p>After mounting, the interpreter then runs scripts from <code class="docutils literal notranslate"><span class="pre">/flash</span></code>:</p>
@@ -876,13 +1124,11 @@ default; created on the very first boot.</p></li>
 <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>.</p></li>
 </ul>
 <p>The default <code class="docutils literal notranslate"><span class="pre">main.py</span></code> shipped on a freshly flashed board just
-blinks the yellow <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> as a heartbeat (two short pulses,
-short gap), so you can tell the firmware booted cleanly without any
-host attached.</p>
-<p>When connected over USB, <code class="docutils literal notranslate"><span class="pre">/flash</span></code> enumerates as a USB mass‑storage
-drive on the host, letting you edit <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>, <code class="docutils literal notranslate"><span class="pre">main.py</span></code>, and any
-other files directly. <strong>Eject the drive before resetting the board</strong>
-so the host flushes its cached writes.</p>
+blinks the user RGB LED’s <strong>blue</strong> channel as a heartbeat (two
+short pulses, short gap), so you can tell the firmware booted
+cleanly without any host attached.</p>
+<p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> is <strong>not</strong> exposed as a USB mass‑storage drive on this
+board.</p>
 </section>
 <section id="storage-sizes">
 <h3>Storage sizes<a class="headerlink" href="#storage-sizes" title="Link to this heading">¶</a></h3>
@@ -930,7 +1176,7 @@ build.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 15 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

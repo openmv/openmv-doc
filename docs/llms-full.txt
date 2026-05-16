@@ -3762,6 +3762,7 @@ for which boards include each one.
    stm.rst
    mimxrt.rst
    omv.alif.rst
+   ubluepy.rst
 
 Hardware drivers
 ~~~~~~~~~~~~~~~~
@@ -3907,6 +3908,8 @@ Arduino Nano 33 BLE Sense — board-specific :doc:`imu <imu>` wrapper
 that selects between the LSM9DS1 (Rev 1) and BMI270 + BMM150 (Rev 2)
 sensor sets, plus:
 
+* :mod:`ubluepy` — Bluetooth LE peripheral and central API on the
+  Nordic SoftDevice
 * :mod:`bmi270` — BMI270 6-axis IMU
 * :mod:`bmm150` — BMM150 3-axis magnetometer
 * :mod:`lsm9ds1` — LSM9DS1 9-axis IMU
@@ -30843,6 +30846,496 @@ Constants
    Mass Storage Class support enabled. The attribute is absent otherwise.
 
 
+:mod:`ubluepy` --- Bluetooth LE peripheral and central
+======================================================
+
+.. module:: ubluepy
+   :synopsis: Nordic-specific Bluetooth LE peripheral and central API
+
+The ``ubluepy`` module is the legacy Bluetooth LE API shipped with the
+MicroPython **nRF port**. It is loosely modelled on the Linux
+`bluepy <https://github.com/IanHarvey/bluepy>`_ Python library and
+sits directly on top of the Nordic SoftDevice — there is no portable
+back-end, so the module is only available on Nordic targets (the
+Arduino Nano 33 BLE Sense in OpenMV's lineup). The newer
+:mod:`bluetooth` / :doc:`aioble </library/aioble>` APIs are **not**
+enabled in this build, so ``ubluepy`` is the only way to drive the
+on-die radio.
+
+The available feature set depends on the SoftDevice flashed by the
+firmware:
+
+* **s140** (Nano 33 BLE Sense) — both peripheral *and* central
+  (scanner) roles. This is what the OpenMV firmware ships.
+* **s132** — both peripheral and central.
+* **s110** — peripheral only; scanner / connect methods are
+  compiled out.
+
+Peripheral example
+------------------
+
+Advertise as a Bluetooth LE peripheral with a single environmental
+sensing service and notify a temperature characteristic on every
+write to its Client Characteristic Configuration Descriptor
+(CCCD)::
+
+    from ubluepy import Service, Characteristic, UUID, Peripheral, constants
+    from machine import LED
+
+    notif_enabled = False
+
+    def event_handler(event_id, handle, data):
+        global notif_enabled
+        if event_id == constants.EVT_GAP_CONNECTED:
+            LED("LED_GREEN").on()
+        elif event_id == constants.EVT_GAP_DISCONNECTED:
+            LED("LED_GREEN").off()
+            periph.advertise(device_name="Nano 33", services=[svc])
+        elif event_id == constants.EVT_GATTS_WRITE:
+            notif_enabled = bool(data[0])
+
+    svc = Service(UUID("181A"))            # Environmental Sensing
+    char = Characteristic(UUID("2A6E"),
+                          props=Characteristic.PROP_NOTIFY | Characteristic.PROP_READ,
+                          attrs=Characteristic.ATTR_CCCD)
+    svc.addCharacteristic(char)
+
+    periph = Peripheral()
+    periph.addService(svc)
+    periph.setConnectionHandler(event_handler)
+    periph.advertise(device_name="Nano 33", services=[svc])
+
+Central example
+---------------
+
+Scan for nearby advertising devices for 100 ms and decode each
+``ScanEntry``'s advertisement data::
+
+    from ubluepy import Scanner, constants
+
+    s = Scanner()
+    for entry in s.scan(100):
+        print(entry.addr(), entry.rssi(), "dBm")
+        for ad_type, name, value in entry.getScanData():
+            print(" ", ad_type, name, bytes(value))
+
+Module contents
+---------------
+
+Classes
+~~~~~~~
+
+.. class:: UUID(value)
+
+   Construct a 16- or 128-bit Bluetooth UUID.
+
+   ``value``
+      One of:
+
+      * ``int`` — a 16-bit numeric UUID (``UUID(0x180A)``).
+      * 6-character ``"0xXXXX"`` string — a 16-bit UUID, e.g.
+        ``UUID("0x181A")``.
+      * 36-character ``"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"``
+        string — a full 128-bit UUID. The vendor-specific portion
+        is registered with the SoftDevice on construction.
+      * Another :class:`UUID` instance — performs a copy.
+
+      Any other length raises ``ValueError("Invalid UUID string
+      length")``.
+
+   .. method:: binVal() -> int
+
+      Return the low 16 bits of the UUID as an ``int``. For
+      128-bit UUIDs only the 16-bit field embedded inside the
+      vendor-specific UUID is returned (the full 128-bit value is
+      accessible only via the SoftDevice's vendor-specific index).
+
+.. class:: Service(uuid: UUID, type: int = Service.PRIMARY)
+
+   Define a GATT service that will be registered with the
+   SoftDevice when added to a :class:`Peripheral`.
+
+   ``uuid``
+      A :class:`UUID` instance. Passing a non-UUID object raises
+      ``ValueError``.
+
+   ``type``
+      Either :data:`Service.PRIMARY` (default) or
+      :data:`Service.SECONDARY`. Other values raise
+      ``ValueError``.
+
+   .. method:: uuid() -> UUID
+
+      Return the service's :class:`UUID` instance.
+
+   .. method:: addCharacteristic(characteristic: Characteristic) -> None
+
+      Register a :class:`Characteristic` with the service. The
+      characteristic's GATT handle is assigned during this call.
+
+   .. method:: getCharacteristic(uuid: UUID) -> Characteristic | None
+
+      Look up a previously added :class:`Characteristic` by UUID.
+      Returns the characteristic instance, or ``None`` if no
+      match is found.
+
+   .. method:: getCharacteristics() -> list
+
+      Return the list of every characteristic added to the service.
+
+   .. data:: PRIMARY
+      :type: int
+
+      Service-type constant for primary services (``1``).
+
+   .. data:: SECONDARY
+      :type: int
+
+      Service-type constant for secondary services (``2``).
+
+.. class:: Characteristic(uuid: UUID, *, props: int = PROP_READ | PROP_WRITE, attrs: int = 0)
+
+   Define a GATT characteristic. Add it to a :class:`Service` with
+   :meth:`Service.addCharacteristic` before the parent
+   :class:`Peripheral` starts advertising.
+
+   ``uuid``
+      A :class:`UUID` instance.
+
+   ``props`` (keyword-only)
+      Bitmask of one or more ``Characteristic.PROP_*`` values
+      describing what operations the characteristic supports.
+
+   ``attrs`` (keyword-only)
+      Bitmask of additional GATT attributes. Use
+      :data:`Characteristic.ATTR_CCCD` to attach a Client
+      Characteristic Configuration Descriptor — required to make
+      ``PROP_NOTIFY`` / ``PROP_INDICATE`` characteristics work.
+
+   .. method:: uuid() -> UUID
+
+      Return the characteristic's :class:`UUID` instance.
+
+   .. method:: properties() -> int
+
+      Return the ``props`` bitmask set at construction time.
+
+   .. method:: read() -> bytearray
+
+      **Central role only.** Read the characteristic's value from
+      the connected peer. Returns a ``bytearray`` with the latest
+      value. On a peripheral this is a no-op and returns ``None``.
+
+   .. method:: write(data, *, with_response: bool = False) -> None
+
+      Write to the characteristic.
+
+      * On a **peripheral**, if ``PROP_NOTIFY`` is set in the
+        characteristic's properties the value is sent as a GATT
+        notification to the connected central; otherwise the
+        local attribute value is updated.
+      * On a **central**, the value is written to the remote
+        peer. Set ``with_response=True`` to issue a write request
+        and wait for the peer's acknowledgement instead of a
+        write command.
+
+      ``data`` is any buffer-protocol object (``bytes``,
+      ``bytearray``, ``memoryview``).
+
+   .. data:: PROP_BROADCAST
+      :type: int
+
+      Characteristic can broadcast its value (``0x01``).
+
+   .. data:: PROP_READ
+      :type: int
+
+      Characteristic supports reads (``0x02``).
+
+   .. data:: PROP_WRITE_WO_RESP
+      :type: int
+
+      Characteristic supports writes without response (``0x04``).
+
+   .. data:: PROP_WRITE
+      :type: int
+
+      Characteristic supports writes with response (``0x08``).
+
+   .. data:: PROP_NOTIFY
+      :type: int
+
+      Characteristic can push notifications to a subscribed
+      central (``0x10``).
+
+   .. data:: PROP_INDICATE
+      :type: int
+
+      Characteristic can push indications (acknowledged
+      notifications) to a subscribed central (``0x20``).
+
+   .. data:: PROP_AUTH_SIGNED_WR
+      :type: int
+
+      Characteristic supports authenticated signed writes
+      (``0x40``).
+
+   .. data:: ATTR_CCCD
+      :type: int
+
+      Add a Client Characteristic Configuration Descriptor to the
+      characteristic (``0x01``). Required for clients to be able
+      to subscribe to notifications/indications.
+
+.. class:: Descriptor(uuid: UUID)
+
+   Stub class for representing GATT descriptors. The current
+   implementation only stores the UUID and exposes no methods —
+   it is provided for forward compatibility with future revisions
+   of the module.
+
+.. class:: Peripheral()
+
+   The local Bluetooth LE device. The same class is used for both
+   peripheral and central roles; the role is selected by which
+   methods you call (:meth:`advertise` selects peripheral,
+   :meth:`connect` selects central).
+
+   .. method:: addService(service: Service) -> None
+
+      Register a :class:`Service` (and all its previously added
+      characteristics) with the local GATT server.
+
+   .. method:: getServices() -> list
+
+      Return the list of services currently registered with this
+      :class:`Peripheral`.
+
+   .. method:: advertise(*, device_name: str | None = None, services: list | None = None, data: bytes | None = None, connectable: bool = True) -> None
+
+      Start advertising in peripheral role.
+
+      ``device_name``
+         Complete local name advertised in the GAP payload.
+
+      ``services``
+         List of :class:`Service` instances to advertise. Each
+         service's UUID is included in the advertisement.
+
+      ``data``
+         Optional raw advertisement payload (``bytes`` /
+         ``bytearray``) appended to the auto-generated header.
+         Use this for vendor-specific or beacon payloads such as
+         Eddystone.
+
+      ``connectable``
+         When ``True`` (default), advertise as a connectable
+         device and register GAP / GATTS event handlers so the
+         configured :meth:`setConnectionHandler` callback fires
+         on connect, disconnect, and CCCD writes. When
+         ``False``, advertise as a beacon — no handlers are
+         attached and the device cannot be connected to.
+
+   .. method:: advertise_stop() -> None
+
+      Stop any in-progress advertisement.
+
+   .. method:: setConnectionHandler(func) -> None
+
+      Register a callback invoked on GAP and GATTS events. The
+      callback is called as ``func(event_id, conn_handle, data)``
+      where ``event_id`` is one of the
+      :data:`constants.EVT_GAP_CONNECTED`,
+      :data:`constants.EVT_GAP_DISCONNECTED`, or
+      :data:`constants.EVT_GATTS_WRITE` values, ``conn_handle``
+      is the SoftDevice connection handle (or attribute handle
+      for GATTS writes), and ``data`` is the raw event payload
+      as a ``bytearray`` (or ``None`` for connect / disconnect).
+
+   .. method:: setNotificationHandler(func) -> None
+
+      Register a callback for notification events received in
+      central role.
+
+   .. method:: withDelegate(delegate: DefaultDelegate) -> None
+
+      Attach a :class:`DefaultDelegate` instance to receive
+      decoded GATT events.
+
+   .. method:: disconnect() -> None
+
+      Drop the active connection (currently a no-op stub in this
+      build).
+
+   .. method:: connect(addr, *, addr_type: int = constants.ADDR_TYPE_PUBLIC) -> None
+
+      **Central role only.** Connect to the peer with the given
+      address and synchronously discover its primary services
+      and characteristics. Blocks until the connection is
+      established and discovery completes; the discovered
+      services are then available via :meth:`getServices`.
+
+      ``addr``
+         Peer address as a 17-character ``"xx:xx:xx:xx:xx:xx"``
+         string (e.g. taken from
+         :meth:`ScanEntry.addr`).
+
+      ``addr_type`` (keyword-only)
+         Either :data:`constants.ADDR_TYPE_PUBLIC` (default) or
+         :data:`constants.ADDR_TYPE_RANDOM_STATIC`.
+
+.. class:: Scanner()
+
+   GAP observer for discovering nearby advertising devices.
+   Available only when the firmware is built against a
+   SoftDevice with central support (s132 / s140).
+
+   .. method:: scan(timeout: int) -> list
+
+      Run a passive scan for ``timeout`` milliseconds and return
+      a list of :class:`ScanEntry` instances — one per
+      advertisement report received during the window.
+
+.. class:: ScanEntry()
+
+   A single advertisement report captured by
+   :meth:`Scanner.scan`. Instances are returned from the scanner
+   — there is no public constructor.
+
+   .. method:: addr() -> str
+
+      Return the peer address as a 17-character
+      ``"xx:xx:xx:xx:xx:xx"`` string.
+
+   .. method:: addr_type() -> int
+
+      Return the peer address type
+      (:data:`constants.ADDR_TYPE_PUBLIC` or
+      :data:`constants.ADDR_TYPE_RANDOM_STATIC`).
+
+   .. method:: rssi() -> int
+
+      Return the signal-strength indicator in dBm.
+
+   .. method:: getScanData() -> list
+
+      Decode the advertisement payload into a list of
+      ``(ad_type, description, value)`` tuples. ``ad_type`` is
+      the numeric AD type byte
+      (see :data:`constants.ad_types`), ``description`` is the
+      matching constant's name as a string (or ``None`` if the
+      type is unknown), and ``value`` is the AD record body as a
+      ``bytearray``.
+
+.. class:: DefaultDelegate()
+
+   Base class for objects passed to :meth:`Peripheral.withDelegate`.
+   Subclass it and override :meth:`handleConnection` /
+   :meth:`handleNotification` to react to GATT events.
+
+   .. method:: handleConnection() -> None
+
+      Called on GAP connect / disconnect events. The default
+      implementation is empty.
+
+   .. method:: handleNotification() -> None
+
+      Called on incoming GATT notifications. The default
+      implementation is empty.
+
+Constants
+---------
+
+The :data:`constants` attribute of the module is a namespace
+containing GAP/GATT event identifiers, address-type values, and
+the nested :data:`ad_types` namespace.
+
+.. data:: constants
+   :type: type
+
+   Container exposing the constants below.
+
+.. data:: constants.EVT_GAP_CONNECTED
+   :type: int
+
+   ``Peripheral`` connection handler ``event_id`` value for GAP
+   connect (``16``).
+
+.. data:: constants.EVT_GAP_DISCONNECTED
+   :type: int
+
+   ``Peripheral`` connection handler ``event_id`` value for GAP
+   disconnect (``17``).
+
+.. data:: constants.EVT_GATTS_WRITE
+   :type: int
+
+   ``Peripheral`` connection handler ``event_id`` value for a
+   write to a local GATT attribute, including writes to a CCCD
+   that enable/disable notifications (``80``).
+
+.. data:: constants.UUID_CCCD
+   :type: int
+
+   Standard Bluetooth UUID for the Client Characteristic
+   Configuration Descriptor (``0x2902``).
+
+.. data:: constants.ADDR_TYPE_PUBLIC
+   :type: int
+
+   Public Bluetooth Device Address (``0``).
+
+.. data:: constants.ADDR_TYPE_RANDOM_STATIC
+   :type: int
+
+   Static random Bluetooth Device Address (``1``).
+
+.. data:: constants.ad_types
+   :type: type
+
+   Namespace of advertising-data AD-type constants from the
+   `Bluetooth Core Specification Supplement
+   <https://www.bluetooth.com/specifications/specs/core-specification-supplement-12/>`_.
+   Each name maps to the corresponding 1-byte AD type:
+
+   .. csv-table::
+      :header: "Name", "Value"
+      :widths: 70, 30
+
+      "``AD_TYPE_FLAGS``",                              "``0x01``"
+      "``AD_TYPE_16BIT_SERVICE_UUID_MORE_AVAILABLE``",  "``0x02``"
+      "``AD_TYPE_16BIT_SERVICE_UUID_COMPLETE``",        "``0x03``"
+      "``AD_TYPE_32BIT_SERVICE_UUID_MORE_AVAILABLE``",  "``0x04``"
+      "``AD_TYPE_32BIT_SERVICE_UUID_COMPLETE``",        "``0x05``"
+      "``AD_TYPE_128BIT_SERVICE_UUID_MORE_AVAILABLE``", "``0x06``"
+      "``AD_TYPE_128BIT_SERVICE_UUID_COMPLETE``",       "``0x07``"
+      "``AD_TYPE_SHORT_LOCAL_NAME``",                   "``0x08``"
+      "``AD_TYPE_COMPLETE_LOCAL_NAME``",                "``0x09``"
+      "``AD_TYPE_TX_POWER_LEVEL``",                     "``0x0A``"
+      "``AD_TYPE_CLASS_OF_DEVICE``",                    "``0x0D``"
+      "``AD_TYPE_SIMPLE_PAIRING_HASH_C``",              "``0x0E``"
+      "``AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R``",        "``0x0F``"
+      "``AD_TYPE_SECURITY_MANAGER_TK_VALUE``",          "``0x10``"
+      "``AD_TYPE_SECURITY_MANAGER_OOB_FLAGS``",         "``0x11``"
+      "``AD_TYPE_SLAVE_CONNECTION_INTERVAL_RANGE``",    "``0x12``"
+      "``AD_TYPE_SOLICITED_SERVICE_UUIDS_16BIT``",      "``0x14``"
+      "``AD_TYPE_SOLICITED_SERVICE_UUIDS_128BIT``",     "``0x15``"
+      "``AD_TYPE_SERVICE_DATA``",                       "``0x16``"
+      "``AD_TYPE_PUBLIC_TARGET_ADDRESS``",              "``0x17``"
+      "``AD_TYPE_RANDOM_TARGET_ADDRESS``",              "``0x18``"
+      "``AD_TYPE_APPEARANCE``",                         "``0x19``"
+      "``AD_TYPE_ADVERTISING_INTERVAL``",               "``0x1A``"
+      "``AD_TYPE_LE_BLUETOOTH_DEVICE_ADDRESS``",        "``0x1B``"
+      "``AD_TYPE_LE_ROLE``",                            "``0x1C``"
+      "``AD_TYPE_SIMPLE_PAIRING_HASH_C256``",           "``0x1D``"
+      "``AD_TYPE_SIMPLE_PAIRING_RANDOMIZER_R256``",     "``0x1E``"
+      "``AD_TYPE_SERVICE_DATA_32BIT_UUID``",            "``0x20``"
+      "``AD_TYPE_SERVICE_DATA_128BIT_UUID``",           "``0x21``"
+      "``AD_TYPE_URI``",                                "``0x24``"
+      "``AD_TYPE_3D_INFORMATION_DATA``",                "``0x3D``"
+      "``AD_TYPE_MANUFACTURER_SPECIFIC_DATA``",         "``0xFF``"
+
+
 :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
 ===========================================================
 
@@ -31362,7 +31855,7 @@ Example::
     from machine import Pin, I2C
     from bmi270 import BMI270
 
-    imu = BMI270(I2C(1, scl=Pin(15), sda=Pin(14)))
+    imu = BMI270(I2C(1, scl=Pin("P15"), sda=Pin("P14")))
 
     while True:
         print("Accelerometer: x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*imu.accel()))
@@ -31456,7 +31949,7 @@ Example::
     from machine import Pin, I2C
     from bmm150 import BMM150
 
-    imu = BMM150(I2C(1, scl=Pin(15), sda=Pin(14)))
+    imu = BMM150(I2C(1, scl=Pin("P15"), sda=Pin("P14")))
 
     while True:
         print("magnetometer: x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*imu.magnet()))
@@ -31521,7 +32014,7 @@ Example::
     from machine import Pin, I2C
     from lsm9ds1 import LSM9DS1
 
-    imu = LSM9DS1(I2C(1, scl=Pin(15), sda=Pin(14)))
+    imu = LSM9DS1(I2C(1, scl=Pin("P15"), sda=Pin("P14")))
 
     while True:
         print("Accelerometer: x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*imu.accel()))
@@ -31629,7 +32122,7 @@ Example::
     from machine import Pin, I2C
     from hts221 import HTS221
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     hts = HTS221(bus)
 
     while True:
@@ -31684,7 +32177,7 @@ Example::
     from machine import Pin, I2C
     from lps22h import LPS22H
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     lps = LPS22H(bus, oneshot=False)
 
     while True:
@@ -31755,7 +32248,7 @@ Example::
     from machine import Pin, I2C
     from hs3003 import HS3003
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     hts = HS3003(bus)
 
     while True:
@@ -31949,7 +32442,7 @@ Example::
     import imu
     from machine import Pin, I2C
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     sensor = imu.IMU(bus)
 
     while True:
@@ -33078,10 +33571,10 @@ FIFO.
 Example usage::
 
     import time
-    from machine import I2C
+    from machine import I2C, Pin
     from apds9960 import uAPDS9960 as APDS9960
 
-    bus = I2C(1)
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     sensor = APDS9960(bus)
 
     sensor.enableLightSensor()
@@ -34612,6 +35105,41 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 2** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
+
 Timing
 ------
 
@@ -35554,6 +36082,35 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for an
+externally wired **AMG8833** 8 × 8 thermal imager. Connect the
+module to the I²C bus listed below, then read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 1** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
+
 Timing
 ------
 
@@ -36315,6 +36872,41 @@ Software bit‑banged buses
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 4** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
 
 Timing
 ------
@@ -37215,6 +37807,42 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In addition to the on‑board FLIR Lepton, the firmware also
+includes the :doc:`/library/omv.fir` driver for externally wired
+I²C thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 2** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
+
 Timing
 ------
 
@@ -37829,6 +38457,41 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 2** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
+
 Timing
 ------
 
@@ -38377,6 +39040,41 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 2** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
+
 Timing
 ------
 
@@ -38908,6 +39606,41 @@ Software bit‑banged buses
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 2** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
 
 Timing
 ------
@@ -39469,6 +40202,41 @@ Software bit‑banged buses
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 2** — wire
+the module to ``P4`` (SCL) and ``P5`` (SDA).
 
 Timing
 ------
@@ -40336,6 +41104,41 @@ Software bit‑banged buses
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 1** — wire
+the module to the silkscreened ``SCL`` / ``SDA`` pads.
 
 Timing
 ------
@@ -41268,6 +42071,41 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 3** — wire
+the module to ``D12`` (SCL) and ``D11`` (SDA).
+
 Timing
 ------
 
@@ -41341,9 +42179,9 @@ Firmware update (DFU)
 ~~~~~~~~~~~~~~~~~~~~~
 
 The Portenta H7 uses Arduino's standard **double‑tap reset** to
-enter the STM32H747 ROM bootloader. Quickly press the reset button
-twice — the board re‑enumerates over USB as a DFU device and OpenMV
-IDE can flash a new firmware image.
+enter Arduino's bootloader. Quickly press the reset button twice —
+the board re‑enumerates over USB as a DFU device and OpenMV IDE
+can flash a new firmware image.
 
 A running script can re‑enter the bootloader on demand by calling
 :func:`machine.bootloader`::
@@ -42257,6 +43095,41 @@ Software bit‑banged buses
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
 
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 1** — wire
+the module to ``D8`` (SCL) and ``D9`` (SDA).
+
 Timing
 ------
 
@@ -42431,12 +43304,10 @@ Arduino Nano RP2040 Connect
 
 The Arduino Nano RP2040 Connect is a 45 × 18 mm Arduino‑Nano‑form‑factor
 board built around the Raspberry Pi RP2040 — a dual ARM Cortex‑M0+
-running at 133 MHz with 264 KB of internal SRAM. Wireless and BLE
-come from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
-6‑axis IMU and an MP34DT06 PDM microphone. Compared with the
-OpenMV camera boards, the Nano RP2040
-Connect has **no on‑board image sensor** — the OpenMV firmware here
-is mostly used for sensor fusion, audio capture, and wireless work.
+running at 133 MHz with 264 KB of internal SRAM. WiFi and BLE come
+from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
+6‑axis IMU and an MP34DT06 PDM microphone. The OpenMV firmware
+drives all of these from MicroPython.
 
 .. image:: https://docs.openmv.io/_images/arduino-nano-rp2040-connect-hero.jpg
     :alt: Arduino Nano RP2040 Connect
@@ -42451,29 +43322,13 @@ Highlights
 
 * **Raspberry Pi RP2040** dual ARM Cortex‑M0+ at 133 MHz with **264
   KB internal SRAM**.
-* **16 MB external QSPI flash** — half the board's storage budget is
-  available for ROMFS assets and Python files.
+* **16 MB external QSPI flash**.
 * **U‑blox NINA‑W102** module providing **2.4 GHz Wi‑Fi b/g/n** and
-  **Bluetooth 4.2 (BR/EDR + LE)**, accessed over SPI from the RP2040.
-* **LSM6DSOX** 6‑axis IMU on the secondary I²C bus, exposed through
-  the frozen :class:`lsm6dsox.LSM6DSOX` driver.
-* **MP34DT06** PDM microphone captured through PIO using
-  :doc:`/library/omv.audio`.
-* **20 user I/O pins** on the standard Nano headers — D2–D13
-  (digital) plus A0–A7 (analog). Four of the analog pins (A4–A7)
-  route through the NINA module's I/O extender.
+  **Bluetooth 4.2** (BR/EDR + LE).
+* **LSM6DSOX** 6‑axis IMU and **MP34DT06** PDM microphone.
 * **Micro USB** connector for power, programming, and a CDC REPL.
-* **REC** (BOOTSEL) and **RESET** buttons for entering the RP2040 UF2
-  bootloader.
-
-.. note::
-
-   The OpenMV firmware on the Nano RP2040 Connect is a stripped‑down
-   build compared with the OpenMV camera boards: there is no
-   on‑board image sensor, no JPEG codec, and no GPU. ML / TFLite
-   inference is also not enabled in this build — use the NINA‑backed
-   networking, IMU, and PDM mic together with :mod:`ulab.numpy` for
-   on‑device DSP.
+* **22 user I/O pins** on the standard Nano headers — ``TX``/``RX``,
+  ``D2``–``D13`` (digital), ``A0``–``A7`` (analog).
 
 Pinout
 ------
@@ -42489,81 +43344,91 @@ Pin reference
    :header: "Pin name", "Reference", "Function"
    :widths: 14, 12, 74
 
-   "RX (D0)",    "3.3 V", "UART0 RX (Serial1) / GPIO1"
-   "TX (D1)",    "3.3 V", "UART0 TX (Serial1) / GPIO0"
-   "D2",         "3.3 V", "GPIO25"
-   "D3",         "3.3 V", "GPIO15 (PWM7‑B)"
-   "D4",         "3.3 V", "GPIO16 (PWM0‑A)"
-   "D5",         "3.3 V", "GPIO17 (PWM0‑B)"
-   "D6",         "3.3 V", "GPIO18 (PWM1‑A)"
-   "D7",         "3.3 V", "GPIO19 (PWM1‑B)"
-   "D8",         "3.3 V", "GPIO20 (PWM2‑A)"
-   "D9",         "3.3 V", "GPIO21 (PWM2‑B)"
-   "D10",        "3.3 V", "GPIO5  (SPI0 CSn / PWM2‑B)"
-   "D11",        "3.3 V", "GPIO7  (SPI0 TX  / PWM3‑B)"
-   "D12",        "3.3 V", "GPIO4  (SPI0 RX  / PWM2‑A)"
-   "D13",        "3.3 V", "GPIO6  (SPI0 SCK / LED_BUILTIN)"
-   "D14 / A0",   "3.3 V", "GPIO26 / ADC0 / I2C1 SDA"
-   "D15 / A1",   "3.3 V", "GPIO27 / ADC1 / I2C1 SCL"
-   "D16 / A2",   "3.3 V", "GPIO28 / ADC2"
-   "D17 / A3",   "3.3 V", "GPIO29 / ADC3"
-   "D18 / A4",   "3.3 V", "NINA EXT GPIO3 (extender pin, not RP2040)"
-   "D19 / A5",   "3.3 V", "NINA EXT GPIO4 (extender pin, not RP2040)"
-   "D20 / A6",   "3.3 V", "NINA EXT GPIO5 (extender pin, not RP2040)"
-   "D21 / A7",   "3.3 V", "NINA EXT GPIO6 (extender pin, not RP2040)"
-   "SDA",        "3.3 V", "I2C0 SDA / GPIO12 (separate pad on the bottom)"
-   "SCL",        "3.3 V", "I2C0 SCL / GPIO13 (separate pad on the bottom)"
+   "TX",         "3.3 V", "UART0 TX / SPI0 RX / I2C0 SDA / PWM0 A"
+   "RX",         "3.3 V", "UART0 RX / SPI0 CS / I2C0 SCL / PWM0 B"
+   "D2",         "3.3 V", "SPI1 CS / UART1 RX / I2C0 SCL / PWM4 B"
+   "D3",         "3.3 V", "SPI1 TX / UART0 RTS / I2C1 SCL / PWM7 B"
+   "D4",         "3.3 V", "SPI0 RX / UART0 TX / I2C0 SDA / PWM0 A"
+   "D5",         "3.3 V", "SPI0 CS / UART0 RX / I2C0 SCL / PWM0 B"
+   "D6",         "3.3 V", "SPI0 SCK / UART0 CTS / I2C1 SDA / PWM1 A"
+   "D7",         "3.3 V", "SPI0 TX / UART0 RTS / I2C1 SCL / PWM1 B"
+   "D8",         "3.3 V", "SPI0 RX / UART1 TX / I2C0 SDA / PWM2 A"
+   "D9",         "3.3 V", "SPI0 CS / UART1 RX / I2C0 SCL / PWM2 B"
+   "D10",        "3.3 V", "SPI0 CS / UART1 RX / I2C0 SCL / PWM2 B"
+   "D11",        "3.3 V", "SPI0 TX / UART1 RTS / I2C1 SCL / PWM3 B"
+   "D12",        "3.3 V", "SPI0 RX / UART1 TX / I2C0 SDA / PWM2 A"
+   "D13",        "3.3 V", "SPI0 SCK / UART1 CTS / I2C1 SDA / PWM3 A"
+   "D14 / A0",   "3.3 V", "ADC / SPI1 SCK / UART1 CTS / I2C1 SDA / PWM5 A"
+   "D15 / A1",   "3.3 V", "ADC / SPI1 TX / UART1 RTS / I2C1 SCL / PWM5 B"
+   "D16 / A2",   "3.3 V", "ADC / SPI1 RX / UART0 TX / I2C0 SDA / PWM6 A"
+   "D17 / A3",   "3.3 V", "ADC / SPI1 CS / UART0 RX / I2C0 SCL / PWM6 B"
+   "D18 / A4 / SDA", "3.3 V", "ADC / I2C0 SDA / SPI1 RX / UART0 TX / PWM6 A"
+   "D19 / A5 / SCL", "3.3 V", "ADC / I2C0 SCL / SPI1 CS / UART0 RX / PWM6 B"
+   "D20 / A6",       "3.3 V", "ADC / GPIO"
+   "D21 / A7",       "3.3 V", "ADC / GPIO"
    "RESET",      "3.3 V", "press the on‑board RESET button or pull to GND to reset"
-   "REC",        "3.3 V", "BOOTSEL — hold while plugging USB to enter UF2 bootloader"
-   "LED_BUILTIN","3.3 V", "Yellow LED on D13 (RP2040 GPIO6)"
-   "LED_RED",    "—",     "RGB LED red channel — driven through the NINA module"
-   "LED_GREEN",  "—",     "RGB LED green channel — driven through the NINA module"
-   "LED_BLUE",   "—",     "RGB LED blue channel — driven through the NINA module"
+   "REC",        "3.3 V", "BOOTSEL — pull high at power‑on to enter the RP2040 ROM bootloader"
+   "LED_BUILTIN","—",     "Orange user LED on ``D13``"
+   "LED_RED",    "—",     "RGB LED red channel"
+   "LED_GREEN",  "—",     "RGB LED green channel"
+   "LED_BLUE",   "—",     "RGB LED blue channel"
 
-.. note::
+.. warning::
 
-   ``A4``–``A7`` (= ``D18``–``D21``) physically connect to the
-   NINA‑W102 module's I/O extender, not directly to the RP2040.
-   They're accessed via the NINA driver, not via :class:`machine.ADC`.
-   For analog input on the RP2040 itself, use ``A0``–``A3``.
+   The Nano RP2040 Connect's I/O pins are **3.3 V only** — they
+   are **not 5 V tolerant**. Driving 5 V into them will damage
+   the RP2040.
 
 Power pins
 ----------
 
-* **VIN** — 5 – 18 V input. Powers the board through the on‑board
-  regulator.
-* **+5V** — switched 5 V from USB / VIN, available to power external
-  shields.
+* **VIN** — 4 – 20 V input. Powers the board through the on‑board
+  switching regulator. Also fed via a diode from the USB 5 V rail,
+  so USB and ``VIN`` can be present at the same time without
+  back‑driving each other.
+* **+5V** — unconnected by default.
 * **+3V3** — 3.3 V regulator output.
-* **AREF** — analog reference input.
+* **AREF** — analog reference pin. Not wired to the RP2040 on this
+  board — the ADC is always referenced to **3.3 V**.
 * **GND** — common ground.
 
 The Nano RP2040 Connect can be powered through either path:
 
 * **Micro USB** — supplies 5 V to the on‑board regulator.
-* **VIN pin** — drive a regulated 5 – 18 V supply.
+* **VIN pin** — drive a regulated 4 – 20 V supply.
+
+.. note::
+
+   A solder jumper on the bottom of the board bridges ``+5V`` to
+   the USB 5 V rail. Close it to make the ``+5V`` header pin
+   actually carry 5 V.
+
+.. note::
+
+   A normally‑closed solder jumper on the output of the on‑board
+   4–20 V switching regulator can be cut to disable the regulator,
+   so the board can be powered directly from an external 3.3 V
+   supply on ``+3V3``.
 
 Recovery and debug pins
 -----------------------
 
 * **RESET** — both an exposed pad and a momentary RESET button on
-  the top of the board, tied to the RP2040's RUN line. Pull to GND
+  the top of the board, tied to the RP2040's NRST line. Pull to GND
   or press the button to reset.
-* **REC** — BOOTSEL button. Hold REC while plugging in USB to put
-  the RP2040 into ROM bootloader mode; the board enumerates as a USB
-  mass‑storage drive named ``RPI-RP2`` and accepts a ``.uf2``
-  firmware image. OpenMV IDE uses this path to flash new firmware.
+* **REC** — exposed pad. Holding ``REC`` **high** at power‑on (or
+  while pressing RESET) puts the RP2040 into its ROM bootloader;
+  the board re‑enumerates as a USB mass‑storage drive named
+  ``RPI-RP2`` and accepts a ``.uf2`` firmware image.
 
-A running script can re‑enter the UF2 bootloader on demand by
-calling :func:`machine.bootloader`::
+The Nano RP2040 Connect uses Arduino's standard **double‑tap
+reset** to enter Arduino's bootloader. Quickly press the RESET
+button twice — the board re‑enumerates over USB as a UF2 device
+and OpenMV IDE can flash a new firmware image.
 
-    import machine
-
-    machine.bootloader()
-
-The RP2040's SWD signals are exposed on three plated pads on the back
-of the board (``SWDIO``, ``SWCLK``, ``GND``) just below the NINA
-module. They are 3.3 V referenced.
+The RP2040's SWD signals are exposed on plated pads on the back
+of the board, just below the NINA module. All debug signals are
+**3.3 V referenced**.
 
 Onboard peripherals
 -------------------
@@ -42571,24 +43436,70 @@ Onboard peripherals
 LEDs
 ~~~~
 
-The Nano RP2040 Connect has two indicator paths. The rp2 port does
-not expose ``machine.LED``, so use :class:`machine.Pin` for both:
+The Nano RP2040 Connect has a user RGB LED — driven through the
+silkscreened ``LED_RED``, ``LED_GREEN``, and ``LED_BLUE`` channels
+— plus a separate orange ``LED_BUILTIN`` on ``D13``. All four are
+software‑controllable through :ref:`machine.LED <machine.LED>`::
 
-* **Yellow user LED** on ``D13`` (RP2040 GPIO6) — driven directly by
-  the RP2040::
+    from machine import LED
 
-      from machine import Pin
+    LED("LED_RED").on()
+    LED("LED_GREEN").on()
+    LED("LED_BLUE").on()
+    LED("LED_BUILTIN").on()
 
-      Pin("LED_BUILTIN", Pin.OUT).on()
+A separate green **power** LED on the board lights whenever the
++3.3 V rail is up and is not user‑controllable.
 
-* **RGB LED** driven through the NINA‑W102 module's GPIO extender.
-  The named channels (``LED_RED``, ``LED_GREEN``, ``LED_BLUE``) only
-  work after the NINA module has been brought up by the network or
-  BLE stack — bring up Wi‑Fi first, then::
+Camera sensor
+~~~~~~~~~~~~~
 
-      from machine import Pin
+The OpenMV firmware on the Nano RP2040 Connect supports the
+**OmniVision OV7670** parallel CMOS sensor. The board has no
+on‑board image sensor — wire an OV7670 module to the silkscreened
+header pins listed below and drive it through the
+:doc:`/library/omv.csi` module::
 
-      Pin("LED_RED", Pin.OUT).on()
+    import csi
+
+    cam = csi.CSI()
+    cam.reset()
+    cam.pixformat(csi.RGB565)
+    cam.framesize(csi.QVGA)
+    cam.snapshot(time=2000)       # let auto‑exposure settle
+
+    while True:
+        img = cam.snapshot()
+
+.. note::
+
+   The OV7670 takes 14 pins. The firmware wires them as follows:
+
+   .. csv-table::
+      :header: "Sensor signal", "Nano RP2040 pin"
+      :widths: 30, 70
+
+      "D0",       "``D3``"
+      "D1",       "``D4``"
+      "D2",       "``D5``"
+      "D3",       "``D6``"
+      "D4",       "``D7``"
+      "D5",       "``D8``"
+      "D6",       "``D9``"
+      "D7",       "``D2``"
+      "HSYNC",    "``A1``"
+      "VSYNC",    "``A0``"
+      "PXCLK",    "``A3``"
+      "MXCLK",    "``A2``"
+      "POWER",    "``TX``"
+      "RESET",    "``RX``"
+      "SCL",      "``SDA`` (I²C 0)"
+      "SDA",      "``SCL`` (I²C 0)"
+
+   The OV7670's I²C control bus is shared with the on‑board IMU
+   and ATECC608A on I²C 0. The sensor sits at 7‑bit address
+   ``0x21`` — user devices on bus 0 must also avoid this address
+   when the camera is wired up.
 
 IMU
 ~~~
@@ -42636,8 +43547,7 @@ Wi‑Fi
 ~~~~~
 
 The on‑board NINA‑W102 module is exposed via :doc:`/library/network`
-as a station interface. The NINA driver uses the legacy
-``ifconfig()`` API rather than ``ipconfig()``::
+as a station interface::
 
     import network, time
 
@@ -42646,7 +43556,7 @@ as a station interface. The NINA driver uses the legacy
     wlan.connect("ssid", "password")
     while not wlan.isconnected():
         time.sleep(1)
-    print("Wi‑Fi config:", wlan.ifconfig())   # (ip, netmask, gw, dns)
+    print("Wi‑Fi IP:", wlan.ipconfig("addr4")[0])
 
 Bluetooth
 ~~~~~~~~~
@@ -42673,8 +43583,8 @@ GPIO
 ~~~~
 
 Use :ref:`machine.Pin <machine.Pin>` to read or drive any of the
-silkscreened pins. Outputs are 3.3 V CMOS. Maximum sink across all
-GPIOs and the QSPI pins is 50 mA.
+silkscreened pins. Outputs are 3.3 V CMOS, 50 mA total sink across
+all GPIOs.
 
 ::
 
@@ -42688,6 +43598,15 @@ GPIOs and the QSPI pins is 50 mA.
     inp = Pin("D3", Pin.IN, Pin.PULL_UP)
     print(inp.value())
 
+Any input pin can also fire an interrupt on edge transitions::
+
+    def handler(pin):
+        print("triggered:", pin)
+
+    Pin("D3", Pin.IN, Pin.PULL_UP).irq(
+        handler, Pin.IRQ_FALLING | Pin.IRQ_RISING,
+    )
+
 UART
 ~~~~
 
@@ -42697,9 +43616,7 @@ Bus           TX    RX
 UART0         TX    RX
 ============  ====  ====
 
-The ``TX`` and ``RX`` pads on the silkscreen are also labelled
-``D1`` and ``D0`` respectively. Inside MicroPython use the names
-``TX``/``RX`` (the names ``D0``/``D1`` are not exported)::
+Use the silkscreen names ``TX``/``RX`` with :class:`machine.UART`::
 
     from machine import UART
 
@@ -42715,30 +43632,50 @@ The ``TX`` and ``RX`` pads on the silkscreen are also labelled
 I²C
 ~~~
 
-============  ====  ====
-Bus           SCL   SDA
-============  ====  ====
-I2C0          SCL   SDA  (separate pads — GPIO13/GPIO12)
-I2C1          A1    A0   (also = D15/D14, GPIO27/GPIO26)
-============  ====  ====
+======  ================  ================
+Bus     SDA               SCL
+======  ================  ================
+I2C0    ``SDA`` / ``A4``  ``SCL`` / ``A5``
+I2C1    ``A0``            ``A1``
+======  ================  ================
 
-The rp2 port's ``machine.I2C(0)`` defaults to a different pin set
-than what the Nano RP2040 Connect routes to its silkscreened
-``SDA``/``SCL`` pads, so pass the pins explicitly::
+Both buses need their pins passed explicitly to
+:class:`machine.I2C`::
 
     from machine import I2C, Pin
 
-    i2c = I2C(0, scl=Pin("SCL"), sda=Pin("SDA"), freq=400_000)
-    i2c.scan()
-    i2c.writeto(0x6A, b"hi")        # LSM6DSOX is at 0x6A on bus 0
+    bus0 = I2C(0, scl=Pin("SCL"), sda=Pin("SDA"), freq=400_000)
+    bus0.scan()
 
-``I2C(1)`` is wired to ``A0``/``A1`` by ``MICROPY_HW_I2C1_*`` and
-works without explicit pins — using ``A0``/``A1`` as I²C consumes
-those pins for the bus, so you can't simultaneously use them as ADC
-inputs.
+    bus1 = I2C(1, scl=Pin("A1"),  sda=Pin("A0"),  freq=400_000)
+    bus1.scan()
 
-The on‑board IMU sits on **bus 0**; user I²C devices on the same
-bus must avoid the LSM6DSOX address (``0x6A``).
+.. note::
+
+   Two on-board chips share **bus 0** — user devices on this bus
+   must avoid their addresses:
+
+   * ``0x6A`` — LSM6DSOX IMU
+   * ``0x60`` — ATECC608A‑MAHDA‑T
+
+   Using ``A0``/``A1`` as I²C consumes them for the bus, so they
+   can't simultaneously be ADC inputs.
+
+.. note::
+
+   The ``SDA`` / ``SCL`` pads (bus 0) have on‑board pull‑up
+   resistors to 3.3 V, so no external pull‑ups are needed for
+   devices on that bus. ``A0`` / ``A1`` (bus 1) do not — add
+   external pull‑ups when using bus 1.
+
+The same hardware can also be used in target (slave) mode through
+:ref:`machine.I2CTarget <machine.I2CTarget>` to expose a memory
+region to another I²C controller::
+
+    from machine import I2CTarget
+
+    buf = bytearray(32)
+    target = I2CTarget(0, addr=0x42, mem=buf)
 
 SPI
 ~~~
@@ -42749,12 +43686,10 @@ Bus           MOSI   MISO   SCK    CS
 SPI0          D11    D12    D13    D10
 ============  =====  =====  =====  ====
 
-``machine.SPI(0)`` defaults to a different pin set on the RP2040
-port, so pass the silkscreened pads explicitly when creating the
-bus::
+The rp2 port doesn't pre-configure SPI0's pins on this board, so
+pass the silkscreened pads explicitly when creating the bus::
 
-    from machine import SPI
-    from machine import Pin
+    from machine import SPI, Pin
 
     spi = SPI(0, baudrate=10_000_000,
               sck=Pin("D13"), mosi=Pin("D11"), miso=Pin("D12"))
@@ -42766,17 +43701,21 @@ bus::
 
 .. note::
 
-   ``D13`` doubles as ``LED_BUILTIN`` — driving SPI on this bus will
-   blink the yellow user LED in time with the bus clock. That's
-   normal.
+   ``D13`` doubles as the orange ``LED_BUILTIN`` — driving SPI on
+   this bus will blink the LED in time with the bus clock.
 
-   ``machine.SPI(1)`` exists but is reserved for the NINA‑W102 module
-   (the Wi‑Fi SPI link); don't use it directly.
+.. note::
+
+   ``machine.SPI(1)`` exists but is reserved for the on-board
+   NINA‑W102 module (the Wi-Fi/BLE SPI link); don't use it directly.
 
 ADC
 ~~~
 
-The RP2040 has four 12‑bit ADC channels exposed on **A0–A3**::
+The RP2040 has four 12‑bit ADC channels exposed on **A0–A3**, all
+**3.3 V referenced** — ``read_u16`` returns 0–65535 across 0–3.3 V
+at the pin. The board's ``AREF`` pin is not wired, so the reference
+is always 3.3 V::
 
     from machine import ADC
     import time
@@ -42790,21 +43729,30 @@ The RP2040 has four 12‑bit ADC channels exposed on **A0–A3**::
 PWM
 ~~~
 
-The RP2040's PWM peripheral can drive any GPIO. The mapping below
-covers the silkscreened pins; each row is a PWM slice / channel pair.
-
-============  =====================
-Pin           Slice / channel
-============  =====================
-D3            PWM7 B
-D4            PWM0 A
-D5            PWM0 B
-D6            PWM1 A
-D7            PWM1 B
-D8            PWM2 A
-D9            PWM2 B
-D11           PWM3 B
-============  =====================
+================  =====================
+Pin               Slice / channel
+================  =====================
+TX                PWM0 A
+RX                PWM0 B
+D2                PWM4 B
+D3                PWM7 B
+D4                PWM0 A
+D5                PWM0 B
+D6                PWM1 A
+D7                PWM1 B
+D8                PWM2 A
+D9                PWM2 B
+D10               PWM2 B
+D11               PWM3 B
+D12               PWM2 A
+D13               PWM3 A
+D14 / A0          PWM5 A
+D15 / A1          PWM5 B
+D16 / A2          PWM6 A
+D17 / A3          PWM6 B
+D18 / A4 / SDA    PWM6 A
+D19 / A5 / SCL    PWM6 B
+================  =====================
 
 Drive any of them via :ref:`machine.PWM <machine.PWM>`::
 
@@ -42812,11 +43760,57 @@ Drive any of them via :ref:`machine.PWM <machine.PWM>`::
 
     pwm = PWM(Pin("D3"), freq=1_000, duty_u16=32768)
 
+.. note::
+
+   Several pins share PWM slice channels:
+
+   * **PWM0 A** is on ``TX`` *and* ``D4``.
+   * **PWM0 B** is on ``RX`` *and* ``D5``.
+   * **PWM2 A** is on ``D8`` *and* ``D12``.
+   * **PWM2 B** is on ``D9`` *and* ``D10``.
+   * **PWM6 A** is on ``D16``/``A2`` *and* ``D18``/``A4``/``SDA``.
+   * **PWM6 B** is on ``D17``/``A3`` *and* ``D19``/``A5``/``SCL``.
+
+   Pick one consumer per slice channel. Channels A and B inside the
+   same slice share their period (frequency) but each has its own
+   duty cycle.
+
 Software bit‑banged buses
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for an
+externally wired **AMG8833** 8×8 thermal imager. Connect the
+module to the I²C bus listed below, then read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 0** — wire
+the module to the silkscreened ``SCL`` / ``SDA`` pads. The
+sensor's 7‑bit address (``0x69``) must not be used by any other
+device on that bus.
 
 Timing
 ------
@@ -42837,6 +43831,26 @@ elapsed‑time measurement::
     # ...do work...
     elapsed = time.ticks_diff(time.ticks_ms(), start)
 
+Virtual timers
+~~~~~~~~~~~~~~
+
+:ref:`machine.Timer <machine.Timer>` schedules periodic or one‑shot
+callbacks without consuming a hardware timer slot. Pass ``-1`` as the
+id to use a virtual (software) timer::
+
+    from machine import Timer
+
+    one_shot = Timer(-1)
+    one_shot.init(period=5_000, mode=Timer.ONE_SHOT,
+                  callback=lambda t: print("once"))
+
+    periodic = Timer(-1)
+    periodic.init(period=2_000, mode=Timer.PERIODIC,
+                  callback=lambda t: print("tick"))
+
+Period values are in milliseconds. Call :meth:`~machine.Timer.deinit`
+to stop and release the slot.
+
 Real‑time clock
 ~~~~~~~~~~~~~~~
 
@@ -42855,7 +43869,8 @@ Watchdog
 ~~~~~~~~
 
 :ref:`machine.WDT <machine.WDT>` resets the board if the application
-hangs::
+hangs. Once started it can't be stopped or reconfigured — feed it
+periodically inside your main loop::
 
     from machine import WDT
 
@@ -42870,11 +43885,17 @@ Boot and runtime info
 Firmware update (UF2)
 ~~~~~~~~~~~~~~~~~~~~~
 
-The RP2040 enters its ROM bootloader when the **REC** (BOOTSEL)
-button is held while connecting USB — the board re‑enumerates as a
-mass‑storage drive named ``RPI-RP2``. Drop the OpenMV firmware
-``.uf2`` file onto the drive to flash. OpenMV IDE automates this
-when you ask it to update firmware.
+The Nano RP2040 Connect uses Arduino's standard **double‑tap
+reset** to enter Arduino's bootloader. Quickly press the reset
+button twice — the board re‑enumerates over USB as a UF2 device
+and OpenMV IDE can flash a new firmware image.
+
+A running script can re‑enter the bootloader on demand by calling
+:func:`machine.bootloader`::
+
+    import machine
+
+    machine.bootloader()
 
 Filesystem and boot order
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -42892,14 +43913,30 @@ After mounting, the interpreter then runs scripts from ``/flash``:
   ``boot.py``.
 
 The default ``main.py`` shipped on a freshly flashed board just
-blinks the yellow ``LED_BUILTIN`` as a heartbeat (two short pulses,
-short gap), so you can tell the firmware booted cleanly without any
-host attached.
+blinks the user RGB LED's **blue** channel as a heartbeat (two
+short pulses, short gap), so you can tell the firmware booted
+cleanly without any host attached.
 
 When connected over USB, ``/flash`` enumerates as a USB mass‑storage
 drive on the host, letting you edit ``boot.py``, ``main.py``, and any
 other files directly. **Eject the drive before resetting the board**
 so the host flushes its cached writes.
+
+.. note::
+
+   Because the OS treats the drive as a passive block device, files
+   created or modified by code running on the camera will not show
+   up until the host re‑mounts the drive. If both the OS and the
+   camera write the same filesystem at the same time, the OS will
+   win and overwrite changes made by the camera. Use the SD card for
+   any data the script writes back, and remount before reading those
+   files from the host.
+
+.. note::
+
+   The user RGB LED's **red** channel may briefly light up while the
+   host is reading from or writing to the USB mass‑storage drive —
+   this is a firmware‑driven activity indicator, not a fault.
 
 Storage sizes
 ~~~~~~~~~~~~~
@@ -42931,17 +43968,14 @@ Arduino Nano 33 BLE Sense
    or earlier.
 
 The Arduino Nano 33 BLE Sense is a 45 × 18 mm Arduino‑Nano‑form‑factor
-sensor board built around the Nordic Semiconductor nRF52840 — a
-single ARM Cortex‑M4 with FPU running at 64 MHz with 256 KB of
-internal SRAM and 1 MB of internal flash. Bluetooth LE 5.0 (and
-802.15.4) come from the SoftDevice running on the same SoC, and the
-board carries an integrated environmental and motion sensor cluster:
-9‑axis IMU, barometer, temperature / humidity, ambient light /
-colour / proximity / gesture, and a PDM microphone.
-
-The Nano 33 BLE Sense has **no on‑board image sensor** — the OpenMV
-firmware here is a sensors‑and‑audio build focused on the integrated
-peripherals plus support for external thermal cameras over I²C.
+board built around the Nordic Semiconductor nRF52840 — a single
+ARM Cortex‑M4 with FPU running at 64 MHz with 256 KB of internal
+SRAM and 1 MB of internal flash. BLE comes from the on‑die radio,
+and the board carries a 9‑axis IMU, an LPS22HB barometer, an
+HTS221 / HS3003 temperature / humidity sensor, an APDS9960 ambient
+light / colour / proximity / gesture sensor, and an MP34DT05 PDM
+microphone. The OpenMV firmware drives all of these from
+MicroPython.
 
 .. image:: https://docs.openmv.io/_images/arduino-nano-33-ble-sense-hero.jpg
     :alt: Arduino Nano 33 BLE Sense
@@ -42954,35 +43988,20 @@ For full datasheet, photos, and dimensions see the
 Highlights
 ----------
 
-* **Nordic nRF52840** Cortex‑M4 at 64 MHz with **256 KB internal
-  SRAM** and **1 MB internal flash** (Softdevice s140 + OpenMV
-  firmware + filesystem all share this 1 MB).
-* **Bluetooth LE 5.0** plus **IEEE 802.15.4** (Thread / Zigbee) via
-  the on‑die radio and Nordic SoftDevice s140.
-* **9‑axis IMU** — accelerometer + gyroscope + magnetometer.
-  Rev 1 boards have an STMicro **LSM9DS1**; Rev 2 boards have a
-  Bosch **BMI270** plus a **BMM150** magnetometer. The frozen
-  ``imu`` module probes both at boot.
-* **Pressure sensor** — STMicro **LPS22HB** barometer (260–1260 hPa).
-* **Temperature / humidity** — **HTS221** on Rev 1, **HS3003** on
-  Rev 2.
-* **Light / colour / proximity / gesture** — Broadcom **APDS9960**.
-* **MEMS microphone** — STMicro **MP34DT05**, captured through
-  :doc:`/library/omv.audio`.
-* **20 user I/O pins** on the standard Nano headers — D2–D13
-  (digital) plus A0–A7 (analog). Twelve PWM outputs.
+* **Nordic nRF52840** Cortex‑M4 with FPU at 64 MHz with **256 KB
+  internal SRAM** and **1 MB internal flash**.
+* **Bluetooth LE 5.0** via the on‑die radio and Nordic SoftDevice
+  s140.
+* **9‑axis IMU** — :mod:`LSM9DS1 <lsm9ds1>` on Rev 1,
+  :mod:`BMI270 <bmi270>` + :mod:`BMM150 <bmm150>` on Rev 2. The
+  frozen :mod:`imu` driver probes both at boot.
+* :mod:`LPS22HB <lps22h>` barometer, :mod:`HTS221 <hts221>` /
+  :mod:`HS3003 <hs3003>` temperature and humidity sensor,
+  :mod:`APDS9960 <apds9960>` ambient light / colour / proximity /
+  gesture sensor, and **MP34DT05** PDM microphone.
 * **Micro USB** connector for power, programming, and a CDC REPL.
-
-.. note::
-
-   The OpenMV firmware on the Nano 33 BLE Sense is a stripped‑down
-   build compared with the OpenMV camera boards: there is no
-   on‑board image sensor, no JPEG codec, no GPU, no Wi‑Fi, no
-   networking stack, and no ML / TFLite inference. Bluetooth LE is
-   available through the legacy ``ubluepy`` module (the
-   modern :mod:`bluetooth` / :doc:`/library/aioble` APIs are not
-   enabled). Use the integrated sensors together with
-   :mod:`ulab.numpy` for on‑device DSP and feature extraction.
+* **22 user I/O pins** on the standard Nano headers — ``TX``/``RX``,
+  ``D2``–``D13`` (digital), ``A0``–``A7`` (analog).
 
 Pinout
 ------
@@ -42998,34 +44017,33 @@ Pin reference
    :header: "Pin name", "Reference", "Function"
    :widths: 14, 12, 74
 
-   "RX (D0)",    "3.3 V", "UART1 RX (Serial1) / P1.10"
-   "TX (D1)",    "3.3 V", "UART1 TX (Serial1) / P1.03"
-   "D2",         "3.3 V", "P1.11"
-   "D3",         "3.3 V", "P1.12 (PWM‑capable)"
-   "D4",         "3.3 V", "P1.15 (PWM‑capable)"
-   "D5",         "3.3 V", "P1.13 (PWM‑capable)"
-   "D6",         "3.3 V", "P1.14 (PWM‑capable)"
-   "D7",         "3.3 V", "P0.23 (PWM‑capable)"
-   "D8",         "3.3 V", "P0.21 (PWM‑capable)"
-   "D9",         "3.3 V", "P0.27 (PWM‑capable)"
-   "D10",        "3.3 V", "P1.02 (PWM‑capable)"
-   "D11",        "3.3 V", "P1.01 / SPI0 COPI (PWM‑capable)"
-   "D12",        "3.3 V", "P1.08 / SPI0 CIPO"
-   "D13",        "3.3 V", "P0.13 / SPI0 SCK / LED_BUILTIN"
-   "A0",         "3.3 V", "P0.04 / ADC IN2"
-   "A1",         "3.3 V", "P0.05 / ADC IN3"
-   "A2",         "3.3 V", "P0.30 / ADC IN6"
-   "A3",         "3.3 V", "P0.29 / ADC IN5"
-   "A4",         "3.3 V", "P0.31 / ADC IN7 / I2C0 SDA"
-   "A5",         "3.3 V", "P0.02 / ADC IN0 / I2C0 SCL"
-   "A6",         "3.3 V", "P0.28 / ADC IN4"
-   "A7",         "3.3 V", "P0.03 / ADC IN1"
+   "TX",         "3.3 V", "UART1 TX"
+   "RX",         "3.3 V", "UART1 RX"
+   "D2",         "3.3 V", "PWM"
+   "D3",         "3.3 V", "PWM"
+   "D4",         "3.3 V", "PWM"
+   "D5",         "3.3 V", "PWM"
+   "D6",         "3.3 V", "PWM"
+   "D7",         "3.3 V", "PWM"
+   "D8",         "3.3 V", "PWM"
+   "D9",         "3.3 V", "PWM"
+   "D10",        "3.3 V", "PWM"
+   "D11",        "3.3 V", "PWM / SPI0 MOSI"
+   "D12",        "3.3 V", "PWM / SPI0 MISO"
+   "D13",        "3.3 V", "PWM / SPI0 SCK"
+   "A0",         "3.3 V", "ADC / PWM"
+   "A1",         "3.3 V", "ADC / PWM"
+   "A2",         "3.3 V", "ADC / PWM"
+   "A3",         "3.3 V", "ADC / PWM"
+   "A4 / I2C_SDA", "3.3 V", "ADC / PWM / I2C0 SDA"
+   "A5 / I2C_SCL", "3.3 V", "ADC / PWM / I2C0 SCL"
+   "A6",         "3.3 V", "ADC / PWM"
+   "A7",         "3.3 V", "ADC / PWM"
    "RESET",      "3.3 V", "press the on‑board RESET button or pull to GND to reset"
-   "LED_BUILTIN","3.3 V", "Yellow LED on D13 (P0.13)"
-   "LED_RED",    "3.3 V", "RGB LED red channel (active low) / P0.24"
-   "LED_GREEN",  "3.3 V", "RGB LED green channel (active low) / P0.16"
-   "LED_BLUE",   "3.3 V", "RGB LED blue channel (active low) / P0.06"
-   "LED_PWR",    "3.3 V", "Green power LED / P1.09"
+   "LED_BUILTIN","—",     "Orange user LED on ``D13``"
+   "LED_RED",    "—",     "RGB LED red channel (active low)"
+   "LED_GREEN",  "—",     "RGB LED green channel (active low)"
+   "LED_BLUE",   "—",     "RGB LED blue channel (active low)"
 
 .. warning::
 
@@ -43037,12 +44055,13 @@ Power pins
 ----------
 
 * **VIN** — 4.5 – 21 V input. Powers the board through the on‑board
-  regulator.
-* **+5V** — switched 5 V from USB / VIN, available to power external
-  shields. Disabled by default; cut the small ``VUSB`` jumper on the
-  back to enable it.
-* **+3V3** — 3.3 V regulator output (~50 mA available for shields).
-* **AREF** — analog reference input.
+  regulator. Also fed via a diode from the USB 5 V rail, so USB and
+  ``VIN`` can be present at the same time without back‑driving each
+  other.
+* **+5V** — unconnected by default.
+* **+3V3** — 3.3 V regulator output.
+* **AREF** — analog reference pin. Not wired to the nRF52840 on
+  this board — the ADC is always referenced to **3.3 V**.
 * **GND** — common ground.
 
 The Nano 33 BLE Sense can be powered through either path:
@@ -43050,27 +44069,33 @@ The Nano 33 BLE Sense can be powered through either path:
 * **Micro USB** — supplies 5 V to the on‑board regulator.
 * **VIN pin** — drive a regulated 4.5 – 21 V supply.
 
+.. note::
+
+   A solder jumper on the bottom of the board labelled ``VUSB``
+   bridges ``+5V`` to the USB 5 V rail. Close it to make the
+   ``+5V`` header pin actually carry 5 V.
+
+.. note::
+
+   A normally‑closed solder jumper on the output of the on‑board
+   4.5–21 V switching regulator can be cut to disable the regulator,
+   so the board can be powered directly from an external 3.3 V
+   supply on ``+3V3``.
+
 Recovery and debug pins
 -----------------------
 
 * **RESET** — both an exposed pad and a momentary RESET button on
-  the top of the board, tied to the nRF52840's reset line.
+  the top of the board, tied to the nRF52840's reset line. Pull to
+  GND or press the button to reset.
 
 The Nano 33 BLE Sense uses Arduino's standard **double‑tap reset**
-to enter the on‑board mass‑storage bootloader. Quickly press the
-reset button twice — the board re‑enumerates over USB as a drive
-that accepts a ``.bin`` firmware image, and OpenMV IDE uses this
-mode to flash.
+to enter Arduino's bootloader. Quickly press the RESET button
+twice — the board enters bootloader mode and OpenMV IDE can flash
+a new firmware image.
 
-A running script can re‑enter the bootloader on demand by calling
-:func:`machine.bootloader`::
-
-    import machine
-
-    machine.bootloader()
-
-The nRF52840's SWD signals are exposed on small pads on the back of
-the board (``SWDIO``, ``SWCLK``, ``GND``). They are 3.3 V referenced.
+The nRF52840's SWD signals are exposed on plated pads on the back
+of the board. All debug signals are **3.3 V referenced**.
 
 Onboard peripherals
 -------------------
@@ -43078,73 +44103,111 @@ Onboard peripherals
 LEDs
 ~~~~
 
-The Nano 33 BLE Sense has three indicator paths. The nrf port
-exposes them through a board‑specific ``LED`` class addressed by
-numeric ID:
+The Nano 33 BLE Sense has a user RGB LED — driven through the
+silkscreened ``LED_RED``, ``LED_GREEN``, and ``LED_BLUE`` channels
+— plus a separate orange ``LED_BUILTIN`` on ``D13``. All four are
+software‑controllable through :ref:`machine.LED <machine.LED>`::
 
-============  ====================
-LED id        Channel
-============  ====================
-``LED(1)``    Red (P0.24, active low)
-``LED(2)``    Green (P0.16, active low)
-``LED(3)``    Blue (P0.06, active low)
-``LED(4)``    Yellow ``LED_BUILTIN`` (P0.13, active high)
-============  ====================
+    from machine import LED
 
-::
+    LED("LED_RED").on()
+    LED("LED_GREEN").on()
+    LED("LED_BLUE").on()
+    LED("LED_BUILTIN").on()
 
-    from board import LED
+A separate green **power** LED on the board lights whenever the
++3.3 V rail is up and is not user‑controllable.
 
-    LED(4).on()    # yellow user LED
-    LED(1).on()    # red
+Camera sensor
+~~~~~~~~~~~~~
 
-The **green power LED** on ``P1.09`` is wired in hardware to the
-3.3 V rail and is not addressable through ``LED`` — drive it
-directly via :class:`machine.Pin` (alias ``"LED_PWR"``) if you want
-to use it as an extra status indicator.
+The OpenMV firmware on the Nano 33 BLE Sense supports the
+**OmniVision OV7670** parallel CMOS sensor. The board has no
+on‑board image sensor — wire an OV7670 module to the silkscreened
+header pins listed below and drive it through the
+:doc:`/library/omv.csi` module::
+
+    import csi
+
+    cam = csi.CSI()
+    cam.reset()
+    cam.pixformat(csi.RGB565)
+    cam.framesize(csi.QVGA)
+    cam.snapshot(time=2000)       # let auto‑exposure settle
+
+    while True:
+        img = cam.snapshot()
+
+.. note::
+
+   The OV7670 takes 14 pins. The firmware wires them as follows:
+
+   .. csv-table::
+      :header: "Sensor signal", "Nano 33 BLE Sense pin"
+      :widths: 30, 70
+
+      "D0",       "``D10``"
+      "D1",       "``TX``"
+      "D2",       "``RX``"
+      "D3",       "``D2``"
+      "D4",       "``D3``"
+      "D5",       "``D5``"
+      "D6",       "``D6``"
+      "D7",       "``D4``"
+      "HSYNC",    "``A1``"
+      "VSYNC",    "``D8``"
+      "PXCLK",    "``A0``"
+      "MXCLK",    "``D9``"
+      "POWER",    "``A3``"
+      "RESET",    "``A2``"
+      "SCL",      "``A5`` (I²C 0)"
+      "SDA",      "``A4`` (I²C 0)"
+
+   The OV7670's I²C control bus is the same external **I²C 0**
+   exposed on ``A5``/``A4``. The sensor sits at 7‑bit address
+   ``0x21`` — user devices on that bus must avoid this address
+   when the camera is wired up.
 
 IMU
 ~~~
 
 The 9‑axis IMU is exposed through the frozen ``imu`` module, which
-auto‑detects whether the board has the original LSM9DS1 (Rev 1) or
-the BMI270 + BMM150 (Rev 2) and presents a unified ``IMU`` class.
-Pass it the internal I²C bus the sensors share (bus 1 on
-``P0.14``/``P0.15``)::
+auto‑detects whether the board has the LSM9DS1 (Rev 1) or the
+BMI270 + BMM150 (Rev 2) and presents a unified :class:`imu.IMU`
+class. The sensors sit on the internal I²C 1 bus (``P14`` /
+``P15``)::
 
-    import imu
     import time
     from machine import I2C, Pin
+    from imu import IMU
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
-    sensor = imu.IMU(bus)
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
+    sensor = IMU(bus)
 
     while True:
-        print(sensor.accel())   # (x, y, z) acceleration tuple
-        print(sensor.gyro())    # (x, y, z) angular‑rate tuple
-        print(sensor.magnet())  # (x, y, z) magnetometer tuple
+        print(sensor.accel())     # (x, y, z) in g
+        print(sensor.gyro())      # (x, y, z) in deg/s
+        print(sensor.magnet())    # (x, y, z) magnetometer
         time.sleep_ms(100)
 
-For direct access to a specific driver — useful when you need the
-IMU's tap detection, FIFO, or lower‑level configuration — import
-the matching frozen driver (:mod:`lsm9ds1`, :mod:`bmi270`,
-:mod:`bmm150`) and instantiate it on the same internal I²C bus.
+For direct access to features like tap detection or the FIFO,
+import the matching frozen driver (:mod:`lsm9ds1`, :mod:`bmi270`,
+or :mod:`bmm150`) and instantiate it on the same bus.
 
 Environmental sensors
 ~~~~~~~~~~~~~~~~~~~~~
 
-The pressure, temperature, and humidity sensors live on the same
-internal I²C bus as the IMU (bus 1, on ``P0.14``/``P0.15``). The nrf
-port's ``machine.I2C`` doesn't auto‑bind to those pins, so pass
-them explicitly::
+The barometer (:mod:`LPS22HB <lps22h>`) and temperature /
+humidity sensor (:mod:`HTS221 <hts221>` on Rev 1,
+:mod:`HS3003 <hs3003>` on Rev 2) share the same internal I²C 1 bus
+as the IMU::
 
     import time
     from machine import I2C, Pin
     from lps22h import LPS22H
-    from hts221 import HTS221             # Rev 1 (try first)
-    # from hs3003 import HS3003           # Rev 2
+    from hts221 import HTS221
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     lps = LPS22H(bus)
     try:
         hts = HTS221(bus)
@@ -43153,35 +44216,37 @@ them explicitly::
         hts = HS3003(bus)
 
     while True:
-        print("pressure: %.2f hPa" % lps.pressure())
-        print("temperature: %.2f C" % lps.temperature())
-        print("humidity: %.2f %%" % hts.humidity())
+        print("pressure:    %.2f hPa" % lps.pressure())
+        print("temperature: %.2f C"   % lps.temperature())
+        print("humidity:    %.2f %%"  % hts.humidity())
         time.sleep_ms(500)
 
 Light / colour / proximity / gesture
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Broadcom APDS9960 supports ambient light, RGB colour,
-proximity, and gesture sensing on the same I²C bus. The frozen
-``apds9960`` package wraps it::
+The Broadcom :mod:`APDS9960 <apds9960>` sits on the same internal
+I²C 1 bus and provides ambient light, RGB colour, proximity, and
+gesture sensing::
 
-    from time import sleep_ms
+    import time
     from machine import I2C, Pin
     from apds9960 import uAPDS9960 as APDS9960
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     apds = APDS9960(bus)
-
     apds.enableLightSensor()
+
     while True:
-        sleep_ms(250)
         print("ambient light:", apds.readAmbientLight())
+        time.sleep_ms(250)
 
 Microphone
 ~~~~~~~~~~
 
 The on‑board MP34DT05 PDM microphone is captured through
-:doc:`/library/omv.audio`::
+:doc:`/library/omv.audio`. Each buffer arrives as signed‑16‑bit PCM
+``bytearray``, ready to feed into :doc:`ulab/numpy </library/omv.ulab.numpy>`
+for DSP::
 
     import audio
     from ulab import numpy as np
@@ -43198,47 +44263,55 @@ The on‑board MP34DT05 PDM microphone is captured through
     while True:
         pass
 
-Bluetooth LE
-~~~~~~~~~~~~
+Bluetooth
+~~~~~~~~~
 
-The nRF52840's Bluetooth LE radio (running on the Nordic SoftDevice
-s140) is exposed through the legacy ``ubluepy`` module. Advertise as
-a peripheral with a single Service / Characteristic::
+The nRF52840's Bluetooth LE 5.0 radio runs on the Nordic
+SoftDevice s140 and is exposed through the legacy :mod:`ubluepy`
+module — the modern :mod:`bluetooth` / :doc:`/library/aioble`
+APIs are not enabled in this build. Both **peripheral** (GATT
+server, advertise) and **central** (GAP observer / scanner +
+connect) roles are available.
+
+Advertise as a peripheral with a single Environmental Sensing
+service and a notifiable temperature characteristic — the
+``event_handler`` callback fires on connect, disconnect, and CCCD
+writes::
 
     from ubluepy import Service, Characteristic, UUID, Peripheral, constants
-    from board import LED
+    from machine import LED
 
-    def event_handler(id, handle, data):
-        if id == constants.EVT_GAP_CONNECTED:
-            LED(2).on()                    # green LED on connect
-        elif id == constants.EVT_GAP_DISCONNECTED:
-            LED(2).off()
+    def event_handler(event_id, handle, data):
+        if event_id == constants.EVT_GAP_CONNECTED:
+            LED("LED_GREEN").on()
+        elif event_id == constants.EVT_GAP_DISCONNECTED:
+            LED("LED_GREEN").off()
             periph.advertise(device_name="Nano 33", services=[svc])
 
-    svc = Service(UUID("181A"))            # Environmental Sensing
-    svc.addCharacteristic(Characteristic(UUID("2A6E"), props=0x12))   # read + notify
+    svc = Service(UUID("181A"))                          # Environmental Sensing
+    char = Characteristic(UUID("2A6E"),                  # Temperature
+                          props=Characteristic.PROP_NOTIFY | Characteristic.PROP_READ,
+                          attrs=Characteristic.ATTR_CCCD)
+    svc.addCharacteristic(char)
+
     periph = Peripheral()
     periph.addService(svc)
     periph.setConnectionHandler(event_handler)
     periph.advertise(device_name="Nano 33", services=[svc])
 
-The :doc:`/library/aioble` and :mod:`bluetooth` modules used by the
-OpenMV camera boards are **not** enabled in this firmware build.
+Scan for nearby advertising devices in central role::
 
-External thermal cameras
-~~~~~~~~~~~~~~~~~~~~~~~~
+    from ubluepy import Scanner
 
-The Nano 33 BLE Sense build wires :doc:`/library/omv.fir` to the
-internal I²C 0 bus on ``A4``/``A5``. Plug an MLX90621, MLX90640,
-MLX90641, or AMG8833 thermal sensor onto those pins and read frames
-with::
+    for entry in Scanner().scan(1_000):                  # 1 second window
+        print(entry.addr(), entry.rssi(), "dBm")
 
-    import fir
-
-    fir.init(fir.FIR_MLX90640)
-    while True:
-        ta, ir, fmin, fmax = fir.read_ir()
-        print("scene min/max:", fmin, "/", fmax)
+See the :mod:`ubluepy` reference for the full API — :class:`UUID
+<ubluepy.UUID>`, :class:`Service <ubluepy.Service>`,
+:class:`Characteristic <ubluepy.Characteristic>`,
+:class:`Peripheral <ubluepy.Peripheral>`, :class:`Scanner
+<ubluepy.Scanner>`, :class:`ScanEntry <ubluepy.ScanEntry>`, and
+the :data:`constants <ubluepy.constants>` namespace.
 
 Bus reference
 -------------
@@ -43247,8 +44320,8 @@ GPIO
 ~~~~
 
 Use :ref:`machine.Pin <machine.Pin>` to read or drive any of the
-silkscreened pins. Outputs are 3.3 V CMOS. Maximum **15 mA per pin**;
-maximum **25 mA total** across all GPIOs.
+silkscreened pins. Outputs are 3.3 V CMOS — 15 mA per pin, 25 mA
+total across all GPIOs.
 
 ::
 
@@ -43262,6 +44335,15 @@ maximum **25 mA total** across all GPIOs.
     inp = Pin("D3", Pin.IN, Pin.PULL_UP)
     print(inp.value())
 
+Any input pin can also fire an interrupt on edge transitions::
+
+    def handler(pin):
+        print("triggered:", pin)
+
+    Pin("D3", Pin.IN, Pin.PULL_UP).irq(
+        handler, Pin.IRQ_FALLING | Pin.IRQ_RISING,
+    )
+
 UART
 ~~~~
 
@@ -43271,9 +44353,7 @@ Bus           TX    RX
 UART1         TX    RX
 ============  ====  ====
 
-The ``TX`` and ``RX`` pads on the silkscreen are also labelled
-``D1`` and ``D0`` respectively. Inside MicroPython use the names
-``TX``/``RX`` (the names ``D0``/``D1`` are not exported)::
+Use the silkscreen names ``TX``/``RX`` with :class:`machine.UART`::
 
     from machine import UART
 
@@ -43284,26 +44364,31 @@ The ``TX`` and ``RX`` pads on the silkscreen are also labelled
 I²C
 ~~~
 
-============  ====  ====
-Bus           SCL   SDA
-============  ====  ====
-I2C0          A5    A4   (header pins)
-I2C1          —     —    (internal — IMU, baro, env, APDS9960)
-============  ====  ====
+======  =====================  =====================
+Bus     SDA                    SCL
+======  =====================  =====================
+I2C0    ``I2C_SDA`` / ``A4``   ``I2C_SCL`` / ``A5``
+I2C1    ``P14``                ``P15``
+======  =====================  =====================
 
-::
+Both buses need their pins passed explicitly to
+:class:`machine.I2C`::
 
-    from machine import I2C
+    from machine import I2C, Pin
 
-    i2c = I2C(0, freq=400_000)
-    i2c.scan()
-    i2c.writeto(0x76, b"hi")
+    bus0 = I2C(0, scl=Pin("I2C_SCL"), sda=Pin("I2C_SDA"), freq=400_000)
+    bus0.scan()
 
-Bus 1 is the **internal sensor bus** — it serves the IMU, barometer,
-environmental sensor, and APDS9960. ``machine.I2C(1)`` is what the
-frozen sensor drivers use; you can scan or talk to it from your own
-code, but be aware the addresses are already taken by the on‑board
-sensors.
+    bus1 = I2C(1, scl=Pin("P15"), sda=Pin("P14"), freq=400_000)
+    bus1.scan()
+
+.. note::
+
+   Bus 1 is the internal sensor bus on ``P14``/``P15`` (not on the
+   user headers) — it serves the IMU, barometer, environmental
+   sensor, and APDS9960. The frozen sensor drivers use it directly;
+   user code can scan it too but the addresses are already taken
+   by the on‑board sensors.
 
 SPI
 ~~~
@@ -43311,32 +44396,33 @@ SPI
 ============  =====  =====  =====  ====
 Bus           MOSI   MISO   SCK    CS
 ============  =====  =====  =====  ====
-SPI0          D11    D12    D13    —
+SPI0          D11    D12    D13    D10
 ============  =====  =====  =====  ====
 
-.. note::
+The CS line is not driven by the SPI peripheral — configure
+``D10`` as an output and toggle it manually around the transfer::
 
-   The SCK line shares ``D13`` with the yellow ``LED_BUILTIN`` —
-   running SPI will blink the LED in time with the bus clock.
-
-The CS line is not driven by the SPI peripheral — configure any free
-GPIO as an output and toggle it manually around the transfer::
-
-    from machine import SPI
-    from machine import Pin
+    from machine import SPI, Pin
 
     spi = SPI(0, baudrate=10_000_000)
-    cs = Pin("D9", Pin.OUT, value=1)   # CS is not driven by the SPI peripheral
+    cs = Pin("D10", Pin.OUT, value=1)   # CS is not driven by the SPI peripheral
 
     cs.value(0)
     spi.write(b"hello")
     cs.value(1)
 
+.. note::
+
+   ``D13`` doubles as the orange ``LED_BUILTIN`` — driving SPI on
+   this bus will blink the LED in time with the bus clock.
+
 ADC
 ~~~
 
 The nRF52840 has eight 12‑bit ADC channels (``SAADC``) exposed on
-**A0–A7**. ``read_u16`` returns 0–65535 across 0–3.3 V at the pin::
+**A0–A7**, all **3.3 V referenced** — ``read_u16`` returns
+0–65535 across 0–3.3 V at the pin. The board's ``AREF`` pin is
+not wired, so the reference is always 3.3 V::
 
     from machine import ADC
     import time
@@ -43350,18 +44436,125 @@ The nRF52840 has eight 12‑bit ADC channels (``SAADC``) exposed on
 PWM
 ~~~
 
-The nRF52840's PWM peripheral can drive most user GPIOs. Drive any
-of the digital pins via :ref:`machine.PWM <machine.PWM>`::
+The nRF52840 exposes **four PWM peripherals** (``PWM0``–``PWM3``),
+each driving **four channels**, for **16 hardware PWM slots** in
+total. Unlike fixed‑function ports, the peripherals route through
+the GPIOTE matrix — **any GPIO can be a PWM output**, so there is
+no pin‑to‑slice mapping. The cost of that flexibility is two
+constraints baked into the silicon:
+
+* All four channels inside a module share a **single
+  period/frequency**.
+* Each channel has its **own duty cycle** and polarity.
+
+Conceptually the 16 slots look like this:
+
+======  =====  =====  =====  =====
+Module  Ch 0   Ch 1   Ch 2   Ch 3
+======  =====  =====  =====  =====
+PWM0    duty   duty   duty   duty
+PWM1    duty   duty   duty   duty
+PWM2    duty   duty   duty   duty
+PWM3    duty   duty   duty   duty
+======  =====  =====  =====  =====
+
+Each row runs at one frequency; the four cells in a row each drive
+an independently‑chosen pin with its own duty cycle. Different
+rows can run at completely different frequencies.
+
+Drive any silkscreened pin (or the on‑board LEDs) via
+:ref:`machine.PWM <machine.PWM>`::
 
     from machine import Pin, PWM
 
     pwm = PWM(Pin("D3"), freq=1_000, duty_u16=32768)
+
+.. warning::
+
+   **Auto‑allocation consumes a whole module per call.** When you
+   create a ``PWM`` without ``device=``/``channel=`` kwargs, the
+   driver grabs the first free module and binds your pin to its
+   **channel 0** only. The remaining three channels of that module
+   sit idle and are only reachable through explicit
+   ``device=``/``channel=``. That caps unaided ``PWM(Pin(...))``
+   calls at **four** before the driver raises
+   ``ValueError: all PWM devices in use`` — even though twelve
+   slots are technically still free.
+
+To use more than four PWMs, or to deliberately share a frequency
+across pins, pass ``device`` (0–3) and ``channel`` (0–3)::
+
+    # Two PWMs on the same module → forced to share frequency,
+    # but each gets its own duty cycle.
+    pwm_a = PWM(Pin("D3"), device=0, channel=0,
+                freq=1_000, duty_u16=32768)
+    pwm_b = PWM(Pin("D5"), device=0, channel=1,
+                freq=1_000, duty_u16=16384)
+
+    # A third PWM on a separate module, free to pick any frequency.
+    pwm_c = PWM(Pin("D6"), device=1, channel=0,
+                freq=20_000, duty_u16=49152)
+
+Duty cycle accepts ``duty`` (0–100%), ``duty_u16`` (0–65535), or
+``duty_ns``. Add ``invert=1`` to flip the output polarity (handy
+for the active‑low RGB LED).
+
+.. note::
+
+   Because frequency is a per‑module property, calling
+   ``pwm.freq(new_freq)`` on **any** channel of a module re‑runs
+   ``nrfx_pwm_init`` for the whole module and changes the
+   frequency seen by every other channel sharing it.
+
+.. note::
+
+   Allowed frequencies span roughly **4 Hz to 5.3 MHz**, derived
+   from the 16 MHz base clock with prescalers 1/2/4/8/16/32/64/128
+   and a 15‑bit period counter. The driver picks the closest divisor
+   automatically — ``freq()`` reports the requested value, not the
+   exact achievable one.
 
 Software bit‑banged buses
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 :ref:`machine.SoftI2C <machine.SoftI2C>` and :ref:`machine.SoftSPI
 <machine.SoftSPI>` work on any GPIO if you need an extra bus.
+
+Thermal sensor (off‑board)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The firmware includes the :doc:`/library/omv.fir` driver for
+externally wired thermal imagers:
+
+* **MLX90621** — 16 × 4 IR array
+* **MLX90640** — 32 × 24 IR array
+* **MLX90641** — 16 × 12 IR array
+* **AMG8833** — 8 × 8 IR array
+
+Wire the module to the board's I²C bus and read frames with
+``fir.init()`` + ``fir.snapshot()``::
+
+    import time
+    import image
+    import fir
+
+    fir.init()                          # auto‑detects the sensor
+    clock = time.clock()
+
+    while True:
+        clock.tick()
+        try:
+            img = fir.snapshot(x_scale=5, y_scale=5,
+                               color_palette=image.PALETTE_IRONBOW,
+                               hint=image.BICUBIC,
+                               copy_to_fb=True)
+        except OSError:
+            continue
+        print(clock.fps())
+
+The ``fir`` driver only talks to the sensor over **I²C 0** — wire
+the module to the ``I2C_SCL`` / ``I2C_SDA`` pads
+(``A5`` / ``A4``).
 
 Timing
 ------
@@ -43382,6 +44575,26 @@ elapsed‑time measurement::
     # ...do work...
     elapsed = time.ticks_diff(time.ticks_ms(), start)
 
+Virtual timers
+~~~~~~~~~~~~~~
+
+:ref:`machine.Timer <machine.Timer>` schedules periodic or one‑shot
+callbacks without consuming a hardware timer slot. Pass ``-1`` as the
+id to use a virtual (software) timer::
+
+    from machine import Timer
+
+    one_shot = Timer(-1)
+    one_shot.init(period=5_000, mode=Timer.ONE_SHOT,
+                  callback=lambda t: print("once"))
+
+    periodic = Timer(-1)
+    periodic.init(period=2_000, mode=Timer.PERIODIC,
+                  callback=lambda t: print("tick"))
+
+Period values are in milliseconds. Call :meth:`~machine.Timer.deinit`
+to stop and release the slot.
+
 Real‑time clock
 ~~~~~~~~~~~~~~~
 
@@ -43396,26 +44609,45 @@ matters to your application::
     rtc.datetime((2026, 4, 30, 4, 12, 0, 0, 0))   # Y, M, D, weekday, h, m, s, subsec
     print(rtc.datetime())
 
+Watchdog
+~~~~~~~~
+
+:ref:`machine.WDT <machine.WDT>` resets the board if the application
+hangs. Once started it can't be stopped or reconfigured — feed it
+periodically inside your main loop::
+
+    from machine import WDT
+
+    wdt = WDT(timeout=5_000)   # 5 second window
+    while True:
+        # ...do work...
+        wdt.feed()
+
 Boot and runtime info
 ---------------------
 
-Firmware update (DFU)
-~~~~~~~~~~~~~~~~~~~~~
+Firmware update
+~~~~~~~~~~~~~~~
 
 The Nano 33 BLE Sense uses Arduino's standard **double‑tap reset**
-to enter the on‑board mass‑storage bootloader (a single contiguous
-128 KB at the top of flash, baked into the board at the factory).
-Quickly press the reset button twice — the board re‑enumerates over
-USB as a small drive named ``ARDUINO`` and OpenMV IDE flashes the
-firmware over that.
+to enter Arduino's bootloader. Quickly press the RESET button
+twice — the board enters bootloader mode and OpenMV IDE can flash
+a new firmware image.
+
+A running script can re‑enter the bootloader on demand by calling
+:func:`machine.bootloader`::
+
+    import machine
+
+    machine.bootloader()
 
 Filesystem and boot order
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Nano 33 BLE Sense firmware mounts a single filesystem on boot:
 
-* **Internal flash** — 64 KB partition mounted at ``/flash`` and used
-  as the working directory. Holds ``main.py`` and ``README.txt`` by
+* **Internal flash** — always mounted at ``/flash`` and used as the
+  working directory. Holds ``main.py`` and ``README.txt`` by
   default; created on the very first boot.
 
 After mounting, the interpreter then runs scripts from ``/flash``:
@@ -43425,14 +44657,12 @@ After mounting, the interpreter then runs scripts from ``/flash``:
   ``boot.py``.
 
 The default ``main.py`` shipped on a freshly flashed board just
-blinks the yellow ``LED_BUILTIN`` as a heartbeat (two short pulses,
-short gap), so you can tell the firmware booted cleanly without any
-host attached.
+blinks the user RGB LED's **blue** channel as a heartbeat (two
+short pulses, short gap), so you can tell the firmware booted
+cleanly without any host attached.
 
-When connected over USB, ``/flash`` enumerates as a USB mass‑storage
-drive on the host, letting you edit ``boot.py``, ``main.py``, and any
-other files directly. **Eject the drive before resetting the board**
-so the host flushes its cached writes.
+``/flash`` is **not** exposed as a USB mass‑storage drive on this
+board.
 
 Storage sizes
 ~~~~~~~~~~~~~

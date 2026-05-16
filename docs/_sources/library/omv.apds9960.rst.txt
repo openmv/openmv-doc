@@ -14,10 +14,10 @@ FIFO.
 Example usage::
 
     import time
-    from machine import I2C
+    from machine import I2C, Pin
     from apds9960 import uAPDS9960 as APDS9960
 
-    bus = I2C(1)
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     sensor = APDS9960(bus)
 
     sensor.enableLightSensor()

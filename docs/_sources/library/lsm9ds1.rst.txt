@@ -17,7 +17,7 @@ Example::
     from machine import Pin, I2C
     from lsm9ds1 import LSM9DS1
 
-    imu = LSM9DS1(I2C(1, scl=Pin(15), sda=Pin(14)))
+    imu = LSM9DS1(I2C(1, scl=Pin("P15"), sda=Pin("P14")))
 
     while True:
         print("Accelerometer: x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*imu.accel()))

@@ -120,6 +120,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#recovery-and-debug-pins">Recovery and debug pins</a></li>
 <li><a class="reference internal" href="#onboard-peripherals">Onboard peripherals</a><ul>
 <li><a class="reference internal" href="#leds">LEDs</a></li>
+<li><a class="reference internal" href="#camera-sensor">Camera sensor</a></li>
 <li><a class="reference internal" href="#imu">IMU</a></li>
 <li><a class="reference internal" href="#microphone">Microphone</a></li>
 <li><a class="reference internal" href="#wifi">Wi&#8209;Fi</a></li>
@@ -134,10 +135,12 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#adc">ADC</a></li>
 <li><a class="reference internal" href="#pwm">PWM</a></li>
 <li><a class="reference internal" href="#software-bitbanged-buses">Software bit&#8209;banged buses</a></li>
+<li><a class="reference internal" href="#thermal-sensor-offboard">Thermal sensor (off&#8209;board)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#timing">Timing</a><ul>
 <li><a class="reference internal" href="#time">time</a></li>
+<li><a class="reference internal" href="#virtual-timers">Virtual timers</a></li>
 <li><a class="reference internal" href="#realtime-clock">Real&#8209;time clock</a></li>
 <li><a class="reference internal" href="#watchdog">Watchdog</a></li>
 </ul>
@@ -172,7 +175,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/a14b3b5c18df00aa22174528af239b2a2f5e222f/docs/openmvcam/quickref/arduino-nano-rp2040-connect.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/openmvcam/quickref/arduino-nano-rp2040-connect.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -256,12 +259,10 @@ or earlier.</p>
 </div>
 <p>The Arduino Nano RP2040 Connect is a 45 × 18 mm Arduino‑Nano‑form‑factor
 board built around the Raspberry Pi RP2040 — a dual ARM Cortex‑M0+
-running at 133 MHz with 264 KB of internal SRAM. Wireless and BLE
-come from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
-6‑axis IMU and an MP34DT06 PDM microphone. Compared with the
-OpenMV camera boards, the Nano RP2040
-Connect has <strong>no on‑board image sensor</strong> — the OpenMV firmware here
-is mostly used for sensor fusion, audio capture, and wireless work.</p>
+running at 133 MHz with 264 KB of internal SRAM. WiFi and BLE come
+from a U‑blox NINA‑W102 module, and the board carries an LSM6DSOX
+6‑axis IMU and an MP34DT06 PDM microphone. The OpenMV firmware
+drives all of these from MicroPython.</p>
 <a class="reference internal image-reference" href="../../_images/arduino-nano-rp2040-connect-hero.jpg"><img alt="Arduino Nano RP2040 Connect" class="align-center" src="../../_images/arduino-nano-rp2040-connect-hero.jpg" style="width: 400px;" />
 </a>
 <p>For full datasheet, photos, and dimensions see the
@@ -271,30 +272,14 @@ is mostly used for sensor fusion, audio capture, and wireless work.</p>
 <ul class="simple">
 <li><p><strong>Raspberry Pi RP2040</strong> dual ARM Cortex‑M0+ at 133 MHz with <strong>264
 KB internal SRAM</strong>.</p></li>
-<li><p><strong>16 MB external QSPI flash</strong> — half the board’s storage budget is
-available for ROMFS assets and Python files.</p></li>
+<li><p><strong>16 MB external QSPI flash</strong>.</p></li>
 <li><p><strong>U‑blox NINA‑W102</strong> module providing <strong>2.4 GHz Wi‑Fi b/g/n</strong> and
-<strong>Bluetooth 4.2 (BR/EDR + LE)</strong>, accessed over SPI from the RP2040.</p></li>
-<li><p><strong>LSM6DSOX</strong> 6‑axis IMU on the secondary I²C bus, exposed through
-the frozen <a class="reference internal" href="../../library/lsm6dsox.html#lsm6dsox.LSM6DSOX" title="lsm6dsox.LSM6DSOX"><code class="xref py py-class docutils literal notranslate"><span class="pre">lsm6dsox.LSM6DSOX</span></code></a> driver.</p></li>
-<li><p><strong>MP34DT06</strong> PDM microphone captured through PIO using
-<a class="reference internal" href="../../library/omv.audio.html"><span class="doc">audio — Audio Module</span></a>.</p></li>
-<li><p><strong>20 user I/O pins</strong> on the standard Nano headers — D2–D13
-(digital) plus A0–A7 (analog). Four of the analog pins (A4–A7)
-route through the NINA module’s I/O extender.</p></li>
+<strong>Bluetooth 4.2</strong> (BR/EDR + LE).</p></li>
+<li><p><strong>LSM6DSOX</strong> 6‑axis IMU and <strong>MP34DT06</strong> PDM microphone.</p></li>
 <li><p><strong>Micro USB</strong> connector for power, programming, and a CDC REPL.</p></li>
-<li><p><strong>REC</strong> (BOOTSEL) and <strong>RESET</strong> buttons for entering the RP2040 UF2
-bootloader.</p></li>
+<li><p><strong>22 user I/O pins</strong> on the standard Nano headers — <code class="docutils literal notranslate"><span class="pre">TX</span></code>/<code class="docutils literal notranslate"><span class="pre">RX</span></code>,
+<code class="docutils literal notranslate"><span class="pre">D2</span></code>–<code class="docutils literal notranslate"><span class="pre">D13</span></code> (digital), <code class="docutils literal notranslate"><span class="pre">A0</span></code>–<code class="docutils literal notranslate"><span class="pre">A7</span></code> (analog).</p></li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The OpenMV firmware on the Nano RP2040 Connect is a stripped‑down
-build compared with the OpenMV camera boards: there is no
-on‑board image sensor, no JPEG codec, and no GPU. ML / TFLite
-inference is also not enabled in this build — use the NINA‑backed
-networking, IMU, and PDM mic together with <code class="xref py py-mod docutils literal notranslate"><span class="pre">ulab.numpy</span></code> for
-on‑device DSP.</p>
-</div>
 </section>
 <section id="pinout">
 <h2>Pinout<a class="headerlink" href="#pinout" title="Link to this heading">¶</a></h2>
@@ -317,101 +302,93 @@ on‑device DSP.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>RX (D0)</p></td>
+<tr class="row-even"><td><p>TX</p></td>
 <td><p>3.3 V</p></td>
-<td><p>UART0 RX (Serial1) / GPIO1</p></td>
+<td><p>UART0 TX / SPI0 RX / I2C0 SDA / PWM0 A</p></td>
 </tr>
-<tr class="row-odd"><td><p>TX (D1)</p></td>
+<tr class="row-odd"><td><p>RX</p></td>
 <td><p>3.3 V</p></td>
-<td><p>UART0 TX (Serial1) / GPIO0</p></td>
+<td><p>UART0 RX / SPI0 CS / I2C0 SCL / PWM0 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D2</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO25</p></td>
+<td><p>SPI1 CS / UART1 RX / I2C0 SCL / PWM4 B</p></td>
 </tr>
 <tr class="row-odd"><td><p>D3</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO15 (PWM7‑B)</p></td>
+<td><p>SPI1 TX / UART0 RTS / I2C1 SCL / PWM7 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D4</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO16 (PWM0‑A)</p></td>
+<td><p>SPI0 RX / UART0 TX / I2C0 SDA / PWM0 A</p></td>
 </tr>
 <tr class="row-odd"><td><p>D5</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO17 (PWM0‑B)</p></td>
+<td><p>SPI0 CS / UART0 RX / I2C0 SCL / PWM0 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D6</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO18 (PWM1‑A)</p></td>
+<td><p>SPI0 SCK / UART0 CTS / I2C1 SDA / PWM1 A</p></td>
 </tr>
 <tr class="row-odd"><td><p>D7</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO19 (PWM1‑B)</p></td>
+<td><p>SPI0 TX / UART0 RTS / I2C1 SCL / PWM1 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D8</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO20 (PWM2‑A)</p></td>
+<td><p>SPI0 RX / UART1 TX / I2C0 SDA / PWM2 A</p></td>
 </tr>
 <tr class="row-odd"><td><p>D9</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO21 (PWM2‑B)</p></td>
+<td><p>SPI0 CS / UART1 RX / I2C0 SCL / PWM2 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D10</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO5  (SPI0 CSn / PWM2‑B)</p></td>
+<td><p>SPI0 CS / UART1 RX / I2C0 SCL / PWM2 B</p></td>
 </tr>
 <tr class="row-odd"><td><p>D11</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO7  (SPI0 TX  / PWM3‑B)</p></td>
+<td><p>SPI0 TX / UART1 RTS / I2C1 SCL / PWM3 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D12</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO4  (SPI0 RX  / PWM2‑A)</p></td>
+<td><p>SPI0 RX / UART1 TX / I2C0 SDA / PWM2 A</p></td>
 </tr>
 <tr class="row-odd"><td><p>D13</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO6  (SPI0 SCK / LED_BUILTIN)</p></td>
+<td><p>SPI0 SCK / UART1 CTS / I2C1 SDA / PWM3 A</p></td>
 </tr>
 <tr class="row-even"><td><p>D14 / A0</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO26 / ADC0 / I2C1 SDA</p></td>
+<td><p>ADC / SPI1 SCK / UART1 CTS / I2C1 SDA / PWM5 A</p></td>
 </tr>
 <tr class="row-odd"><td><p>D15 / A1</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO27 / ADC1 / I2C1 SCL</p></td>
+<td><p>ADC / SPI1 TX / UART1 RTS / I2C1 SCL / PWM5 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D16 / A2</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO28 / ADC2</p></td>
+<td><p>ADC / SPI1 RX / UART0 TX / I2C0 SDA / PWM6 A</p></td>
 </tr>
 <tr class="row-odd"><td><p>D17 / A3</p></td>
 <td><p>3.3 V</p></td>
-<td><p>GPIO29 / ADC3</p></td>
+<td><p>ADC / SPI1 CS / UART0 RX / I2C0 SCL / PWM6 B</p></td>
 </tr>
-<tr class="row-even"><td><p>D18 / A4</p></td>
+<tr class="row-even"><td><p>D18 / A4 / SDA</p></td>
 <td><p>3.3 V</p></td>
-<td><p>NINA EXT GPIO3 (extender pin, not RP2040)</p></td>
+<td><p>ADC / I2C0 SDA / SPI1 RX / UART0 TX / PWM6 A</p></td>
 </tr>
-<tr class="row-odd"><td><p>D19 / A5</p></td>
+<tr class="row-odd"><td><p>D19 / A5 / SCL</p></td>
 <td><p>3.3 V</p></td>
-<td><p>NINA EXT GPIO4 (extender pin, not RP2040)</p></td>
+<td><p>ADC / I2C0 SCL / SPI1 CS / UART0 RX / PWM6 B</p></td>
 </tr>
 <tr class="row-even"><td><p>D20 / A6</p></td>
 <td><p>3.3 V</p></td>
-<td><p>NINA EXT GPIO5 (extender pin, not RP2040)</p></td>
+<td><p>ADC / GPIO</p></td>
 </tr>
 <tr class="row-odd"><td><p>D21 / A7</p></td>
 <td><p>3.3 V</p></td>
-<td><p>NINA EXT GPIO6 (extender pin, not RP2040)</p></td>
-</tr>
-<tr class="row-even"><td><p>SDA</p></td>
-<td><p>3.3 V</p></td>
-<td><p>I2C0 SDA / GPIO12 (separate pad on the bottom)</p></td>
-</tr>
-<tr class="row-odd"><td><p>SCL</p></td>
-<td><p>3.3 V</p></td>
-<td><p>I2C0 SCL / GPIO13 (separate pad on the bottom)</p></td>
+<td><p>ADC / GPIO</p></td>
 </tr>
 <tr class="row-even"><td><p>RESET</p></td>
 <td><p>3.3 V</p></td>
@@ -419,100 +396,194 @@ on‑device DSP.</p>
 </tr>
 <tr class="row-odd"><td><p>REC</p></td>
 <td><p>3.3 V</p></td>
-<td><p>BOOTSEL — hold while plugging USB to enter UF2 bootloader</p></td>
+<td><p>BOOTSEL — pull high at power‑on to enter the RP2040 ROM bootloader</p></td>
 </tr>
 <tr class="row-even"><td><p>LED_BUILTIN</p></td>
-<td><p>3.3 V</p></td>
-<td><p>Yellow LED on D13 (RP2040 GPIO6)</p></td>
+<td><p>—</p></td>
+<td><p>Orange user LED on <code class="docutils literal notranslate"><span class="pre">D13</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p>LED_RED</p></td>
 <td><p>—</p></td>
-<td><p>RGB LED red channel — driven through the NINA module</p></td>
+<td><p>RGB LED red channel</p></td>
 </tr>
 <tr class="row-even"><td><p>LED_GREEN</p></td>
 <td><p>—</p></td>
-<td><p>RGB LED green channel — driven through the NINA module</p></td>
+<td><p>RGB LED green channel</p></td>
 </tr>
 <tr class="row-odd"><td><p>LED_BLUE</p></td>
 <td><p>—</p></td>
-<td><p>RGB LED blue channel — driven through the NINA module</p></td>
+<td><p>RGB LED blue channel</p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">A4</span></code>–<code class="docutils literal notranslate"><span class="pre">A7</span></code> (= <code class="docutils literal notranslate"><span class="pre">D18</span></code>–<code class="docutils literal notranslate"><span class="pre">D21</span></code>) physically connect to the
-NINA‑W102 module’s I/O extender, not directly to the RP2040.
-They’re accessed via the NINA driver, not via <a class="reference internal" href="../../library/machine.ADC.html#machine.ADC" title="machine.ADC"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.ADC</span></code></a>.
-For analog input on the RP2040 itself, use <code class="docutils literal notranslate"><span class="pre">A0</span></code>–<code class="docutils literal notranslate"><span class="pre">A3</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The Nano RP2040 Connect’s I/O pins are <strong>3.3 V only</strong> — they
+are <strong>not 5 V tolerant</strong>. Driving 5 V into them will damage
+the RP2040.</p>
 </div>
 </section>
 <section id="power-pins">
 <h2>Power pins<a class="headerlink" href="#power-pins" title="Link to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><strong>VIN</strong> — 5 – 18 V input. Powers the board through the on‑board
-regulator.</p></li>
-<li><p><strong>+5V</strong> — switched 5 V from USB / VIN, available to power external
-shields.</p></li>
+<li><p><strong>VIN</strong> — 4 – 20 V input. Powers the board through the on‑board
+switching regulator. Also fed via a diode from the USB 5 V rail,
+so USB and <code class="docutils literal notranslate"><span class="pre">VIN</span></code> can be present at the same time without
+back‑driving each other.</p></li>
+<li><p><strong>+5V</strong> — unconnected by default.</p></li>
 <li><p><strong>+3V3</strong> — 3.3 V regulator output.</p></li>
-<li><p><strong>AREF</strong> — analog reference input.</p></li>
+<li><p><strong>AREF</strong> — analog reference pin. Not wired to the RP2040 on this
+board — the ADC is always referenced to <strong>3.3 V</strong>.</p></li>
 <li><p><strong>GND</strong> — common ground.</p></li>
 </ul>
 <p>The Nano RP2040 Connect can be powered through either path:</p>
 <ul class="simple">
 <li><p><strong>Micro USB</strong> — supplies 5 V to the on‑board regulator.</p></li>
-<li><p><strong>VIN pin</strong> — drive a regulated 5 – 18 V supply.</p></li>
+<li><p><strong>VIN pin</strong> — drive a regulated 4 – 20 V supply.</p></li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A solder jumper on the bottom of the board bridges <code class="docutils literal notranslate"><span class="pre">+5V</span></code> to
+the USB 5 V rail. Close it to make the <code class="docutils literal notranslate"><span class="pre">+5V</span></code> header pin
+actually carry 5 V.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A normally‑closed solder jumper on the output of the on‑board
+4–20 V switching regulator can be cut to disable the regulator,
+so the board can be powered directly from an external 3.3 V
+supply on <code class="docutils literal notranslate"><span class="pre">+3V3</span></code>.</p>
+</div>
 </section>
 <section id="recovery-and-debug-pins">
 <h2>Recovery and debug pins<a class="headerlink" href="#recovery-and-debug-pins" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>RESET</strong> — both an exposed pad and a momentary RESET button on
-the top of the board, tied to the RP2040’s RUN line. Pull to GND
+the top of the board, tied to the RP2040’s NRST line. Pull to GND
 or press the button to reset.</p></li>
-<li><p><strong>REC</strong> — BOOTSEL button. Hold REC while plugging in USB to put
-the RP2040 into ROM bootloader mode; the board enumerates as a USB
-mass‑storage drive named <code class="docutils literal notranslate"><span class="pre">RPI-RP2</span></code> and accepts a <code class="docutils literal notranslate"><span class="pre">.uf2</span></code>
-firmware image. OpenMV IDE uses this path to flash new firmware.</p></li>
+<li><p><strong>REC</strong> — exposed pad. Holding <code class="docutils literal notranslate"><span class="pre">REC</span></code> <strong>high</strong> at power‑on (or
+while pressing RESET) puts the RP2040 into its ROM bootloader;
+the board re‑enumerates as a USB mass‑storage drive named
+<code class="docutils literal notranslate"><span class="pre">RPI-RP2</span></code> and accepts a <code class="docutils literal notranslate"><span class="pre">.uf2</span></code> firmware image.</p></li>
 </ul>
-<p>A running script can re‑enter the UF2 bootloader on demand by
-calling <a class="reference internal" href="../../library/machine.html#machine.bootloader" title="machine.bootloader"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.bootloader()</span></code></a>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">machine</span><span class="o">.</span><span class="n">bootloader</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>The RP2040’s SWD signals are exposed on three plated pads on the back
-of the board (<code class="docutils literal notranslate"><span class="pre">SWDIO</span></code>, <code class="docutils literal notranslate"><span class="pre">SWCLK</span></code>, <code class="docutils literal notranslate"><span class="pre">GND</span></code>) just below the NINA
-module. They are 3.3 V referenced.</p>
+<p>The Nano RP2040 Connect uses Arduino’s standard <strong>double‑tap
+reset</strong> to enter Arduino’s bootloader. Quickly press the RESET
+button twice — the board re‑enumerates over USB as a UF2 device
+and OpenMV IDE can flash a new firmware image.</p>
+<p>The RP2040’s SWD signals are exposed on plated pads on the back
+of the board, just below the NINA module. All debug signals are
+<strong>3.3 V referenced</strong>.</p>
 </section>
 <section id="onboard-peripherals">
 <h2>Onboard peripherals<a class="headerlink" href="#onboard-peripherals" title="Link to this heading">¶</a></h2>
 <section id="leds">
 <h3>LEDs<a class="headerlink" href="#leds" title="Link to this heading">¶</a></h3>
-<p>The Nano RP2040 Connect has two indicator paths. The rp2 port does
-not expose <code class="docutils literal notranslate"><span class="pre">machine.LED</span></code>, so use <a class="reference internal" href="../../library/machine.Pin.html#machine.Pin" title="machine.Pin"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.Pin</span></code></a> for both:</p>
-<ul>
-<li><p><strong>Yellow user LED</strong> on <code class="docutils literal notranslate"><span class="pre">D13</span></code> (RP2040 GPIO6) — driven directly by
-the RP2040:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span>
+<p>The Nano RP2040 Connect has a user RGB LED — driven through the
+silkscreened <code class="docutils literal notranslate"><span class="pre">LED_RED</span></code>, <code class="docutils literal notranslate"><span class="pre">LED_GREEN</span></code>, and <code class="docutils literal notranslate"><span class="pre">LED_BLUE</span></code> channels
+— plus a separate orange <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> on <code class="docutils literal notranslate"><span class="pre">D13</span></code>. All four are
+software‑controllable through <a class="reference internal" href="../../library/machine.LED.html#machine-led"><span class="std std-ref">machine.LED</span></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">LED</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;LED_BUILTIN&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="3"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_RED&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="4"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_GREEN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_BLUE&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="6"><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_BUILTIN&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
 </span></pre></div>
 </div>
-</li>
-<li><p><strong>RGB LED</strong> driven through the NINA‑W102 module’s GPIO extender.
-The named channels (<code class="docutils literal notranslate"><span class="pre">LED_RED</span></code>, <code class="docutils literal notranslate"><span class="pre">LED_GREEN</span></code>, <code class="docutils literal notranslate"><span class="pre">LED_BLUE</span></code>) only
-work after the NINA module has been brought up by the network or
-BLE stack — bring up Wi‑Fi first, then:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span>
+<p>A separate green <strong>power</strong> LED on the board lights whenever the
++3.3 V rail is up and is not user‑controllable.</p>
+</section>
+<section id="camera-sensor">
+<h3>Camera sensor<a class="headerlink" href="#camera-sensor" title="Link to this heading">¶</a></h3>
+<p>The OpenMV firmware on the Nano RP2040 Connect supports the
+<strong>OmniVision OV7670</strong> parallel CMOS sensor. The board has no
+on‑board image sensor — wire an OV7670 module to the silkscreened
+header pins listed below and drive it through the
+<a class="reference internal" href="../../library/omv.csi.html"><span class="doc">csi — camera sensors</span></a> module:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;LED_RED&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="3"><span class="n">cam</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="4"><span class="n">cam</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">cam</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">cam</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">cam</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>       <span class="c1"># let auto‑exposure settle</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="10">    <span class="n">img</span> <span class="o">=</span> <span class="n">cam</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
 </span></pre></div>
 </div>
-</li>
-</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The OV7670 takes 14 pins. The firmware wires them as follows:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Sensor signal</p></th>
+<th class="head"><p>Nano RP2040 pin</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>D0</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D3</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>D1</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D4</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>D2</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D5</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>D3</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D6</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>D4</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D7</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>D5</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D8</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>D6</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D9</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>D7</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">D2</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>HSYNC</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A1</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>VSYNC</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A0</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>PXCLK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A3</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>MXCLK</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A2</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>POWER</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TX</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>RESET</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">RX</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>SCL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SDA</span></code> (I²C 0)</p></td>
+</tr>
+<tr class="row-odd"><td><p>SDA</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SCL</span></code> (I²C 0)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The OV7670’s I²C control bus is shared with the on‑board IMU
+and ATECC608A on I²C 0. The sensor sits at 7‑bit address
+<code class="docutils literal notranslate"><span class="pre">0x21</span></code> — user devices on bus 0 must also avoid this address
+when the camera is wired up.</p>
+</div>
 </section>
 <section id="imu">
 <h3>IMU<a class="headerlink" href="#imu" title="Link to this heading">¶</a></h3>
@@ -559,8 +630,7 @@ silkscreened <code class="docutils literal notranslate"><span class="pre">SDA</s
 <section id="wifi">
 <h3>Wi‑Fi<a class="headerlink" href="#wifi" title="Link to this heading">¶</a></h3>
 <p>The on‑board NINA‑W102 module is exposed via <a class="reference internal" href="../../library/network.html"><span class="doc">network — network configuration</span></a>
-as a station interface. The NINA driver uses the legacy
-<code class="docutils literal notranslate"><span class="pre">ifconfig()</span></code> API rather than <code class="docutils literal notranslate"><span class="pre">ipconfig()</span></code>:</p>
+as a station interface:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">network</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">wlan</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">WLAN</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">STA_IF</span><span class="p">)</span>
@@ -568,7 +638,7 @@ as a station interface. The NINA driver uses the legacy
 </span><span data-line="5"><span class="n">wlan</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;ssid&quot;</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">)</span>
 </span><span data-line="6"><span class="k">while</span> <span class="ow">not</span> <span class="n">wlan</span><span class="o">.</span><span class="n">isconnected</span><span class="p">():</span>
 </span><span data-line="7">    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="8"><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Wi‑Fi config:&quot;</span><span class="p">,</span> <span class="n">wlan</span><span class="o">.</span><span class="n">ifconfig</span><span class="p">())</span>   <span class="c1"># (ip, netmask, gw, dns)</span>
+</span><span data-line="8"><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Wi‑Fi IP:&quot;</span><span class="p">,</span> <span class="n">wlan</span><span class="o">.</span><span class="n">ipconfig</span><span class="p">(</span><span class="s2">&quot;addr4&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
 </span></pre></div>
 </div>
 </section>
@@ -596,8 +666,8 @@ advertise as a peripheral and wait for a central to connect:</p>
 <section id="gpio">
 <h3>GPIO<a class="headerlink" href="#gpio" title="Link to this heading">¶</a></h3>
 <p>Use <a class="reference internal" href="../../library/machine.Pin.html#machine-pin"><span class="std std-ref">machine.Pin</span></a> to read or drive any of the
-silkscreened pins. Outputs are 3.3 V CMOS. Maximum sink across all
-GPIOs and the QSPI pins is 50 mA.</p>
+silkscreened pins. Outputs are 3.3 V CMOS, 50 mA total sink across
+all GPIOs.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">out</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D2&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
@@ -607,6 +677,15 @@ GPIOs and the QSPI pins is 50 mA.</p>
 </span><span data-line="7">
 </span><span data-line="8"><span class="n">inp</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IN</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">PULL_UP</span><span class="p">)</span>
 </span><span data-line="9"><span class="nb">print</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">value</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Any input pin can also fire an interrupt on edge transitions:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">pin</span><span class="p">):</span>
+</span><span data-line="2">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;triggered:&quot;</span><span class="p">,</span> <span class="n">pin</span><span class="p">)</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IN</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">PULL_UP</span><span class="p">)</span><span class="o">.</span><span class="n">irq</span><span class="p">(</span>
+</span><span data-line="5">    <span class="n">handler</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IRQ_FALLING</span> <span class="o">|</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IRQ_RISING</span><span class="p">,</span>
+</span><span data-line="6"><span class="p">)</span>
 </span></pre></div>
 </div>
 </section>
@@ -628,9 +707,7 @@ GPIOs and the QSPI pins is 50 mA.</p>
 </tbody>
 </table>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">TX</span></code> and <code class="docutils literal notranslate"><span class="pre">RX</span></code> pads on the silkscreen are also labelled
-<code class="docutils literal notranslate"><span class="pre">D1</span></code> and <code class="docutils literal notranslate"><span class="pre">D0</span></code> respectively. Inside MicroPython use the names
-<code class="docutils literal notranslate"><span class="pre">TX</span></code>/<code class="docutils literal notranslate"><span class="pre">RX</span></code> (the names <code class="docutils literal notranslate"><span class="pre">D0</span></code>/<code class="docutils literal notranslate"><span class="pre">D1</span></code> are not exported):</p>
+<p>Use the silkscreen names <code class="docutils literal notranslate"><span class="pre">TX</span></code>/<code class="docutils literal notranslate"><span class="pre">RX</span></code> with <a class="reference internal" href="../../library/machine.UART.html#machine.UART" title="machine.UART"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.UART</span></code></a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">UART</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">uart</span> <span class="o">=</span> <span class="n">UART</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
@@ -650,38 +727,60 @@ NINA‑W102 module (the BLE link); don’t use it directly.</p>
 <table class="docutils align-default">
 <thead>
 <tr class="row-odd"><th class="head"><p>Bus</p></th>
-<th class="head"><p>SCL</p></th>
 <th class="head"><p>SDA</p></th>
+<th class="head"><p>SCL</p></th>
 </tr>
 </thead>
 <tbody>
 <tr class="row-even"><td><p>I2C0</p></td>
-<td><p>SCL</p></td>
-<td><p>SDA  (separate pads — GPIO13/GPIO12)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SDA</span></code> / <code class="docutils literal notranslate"><span class="pre">A4</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">SCL</span></code> / <code class="docutils literal notranslate"><span class="pre">A5</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p>I2C1</p></td>
-<td><p>A1</p></td>
-<td><p>A0   (also = D15/D14, GPIO27/GPIO26)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A0</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">A1</span></code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>The rp2 port’s <code class="docutils literal notranslate"><span class="pre">machine.I2C(0)</span></code> defaults to a different pin set
-than what the Nano RP2040 Connect routes to its silkscreened
-<code class="docutils literal notranslate"><span class="pre">SDA</span></code>/<code class="docutils literal notranslate"><span class="pre">SCL</span></code> pads, so pass the pins explicitly:</p>
+<p>Both buses need their pins passed explicitly to
+<a class="reference internal" href="../../library/machine.I2C.html#machine.I2C" title="machine.I2C"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.I2C</span></code></a>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2C</span><span class="p">,</span> <span class="n">Pin</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="n">i2c</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;SCL&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;SDA&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">400_000</span><span class="p">)</span>
-</span><span data-line="4"><span class="n">i2c</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
-</span><span data-line="5"><span class="n">i2c</span><span class="o">.</span><span class="n">writeto</span><span class="p">(</span><span class="mh">0x6A</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;hi&quot;</span><span class="p">)</span>        <span class="c1"># LSM6DSOX is at 0x6A on bus 0</span>
+</span><span data-line="3"><span class="n">bus0</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;SCL&quot;</span><span class="p">),</span> <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;SDA&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">400_000</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">bus0</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">bus1</span> <span class="o">=</span> <span class="n">I2C</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">scl</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;A1&quot;</span><span class="p">),</span>  <span class="n">sda</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;A0&quot;</span><span class="p">),</span>  <span class="n">freq</span><span class="o">=</span><span class="mi">400_000</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">bus1</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
 </span></pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">I2C(1)</span></code> is wired to <code class="docutils literal notranslate"><span class="pre">A0</span></code>/<code class="docutils literal notranslate"><span class="pre">A1</span></code> by <code class="docutils literal notranslate"><span class="pre">MICROPY_HW_I2C1_*</span></code> and
-works without explicit pins — using <code class="docutils literal notranslate"><span class="pre">A0</span></code>/<code class="docutils literal notranslate"><span class="pre">A1</span></code> as I²C consumes
-those pins for the bus, so you can’t simultaneously use them as ADC
-inputs.</p>
-<p>The on‑board IMU sits on <strong>bus 0</strong>; user I²C devices on the same
-bus must avoid the LSM6DSOX address (<code class="docutils literal notranslate"><span class="pre">0x6A</span></code>).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Two on-board chips share <strong>bus 0</strong> — user devices on this bus
+must avoid their addresses:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0x6A</span></code> — LSM6DSOX IMU</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">0x60</span></code> — ATECC608A‑MAHDA‑T</p></li>
+</ul>
+<p>Using <code class="docutils literal notranslate"><span class="pre">A0</span></code>/<code class="docutils literal notranslate"><span class="pre">A1</span></code> as I²C consumes them for the bus, so they
+can’t simultaneously be ADC inputs.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">SDA</span></code> / <code class="docutils literal notranslate"><span class="pre">SCL</span></code> pads (bus 0) have on‑board pull‑up
+resistors to 3.3 V, so no external pull‑ups are needed for
+devices on that bus. <code class="docutils literal notranslate"><span class="pre">A0</span></code> / <code class="docutils literal notranslate"><span class="pre">A1</span></code> (bus 1) do not — add
+external pull‑ups when using bus 1.</p>
+</div>
+<p>The same hardware can also be used in target (slave) mode through
+<a class="reference internal" href="../../library/machine.I2CTarget.html#machine-i2ctarget"><span class="std std-ref">machine.I2CTarget</span></a> to expose a memory
+region to another I²C controller:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">I2CTarget</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="mi">32</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">target</span> <span class="o">=</span> <span class="n">I2CTarget</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">addr</span><span class="o">=</span><span class="mh">0x42</span><span class="p">,</span> <span class="n">mem</span><span class="o">=</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
 </section>
 <section id="spi">
 <h3>SPI<a class="headerlink" href="#spi" title="Link to this heading">¶</a></h3>
@@ -705,33 +804,36 @@ bus must avoid the LSM6DSOX address (<code class="docutils literal notranslate">
 </tbody>
 </table>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">machine.SPI(0)</span></code> defaults to a different pin set on the RP2040
-port, so pass the silkscreened pads explicitly when creating the
-bus:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">SPI</span>
-</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="n">spi</span> <span class="o">=</span> <span class="n">SPI</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">10_000_000</span><span class="p">,</span>
-</span><span data-line="5">          <span class="n">sck</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D13&quot;</span><span class="p">),</span> <span class="n">mosi</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D11&quot;</span><span class="p">),</span> <span class="n">miso</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D12&quot;</span><span class="p">))</span>
-</span><span data-line="6"><span class="n">cs</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D10&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># CS is not driven by the SPI peripheral</span>
-</span><span data-line="7">
-</span><span data-line="8"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span><span data-line="9"><span class="n">spi</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
-</span><span data-line="10"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<p>The rp2 port doesn’t pre-configure SPI0’s pins on this board, so
+pass the silkscreened pads explicitly when creating the bus:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">SPI</span><span class="p">,</span> <span class="n">Pin</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">spi</span> <span class="o">=</span> <span class="n">SPI</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">10_000_000</span><span class="p">,</span>
+</span><span data-line="4">          <span class="n">sck</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D13&quot;</span><span class="p">),</span> <span class="n">mosi</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D11&quot;</span><span class="p">),</span> <span class="n">miso</span><span class="o">=</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D12&quot;</span><span class="p">))</span>
+</span><span data-line="5"><span class="n">cs</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D10&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># CS is not driven by the SPI peripheral</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">spi</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello&quot;</span><span class="p">)</span>
+</span><span data-line="9"><span class="n">cs</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </span></pre></div>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">D13</span></code> doubles as <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> — driving SPI on this bus will
-blink the yellow user LED in time with the bus clock. That’s
-normal.</p>
-<p><code class="docutils literal notranslate"><span class="pre">machine.SPI(1)</span></code> exists but is reserved for the NINA‑W102 module
-(the Wi‑Fi SPI link); don’t use it directly.</p>
+<p><code class="docutils literal notranslate"><span class="pre">D13</span></code> doubles as the orange <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> — driving SPI on
+this bus will blink the LED in time with the bus clock.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">machine.SPI(1)</span></code> exists but is reserved for the on-board
+NINA‑W102 module (the Wi-Fi/BLE SPI link); don’t use it directly.</p>
 </div>
 </section>
 <section id="adc">
 <h3>ADC<a class="headerlink" href="#adc" title="Link to this heading">¶</a></h3>
-<p>The RP2040 has four 12‑bit ADC channels exposed on <strong>A0–A3</strong>:</p>
+<p>The RP2040 has four 12‑bit ADC channels exposed on <strong>A0–A3</strong>, all
+<strong>3.3 V referenced</strong> — <code class="docutils literal notranslate"><span class="pre">read_u16</span></code> returns 0–65535 across 0–3.3 V
+at the pin. The board’s <code class="docutils literal notranslate"><span class="pre">AREF</span></code> pin is not wired, so the reference
+is always 3.3 V:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADC</span>
 </span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 </span><span data-line="3">
@@ -745,8 +847,6 @@ normal.</p>
 </section>
 <section id="pwm">
 <h3>PWM<a class="headerlink" href="#pwm" title="Link to this heading">¶</a></h3>
-<p>The RP2040’s PWM peripheral can drive any GPIO. The mapping below
-covers the silkscreened pins; each row is a PWM slice / channel pair.</p>
 <div class="table-wrapper docutils container">
 <table class="docutils align-default">
 <thead>
@@ -755,29 +855,65 @@ covers the silkscreened pins; each row is a PWM slice / channel pair.</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>D3</p></td>
-<td><p>PWM7 B</p></td>
-</tr>
-<tr class="row-odd"><td><p>D4</p></td>
+<tr class="row-even"><td><p>TX</p></td>
 <td><p>PWM0 A</p></td>
 </tr>
-<tr class="row-even"><td><p>D5</p></td>
+<tr class="row-odd"><td><p>RX</p></td>
 <td><p>PWM0 B</p></td>
 </tr>
-<tr class="row-odd"><td><p>D6</p></td>
+<tr class="row-even"><td><p>D2</p></td>
+<td><p>PWM4 B</p></td>
+</tr>
+<tr class="row-odd"><td><p>D3</p></td>
+<td><p>PWM7 B</p></td>
+</tr>
+<tr class="row-even"><td><p>D4</p></td>
+<td><p>PWM0 A</p></td>
+</tr>
+<tr class="row-odd"><td><p>D5</p></td>
+<td><p>PWM0 B</p></td>
+</tr>
+<tr class="row-even"><td><p>D6</p></td>
 <td><p>PWM1 A</p></td>
 </tr>
-<tr class="row-even"><td><p>D7</p></td>
+<tr class="row-odd"><td><p>D7</p></td>
 <td><p>PWM1 B</p></td>
 </tr>
-<tr class="row-odd"><td><p>D8</p></td>
+<tr class="row-even"><td><p>D8</p></td>
 <td><p>PWM2 A</p></td>
 </tr>
-<tr class="row-even"><td><p>D9</p></td>
+<tr class="row-odd"><td><p>D9</p></td>
+<td><p>PWM2 B</p></td>
+</tr>
+<tr class="row-even"><td><p>D10</p></td>
 <td><p>PWM2 B</p></td>
 </tr>
 <tr class="row-odd"><td><p>D11</p></td>
 <td><p>PWM3 B</p></td>
+</tr>
+<tr class="row-even"><td><p>D12</p></td>
+<td><p>PWM2 A</p></td>
+</tr>
+<tr class="row-odd"><td><p>D13</p></td>
+<td><p>PWM3 A</p></td>
+</tr>
+<tr class="row-even"><td><p>D14 / A0</p></td>
+<td><p>PWM5 A</p></td>
+</tr>
+<tr class="row-odd"><td><p>D15 / A1</p></td>
+<td><p>PWM5 B</p></td>
+</tr>
+<tr class="row-even"><td><p>D16 / A2</p></td>
+<td><p>PWM6 A</p></td>
+</tr>
+<tr class="row-odd"><td><p>D17 / A3</p></td>
+<td><p>PWM6 B</p></td>
+</tr>
+<tr class="row-even"><td><p>D18 / A4 / SDA</p></td>
+<td><p>PWM6 A</p></td>
+</tr>
+<tr class="row-odd"><td><p>D19 / A5 / SCL</p></td>
+<td><p>PWM6 B</p></td>
 </tr>
 </tbody>
 </table>
@@ -788,10 +924,55 @@ covers the silkscreened pins; each row is a PWM slice / channel pair.</p>
 </span><span data-line="3"><span class="n">pwm</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;D3&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">32768</span><span class="p">)</span>
 </span></pre></div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Several pins share PWM slice channels:</p>
+<ul class="simple">
+<li><p><strong>PWM0 A</strong> is on <code class="docutils literal notranslate"><span class="pre">TX</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">D4</span></code>.</p></li>
+<li><p><strong>PWM0 B</strong> is on <code class="docutils literal notranslate"><span class="pre">RX</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">D5</span></code>.</p></li>
+<li><p><strong>PWM2 A</strong> is on <code class="docutils literal notranslate"><span class="pre">D8</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">D12</span></code>.</p></li>
+<li><p><strong>PWM2 B</strong> is on <code class="docutils literal notranslate"><span class="pre">D9</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">D10</span></code>.</p></li>
+<li><p><strong>PWM6 A</strong> is on <code class="docutils literal notranslate"><span class="pre">D16</span></code>/<code class="docutils literal notranslate"><span class="pre">A2</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">D18</span></code>/<code class="docutils literal notranslate"><span class="pre">A4</span></code>/<code class="docutils literal notranslate"><span class="pre">SDA</span></code>.</p></li>
+<li><p><strong>PWM6 B</strong> is on <code class="docutils literal notranslate"><span class="pre">D17</span></code>/<code class="docutils literal notranslate"><span class="pre">A3</span></code> <em>and</em> <code class="docutils literal notranslate"><span class="pre">D19</span></code>/<code class="docutils literal notranslate"><span class="pre">A5</span></code>/<code class="docutils literal notranslate"><span class="pre">SCL</span></code>.</p></li>
+</ul>
+<p>Pick one consumer per slice channel. Channels A and B inside the
+same slice share their period (frequency) but each has its own
+duty cycle.</p>
+</div>
 </section>
 <section id="software-bitbanged-buses">
 <h3>Software bit‑banged buses<a class="headerlink" href="#software-bitbanged-buses" title="Link to this heading">¶</a></h3>
 <p><a class="reference internal" href="../../library/machine.I2C.html#machine-softi2c"><span class="std std-ref">machine.SoftI2C</span></a> and <a class="reference internal" href="../../library/machine.SPI.html#machine-softspi"><span class="std std-ref">machine.SoftSPI</span></a> work on any GPIO if you need an extra bus.</p>
+</section>
+<section id="thermal-sensor-offboard">
+<h3>Thermal sensor (off‑board)<a class="headerlink" href="#thermal-sensor-offboard" title="Link to this heading">¶</a></h3>
+<p>The firmware includes the <a class="reference internal" href="../../library/omv.fir.html"><span class="doc">fir — thermal sensor driver (fir == far infrared)</span></a> driver for an
+externally wired <strong>AMG8833</strong> 8×8 thermal imager. Connect the
+module to the I²C bus listed below, then read frames with
+<code class="docutils literal notranslate"><span class="pre">fir.init()</span></code> + <code class="docutils literal notranslate"><span class="pre">fir.snapshot()</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">fir</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">fir</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>                          <span class="c1"># auto‑detects the sensor</span>
+</span><span data-line="6"><span class="n">clock</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="9">    <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+</span><span data-line="10">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="11">        <span class="n">img</span> <span class="o">=</span> <span class="n">fir</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">x_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+</span><span data-line="12">                           <span class="n">color_palette</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">PALETTE_IRONBOW</span><span class="p">,</span>
+</span><span data-line="13">                           <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">BICUBIC</span><span class="p">,</span>
+</span><span data-line="14">                           <span class="n">copy_to_fb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="15">    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="16">        <span class="k">continue</span>
+</span><span data-line="17">    <span class="nb">print</span><span class="p">(</span><span class="n">clock</span><span class="o">.</span><span class="n">fps</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">fir</span></code> driver only talks to the sensor over <strong>I²C 0</strong> — wire
+the module to the silkscreened <code class="docutils literal notranslate"><span class="pre">SCL</span></code> / <code class="docutils literal notranslate"><span class="pre">SDA</span></code> pads. The
+sensor’s 7‑bit address (<code class="docutils literal notranslate"><span class="pre">0x69</span></code>) must not be used by any other
+device on that bus.</p>
 </section>
 </section>
 <section id="timing">
@@ -812,6 +993,25 @@ elapsed‑time measurement:</p>
 </span></pre></div>
 </div>
 </section>
+<section id="virtual-timers">
+<h3>Virtual timers<a class="headerlink" href="#virtual-timers" title="Link to this heading">¶</a></h3>
+<p><a class="reference internal" href="../../library/machine.Timer.html#machine-timer"><span class="std std-ref">machine.Timer</span></a> schedules periodic or one‑shot
+callbacks without consuming a hardware timer slot. Pass <code class="docutils literal notranslate"><span class="pre">-1</span></code> as the
+id to use a virtual (software) timer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timer</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">one_shot</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">one_shot</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">period</span><span class="o">=</span><span class="mi">5_000</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Timer</span><span class="o">.</span><span class="n">ONE_SHOT</span><span class="p">,</span>
+</span><span data-line="5">              <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;once&quot;</span><span class="p">))</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">periodic</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">periodic</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">period</span><span class="o">=</span><span class="mi">2_000</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">Timer</span><span class="o">.</span><span class="n">PERIODIC</span><span class="p">,</span>
+</span><span data-line="9">              <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;tick&quot;</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>Period values are in milliseconds. Call <a class="reference internal" href="../../library/machine.Timer.html#machine.Timer.deinit" title="machine.Timer.deinit"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deinit()</span></code></a>
+to stop and release the slot.</p>
+</section>
 <section id="realtime-clock">
 <h3>Real‑time clock<a class="headerlink" href="#realtime-clock" title="Link to this heading">¶</a></h3>
 <p><a class="reference internal" href="../../library/machine.RTC.html#machine-rtc"><span class="std std-ref">machine.RTC</span></a> keeps wall‑clock time across resets.
@@ -829,7 +1029,8 @@ matters to your application:</p>
 <section id="watchdog">
 <h3>Watchdog<a class="headerlink" href="#watchdog" title="Link to this heading">¶</a></h3>
 <p><a class="reference internal" href="../../library/machine.WDT.html#machine-wdt"><span class="std std-ref">machine.WDT</span></a> resets the board if the application
-hangs:</p>
+hangs. Once started it can’t be stopped or reconfigured — feed it
+periodically inside your main loop:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">WDT</span>
 </span><span data-line="2">
 </span><span data-line="3"><span class="n">wdt</span> <span class="o">=</span> <span class="n">WDT</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5_000</span><span class="p">)</span>   <span class="c1"># 5 second window</span>
@@ -844,11 +1045,17 @@ hangs:</p>
 <h2>Boot and runtime info<a class="headerlink" href="#boot-and-runtime-info" title="Link to this heading">¶</a></h2>
 <section id="firmware-update-uf2">
 <h3>Firmware update (UF2)<a class="headerlink" href="#firmware-update-uf2" title="Link to this heading">¶</a></h3>
-<p>The RP2040 enters its ROM bootloader when the <strong>REC</strong> (BOOTSEL)
-button is held while connecting USB — the board re‑enumerates as a
-mass‑storage drive named <code class="docutils literal notranslate"><span class="pre">RPI-RP2</span></code>. Drop the OpenMV firmware
-<code class="docutils literal notranslate"><span class="pre">.uf2</span></code> file onto the drive to flash. OpenMV IDE automates this
-when you ask it to update firmware.</p>
+<p>The Nano RP2040 Connect uses Arduino’s standard <strong>double‑tap
+reset</strong> to enter Arduino’s bootloader. Quickly press the reset
+button twice — the board re‑enumerates over USB as a UF2 device
+and OpenMV IDE can flash a new firmware image.</p>
+<p>A running script can re‑enter the bootloader on demand by calling
+<a class="reference internal" href="../../library/machine.html#machine.bootloader" title="machine.bootloader"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.bootloader()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">machine</span><span class="o">.</span><span class="n">bootloader</span><span class="p">()</span>
+</span></pre></div>
+</div>
 </section>
 <section id="filesystem-and-boot-order">
 <h3>Filesystem and boot order<a class="headerlink" href="#filesystem-and-boot-order" title="Link to this heading">¶</a></h3>
@@ -865,13 +1072,29 @@ created on the very first boot.</p></li>
 <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>.</p></li>
 </ul>
 <p>The default <code class="docutils literal notranslate"><span class="pre">main.py</span></code> shipped on a freshly flashed board just
-blinks the yellow <code class="docutils literal notranslate"><span class="pre">LED_BUILTIN</span></code> as a heartbeat (two short pulses,
-short gap), so you can tell the firmware booted cleanly without any
-host attached.</p>
+blinks the user RGB LED’s <strong>blue</strong> channel as a heartbeat (two
+short pulses, short gap), so you can tell the firmware booted
+cleanly without any host attached.</p>
 <p>When connected over USB, <code class="docutils literal notranslate"><span class="pre">/flash</span></code> enumerates as a USB mass‑storage
 drive on the host, letting you edit <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>, <code class="docutils literal notranslate"><span class="pre">main.py</span></code>, and any
 other files directly. <strong>Eject the drive before resetting the board</strong>
 so the host flushes its cached writes.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Because the OS treats the drive as a passive block device, files
+created or modified by code running on the camera will not show
+up until the host re‑mounts the drive. If both the OS and the
+camera write the same filesystem at the same time, the OS will
+win and overwrite changes made by the camera. Use the SD card for
+any data the script writes back, and remount before reading those
+files from the host.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The user RGB LED’s <strong>red</strong> channel may briefly light up while the
+host is reading from or writing to the USB mass‑storage drive —
+this is a firmware‑driven activity indicator, not a fault.</p>
+</div>
 </section>
 <section id="storage-sizes">
 <h3>Storage sizes<a class="headerlink" href="#storage-sizes" title="Link to this heading">¶</a></h3>
@@ -919,7 +1142,7 @@ build.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 15 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

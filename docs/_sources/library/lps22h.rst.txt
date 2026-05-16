@@ -15,7 +15,7 @@ Example::
     from machine import Pin, I2C
     from lps22h import LPS22H
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     lps = LPS22H(bus, oneshot=False)
 
     while True:

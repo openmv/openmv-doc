@@ -31,7 +31,7 @@ Example::
     import imu
     from machine import Pin, I2C
 
-    bus = I2C(1, scl=Pin(15), sda=Pin(14))
+    bus = I2C(1, scl=Pin("P15"), sda=Pin("P14"))
     sensor = imu.IMU(bus)
 
     while True:
