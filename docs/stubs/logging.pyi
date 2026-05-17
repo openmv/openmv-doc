@@ -240,7 +240,7 @@ class Logger:
         ...
 
 class StreamHandler:
-    """
+    r"""
     Handler that writes formatted records, followed by self.terminator
     ("\n" by default), to stream. stream defaults to sys.stderr.
     """
@@ -248,7 +248,7 @@ class StreamHandler:
     stream: Any
     """The destination stream object."""
     terminator: Any
-    """String appended after every formatted record. Defaults to "\n"."""
+    r"""String appended after every formatted record. Defaults to "\n"."""
     def close(self) -> None:
         """Flush the underlying stream when it exposes a flush method."""
         ...

@@ -14,7 +14,7 @@ class BLE:
         The radio must be made active before using any other methods on this class.
         """
         ...
-    def config(self, *, **kwargs: Any) -> None:
+    def config(self, **kwargs: Any) -> None:
         """
         Get or set configuration values of the BLE interface.  To get a value the
         parameter name should be quoted as a string, and just one parameter is
@@ -578,7 +578,7 @@ class BLE:
         ...
 
 class UUID:
-    """
+    r"""
     Creates a UUID instance with the specified value.
     The value can be either:
     A 16-bit integer. e.g. 0x2908.

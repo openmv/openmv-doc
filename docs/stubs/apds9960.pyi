@@ -137,7 +137,7 @@ class ADPS9960InvalidDevId(Exception):
     """
     ...
 class ADPS9960InvalidMode(Exception):
-    """
+    r"""
     Subclass of ValueError. Raised by APDS9960.setMode() when the
     mode argument is outside the range
     APDS9960_MODE_POWER..\ APDS9960_MODE_ALL.
@@ -145,7 +145,7 @@ class ADPS9960InvalidMode(Exception):
     ...
 
 class APDS9960:
-    """
+    r"""
     Construct an APDS9960 driver instance.
     bus is a configured I2C bus object used to communicate with the
     sensor. The base class issues SMBus-style read_byte_data,
@@ -838,7 +838,7 @@ class APDS9960:
         """Set the 16-bit low threshold used for the ambient-light interrupt."""
         ...
     def setMode(self, mode: int, enable: bool = True) -> None:
-        """
+        r"""
         Enable or disable an individual feature in the ENABLE register.
         mode must be one of the APDS9960_MODE_* values
         (APDS9960_MODE_POWER ..\ APDS9960_MODE_ALL).

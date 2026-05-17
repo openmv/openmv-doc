@@ -24,7 +24,7 @@ def search(regex_str: str, string: str) -> 'match | None':
     """
     ...
 def sub(regex_str: str, replace: str | Callable, string: str, count: int = 0, flags: int = 0, /) -> str:
-    """
+    r"""
     Compile regex_str and search for it in string, replacing all matches
     with replace, and returning the new string.
     replace can be a string or a function.  If it is a string then escape
@@ -37,43 +37,6 @@ def sub(regex_str: str, replace: str | Callable, string: str, count: int = 0, fl
     Note: availability of this function depends on MicroPython port.
     """
     ...
-
-class match:
-    def __init__(self) -> None: ...
-    def end(self, index: int = 0) -> int:
-        """
-        Return the index in the original string of the start or end of the
-        substring group that was matched.  index defaults to the entire
-        group, otherwise it will select a group.
-        Note: availability of these methods depends on MicroPython port.
-        """
-        ...
-    def group(self, index: int) -> str:
-        """
-        Return matching (sub)string. index is 0 for entire match,
-        1 and above for each capturing group. Only numeric groups are supported.
-        """
-        ...
-    def groups(self) -> tuple[str, ...]:
-        """
-        Return a tuple containing all the substrings of the groups of the match.
-        Note: availability of this method depends on MicroPython port.
-        """
-        ...
-    def span(self, index: int = 0) -> tuple[int, int]:
-        """
-        Returns the 2-tuple (match.start(index), match.end(index)).
-        Note: availability of this method depends on MicroPython port.
-        """
-        ...
-    def start(self, index: int = 0) -> int:
-        """
-        Return the index in the original string of the start or end of the
-        substring group that was matched.  index defaults to the entire
-        group, otherwise it will select a group.
-        Note: availability of these methods depends on MicroPython port.
-        """
-        ...
 
 class regex:
     def __init__(self) -> None: ...

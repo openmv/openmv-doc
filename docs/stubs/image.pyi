@@ -273,7 +273,7 @@ class Cascade:
     def __init__(self) -> None: ...
 
 class Image:
-    """
+    r"""
     If arg is a string then this creates a new image object from a file at arg path.
     Supports loading bmp/pgm/ppm/jpg/jpeg/png image files from disk. If copy_to_fb is true
     the image is copied to the frame buffer verus being allocated on the heap.
@@ -3237,7 +3237,7 @@ class Image:
         """
         ...
     def draw_string(self, x: int, y: int, text: str, color: int | tuple[int, int, int] | None = None, scale: float = 1, x_spacing: int = 0, y_spacing: int = 0, mono_space: bool = True, char_rotation: int = 0, char_hmirror: bool = False, char_vflip: bool = False, string_rotation: int = 0, string_hmirror: bool = False, string_vflip: bool = False) -> Image:
-        """
+        r"""
         Draws 8x10 text starting at location (x, y) in the image. You may either pass
         x, y separately or as a tuple (x, y).
         text is a string to write to the image. \n, \r, and \r\n

@@ -190,10 +190,11 @@ Constructors
 
       For connecting to a WPA/PSK based password protected network.
 
-   .. data:: 802_1X
-      :type: int
+   .. note::
 
-      Network is secured with WPA/WPA2 Enterprise.
+      A WPA/WPA2 **Enterprise** (802.1X) security value also exists. The
+      firmware exposes it under the name ``802_1X``, which is not a valid
+      Python identifier — access it with ``getattr(network.WINC, "802_1X")``.
 
    .. data:: MODE_STA
       :type: int

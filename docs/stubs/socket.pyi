@@ -62,7 +62,7 @@ def getaddrinfo(host: str, port: int, af: int = 0, type: int = 0, proto: int = 0
     """
     ...
 def inet_ntop(af: int, bin_addr: bytes) -> str:
-    """
+    r"""
     Convert a binary network address bin_addr of the given address family af
     to a textual representation:
     >>> socket.inet_ntop(socket.AF_INET, b"\x7f\0\0\1")
@@ -70,7 +70,7 @@ def inet_ntop(af: int, bin_addr: bytes) -> str:
     """
     ...
 def inet_pton(af: int, txt_addr: str) -> bytes:
-    """
+    r"""
     Convert a textual network address txt_addr of the given address family af
     to a binary representation:
     >>> socket.inet_pton(socket.AF_INET, "1.2.3.4")

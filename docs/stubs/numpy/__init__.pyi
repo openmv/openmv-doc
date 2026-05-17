@@ -10,7 +10,7 @@ was built with ULAB_SUPPORTS_COMPLEX enabled. Complex elements
 pack two float values (real, imaginary).
 """
 e: int
-"""Euler’s number e \approx 2.71828."""
+r"""Euler’s number e \approx 2.71828."""
 float: int
 """
 ulab.dtype code for floating-point arrays. Element width is either
@@ -25,7 +25,7 @@ int8: int
 nan: int
 """IEEE-754 floating-point “not a number”."""
 pi: int
-"""\pi \approx 3.14159."""
+r"""\pi \approx 3.14159."""
 uint16: int
 """ulab.dtype code for unsigned 16-bit integer arrays."""
 uint8: int

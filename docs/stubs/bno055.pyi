@@ -134,7 +134,7 @@ class BNO055:
         """
         ...
     def read_id(self) -> bytes:
-        """
+        r"""
         Return the 4-byte ID block read from register 0x00. The expected
         value is b'\xA0\xFB\x32\x0F'.
         """

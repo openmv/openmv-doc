@@ -7,8 +7,6 @@ SEC_NONE: int
 """The type of connection security."""
 SEC_PAP: int
 """The type of connection security."""
-802_1X: int
-"""Network is secured with WPA/WPA2 Enterprise."""
 MODE_AP: int
 """Start in access point mode (i.e. become the network)."""
 MODE_BSP: int
@@ -601,11 +599,9 @@ class WINC:
 
     For connecting to a WPA/PSK based password protected network.
 
-
-
-    802_1X: int
-
-    Network is secured with WPA/WPA2 Enterprise.
+    A WPA/WPA2 Enterprise (802.1X) security value also exists. The
+    firmware exposes it under the name 802_1X, which is not a valid
+    Python identifier — access it with getattr(network.WINC, "802_1X").
 
 
 

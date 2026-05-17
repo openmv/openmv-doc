@@ -281,7 +281,7 @@ class Lora:
         """
         ...
     def receive(self, delimiter: str | list | None = None, max_bytes: int | None = None, timeout: int = 1000) -> str:
-        """
+        r"""
         Low-level UART read. Reads characters from the modem until a delimiter
         is matched, max_bytes characters have been read, or timeout
         milliseconds elapse, then returns the accumulated string with any
@@ -316,7 +316,7 @@ class Lora:
         """
         ...
     def send_command(self, cmd: str, *args, delimiter: str = '\\r', data: bytes = None, timeout: int = 1000, raise_error: bool = True) -> str:
-        """
+        r"""
         Build an AT command from cmd and args, optionally append a raw
         data payload, transmit it, and return the modem’s response. For
         query commands ending in ?, only the value portion (the substring

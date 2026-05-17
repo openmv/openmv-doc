@@ -583,7 +583,7 @@ class ADCBlock:
         ...
 
 class CAN:
-    """
+    r"""
     Construct a CAN controller object of the given id:
     id identifies a particular CAN controller object; it is board and port specific.
 
@@ -1412,7 +1412,7 @@ class CAN:
         """
         ...
     def send(self, id: int, data: bytes, flags: int = 0) -> int | None:
-        """
+        r"""
         Copy a new CAN message into the controller’s hardware transmit queue to be
         sent onto the bus. The transmit queue is a priority queue sorted on CAN
         identifier priority (lower numeric identifiers have higher priority).
