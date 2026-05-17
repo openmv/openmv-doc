@@ -18,7 +18,7 @@ The following is an example of public API functions from ``obj.h``:
 
 At its core, any functions and macros in header files make up the public
 API and can be used to access very low-level details of MicroPython. Static
-inline functions in header files are fine too, such functions will be
+inline functions in header files are fine too; such functions will be
 inlined in the code when used.
 
 Header files in the ``ports`` directory are only exposed to the functionality

@@ -7,7 +7,7 @@ MicroPython uses several optimizations to save RAM but also ensure the efficient
 execution of programs. This chapter discusses some of these optimizations.
 
 .. note::
-   :ref:`qstr` and :ref:`maps` details other optimizations on strings and
+   :ref:`qstr` and :ref:`maps` detail other optimizations on strings and
    dictionaries.
 
 Frozen bytecode
@@ -71,4 +71,4 @@ However the following are:
 - First-time assignment of global variables (to create the slot in the global dict).
 
 For a detailed discussion on a more user-centric perspective on optimization,
-see `Maximising MicroPython speed <https://docs.micropython.org/en/latest/reference/speed_python.html>`_
+see :ref:`Maximising MicroPython speed <speed_python>`.

@@ -15,7 +15,7 @@ documentation.
 Flash memory
 ------------
 
-On the Pyboard the simple way to address the limited capacity is to fit a micro
+On OpenMV Cams the simple way to address the limited capacity is to fit a micro
 SD card. In some cases this is impractical, either because the device does not
 have an SD card slot or for reasons of cost or power consumption; hence the
 on-chip flash must be used. The firmware including the MicroPython subsystem is
@@ -240,7 +240,7 @@ were frozen as bytecode, both the `tuple` and `bytes` object would reside in fla
 Python3 introduced Unicode support. This introduced a distinction between a
 string and an array of bytes. MicroPython ensures that Unicode strings take no
 additional space so long as all characters in the string are ASCII (i.e. have
-a value < 126). If values in the full 8-bit range are required `bytes` and
+a value < 128). If values in the full 8-bit range are required `bytes` and
 `bytearray` objects can be used to ensure that no additional space will be
 required. Note that most string methods (e.g. :meth:`str.strip()`) apply also to `bytes`
 instances so the process of eliminating Unicode can be painless.
@@ -316,6 +316,12 @@ following periodically:
     gc.collect()
     gc.threshold(gc.mem_free() // 4 + gc.mem_alloc())
 
+For more information, see below and the documentation for built-in module
+:mod:`gc`.
+
+For details from MicroPython internals/developer perspective, see also
+:doc:`/develop/memorymgt`.
+
 Fragmentation
 ~~~~~~~~~~~~~
 
@@ -339,8 +345,8 @@ Reporting
 
 A number of library functions are available to report on memory allocation and
 to control GC. These are to be found in the `gc` and `micropython` modules.
-The following example may be pasted at the REPL (``ctrl e`` to enter paste mode,
-``ctrl d`` to run it).
+The following example may be pasted at the REPL (``Ctrl-E`` to enter paste mode,
+``Ctrl-D`` to run it).
 
 .. code::
 
@@ -405,7 +411,7 @@ Control of garbage collection
 A GC can be demanded at any time by issuing `gc.collect()`. It is advantageous
 to do this at intervals, firstly to preempt fragmentation and secondly for
 performance. A GC can take several milliseconds but is quicker when there is
-little work to do (about 1ms on the Pyboard). An explicit call can minimise that
+little work to do (about 1ms on an OpenMV Cam). An explicit call can minimise that
 delay while ensuring it occurs at points in the program when it is acceptable.
 
 Automatic GC is provoked under the following circumstances. When an attempt at

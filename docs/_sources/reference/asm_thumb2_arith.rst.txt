@@ -19,7 +19,7 @@ Addition
 
 * add(Rdn, imm8) ``Rdn = Rdn + imm8``
 * add(Rd, Rn, imm3) ``Rd = Rn + imm3``
-* add(Rd, Rn, Rm) ``Rd = Rn +Rm``
+* add(Rd, Rn, Rm) ``Rd = Rn + Rm``
 * adc(Rd, Rn) ``Rd = Rd + Rn + carry``
 
 Subtraction

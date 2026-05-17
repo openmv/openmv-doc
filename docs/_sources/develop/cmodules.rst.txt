@@ -8,8 +8,8 @@ limitations with the Python environment, often due to an inability to access
 certain hardware resources or Python speed limitations.
 
 If your limitations can't be resolved with suggestions in :ref:`speed_python`,
-writing some or all of your module in C (and/or C++ if implemented for your port)
-is a viable option.
+writing some or all of your module in C (and/or
+:ref:`C++ if implemented for your port<cxx_support>`) is a viable option.
 
 If your module is designed to access or work with commonly available
 hardware or libraries please consider implementing it inside the MicroPython
@@ -25,7 +25,7 @@ ports.  But when compiling a particular port you will only need to use one
 method of building, either Make or CMake.
 
 An alternative approach is to use :ref:`natmod` which allows writing custom C
-code that is placed in a .mpy file, which can be imported dynamically in to
+code that is placed in a .mpy file, which can be imported dynamically into
 a running MicroPython system without the need to recompile the main firmware.
 
 
@@ -45,7 +45,7 @@ A MicroPython user C module is a directory with the following files:
 * ``micropython.mk`` contains the Makefile fragment for this module.
 
   ``$(USERMOD_DIR)`` is available in ``micropython.mk`` as the path to your
-  module directory. As it's redefined for each c module, is should be expanded
+  module directory. As it's redefined for each C module, it should be expanded
   in your ``micropython.mk`` to a local make variable,
   eg ``EXAMPLE_MOD_DIR := $(USERMOD_DIR)``
 
@@ -140,7 +140,7 @@ For building the example modules which come with MicroPython,
 set ``USER_C_MODULES`` to the ``examples/usercmodule`` directory for Make,
 or to ``examples/usercmodule/micropython.cmake`` for CMake.
 
-For example, here's how the to build the unix port with the example modules:
+For example, here's how to build the unix port with the example modules:
 
 .. code-block:: bash
 
@@ -215,12 +215,10 @@ Then build with:
 
 .. code-block:: bash
 
-    cd my_project/micropython/ports/esp32
-    make USER_C_MODULES=../../../../modules/micropython.cmake
+    cd my_project/micropython/ports/rp2
+    make USER_C_MODULES=../../../modules/micropython.cmake
 
-Note that the esp32 port needs the extra ``..`` for relative paths due to the
-location of its main ``CMakeLists.txt`` file.   You can also specify absolute
-paths to ``USER_C_MODULES``.
+You can also specify absolute paths to ``USER_C_MODULES``.
 
 All modules specified by the ``USER_C_MODULES`` variable (either found in this
 directory when using Make, or added via ``include`` when using CMake) will be
@@ -285,3 +283,72 @@ can now be accessed in Python just like any other builtin module, e.g.
     sleep_ms(1000)
     print(watch.time())
     # should display approximately 1000
+
+
+.. _c_heap:
+
+C Dynamic Memory Allocation
+---------------------------
+
+MicroPython uses its own "Python heap" for `memorymanagement`,
+which is not the same as the "C heap" used by C library functions ``malloc()``,
+``free()``, etc. Not every MicroPython port comes with a "C heap" at all.
+
+Tier 1 & 2 ports have varying support for C dynamic memory allocation via a "C
+heap":
+
+- unix, windows, esp32 and webassembly ports support C dynamic memory
+  allocation.
+- rp2 port will fail to allocate any memory at runtime unless the firmware is
+  built with ``MICROPY_C_HEAP_SIZE=n`` to reserve ``n`` bytes of memory for a C
+  heap. This memory will not be available for Python code to use.
+- alif, mimxrt, nrf, renesas-ra, samd, and stm32 port builds that include
+  dynamic C allocation will fail at link-time with errors such as ``undefined
+  reference to `malloc'``. MicroPython has no built-in support for dynamic C
+  allocation on these ports. Any solution requires manually adding a C heap
+  implementation to the custom build.
+- zephyr port currently does not support building with user modules.
+
+Python heap as C heap
+~~~~~~~~~~~~~~~~~~~~~
+
+It may be practical for C code to call "Python heap" dynamic allocation
+functions such as ``m_malloc()``, ``m_malloc0()`` and ``m_free()`` instead.
+
+See `python_memory_from_c` for more information about this approach.
+
+.. _cxx_support:
+
+C++ Modules
+-----------
+
+Most Tier 1 & 2 MicroPython ports (and some Tier 3) support building C++ user
+modules, using the C++-specific environment variables described above.
+
+Integrating C++ and MicroPython successfully involves some additional
+considerations:
+
+C++ Dynamic Memory Allocation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+C++ programs (as well as C++ Standard Library features) typically use dynamic
+memory allocation. The C++ default memory allocator (i.e. operators ``new`` and
+``delete``) is typically implemented as a layer on top of `c_heap`.
+
+For MicroPython ports which don't include C dynamic memory allocation support,
+C++ dynamic memory allocation can be supported in one of two ways:
+
+- Implement C dynamic memory allocation in your custom build.
+- Implement a custom C++ allocator in your custom build.
+
+Linkage Considerations
+~~~~~~~~~~~~~~~~~~~~~~
+
+Because MicroPython is a C-based project, any symbols which link to or from
+MicroPython need to be qualified ``extern "C"`` in C++ code.
+
+It's strongly recommended to follow the pattern demonstrated in
+`examples/usercmodule/cppexample
+<https://github.com/micropython/micropython/blob/master/examples/usercmodule/cppexample>`_,
+where the Python module is implemented in a minimal C file wrapper around the
+C++ code.

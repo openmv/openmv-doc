@@ -9,7 +9,7 @@ identifiers in your code, as something like a function or variable name is very
 likely to appear in multiple places in the code.  In MicroPython an interned
 string is called a QSTR (uniQue STRing).
 
-A QSTR value (with type ``qstr``) is a index into a linked list of QSTR pools.
+A QSTR value (with type ``qstr``) is an index into a linked list of QSTR pools.
 QSTRs store their length and a hash of their contents for fast comparison during
 the de-duplication process.  All bytecode operations that work with strings use
 a QSTR argument.
@@ -74,7 +74,7 @@ Processing happens in the following stages:
    data is written to another file (``qstrdefs.collected.h.hash``) which allows
    it to track changes across builds.
 
-4. Generate an enumeration, each entry of which maps a ``MP_QSTR_Foo`` to it's corresponding index.
+4. Generate an enumeration, each entry of which maps a ``MP_QSTR_Foo`` to its corresponding index.
    It concatenates ``qstrdefs.collected.h`` with ``qstrdefs*.h``, then it transforms
    each line from ``Q(Foo)`` to ``"Q(Foo)"`` so they pass through the preprocessor
    unchanged.  Then the preprocessor is used to deal with any conditional

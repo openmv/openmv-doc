@@ -49,7 +49,7 @@ resolve to absolute paths.
   ``require()``.
 - ``$(PORT_DIR)`` -- path to the current port (e.g. ``ports/stm32``)
 - ``$(BOARD_DIR)`` -- path to the current board
-  (e.g. ``ports/stm32/boards/PYBV11``)
+  (e.g. ``ports/stm32/boards/OPENMV4``)
 
 Custom manifest files should not live in the main MicroPython repository. You
 should keep them in version control with the rest of your project.
@@ -68,8 +68,8 @@ Your manifest can be specified on the ``make`` command line with:
 
     $ make BOARD=MYBOARD FROZEN_MANIFEST=/path/to/my/project/manifest.py
 
-This applies to all ports, including CMake-based ones (e.g. esp32, rp2), as the
-Makefile wrapper that will pass this into the CMake build.
+This applies to all ports, including CMake-based ones (e.g. rp2), as the
+Makefile wrapper will pass this into the CMake build.
 
 Adding a manifest to a board definition
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,7 +82,7 @@ manifest automatically. On make-based ports (most ports), in your
 
     FROZEN_MANIFEST ?= $(BOARD_DIR)/manifest.py
 
-On CMake-based ports (e.g. esp32, rp2), instead use ``mpconfigboard.cmake``
+On CMake-based ports (e.g. rp2), instead use ``mpconfigboard.cmake``
 
 .. code-block:: cmake
 
@@ -90,6 +90,21 @@ On CMake-based ports (e.g. esp32, rp2), instead use ``mpconfigboard.cmake``
 
 High-level functions
 ~~~~~~~~~~~~~~~~~~~~
+
+These are the functions you will normally use. They add code to the set that
+is precompiled to bytecode and frozen into the firmware image:
+
+- `module` and `package` freeze your **own** local source — a single file
+  or a whole package directory respectively.
+- `require` freezes a **published** package (and its dependencies) from
+  :term:`micropython-lib`, by name.
+- `include` pulls in another manifest so its frozen modules are added too.
+- `add_library` and `metadata` are support functions (registering extra
+  search paths for `require`, and declaring package metadata).
+
+A typical firmware manifest first ``include``\ s the port or board manifest
+(so the modules the board needs stay frozen), then adds its own
+``module``/``package``/``require`` lines.
 
 Note: The ``opt`` keyword argument can be set on the various functions, this controls
 the optimisation level used by the cross-compiler.
@@ -99,6 +114,10 @@ See :func:`micropython.opt_level`.
 
     Register the path to an external named *library*.
 
+    Use this when you want `require` to resolve packages from a directory
+    other than :term:`micropython-lib` — for example your own collection of
+    drivers, or a third-party library checkout.
+
     The path *library_path* will be automatically searched when using `require`.
     By default the added library is added to the end of the list of libraries to
     search.  Pass ``True`` to *prepend* to add it to the start of the list.
@@ -107,6 +126,10 @@ See :func:`micropython.opt_level`.
     ``require("name", library="library")``.
 
 .. function:: package(package_path, files=None, base_path=".", opt=None)
+
+    Freeze an entire **package** — a directory of ``.py`` files (optionally
+    with sub-packages) — so it can be imported as ``import <package>``. Use
+    `module` instead for a single standalone file.
 
     This is equivalent to copying the "package_path" directory to the device
     (except as frozen code).
@@ -133,7 +156,9 @@ See :func:`micropython.opt_level`.
 
 .. function:: module(module_path, base_path=".", opt=None)
 
-    Include a single Python file as a module.
+    Freeze a single standalone ``.py`` file so it can be imported by its name
+    (``module("foo.py")`` makes ``import foo`` work). Use `package` for a
+    directory/package.
 
     If the file is in the current directory:
 
@@ -153,13 +178,21 @@ See :func:`micropython.opt_level`.
 
     Require a package by name (and its dependencies) from :term:`micropython-lib`.
 
+    This is how standard-library extensions and community drivers get frozen
+    in: the named package is fetched from the :term:`micropython-lib`
+    submodule and frozen along with everything it depends on. Use `module` or
+    `package` instead to freeze your own source rather than a published
+    package.
+
     Optionally specify *library* (a string) to reference a package from a
     library that has been previously registered with `add_library`. Otherwise
     the list of library paths will be used.
 
 .. function:: include(manifest_path)
 
-    Include another manifest.
+    Include another manifest. This is how manifests are composed: a custom
+    firmware manifest should ``include`` the port (or board) manifest so the
+    modules the board needs stay frozen, and then add its own entries.
 
     Typically a manifest used for compiling firmware will need to include the
     port manifest, which might include frozen modules that are required for
@@ -180,14 +213,29 @@ See :func:`micropython.opt_level`.
     Define metadata for this manifest file. This is useful for manifests for
     micropython-lib packages.
 
+    These fields are consumed when a package is published to / installed from
+    :term:`micropython-lib` via :ref:`mip <packages>`; they are not needed in
+    a board firmware manifest.
+
 Low-level functions
 ~~~~~~~~~~~~~~~~~~~
 
 These functions are documented for completeness, but with the exception of
 ``freeze_as_str`` all functionality can be accessed via the high-level functions.
 
+The ``freeze*`` functions differ only in *how* the code is stored:
+
+- ``freeze_as_mpy`` / ``freeze_mpy`` store precompiled **bytecode** (``.mpy``)
+  in flash. The code runs directly from flash, uses minimal RAM, and imports
+  quickly. This is what `module`, `package` and `require` use internally.
+- ``freeze_as_str`` instead freezes the Python **source**, which is compiled
+  to bytecode at import time (using RAM, and requiring the on-device
+  compiler). This is the one capability not exposed by the high-level
+  functions, which is why it is the exception noted above.
+
 .. function:: freeze(path, script=None, opt=0)
 
+    The underlying primitive the high-level functions build on; prefer those.
     Freeze the input specified by *path*, automatically determining its type.  A
     ``.py`` script will be compiled to a ``.mpy`` first then frozen, and a
     ``.mpy`` file will be frozen directly.
@@ -215,18 +263,22 @@ These functions are documented for completeness, but with the exception of
 .. function:: freeze_as_str(path)
 
     Freeze the given *path* and all ``.py`` scripts within it as a string, which
-    will be compiled upon import.
+    will be compiled upon import. Use this only when the frozen code must
+    remain Python source; it costs import-time RAM compared with the ``.mpy``
+    variants.
 
 .. function:: freeze_as_mpy(path, script=None, opt=0)
 
     Freeze the input by first compiling the ``.py`` scripts to ``.mpy`` files,
-    then freezing the resulting ``.mpy`` files.  See ``freeze()`` for further
-    details on the arguments.
+    then freezing the resulting ``.mpy`` files.  This is what `module` and
+    `package` do under the hood.  See ``freeze()`` for further details on the
+    arguments.
 
-.. function::   freeze_mpy(path, script=None, opt=0)
+.. function:: freeze_mpy(path, script=None, opt=0)
 
-    Freeze the input, which must be ``.mpy`` files that are frozen directly.
-    See ``freeze()`` for further details on the arguments.
+    Freeze the input, which must be ``.mpy`` files that are frozen directly
+    (no compilation step).  See ``freeze()`` for further details on the
+    arguments.
 
 Examples
 --------
@@ -251,8 +303,8 @@ To freeze the "hmac" library from :term:`micropython-lib`, use:
 
     require("hmac")
 
-A more complete example of a custom ``manifest.py`` file for the ``PYBD_SF2``
-board is:
+A more complete example of a custom ``manifest.py`` file (for a board that
+has its own default manifest) is:
 
 .. code-block:: python3
 
@@ -268,7 +320,7 @@ Then the board can be compiled with
 .. code-block:: bash
 
     $ cd ports/stm32
-    $ make BOARD=PYBD_SF2 FROZEN_MANIFEST=~/src/myproject/manifest.py
+    $ make BOARD=MYBOARD FROZEN_MANIFEST=~/src/myproject/manifest.py
 
 Note that most boards do not have their own ``manifest.py``, rather they use the
 port one directly, in which case your manifest should just

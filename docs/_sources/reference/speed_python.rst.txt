@@ -4,6 +4,8 @@ Maximising MicroPython speed
 ============================
 
 .. contents::
+   :local:
+   :depth: 1
 
 This tutorial describes ways of improving the performance of MicroPython code.
 Optimisations involving other languages are covered elsewhere, namely the use
@@ -86,7 +88,7 @@ may lack dedicated floating-point coprocessor, and perform arithmetic operations
 on them in "software" at considerably lower speed than on integers. Where
 performance is important, use integer operations and restrict the use of floating
 point to sections of the code where performance is not paramount. For example,
-capture ADC readings as integers values to an array in one quick go, and only then
+capture ADC readings as integer values to an array in one quick go, and only then
 convert them to floating-point numbers for signal processing.
 
 .. _speed_arrays:
@@ -107,7 +109,7 @@ When passing slices of objects such as `bytearray` instances, Python creates
 a copy which involves allocation of the size proportional to the size of slice.
 This can be alleviated using a `memoryview` object. The `memoryview` itself
 is allocated on the heap, but is a small, fixed-size object, regardless of the size
-of slice it points too. Slicing a `memoryview` creates a new `memoryview`, so this
+of slice it points to. Slicing a `memoryview` creates a new `memoryview`, so this
 cannot be done in an interrupt service routine. Further, the slice syntax ``a:b``
 causes further allocation by instantiating a ``slice(a, b)`` object.
 
@@ -135,7 +137,7 @@ of buffer and pass it to ``readinto()``.
 Strings vs Bytes
 ~~~~~~~~~~~~~~~~
 
-MicroPython uses :ref:``string interning <qstr>`` to save space when there are
+MicroPython uses :ref:`string interning <qstr>` to save space when there are
 multiple identical strings. Each time a new string is allocated at runtime (for
 example, when two other strings are concatenated), MicroPython checks whether
 the new string can be interned to save RAM.
@@ -329,23 +331,34 @@ microseconds. The rules for casting are as follows:
   must be of integral type and the value of that integral object is returned.
 * The argument to a bool cast must be integral type (boolean or integer); when used as a return
   type the viper function will return True or False objects.
-* If the argument is a Python object and the cast is ``ptr``, ``ptr``, ``ptr16`` or ``ptr32``,
+* If the argument is a Python object and the cast is ``ptr``, ``ptr8``, ``ptr16`` or ``ptr32``,
   then the Python object must either have the buffer protocol (in which case a pointer to the
   start of the buffer is returned) or it must be of integral type (in which case the value of
   that integral object is returned).
 
 Writing to a pointer which points to a read-only object will lead to undefined behaviour.
 
-The following example illustrates the use of a ``ptr16`` cast to toggle pin X1 ``n`` times:
+.. note::
+
+   The code examples below are given for the STM32-based OpenMV Cams, which
+   provide the ``stm`` module. The techniques described apply generally.
+
+The ``stm`` module exposes the memory addresses of
+the MCU's peripheral registers. Each GPIO port has an *output data register*
+(ODR) whose bits map one-to-one to that port's pins: writing the register
+drives those pins directly, without the overhead of a :class:`machine.Pin`
+method call, and XOR-ing a bit toggles its pin. On the original OpenMV Cam the
+blue LED is wired to ``GPIOC`` pin 2, so the following example uses a
+``ptr16`` cast to toggle the blue LED ``n`` times:
 
 .. code:: python
 
-    BIT0 = const(1)
+    BIT2 = const(1 << 2)
     @micropython.viper
     def toggle_n(n: int):
-        odr = ptr16(stm.GPIOA + stm.GPIO_ODR)
+        odr = ptr16(stm.GPIOC + stm.GPIO_ODR)
         for _ in range(n):
-            odr[0] ^= BIT0
+            odr[0] ^= BIT2
 
 A detailed technical description of the three code emitters may be found
 on Kickstarter here `Note 1 <https://www.kickstarter.com/projects/214379695/micro-python-python-for-microcontrollers/posts/664832>`_
@@ -354,13 +367,8 @@ and here `Note 2 <https://www.kickstarter.com/projects/214379695/micro-python-py
 Accessing hardware directly
 ---------------------------
 
-.. note::
-
-    Code examples in this section are given for the Pyboard. The techniques
-    described however may be applied to other MicroPython ports too.
-
 This comes into the category of more advanced programming and involves some knowledge
-of the target MCU. Consider the example of toggling an output pin on the Pyboard. The
+of the target MCU. Consider the example of toggling an output pin on an OpenMV Cam. The
 standard approach would be to write
 
 .. code:: python
@@ -369,15 +377,17 @@ standard approach would be to write
 
 This involves the overhead of two calls to the :class:`~machine.Pin` instance's :meth:`~machine.Pin.value()`
 method. This overhead can be eliminated by performing a read/write to the relevant bit
-of the chip's GPIO port output data register (odr). To facilitate this the ``stm``
-module provides a set of constants providing the addresses of the relevant registers.
-A fast toggle of pin ``P4`` (CPU pin ``A14``) - corresponding to the green LED -
-can be performed as follows:
+of the chip's GPIO port output data register (ODR). To facilitate this the ``stm``
+module provides a set of constants giving the addresses of the relevant registers
+(``stm.GPIOC`` is the base address of the GPIOC port, ``stm.GPIO_ODR`` the
+offset of its output data register). As above, the blue LED on the original
+OpenMV Cam is ``GPIOC`` pin 2, so a fast toggle of it can be performed as
+follows:
 
 .. code:: python
 
     import machine
     import stm
 
-    BIT14 = const(1 << 14)
-    machine.mem16[stm.GPIOA + stm.GPIO_ODR] ^= BIT14
+    BIT2 = const(1 << 2)
+    machine.mem16[stm.GPIOC + stm.GPIO_ODR] ^= BIT2

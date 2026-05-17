@@ -13,8 +13,8 @@ is not found then ``foo.mpy`` is looked for, then the search continues in the
 next directory if neither is found.  As such, ``foo.py`` will take precedence
 over ``foo.mpy``.
 
-These .mpy files can contain bytecode which is usually generated from Python
-source files (.py files) via the ``mpy-cross`` program.  For some architectures
+These .mpy files can contain :term:`bytecode` which is usually generated from
+Python source files (.py files) via the ``mpy-cross`` program.  For some architectures
 an .mpy file can also contain native machine code, which can be generated in
 a variety of ways, most notably from C source code.
 
@@ -28,13 +28,13 @@ Compatibility is based on the following:
   supported by the system loading it.
 
 * Sub-version of the .mpy file: if the .mpy file contains native machine code
-  then the sub-version of the file must match the version support by the
+  then the sub-version of the file must match the version supported by the
   system loading it.  Otherwise, if there is no native machine code in the .mpy
   file, then the sub-version is ignored when loading.
 
 * Small integer bits: the .mpy file will require a minimum number of bits in
-  a small integer and the system loading it must support at least this many
-  bits.
+  a :term:`small integer` and the system loading it must support at least this
+  many bits.
 
 * Native architecture: if the .mpy file contains native machine code then
   it will specify the architecture of that machine code and the system
@@ -130,7 +130,7 @@ the outer module is stored first, and then its children follow.  Each child may
 have further children, for example in the case of a class having methods, or a
 function defining a lambda or comprehension.  To keep files small while still
 providing a large range of possible values it uses the concept of a
-variably-encoded-unsigned-integer (vuint) in many places.  Similar to utf-8
+variably-encoded-unsigned-integer (vuint) in many places.  Similar to UTF-8
 encoding, this encoding stores 7 bits per byte with the 8th bit (MSB) set
 if one or more bytes follow.  The bits of the unsigned integer are stored
 in the vuint in LSB form.

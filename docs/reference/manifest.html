@@ -97,7 +97,6 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
 <li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
 <li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">MicroPython 2.0 Migration Guide</a></li>
 </ul>
 </li>
@@ -160,7 +159,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/reference/manifest.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/d532f6c35ba2440a73e7d6bb08ceb082f3359724/docs/reference/manifest.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -274,7 +273,7 @@ resolve to absolute paths.</p>
 <code class="docutils literal notranslate"><span class="pre">require()</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">$(PORT_DIR)</span></code> – path to the current port (e.g. <code class="docutils literal notranslate"><span class="pre">ports/stm32</span></code>)</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">$(BOARD_DIR)</span></code> – path to the current board
-(e.g. <code class="docutils literal notranslate"><span class="pre">ports/stm32/boards/PYBV11</span></code>)</p></li>
+(e.g. <code class="docutils literal notranslate"><span class="pre">ports/stm32/boards/OPENMV4</span></code>)</p></li>
 </ul>
 <p>Custom manifest files should not live in the main MicroPython repository. You
 should keep them in version control with the rest of your project.</p>
@@ -288,8 +287,8 @@ include the board manifest (which will in turn include the port manifest).</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">$<span class="w"> </span>make<span class="w"> </span><span class="nv">BOARD</span><span class="o">=</span>MYBOARD<span class="w"> </span><span class="nv">FROZEN_MANIFEST</span><span class="o">=</span>/path/to/my/project/manifest.py
 </span></pre></div>
 </div>
-<p>This applies to all ports, including CMake-based ones (e.g. esp32, rp2), as the
-Makefile wrapper that will pass this into the CMake build.</p>
+<p>This applies to all ports, including CMake-based ones (e.g. rp2), as the
+Makefile wrapper will pass this into the CMake build.</p>
 </section>
 <section id="adding-a-manifest-to-a-board-definition">
 <h3>Adding a manifest to a board definition<a class="headerlink" href="#adding-a-manifest-to-a-board-definition" title="Link to this heading">¶</a></h3>
@@ -299,13 +298,27 @@ manifest automatically. On make-based ports (most ports), in your
 <div class="highlight-makefile notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nv">FROZEN_MANIFEST</span><span class="w"> </span><span class="o">?=</span><span class="w"> </span><span class="k">$(</span>BOARD_DIR<span class="k">)</span>/manifest.py
 </span></pre></div>
 </div>
-<p>On CMake-based ports (e.g. esp32, rp2), instead use <code class="docutils literal notranslate"><span class="pre">mpconfigboard.cmake</span></code></p>
+<p>On CMake-based ports (e.g. rp2), instead use <code class="docutils literal notranslate"><span class="pre">mpconfigboard.cmake</span></code></p>
 <div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">set</span><span class="p">(</span><span class="s">MICROPY_FROZEN_MANIFEST</span><span class="w"> </span><span class="o">${</span><span class="nv">MICROPY_BOARD_DIR</span><span class="o">}</span><span class="s">/manifest.py</span><span class="p">)</span>
 </span></pre></div>
 </div>
 </section>
 <section id="high-level-functions">
 <h3>High-level functions<a class="headerlink" href="#high-level-functions" title="Link to this heading">¶</a></h3>
+<p>These are the functions you will normally use. They add code to the set that
+is precompiled to bytecode and frozen into the firmware image:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#module" title="module"><code class="xref any py py-func docutils literal notranslate"><span class="pre">module</span></code></a> and <a class="reference internal" href="#package" title="package"><code class="xref any py py-func docutils literal notranslate"><span class="pre">package</span></code></a> freeze your <strong>own</strong> local source — a single file
+or a whole package directory respectively.</p></li>
+<li><p><a class="reference internal" href="#require" title="require"><code class="xref any py py-func docutils literal notranslate"><span class="pre">require</span></code></a> freezes a <strong>published</strong> package (and its dependencies) from
+<a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a>, by name.</p></li>
+<li><p><a class="reference internal" href="#include" title="include"><code class="xref any py py-func docutils literal notranslate"><span class="pre">include</span></code></a> pulls in another manifest so its frozen modules are added too.</p></li>
+<li><p><a class="reference internal" href="#add_library" title="add_library"><code class="xref any py py-func docutils literal notranslate"><span class="pre">add_library</span></code></a> and <a class="reference internal" href="#metadata" title="metadata"><code class="xref any py py-func docutils literal notranslate"><span class="pre">metadata</span></code></a> are support functions (registering extra
+search paths for <a class="reference internal" href="#require" title="require"><code class="xref any py py-func docutils literal notranslate"><span class="pre">require</span></code></a>, and declaring package metadata).</p></li>
+</ul>
+<p>A typical firmware manifest first <code class="docutils literal notranslate"><span class="pre">include</span></code>s the port or board manifest
+(so the modules the board needs stay frozen), then adds its own
+<code class="docutils literal notranslate"><span class="pre">module</span></code>/<code class="docutils literal notranslate"><span class="pre">package</span></code>/<code class="docutils literal notranslate"><span class="pre">require</span></code> lines.</p>
 <p>Note: The <code class="docutils literal notranslate"><span class="pre">opt</span></code> keyword argument can be set on the various functions, this controls
 the optimisation level used by the cross-compiler.
 See <a class="reference internal" href="../library/micropython.html#micropython.opt_level" title="micropython.opt_level"><code class="xref py py-func docutils literal notranslate"><span class="pre">micropython.opt_level()</span></code></a>.</p>
@@ -313,6 +326,9 @@ See <a class="reference internal" href="../library/micropython.html#micropython.
 <dt class="sig sig-object py" id="add_library">
 <span class="sig-name descname"><span class="pre">add_library</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">library</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prepend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#add_library" title="Link to this definition">¶</a></dt>
 <dd><p>Register the path to an external named <em>library</em>.</p>
+<p>Use this when you want <a class="reference internal" href="#require" title="require"><code class="xref any py py-func docutils literal notranslate"><span class="pre">require</span></code></a> to resolve packages from a directory
+other than <a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a> — for example your own collection of
+drivers, or a third-party library checkout.</p>
 <p>The path <em>library_path</em> will be automatically searched when using <a class="reference internal" href="#require" title="require"><code class="xref any py py-func docutils literal notranslate"><span class="pre">require</span></code></a>.
 By default the added library is added to the end of the list of libraries to
 search.  Pass <code class="docutils literal notranslate"><span class="pre">True</span></code> to <em>prepend</em> to add it to the start of the list.</p>
@@ -323,7 +339,10 @@ search.  Pass <code class="docutils literal notranslate"><span class="pre">True<
 <dl class="py function">
 <dt class="sig sig-object py" id="package">
 <span class="sig-name descname"><span class="pre">package</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">package_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#package" title="Link to this definition">¶</a></dt>
-<dd><p>This is equivalent to copying the “package_path” directory to the device
+<dd><p>Freeze an entire <strong>package</strong> — a directory of <code class="docutils literal notranslate"><span class="pre">.py</span></code> files (optionally
+with sub-packages) — so it can be imported as <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">&lt;package&gt;</span></code>. Use
+<a class="reference internal" href="#module" title="module"><code class="xref any py py-func docutils literal notranslate"><span class="pre">module</span></code></a> instead for a single standalone file.</p>
+<p>This is equivalent to copying the “package_path” directory to the device
 (except as frozen code).</p>
 <p>In the simplest case, to freeze a package “foo” in the current directory:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">package</span><span class="p">(</span><span class="s2">&quot;foo&quot;</span><span class="p">)</span>
@@ -343,7 +362,9 @@ should be relative to the package): <code class="docutils literal notranslate"><
 <dl class="py function">
 <dt class="sig sig-object py" id="module">
 <span class="sig-name descname"><span class="pre">module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#module" title="Link to this definition">¶</a></dt>
-<dd><p>Include a single Python file as a module.</p>
+<dd><p>Freeze a single standalone <code class="docutils literal notranslate"><span class="pre">.py</span></code> file so it can be imported by its name
+(<code class="docutils literal notranslate"><span class="pre">module(&quot;foo.py&quot;)</span></code> makes <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">foo</span></code> work). Use <a class="reference internal" href="#package" title="package"><code class="xref any py py-func docutils literal notranslate"><span class="pre">package</span></code></a> for a
+directory/package.</p>
 <p>If the file is in the current directory:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">module</span><span class="p">(</span><span class="s2">&quot;foo.py&quot;</span><span class="p">)</span>
 </span></pre></div>
@@ -359,6 +380,11 @@ should be relative to the package): <code class="docutils literal notranslate"><
 <dt class="sig sig-object py" id="require">
 <span class="sig-name descname"><span class="pre">require</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">library</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#require" title="Link to this definition">¶</a></dt>
 <dd><p>Require a package by name (and its dependencies) from <a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a>.</p>
+<p>This is how standard-library extensions and community drivers get frozen
+in: the named package is fetched from the <a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a>
+submodule and frozen along with everything it depends on. Use <a class="reference internal" href="#module" title="module"><code class="xref any py py-func docutils literal notranslate"><span class="pre">module</span></code></a> or
+<a class="reference internal" href="#package" title="package"><code class="xref any py py-func docutils literal notranslate"><span class="pre">package</span></code></a> instead to freeze your own source rather than a published
+package.</p>
 <p>Optionally specify <em>library</em> (a string) to reference a package from a
 library that has been previously registered with <a class="reference internal" href="#add_library" title="add_library"><code class="xref any py py-func docutils literal notranslate"><span class="pre">add_library</span></code></a>. Otherwise
 the list of library paths will be used.</p>
@@ -367,7 +393,9 @@ the list of library paths will be used.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="include">
 <span class="sig-name descname"><span class="pre">include</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manifest_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#include" title="Link to this definition">¶</a></dt>
-<dd><p>Include another manifest.</p>
+<dd><p>Include another manifest. This is how manifests are composed: a custom
+firmware manifest should <code class="docutils literal notranslate"><span class="pre">include</span></code> the port (or board) manifest so the
+modules the board needs stay frozen, and then add its own entries.</p>
 <p>Typically a manifest used for compiling firmware will need to include the
 port manifest, which might include frozen modules that are required for
 the board to function.</p>
@@ -384,6 +412,9 @@ manifest.py file inside that directory.</p>
 <span class="sig-name descname"><span class="pre">metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">license</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#metadata" title="Link to this definition">¶</a></dt>
 <dd><p>Define metadata for this manifest file. This is useful for manifests for
 micropython-lib packages.</p>
+<p>These fields are consumed when a package is published to / installed from
+<a class="reference internal" href="glossary.html#term-micropython-lib"><span class="xref std std-term">micropython-lib</span></a> via <a class="reference internal" href="packages.html#packages"><span class="std std-ref">mip</span></a>; they are not needed in
+a board firmware manifest.</p>
 </dd></dl>
 
 </section>
@@ -391,10 +422,21 @@ micropython-lib packages.</p>
 <h3>Low-level functions<a class="headerlink" href="#low-level-functions" title="Link to this heading">¶</a></h3>
 <p>These functions are documented for completeness, but with the exception of
 <code class="docutils literal notranslate"><span class="pre">freeze_as_str</span></code> all functionality can be accessed via the high-level functions.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">freeze*</span></code> functions differ only in <em>how</em> the code is stored:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">freeze_as_mpy</span></code> / <code class="docutils literal notranslate"><span class="pre">freeze_mpy</span></code> store precompiled <strong>bytecode</strong> (<code class="docutils literal notranslate"><span class="pre">.mpy</span></code>)
+in flash. The code runs directly from flash, uses minimal RAM, and imports
+quickly. This is what <a class="reference internal" href="#module" title="module"><code class="xref any py py-func docutils literal notranslate"><span class="pre">module</span></code></a>, <a class="reference internal" href="#package" title="package"><code class="xref any py py-func docutils literal notranslate"><span class="pre">package</span></code></a> and <a class="reference internal" href="#require" title="require"><code class="xref any py py-func docutils literal notranslate"><span class="pre">require</span></code></a> use internally.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">freeze_as_str</span></code> instead freezes the Python <strong>source</strong>, which is compiled
+to bytecode at import time (using RAM, and requiring the on-device
+compiler). This is the one capability not exposed by the high-level
+functions, which is why it is the exception noted above.</p></li>
+</ul>
 <dl class="py function">
 <dt class="sig sig-object py" id="freeze">
 <span class="sig-name descname"><span class="pre">freeze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#freeze" title="Link to this definition">¶</a></dt>
-<dd><p>Freeze the input specified by <em>path</em>, automatically determining its type.  A
+<dd><p>The underlying primitive the high-level functions build on; prefer those.
+Freeze the input specified by <em>path</em>, automatically determining its type.  A
 <code class="docutils literal notranslate"><span class="pre">.py</span></code> script will be compiled to a <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> first then frozen, and a
 <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> file will be frozen directly.</p>
 <p><em>path</em> must be a directory, which is the base directory to begin searching
@@ -417,22 +459,26 @@ to <code class="docutils literal notranslate"><span class="pre">.mpy</span></cod
 <dt class="sig sig-object py" id="freeze_as_str">
 <span class="sig-name descname"><span class="pre">freeze_as_str</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#freeze_as_str" title="Link to this definition">¶</a></dt>
 <dd><p>Freeze the given <em>path</em> and all <code class="docutils literal notranslate"><span class="pre">.py</span></code> scripts within it as a string, which
-will be compiled upon import.</p>
+will be compiled upon import. Use this only when the frozen code must
+remain Python source; it costs import-time RAM compared with the <code class="docutils literal notranslate"><span class="pre">.mpy</span></code>
+variants.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="freeze_as_mpy">
 <span class="sig-name descname"><span class="pre">freeze_as_mpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#freeze_as_mpy" title="Link to this definition">¶</a></dt>
 <dd><p>Freeze the input by first compiling the <code class="docutils literal notranslate"><span class="pre">.py</span></code> scripts to <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files,
-then freezing the resulting <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files.  See <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> for further
-details on the arguments.</p>
+then freezing the resulting <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files.  This is what <a class="reference internal" href="#module" title="module"><code class="xref any py py-func docutils literal notranslate"><span class="pre">module</span></code></a> and
+<a class="reference internal" href="#package" title="package"><code class="xref any py py-func docutils literal notranslate"><span class="pre">package</span></code></a> do under the hood.  See <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> for further details on the
+arguments.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="freeze_mpy">
 <span class="sig-name descname"><span class="pre">freeze_mpy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">opt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#freeze_mpy" title="Link to this definition">¶</a></dt>
-<dd><p>Freeze the input, which must be <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files that are frozen directly.
-See <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> for further details on the arguments.</p>
+<dd><p>Freeze the input, which must be <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> files that are frozen directly
+(no compilation step).  See <code class="docutils literal notranslate"><span class="pre">freeze()</span></code> for further details on the
+arguments.</p>
 </dd></dl>
 
 </section>
@@ -453,8 +499,8 @@ directory which will be available as <code class="docutils literal notranslate">
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">require</span><span class="p">(</span><span class="s2">&quot;hmac&quot;</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>A more complete example of a custom <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code> file for the <code class="docutils literal notranslate"><span class="pre">PYBD_SF2</span></code>
-board is:</p>
+<p>A more complete example of a custom <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code> file (for a board that
+has its own default manifest) is:</p>
 <div class="highlight-python3 notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># Include the board&#39;s default manifest.</span>
 </span><span data-line="2"><span class="n">include</span><span class="p">(</span><span class="s2">&quot;$(BOARD_DIR)/manifest.py&quot;</span><span class="p">)</span>
 </span><span data-line="3"><span class="c1"># Add a custom driver</span>
@@ -465,7 +511,7 @@ board is:</p>
 </div>
 <p>Then the board can be compiled with</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>ports/stm32
-</span><span data-line="2">$<span class="w"> </span>make<span class="w"> </span><span class="nv">BOARD</span><span class="o">=</span>PYBD_SF2<span class="w"> </span><span class="nv">FROZEN_MANIFEST</span><span class="o">=</span>~/src/myproject/manifest.py
+</span><span data-line="2">$<span class="w"> </span>make<span class="w"> </span><span class="nv">BOARD</span><span class="o">=</span>MYBOARD<span class="w"> </span><span class="nv">FROZEN_MANIFEST</span><span class="o">=</span>~/src/myproject/manifest.py
 </span></pre></div>
 </div>
 <p>Note that most boards do not have their own <code class="docutils literal notranslate"><span class="pre">manifest.py</span></code>, rather they use the
@@ -502,7 +548,7 @@ port one directly, in which case your manifest should just
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 17 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

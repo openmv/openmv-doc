@@ -90,7 +90,7 @@ The -t option accepts the following for the test instance:
 - **a<n>** - connect to and use /dev/ttyACM<n>
 - **u<n>** - connect to and use /dev/ttyUSB<n>
 - **c<n>** - connect to and use COM<n>
-- **exec:<command>** - execute a command and attach to it's stdin/stdout
+- **exec:<command>** - execute a command and attach to its stdin/stdout
 - **execpty:<command>** - execute a command and attach to the printed /dev/pts/<n> device
 - **<a>.<b>.<c>.<d>** - connect to the given IPv4 address
 - anything else specifies a serial port
@@ -134,10 +134,10 @@ Set the MICROPY_MPYCROSS environment variable to use a specific version of ``mpy
    # Run specific test files in parallel
    $ ./run-tests.py -j 4 basics/list*.py
 
-   # Test on connected ESP32 board
-   $ ./run-tests.py -t /dev/ttyUSB0
+   # Test on a connected OpenMV Cam
+   $ ./run-tests.py -t /dev/ttyACM0
    # or
-   $ ./run-tests.py -t u0
+   $ ./run-tests.py -t a0
 
    # Re-run only failed tests from previous run
    $ ./run-tests.py --run-failures

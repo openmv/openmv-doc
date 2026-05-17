@@ -21,7 +21,7 @@ language which can be compiled to stand-alone machine code can be put into a
 
 A native .mpy module is built using the ``mpy_ld.py`` tool, which is found in the
 ``tools/`` directory of the project.  This tool takes a set of object files
-(.o files) and links them together to create a native .mpy files.  It requires
+(.o files) and links them together to create a native .mpy file.  It requires
 CPython 3 and the library pyelftools v0.25 or greater.
 
 Supported features and limitations
@@ -53,7 +53,7 @@ architecture flags are present, only if they match the target's capabilities).
 For more details about .mpy files see :ref:`mpy_files`.
 
 Native code must be compiled as position independent code (PIC) and use a global
-offset table (GOT), although the details of this varies from architecture to
+offset table (GOT), although the details of this vary from architecture to
 architecture.  When importing .mpy files with native code the import machinery
 is able to do some basic relocation of the native code.  This includes
 relocating text, rodata and BSS sections.
@@ -124,7 +124,7 @@ The filesystem layout consists of two main parts, the source files and the Makef
   both C source files as well as any Python files which will be included in the
   resulting .mpy file.
 
-* The ``Makefile`` contains the build configuration for the module and list the
+* The ``Makefile`` contains the build configuration for the module and lists the
   source files used to build the .mpy module.  It should define ``MPY_DIR`` as the
   location of the MicroPython repository (to find header files, the relevant Makefile
   fragment, and the ``mpy_ld.py`` tool), ``MOD`` as the name of the module, ``SRC``

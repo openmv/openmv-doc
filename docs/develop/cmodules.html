@@ -120,6 +120,15 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#basic-example">Basic example</a></li>
 <li><a class="reference internal" href="#compiling-the-cmodule-into-micropython">Compiling the cmodule into MicroPython</a></li>
 <li><a class="reference internal" href="#module-usage-in-micropython">Module usage in MicroPython</a></li>
+<li><a class="reference internal" href="#c-dynamic-memory-allocation">C Dynamic Memory Allocation</a><ul>
+<li><a class="reference internal" href="#python-heap-as-c-heap">Python heap as C heap</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#c-modules">C++ Modules</a><ul>
+<li><a class="reference internal" href="#id1">C++ Dynamic Memory Allocation</a></li>
+<li><a class="reference internal" href="#linkage-considerations">Linkage Considerations</a></li>
+</ul>
+</li>
 </ul>
 </div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
@@ -143,7 +152,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/develop/cmodules.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/d532f6c35ba2440a73e7d6bb08ceb082f3359724/docs/develop/cmodules.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -225,8 +234,8 @@ data-aria-dark="Switch to auto color mode">
 limitations with the Python environment, often due to an inability to access
 certain hardware resources or Python speed limitations.</p>
 <p>If your limitations can’t be resolved with suggestions in <a class="reference internal" href="../reference/speed_python.html#speed-python"><span class="std std-ref">Maximising MicroPython speed</span></a>,
-writing some or all of your module in C (and/or C++ if implemented for your port)
-is a viable option.</p>
+writing some or all of your module in C (and/or
+<a class="reference internal" href="#cxx-support"><span class="std std-ref">C++ if implemented for your port</span></a>) is a viable option.</p>
 <p>If your module is designed to access or work with commonly available
 hardware or libraries please consider implementing it inside the MicroPython
 source tree alongside similar modules and submitting it as a pull request.
@@ -239,7 +248,7 @@ add the build files for both of these tools so the module can be used on all
 ports.  But when compiling a particular port you will only need to use one
 method of building, either Make or CMake.</p>
 <p>An alternative approach is to use <a class="reference internal" href="natmod.html#natmod"><span class="std std-ref">Native machine code in .mpy files</span></a> which allows writing custom C
-code that is placed in a .mpy file, which can be imported dynamically in to
+code that is placed in a .mpy file, which can be imported dynamically into
 a running MicroPython system without the need to recompile the main firmware.</p>
 <section id="structure-of-an-external-c-module">
 <h2>Structure of an external C module<a class="headerlink" href="#structure-of-an-external-c-module" title="Link to this heading">¶</a></h2>
@@ -253,7 +262,7 @@ to find similar modules within the MicroPython tree and use them as examples.</p
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> contains the Makefile fragment for this module.</p>
 <p><code class="docutils literal notranslate"><span class="pre">$(USERMOD_DIR)</span></code> is available in <code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> as the path to your
-module directory. As it’s redefined for each c module, is should be expanded
+module directory. As it’s redefined for each C module, it should be expanded
 in your <code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> to a local make variable,
 eg <code class="docutils literal notranslate"><span class="pre">EXAMPLE_MOD_DIR</span> <span class="pre">:=</span> <span class="pre">$(USERMOD_DIR)</span></code></p>
 <p>Your <code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> must add your modules source files to the
@@ -334,7 +343,7 @@ automatically enabled.</p></li>
 <p>For building the example modules which come with MicroPython,
 set <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> to the <code class="docutils literal notranslate"><span class="pre">examples/usercmodule</span></code> directory for Make,
 or to <code class="docutils literal notranslate"><span class="pre">examples/usercmodule/micropython.cmake</span></code> for CMake.</p>
-<p>For example, here’s how the to build the unix port with the example modules:</p>
+<p>For example, here’s how to build the unix port with the example modules:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>micropython/ports/unix
 </span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../examples/usercmodule
 </span></pre></div>
@@ -399,13 +408,11 @@ you want to have available:</p>
 </div>
 </div></blockquote>
 <p>Then build with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>my_project/micropython/ports/esp32
-</span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../../../modules/micropython.cmake
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>my_project/micropython/ports/rp2
+</span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../../modules/micropython.cmake
 </span></pre></div>
 </div>
-<p>Note that the esp32 port needs the extra <code class="docutils literal notranslate"><span class="pre">..</span></code> for relative paths due to the
-location of its main <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file.   You can also specify absolute
-paths to <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code>.</p>
+<p>You can also specify absolute paths to <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code>.</p>
 <p>All modules specified by the <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> variable (either found in this
 directory when using Make, or added via <code class="docutils literal notranslate"><span class="pre">include</span></code> when using CMake) will be
 compiled, but only those which are enabled will be available for importing.
@@ -464,6 +471,61 @@ can now be accessed in Python just like any other builtin module, e.g.</p>
 </span></pre></div>
 </div>
 </section>
+<section id="c-dynamic-memory-allocation">
+<span id="c-heap"></span><h2>C Dynamic Memory Allocation<a class="headerlink" href="#c-dynamic-memory-allocation" title="Link to this heading">¶</a></h2>
+<p>MicroPython uses its own “Python heap” for <a class="reference internal" href="memorymgt.html#memorymanagement"><span class="std std-ref">Memory Management</span></a>,
+which is not the same as the “C heap” used by C library functions <code class="docutils literal notranslate"><span class="pre">malloc()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">free()</span></code>, etc. Not every MicroPython port comes with a “C heap” at all.</p>
+<p>Tier 1 &amp; 2 ports have varying support for C dynamic memory allocation via a “C
+heap”:</p>
+<ul class="simple">
+<li><p>unix, windows, esp32 and webassembly ports support C dynamic memory
+allocation.</p></li>
+<li><p>rp2 port will fail to allocate any memory at runtime unless the firmware is
+built with <code class="docutils literal notranslate"><span class="pre">MICROPY_C_HEAP_SIZE=n</span></code> to reserve <code class="docutils literal notranslate"><span class="pre">n</span></code> bytes of memory for a C
+heap. This memory will not be available for Python code to use.</p></li>
+<li><p>alif, mimxrt, nrf, renesas-ra, samd, and stm32 port builds that include
+dynamic C allocation will fail at link-time with errors such as <code class="docutils literal notranslate"><span class="pre">undefined</span>
+<span class="pre">reference</span> <span class="pre">to</span> <span class="pre">`malloc'</span></code>. MicroPython has no built-in support for dynamic C
+allocation on these ports. Any solution requires manually adding a C heap
+implementation to the custom build.</p></li>
+<li><p>zephyr port currently does not support building with user modules.</p></li>
+</ul>
+<section id="python-heap-as-c-heap">
+<h3>Python heap as C heap<a class="headerlink" href="#python-heap-as-c-heap" title="Link to this heading">¶</a></h3>
+<p>It may be practical for C code to call “Python heap” dynamic allocation
+functions such as <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_malloc0()</span></code> and <code class="docutils literal notranslate"><span class="pre">m_free()</span></code> instead.</p>
+<p>See <a class="reference internal" href="memorymgt.html#python-memory-from-c"><span class="std std-ref">MicroPython Memory from C code</span></a> for more information about this approach.</p>
+</section>
+</section>
+<section id="c-modules">
+<span id="cxx-support"></span><h2>C++ Modules<a class="headerlink" href="#c-modules" title="Link to this heading">¶</a></h2>
+<p>Most Tier 1 &amp; 2 MicroPython ports (and some Tier 3) support building C++ user
+modules, using the C++-specific environment variables described above.</p>
+<p>Integrating C++ and MicroPython successfully involves some additional
+considerations:</p>
+<section id="id1">
+<h3>C++ Dynamic Memory Allocation<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h3>
+<p>C++ programs (as well as C++ Standard Library features) typically use dynamic
+memory allocation. The C++ default memory allocator (i.e. operators <code class="docutils literal notranslate"><span class="pre">new</span></code> and
+<code class="docutils literal notranslate"><span class="pre">delete</span></code>) is typically implemented as a layer on top of <a class="reference internal" href="#c-heap"><span class="std std-ref">C Dynamic Memory Allocation</span></a>.</p>
+<p>For MicroPython ports which don’t include C dynamic memory allocation support,
+C++ dynamic memory allocation can be supported in one of two ways:</p>
+<ul class="simple">
+<li><p>Implement C dynamic memory allocation in your custom build.</p></li>
+<li><p>Implement a custom C++ allocator in your custom build.</p></li>
+</ul>
+</section>
+<section id="linkage-considerations">
+<h3>Linkage Considerations<a class="headerlink" href="#linkage-considerations" title="Link to this heading">¶</a></h3>
+<p>Because MicroPython is a C-based project, any symbols which link to or from
+MicroPython need to be qualified <code class="docutils literal notranslate"><span class="pre">extern</span> <span class="pre">&quot;C&quot;</span></code> in C++ code.</p>
+<p>It’s strongly recommended to follow the pattern demonstrated in
+<a class="reference external" href="https://github.com/micropython/micropython/blob/master/examples/usercmodule/cppexample">examples/usercmodule/cppexample</a>,
+where the Python module is implemented in a minimal C file wrapper around the
+C++ code.</p>
+</section>
+</section>
 </section>
 
         </article><button class="back-to-top" type="button">
@@ -494,7 +556,7 @@ can now be accessed in Python just like any other builtin module, e.g.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 17 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

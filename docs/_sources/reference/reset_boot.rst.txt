@@ -4,6 +4,19 @@ Reset and Boot Sequence
 A device running MicroPython follows a particular boot sequence to start up and
 initialise itself after a reset.
 
+.. note::
+
+   The ``_boot.py`` → ``boot.py`` → ``main.py`` → REPL sequence described
+   below is what the firmware runs on **every reset**, regardless of how
+   you connect — so it always applies. When you run a script from **OpenMV
+   IDE**, the IDE interrupts the currently-running ``main.py`` and runs the
+   script open in the editor in its place, over its own debug protocol. It
+   does not use the on-device :doc:`REPL <repl>`, so the *REPL-specific*
+   references on this page (the interactive prompt, ``Ctrl-D`` / ``Ctrl-C``
+   at a serial terminal, etc.) apply to standalone operation and direct
+   serial-terminal sessions — but the boot sequence itself applies in all
+   cases.
+
 .. _hard_reset:
 
 Hard reset
@@ -111,10 +124,10 @@ that it's always available after reset for use with the :doc:`REPL <repl>`,
 
 .. warning:: boot.py should always exit and not run indefinitely.
 
-   Depending on the port, some hardware initialisation is delayed until after
-   ``boot.py`` exits. This includes initialising USB on the stm32 port. On these
-   ports, output printed from ``boot.py`` may not be visible on the built-in USB
-   serial port until after ``boot.py`` finishes running.
+   Depending on the board, some hardware initialisation is delayed until after
+   ``boot.py`` exits. This includes initialising USB on the STM32-based OpenMV
+   Cams. On these boards, output printed from ``boot.py`` may not be visible on
+   the built-in USB serial port until after ``boot.py`` finishes running.
 
    The purpose of this late initialisation is so that it's possible to
    pre-configure particular hardware in ``boot.py``, and then have it start with
@@ -139,7 +152,7 @@ Some tips for ``main.py`` usage:
 
 - ``main.py`` doesn't have to exit, feel free to put an infinite ``while
   True`` loop in there.
-- For complex Python applications then you don't need to put all your
+- For complex Python applications you don't need to put all your
   code in ``main.py``. ``main.py`` can be a simple entry point that
   imports your application and starts execution::
 
@@ -208,6 +221,12 @@ state sometimes called "soft bricked". For example:
 
 Rest assured, recovery is possible!
 
+If you use OpenMV IDE, simply connecting is often enough — the IDE stops the
+running ``main.py`` and takes over. If the camera won't connect at all, use
+the **Factory Reset** below. The ``Ctrl-C`` method described next is for
+direct serial-terminal sessions — it relies on the on-device REPL, which
+OpenMV IDE does not use.
+
 KeyboardInterrupt
 ^^^^^^^^^^^^^^^^^
 
@@ -223,4 +242,25 @@ To confirm which files are still present in the internal filesystem::
 
     import os
     os.listdir()
+
+Factory Reset
+^^^^^^^^^^^^^
+
+If you can't get to a REPL using the method above, the remaining option is a
+factory reset: erasing the entire contents of the internal flash filesystem.
+This is also the fix if the internal filesystem has become corrupted.
+
+OpenMV IDE has several built-in ways to do this. First put the camera into its
+recovery/bootloader mode — the method differs per board, so see the **Recovery
+and debug pins** section of your board's :doc:`quick reference
+</openmvcam/quickref>` for how to enter it. Then click the connect button in
+OpenMV IDE and follow the prompts to erase the filesystem and re-flash the
+firmware.
+
+.. warning:: Re-flashing the firmware *without* erasing the filesystem will
+             usually not recover from soft bricking, as a normal firmware
+             update preserves the contents of the filesystem. Be sure to
+             choose the erase option when OpenMV IDE prompts for it.
+
+If you get stuck, ask on the `OpenMV forums <https://forums.openmv.io>`_.
 

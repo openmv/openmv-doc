@@ -111,7 +111,6 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
 <li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">MicroPython 2.0 Migration Guide</a></li>
 </ul>
 </li>
@@ -161,7 +160,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/reference/asm_thumb2_hints_tips.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/d532f6c35ba2440a73e7d6bb08ceb082f3359724/docs/reference/asm_thumb2_hints_tips.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -303,7 +302,7 @@ along with other registers which the program logic requires to be preserved.</p>
 </section>
 <section id="argument-passing-and-return">
 <h2><span class="section-number">1.2. </span>Argument passing and return<a class="headerlink" href="#argument-passing-and-return" title="Link to this heading">¶</a></h2>
-<p>The tutorial details the fact that assembler functions can support from zero to
+<p>Assembler functions can support from zero to
 three arguments, which must (if used) be named <code class="docutils literal notranslate"><span class="pre">r0</span></code>, <code class="docutils literal notranslate"><span class="pre">r1</span></code> and <code class="docutils literal notranslate"><span class="pre">r2</span></code>. When
 the code executes the registers will be initialised to those values.</p>
 <p>The data types which can be passed in this way are integers and memory
@@ -419,37 +418,25 @@ calls such as</p>
 </section>
 <section id="overcoming-micropython-s-integer-restriction">
 <h2><span class="section-number">1.6. </span>Overcoming MicroPython’s integer restriction<a class="headerlink" href="#overcoming-micropython-s-integer-restriction" title="Link to this heading">¶</a></h2>
-<p>The Pyboard chip includes a CRC generator. Its use presents a problem in
-MicroPython because the returned values cover the full gamut of 32 bit
-quantities whereas small integers in MicroPython cannot have differing values
-in bits 30 and 31. This limitation is overcome with the following code, which
-uses assembler to put the result into an array and Python code to
-coerce the result into an arbitrary precision unsigned integer.</p>
+<p>MicroPython small integers on 32-bit ports cannot hold a value whose bits 30
+and 31 differ (for example <code class="docutils literal notranslate"><span class="pre">0x80000000</span></code>), so an assembler routine that
+produces a full 32-bit result cannot simply return it directly. This limitation
+is overcome with the following code, which uses assembler to put the result into
+an array and Python code to coerce the result into an arbitrary precision
+unsigned integer.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">array</span><span class="w"> </span><span class="kn">import</span> <span class="n">array</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">stm</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">enable_crc</span><span class="p">():</span>
-</span><span data-line="5">    <span class="n">stm</span><span class="o">.</span><span class="n">mem32</span><span class="p">[</span><span class="n">stm</span><span class="o">.</span><span class="n">RCC</span> <span class="o">+</span> <span class="n">stm</span><span class="o">.</span><span class="n">RCC_AHB1ENR</span><span class="p">]</span> <span class="o">|=</span> <span class="mh">0x1000</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="k">def</span><span class="w"> </span><span class="nf">reset_crc</span><span class="p">():</span>
-</span><span data-line="8">    <span class="n">stm</span><span class="o">.</span><span class="n">mem32</span><span class="p">[</span><span class="n">stm</span><span class="o">.</span><span class="n">CRC</span><span class="o">+</span><span class="n">stm</span><span class="o">.</span><span class="n">CRC_CR</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-</span><span data-line="9">
-</span><span data-line="10"><span class="nd">@micropython</span><span class="o">.</span><span class="n">asm_thumb</span>
-</span><span data-line="11"><span class="k">def</span><span class="w"> </span><span class="nf">getval</span><span class="p">(</span><span class="n">r0</span><span class="p">,</span> <span class="n">r1</span><span class="p">):</span>
-</span><span data-line="12">    <span class="n">movwt</span><span class="p">(</span><span class="n">r3</span><span class="p">,</span> <span class="n">stm</span><span class="o">.</span><span class="n">CRC</span> <span class="o">+</span> <span class="n">stm</span><span class="o">.</span><span class="n">CRC_DR</span><span class="p">)</span>
-</span><span data-line="13">    <span class="nb">str</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="p">[</span><span class="n">r3</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-</span><span data-line="14">    <span class="n">ldr</span><span class="p">(</span><span class="n">r2</span><span class="p">,</span> <span class="p">[</span><span class="n">r3</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-</span><span data-line="15">    <span class="nb">str</span><span class="p">(</span><span class="n">r2</span><span class="p">,</span> <span class="p">[</span><span class="n">r0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
-</span><span data-line="16">
-</span><span data-line="17"><span class="k">def</span><span class="w"> </span><span class="nf">getcrc</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
-</span><span data-line="18">    <span class="n">a</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-</span><span data-line="19">    <span class="n">getval</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-</span><span data-line="20">    <span class="k">return</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span> <span class="c1"># coerce to arbitrary precision</span>
-</span><span data-line="21">
-</span><span data-line="22"><span class="n">enable_crc</span><span class="p">()</span>
-</span><span data-line="23"><span class="n">reset_crc</span><span class="p">()</span>
-</span><span data-line="24"><span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">20</span><span class="p">):</span>
-</span><span data-line="25">    <span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">getcrc</span><span class="p">(</span><span class="mi">0</span><span class="p">)))</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="nd">@micropython</span><span class="o">.</span><span class="n">asm_thumb</span>
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">getval</span><span class="p">(</span><span class="n">r0</span><span class="p">):</span>
+</span><span data-line="5">    <span class="n">movwt</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="mh">0x80000000</span><span class="p">)</span>  <span class="c1"># a 32-bit value whose bits 30 and 31 differ</span>
+</span><span data-line="6">    <span class="nb">str</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="p">[</span><span class="n">r0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">():</span>
+</span><span data-line="9">    <span class="n">a</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="10">    <span class="n">getval</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+</span><span data-line="11">    <span class="k">return</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span>  <span class="c1"># coerce to arbitrary precision</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="nb">print</span><span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">get</span><span class="p">()))</span>  <span class="c1"># 0x80000000</span>
 </span></pre></div>
 </div>
 </section>
@@ -483,7 +470,7 @@ coerce the result into an arbitrary precision unsigned integer.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 17 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

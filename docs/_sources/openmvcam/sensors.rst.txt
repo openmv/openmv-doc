@@ -1,7 +1,7 @@
 .. _sensors:
 
-Sensors
-=======
+OpenMV Sensors
+==============
 
 Camera modules and sensor adapters that plug into the board-to-board
 connector on supported OpenMV Cams. Each page covers what the sensor

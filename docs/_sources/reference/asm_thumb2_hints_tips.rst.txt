@@ -73,7 +73,7 @@ along with other registers which the program logic requires to be preserved.
 Argument passing and return
 ---------------------------
 
-The tutorial details the fact that assembler functions can support from zero to
+Assembler functions can support from zero to
 three arguments, which must (if used) be named ``r0``, ``r1`` and ``r2``. When
 the code executes the registers will be initialised to those values.
 
@@ -208,37 +208,25 @@ indicates that each subsequent argument is a two byte quantity.
 Overcoming MicroPython's integer restriction
 --------------------------------------------
 
-The Pyboard chip includes a CRC generator. Its use presents a problem in
-MicroPython because the returned values cover the full gamut of 32 bit
-quantities whereas small integers in MicroPython cannot have differing values
-in bits 30 and 31. This limitation is overcome with the following code, which
-uses assembler to put the result into an array and Python code to
-coerce the result into an arbitrary precision unsigned integer.
+MicroPython small integers on 32-bit ports cannot hold a value whose bits 30
+and 31 differ (for example ``0x80000000``), so an assembler routine that
+produces a full 32-bit result cannot simply return it directly. This limitation
+is overcome with the following code, which uses assembler to put the result into
+an array and Python code to coerce the result into an arbitrary precision
+unsigned integer.
 
 ::
 
     from array import array
-    import stm
-
-    def enable_crc():
-        stm.mem32[stm.RCC + stm.RCC_AHB1ENR] |= 0x1000
-
-    def reset_crc():
-        stm.mem32[stm.CRC+stm.CRC_CR] = 1
 
     @micropython.asm_thumb
-    def getval(r0, r1):
-        movwt(r3, stm.CRC + stm.CRC_DR)
-        str(r1, [r3, 0])
-        ldr(r2, [r3, 0])
-        str(r2, [r0, 0])
+    def getval(r0):
+        movwt(r1, 0x80000000)  # a 32-bit value whose bits 30 and 31 differ
+        str(r1, [r0, 0])
 
-    def getcrc(value):
+    def get():
         a = array('i', [0])
-        getval(a, value)
-        return a[0] & 0xffffffff # coerce to arbitrary precision
+        getval(a)
+        return a[0] & 0xffffffff  # coerce to arbitrary precision
 
-    enable_crc()
-    reset_crc()
-    for x in range(20):
-        print(hex(getcrc(0)))
+    print(hex(get()))  # 0x80000000

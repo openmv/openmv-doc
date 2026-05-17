@@ -2,7 +2,7 @@ Floating point instructions
 ===========================
 
 These instructions support the use of the ARM floating point coprocessor
-(on platforms such as the Pyboard which are equipped with one). The FPU
+(on platforms such as the OpenMV Cams which are equipped with one). The FPU
 has 32 registers known as ``s0-s31`` each of which can hold a single
 precision float. Data can be passed between the FPU registers and the
 ARM core registers with the ``vmov`` instruction.

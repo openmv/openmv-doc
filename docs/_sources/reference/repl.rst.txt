@@ -5,10 +5,20 @@ This section covers some characteristics of the MicroPython Interactive
 Interpreter Mode. A commonly used term for this is REPL (read-eval-print-loop)
 which will be used to refer to this interactive prompt.
 
+.. note::
+
+   OpenMV Cams expose this REPL over their USB serial (CDC) port. It is
+   only relevant when you connect to the camera directly with a serial
+   terminal emulator (or a tool such as :ref:`mpremote`). **OpenMV IDE
+   does not use the REPL** — it communicates with the camera over a
+   separate debug protocol to run scripts, transfer files, and stream
+   the framebuffer. Everything described on this page applies to direct
+   terminal sessions only.
+
 Auto-indent
 -----------
 
-When typing python statements which end in a colon (for example if, for, while)
+When typing Python statements which end in a colon (for example if, for, while)
 then the prompt will change to three dots (...) and the cursor will be indented
 by 4 spaces. When you press return, the next line will continue at the same
 level of indentation for regular statements or an additional level of indentation
@@ -58,8 +68,8 @@ Auto-completion
 
 While typing a command at the REPL, if the line typed so far corresponds to
 the beginning of the name of something, then pressing TAB will show
-possible things that could be entered. For example, first import the machine
-module by entering ``import machine`` and pressing RETURN.
+possible things that could be entered. For example, first import the
+:mod:`machine` module by entering ``import machine`` and pressing RETURN.
 Then type ``m`` and press TAB and it should expand to ``machine``.
 Enter a dot ``.`` and press TAB again. You should see something like:
 
@@ -70,13 +80,13 @@ Enter a dot ``.`` and press TAB again. You should see something like:
     Pin
 
 The word will be expanded as much as possible until multiple possibilities exist.
-For example, type ``machine.Pin.AF3`` and press TAB and it will expand to
-``machine.Pin.AF3_TIM``. Pressing TAB a second time will show the possible
+For example, type ``machine.Pin.PULL`` and press TAB and it will expand to
+``machine.Pin.PULL_``. Pressing TAB a second time will show the possible
 expansions:
 
-    >>> machine.Pin.AF3_TIM
-    AF3_TIM10       AF3_TIM11       AF3_TIM8        AF3_TIM9
-    >>> machine.Pin.AF3_TIM
+    >>> machine.Pin.PULL_
+    PULL_DOWN       PULL_UP
+    >>> machine.Pin.PULL_
 
 Interrupting a running program
 ------------------------------
@@ -107,7 +117,7 @@ Paste mode
 ----------
 
 If you want to paste some code into your terminal window, the auto-indent feature
-will mess things up. For example, if you had the following python code: ::
+will mess things up. For example, if you had the following Python code: ::
 
    def foo():
        print('This is a test to show paste mode')
@@ -148,19 +158,19 @@ it were a file. Pressing Ctrl-D exits paste mode and initiates the compilation.
 Soft reset
 ----------
 
-A :ref:`soft_reset` will reset the python interpreter, but tries not to reset the
-method by which you're connected to the MicroPython board (USB-serial, or Wifi).
+A :ref:`soft_reset` will reset the Python interpreter, but tries not to reset the
+method by which you're connected to the OpenMV Cam (USB).
 
-You can perform a soft reset from the REPL by pressing Ctrl-D, or from your python
+You can perform a soft reset from the REPL by pressing Ctrl-D, or from your Python
 code by executing: ::
 
     machine.soft_reset()
 
-For example, if you reset your MicroPython board, and you execute a dir()
+For example, if you reset your OpenMV Cam and execute a dir()
 command, you'd see something like this:
 
     >>> dir()
-    ['__name__', 'pyb']
+    ['__name__']
 
 Now create some variables and repeat the dir() command:
 
@@ -168,7 +178,7 @@ Now create some variables and repeat the dir() command:
     >>> j = 23
     >>> x = 'abc'
     >>> dir()
-    ['j', 'x', '__name__', 'pyb', 'i']
+    ['j', 'x', '__name__', 'i']
     >>>
 
 Now if you enter Ctrl-D, and repeat the dir() command, you'll see that your
@@ -178,10 +188,10 @@ variables no longer exist:
 
     MPY: sync filesystems
     MPY: soft reboot
-    MicroPython v1.5-51-g6f70283-dirty on 2015-10-30; PYBv1.0 with STM32F405RG
+    MicroPython v1.25.0 on 2025-05-15; OpenMV Cam H7 with STM32H743
     Type "help()" for more information.
     >>> dir()
-    ['__name__', 'pyb']
+    ['__name__']
     >>>
 
 For more information about reset types and the startup process, see
@@ -191,7 +201,7 @@ The special variable _ (underscore)
 -----------------------------------
 
 When you use the REPL, you may perform computations and see the results.
-MicroPython stores the results of the previous statement in the variable _ (underscore).
+MicroPython stores the result of the previous statement in the variable _ (underscore).
 So you can use the underscore to save the result in a variable. For example:
 
     >>> 1 + 2 + 3 + 4 + 5
@@ -259,7 +269,7 @@ Raw-paste mode uses the following protocol:
      written to the device and no more code sent after that.  (Note: if there is
      a byte waiting to be read from the device then it does not need to be read
      and acted upon immediately, the device will continue to consume incoming
-     bytes as long as reamining-window-size is greater than 0.)
+     bytes as long as remaining-window-size is greater than 0.)
 
 #. When all code has been written to the device, write ``b"\x04"`` to indicate
    end-of-data.
@@ -303,5 +313,5 @@ window-size-increment value and one from the explicit ``b"\x01"`` value that
 is sent.  So this means up to 256 bytes can be written to begin with before
 waiting or checking for more incoming flow-control characters.
 
-The ``tools/pyboard.py`` program uses the raw REPL, including raw-paste mode, to
-execute Python code on a MicroPython-enabled board.
+The :ref:`mpremote` tool uses the raw REPL, including raw-paste mode, to
+execute Python code on OpenMV Cams.

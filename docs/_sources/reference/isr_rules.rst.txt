@@ -41,6 +41,7 @@ for the purpose. Debugging is simplified if the following code is included in an
 .. code:: python
 
     import micropython
+
     micropython.alloc_emergency_exception_buf(100)
 
 The emergency exception buffer can only hold one exception stack trace. This means that if a second exception is
@@ -75,21 +76,27 @@ example causes two LED's to flash at different rates.
 
 .. code:: python
 
-    import pyb, micropython
+    import machine
+    import micropython
+
     micropython.alloc_emergency_exception_buf(100)
+
+
     class Foo(object):
-        def __init__(self, timer, led):
+        def __init__(self, freq, led):
             self.led = led
-            timer.callback(self.cb)
+            self.timer = machine.Timer(-1, freq=freq, callback=self.cb, hard=True)
+
         def cb(self, tim):
             self.led.toggle()
 
-    red = Foo(pyb.Timer(4, freq=1), pyb.LED(1))
-    green = Foo(pyb.Timer(2, freq=0.8), pyb.LED(2))
 
-In this example the ``red`` instance associates timer 4 with LED 1: when a timer 4 interrupt occurs ``red.cb()``
-is called causing LED 1 to change state. The ``green`` instance operates similarly: a timer 2 interrupt
-results in the execution of ``green.cb()`` and toggles LED 2. The use of instance methods confers two
+    red = Foo(1, machine.LED("LED_RED"))
+    green = Foo(0.8, machine.LED("LED_GREEN"))
+
+In this example the ``red`` instance drives the red LED from a 1 Hz virtual timer: each time the timer
+fires ``red.cb()`` is called, toggling the red LED. The ``green`` instance operates similarly with a
+0.8 Hz timer toggling the green LED. The use of instance methods confers two
 benefits. Firstly a single class enables code to be shared between multiple hardware instances. Secondly, as
 a bound method the callback function's first argument is ``self``. This enables the callback to access instance
 data and to save state between successive calls. For example, if the class above had a variable ``self.count``
@@ -100,7 +107,7 @@ Creation of Python objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ISR's cannot create instances of Python objects. This is because MicroPython needs to allocate memory for the
-object from a store of free memory block called the heap. This is not permitted in an interrupt handler because
+object from a store of free memory block called the :term:`heap`. This is not permitted in an interrupt handler because
 heap allocation is not re-entrant. In other words the interrupt might occur when the main program is part way
 through performing an allocation - to maintain the integrity of the heap the interpreter disallows memory
 allocations in ISR code.
@@ -114,7 +121,7 @@ creates a ``bytearray`` instance and a boolean flag. The ISR method assigns data
 the flag. The memory allocation occurs in the main program code when the object is instantiated rather than in the ISR.
 
 The MicroPython library I/O methods usually provide an option to use a pre-allocated buffer. For
-example ``pyb.i2c.recv()`` can accept a mutable buffer as its first argument: this enables its use in an ISR.
+example ``machine.I2C.readfrom_into()`` reads into a caller-supplied mutable buffer: this enables its use in an ISR.
 
 A means of creating an object without employing a class or globals is as follows:
 
@@ -140,9 +147,7 @@ and to pass that reference in the ISR. For example:
         def __init__(self):
             self.bar_ref = self.bar  # Allocation occurs here
             self.x = 0.1
-            tim = pyb.Timer(4)
-            tim.init(freq=2)
-            tim.callback(self.cb)
+            self.tim = machine.Timer(-1, freq=2, callback=self.cb, hard=True)
 
         def bar(self, _):
             self.x *= 1.2
@@ -159,7 +164,7 @@ Use of Python objects
 ~~~~~~~~~~~~~~~~~~~~~
 
 A further restriction on objects arises because of the way Python works. When an ``import`` statement is executed the
-Python code is compiled to bytecode, with one line of code typically mapping to multiple bytecodes. When the code
+Python code is compiled to :term:`bytecode`, with one line of code typically mapping to multiple bytecodes. When the code
 runs the interpreter reads each bytecode and executes it as a series of machine code instructions. Given that an
 interrupt can occur at any time between machine code instructions, the original line of Python code may be only
 partially executed. Consequently a Python object such as a set, list or dictionary modified in the main loop
@@ -192,8 +197,8 @@ Overcoming the float limitation
 
 In general it is best to avoid using floats in ISR code: hardware devices normally handle integers and conversion
 to floats is normally done in the main loop. However there are a few DSP algorithms which require floating point.
-On platforms with hardware floating point (such as the Pyboard) the inline ARM Thumb assembler can be used to work
-round this limitation. This is because the processor stores float values in a machine word; values can be shared
+On platforms with hardware floating point (such as the STM32-based OpenMV Cams) the inline ARM Thumb assembler can be
+used to work around this limitation. This is because the processor stores float values in a machine word; values can be shared
 between the ISR and main program code via an array of floats.
 
 Using micropython.schedule
@@ -240,8 +245,10 @@ to an interrupt:
 
     tsf = asyncio.ThreadSafeFlag()
 
+
     def isr(_):  # Interrupt handler
         tsf.set()
+
 
     async def foo():
         while True:
@@ -321,50 +328,63 @@ An example of a critical section of code is one which accesses more than one var
 the interrupt happens to occur between accesses to the individual variables, their values will be inconsistent. This is
 an instance of a hazard known as a race condition: the ISR and the main program loop race to alter the variables. To
 avoid inconsistency a means must be employed to ensure that the ISR does not alter the values for the duration of
-the critical section. One way to achieve this is to issue ``pyb.disable_irq()`` before the start of the section, and
-``pyb.enable_irq()`` at the end. Here is an example of this approach:
+the critical section. One way to achieve this is to issue ``machine.disable_irq()`` before the start of the section, and
+``machine.enable_irq()`` at the end. Here is an example of this approach:
 
 .. code:: python
 
-    import pyb, micropython, array
+    import machine
+    import micropython
+    import array
+    import random
+    import time
+
     micropython.alloc_emergency_exception_buf(100)
+
 
     class BoundsException(Exception):
         pass
 
+
     ARRAYSIZE = const(20)
     index = 0
-    data = array.array('i', 0 for x in range(ARRAYSIZE))
+    data = array.array('i', [0] * ARRAYSIZE)
+
 
     def callback1(t):
         global data, index
         for x in range(5):
-            data[index] = pyb.rng() # simulate input
+            data[index] = random.getrandbits(30)  # simulate input
             index += 1
             if index >= ARRAYSIZE:
                 raise BoundsException('Array bounds exceeded')
 
-    tim4 = pyb.Timer(4, freq=100, callback=callback1)
+
+    tim = machine.Timer(-1, freq=100, callback=callback1, hard=True)
 
     for loop in range(1000):
         if index > 0:
-            irq_state = pyb.disable_irq() # Start of critical section
+            irq_state = machine.disable_irq()  # Start of critical section
             for x in range(index):
                 print(data[x])
             index = 0
-            pyb.enable_irq(irq_state) # End of critical section
+            machine.enable_irq(irq_state)  # End of critical section
             print('loop {}'.format(loop))
-        pyb.delay(1)
+        time.sleep_ms(1)
 
-    tim4.callback(None)
+    tim.deinit()
 
 A critical section can comprise a single line of code and a single variable. Consider the following code fragment.
 
 .. code:: python
 
     count = 0
+
+
     def cb(): # An interrupt callback
-        count +=1
+        count += 1
+
+
     def main():
         # Code to set up the interrupt callback omitted
         while True:
@@ -372,7 +392,7 @@ A critical section can comprise a single line of code and a single variable. Con
 
 This example illustrates a subtle source of bugs. The line ``count += 1`` in the main loop carries a specific race
 condition hazard known as a read-modify-write. This is a classic cause of bugs in real time systems. In the main loop
-MicroPython reads the value of ``count``, adds 1 to it, and writes it back. On rare occasions the  interrupt occurs
+MicroPython reads the value of ``count``, adds 1 to it, and writes it back. On rare occasions the interrupt occurs
 after the read and before the write. The interrupt modifies ``count`` but its change is overwritten by the main
 loop when the ISR returns. In a real system this could lead to rare, unpredictable failures.
 
@@ -407,14 +427,14 @@ Interrupts and the REPL
 Interrupt handlers, such as those associated with timers, can continue to run
 after a program terminates.  This may produce unexpected results where you might
 have expected the object raising the callback to have gone out of scope.  For
-example on the Pyboard:
+example on an OpenMV Cam:
 
 .. code:: python
 
     def bar():
-        foo = pyb.Timer(2, freq=4, callback=lambda t: print('.', end=''))
+        foo = machine.Timer(-1, freq=4, callback=lambda t: print('.', end=''), hard=True)
 
     bar()
 
 This continues to run until the timer is explicitly disabled or the board is
-reset with ``ctrl D``.
+reset with ``Ctrl-D``.

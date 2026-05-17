@@ -1,7 +1,7 @@
 .. _shields:
 
-Shields
-=======
+OpenMV Shields
+==============
 
 Add-on boards that plug into an OpenMV Cam, extending it with
 networking, motor control, displays, sensors, and more. Each page

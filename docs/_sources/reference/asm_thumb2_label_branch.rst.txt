@@ -1,16 +1,16 @@
 Branch instructions
 ===================
 
-These cause execution to jump to a target location usually specified by a label (see the ``label``
-assembler directive). Conditional branches and the ``it`` and ``ite`` instructions test
+These cause execution to jump to a target location usually specified by a label (see the
+:doc:`label() <asm_thumb2_directives>` assembler directive). Conditional branches and the ``it`` and ``ite`` instructions test
 the Application Program Status Register (APSR) N (negative), Z (zero), C (carry) and V
 (overflow) flags to determine whether the branch should be executed.
 
 Most of the exposed assembler instructions (including move operations) set the flags but
 there are explicit comparison instructions to enable values to be tested.
 
-Further detail on the meaning of the condition flags is provided in the section
-describing comparison functions.
+Further detail on the meaning of the condition flags is provided in the
+:doc:`comparison instructions <asm_thumb2_compare>` section.
 
 Document conventions
 --------------------
@@ -70,7 +70,7 @@ Subroutines (functions)
 
 When entering a subroutine the processor stores the return address in register r14, also
 known as the link register (lr). Return to the instruction after the subroutine call is
-performed by updating the program counter (r15 or pc) from the link register, This
+performed by updating the program counter (r15 or pc) from the link register. This
 process is handled by the following instructions.
 
 * bl(LABEL)

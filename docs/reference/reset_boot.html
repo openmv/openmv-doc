@@ -97,7 +97,6 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
 <li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
 <li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
 <li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">MicroPython 2.0 Migration Guide</a></li>
 </ul>
 </li>
@@ -125,6 +124,7 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#soft-bricking-failure-to-boot">Soft Bricking (failure to boot)</a><ul>
 <li><a class="reference internal" href="#keyboardinterrupt">KeyboardInterrupt</a></li>
+<li><a class="reference internal" href="#factory-reset">Factory Reset</a></li>
 </ul>
 </li>
 </ul>
@@ -150,7 +150,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/reference/reset_boot.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/d532f6c35ba2440a73e7d6bb08ceb082f3359724/docs/reference/reset_boot.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -226,6 +226,19 @@ data-aria-dark="Switch to auto color mode">
 <h1>Reset and Boot Sequence<a class="headerlink" href="#reset-and-boot-sequence" title="Link to this heading">¶</a></h1>
 <p>A device running MicroPython follows a particular boot sequence to start up and
 initialise itself after a reset.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">_boot.py</span></code> → <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> → <code class="docutils literal notranslate"><span class="pre">main.py</span></code> → REPL sequence described
+below is what the firmware runs on <strong>every reset</strong>, regardless of how
+you connect — so it always applies. When you run a script from <strong>OpenMV
+IDE</strong>, the IDE interrupts the currently-running <code class="docutils literal notranslate"><span class="pre">main.py</span></code> and runs the
+script open in the editor in its place, over its own debug protocol. It
+does not use the on-device <a class="reference internal" href="repl.html"><span class="doc">REPL</span></a>, so the <em>REPL-specific</em>
+references on this page (the interactive prompt, <code class="docutils literal notranslate"><span class="pre">Ctrl-D</span></code> / <code class="docutils literal notranslate"><span class="pre">Ctrl-C</span></code>
+at a serial terminal, etc.) apply to standalone operation and direct
+serial-terminal sessions — but the boot sequence itself applies in all
+cases.</p>
+</div>
 <section id="hard-reset">
 <span id="id1"></span><h2>Hard reset<a class="headerlink" href="#hard-reset" title="Link to this heading">¶</a></h2>
 <p>Booting from hard reset is what happens when a board is first powered up, a cold
@@ -309,10 +322,10 @@ that it’s always available after reset for use with the <a class="reference in
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>boot.py should always exit and not run indefinitely.</p>
-<p>Depending on the port, some hardware initialisation is delayed until after
-<code class="docutils literal notranslate"><span class="pre">boot.py</span></code> exits. This includes initialising USB on the stm32 port. On these
-ports, output printed from <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> may not be visible on the built-in USB
-serial port until after <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> finishes running.</p>
+<p>Depending on the board, some hardware initialisation is delayed until after
+<code class="docutils literal notranslate"><span class="pre">boot.py</span></code> exits. This includes initialising USB on the STM32-based OpenMV
+Cams. On these boards, output printed from <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> may not be visible on
+the built-in USB serial port until after <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> finishes running.</p>
 <p>The purpose of this late initialisation is so that it’s possible to
 pre-configure particular hardware in <code class="docutils literal notranslate"><span class="pre">boot.py</span></code>, and then have it start with
 the correct configuration.</p>
@@ -334,7 +347,7 @@ starts.</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">main.py</span></code> doesn’t have to exit, feel free to put an infinite <code class="docutils literal notranslate"><span class="pre">while</span>
 <span class="pre">True</span></code> loop in there.</p></li>
-<li><p>For complex Python applications then you don’t need to put all your
+<li><p>For complex Python applications you don’t need to put all your
 code in <code class="docutils literal notranslate"><span class="pre">main.py</span></code>. <code class="docutils literal notranslate"><span class="pre">main.py</span></code> can be a simple entry point that
 imports your application and starts execution:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">my_app</span>
@@ -400,6 +413,11 @@ never initialises.</p></li>
 <li><p>If Python code reconfigures the REPL interface, making it inaccessible.</p></li>
 </ul>
 <p>Rest assured, recovery is possible!</p>
+<p>If you use OpenMV IDE, simply connecting is often enough — the IDE stops the
+running <code class="docutils literal notranslate"><span class="pre">main.py</span></code> and takes over. If the camera won’t connect at all, use
+the <strong>Factory Reset</strong> below. The <code class="docutils literal notranslate"><span class="pre">Ctrl-C</span></code> method described next is for
+direct serial-terminal sessions — it relies on the on-device REPL, which
+OpenMV IDE does not use.</p>
 <section id="keyboardinterrupt">
 <h3>KeyboardInterrupt<a class="headerlink" href="#keyboardinterrupt" title="Link to this heading">¶</a></h3>
 <p>In many cases, opening the REPL serial port and typing <code class="docutils literal notranslate"><span class="pre">Ctrl-C</span></code> will inject
@@ -415,6 +433,25 @@ Python file:</p>
 </span><span data-line="2"><span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">()</span>
 </span></pre></div>
 </div>
+</section>
+<section id="factory-reset">
+<h3>Factory Reset<a class="headerlink" href="#factory-reset" title="Link to this heading">¶</a></h3>
+<p>If you can’t get to a REPL using the method above, the remaining option is a
+factory reset: erasing the entire contents of the internal flash filesystem.
+This is also the fix if the internal filesystem has become corrupted.</p>
+<p>OpenMV IDE has several built-in ways to do this. First put the camera into its
+recovery/bootloader mode — the method differs per board, so see the <strong>Recovery
+and debug pins</strong> section of your board’s <a class="reference internal" href="../openmvcam/quickref.html"><span class="doc">quick reference</span></a> for how to enter it. Then click the connect button in
+OpenMV IDE and follow the prompts to erase the filesystem and re-flash the
+firmware.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Re-flashing the firmware <em>without</em> erasing the filesystem will
+usually not recover from soft bricking, as a normal firmware
+update preserves the contents of the filesystem. Be sure to
+choose the erase option when OpenMV IDE prompts for it.</p>
+</div>
+<p>If you get stuck, ask on the <a class="reference external" href="https://forums.openmv.io">OpenMV forums</a>.</p>
 </section>
 </section>
 </section>
@@ -447,7 +484,7 @@ Python file:</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 17 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

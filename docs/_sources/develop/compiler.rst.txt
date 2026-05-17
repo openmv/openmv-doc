@@ -10,7 +10,7 @@ The compilation process in MicroPython involves the following steps:
 * Then bytecode or native code is emitted based on the parse tree.
 
 For purposes of this discussion we are going to add a simple language feature ``add1``
-that can be use in Python as:
+that can be used in Python as:
 
 .. code-block:: bash
 
@@ -44,7 +44,7 @@ in ``py/compile.c`` to turn this rule into executable code.
 The third required argument can be ``or`` or ``and``. This specifies the number of nodes associated
 with a statement. For example, in this case, our ``add1`` statement is similar to ADD1 in assembly
 language. It takes one numeric argument. Therefore, the ``add1_stmt`` has two nodes associated with it.
-One node is for the statement itself, i.e the literal ``add1`` corresponding to ``KW_ADD1``,
+One node is for the statement itself, i.e. the literal ``add1`` corresponding to ``KW_ADD1``,
 and the other for its argument, a ``testlist`` rule which is the top-level expression rule.
 
 .. note::
@@ -250,7 +250,7 @@ There is also support for *inline assembly code*, where assembly instructions ar
 written as Python function calls but are emitted directly as the corresponding
 machine code. This assembler has only three passes (scope, code size, emit)
 and uses a different implementation, not the ``compile_scope`` function.
-See the `inline assembler tutorial <https://docs.micropython.org/en/latest/pyboard/tutorial/assembler.html#pyboard-tutorial-assembler>`_
+See the :ref:`inline assembler reference <asm_thumb2_index>`
 for more details.
 
 Fourth pass

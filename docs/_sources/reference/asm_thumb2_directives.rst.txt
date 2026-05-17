@@ -16,7 +16,7 @@ The following assembler directives facilitate embedding data in an assembler cod
 
 * data(size, d0, d1 .. dn)
 
-The data directive creates n array of data values in memory. The first argument specifies the
+The data directive creates an array of data values in memory. The first argument specifies the
 size in bytes of the subsequent arguments. Hence the first statement below will cause the
 assembler to put three bytes (with values 2, 3 and 4) into consecutive memory locations
 while the second will cause it to emit two four byte words.

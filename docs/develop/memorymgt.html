@@ -112,6 +112,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#micropython-memory-from-c-code">MicroPython Memory from C code</a></li>
 <li><a class="reference internal" href="#the-object-model">The object model</a></li>
 <li><a class="reference internal" href="#allocation-of-objects">Allocation of objects</a></li>
 </ul>
@@ -137,7 +138,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/95c5660f08419e1f6e164dc9ba86fad62a3f0596/docs/develop/memorymgt.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/d532f6c35ba2440a73e7d6bb08ceb082f3359724/docs/develop/memorymgt.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -227,7 +228,7 @@ garbage collection (GC).</p>
 <a class="reference external" href="https://en.wikipedia.org/wiki/Tracing_garbage_collection#Basic_algorithm">Mark and Sweep</a>
 policy for managing memory. This algorithm has a mark phase that traverses the heap marking all
 live objects while the sweep phase goes through the heap reclaiming all unmarked objects.</p>
-<p>Garbage collection functionality in MicroPython is available through the <code class="docutils literal notranslate"><span class="pre">gc</span></code> built-in
+<p>Garbage collection functionality in MicroPython is available through the <a class="reference internal" href="../library/gc.html#module-gc" title="gc: control the garbage collector"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gc</span></code></a> built-in
 module:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">&gt;&gt;&gt;<span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
 </span><span data-line="2">&gt;&gt;&gt;<span class="w"> </span>x
@@ -245,11 +246,69 @@ module:</p>
 </span></pre></div>
 </div>
 <p>Even when <code class="docutils literal notranslate"><span class="pre">gc.disable()</span></code> is invoked, collection can be triggered with <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code>.</p>
+<section id="micropython-memory-from-c-code">
+<span id="python-memory-from-c"></span><h2>MicroPython Memory from C code<a class="headerlink" href="#micropython-memory-from-c-code" title="Link to this heading">¶</a></h2>
+<p>Awareness of the garbage collector is needed when writing C code that allocates
+memory from the “Python heap” (i.e. functions <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_malloc0()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">m_free()</span></code>, etc).</p>
+<p>The mark phase of the garbage collector scans for live pointers to heap memory
+starting from the following roots:</p>
+<ul class="simple">
+<li><p>The stack of the main Python runtime (or REPL).</p></li>
+<li><p>The stacks of each “Python thread”, for ports which implement Python threads
+on top of native operating system threads or tasks.</p></li>
+<li><p>The “root pointers” defined in C code using the macro
+<code class="docutils literal notranslate"><span class="pre">MP_REGISTER_ROOT_POINTER</span></code>. These are the recommended way to have statically
+scoped pointers to the Python heap.</p></li>
+<li><p>Tracked allocations made with the <code class="docutils literal notranslate"><span class="pre">m_tracked_calloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_tracked_realloc</span></code>
+and <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code> functions. These special functions allow allocating a
+block of memory which is always considered live by the garbage collector.
+Similar to memory allocation in C, this memory is only freed by calling
+<code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code> or by soft reset. There is a small memory usage and
+runtime overhead to each tracked allocation. This feature is not enabled by
+default on all ports.</p></li>
+</ul>
+<p>The garbage collector then recursively scans and marks all the memory pointed to
+by the root pointers, until all addresses are exhausted. This is sufficient to
+find all Python objects that are still in use by the MicroPython runtime.</p>
+<p>However, the following memory will <strong>not</strong> be scanned by the garbage collector
+and could be freed prematurely:</p>
+<ul class="simple">
+<li><p>Static or global C variables which contain pointers to heap memory.</p></li>
+<li><p>Pointers which don’t point to the “head” of an allocated buffer (i.e. to the
+exact address returned by <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>), but instead to an address inside
+the allocated buffer (for example, a pointer to a nested struct). For
+performance reasons, the garbage collector doesn’t mark the enclosing buffer
+in these cases.</p></li>
+<li><p>The stack of any thread or RTOS task which isn’t running Python code or
+manually registered as a “Python thread” (for ports which support native
+threads or tasks).</p></li>
+</ul>
+<p>Ways to avoid use-after-free in these scenarios:</p>
+<ul class="simple">
+<li><p>Use the tracked allocation API <code class="docutils literal notranslate"><span class="pre">m_tracked_calloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_tracked_realloc()</span></code>
+and <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code>.</p></li>
+<li><p>Register a root pointer (see above), instead of storing a pointer in a static
+variable.</p></li>
+<li><p>Restructure the code, for example by having an API where Python code
+initialises a singleton Python object (implemented in C) which holds all of the
+relevant pointers instead of having them in static variables.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="../reference/reset_boot.html#soft-reset"><span class="std std-ref">Soft Reset</span></a> always clears the Python heap and frees all memory.
+It’s important not to hold any pointers to the heap after a soft
+reset, as they will become dangling pointers to freed memory.</p>
+<p>Some ports support a “C heap” as well (see <a class="reference internal" href="cmodules.html#c-heap"><span class="std std-ref">C Dynamic Memory Allocation</span></a>), in which case
+you can allocate memory that will stay valid over soft reset by
+calling standard C functions <code class="docutils literal notranslate"><span class="pre">malloc</span></code>, etc.</p>
+</div>
+</section>
 <section id="the-object-model">
 <h2>The object model<a class="headerlink" href="#the-object-model" title="Link to this heading">¶</a></h2>
 <p>All MicroPython objects are referred to by the <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> data type.
 This is usually word-sized (i.e. the same size as a pointer on the target architecture),
-and can be typically 32-bit (STM32, nRF, ESP32, Unix x86) or 64-bit (Unix x64).
+and can be typically 32-bit (STM32, RP2, nRF, Unix x86) or 64-bit (Unix x64).
 It can also be greater than a word-size for certain object representations, for
 example <code class="docutils literal notranslate"><span class="pre">OBJ_REPR_D</span></code> has a 64-bit sized <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> on a 32-bit architecture.</p>
 <p>An <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> represents a MicroPython object, for example an integer, float, type, dict or
@@ -350,7 +409,7 @@ can have different properties:</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 17 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

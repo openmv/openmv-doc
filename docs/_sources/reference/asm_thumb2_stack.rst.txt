@@ -6,7 +6,7 @@ Document conventions
 
 The ``push()`` and ``pop()`` instructions accept as their argument a register set containing
 a subset, or possibly all, of the general-purpose registers R0-R12 and the link register (lr or R14).
-As with any Python set the order in which the registers are specified is immaterial. Thus the
+As with any Python set the order in which the registers are specified is immaterial. Thus
 in the following example the pop() instruction would restore R1, R7 and R8 to their contents prior
 to the push():
 

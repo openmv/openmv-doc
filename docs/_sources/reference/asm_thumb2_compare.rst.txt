@@ -40,9 +40,9 @@ as 0x10 + 0xffffffff which will set the carry bit.
 
 * V (overflow)
 
-The overflow flag is set if the result, viewed as a two's compliment number, has the "wrong" sign
+The overflow flag is set if the result, viewed as a two's complement number, has the "wrong" sign
 in relation to the operands. For example adding 1 to 0x7fffffff will set the overflow bit because
-the result (0x8000000), viewed as a two's complement integer, is negative. Note that in this instance
+the result (0x80000000), viewed as a two's complement integer, is negative. Note that in this instance
 the carry bit is not set.
 
 Comparison instructions

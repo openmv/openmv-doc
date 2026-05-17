@@ -168,7 +168,9 @@ below but other unixes ought to work with little modification:
    gcc (Ubuntu 9.3.0-10ubuntu2) 9.3.0
    Copyright (C) 2019 Free Software Foundation, Inc.
    This is free software; see the source for copying conditions.  There is NO
-   warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.then build:
+   warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+then build:
 
 .. code-block:: bash
 
@@ -232,7 +234,7 @@ You can also specify which board to use:
    $ make BOARD=<board>
 
 See `ports/stm32/boards <https://github.com/micropython/micropython/tree/master/ports/stm32/boards>`_
-for the available boards. e.g. "PYBV11" or "NUCLEO_WB55".
+for the available boards. e.g. "OPENMV4" or "OPENMV4P".
 
 Building the documentation
 --------------------------
@@ -399,7 +401,7 @@ tests
 tools
 
   Contains scripts used by the build and CI process, as well as user tools such
-  as ``pyboard.py`` and ``mpremote``.
+  as ``mpremote``.
 
 examples
 

@@ -6,7 +6,7 @@ to MicroPython. It acts as a comprehensive resource on the implementation detail
 for both novice and expert contributors.
 
 Development around MicroPython usually involves modifying the core runtime, porting or
-maintaining a new library. This guide describes at great depth, the implementation
+maintaining a new library. This guide describes in great depth the implementation
 details of MicroPython including a getting started guide, compiler internals, porting
 MicroPython to a new platform and implementing a core MicroPython library.
 

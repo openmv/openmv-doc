@@ -1,7 +1,7 @@
 .. _quickref:
 
-Boards
-======
+OpenMV Boards
+=============
 
 OpenMV cameras and Arduino boards running OpenMV firmware. Each page
 has the full pinout, peripheral mapping, supported drivers, and

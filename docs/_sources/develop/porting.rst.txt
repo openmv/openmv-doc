@@ -34,7 +34,7 @@ port in the ``ports`` directory:
    $ cd ports
    $ mkdir example_port
 
-The basic MicroPython firmware is implemented in the main port file, e.g ``main.c``:
+The basic MicroPython firmware is implemented in the main port file, e.g. ``main.c``:
 
 .. code-block:: c
 
@@ -110,7 +110,7 @@ We also need a Makefile at this point for the port:
        shared/runtime/pyexec.c \
        shared/runtime/stdout_helpers.c \
 
-   # Define source files containung qstrs.
+   # Define source files containing qstrs.
    SRC_QSTR += shared/readline/readline.c shared/runtime/pyexec.c
 
    # Define the required object files.
@@ -173,13 +173,13 @@ The following is an example of an ``mpconfigport.h`` file:
    #define MP_STATE_PORT MP_STATE_VM
 
 This configuration file contains machine-specific configurations including aspects like if different
-MicroPython features should be enabled e.g. ``#define MICROPY_ENABLE_GC (1)``. Making this Setting
+MicroPython features should be enabled e.g. ``#define MICROPY_ENABLE_GC (1)``. Setting this to
 ``(0)`` disables the feature.
 
 Other configurations include type definitions, root pointers, board name, microcontroller name
 etc.
 
-Similarly, an minimal example ``mphalport.h`` file looks like this:
+Similarly, a minimal example ``mphalport.h`` file looks like this:
 
 .. code-block:: c
 
@@ -241,10 +241,12 @@ That should give a MicroPython REPL.  You can then run commands like:
 
 .. code-block:: bash
 
-   MicroPython v1.13 on 2021-01-01; example-board with unknown-cpu
-   >>> import sys
-   >>> sys.implementation
-   ('micropython', (1, 13, 0))
+   MicroPython v1.26.0-preview on 2025-08-01; minimal with unknown-cpu
+   >>> def sum(n, m):
+   ...     return n + m
+   ...
+   >>> 3, 4, sum(3, 4)
+   (3, 4, 7)
    >>>
 
 Use Ctrl-D to exit, and then run ``reset`` to reset the terminal.

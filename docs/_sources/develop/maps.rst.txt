@@ -30,10 +30,10 @@ placing the item in the next free slot which is slot ``4`` in our example:
 
 .. image:: img/linprob.png
 
-The same methods i.e open addressing and linear probing are used to search for an item in a dictionary.
+The same methods, i.e. open addressing and linear probing, are used to search for an item in a dictionary.
 Assume we want to search for the data item ``33``. The computed hash value will be 2. Looking at slot 2
-reveals ``33``, at this point, we return ``True``. Searching for ``70`` is quite different as there was a
-collision at the time of insertion. Therefore computing the hash value is ``0`` which is currently
+reveals ``33``. At this point, we return ``True``. Searching for ``70`` is quite different as there was a
+collision at the time of insertion. Therefore the computed hash value is ``0``, which is currently
 holding ``44``. Instead of simply returning ``False``, we perform a sequential search starting at point
 ``1`` until the item ``70`` is found or we encounter a free slot. This is the general way of performing
 look-ups in hashes:

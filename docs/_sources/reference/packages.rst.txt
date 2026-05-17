@@ -24,7 +24,7 @@ The most common way to use ``mip`` is from the REPL::
 ``mip`` will detect an appropriate location on the filesystem by searching
 ``sys.path`` for the first entry ending in ``/lib``. You can override the
 destination using ``target``, but note that this path must be in ``sys.path`` to be
-able to subsequently import it.::
+able to subsequently import it::
 
     >>> mip.install("pkgname", target="third-party")
     >>> sys.path.append("third-party")
@@ -47,7 +47,7 @@ hosted on GitHub or GitLab::
     >>> mip.install("gitlab:org/repo/path/foo.py", version="branch-or-tag")  # Optionally specify the branch or tag
 
 More sophisticated packages (i.e. with more than one file, or with dependencies)
-can be downloaded by specifying the path to their ``package.json``.
+can be downloaded by specifying the path to their ``package.json``::
 
     >>> mip.install("http://example.com/x/package.json")
     >>> mip.install("github:org/user/path/package.json")
@@ -191,7 +191,7 @@ faster), but it can free up significant amounts of RAM for your program to
 use.
 
 The downside of this approach is that it's much slower to develop, because you
-have to flash the firmware each time, but it can be still useful to freeze
+have to flash the firmware each time, but it can still be useful to freeze
 dependencies that don't change often.
 
 Freezing is done by writing a manifest file and using it in the build, often as
