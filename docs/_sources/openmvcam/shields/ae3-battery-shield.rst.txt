@@ -85,10 +85,10 @@ The microSD socket is exposed on the AE3's SPI bus through
 
     machine.Pin("P11", machine.Pin.OUT, value=1)  # enable card power
 
-    spi = machine.SPI(0, baudrate=10_000_000)
+    spi = machine.SPI(0)
     cs  = machine.Pin("P3", machine.Pin.OUT, value=1)
 
-    sd  = sdcard.SDCard(spi, cs)
+    sd  = sdcard.SDCard(spi, cs, baudrate=20_000_000)
     os.mount(os.VfsFat(sd), "/sdcard")
     print(os.listdir("/sdcard"))
 

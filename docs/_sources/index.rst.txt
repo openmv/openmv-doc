@@ -11,4 +11,5 @@ OpenMV MicroPython documentation
     Language <reference/index.rst>
     CPython <genrst/index.rst>
     Internals <develop/index.rst>
+    Changelog <changelog/index.rst>
     License <license.rst>
