@@ -13,6 +13,7 @@
 #       --pyi-dir openmv-ide/resources/stubs
 
 import argparse
+import keyword
 import os
 import re
 import shutil
@@ -38,7 +39,7 @@ def run_sphinx(docs_dir):
     os.makedirs(src)
 
     # Minimal conf.py
-    with open(os.path.join(src, "conf.py"), "w") as f:
+    with open(os.path.join(src, "conf.py"), "w", encoding="utf-8") as f:
         f.write("extensions = []\nsuppress_warnings = ['*']\n")
 
     # Copy .rst.txt files as .rst
@@ -47,7 +48,7 @@ def run_sphinx(docs_dir):
         shutil.copy(rst, os.path.join(src, dst_name))
 
     # Minimal index
-    with open(os.path.join(src, "index.rst"), "w") as f:
+    with open(os.path.join(src, "index.rst"), "w", encoding="utf-8") as f:
         f.write("X\n=\n\n")
 
     # Run Sphinx (suppress all output)
@@ -105,6 +106,29 @@ def run_sphinx(docs_dir):
 # Parse signatures
 # ---------------------------------------------------------------------------
 
+def valid_identifier(name):
+    """True if `name` is a usable Python identifier (not a keyword)."""
+    return bool(name) and name.isidentifier() and not keyword.iskeyword(name)
+
+
+def sanitize_params(params):
+    """Drop a bare ``*`` separator that no keyword-only parameter follows.
+
+    Some docs spell a kwargs-only method as ``f(*, **kwargs)``; in Python a
+    bare ``*`` is only legal when at least one keyword-only parameter (not
+    ``**kwargs``) follows it. Strip the lone ``*`` so the emitted stub parses.
+    """
+    if not params:
+        return params
+    toks = [t.strip() for t in _split_top_level(params, ",")]
+    if "*" in toks:
+        i = toks.index("*")
+        rest = toks[i + 1:]
+        if not rest or all(t.startswith("**") for t in rest):
+            toks.pop(i)
+    return ", ".join(t for t in toks if t)
+
+
 def parse_sig(raw):
     """Parse 'name(params) -> ret' from Sphinx signature text.
 
@@ -143,7 +167,7 @@ def parse_sig(raw):
     if rest.startswith("->"):
         ret = rest[2:].strip()
 
-    return name, params, ret
+    return name, sanitize_params(params), ret
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +182,8 @@ def build_modules(objects, sigs):
         "constants": [],
         "exceptions": [],
     })
+
+    skipped = []  # fully-qualified names dropped (not valid Python identifiers)
 
     # Collect known module names first
     known_modules = {fqn for fqn, ot in objects.items() if ot == "module"}
@@ -179,6 +205,9 @@ def build_modules(objects, sigs):
         if objtype == "function":
             mod, rest = resolve_module(parts)
             fname = rest[-1]
+            if not valid_identifier(fname):
+                skipped.append(fqn)
+                continue
             if fqn in sigs:
                 _, params, ret = parse_sig(sigs[fqn][1])
                 doc = sigs[fqn][2]
@@ -189,6 +218,9 @@ def build_modules(objects, sigs):
         elif objtype == "class":
             mod, rest = resolve_module(parts)
             cname = rest[-1]
+            if not valid_identifier(cname):
+                skipped.append(fqn)
+                continue
             if fqn in sigs:
                 _, params, ret = parse_sig(sigs[fqn][1])
                 doc = sigs[fqn][2]
@@ -204,6 +236,9 @@ def build_modules(objects, sigs):
                 mname = rest[-1]
             else:
                 continue
+            if not (valid_identifier(cname) and valid_identifier(mname)):
+                skipped.append(fqn)
+                continue
             if fqn in sigs:
                 _, params, ret = parse_sig(sigs[fqn][1])
                 doc = sigs[fqn][2]
@@ -216,6 +251,9 @@ def build_modules(objects, sigs):
         elif objtype == "exception":
             mod, rest = resolve_module(parts)
             ename = rest[-1]
+            if not valid_identifier(ename):
+                skipped.append(fqn)
+                continue
             doc = sigs[fqn][2] if fqn in sigs else ""
             modules[mod]["exceptions"].append((ename, doc))
 
@@ -226,11 +264,17 @@ def build_modules(objects, sigs):
                 # Class attribute (e.g. Model.len)
                 cname = rest[-2]
                 aname = rest[-1]
+                if not (valid_identifier(cname) and valid_identifier(aname)):
+                    skipped.append(fqn)
+                    continue
                 if "attrs" not in modules[mod]["classes"][cname]:
                     modules[mod]["classes"][cname]["attrs"] = []
                 modules[mod]["classes"][cname]["attrs"].append((aname, doc))
             else:
                 dname = rest[-1]
+                if not valid_identifier(dname):
+                    skipped.append(fqn)
+                    continue
                 modules[mod]["constants"].append((dname, doc))
 
     # Move empty-string module to "builtins", filtering out
@@ -278,7 +322,17 @@ def build_modules(objects, sigs):
         else:
             modules["builtins"] = filtered
 
-    return dict(modules)
+    # A module-level name cannot be both a function and a class in Python.
+    # The MicroPython docs sometimes document a callable and its result
+    # type under one lowercase name (re.match(), select.poll()). Keep the
+    # function -- the call is the primary API -- and drop the shadowed class.
+    for mname, m in modules.items():
+        fnames = {n for n, *_ in m["functions"]}
+        for cname in [c for c in m["classes"] if c in fnames]:
+            del m["classes"][cname]
+            skipped.append(f"{mname}.{cname} (class shadowed by same-named function)")
+
+    return dict(modules), skipped
 
 
 # ---------------------------------------------------------------------------
@@ -311,16 +365,25 @@ def format_docstring(doc, indent=0):
         return []
     prefix = " " * indent
     doc = doc.replace('"""', "'''")
+    # RST artifacts (\ escaped-space, \pi, \<n>, ...) leak into astext().
+    # Emit a raw string when a backslash is present so the literal stays
+    # valid and warning-free; a string still cannot end with a backslash.
+    q = 'r"""' if "\\" in doc else '"""'
     lines = doc.split("\n")
     if len(lines) == 1:
-        return [f'{prefix}"""{lines[0]}"""']
-    result = [f'{prefix}"""']
+        body = lines[0].rstrip("\\")
+        if body.endswith('"'):
+            body += " "
+        return [f"{prefix}{q}{body}\"\"\""]
+    result = [f"{prefix}{q}"]
     for line in lines:
         stripped = line.strip()
-        if stripped:
-            result.append(f"{prefix}{stripped}")
-        else:
-            result.append("")
+        result.append(f"{prefix}{stripped}" if stripped else "")
+    # The last non-empty content line must not end with a backslash.
+    for idx in range(len(result) - 1, 0, -1):
+        if result[idx].strip():
+            result[idx] = result[idx].rstrip("\\")
+            break
     result.append(f'{prefix}"""')
     return result
 
@@ -508,7 +571,7 @@ def emit_pyi(mod_name, module, out_path, all_module_names):
         lines.append("")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("\n".join(lines) + "\n")
+    out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -535,7 +598,15 @@ def main():
 
     print("Running Sphinx build...", file=sys.stderr)
     objects, sigs = run_sphinx(args.docs_dir)
-    modules = build_modules(objects, sigs)
+    modules, skipped = build_modules(objects, sigs)
+    if skipped:
+        print(
+            f"Warning: skipped {len(skipped)} object(s) that cannot be "
+            f"represented in a stub (invalid Python identifier, or a class "
+            f"shadowed by a same-named function): "
+            f"{', '.join(sorted(skipped))}",
+            file=sys.stderr,
+        )
 
     # Clean output directory
     pyi_dir = args.pyi_dir
