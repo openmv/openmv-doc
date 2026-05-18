@@ -1,5 +1,5 @@
-:mod:`cryptolib` -- cryptographic ciphers
-=========================================
+:mod:`cryptolib` --- cryptographic ciphers
+==========================================
 
 .. module:: cryptolib
    :synopsis: cryptographic ciphers
@@ -11,7 +11,7 @@ Classes
 
     Create a new AES cipher object, suitable for encryption or decryption.
     After initialization, the cipher object can be used only for one
-    direction — running ``decrypt()`` after ``encrypt()`` (or vice versa)
+    direction --- running ``decrypt()`` after ``encrypt()`` (or vice versa)
     is not supported.
 
     Parameters are:

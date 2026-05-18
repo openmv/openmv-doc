@@ -1,5 +1,5 @@
-:mod:`micropython` -- access and control MicroPython internals
-==============================================================
+:mod:`micropython` --- access and control MicroPython internals
+===============================================================
 
 .. module:: micropython
    :synopsis: access and control MicroPython internals

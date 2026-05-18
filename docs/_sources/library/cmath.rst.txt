@@ -1,10 +1,10 @@
-:mod:`cmath` -- mathematical functions for complex numbers
-==========================================================
+:mod:`cmath` --- mathematical functions for complex numbers
+===========================================================
 
 .. module:: cmath
    :synopsis: mathematical functions for complex numbers
 
-The ``cmath`` module provides basic mathematical functions for working
+The :mod:`cmath` module provides basic mathematical functions for working
 with complex numbers, including trigonometric, exponential, logarithmic,
 and conversions between rectangular ``(real, imag)`` and polar
 ``(r, phi)`` representations.
@@ -54,9 +54,9 @@ Constants
 .. data:: e
    :type: float
 
-   base of the natural logarithm
+   Base of the natural logarithm
 
 .. data:: pi
    :type: float
 
-   the ratio of a circle's circumference to its diameter
+   The ratio of a circle's circumference to its diameter

@@ -1,5 +1,5 @@
-:mod:`marshal` -- Python object serialization
-=============================================
+:mod:`marshal` --- Python object serialization
+==============================================
 
 .. module:: marshal
    :synopsis: Convert Python objects to and from a binary format

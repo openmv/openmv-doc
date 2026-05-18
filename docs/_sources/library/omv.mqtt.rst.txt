@@ -1,5 +1,5 @@
-:mod:`mqtt` -- Simple MQTT client
-=================================
+:mod:`mqtt` --- Simple MQTT client
+==================================
 
 .. module:: mqtt
    :synopsis: simple MQTT v3.1.1 client

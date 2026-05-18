@@ -12,7 +12,7 @@ def dump(obj: Any, stream: Any, separators: tuple[str, str] | None = None) -> No
 def dumps(obj: Any, separators: tuple[str, str] | None = None) -> str:
     """
     Return obj represented as a JSON string.
-    The arguments have the same meaning as in dump.
+    The arguments have the same meaning as in dump().
     """
     ...
 def load(stream: Any) -> Any:

@@ -2,9 +2,9 @@
 from typing import Any
 
 e: int
-"""base of the natural logarithm"""
+"""Base of the natural logarithm"""
 pi: int
-"""the ratio of a circle’s circumference to its diameter"""
+"""The ratio of a circle’s circumference to its diameter"""
 
 def cos(z: complex) -> complex:
     """Return the cosine of z."""

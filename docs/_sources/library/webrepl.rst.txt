@@ -1,5 +1,5 @@
-:mod:`webrepl` -- WebREPL server
-================================
+:mod:`webrepl` --- WebREPL server
+=================================
 
 .. module:: webrepl
    :synopsis: WebREPL server

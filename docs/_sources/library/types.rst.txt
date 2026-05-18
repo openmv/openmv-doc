@@ -10,9 +10,9 @@ functions or generators), together with a small number of helpers for dynamic
 class construction.
 
 This is a MicroPython port of a subset of CPython's :mod:`types` module. Several
-type aliases that have no useful representation in MicroPython (``CodeType``,
-``MappingProxyType``, ``SimpleNamespace``, ``TracebackType``, ``FrameType``,
-``GetSetDescriptorType``, ``MemberDescriptorType``) are exposed as ``None``
+type aliases that have no useful representation in MicroPython (:data:`CodeType`,
+:data:`MappingProxyType`, :data:`SimpleNamespace`, :data:`TracebackType`, :data:`FrameType`,
+:data:`GetSetDescriptorType`, :data:`MemberDescriptorType`) are exposed as ``None``
 placeholders so that code which only references them keeps importing, but they
 will not match any real object via :func:`isinstance`.
 
@@ -28,7 +28,7 @@ Type aliases
 .. data:: LambdaType
    :type: type
 
-   The type of ``lambda`` expressions. Identical to `FunctionType`.
+   The type of ``lambda`` expressions. Identical to :data:`FunctionType`.
 
 .. data:: GeneratorType
    :type: type
@@ -49,7 +49,7 @@ Type aliases
    :type: type
 
    The type of bound methods of built-in types (for example ``[].append``).
-   Identical to `BuiltinFunctionType`.
+   Identical to :data:`BuiltinFunctionType`.
 
 .. data:: ModuleType
    :type: type

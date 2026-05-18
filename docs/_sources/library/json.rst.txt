@@ -1,5 +1,5 @@
-:mod:`json` -- JSON encoding and decoding
-=========================================
+:mod:`json` --- JSON encoding and decoding
+==========================================
 
 .. module:: json
    :synopsis: JSON encoding and decoding
@@ -24,7 +24,7 @@ Functions
 
    Return *obj* represented as a JSON string.
 
-   The arguments have the same meaning as in `dump`.
+   The arguments have the same meaning as in :func:`dump`.
 
 .. function:: load(stream: Any) -> Any
 

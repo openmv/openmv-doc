@@ -1,5 +1,5 @@
-:mod:`vfs` -- virtual filesystem control
-========================================
+:mod:`vfs` --- virtual filesystem control
+=========================================
 
 .. module:: vfs
    :synopsis: virtual filesystem control
@@ -146,7 +146,7 @@ that the block device supports the extended interface.
 .. class:: AbstractBlockDev
 
     Documentation template for the block-device protocol. MicroPython does
-    not actually expose this class — it is shown here only to document the
+    not actually expose this class --- it is shown here only to document the
     methods a user-defined block-device class must implement. Constructor
     arguments are entirely up to the implementation (typically things like
     flash bus, chip-select pin, sector size, etc.).

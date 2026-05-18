@@ -1,12 +1,12 @@
-:mod:`hashlib` -- hashing algorithms
-====================================
+:mod:`hashlib` --- hashing algorithms
+=====================================
 
 .. module:: hashlib
    :synopsis: hashing algorithms
 
 This module implements binary data hashing algorithms.  Each algorithm is
 exposed as a class whose instances accept incremental data via
-:meth:`update` and produce a fixed-size digest via :meth:`digest`.  The
+``update()`` and produce a fixed-size digest via ``digest()``.  The
 exact inventory of available algorithms depends on the board.  Among the
 algorithms which may be implemented:
 
@@ -24,39 +24,62 @@ algorithms which may be implemented:
   selected boards, targeting interoperability with legacy applications,
   will offer this.
 
-Constructors
-------------
+Classes
+-------
 
 .. class:: hashlib.sha256(data: bytes = b"")
 
-    Create an SHA256 hasher object and optionally feed ``data`` into it.
+    Create an SHA256 hasher object and optionally feed *data* into it.
+
+    .. method:: update(data: bytes) -> None
+
+       Feed more binary data into the hash.
+
+    .. method:: digest() -> bytes
+
+       Return the hash of all data passed through it so far, as a bytes
+       object. After this method is called, no more data can be fed into the
+       hash.
+
+    .. note::
+
+       ``hexdigest()`` is not implemented in MicroPython. Use
+       ``binascii.hexlify(h.digest())`` to obtain a hex string.
 
 .. class:: hashlib.sha1(data: bytes = b"")
 
-    Create an SHA1 hasher object and optionally feed ``data`` into it.
+    Create an SHA1 hasher object and optionally feed *data* into it.
+
+    .. method:: update(data: bytes) -> None
+
+       Feed more binary data into the hash.
+
+    .. method:: digest() -> bytes
+
+       Return the hash of all data passed through it so far, as a bytes
+       object. After this method is called, no more data can be fed into the
+       hash.
+
+    .. note::
+
+       ``hexdigest()`` is not implemented in MicroPython. Use
+       ``binascii.hexlify(h.digest())`` to obtain a hex string.
 
 .. class:: hashlib.md5(data: bytes = b"")
 
-    Create an MD5 hasher object and optionally feed ``data`` into it.
+    Create an MD5 hasher object and optionally feed *data* into it.
 
-Methods
--------
+    .. method:: update(data: bytes) -> None
 
-.. class:: hash
+       Feed more binary data into the hash.
 
-   Hasher object returned by `hashlib.sha256()`, `hashlib.sha1()`, or
-   `hashlib.md5()`.
+    .. method:: digest() -> bytes
 
-   .. method:: update(data: bytes) -> None
+       Return the hash of all data passed through it so far, as a bytes
+       object. After this method is called, no more data can be fed into the
+       hash.
 
-      Feed more binary data into hash.
+    .. note::
 
-   .. method:: digest() -> bytes
-
-      Return hash for all data passed through hash, as a bytes object. After this
-      method is called, more data cannot be fed into the hash any longer.
-
-   .. method:: hexdigest() -> str
-
-      This method is NOT implemented. Use ``binascii.hexlify(hash.digest())``
-      to achieve a similar effect.
+       ``hexdigest()`` is not implemented in MicroPython. Use
+       ``binascii.hexlify(h.digest())`` to obtain a hex string.

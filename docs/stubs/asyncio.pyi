@@ -32,7 +32,7 @@ def new_event_loop() -> Loop:
 def open_connection(host: str, port: int, ssl: ssl.SSLContext | bool | None = None) -> tuple[Stream, Stream]:
     """
     Open a TCP connection to the given host and port.  The host address will be
-    resolved using socket.getaddrinfo, which is currently a blocking call.
+    resolved using socket.getaddrinfo(), which is currently a blocking call.
     If ssl is a ssl.SSLContext object, this context is used to create the transport;
     if ssl is True, a default context is used.
     Returns a pair of streams: a reader and a writer stream.
@@ -84,7 +84,7 @@ def wait_for(awaitable: Awaitable, timeout: float) -> Any:
     ...
 def wait_for_ms(awaitable: Awaitable, timeout: int) -> Any:
     """
-    Similar to wait_for but timeout is an integer in milliseconds.
+    Similar to wait_for() but timeout is an integer in milliseconds.
     This is a coroutine, and a MicroPython extension.
     """
     ...
@@ -144,7 +144,7 @@ class Lock:
 class Loop:
     """
     This represents the object which schedules and runs tasks.  It cannot be
-    created, use get_event_loop instead.
+    created, use get_event_loop() instead.
     """
     def __init__(self) -> None: ...
     def call_exception_handler(self, context: dict) -> None:
@@ -189,7 +189,7 @@ class Loop:
 
 class Server:
     """
-    This represents the server class returned from start_server.  It can be used
+    This represents the server class returned from start_server().  It can be used
     in an async with statement to close the server upon exit.
     """
     def __init__(self) -> None: ...
@@ -262,7 +262,7 @@ class Stream:
     def write(self, buf: bytes) -> None:
         """
         Accumulated buf to the output buffer.  The data is only flushed when
-        Stream.drain is called.  It is recommended to call Stream.drain immediately
+        Stream.drain() is called.  It is recommended to call Stream.drain() immediately
         after calling this function.
         """
         ...
@@ -272,7 +272,7 @@ class Task:
     This object wraps a coroutine into a running task.  Tasks can be waited on
     using await task, which will wait for the task to complete and return
     the return value of the task.
-    Tasks should not be created directly, rather use create_task to create them.
+    Tasks should not be created directly, rather use create_task() to create them.
     """
     def __init__(self) -> None: ...
     def cancel(self) -> None:

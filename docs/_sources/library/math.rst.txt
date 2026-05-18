@@ -1,5 +1,5 @@
-:mod:`math` -- mathematical functions
-=====================================
+:mod:`math` --- mathematical functions
+======================================
 
 .. module:: math
    :synopsis: mathematical functions
@@ -7,7 +7,7 @@
 The ``math`` module provides some basic mathematical functions for
 working with floating-point numbers.
 
-*Note:* On the pyboard, floating-point numbers have 32-bit precision.
+*Note:* On the OpenMV Cam, floating-point numbers have 32-bit precision.
 
 Functions
 ---------
@@ -119,8 +119,7 @@ Functions
 
    Return the natural logarithm of the gamma function of ``x``.
 
-.. function:: log(x: float) -> float
-              log(x: float, base: float) -> float
+.. function:: log(x: float, base: float = ...) -> float
 
    With one argument, return the natural logarithm of *x*.
 
@@ -177,9 +176,9 @@ Constants
 .. data:: e
    :type: float
 
-   base of the natural logarithm
+   Base of the natural logarithm.
 
 .. data:: pi
    :type: float
 
-   the ratio of a circle's circumference to its diameter
+   The ratio of a circle's circumference to its diameter.

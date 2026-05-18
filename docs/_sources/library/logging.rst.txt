@@ -1,5 +1,5 @@
-:mod:`logging` -- event logging
-===============================
+:mod:`logging` --- event logging
+================================
 
 .. module:: logging
    :synopsis: event logging

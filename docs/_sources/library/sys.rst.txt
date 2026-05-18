@@ -1,5 +1,5 @@
-:mod:`sys` -- system specific functions
-=======================================
+:mod:`sys` --- system specific functions
+========================================
 
 .. module:: sys
    :synopsis: system specific functions
@@ -14,11 +14,11 @@ Functions
 .. function:: exit(retval: object = 0, /) -> NoReturn
 
    Terminate current program with a given exit code. Underlyingly, this
-   function raises a `SystemExit` exception. If an argument is given, its
-   value given as an argument to `SystemExit`.
+   function raises a :exc:`SystemExit` exception. If an argument is given, its
+   value given as an argument to :exc:`SystemExit`.
 
    On embedded ports (i.e. all ports but Windows and Unix), an unhandled
-   `SystemExit` currently causes a :ref:`soft_reset` of MicroPython.
+   :exc:`SystemExit` currently causes a :ref:`soft_reset` of MicroPython.
 
 .. function:: atexit(func: Optional[Callable[[], None]]) -> Optional[Callable[[], None]]
 
@@ -36,7 +36,7 @@ Functions
 .. function:: print_exception(exc: BaseException, file: Any = sys.stdout, /) -> None
 
    Print exception with a traceback to a file-like object *file* (or
-   `sys.stdout` by default).
+   :data:`sys.stdout` by default).
 
    .. admonition:: Difference to CPython
       :class: attention
@@ -106,7 +106,8 @@ Constants
    target has the ``_thread`` module.  If the target enables the GIL (global
    interpreter lock) then this attribute is ``"GIL"``.  Otherwise the attribute
    is ``"unsafe"`` and the target has threading but does not enable the GIL,
-   and mutable Python objects (such as `bytearray`, `list` and `dict`) that are
+   and mutable Python objects (such as :class:`bytearray`, :class:`list` and
+   :class:`dict`) that are
    shared amongst threads must be protected explicitly by locks such as
    ``_thread.allocate_lock``.
 
@@ -169,14 +170,21 @@ Constants
    is an identifier of a board, e.g. ``"pyboard"`` for the original MicroPython
    reference board. It thus can be used to distinguish one board from another.
    If you need to check whether your program runs on MicroPython (vs other
-   Python implementation), use `sys.implementation` instead.
+   Python implementation), use :data:`sys.implementation` instead.
 
 .. data:: ps1
-          ps2
    :type: str
 
-   Mutable attributes holding strings, which are used for the REPL prompt.  The defaults
-   give the standard Python prompt of ``>>>`` and ``...``.
+   Mutable attribute holding the string used for the primary REPL prompt.  The
+   default gives the standard Python prompt of ``>>>``.  See also :data:`sys.ps2`
+   for the continuation prompt.
+
+.. data:: ps2
+   :type: str
+
+   Mutable attribute holding the string used for the REPL continuation prompt.
+   The default gives the standard Python prompt of ``...``.  See also :data:`sys.ps1`
+   for the primary prompt.
 
 .. data:: stderr
    :type: object
@@ -212,7 +220,7 @@ Constants
 
    Python language version that this implementation conforms to, as a tuple of ints.
 
-    .. admonition:: Difference to CPython
+   .. admonition:: Difference to CPython
       :class: attention
 
       Only the first three version numbers (major, minor, micro) are supported and

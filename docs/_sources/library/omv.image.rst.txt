@@ -228,7 +228,7 @@ Constants
 .. data:: PALETTE_EVT_DARK
    :type: int
 
-   Color palette for visualizing GENX320 event images on a dark background — pass to
+   Color palette for visualizing GENX320 event images on a dark background --- pass to
    `csi.CSI.color_palette` to have the GENX320 driver emit colorized RGB565 frames in
    histogram mode, or to `Image.draw_image` ``color_palette=`` when colorizing a
    grayscale event image.
@@ -236,7 +236,7 @@ Constants
 .. data:: PALETTE_EVT_LIGHT
    :type: int
 
-   Color palette for visualizing GENX320 event images on a light background — pass to
+   Color palette for visualizing GENX320 event images on a light background --- pass to
    `csi.CSI.color_palette` to have the GENX320 driver emit colorized RGB565 frames in
    histogram mode, or to `Image.draw_image` ``color_palette=`` when colorizing a
    grayscale event image.

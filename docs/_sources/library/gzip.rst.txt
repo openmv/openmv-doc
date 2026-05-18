@@ -1,5 +1,5 @@
-:mod:`gzip` -- gzip compression & decompression
-===============================================
+:mod:`gzip` --- gzip compression & decompression
+================================================
 
 .. module:: gzip
    :synopsis: gzip compression & decompression

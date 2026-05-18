@@ -1,5 +1,5 @@
-:mod:`time` -- time related functions
-=====================================
+:mod:`time` --- time related functions
+======================================
 
 .. module:: time
    :synopsis: time related functions
@@ -17,7 +17,7 @@ Real Time Clock (RTC). On systems with underlying OS (including some
 RTOS), an RTC may be implicit. Setting and maintaining actual calendar
 time is responsibility of OS/RTOS and is done outside of MicroPython,
 it just uses OS API to query date/time. On baremetal ports however
-system time depends on ``machine.RTC()`` object. The current calendar time
+system time depends on :class:`machine.RTC` object. The current calendar time
 may be set using ``machine.RTC().datetime(tuple)`` function, and maintained
 by following means:
 
@@ -69,7 +69,7 @@ Functions
    other boards may not accept a floating-point argument, for compatibility with
    them use `sleep_ms()` and `sleep_us()` functions.
 
-   Calling ``sleep``, including ``sleep(0)`` is guaranteed to call pending callback
+   Calling :func:`sleep`, including ``sleep(0)`` is guaranteed to call pending callback
    functions.
 
 .. function:: sleep_ms(ms: int) -> None
@@ -81,7 +81,7 @@ Functions
    interrupt handlers or other threads.  Passing in 0 for *ms* will still allow
    this other processing to occur.  Use `sleep_us()` for more precise delays.
 
-   Calling ``sleep_ms``, including ``sleep_ms(0)`` is guaranteed to call
+   Calling :func:`sleep_ms`, including ``sleep_ms(0)`` is guaranteed to call
    pending callback functions.
 
 .. function:: sleep_us(us: int) -> None

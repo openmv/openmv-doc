@@ -2,9 +2,9 @@
 from typing import Any
 
 e: int
-"""base of the natural logarithm"""
+"""Base of the natural logarithm."""
 pi: int
-"""the ratio of a circle’s circumference to its diameter"""
+"""The ratio of a circle’s circumference to its diameter."""
 
 def acos(x: float) -> float:
     """Return the inverse cosine of x."""
@@ -89,7 +89,7 @@ def ldexp(x: float, exp: int) -> float:
 def lgamma(x: float) -> float:
     """Return the natural logarithm of the gamma function of x."""
     ...
-def log(x: float) -> float:
+def log(x: float, base: float = ...) -> float:
     """
     With one argument, return the natural logarithm of x.
     With two arguments, return the logarithm of x to the given base.

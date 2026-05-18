@@ -1,5 +1,5 @@
-:mod:`struct` -- pack and unpack primitive data types
-=====================================================
+:mod:`struct` --- pack and unpack primitive data types
+======================================================
 
 .. module:: struct
    :synopsis: pack and unpack primitive data types

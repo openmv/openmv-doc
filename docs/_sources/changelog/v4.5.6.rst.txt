@@ -1,0 +1,229 @@
+.. _changelog_v4_5_6:
+
+v4.5.6
+======
+
+v4.5.6 is the big machine-learning release. The TensorFlow ``tf`` C module was
+replaced by a new, engine-agnostic :mod:`ml` package backed by TensorFlow Lite
+Micro (TFLM), image→tensor conversion moved to ``image.to_ndarray()``, and
+dual-core boards moved to Open-AMP. There are several breaking changes — read
+them below before upgrading ML scripts.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **New** :mod:`ml` **package** — the old ``tf`` module was rewritten into an
+  engine-agnostic :mod:`ml` package (:class:`ml.Model`,
+  :mod:`ml.preprocessing`, :mod:`ml.utils`, :mod:`ml.apps`); ``tf`` remains as an
+  alias.
+- **TFLM backend** — the obsolete ``libtf`` was replaced by upstream-based
+  TensorFlow Lite Micro: ~20% faster inference and smaller libraries.
+- **Open-AMP dual-core** — GIGA and Portenta H7 now use Open-AMP/RPMsg for
+  M7/M4 inter-core communication (the old CM4 mechanism was removed).
+- **Onboard Bluetooth** — CYW43 Bluetooth firmware enabled on Nicla Vision,
+  Portenta H7, and GIGA.
+- **MicroPython 1.23.0, ulab 6.5.2** (with 4-D ndarray support).
+- **Breaking:** the ML API changed substantially and Haar cascades are
+  disabled by default on most boards — see the breaking changes.
+
+New features
+------------
+
+- :mod:`ml` **package** — :class:`ml.Model` with ``predict()`` (``roi``,
+  ``callback``, multi-input list), per-tensor shape/dtype/scale/zero-point
+  attributes, :class:`ml.preprocessing.Normalization`, :mod:`ml.utils` (NMS), and
+  :mod:`ml.apps` (a pure-Python ``MicroSpeech`` keyword spotter with
+  ``listen()`` and non-blocking ``timeout=-1`` streaming, plus
+  ``draw_predictions()``).
+- **Built-in model system** — models listed in ``models/index.txt`` are
+  conditionally embedded per board (FOMO on all ML boards, audio models on
+  boards with mics).
+- ``image.to_ndarray(dtype, buffer=...)`` — convert an image into a ulab
+  ndarray (optionally in place).
+- ``Image()`` from raw arrays — new ``shape=``, ``strides=``, ``scale=``
+  keyword arguments build grayscale/RGB565 images from raw pixel lists.
+- Anti-aliased ``draw_circle()``.
+- :mod:`ssl` module frozen into firmware on GIGA, Nicla Vision, Portenta H7,
+  Nano RP2040 Connect, OpenMV 4/4P/PRO/PT, RT1060, and Pico.
+- **Audio** — :func:`audio.init` gained a ``samples=`` keyword (PDM samples per
+  channel); ``gain_db`` now applies on DFSDM microphones (e.g. Nicla Vision).
+- **Debug protocol** — a new ``GET_STATE`` command returns run/text/JPEG
+  flags, frame geometry, and text in a single packet, cutting host round-trips.
+- **Open-AMP vuart example** for inter-core communication.
+
+Other changes and improvements
+------------------------------
+
+- **MicroPython updated to 1.23.0**; ulab to 6.5.2 with 4-D ndarray support.
+- **Faster inference** — the ML backend keeps persistent state/memory across
+  invocations (~20% faster, supports LSTM-style models).
+- ``get_similarity()`` was reimplemented on the ``draw_image`` backend
+  (broader format/operation support).
+- ``morph()`` and the ``mean()`` filter family moved to keyword-argument
+  parsing; ``mask=`` now accepts a mutable image.
+- **Memory layout reworked** — DMA regions power-of-2 aligned, reorderable GC
+  blocks, multiple heaps; less early heap fragmentation on low-RAM boards;
+  RT1060 gains extra GC heap.
+- WiFi (CYW43) is now deinitialized on soft-reset; SPI-TV display flushes only
+  the framebuffer region from cache for smoother updates.
+
+Bug fixes
+---------
+
+Camera and sensors:
+
+- Fixed accidental CPU cache invalidation in the framebuffer/sensor path on
+  STM32 and i.MX RT, which could corrupt image data.
+- Fixed MLX90640/MLX90641 thermal I2C reads on i.MX RT boards (large transfers
+  are now chunked).
+
+Machine learning:
+
+- Fixed :class:`ml.Model` ``load_to_fb`` handling, input ``bytearray`` sizing,
+  ndarray ``ndim`` checks, and ``Normalization`` image-format/shape validation.
+
+Image / system:
+
+- Added the missing ``image.BLACK_BACKGROUND`` draw-hint constant and an
+  image/tensor buffer-length sanity check.
+- Fixed FIR and audio GC root pointers that could let the collector free
+  in-use buffers.
+- The Servo Shield example now uses ``SoftI2C`` so it works on OpenMV RT
+  boards.
+
+Hardware and board support
+--------------------------
+
+- **Arduino GIGA** — HM01B0 / HM0360 sensor support; Open-AMP dual-core.
+- **Bluetooth** — CYW43 BT firmware on Nicla Vision, Portenta H7, and GIGA.
+- **Portenta H7** — Open-AMP M7/M4 RPMsg.
+- **OpenMV RT1060** — additional GC heap blocks (more Python memory).
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v4.5.5 and v4.5.6. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *major* — most scripts that used it need edits.
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+- *tooling* — affects dual-core / board mechanisms, not the Python API.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v4_5_6_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v4_5_6_ml:
+
+``tf`` module replaced by the :mod:`ml` package *(major)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The TensorFlow ``tf`` C module was rewritten into an engine-agnostic
+:mod:`ml` package (``tf`` is kept as a backwards-compatible alias, but new
+code should use :mod:`ml`). The module-level functions ``tf.load``,
+``tf.load_builtin_model`` and the ``detect()``/``segment()``/classification
+methods were removed — construct a :class:`ml.Model` and call ``predict()``.
+``ml.Model(path)`` now returns just the model (no ``(labels, model)`` tuple);
+labels are a ``model.labels`` attribute. ``predict()`` now returns ulab
+``ndarray``\ s (not float tuples), supports multi-input models (pass a list),
+and NMS moved to :mod:`ml.utils`; input normalization moved to
+:class:`ml.preprocessing.Normalization`. The old ``ml.py`` is now :mod:`ml.apps`.
+
+*Commits:* `c7228cbb4 <https://github.com/openmv/openmv/commit/c7228cbb4>`__,
+`6c212409c <https://github.com/openmv/openmv/commit/6c212409c>`__,
+`3e37f46db <https://github.com/openmv/openmv/commit/3e37f46db>`__,
+`9a186f4e2 <https://github.com/openmv/openmv/commit/9a186f4e2>`__,
+`70b89f474 <https://github.com/openmv/openmv/commit/70b89f474>`__,
+`3f8491cb0 <https://github.com/openmv/openmv/commit/3f8491cb0>`__,
+`4506682c2 <https://github.com/openmv/openmv/commit/4506682c2>`__,
+`8b38f3837 <https://github.com/openmv/openmv/commit/8b38f3837>`__
+
+.. _v4_5_6_unpack:
+
+``image.unpack()`` removed — use ``to_ndarray()`` *(major)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The short-lived ``image.unpack()`` was removed; convert an image to a tensor
+with ``image.to_ndarray(dtype, buffer=...)`` instead, and apply scale/mean/
+stdev normalization with :class:`ml.preprocessing.Normalization` rather than the
+old built-in image-scaling path.
+
+*Commits:* `9848eed12 <https://github.com/openmv/openmv/commit/9848eed12>`__,
+`de0d46fa6 <https://github.com/openmv/openmv/commit/de0d46fa6>`__
+
+.. _v4_5_6_imgscale:
+
+``Image()`` raw-array ``scale`` argument *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When constructing an ``Image`` from a raw pixel array, the ``scale`` argument
+now takes a ``(min, max)`` range instead of ``(scale, add)``.
+
+*Commit:* `7b79fb4c7 <https://github.com/openmv/openmv/commit/7b79fb4c7>`__
+
+.. _v4_5_6_haar:
+
+Haar cascades disabled by default on most boards *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To free flash space, Haar-cascade face detection (``find_features()`` /
+:func:`image.HaarCascade`) is now disabled by default on Arduino GIGA, Nicla
+Vision, Portenta H7, OpenMV 3, OpenMV 4 / 4 Plus / PRO, and OpenMV Pure
+Thermal. Scripts using Haar cascades on those boards must rebuild the firmware
+with the feature enabled.
+
+*Commit:* `6ce27c910 <https://github.com/openmv/openmv/commit/6ce27c910>`__
+
+.. _v4_5_6_behavior:
+
+Script interruption and tensor scaling *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The USB debugger now interrupts a running script via MicroPython's VM-abort
+feature instead of a forced PendSV jump (cleaner, but the interruption point
+differs). The ``SCALE_S128_127`` input scaling was corrected to map 0–255 to
+−128–127 without an erroneous gain — models relying on the old (incorrect)
+scaling will produce different results.
+
+*Commits:* `e758a0f95 <https://github.com/openmv/openmv/commit/e758a0f95>`__,
+`a4d97c572 <https://github.com/openmv/openmv/commit/a4d97c572>`__
+
+.. _v4_5_6_cm4:
+
+CM4 coprocessor replaced by Open-AMP *(tooling)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The deprecated CM4 coprocessor firmware mechanism on GIGA / Nicla Vision /
+Portenta H7 was removed and replaced by Open-AMP/RPMsg. Dual-core code must
+move to the Open-AMP model (a vuart example is provided).
+
+*Commits:* `3cc57fea4 <https://github.com/openmv/openmv/commit/3cc57fea4>`__,
+`93f2d4c41 <https://github.com/openmv/openmv/commit/93f2d4c41>`__
+
+.. _v4_5_6_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v4.5.6 the typical work is:
+
+#. Port ML code to :mod:`ml`: construct ``ml.Model(path)``, call
+   ``predict()``, read ``model.labels``, expect ``ndarray`` outputs, and move
+   normalization to :class:`ml.preprocessing.Normalization` and NMS to
+   :mod:`ml.utils` (:ref:`the ml package change <v4_5_6_ml>`).
+#. Replace ``image.unpack()`` with ``image.to_ndarray()``
+   (:ref:`the unpack removal <v4_5_6_unpack>`).
+#. Update any ``Image()`` raw-array ``scale`` argument to a ``(min, max)``
+   range (:ref:`the Image scale change <v4_5_6_imgscale>`).
+#. If you use Haar cascades on an affected board, rebuild with the feature
+   enabled (:ref:`the Haar cascade change <v4_5_6_haar>`).
+#. Re-validate models that depended on ``SCALE_S128_127``
+   (:ref:`the scaling change <v4_5_6_behavior>`).
+#. Move dual-core code to Open-AMP (:ref:`the CM4 change <v4_5_6_cm4>`).

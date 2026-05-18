@@ -76,7 +76,7 @@ def mkdir(path: str) -> None:
     """Create a new directory."""
     ...
 def mount(fsobj: Any, mount_point: str, *, readonly: bool) -> None:
-    """See vfs.mount."""
+    """See vfs.mount()."""
     ...
 def remove(path: str) -> None:
     """Remove a file."""
@@ -122,7 +122,7 @@ def sync() -> None:
     """Sync all filesystems."""
     ...
 def umount(mount_point: str) -> None:
-    """See vfs.umount."""
+    """See vfs.umount()."""
     ...
 def uname() -> tuple[str, str, str, str, str]:
     """

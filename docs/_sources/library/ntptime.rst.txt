@@ -1,5 +1,5 @@
-:mod:`ntptime` -- simple NTP client
-===================================
+:mod:`ntptime` --- simple NTP client
+====================================
 
 .. module:: ntptime
    :synopsis: simple NTP client

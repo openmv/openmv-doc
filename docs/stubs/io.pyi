@@ -11,32 +11,153 @@ def open(name: str, mode: str = 'r', **kwargs) -> Any:
 
 class BytesIO:
     """
-    In-memory file-like objects for input/output. StringIO is used for
-    text-mode I/O (similar to a normal file opened with “t” modifier).
-    BytesIO is used for binary-mode I/O (similar to a normal file
-    opened with “b” modifier). Initial contents of file-like objects
-    can be specified with string parameter (should be normal string
-    for StringIO or bytes object for BytesIO). All the usual file
-    methods like read(), write(), seek(), flush(),
-    close() are available on these objects, and additionally, a
-    following method:
+    In-memory file-like object for binary-mode input/output (similar to a
+    normal file opened with the “b” modifier). The first form initializes the
+    contents from the string parameter (which should be a bytes object).
+    The second form creates an empty BytesIO preallocated to hold up to
+    alloc_size bytes, so writing up to that many bytes will not reallocate
+    the buffer (avoiding an out-of-memory situation or memory fragmentation);
+    it is a MicroPython extension recommended only for special cases and
+    system-level libraries, not end-user applications. Instances also support
+    the context-manager protocol (usable in a with statement).
+    Difference to CPython
+
+    The BytesIO(alloc_size) constructor is a MicroPython extension.
     """
     def __init__(self, string: bytes = b'') -> None: ...
-    def getvalue(self) -> Any:
-        """Get the current contents of the underlying buffer which holds data."""
+    def close(self) -> None:
+        """
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise ValueError.
+        """
+        ...
+    def flush(self) -> None:
+        """Flush the write buffers. This is a no-op for an in-memory stream."""
+        ...
+    def getvalue(self) -> bytes:
+        """Return the current contents of the underlying buffer."""
+        ...
+    def read(self, size: int = -1) -> bytes:
+        """
+        Read and return up to size bytes. If size is omitted or negative,
+        read and return all remaining contents.
+        """
+        ...
+    def readinto(self, buf: bytearray) -> int:
+        """
+        Read into the pre-allocated, writable buffer buf and return the
+        number of bytes read.
+        """
+        ...
+    def readline(self, size: int = -1) -> bytes:
+        """
+        Read and return one line. If size is given, at most size bytes
+        are read.
+        """
+        ...
+    def seek(self, offset: int, whence: int = 0) -> int:
+        """
+        Change the stream position to offset relative to whence
+        (0 = start, 1 = current, 2 = end) and return the new
+        absolute position.
+        """
+        ...
+    def tell(self) -> int:
+        """Return the current stream position."""
+        ...
+    def write(self, b: bytes) -> int:
+        """
+        Write the bytes-like object b and return the number of bytes
+        written.
+        """
+        ...
+
+class IOBase:
+    """
+    Base class for implementing stream (“file-like”) objects in pure Python.
+    Derive from this class and implement the methods below; the runtime calls
+    them when the corresponding stream operation is performed on an instance.
+    """
+    def __init__(self) -> None: ...
+    def ioctl(self, request: int, arg: int) -> int:
+        """
+        Control the underlying stream/device. request is one of the
+        MP_STREAM_* request codes. Return a non-negative value on success,
+        or a negative errno value on error.
+        """
+        ...
+    def readinto(self, buf: bytearray) -> int | None:
+        """
+        Read bytes into the writable buffer buf. Return the number of bytes
+        read, 0 at end of stream, or None if no data is available
+        right now (for a non-blocking stream).
+        """
+        ...
+    def write(self, buf: bytes) -> int | None:
+        """
+        Write the bytes in buf. Return the number of bytes written, or
+        None if the write cannot be performed right now (for a
+        non-blocking stream).
+        """
         ...
 
 class StringIO:
     """
-    In-memory file-like objects for input/output. StringIO is used for
-    text-mode I/O (similar to a normal file opened with “t” modifier).
-    BytesIO is used for binary-mode I/O (similar to a normal file
-    opened with “b” modifier). Initial contents of file-like objects
-    can be specified with string parameter (should be normal string
-    for StringIO or bytes object for BytesIO). All the usual file
-    methods like read(), write(), seek(), flush(),
-    close() are available on these objects, and additionally, a
-    following method:
+    In-memory file-like object for text-mode input/output (similar to a
+    normal file opened with the “t” modifier). The first form initializes the
+    contents from the string parameter (which should be a normal string).
+    The second form creates an empty StringIO preallocated to hold up to
+    alloc_size bytes, so writing up to that many bytes will not reallocate
+    the buffer (avoiding an out-of-memory situation or memory fragmentation);
+    it is a MicroPython extension recommended only for special cases and
+    system-level libraries, not end-user applications. Instances also support
+    the context-manager protocol (usable in a with statement).
+    Difference to CPython
+
+    The StringIO(alloc_size) constructor is a MicroPython extension.
     """
     def __init__(self, string: str = '') -> None: ...
+    def close(self) -> None:
+        """
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise ValueError.
+        """
+        ...
+    def flush(self) -> None:
+        """Flush the write buffers. This is a no-op for an in-memory stream."""
+        ...
+    def getvalue(self) -> str:
+        """Return the current contents of the underlying buffer."""
+        ...
+    def read(self, size: int = -1) -> str:
+        """
+        Read and return up to size characters. If size is omitted or
+        negative, read and return all remaining contents.
+        """
+        ...
+    def readinto(self, buf: bytearray) -> int:
+        """
+        Read into the pre-allocated, writable buffer buf and return the
+        number of bytes read.
+        """
+        ...
+    def readline(self, size: int = -1) -> str:
+        """
+        Read and return one line. If size is given, at most size
+        characters are read.
+        """
+        ...
+    def seek(self, offset: int, whence: int = 0) -> int:
+        """
+        Change the stream position to offset relative to whence
+        (0 = start, 1 = current, 2 = end) and return the new
+        absolute position.
+        """
+        ...
+    def tell(self) -> int:
+        """Return the current stream position."""
+        ...
+    def write(self, s: str) -> int:
+        """Write the string s and return the number of characters written."""
+        ...
 

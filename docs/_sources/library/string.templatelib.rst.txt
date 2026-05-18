@@ -1,5 +1,5 @@
-:mod:`string.templatelib` -- Template String Support
-====================================================
+:mod:`string.templatelib` --- Template String Support
+=====================================================
 
 .. module:: string.templatelib
    :synopsis: PEP 750 template string support
@@ -112,7 +112,7 @@ Processing code must explicitly apply conversions when needed.
 Format Specifications
 ~~~~~~~~~~~~~~~~~~~~~
 
-Format specifications are stored as metadata in the ``Interpolation`` object.
+Format specifications are stored as metadata in the :class:`Interpolation` object.
 Unlike f-strings, formatting is not applied automatically::
 
     pi = 3.14159

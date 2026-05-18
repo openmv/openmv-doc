@@ -1,5 +1,5 @@
-:mod:`socket` -- socket module
-==============================
+:mod:`socket` --- socket module
+===============================
 
 .. module:: socket
    :synopsis: socket module
@@ -11,7 +11,7 @@ This module provides access to the BSD socket interface.
 
    For efficiency and consistency, socket objects in MicroPython implement a :std:term:`stream`
    (file-like) interface directly. In CPython, you need to convert a socket to
-   a file-like object using `makefile()` method. This method is still supported
+   a file-like object using :meth:`~socket.socket.makefile` method. This method is still supported
    by MicroPython (but is a no-op), so where compatibility with CPython matters,
    be sure to use it.
 
@@ -19,7 +19,7 @@ Socket address format(s)
 ------------------------
 
 The native socket address format of the ``socket`` module is an opaque data type
-returned by `getaddrinfo` function, which must be used to resolve textual address
+returned by :func:`getaddrinfo` function, which must be used to resolve textual address
 (including numeric addresses)::
 
     sockaddr = socket.getaddrinfo('www.micropython.org', 80)[0][-1]
@@ -28,7 +28,7 @@ returned by `getaddrinfo` function, which must be used to resolve textual addres
     # Now you can use that address
     sock.connect(sockaddr)
 
-Using `getaddrinfo` is the most efficient (both in terms of memory and processing
+Using :func:`getaddrinfo` is the most efficient (both in terms of memory and processing
 power) and portable way to work with addresses.
 
 However, ``socket`` module (note the difference with native MicroPython
@@ -37,11 +37,11 @@ addresses using tuples, as described below. Note that depending on a
 :term:`MicroPython port`, ``socket`` module can be builtin or need to be
 installed from `micropython-lib` (as in the case of :term:`MicroPython Unix port`),
 and some ports still accept only numeric addresses in the tuple format,
-and require to use `getaddrinfo` function to resolve domain names.
+and require to use :func:`getaddrinfo` function to resolve domain names.
 
 Summing up:
 
-* Always use `getaddrinfo` when writing portable applications.
+* Always use :func:`getaddrinfo` when writing portable applications.
 * Tuple addresses described below can be used as a shortcut for
   quick hacks and interactive use, if your port supports them.
 
@@ -51,13 +51,13 @@ Tuple address format for ``socket`` module:
   dot-notation numeric IPv4 address, e.g. ``"8.8.8.8"``, and *port* is and
   integer port number in the range 1-65535. Note the domain names are not
   accepted as *ipv4_address*, they should be resolved first using
-  `socket.getaddrinfo()`.
+  :func:`socket.getaddrinfo()`.
 * IPv6: *(ipv6_address, port, flowinfo, scopeid)*, where *ipv6_address*
   is a string with colon-notation numeric IPv6 address, e.g. ``"2001:db8::1"``,
   and *port* is an integer port number in the range 1-65535. *flowinfo*
   must be 0. *scopeid* is the interface scope identifier for link-local
   addresses. Note the domain names are not accepted as *ipv6_address*,
-  they should be resolved first using `socket.getaddrinfo()`. Availability
+  they should be resolved first using :func:`socket.getaddrinfo()`. Availability
   of IPv6 support depends on a :term:`MicroPython port`.
 
 Functions
@@ -67,7 +67,7 @@ Functions
 
    Translate the host/port argument into a sequence of 5-tuples that contain all the
    necessary arguments for creating a socket connected to that service. Arguments
-   *af*, *type*, and *proto* (which have the same meaning as for the `socket()` function)
+   *af*, *type*, and *proto* (which have the same meaning as for the :class:`socket` function)
    can be used to filter which kind of addresses are returned. If a parameter is not
    specified or zero, all combinations of addresses can be returned (requiring
    filtering on the user side).
@@ -93,11 +93,11 @@ Functions
    .. admonition:: Difference to CPython
       :class: attention
 
-      CPython raises a ``socket.gaierror`` exception (`OSError` subclass) in case
+      CPython raises a ``socket.gaierror`` exception (:exc:`OSError` subclass) in case
       of error in this function. MicroPython doesn't have ``socket.gaierror``
-      and raises OSError directly. Note that error numbers of `getaddrinfo()`
+      and raises OSError directly. Note that error numbers of :func:`getaddrinfo()`
       form a separate namespace and may not match error numbers from
-      the :mod:`errno` module. To distinguish `getaddrinfo()` errors, they are
+      the :mod:`errno` module. To distinguish :func:`getaddrinfo()` errors, they are
       represented by negative numbers, whereas standard system errors are
       positive numbers (error numbers are accessible using ``e.args[0]`` property
       from an exception object). The use of negative values is a provisional
@@ -123,37 +123,53 @@ Constants
 ---------
 
 .. data:: AF_INET
-          AF_INET6
    :type: int
 
-   Address family types. Availability depends on a particular :term:`MicroPython port`.
+   IPv4 address family type. Availability depends on a particular :term:`MicroPython port`.
+
+.. data:: AF_INET6
+   :type: int
+
+   IPv6 address family type. Availability depends on a particular :term:`MicroPython port`.
 
 .. data:: SOCK_STREAM
-          SOCK_DGRAM
    :type: int
 
-   Socket types.
+   Stream (TCP) socket type.
+
+.. data:: SOCK_DGRAM
+   :type: int
+
+   Datagram (UDP) socket type.
 
 .. data:: IPPROTO_UDP
-          IPPROTO_TCP
    :type: int
 
-   IP protocol numbers. Availability depends on a particular :term:`MicroPython port`.
-   Note that you don't need to specify these in a call to `socket.socket()`,
-   because `SOCK_STREAM` socket type automatically selects `IPPROTO_TCP`, and
-   `SOCK_DGRAM` - `IPPROTO_UDP`. Thus, the only real use of these constants
-   is as an argument to `setsockopt()`.
+   UDP IP protocol number. Availability depends on a particular :term:`MicroPython port`.
+   Note that you don't need to specify this in a call to :class:`socket.socket()`,
+   because the :data:`SOCK_DGRAM` socket type automatically selects
+   :data:`IPPROTO_UDP`. Thus, the only real use of this constant
+   is as an argument to :meth:`~socket.socket.setsockopt()`.
+
+.. data:: IPPROTO_TCP
+   :type: int
+
+   TCP IP protocol number. Availability depends on a particular :term:`MicroPython port`.
+   Note that you don't need to specify this in a call to :class:`socket.socket()`,
+   because the :data:`SOCK_STREAM` socket type automatically selects
+   :data:`IPPROTO_TCP`. Thus, the only real use of this constant
+   is as an argument to :meth:`~socket.socket.setsockopt()`.
 
 .. data:: socket.SOL_*
    :type: int
 
-   Socket option levels (an argument to `setsockopt()`). The exact
+   Socket option levels (an argument to :meth:`~socket.socket.setsockopt()`). The exact
    inventory depends on a :term:`MicroPython port`.
 
 .. data:: socket.SO_*
    :type: int
 
-   Socket options (an argument to `setsockopt()`). The exact
+   Socket options (an argument to :meth:`~socket.socket.setsockopt()`). The exact
    inventory depends on a :term:`MicroPython port`.
 
 .. only:: port_wipy
@@ -186,7 +202,7 @@ Classes
       supported by protocol.
 
       Sockets are automatically closed when they are garbage-collected, but it is recommended
-      to `close()` them explicitly as soon you finished working with them.
+      to :meth:`close()` them explicitly as soon you finished working with them.
 
    .. method:: bind(address: Any) -> None
 
@@ -219,11 +235,11 @@ Classes
    .. method:: sendall(bytes: bytes) -> None
 
       Send all data to the socket. The socket must be connected to a remote socket.
-      Unlike `send()`, this method will try to send all of data, by sending data
+      Unlike :meth:`send()`, this method will try to send all of data, by sending data
       chunk by chunk consecutively.
 
       The behaviour of this method on non-blocking sockets is undefined. Due to this,
-      on MicroPython, it's recommended to use `write()` method instead, which
+      on MicroPython, it's recommended to use :meth:`write()` method instead, which
       has the same "no short writes" policy for blocking sockets, and will return
       number of bytes sent on non-blocking sockets.
 
@@ -247,7 +263,7 @@ Classes
      bytes object representing the data received and *address* is the address of the socket sending
      the data.
 
-     See the `recv` function for an explanation of the optional *flags* argument.
+     See the :meth:`recv` function for an explanation of the optional *flags* argument.
 
    .. method:: setsockopt(level: int, optname: int, value: Union[int, bytes]) -> None
 
@@ -261,12 +277,12 @@ Classes
 
       Set a timeout on blocking socket operations. The value argument can be a nonnegative floating
       point number expressing seconds, or None. If a non-zero value is given, subsequent socket operations
-      will raise an `OSError` exception if the timeout period value has elapsed before the operation has
+      will raise an :exc:`OSError` exception if the timeout period value has elapsed before the operation has
       completed. If zero is given, the socket is put in non-blocking mode. If None is given, the socket
       is put in blocking mode.
 
       Not every :term:`MicroPython port` supports this method. A more portable and
-      generic solution is to use `select.poll` object. This allows to wait on
+      generic solution is to use :func:`select.poll` object. This allows to wait on
       multiple objects at the same time (and not just on sockets, but on generic
       :std:term:`stream` objects which support polling). Example::
 
@@ -285,7 +301,7 @@ Classes
          :class: attention
 
          CPython raises a ``socket.timeout`` exception in case of timeout,
-         which is an `OSError` subclass. MicroPython raises an OSError directly
+         which is an :exc:`OSError` subclass. MicroPython raises an OSError directly
          instead. If you use ``except OSError:`` to catch the exception,
          your code will work both in MicroPython and CPython.
 
@@ -294,7 +310,7 @@ Classes
       Set blocking or non-blocking mode of the socket: if flag is false, the socket is set to non-blocking,
       else to blocking mode.
 
-      This method is a shorthand for certain `settimeout()` calls:
+      This method is a shorthand for certain :meth:`settimeout()` calls:
 
       * ``sock.setblocking(True)`` is equivalent to ``sock.settimeout(None)``
       * ``sock.setblocking(False)`` is equivalent to ``sock.settimeout(0)``
@@ -329,7 +345,7 @@ Classes
 
       Read bytes into the *buf*.  If *nbytes* is specified then read at most
       that many bytes.  Otherwise, read at most *len(buf)* bytes. Just as
-      `read()`, this method follows "no short reads" policy.
+      :meth:`read()`, this method follows "no short reads" policy.
 
       Return value: number of bytes read and stored into *buf*.
 
@@ -351,5 +367,5 @@ Classes
 .. note::
 
    MicroPython does not implement ``socket.error``. CPython has a deprecated
-   ``socket.error`` exception that is an alias of `OSError`; in MicroPython,
-   use `OSError` directly to catch socket-related errors.
+   ``socket.error`` exception that is an alias of :exc:`OSError`; in MicroPython,
+   use :exc:`OSError` directly to catch socket-related errors.

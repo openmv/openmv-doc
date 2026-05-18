@@ -26,13 +26,9 @@ Example::
         asyncio.create_task(blink(led2, 400))
         await asyncio.sleep_ms(10_000)
 
-    # Running on a pyboard
-    from pyb import LED
+    # Running on an OpenMV Cam
+    from machine import LED
     asyncio.run(main(LED(1), LED(2)))
-
-    # Running on a generic board
-    from machine import Pin
-    asyncio.run(main(Pin(1), Pin(2)))
 
 Core functions
 --------------
@@ -41,11 +37,11 @@ Core functions
 
     Create a new task from the given coroutine and schedule it to run.
 
-    Returns the corresponding `Task` object.
+    Returns the corresponding :class:`Task` object.
 
 .. function:: current_task() -> Task
 
-    Return the `Task` object associated with the currently running task.
+    Return the :class:`Task` object associated with the currently running task.
 
 .. function:: run(coro: Coroutine) -> Any
 
@@ -85,7 +81,7 @@ Additional functions
 
 .. function:: wait_for_ms(awaitable: Awaitable, timeout: int) -> Any
 
-    Similar to `wait_for` but *timeout* is an integer in milliseconds.
+    Similar to :func:`wait_for` but *timeout* is an integer in milliseconds.
 
     This is a coroutine, and a MicroPython extension.
 
@@ -107,7 +103,7 @@ class Task
     using ``await task``, which will wait for the task to complete and return
     the return value of the task.
 
-    Tasks should not be created directly, rather use `create_task` to create them.
+    Tasks should not be created directly, rather use :func:`create_task` to create them.
 
     .. method:: cancel() -> None
 
@@ -132,7 +128,7 @@ class Event
        Set the event.  Any tasks waiting on the event will be scheduled to run.
 
        Note: This must be called from within a task. It is not safe to call this
-       from an IRQ, scheduler callback, or other thread. See `ThreadSafeFlag`.
+       from an IRQ, scheduler callback, or other thread. See :class:`ThreadSafeFlag`.
 
     .. method:: clear() -> None
 
@@ -206,8 +202,8 @@ TCP stream connections
 .. function:: open_connection(host: str, port: int, ssl: ssl.SSLContext | bool | None = None) -> Tuple[Stream, Stream]
 
     Open a TCP connection to the given *host* and *port*.  The *host* address will be
-    resolved using `socket.getaddrinfo`, which is currently a blocking call.
-    If *ssl* is a `ssl.SSLContext` object, this context is used to create the transport;
+    resolved using :func:`socket.getaddrinfo`, which is currently a blocking call.
+    If *ssl* is a :class:`ssl.SSLContext` object, this context is used to create the transport;
     if *ssl* is ``True``, a default context is used.
 
     Returns a pair of streams: a reader and a writer stream.
@@ -222,9 +218,9 @@ TCP stream connections
     called with incoming, accepted connections, and be passed 2 arguments: reader
     and writer streams for the connection.
 
-    If *ssl* is a `ssl.SSLContext` object, this context is used to create the transport.
+    If *ssl* is a :class:`ssl.SSLContext` object, this context is used to create the transport.
 
-    Returns a `Server` object.
+    Returns a :class:`Server` object.
 
     This is a coroutine.
 
@@ -282,7 +278,7 @@ TCP stream connections
     .. method:: write(buf: bytes) -> None
 
        Accumulated *buf* to the output buffer.  The data is only flushed when
-       `Stream.drain` is called.  It is recommended to call `Stream.drain` immediately
+       :meth:`Stream.drain` is called.  It is recommended to call :meth:`Stream.drain` immediately
        after calling this function.
 
     .. method:: drain() -> None
@@ -293,7 +289,7 @@ TCP stream connections
 
 .. class:: Server()
 
-    This represents the server class returned from `start_server`.  It can be used
+    This represents the server class returned from :func:`start_server`.  It can be used
     in an ``async with`` statement to close the server upon exit.
 
     .. method:: close() -> None
@@ -311,7 +307,7 @@ Event Loop
 
 .. function:: get_event_loop() -> Loop
 
-    Return the event loop used to schedule and run tasks.  See `Loop`.
+    Return the event loop used to schedule and run tasks.  See :class:`Loop`.
 
 .. function:: new_event_loop() -> Loop
 
@@ -323,15 +319,15 @@ Event Loop
 .. class:: Loop()
 
     This represents the object which schedules and runs tasks.  It cannot be
-    created, use `get_event_loop` instead.
+    created, use :func:`get_event_loop` instead.
 
     .. method:: create_task(coro: Coroutine) -> Task
 
-       Create a task from the given *coro* and return the new `Task` object.
+       Create a task from the given *coro* and return the new :class:`Task` object.
 
     .. method:: run_forever() -> None
 
-       Run the event loop until `stop()` is called.
+       Run the event loop until :meth:`stop()` is called.
 
     .. method:: run_until_complete(awaitable: Awaitable) -> Any
 

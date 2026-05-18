@@ -2,37 +2,37 @@
 from typing import Any
 
 AF_INET: int
-"""Address family types. Availability depends on a particular MicroPython port."""
+"""IPv4 address family type. Availability depends on a particular MicroPython port."""
 AF_INET6: int
-"""Address family types. Availability depends on a particular MicroPython port."""
+"""IPv6 address family type. Availability depends on a particular MicroPython port."""
 IPPROTO_SEC: int
 """Special protocol value to create SSL-compatible socket."""
 IPPROTO_TCP: int
 """
-IP protocol numbers. Availability depends on a particular MicroPython port.
-Note that you don’t need to specify these in a call to socket.socket(),
-because SOCK_STREAM socket type automatically selects IPPROTO_TCP, and
-SOCK_DGRAM - IPPROTO_UDP. Thus, the only real use of these constants
+TCP IP protocol number. Availability depends on a particular MicroPython port.
+Note that you don’t need to specify this in a call to socket.socket(),
+because the SOCK_STREAM socket type automatically selects
+IPPROTO_TCP. Thus, the only real use of this constant
 is as an argument to setsockopt().
 """
 IPPROTO_UDP: int
 """
-IP protocol numbers. Availability depends on a particular MicroPython port.
-Note that you don’t need to specify these in a call to socket.socket(),
-because SOCK_STREAM socket type automatically selects IPPROTO_TCP, and
-SOCK_DGRAM - IPPROTO_UDP. Thus, the only real use of these constants
+UDP IP protocol number. Availability depends on a particular MicroPython port.
+Note that you don’t need to specify this in a call to socket.socket(),
+because the SOCK_DGRAM socket type automatically selects
+IPPROTO_UDP. Thus, the only real use of this constant
 is as an argument to setsockopt().
 """
 SOCK_DGRAM: int
-"""Socket types."""
+"""Datagram (UDP) socket type."""
 SOCK_STREAM: int
-"""Socket types."""
+"""Stream (TCP) socket type."""
 
 def getaddrinfo(host: str, port: int, af: int = 0, type: int = 0, proto: int = 0, flags: int = 0, /) -> list[tuple]:
     """
     Translate the host/port argument into a sequence of 5-tuples that contain all the
     necessary arguments for creating a socket connected to that service. Arguments
-    af, type, and proto (which have the same meaning as for the socket() function)
+    af, type, and proto (which have the same meaning as for the socket function)
     can be used to filter which kind of addresses are returned. If a parameter is not
     specified or zero, all combinations of addresses can be returned (requiring
     filtering on the user side).
@@ -174,7 +174,7 @@ class socket:
         Receive data from the socket. The return value is a pair (bytes, address) where bytes is a
         bytes object representing the data received and address is the address of the socket sending
         the data.
-        See the recv function for an explanation of the optional flags argument.
+        See the recv() function for an explanation of the optional flags argument.
         """
         ...
     def send(self, bytes: bytes) -> int:
@@ -227,7 +227,7 @@ class socket:
         completed. If zero is given, the socket is put in non-blocking mode. If None is given, the socket
         is put in blocking mode.
         Not every MicroPython port supports this method. A more portable and
-        generic solution is to use select.poll object. This allows to wait on
+        generic solution is to use select.poll() object. This allows to wait on
         multiple objects at the same time (and not just on sockets, but on generic
         stream objects which support polling). Example:
         # Instead of:

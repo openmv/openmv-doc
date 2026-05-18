@@ -213,120 +213,120 @@ otherwise noted.
 
 .. rubric:: OPENMV_N6 (STM32N6)
 
-OpenMV N6 (STM32N6 — STMicroelectronics' first NPU-equipped MCU):
+OpenMV N6 (STM32N6 --- STMicroelectronics' first NPU-equipped MCU):
 
-* :mod:`pyb` — functions related to the board
-* :mod:`stm` — functionality specific to STM32 MCUs
-* :mod:`ssd1306` — OLED driver
-* :mod:`tb6612` — TB6612 motor driver
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
 
 .. rubric:: OPENMV_AE3 (Alif Ensemble E3)
 
 OpenMV AE3 (Alif Ensemble E3 MCU):
 
-* :mod:`alif` — Alif Ensemble SoC functions
-* :mod:`lsm6dsox` — LSM6DSOX 6-axis IMU
-* :mod:`romfs` — ROMFS helper utilities
-* :mod:`pca9674a` — PCA9674A I2C expander driver
+* :mod:`alif` --- Alif Ensemble SoC functions
+* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
+* :mod:`romfs` --- ROMFS helper utilities
+* :mod:`pca9674a` --- PCA9674A I2C expander driver
 
 .. rubric:: OPENMV_RT1060 (i.MX RT1060)
 
 OpenMV RT1060:
 
-* :mod:`mimxrt` — functionality specific to NXP i.MXRT
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
-* :mod:`ssd1306` — OLED driver
-* :mod:`tb6612` — TB6612 motor driver
-* :mod:`pca9674a` — PCA9674A I2C expander driver
+* :mod:`mimxrt` --- functionality specific to NXP i.MXRT
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
+* :mod:`pca9674a` --- PCA9674A I2C expander driver
 
 .. rubric:: OPENMVPT (Pure Thermal, STM32H7 + DVI/HDMI)
 
 OpenMV Pure Thermal:
 
-* :mod:`pyb` — functions related to the board
-* :mod:`stm` — functionality specific to STM32 MCUs
-* :mod:`tfp410` — DVI/HDMI serializer
-* :mod:`ft5x06` — capacitive touchscreen driver
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
-* :mod:`ssd1306` — OLED driver
-* :mod:`tb6612` — TB6612 motor driver
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`tfp410` --- DVI/HDMI serializer
+* :mod:`ft5x06` --- capacitive touchscreen driver
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
 
 .. rubric:: OPENMV2 / OPENMV3 / OPENMV4 / OPENMV4P (STM32)
 
 Legacy STM32-based OpenMV camera boards:
 
-* :mod:`pyb` — functions related to the board
-* :mod:`stm` — functionality specific to STM32 MCUs
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
-* :mod:`ssd1306` — OLED driver
-* :mod:`tb6612` — TB6612 motor driver
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
 
 .. rubric:: ARDUINO_GIGA (STM32H7 + touchscreen)
 
 Arduino Giga R1 WiFi:
 
-* :mod:`pyb` — functions related to the board
-* :mod:`stm` — functionality specific to STM32 MCUs
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
-* :mod:`gt911` — GT911 5-point capacitive touch controller
-* :mod:`ft5x06` — capacitive touchscreen driver
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`gt911` --- GT911 5-point capacitive touch controller
+* :mod:`ft5x06` --- capacitive touchscreen driver
 
 .. rubric:: ARDUINO_PORTENTA_H7 (STM32H7)
 
 Arduino Portenta H7:
 
-* :mod:`pyb` — functions related to the board
-* :mod:`stm` — functionality specific to STM32 MCUs
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
-* :mod:`lora` — LoRa modem driver
-* :mod:`ssd1306` — OLED driver
-* :mod:`tb6612` — TB6612 motor driver
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`lora` --- LoRa modem driver
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
 
 .. rubric:: ARDUINO_NICLA_VISION (STM32H7)
 
 Arduino Nicla Vision:
 
-* :mod:`pyb` — functions related to the board
-* :mod:`stm` — functionality specific to STM32 MCUs
-* :mod:`lsm6dsox` — LSM6DSOX 6-axis IMU
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
 
 .. rubric:: ARDUINO_NANO_33_BLE_SENSE (Nordic nRF52840)
 
-Arduino Nano 33 BLE Sense — board-specific :doc:`imu <imu>` wrapper
+Arduino Nano 33 BLE Sense --- board-specific :doc:`imu <imu>` wrapper
 that selects between the LSM9DS1 (Rev 1) and BMI270 + BMM150 (Rev 2)
 sensor sets, plus:
 
-* :mod:`ubluepy` — Bluetooth LE peripheral and central API on the
+* :mod:`ubluepy` --- Bluetooth LE peripheral and central API on the
   Nordic SoftDevice
-* :mod:`bmi270` — BMI270 6-axis IMU
-* :mod:`bmm150` — BMM150 3-axis magnetometer
-* :mod:`lsm9ds1` — LSM9DS1 9-axis IMU
-* :mod:`hts221` — HTS221 humidity/temperature sensor
-* :mod:`lps22h` — LPS22HB/HH pressure sensor
-* :mod:`hs3003` — HS3003 humidity/temperature sensor
-* :mod:`apds9960` — proximity, gesture, and color sensor driver
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
+* :mod:`bmi270` --- BMI270 6-axis IMU
+* :mod:`bmm150` --- BMM150 3-axis magnetometer
+* :mod:`lsm9ds1` --- LSM9DS1 9-axis IMU
+* :mod:`hts221` --- HTS221 humidity/temperature sensor
+* :mod:`lps22h` --- LPS22HB/HH pressure sensor
+* :mod:`hs3003` --- HS3003 humidity/temperature sensor
+* :mod:`apds9960` --- proximity, gesture, and color sensor driver
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
 
 .. rubric:: ARDUINO_NANO_RP2040_CONNECT / RPI_PICO (RP2)
 
@@ -336,19 +336,19 @@ upstream drivers.
 
 Arduino Nano RP2040 Connect:
 
-* :mod:`espflash` — ESP32 ROM bootloader firmware flasher
-* :mod:`lsm6dsox` — LSM6DSOX 6-axis IMU
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
+* :mod:`espflash` --- ESP32 ROM bootloader firmware flasher
+* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
 
 Raspberry Pi Pico:
 
-* :mod:`dht` — DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` — 1-Wire bus protocol
-* :mod:`ds18x20` — DS18x20 temperature sensor driver
-* :mod:`neopixel` — control of WS2812 / NeoPixel LEDs
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
 
 .. _micropython_lib_extending:
 
@@ -358,10 +358,11 @@ Extending built-in libraries from Python
 A subset of the built-in modules are able to be extended by Python code by
 providing a module of the same name in the filesystem. This extensibility
 applies to the following Python standard library modules which are built-in to
-the firmware: ``array``, ``binascii``, ``collections``, ``errno``, ``gzip``,
-``hashlib``, ``heapq``, ``io``, ``json``, ``os``, ``platform``, ``random``,
-``re``, ``select``, ``socket``, ``ssl``, ``struct``, ``time`` ``zlib``, as well
-as the MicroPython-specific ``machine`` module. All other built-in modules
+the firmware: :mod:`array`, :mod:`binascii`, :mod:`collections`, :mod:`errno`,
+:mod:`gzip`, :mod:`hashlib`, :mod:`heapq`, :mod:`io`, :mod:`json`, :mod:`os`,
+:mod:`platform`, :mod:`random`, :mod:`re`, :mod:`select`, :mod:`socket`,
+:mod:`ssl`, :mod:`struct`, :mod:`time`, :mod:`zlib`, as well as the
+MicroPython-specific :mod:`machine` module. All other built-in modules
 cannot be extended from the filesystem.
 
 This allows the user to provide an extended implementation of a built-in library
@@ -372,7 +373,7 @@ the built-in module in order to inherit all the globals (classes, functions and
 variables) from the built-in.
 
 In MicroPython v1.21.0 and higher, to prevent the filesystem module from
-importing itself, it can force an import of the built-in module it by
+importing itself, it can force an import of the built-in module by
 temporarily clearing ``sys.path`` during the import. For example, to extend the
 ``time`` module from Python, a file named ``time.py`` on the filesystem would
 do the following::
@@ -393,7 +394,7 @@ module, but adds ``extra_method``.
 
 In earlier versions of MicroPython, you can force an import of a built-in module
 by appending a ``u`` to the start of its name. For example, ``import utime``
-instead of ``import time``. For example, ``time.py`` on the filesystem could
+instead of ``import time``. For instance, ``time.py`` on the filesystem could
 look like::
 
   from utime import *

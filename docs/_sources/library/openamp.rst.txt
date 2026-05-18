@@ -1,5 +1,5 @@
-:mod:`openamp` -- provides standard Asymmetric Multiprocessing (AMP) support
-============================================================================
+:mod:`openamp` --- provides standard Asymmetric Multiprocessing (AMP) support
+=============================================================================
 
 .. module:: openamp
    :synopsis: provides standard Asymmetric Multiprocessing (AMP) support

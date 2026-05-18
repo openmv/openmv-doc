@@ -1,5 +1,5 @@
-:mod:`zlib` -- zlib compression & decompression
-===============================================
+:mod:`zlib` --- zlib compression & decompression
+================================================
 
 .. module:: zlib
    :synopsis: zlib compression & decompression

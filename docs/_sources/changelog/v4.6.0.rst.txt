@@ -1,0 +1,220 @@
+.. _changelog_v4_6_0:
+
+v4.6.0
+======
+
+v4.6.0 is a major feature release. Headlining it: the camera module was
+renamed from :mod:`sensor` to :mod:`csi` (with a backwards-compatible :mod:`sensor`
+alias), a new :mod:`ml.postprocessing` module, support for the Prophesee
+GenX320 event sensor, PAG7936, and FLIR Boson thermal cameras, a new
+TinyUSB-based DFU bootloader, Nema GPU acceleration, and MicroPython 1.24. It
+also changes the drawing ``alpha`` range, so read the breaking changes below.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- :mod:`sensor` is now also :mod:`csi` — the camera module was renamed to
+  :mod:`csi`; :mod:`sensor` remains as a backwards-compatible alias (no code change
+  required yet).
+- **New** :mod:`ml.postprocessing` **module** — ``fomo_postprocess``,
+  ``yolo_v2_postprocess``, ``yolo_v5_postprocess``.
+- **New sensors** — Prophesee GenX320 event camera, PAG7936, and FLIR Boson
+  320/640 thermal.
+- **New DFU bootloader** — a TinyUSB-based standard-DFU bootloader replaces the
+  legacy CDC bootloader on all boards.
+- **Nema GPU** — accelerated 2D/vector graphics on STM32.
+- **MicroPython updated to 1.24.0.**
+- **Breaking:** the drawing ``alpha`` range changed from 0–256 to 0–255 (see
+  :ref:`the alpha-range change <v4_6_0_alpha>`).
+
+New features
+------------
+
+- :mod:`ml.postprocessing` — a new module decoding model output: a FOMO
+  decoder (``fomo_postprocess``, ``find_blobs`` + NMS, configurable
+  ``threshold``) and ``yolo_v2_postprocess`` / ``yolo_v5_postprocess`` (with
+  ``threshold``, ``anchors``, ``nms_threshold``, ``nms_sigma``).
+- **Event-camera visualization** — new ``Image.to_evt_dark()`` /
+  ``Image.to_evt_light()`` methods and ``PALETTE_EVT_DARK`` /
+  ``PALETTE_EVT_LIGHT`` color palettes.
+- **Depth visualization** — new ``Image.to_depth()`` method and a
+  ``PALETTE_DEPTH`` color palette (ToF-enabled boards).
+- **Sensor introspection** — new ``IOCTL_GET_RGB_STATS`` ioctl returning an
+  ``(R, Gb, Gr, B)`` channel-statistics tuple.
+- **GenX320 bias presets** — new ``IOCTL_GENX320_SET_BIASES`` ioctl with
+  ``GENX320_BIASES_DEFAULT`` / ``LOW_LIGHT`` / ``ACTIVE_MARKER`` /
+  ``LOW_NOISE`` / ``HIGH_SPEED`` presets.
+- :func:`omv.debug_mode` — a new function to query whether the USB debug
+  interface is active.
+- **Nema GPU** — Cortex-M55 NemaGFX/NemaVG driver integration on STM32, with
+  in-place GPU cut-through for ``draw_image``.
+- **PAG7936** — added color-bar output, auto-exposure / auto-gain, sleep, and
+  MIPI mode.
+
+Other changes and improvements
+------------------------------
+
+- **MicroPython updated to 1.24.0**; ulab updated to 6.7.3 (adds ``keepdims``).
+- **Common boot script** — STM32 / i.MX RT / RP2 now share a ``_boot.py`` that
+  auto-creates the flash/SD filesystem with a default ``main.py`` and
+  ``README.txt`` and frees temporary startup globals.
+- **STM32N6 groundwork** — basic STM32N6 support, an XSPI driver, a common MPU
+  driver, and firmware/bootloader signing on STM32.
+- **Computed-goto VM** — enabled on STM32 and nRF for a interpreter speedup.
+
+Bug fixes
+---------
+
+Camera and sensors:
+
+- Fixed the OV5640 PCLK/exposure calculation (two MIPI lanes, corrected
+  divider table).
+- The MT9V0xx Bayer-CFA variant now accepts RGB565/BAYER/GRAYSCALE and outputs
+  proper raw Bayer data instead of erroring.
+- Enabled PAG7936 lens-shading correction and fixed HD image shifting;
+  ``set_framerate()`` is now capped per resolution.
+- Fixed FLIR Lepton thermal capture on the i.MX RT1060 (corrected VoSPI
+  CPOL/CPHA), and Lepton snapshots now return specific error codes.
+- Fixed GenX320 frequency rounding.
+
+Image processing:
+
+- Fixed memory corruption in ``to_ndarray()`` on grayscale images.
+- Fixed debayer bounds prediction in Bayer→RGB/grayscale conversion.
+- Fixed ``draw_image()`` ``transpose`` on boards without SDRAM (chunked
+  buffer).
+- Fixed boolean-argument handling in ``Image.binary()`` and the
+  :class:`ml.Model` ``load_to_fb`` flag.
+
+System:
+
+- Fixed SPI RX-only / TX-only pin configuration on STM32 and i.MX RT.
+- Moved the Portenta H7 Ethernet DMA buffers into SRAM3 so Ethernet works.
+- Fixed a dropped character in debug-channel text output over USB; rounded ML
+  dynamic-allocation sizes up to avoid undersized model buffers.
+
+Hardware and board support
+--------------------------
+
+- **Prophesee GenX320** event-based vision sensor (STM32F7 + i.MX RT1060).
+- **PAG7936** sensor (with MIPI mode).
+- **FLIR Boson 320/640** thermal cameras (IDD 4 driver).
+- **Nema GPU** acceleration on STM32.
+- **STM32N6** bootloader/XSPI groundwork.
+- **VL53L5CX** — added power-enable-pin support.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v4.5.9 and v4.6.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *major* — most scripts that used it need edits.
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+- *tooling* — only affects flashing / host tools / board availability.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v4_6_0_migration>` at the end.
+Each commit hash links to its diff on GitHub. Note: the :mod:`sensor` → :mod:`csi`
+module rename in this release is **not** breaking — :mod:`sensor` still works as
+an alias.
+
+.. _v4_6_0_alpha:
+
+Drawing ``alpha`` range is now 0–255 *(major)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``alpha`` argument of ``draw_image()`` and every overlay that takes one
+(FIR, ToF, display, TV, MJPEG, alpha tables) now uses a **0–255** range
+instead of 0–256. Scripts that passed ``256`` for fully opaque, or computed
+alpha against 256, must be rescaled to 0–255.
+
+*Commit:* `1f87b5bb6 <https://github.com/openmv/openmv/commit/1f87b5bb6>`__
+
+.. _v4_6_0_lepton:
+
+FLIR Lepton ioctl constants renamed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three Lepton ioctl constants were shortened: ``IOCTL_LEPTON_SET_MEASUREMENT_MODE``
+→ ``IOCTL_LEPTON_SET_MODE``, ``IOCTL_LEPTON_SET_MEASUREMENT_RANGE`` →
+``IOCTL_LEPTON_SET_RANGE``, ``IOCTL_LEPTON_GET_FPA_TEMPERATURE`` →
+``IOCTL_LEPTON_GET_FPA_TEMP``. The bundled examples were updated.
+
+*Commit:* `12582d54d <https://github.com/openmv/openmv/commit/12582d54d>`__
+
+.. _v4_6_0_ml:
+
+ML post-processing API churn *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:mod:`ml.postprocessing` is new in this release and its API moved during it:
+the ``yolo_v2_postprocess`` constructor keyword ``score_threshold`` was
+renamed to ``threshold``, and empty post-processing results now return ``()``
+instead of ``[]``. The bundled model ``yolov5_rgb_person`` was renamed to
+``yolo_v5_224_nano``. :class:`ml.apps.MicroSpeech` now forwards arbitrary
+``**kwargs`` to :func:`audio.init` instead of a fixed ``gain_db=24``.
+
+*Commits:* `d67bd1ad7 <https://github.com/openmv/openmv/commit/d67bd1ad7>`__,
+`979b4e8ee <https://github.com/openmv/openmv/commit/979b4e8ee>`__,
+`b89b815b2 <https://github.com/openmv/openmv/commit/b89b815b2>`__,
+`6671d9df5 <https://github.com/openmv/openmv/commit/6671d9df5>`__,
+`5c2f4388c <https://github.com/openmv/openmv/commit/5c2f4388c>`__
+
+.. _v4_6_0_agast:
+
+AGAST is the default corner detector *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``find_keypoints()`` now uses AGAST instead of FAST as its default corner
+detector on all boards. Keypoint sets (and therefore descriptor matches)
+differ from previous releases — re-check tuned keypoint pipelines. IDE
+frame-buffer streaming is also now capped at 20 Hz to reduce USB load.
+
+*Commits:* `da6bf6910 <https://github.com/openmv/openmv/commit/da6bf6910>`__,
+`bc4e39246 <https://github.com/openmv/openmv/commit/bc4e39246>`__
+
+.. _v4_6_0_tooling:
+
+Bootloader, removed boards and features *(tooling)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The legacy CDC bootloader was replaced by a new TinyUSB-based **standard DFU**
+bootloader on all boards — the firmware-update mechanism changed; update your
+flashing workflow/tooling accordingly. The **OpenMV Pro** board, the
+standalone **Raspberry Pi Pico** build, and the WiFi-debug (``wifidbg``)
+remote-IDE feature were removed.
+
+*Commits:* `a03fc90d8 <https://github.com/openmv/openmv/commit/a03fc90d8>`__,
+`c2e616aae <https://github.com/openmv/openmv/commit/c2e616aae>`__,
+`af3ea774b <https://github.com/openmv/openmv/commit/af3ea774b>`__,
+`f8bca9799 <https://github.com/openmv/openmv/commit/f8bca9799>`__,
+`59a38a0d3 <https://github.com/openmv/openmv/commit/59a38a0d3>`__,
+`7edeb4fbe <https://github.com/openmv/openmv/commit/7edeb4fbe>`__,
+`d58d77fa2 <https://github.com/openmv/openmv/commit/d58d77fa2>`__
+
+.. _v4_6_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v4.6.0 the typical work is:
+
+#. Rescale every drawing/overlay ``alpha`` value from the 0–256 range to
+   0–255 (:ref:`the alpha-range change <v4_6_0_alpha>`).
+#. Rename any FLIR Lepton ioctl constants to their shortened forms
+   (:ref:`the Lepton ioctl rename <v4_6_0_lepton>`).
+#. If you used the new ML post-processors, switch ``score_threshold`` to
+   ``threshold``, handle a ``()`` empty result, and update the
+   ``yolo_v5_224_nano`` model name (:ref:`the ML changes <v4_6_0_ml>`).
+#. Re-check ``find_keypoints()``-based pipelines for the AGAST detector
+   change (:ref:`the corner-detector change <v4_6_0_agast>`).
+#. Update your firmware-flashing workflow for the new DFU bootloader
+   (:ref:`the bootloader/board changes <v4_6_0_tooling>`).

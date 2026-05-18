@@ -3,32 +3,42 @@ from typing import Any
 
 CERT_NONE: int
 """
-Supported values for cert_reqs parameter, and the SSLContext.verify_mode
-attribute.
+Supported value for the cert_reqs parameter, and the
+SSLContext.verify_mode attribute.  No certificate verification is
+performed on the peer.
 """
 CERT_OPTIONAL: int
 """
-Supported values for cert_reqs parameter, and the SSLContext.verify_mode
-attribute.
+Supported value for the cert_reqs parameter, and the
+SSLContext.verify_mode attribute.  Certificate verification is
+optional.  Note that for mbedtls based ports this behaves like
+ssl.CERT_NONE.
 """
 CERT_REQUIRED: int
 """
-Supported values for cert_reqs parameter, and the SSLContext.verify_mode
-attribute.
+Supported value for the cert_reqs parameter, and the
+SSLContext.verify_mode attribute.  A valid certificate is required
+from the peer.
 """
 PROTOCOL_DTLS_CLIENT: int
-"""Supported values for the protocol parameter."""
+"""
+Supported value for the protocol parameter, selecting DTLS client mode.
+Only available when DTLS support is enabled.
+"""
 PROTOCOL_DTLS_SERVER: int
-"""Supported values for the protocol parameter."""
+"""
+Supported value for the protocol parameter, selecting DTLS server mode.
+Only available when DTLS support is enabled.
+"""
 PROTOCOL_TLS_CLIENT: int
-"""Supported values for the protocol parameter."""
+"""Supported value for the protocol parameter, selecting TLS client mode."""
 PROTOCOL_TLS_SERVER: int
-"""Supported values for the protocol parameter."""
+"""Supported value for the protocol parameter, selecting TLS server mode."""
 
 def wrap_socket(sock: Any, server_side: bool = False, key: bytes | None = None, cert: bytes | None = None, cert_reqs: int = CERT_NONE, cadata: bytes | None = None, server_hostname: str | None = None, do_handshake: bool = True) -> Any:
     """
     Wrap the given sock and return a new wrapped-socket object.  The implementation
-    of this function is to first create an SSLContext and then call the SSLContext.wrap_socket
+    of this function is to first create an SSLContext and then call the SSLContext.wrap_socket()
     method on that context object.  The arguments sock, server_side and server_hostname are
     passed through unchanged to the method call.  The argument do_handshake is passed through as
     do_handshake_on_connect.  The remaining arguments have the following behaviour:

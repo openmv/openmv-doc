@@ -1,5 +1,5 @@
-:mod:`os` -- basic "operating system" services
-==============================================
+:mod:`os` --- basic "operating system" services
+===============================================
 
 .. module:: os
    :synopsis: basic "operating system" services
@@ -133,7 +133,7 @@ Terminal redirection and duplication
 .. function:: dupterm_notify(obj_in: Any, /) -> None
 
     Notify the MicroPython REPL that input is available on a stream-like object
-    previously registered via `os.dupterm()`.
+    previously registered via :func:`os.dupterm`.
 
     This function should be called by custom stream implementations (e.g., UART,
     Bluetooth, or other non-USB REPL streams) to inform the REPL that input is
@@ -141,7 +141,7 @@ Terminal redirection and duplication
     Ctrl+C (used to trigger KeyboardInterrupt) are processed promptly by the
     REPL, enabling expected interruption behavior for user code.
 
-    The *obj_in* parameter is ignored by `os.dupterm_notify()`, but is required to allow calling
+    The *obj_in* parameter is ignored by :func:`os.dupterm_notify`, but is required to allow calling
     dupterm_notify from an interrupt handler such as `UART.irq()`.
 
     Example:
@@ -170,24 +170,24 @@ removed in version 2 of MicroPython.
 
 .. function:: mount(fsobj: Any, mount_point: str, *, readonly: bool) -> None
 
-    See `vfs.mount`.
+    See :func:`vfs.mount`.
 
 .. function:: umount(mount_point: str) -> None
 
-    See `vfs.umount`.
+    See :func:`vfs.umount`.
 
 .. class:: VfsFat(block_dev: AbstractBlockDev)
 
-    See `vfs.VfsFat`.
+    See :class:`vfs.VfsFat`.
 
 .. class:: VfsLfs1(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32)
 
-    See `vfs.VfsLfs1`.
+    See :class:`vfs.VfsLfs1`.
 
 .. class:: VfsLfs2(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32, mtime: bool = True)
 
-    See `vfs.VfsLfs2`.
+    See :class:`vfs.VfsLfs2`.
 
 .. class:: VfsPosix(root: Optional[str] = None)
 
-    See `vfs.VfsPosix`.
+    See :class:`vfs.VfsPosix`.

@@ -1,5 +1,5 @@
-:mod:`array` -- arrays of numeric data
-======================================
+:mod:`array` --- arrays of numeric data
+=======================================
 
 .. module:: array
    :synopsis: efficient arrays of numeric data
@@ -10,7 +10,7 @@ but backed by a contiguous block of memory accessible via the buffer
 protocol.
 
 Supported type codes
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 The single-character ``typecode`` argument selects the element type:
 
@@ -73,7 +73,7 @@ The single-character ``typecode`` argument selects the element type:
 
 The ``'f'`` and ``'d'`` codes require firmware built with floating-point
 support (the default on most boards). The exact width of ``'i'`` and
-``'I'`` follows the host C ABI — typically 4 bytes on the Cortex-M
+``'I'`` follows the host C ABI --- typically 4 bytes on the Cortex-M
 ports.
 
 Classes
@@ -87,7 +87,7 @@ Classes
 
     In addition to the methods below, array objects also implement the buffer
     protocol. This means the contents of the entire array can be accessed as raw
-    bytes via a `memoryview` or other interfaces which use this protocol.
+    bytes via a :class:`memoryview` or other interfaces which use this protocol.
 
     .. method:: append(val: Any) -> None
 
@@ -102,7 +102,7 @@ Classes
 
         Indexed read of the array, called as ``a[index]`` (where ``a`` is an ``array``).
         Returns a value if *index* is an ``int`` and an ``array`` if *index* is a slice.
-        Negative indices count from the end and ``IndexError`` is thrown if the index is
+        Negative indices count from the end and :exc:`IndexError` is thrown if the index is
         out of range.
 
         **Note:** ``__getitem__`` cannot be called directly (``a.__getitem__(index)`` fails) and
@@ -112,7 +112,7 @@ Classes
 
         Indexed write into the array, called as ``a[index] = value`` (where ``a`` is an ``array``).
         ``value`` is a single value if *index* is an ``int`` and an ``array`` if *index* is a slice.
-        Negative indices count from the end and ``IndexError`` is thrown if the index is out of range.
+        Negative indices count from the end and :exc:`IndexError` is thrown if the index is out of range.
 
         **Note:** ``__setitem__`` cannot be called directly (``a.__setitem__(index, value)`` fails) and
         is not present in ``__dict__``, however ``a[index] = value`` does work.

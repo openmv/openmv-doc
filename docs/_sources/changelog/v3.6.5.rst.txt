@@ -1,0 +1,112 @@
+.. _changelog_v3_6_5:
+
+v3.6.5
+======
+
+v3.6.5 updates TensorFlow and :mod:`ulab`, substantially improves the **HM01B0**
+camera (arbitrary resolutions, QQVGA, cropping, ``set_auto_exposure()``, and
+an anti-flicker fix), and brings Portenta external-SDRAM and production board
+support. The legacy CMSIS-NN training tooling/examples were removed and the
+OpenMV 4 Plus framebuffer was reduced — read the breaking changes below.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **HM01B0** — arbitrary resolutions, QQVGA, cropping, and ``set_auto_exposure()``
+  support, plus an automatic-exposure flicker fix.
+- **TensorFlow / ulab** updated to their latest versions.
+- **Portenta** — external-SDRAM usage and production board files.
+- **Fixes** — lens correction, image quality at low resolutions, and an FPS
+  clock fix.
+- **Breaking:** the legacy CMSIS-NN training/conversion tooling and examples
+  were removed and the OpenMV 4 Plus framebuffer was reduced — see the
+  breaking changes.
+
+New features
+------------
+
+- **HM01B0** — added arbitrary-resolution support, QQVGA and additional
+  stubs, sensor-side cropping, and :func:`sensor.set_auto_exposure` support.
+- **Apriltag readout** — added a readout-control apriltag-tracking example.
+
+Other changes and improvements
+------------------------------
+
+- Updated TensorFlow and :mod:`ulab` to their latest versions; added Portenta
+  external-SDRAM usage and production/CI board files; cleaned up the
+  MT9V034 driver and the framebuffer accessor functions.
+
+Bug fixes
+---------
+
+Camera and imaging:
+
+- Fixed flickering during automatic exposure on the HM01B0, lens correction,
+  image quality at lower resolutions, the OV5640/JPEG line copy
+  (``dest_fb``), the FPS clock, and returning 0 when ``bpp`` is negative;
+  removed an unnecessary HM01B0 horizontal flip.
+
+Hardware and board support
+--------------------------
+
+- **HM01B0** — arbitrary resolutions, QQVGA, and cropping.
+- **Arduino Portenta H7** — external SDRAM and updated production board
+  files.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v3.6.4 and v3.6.5. Scope: Python C-modules in
+``modules/``, Python libraries in ``scripts/libraries/``, and the bundled
+tooling/examples.
+
+Each change is tagged with its impact:
+
+- *behavior* — same API, different results; re-check tuned scripts.
+- *tooling* — affects the build/conversion tooling or bundled examples, not
+  the firmware Python API.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v3_6_5_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v3_6_5_fb:
+
+OpenMV 4 Plus framebuffer reduced *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The OpenMV 4 Plus framebuffer was reduced to 20 MB (and the OpenMV 2/3 buffer
+size was corrected). Memory-tight scripts on the OpenMV 4 Plus that allocated
+very large frames/objects from the framebuffer may now hit allocation limits
+sooner and should be re-checked.
+
+*Commits:* `3a790a827 <https://github.com/openmv/openmv/commit/3a790a827>`__
+
+.. _v3_6_5_cmsisnn:
+
+Legacy CMSIS-NN tooling and examples removed *(tooling)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The legacy CMSIS-NN model-training/conversion tooling (``nn_convert.py``,
+``nn_quantizer.py``, the LeNet/CIFAR/smile model files) and the
+``25-Machine-Learning/nn_*.py`` example scripts were removed. The ``nn``
+module itself still works in this release (it is removed later, in v3.9.0),
+but the CMSIS-NN model-generation tooling is gone — use the TensorFlow Lite
+(``tf``) workflow instead.
+
+*Commits:* `588f79a62 <https://github.com/openmv/openmv/commit/588f79a62>`__
+
+.. _v3_6_5_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Re-check large framebuffer allocations on the OpenMV 4 Plus against the
+reduced 20 MB framebuffer (:ref:`the framebuffer change <v3_6_5_fb>`), and
+move CMSIS-NN model generation to the TensorFlow Lite workflow
+(:ref:`the CMSIS-NN tooling removal <v3_6_5_cmsisnn>`). All other scripts run
+unchanged.

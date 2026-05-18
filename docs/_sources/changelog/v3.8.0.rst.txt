@@ -1,0 +1,167 @@
+.. _changelog_v3_8_0:
+
+v3.8.0
+======
+
+v3.8.0 updates the core to **MicroPython 1.13**, freezes a large set of helper
+libraries into the firmware, adds **Portenta Ethernet** (with networking
+examples), **HDMI CEC** support to the ``lcd`` module, :class:`pyb.CAN`
+baudrate/sampling-point configuration, and a wave of H7 low-power and HAL
+fixes. The :mod:`time` / ``utime`` modules were merged and F4 :class:`pyb.DAC` DMA was
+disabled — read the breaking changes below.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **MicroPython 1.13** — the bundled MicroPython core was updated.
+- **Frozen libraries** — ``uasyncio``, :mod:`mqtt`, :mod:`rpc`, :mod:`rtsp`,
+  :mod:`modbus`, :mod:`bno055`, :mod:`pid`, :mod:`ssd1306`, and more are now frozen into
+  the firmware.
+- **Portenta Ethernet** — Ethernet support plus HTTP / SSL / peer-to-peer
+  examples.
+- **HDMI CEC** — new CEC API in the ``lcd`` module (Pure Thermal).
+- :class:`pyb.CAN` — bit timing from ``baudrate`` / ``sampling_point``
+  keywords.
+- **Breaking:** the :mod:`time` / ``utime`` modules were merged and F4
+  :class:`pyb.DAC` DMA functions were disabled — see the breaking changes.
+
+New features
+------------
+
+- **Frozen manifest** — ``uasyncio``, :mod:`mqtt`, :mod:`rpc`, :mod:`rtsp`,
+  :mod:`modbus`, :mod:`bno055`, :mod:`mutex`, :mod:`pid`, :mod:`ssd1306`, :mod:`tb6612`, and
+  :mod:`vl53l1x` are now frozen into the firmware on OpenMV 3 / 4 / 4 Plus /
+  Pure Thermal / Portenta.
+- **Portenta Ethernet** — enabled Ethernet with ``http_client``,
+  ``http_client_ssl``, and ``peer_to_peer`` examples.
+- **HDMI CEC** — added an HDMI CEC API to the ``lcd`` module (Pure Thermal).
+- :class:`pyb.CAN` — the constructor / ``init()`` now derives bit timing from
+  ``baudrate`` and ``sampling_point`` keywords (the manual prescaler form
+  still works); CAN examples updated accordingly.
+
+Other changes and improvements
+------------------------------
+
+- The REPL banner now includes the HAL version string; the Audio FFT example
+  was updated for the newer :mod:`ulab` API.
+
+Bug fixes
+---------
+
+Camera and sensors:
+
+- Fixed the OV2640 sensor clock and OV5640 PCLK frequency scaling on STM32H7
+  rev Y devices; recover the FIR I2C bus from an arbitration-lost state by
+  pulsing SCL, and retry AMG8833 init on an F7 soft-reset.
+
+Power and timers:
+
+- Fixed H7 low-power (stop/standby) entry — voltage scaling for rev V,
+  re-enabling the oscillator/PLL on wake, SDRAM low-power with DRAM retention,
+  disabling Systick on stop entry, and enabling DBGMCU only in debug builds.
+  Fixed the :class:`machine.Timer` HAL state after the H7 HAL update and reverted
+  the SD read/write IRQ priority change.
+
+Display and connectivity:
+
+- Fixed the F4 SPI LCD 8/16-bit data-size config (wrong ``MCU_SERIES``
+  define), returned an error on WINC1500 SPI bus-init failure instead of
+  silently continuing, and used a static SPI handle to avoid WINC1500 SPI bus
+  conflicts. Fixed a MicroPython GC-collect bug.
+
+System:
+
+- ``unittests.py`` no longer marks the suite failed when a test is disabled or
+  unavailable; removed the broken Thermopile-shield ``camera_lcd`` examples.
+
+Hardware and board support
+--------------------------
+
+- **OpenMV Pure Thermal** — board updated and renamed
+  (``OPENMVPURETHERMAL`` → ``OPENMVPT``), with HDMI CEC.
+- **OpenMV 2** — OV2640 camera driver enabled.
+- **Arduino Portenta H7** — Ethernet support.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v3.7.0 and v3.8.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v3_8_0_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v3_8_0_time:
+
+:mod:`time` / ``utime`` modules merged *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :mod:`time` and ``utime`` modules were merged and the OpenMV ``clock`` class
+moved to ``utime``. All bundled examples were updated to
+``import utime`` / ``clock = utime.clock()``. Scripts that relied on
+``import time`` for the ``clock`` class should import ``utime`` instead.
+
+*Commits:* `20587f308 <https://github.com/openmv/openmv/commit/20587f308>`__
+
+.. _v3_8_0_dac:
+
+F4 :class:`pyb.DAC` DMA functions disabled *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On F4-based boards, :class:`pyb.DAC` functions that require DMA were disabled
+because the F4 heap lives in CCM, which is not DMA-accessible. F4 scripts that
+used DAC DMA-buffer writes must avoid those functions.
+
+*Commits:* `d61f236f2 <https://github.com/openmv/openmv/commit/d61f236f2>`__
+
+.. _v3_8_0_micropython:
+
+MicroPython updated to 1.13 *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The bundled MicroPython core was updated to 1.13. Standard-library and
+language behavior follows upstream MicroPython 1.13; re-check scripts that
+depend on version-specific :mod:`micropython` / standard-module behavior.
+
+*Commits:* `fb0a5e26d <https://github.com/openmv/openmv/commit/fb0a5e26d>`__
+
+.. _v3_8_0_cpufreq:
+
+``cpufreq`` supported frequencies are revision-dependent *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+More CPU frequencies were added and made silicon-revision aware:
+``cpufreq.get_supported_frequencies()`` now returns a revision-dependent list
+on the H7 (50/100/200/400 MHz on rev X/Y, 60/120/240/480 MHz on rev V).
+Scripts that hard-coded a frequency from the old fixed list should query the
+supported list at runtime.
+
+*Commits:* `825dd0742 <https://github.com/openmv/openmv/commit/825dd0742>`__
+
+.. _v3_8_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v3.8.0 the typical work is:
+
+#. Change ``import time`` to ``import utime`` where you use the ``clock``
+   class (:ref:`the time/utime merge <v3_8_0_time>`).
+#. On F4 boards, stop using :class:`pyb.DAC` DMA-buffer functions
+   (:ref:`the F4 DAC change <v3_8_0_dac>`).
+#. Re-validate scripts that depend on version-specific MicroPython behavior
+   against 1.13 (:ref:`the MicroPython bump <v3_8_0_micropython>`) and query
+   ``cpufreq.get_supported_frequencies()`` at runtime instead of hard-coding
+   (:ref:`the cpufreq change <v3_8_0_cpufreq>`).
+
+All other scripts run unchanged.

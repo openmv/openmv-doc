@@ -3,12 +3,12 @@ from typing import Any, Iterable, Sequence
 
 def namedtuple(name: str, fields: str | Sequence[str]) -> type:
     """
-    This is factory function to create a new namedtuple type with a specific
+    This is a factory function to create a new namedtuple type with a specific
     name and set of fields. A namedtuple is a subclass of tuple which allows
     to access its fields not just by numeric index, but also with an attribute
     access syntax using symbolic field names. Fields is a sequence of strings
     specifying field names. For compatibility with CPython it can also be a
-    a string with space-separated field named (but this is less efficient).
+    string with space-separated field names (but this is less efficient).
     Example of use:
     from collections import namedtuple
 
@@ -17,6 +17,7 @@ def namedtuple(name: str, fields: str | Sequence[str]) -> type:
     t2 = MyTuple(2, "bar")
     print(t1.name)
     assert t2.name == t2[1]
+    Instances also provide the following method:
     """
     ...
 
@@ -73,7 +74,7 @@ class deque:
     discard items from the opposite end.
 
     The optional flags can be 1 to check for overflow when adding items.
-    Deque objects support bool, len, iteration and subscript load and store.
+    Deque objects support bool, len(), iteration and subscript load and store.
     They also have the following methods:
     """
     def __init__(self, iterable: Iterable, maxlen: int, flags: int = 0) -> None: ...

@@ -1,5 +1,5 @@
-:mod:`re` -- simple regular expressions
-=======================================
+:mod:`re` --- simple regular expressions
+========================================
 
 .. module:: re
    :synopsis: regular expressions

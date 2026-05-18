@@ -120,7 +120,7 @@ The `CSI` class is used to control a camera sensor.
    .. method:: framesize(framesize:Optional[Union[int,Tuple[int,int]]]=None) -> Optional[int]
 
       Sets the frame size for the camera module to one of the size constants (e.g. `csi.QVGA`,
-      `csi.VGA`, `csi.HD`, etc. — see the constants section).
+      `csi.VGA`, `csi.HD`, etc. --- see the constants section).
 
       Alternatively, you may pass a custom framesize as a ``(w, h)`` tuple. When `CSI.snapshot` is
       called the custom framesize will be evaluated against DMA rules. Generally framesizes need
@@ -299,7 +299,7 @@ The `CSI` class is used to control a camera sensor.
 
       ``count`` of 1 (single buffer), 2 (double buffer), or 3 (triple buffer) selects the
       corresponding capture mode. Pass 4 or greater to put the driver into video FIFO mode where
-      ``count`` buffers are queued — useful for video recording to an SD card. On frame drop, all
+      ``count`` buffers are queued --- useful for video recording to an SD card. On frame drop, all
       frame buffers except the active one are cleared so `CSI.snapshot` always returns a recent
       frame.
 
@@ -345,65 +345,65 @@ The `CSI` class is used to control a camera sensor.
       Executes a sensor-specific request. The first argument is one of the ``IOCTL_*`` constants;
       additional arguments and return value depend on the request.
 
-      * `csi.IOCTL_SET_READOUT_WINDOW` — Pass an ``(x, y, w, h)`` or ``(w, h)`` tuple/list to set
+      * `csi.IOCTL_SET_READOUT_WINDOW` --- Pass an ``(x, y, w, h)`` or ``(w, h)`` tuple/list to set
         the readout window of the sensor. Increases frame rate at the cost of field-of-view.
-      * `csi.IOCTL_GET_READOUT_WINDOW` — Returns the current readout window as ``(x, y, w, h)``.
-      * `csi.IOCTL_SET_TRIGGERED_MODE` — Pass ``True``/``False`` to set triggered mode (MT9V034).
-      * `csi.IOCTL_GET_TRIGGERED_MODE` — Returns the current triggered mode state.
-      * `csi.IOCTL_SET_FOV_WIDE` — Pass ``True``/``False`` to enable `CSI.framesize` to optimize
+      * `csi.IOCTL_GET_READOUT_WINDOW` --- Returns the current readout window as ``(x, y, w, h)``.
+      * `csi.IOCTL_SET_TRIGGERED_MODE` --- Pass ``True``/``False`` to set triggered mode (MT9V034).
+      * `csi.IOCTL_GET_TRIGGERED_MODE` --- Returns the current triggered mode state.
+      * `csi.IOCTL_SET_FOV_WIDE` --- Pass ``True``/``False`` to enable `CSI.framesize` to optimize
         for field-of-view over FPS.
-      * `csi.IOCTL_GET_FOV_WIDE` — Returns the current FOV-wide state.
-      * `csi.IOCTL_SET_NIGHT_MODE` — Pass ``True``/``False`` to enable night mode (OV7725, OV5640).
-      * `csi.IOCTL_GET_NIGHT_MODE` — Returns the current night mode state.
-      * `csi.IOCTL_TRIGGER_AUTO_FOCUS` — Trigger auto focus on the OV5640 FPC module.
-      * `csi.IOCTL_PAUSE_AUTO_FOCUS` — Pause auto focus on the OV5640 FPC module.
-      * `csi.IOCTL_RESET_AUTO_FOCUS` — Reset auto focus on the OV5640 FPC module.
-      * `csi.IOCTL_WAIT_ON_AUTO_FOCUS` — Wait for auto focus to finish (OV5640 FPC). Optional
+      * `csi.IOCTL_GET_FOV_WIDE` --- Returns the current FOV-wide state.
+      * `csi.IOCTL_SET_NIGHT_MODE` --- Pass ``True``/``False`` to enable night mode (OV7725, OV5640).
+      * `csi.IOCTL_GET_NIGHT_MODE` --- Returns the current night mode state.
+      * `csi.IOCTL_TRIGGER_AUTO_FOCUS` --- Trigger auto focus on the OV5640 FPC module.
+      * `csi.IOCTL_PAUSE_AUTO_FOCUS` --- Pause auto focus on the OV5640 FPC module.
+      * `csi.IOCTL_RESET_AUTO_FOCUS` --- Reset auto focus on the OV5640 FPC module.
+      * `csi.IOCTL_WAIT_ON_AUTO_FOCUS` --- Wait for auto focus to finish (OV5640 FPC). Optional
         second argument is the timeout in ms (default 5000).
-      * `csi.IOCTL_LEPTON_GET_WIDTH` — Returns the FLIR Lepton image width in pixels.
-      * `csi.IOCTL_LEPTON_GET_HEIGHT` — Returns the FLIR Lepton image height in pixels.
-      * `csi.IOCTL_LEPTON_GET_RADIOMETRY` — Returns the FLIR Lepton type (radiometric or not).
-      * `csi.IOCTL_LEPTON_GET_REFRESH` — Returns the FLIR Lepton refresh rate in Hz.
-      * `csi.IOCTL_LEPTON_GET_RESOLUTION` — Returns the FLIR Lepton ADC resolution in bits.
-      * `csi.IOCTL_LEPTON_RUN_COMMAND` — Pass a 16-bit value as the FLIR Lepton SDK command.
-      * `csi.IOCTL_LEPTON_SET_ATTRIBUTE` — Pass the 16-bit attribute id and a bytes/bytearray
+      * `csi.IOCTL_LEPTON_GET_WIDTH` --- Returns the FLIR Lepton image width in pixels.
+      * `csi.IOCTL_LEPTON_GET_HEIGHT` --- Returns the FLIR Lepton image height in pixels.
+      * `csi.IOCTL_LEPTON_GET_RADIOMETRY` --- Returns the FLIR Lepton type (radiometric or not).
+      * `csi.IOCTL_LEPTON_GET_REFRESH` --- Returns the FLIR Lepton refresh rate in Hz.
+      * `csi.IOCTL_LEPTON_GET_RESOLUTION` --- Returns the FLIR Lepton ADC resolution in bits.
+      * `csi.IOCTL_LEPTON_RUN_COMMAND` --- Pass a 16-bit value as the FLIR Lepton SDK command.
+      * `csi.IOCTL_LEPTON_SET_ATTRIBUTE` --- Pass the 16-bit attribute id and a bytes/bytearray
         payload (multiple of 16 bits) as defined by the FLIR Lepton SDK.
-      * `csi.IOCTL_LEPTON_GET_ATTRIBUTE` — Pass the 16-bit attribute id and a 16-bit-word count.
+      * `csi.IOCTL_LEPTON_GET_ATTRIBUTE` --- Pass the 16-bit attribute id and a 16-bit-word count.
         Returns a bytearray.
-      * `csi.IOCTL_LEPTON_GET_FPA_TEMP` — Returns the FLIR Lepton FPA temp in Celsius.
-      * `csi.IOCTL_LEPTON_GET_AUX_TEMP` — Returns the FLIR Lepton AUX temp in Celsius.
-      * `csi.IOCTL_LEPTON_SET_MODE` — Pass ``measurement_enabled`` and optionally
+      * `csi.IOCTL_LEPTON_GET_FPA_TEMP` --- Returns the FLIR Lepton FPA temp in Celsius.
+      * `csi.IOCTL_LEPTON_GET_AUX_TEMP` --- Returns the FLIR Lepton AUX temp in Celsius.
+      * `csi.IOCTL_LEPTON_SET_MODE` --- Pass ``measurement_enabled`` and optionally
         ``high_temp_enabled`` to switch the Lepton between AGC and direct-temperature output.
-      * `csi.IOCTL_LEPTON_GET_MODE` — Returns ``(measurement_enabled, high_temp_enabled)``.
-      * `csi.IOCTL_LEPTON_SET_RANGE` — Pass ``(min_celsius, max_celsius)`` to set the temperature
+      * `csi.IOCTL_LEPTON_GET_MODE` --- Returns ``(measurement_enabled, high_temp_enabled)``.
+      * `csi.IOCTL_LEPTON_SET_RANGE` --- Pass ``(min_celsius, max_celsius)`` to set the temperature
         range mapped to 0..255 when measurement mode is enabled.
-      * `csi.IOCTL_LEPTON_GET_RANGE` — Returns the ``(min, max)`` temperature range in Celsius.
-      * `csi.IOCTL_HIMAX_MD_ENABLE` — Pass ``True``/``False`` to enable HM01B0 motion detection.
-      * `csi.IOCTL_HIMAX_MD_WINDOW` — Pass ``(x, y, w, h)`` or ``(w, h)`` to set the HM01B0 motion
+      * `csi.IOCTL_LEPTON_GET_RANGE` --- Returns the ``(min, max)`` temperature range in Celsius.
+      * `csi.IOCTL_HIMAX_MD_ENABLE` --- Pass ``True``/``False`` to enable HM01B0 motion detection.
+      * `csi.IOCTL_HIMAX_MD_WINDOW` --- Pass ``(x, y, w, h)`` or ``(w, h)`` to set the HM01B0 motion
         detection window.
-      * `csi.IOCTL_HIMAX_MD_THRESHOLD` — Pass a 0-255 threshold for HM01B0 motion detection.
-      * `csi.IOCTL_HIMAX_MD_CLEAR` — Clears the HM01B0 motion detection interrupt.
-      * `csi.IOCTL_HIMAX_OSC_ENABLE` — Pass ``True``/``False`` to enable the HM01B0 oscillator.
-      * `csi.IOCTL_GET_RGB_STATS` — Returns ``(r, gb, gr, b)`` RGB statistics from the sensor.
-      * `csi.IOCTL_GENX320_SET_BIASES` — Pass a ``GENX320_BIASES_*`` constant to apply a bias
+      * `csi.IOCTL_HIMAX_MD_THRESHOLD` --- Pass a 0-255 threshold for HM01B0 motion detection.
+      * `csi.IOCTL_HIMAX_MD_CLEAR` --- Clears the HM01B0 motion detection interrupt.
+      * `csi.IOCTL_HIMAX_OSC_ENABLE` --- Pass ``True``/``False`` to enable the HM01B0 oscillator.
+      * `csi.IOCTL_GET_RGB_STATS` --- Returns ``(r, gb, gr, b)`` RGB statistics from the sensor.
+      * `csi.IOCTL_GENX320_SET_BIASES` --- Pass a ``GENX320_BIASES_*`` constant to apply a bias
         preset.
-      * `csi.IOCTL_GENX320_SET_BIAS` — Pass a ``GENX320_BIAS_*`` constant and an integer value to
+      * `csi.IOCTL_GENX320_SET_BIAS` --- Pass a ``GENX320_BIAS_*`` constant and an integer value to
         set a single bias.
-      * `csi.IOCTL_GENX320_SET_AFK` — Pass ``enable`` (and optionally ``freq_low_hz``,
+      * `csi.IOCTL_GENX320_SET_AFK` --- Pass ``enable`` (and optionally ``freq_low_hz``,
         ``freq_high_hz``) to control the anti-flicker filter.
-      * `csi.IOCTL_GENX320_SET_STC` — Pass a ``GENX320_STC_*`` constant (and optionally up to two
+      * `csi.IOCTL_GENX320_SET_STC` --- Pass a ``GENX320_STC_*`` constant (and optionally up to two
         further arguments) to control spatio-temporal contrast filtering.
-      * `csi.IOCTL_GENX320_SET_MODE` — Pass a ``GENX320_MODE_*`` constant. For event mode, pass
+      * `csi.IOCTL_GENX320_SET_MODE` --- Pass a ``GENX320_MODE_*`` constant. For event mode, pass
         the row-axis length of the event ``ndarray`` as the second argument.
-      * `csi.IOCTL_GENX320_READ_EVENTS` — Pass a uint16 ``ndarray`` of shape ``(EVT_res, 6)`` (with
+      * `csi.IOCTL_GENX320_READ_EVENTS` --- Pass a uint16 ``ndarray`` of shape ``(EVT_res, 6)`` (with
         ``EVT_res`` a power of two between 1024 and 65536). The columns are
         ``[0]`` event type (`csi.PIX_OFF_EVENT`/`csi.PIX_ON_EVENT`/trigger), ``[1]`` seconds,
         ``[2]`` milliseconds, ``[3]`` microseconds, ``[4]`` x coordinate, ``[5]`` y coordinate.
         Returns the number of events written.
-      * `csi.IOCTL_GENX320_CALIBRATE` — Pass an integer iteration count and a sigma float to turn
+      * `csi.IOCTL_GENX320_CALIBRATE` --- Pass an integer iteration count and a sigma float to turn
         off pixels outside ``sigma`` standard deviations of the normal distribution. Returns the
         number of pixels disabled.
-      * `csi.IOCTL_GENX320_READ_EVENTS_RAW` — Returns an `image.Image` containing the raw event
+      * `csi.IOCTL_GENX320_READ_EVENTS_RAW` --- Returns an `image.Image` containing the raw event
         frame from the GENX320.
 
    .. method:: color_palette(palette:Optional[int]=None) -> Optional[int]
@@ -888,20 +888,20 @@ Constants
    Sets the GENX320 sensor biases to one of the
    ``GENX320_BIASES_*`` presets. See `CSI.ioctl`. After
    `CSI.reset` the driver applies `csi.GENX320_BIASES_LOW_NOISE`,
-   not `csi.GENX320_BIASES_DEFAULT` — use this ioctl to switch to
+   not `csi.GENX320_BIASES_DEFAULT` --- use this ioctl to switch to
    a different preset when the application needs more sensitivity
    or bandwidth.
 
 .. data:: GENX320_BIASES_DEFAULT
    :type: int
 
-   GenX320 datasheet defaults — balanced sensitivity, noise, and
+   GenX320 datasheet defaults --- balanced sensitivity, noise, and
    bandwidth for general scenes.
 
 .. data:: GENX320_BIASES_LOW_LIGHT
    :type: int
 
-   Tuned for low-light conditions — both contrast thresholds
+   Tuned for low-light conditions --- both contrast thresholds
    loosened for higher sensitivity, FO lowered, HPF disabled so
    slow brightness changes still register.
 
@@ -909,14 +909,14 @@ Constants
    :type: int
 
    Tuned for tracking high-contrast blinking LEDs (active markers)
-   — contrast thresholds raised so only sharp transitions trigger,
+   --- contrast thresholds raised so only sharp transitions trigger,
    FO and HPF cranked high to maximize bandwidth and reject slow
    ambient drift, REFR=0 so every blink edge is captured.
 
 .. data:: GENX320_BIASES_LOW_NOISE
    :type: int
 
-   Driver default — lower sensitivity than ``DEFAULT`` (raised
+   Driver default --- lower sensitivity than ``DEFAULT`` (raised
    contrast thresholds) and a lower FO for less background-noise
    activity. Best for static or slow scenes where false events
    would dominate.
@@ -924,7 +924,7 @@ Constants
 .. data:: GENX320_BIASES_HIGH_SPEED
    :type: int
 
-   Tuned for fast-motion scenes — higher FO for wider pixel
+   Tuned for fast-motion scenes --- higher FO for wider pixel
    bandwidth, higher HPF to reject slow changes, higher REFR for
    a longer dead time after each event so the readout doesn't
    saturate.
@@ -936,42 +936,42 @@ Constants
    ``GENX320_BIAS_*`` constant (`csi.GENX320_BIAS_DIFF_OFF`,
    `csi.GENX320_BIAS_DIFF_ON`, `csi.GENX320_BIAS_FO`,
    `csi.GENX320_BIAS_HPF`, or `csi.GENX320_BIAS_REFR`) and an
-   integer DAC value. Each bias is independent — call this ioctl
+   integer DAC value. Each bias is independent --- call this ioctl
    repeatedly to tweak only the biases you need after applying a
    preset. See `CSI.ioctl`.
 
 .. data:: GENX320_BIAS_DIFF_OFF
    :type: int
 
-   Negative comparator contrast threshold — controls how much a
+   Negative comparator contrast threshold --- controls how much a
    pixel has to darken before a `csi.PIX_OFF_EVENT` fires. Lower
    value = more sensitive (more events).
 
 .. data:: GENX320_BIAS_DIFF_ON
    :type: int
 
-   Positive comparator contrast threshold — controls how much a
+   Positive comparator contrast threshold --- controls how much a
    pixel has to brighten before a `csi.PIX_ON_EVENT` fires. Lower
    value = more sensitive (more events).
 
 .. data:: GENX320_BIAS_FO
    :type: int
 
-   Pixel low-pass cut-off frequency — trades pixel bandwidth
+   Pixel low-pass cut-off frequency --- trades pixel bandwidth
    (speed/latency) against background-noise activity. Higher
    value = faster pixel response, more noise.
 
 .. data:: GENX320_BIAS_HPF
    :type: int
 
-   Pixel high-pass cut-off frequency — rejects slow brightness
+   Pixel high-pass cut-off frequency --- rejects slow brightness
    changes. Higher value = slower changes filtered out (only
    fast transitions register).
 
 .. data:: GENX320_BIAS_REFR
    :type: int
 
-   Pixel refractory period — dead time after a pixel emits an
+   Pixel refractory period --- dead time after a pixel emits an
    event during which it cannot fire again. Higher value =
    longer dead time, fewer events from a busy pixel.
 
@@ -998,7 +998,7 @@ Constants
 .. data:: GENX320_STC_DISABLE
    :type: int
 
-   Disable the GENX320 STC/trail filter — every event passes
+   Disable the GENX320 STC/trail filter --- every event passes
    through.
 
 .. data:: GENX320_STC_ONLY
@@ -1006,7 +1006,7 @@ Constants
 
    *Keeps the second event of a burst*; drops the first event
    and any later events. Takes one parameter, ``stc_threshold``
-   in milliseconds — events within that window of a prior event
+   in milliseconds --- events within that window of a prior event
    on the same pixel are considered part of the same burst.
 
 .. data:: GENX320_STC_TRAIL_ONLY
@@ -1019,7 +1019,7 @@ Constants
 .. data:: GENX320_STC_TRAIL
    :type: int
 
-   *Keeps the first event of a burst plus subsequent edges* —
+   *Keeps the first event of a burst plus subsequent edges* ---
    combines `csi.GENX320_STC_ONLY` and `csi.GENX320_STC_TRAIL_ONLY`.
    Takes two parameters, ``stc_threshold`` and ``trail_threshold``
    (both ms); the sensor requires the two to stay within roughly
@@ -1038,7 +1038,7 @@ Constants
 .. data:: GENX320_MODE_HISTO
    :type: int
 
-   Histogram mode — events are accumulated on-chip into per-pixel
+   Histogram mode --- events are accumulated on-chip into per-pixel
    bins and reported as a 320x320 grayscale frame at the
    configured rate (~20-350 FPS). The cam looks like a regular
    camera, so all the standard image-processing routines work
@@ -1047,7 +1047,7 @@ Constants
 .. data:: GENX320_MODE_EVENT
    :type: int
 
-   Event mode — bypasses the on-chip histogram and streams raw
+   Event mode --- bypasses the on-chip histogram and streams raw
    events into a numpy ``ndarray`` with microsecond timestamps,
    for applications that need full temporal detail rather than a
    pre-binned frame.
@@ -1069,12 +1069,12 @@ Constants
 .. data:: IOCTL_GENX320_CALIBRATE
    :type: int
 
-   Automatically disables hot pixels — pixels that fire
+   Automatically disables hot pixels --- pixels that fire
    spuriously even on a static scene. The driver builds a
    320x320 per-pixel hit count, computes the mean and standard
    deviation, and disables any pixel whose count exceeds
    ``mean + sigma * stddev``. Pass an event-count budget
-   (events to tally before computing statistics — higher = more
+   (events to tally before computing statistics --- higher = more
    reliable estimate, slower; ~10000 is a good default) and a
    sigma float (lower = more aggressive, ~0.5 default). Returns
    the number of pixels disabled. Aim the cam at a static scene
@@ -1085,7 +1085,7 @@ Constants
    :type: int
 
    Returns a raw event-frame `image.Image` from the GENX320,
-   with the events still in the chip's native packed encoding —
+   with the events still in the chip's native packed encoding ---
    useful if you want to forward the raw stream to a PC for
    off-line decoding rather than process it on the cam. See
    `CSI.ioctl`.
@@ -1093,35 +1093,35 @@ Constants
 .. data:: PIX_OFF_EVENT
    :type: int
 
-   GENX320 event type (column ``[0]``) — a pixel detected a
+   GENX320 event type (column ``[0]``) --- a pixel detected a
    brightness decrease (the negative-contrast threshold was
    crossed). Columns ``[4]/[5]`` carry the pixel's X/Y.
 
 .. data:: PIX_ON_EVENT
    :type: int
 
-   GENX320 event type (column ``[0]``) — a pixel detected a
+   GENX320 event type (column ``[0]``) --- a pixel detected a
    brightness increase (the positive-contrast threshold was
    crossed). Columns ``[4]/[5]`` carry the pixel's X/Y.
 
 .. data:: RST_TRIGGER_RISING
    :type: int
 
-   GENX320 event type (column ``[0]``) — pixel-reset trigger,
+   GENX320 event type (column ``[0]``) --- pixel-reset trigger,
    rising edge. X/Y are unused. Not generated by the firmware
    at this time.
 
 .. data:: RST_TRIGGER_FALLING
    :type: int
 
-   GENX320 event type (column ``[0]``) — pixel-reset trigger,
+   GENX320 event type (column ``[0]``) --- pixel-reset trigger,
    falling edge. X/Y are unused. Not generated by the firmware
    at this time.
 
 .. data:: EXT_TRIGGER_RISING
    :type: int
 
-   GENX320 event type (column ``[0]``) — the sensor's external
+   GENX320 event type (column ``[0]``) --- the sensor's external
    trigger pin saw a rising edge. The GENX320's external trigger
    input is wired to the camera's frame-sync line, also routed
    to **P10** on the processor and the pin header. X/Y are
@@ -1130,7 +1130,7 @@ Constants
 .. data:: EXT_TRIGGER_FALLING
    :type: int
 
-   GENX320 event type (column ``[0]``) — the sensor's external
+   GENX320 event type (column ``[0]``) --- the sensor's external
    trigger pin saw a falling edge. The GENX320's external trigger
    input is wired to the camera's frame-sync line, also routed
    to **P10** on the processor and the pin header. X/Y are

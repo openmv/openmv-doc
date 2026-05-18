@@ -1,5 +1,5 @@
-:mod:`senml` -- Sensor Markup Language
-======================================
+:mod:`senml` --- Sensor Markup Language
+=======================================
 
 .. module:: senml
    :synopsis: Sensor Markup Language (SenML) encoder/decoder

@@ -1,5 +1,5 @@
-:mod:`binascii` -- binary/ASCII conversions
-===========================================
+:mod:`binascii` --- binary/ASCII conversions
+============================================
 
 .. module:: binascii
    :synopsis: binary/ASCII conversions

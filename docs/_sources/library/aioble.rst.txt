@@ -13,41 +13,41 @@ indicate, l2cap recv/send, pair) are awaitable and support timeouts.
 
 **Supported roles:**
 
-* **Broadcaster (advertiser)** — generate advertising and scan-response
+* **Broadcaster (advertiser)** --- generate advertising and scan-response
   payloads for common fields, automatically split payload across
   advertising and scan response, advertise indefinitely or for a fixed
   duration.
-* **Peripheral** — wait for connection from a central, wait for MTU
+* **Peripheral** --- wait for connection from a central, wait for MTU
   exchange.
-* **Observer (scanner)** — passive and active scanning, combine
+* **Observer (scanner)** --- passive and active scanning, combine
   advertising and scan-response payloads for the same device, parse
   common fields from advertising payloads.
-* **Central** — connect to a peripheral, initiate MTU exchange.
-* **GATT Client** — discover services / characteristics / descriptors
+* **Central** --- connect to a peripheral, initiate MTU exchange.
+* **GATT Client** --- discover services / characteristics / descriptors
   (optionally by UUID); read / write / write-with-response on
   characteristics and descriptors; subscribe to notifications and
   indications (via the CCCD); wait for notifications and indications.
-* **GATT Server** — register services / characteristics / descriptors;
+* **GATT Server** --- register services / characteristics / descriptors;
   wait for writes on characteristics and descriptors; intercept read
   requests; send notifications and indications (and wait on response).
-* **L2CAP** — accept and connect L2CAP connection-oriented channels,
+* **L2CAP** --- accept and connect L2CAP connection-oriented channels,
   manage channel flow control.
-* **Security** — JSON-backed key/secret management, initiate pairing,
+* **Security** --- JSON-backed key/secret management, initiate pairing,
   query encryption / authentication state.
 
 The package is delivered as a meta-package built from several optional
 sub-packages, any combination of which may be installed:
 
-* ``aioble-core`` — core BLE functionality required by every aioble user.
-* ``aioble-central`` — Central (and Observer) role: scanning and
+* ``aioble-core`` --- core BLE functionality required by every aioble user.
+* ``aioble-central`` --- Central (and Observer) role: scanning and
   connecting.
-* ``aioble-client`` — GATT client (typically used by central-role
+* ``aioble-client`` --- GATT client (typically used by central-role
   devices, but can also be used on peripherals).
-* ``aioble-peripheral`` — Peripheral (and Broadcaster) role: advertising.
-* ``aioble-server`` — GATT server (typically used by peripheral-role
+* ``aioble-peripheral`` --- Peripheral (and Broadcaster) role: advertising.
+* ``aioble-server`` --- GATT server (typically used by peripheral-role
   devices, but can also be used on centrals).
-* ``aioble-l2cap`` — L2CAP connection-oriented-channel support.
-* ``aioble-security`` — pairing and bonding support.
+* ``aioble-l2cap`` --- L2CAP connection-oriented-channel support.
+* ``aioble-security`` --- pairing and bonding support.
 
 Installing the meta-package ``aioble`` pulls all of them in.
 

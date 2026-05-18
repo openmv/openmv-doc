@@ -40,7 +40,8 @@ The _thread entry was added in version 1.26.0 and if it exists then the
 target has the _thread module.  If the target enables the GIL (global
 interpreter lock) then this attribute is "GIL".  Otherwise the attribute
 is "unsafe" and the target has threading but does not enable the GIL,
-and mutable Python objects (such as bytearray, list and dict) that are
+and mutable Python objects (such as bytearray, list and
+dict) that are
 shared amongst threads must be protected explicitly by locks such as
 _thread.allocate_lock.
 Difference to CPython
@@ -97,13 +98,15 @@ Python implementation), use sys.implementation instead.
 """
 ps1: int
 """
-Mutable attributes holding strings, which are used for the REPL prompt.  The defaults
-give the standard Python prompt of >>> and ....
+Mutable attribute holding the string used for the primary REPL prompt.  The
+default gives the standard Python prompt of >>>.  See also sys.ps2
+for the continuation prompt.
 """
 ps2: int
 """
-Mutable attributes holding strings, which are used for the REPL prompt.  The defaults
-give the standard Python prompt of >>> and ....
+Mutable attribute holding the string used for the REPL continuation prompt.
+The default gives the standard Python prompt of ....  See also sys.ps1
+for the primary prompt.
 """
 stderr: int
 """Standard error stream."""

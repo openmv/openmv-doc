@@ -1197,7 +1197,7 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
       `csi.PIX_OFF_EVENT` row the pixel gets ``-contrast``. Trigger events are ignored.
       Pixel values are clamped to 0-255.
 
-      ``clear`` if True resets the image buffer to ``brightness`` before drawing — every
+      ``clear`` if True resets the image buffer to ``brightness`` before drawing --- every
       frame becomes a fresh event-only render. Set to False to accumulate events across
       multiple calls (useful for long-exposure motion trails).
 
@@ -1205,7 +1205,7 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
       is True. The default 128 puts ON events at the bright end and OFF events at the dark
       end with equal headroom.
 
-      ``contrast`` controls how much each event shifts its pixel — higher values make
+      ``contrast`` controls how much each event shifts its pixel --- higher values make
       events pop, at the cost of saturating quickly when many events land on the same
       pixel.
 

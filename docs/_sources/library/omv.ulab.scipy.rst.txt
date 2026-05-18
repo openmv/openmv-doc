@@ -6,7 +6,7 @@
 
 Typically imported via ``from ulab import scipy``.
 
-The ``scipy`` module itself exposes no functions of its own — all of its
+The ``scipy`` module itself exposes no functions of its own --- all of its
 functionality lives in the submodules listed below.
 
 Submodules

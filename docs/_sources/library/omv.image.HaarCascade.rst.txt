@@ -12,7 +12,7 @@ Construction
 
 The class has no public constructor. Use `image.HaarCascade()` to load a
 cascade and obtain a ``Cascade`` instance. The ``Cascade`` class itself
-exposes no methods or attributes — it's an opaque handle used by
+exposes no methods or attributes --- it's an opaque handle used by
 `Image.find_features()`.
 
 .. class:: Cascade

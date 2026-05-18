@@ -1,5 +1,5 @@
-:mod:`platform` -- access to underlying platform’s identifying data
-===================================================================
+:mod:`platform` --- access to underlying platform’s identifying data
+====================================================================
 
 .. module:: platform
    :synopsis: access to underlying platform’s identifying data

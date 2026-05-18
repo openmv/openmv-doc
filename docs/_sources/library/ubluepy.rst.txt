@@ -7,7 +7,7 @@
 The ``ubluepy`` module is the legacy Bluetooth LE API shipped with the
 MicroPython **nRF port**. It is loosely modelled on the Linux
 `bluepy <https://github.com/IanHarvey/bluepy>`_ Python library and
-sits directly on top of the Nordic SoftDevice — there is no portable
+sits directly on top of the Nordic SoftDevice --- there is no portable
 back-end, so the module is only available on Nordic targets (the
 Arduino Nano 33 BLE Sense in OpenMV's lineup). The newer
 :mod:`bluetooth` / :doc:`aioble </library/aioble>` APIs are **not**
@@ -17,10 +17,10 @@ on-die radio.
 The available feature set depends on the SoftDevice flashed by the
 firmware:
 
-* **s140** (Nano 33 BLE Sense) — both peripheral *and* central
+* **s140** (Nano 33 BLE Sense) --- both peripheral *and* central
   (scanner) roles. This is what the OpenMV firmware ships.
-* **s132** — both peripheral and central.
-* **s110** — peripheral only; scanner / connect methods are
+* **s132** --- both peripheral and central.
+* **s110** --- peripheral only; scanner / connect methods are
   compiled out.
 
 Peripheral example
@@ -84,13 +84,13 @@ Classes
    ``value``
       One of:
 
-      * ``int`` — a 16-bit numeric UUID (``UUID(0x180A)``).
-      * 6-character ``"0xXXXX"`` string — a 16-bit UUID, e.g.
+      * ``int`` --- a 16-bit numeric UUID (``UUID(0x180A)``).
+      * 6-character ``"0xXXXX"`` string --- a 16-bit UUID, e.g.
         ``UUID("0x181A")``.
       * 36-character ``"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"``
-        string — a full 128-bit UUID. The vendor-specific portion
+        string --- a full 128-bit UUID. The vendor-specific portion
         is registered with the SoftDevice on construction.
-      * Another :class:`UUID` instance — performs a copy.
+      * Another :class:`UUID` instance --- performs a copy.
 
       Any other length raises ``ValueError("Invalid UUID string
       length")``.
@@ -161,7 +161,7 @@ Classes
    ``attrs`` (keyword-only)
       Bitmask of additional GATT attributes. Use
       :data:`Characteristic.ATTR_CCCD` to attach a Client
-      Characteristic Configuration Descriptor — required to make
+      Characteristic Configuration Descriptor --- required to make
       ``PROP_NOTIFY`` / ``PROP_INDICATE`` characteristics work.
 
    .. method:: uuid() -> UUID
@@ -242,7 +242,7 @@ Classes
 .. class:: Descriptor(uuid: UUID)
 
    Stub class for representing GATT descriptors. The current
-   implementation only stores the UUID and exposes no methods —
+   implementation only stores the UUID and exposes no methods ---
    it is provided for forward compatibility with future revisions
    of the module.
 
@@ -285,7 +285,7 @@ Classes
          device and register GAP / GATTS event handlers so the
          configured :meth:`setConnectionHandler` callback fires
          on connect, disconnect, and CCCD writes. When
-         ``False``, advertise as a beacon — no handlers are
+         ``False``, advertise as a beacon --- no handlers are
          attached and the device cannot be connected to.
 
    .. method:: advertise_stop() -> None
@@ -345,14 +345,14 @@ Classes
    .. method:: scan(timeout: int) -> list
 
       Run a passive scan for ``timeout`` milliseconds and return
-      a list of :class:`ScanEntry` instances — one per
+      a list of :class:`ScanEntry` instances --- one per
       advertisement report received during the window.
 
 .. class:: ScanEntry()
 
    A single advertisement report captured by
    :meth:`Scanner.scan`. Instances are returned from the scanner
-   — there is no public constructor.
+   --- there is no public constructor.
 
    .. method:: addr() -> str
 

@@ -1,5 +1,5 @@
-:mod:`random` -- generate random numbers
-========================================
+:mod:`random` --- generate random numbers
+=========================================
 
 .. module:: random
    :synopsis: random numbers
@@ -72,7 +72,7 @@ Other Functions
     (usually a hardware generated random number).
 
     The ``None`` case only works if ``MICROPY_PY_RANDOM_SEED_INIT_FUNC`` is
-    enabled by the port, otherwise it raises ``ValueError``.
+    enabled by the port, otherwise it raises :exc:`ValueError`.
 
 .. function:: choice(sequence: Any) -> Any
 

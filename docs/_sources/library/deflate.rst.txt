@@ -1,5 +1,5 @@
-:mod:`deflate` -- deflate compression & decompression
-=====================================================
+:mod:`deflate` --- deflate compression & decompression
+======================================================
 
 .. module:: deflate
    :synopsis: deflate compression & decompression

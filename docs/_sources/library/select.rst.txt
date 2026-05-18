@@ -1,5 +1,5 @@
-:mod:`select` -- wait for events on a set of streams
-====================================================
+:mod:`select` --- wait for events on a set of streams
+=====================================================
 
 .. module:: select
    :synopsis: wait for events on a set of streams
@@ -12,7 +12,7 @@ Functions
 
 .. function:: poll() -> poll
 
-   Create a new `poll` object — used to register a set of streams (or any
+   Create a new `poll` object --- used to register a set of streams (or any
    objects exposing the stream protocol) and efficiently wait until one
    or more of them becomes readable or writable.
 
@@ -29,7 +29,7 @@ Classes
 .. class:: poll
    :no-index:
 
-   Polling object returned by `select.poll()`. It maintains a set of
+   Polling object returned by :func:`select.poll`. It maintains a set of
    registered streams (or any objects exposing the stream protocol) and
    efficiently waits until one or more of them becomes readable, writable,
    or signals an exceptional condition.
@@ -63,7 +63,7 @@ Classes
 
    .. method:: modify(obj: Any, eventmask: int) -> None
 
-      Modify the *eventmask* for *obj*. If *obj* is not registered, `OSError`
+      Modify the *eventmask* for *obj*. If *obj* is not registered, :exc:`OSError`
       is raised with error of ENOENT.
 
    .. method:: poll(timeout: int = -1, /) -> List[Tuple]

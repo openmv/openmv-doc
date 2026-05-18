@@ -55,7 +55,7 @@ attrtuple with 24 fields.
 
    .. method:: family() -> int
 
-      Returns the numeric family of the apriltag — one of:
+      Returns the numeric family of the apriltag --- one of:
 
         * `image.TAG16H5`
         * `image.TAG25H9`

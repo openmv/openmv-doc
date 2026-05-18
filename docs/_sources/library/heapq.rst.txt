@@ -1,5 +1,5 @@
-:mod:`heapq` -- heap queue algorithm
-====================================
+:mod:`heapq` --- heap queue algorithm
+=====================================
 
 .. module:: heapq
    :synopsis: heap queue algorithm
@@ -21,7 +21,7 @@ Functions
 
 .. function:: heappop(heap: list) -> Any
 
-   Pop the first item from the ``heap``, and return it.  Raise ``IndexError`` if
+   Pop the first item from the ``heap``, and return it.  Raise :exc:`IndexError` if
    ``heap`` is empty.
 
    The returned item will be the smallest item in the ``heap``.

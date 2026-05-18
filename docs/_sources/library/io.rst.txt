@@ -1,5 +1,5 @@
-:mod:`io` -- input/output streams
-=================================
+:mod:`io` --- input/output streams
+==================================
 
 .. module:: io
    :synopsis: input/output streams
@@ -86,35 +86,147 @@ Functions
 Classes
 -------
 
+.. class:: IOBase
+
+    Base class for implementing stream ("file-like") objects in pure Python.
+    Derive from this class and implement the methods below; the runtime calls
+    them when the corresponding stream operation is performed on an instance.
+
+    .. method:: readinto(buf: bytearray) -> Optional[int]
+
+        Read bytes into the writable buffer *buf*. Return the number of bytes
+        read, ``0`` at end of stream, or ``None`` if no data is available
+        right now (for a non-blocking stream).
+
+    .. method:: write(buf: bytes) -> Optional[int]
+
+        Write the bytes in *buf*. Return the number of bytes written, or
+        ``None`` if the write cannot be performed right now (for a
+        non-blocking stream).
+
+    .. method:: ioctl(request: int, arg: int) -> int
+
+        Control the underlying stream/device. *request* is one of the
+        ``MP_STREAM_*`` request codes. Return a non-negative value on success,
+        or a negative ``errno`` value on error.
+
 .. class:: StringIO(string: str = "")
-           BytesIO(string: bytes = b"")
+           StringIO(alloc_size: int)
 
-    In-memory file-like objects for input/output. `StringIO` is used for
-    text-mode I/O (similar to a normal file opened with "t" modifier).
-    `BytesIO` is used for binary-mode I/O (similar to a normal file
-    opened with "b" modifier). Initial contents of file-like objects
-    can be specified with *string* parameter (should be normal string
-    for `StringIO` or bytes object for `BytesIO`). All the usual file
-    methods like ``read()``, ``write()``, ``seek()``, ``flush()``,
-    ``close()`` are available on these objects, and additionally, a
-    following method:
-
-    .. method:: getvalue() -> Any
-
-        Get the current contents of the underlying buffer which holds data.
-
-.. class:: StringIO(alloc_size: int)
-           BytesIO(alloc_size: int)
-    :noindex:
-
-    Create an empty `StringIO`/`BytesIO` object, preallocated to hold up
-    to *alloc_size* number of bytes. That means that writing that amount
-    of bytes won't lead to reallocation of the buffer, and thus won't hit
-    out-of-memory situation or lead to memory fragmentation. These constructors
-    are a MicroPython extension and are recommended for usage only in special
-    cases and in system-level libraries, not for end-user applications.
+    In-memory file-like object for text-mode input/output (similar to a
+    normal file opened with the "t" modifier). The first form initializes the
+    contents from the *string* parameter (which should be a normal string).
+    The second form creates an empty ``StringIO`` preallocated to hold up to
+    *alloc_size* bytes, so writing up to that many bytes will not reallocate
+    the buffer (avoiding an out-of-memory situation or memory fragmentation);
+    it is a MicroPython extension recommended only for special cases and
+    system-level libraries, not end-user applications. Instances also support
+    the context-manager protocol (usable in a ``with`` statement).
 
     .. admonition:: Difference to CPython
         :class: attention
 
-        These constructors are a MicroPython extension.
+        The ``StringIO(alloc_size)`` constructor is a MicroPython extension.
+
+    .. method:: read(size: int = -1) -> str
+
+        Read and return up to *size* characters. If *size* is omitted or
+        negative, read and return all remaining contents.
+
+    .. method:: readline(size: int = -1) -> str
+
+        Read and return one line. If *size* is given, at most *size*
+        characters are read.
+
+    .. method:: readinto(buf: bytearray) -> int
+
+        Read into the pre-allocated, writable buffer *buf* and return the
+        number of bytes read.
+
+    .. method:: write(s: str) -> int
+
+        Write the string *s* and return the number of characters written.
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+
+        Change the stream position to *offset* relative to *whence*
+        (``0`` = start, ``1`` = current, ``2`` = end) and return the new
+        absolute position.
+
+    .. method:: tell() -> int
+
+        Return the current stream position.
+
+    .. method:: flush() -> None
+
+        Flush the write buffers. This is a no-op for an in-memory stream.
+
+    .. method:: close() -> None
+
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise :exc:`ValueError`.
+
+    .. method:: getvalue() -> str
+
+        Return the current contents of the underlying buffer.
+
+.. class:: BytesIO(string: bytes = b"")
+           BytesIO(alloc_size: int)
+
+    In-memory file-like object for binary-mode input/output (similar to a
+    normal file opened with the "b" modifier). The first form initializes the
+    contents from the *string* parameter (which should be a bytes object).
+    The second form creates an empty ``BytesIO`` preallocated to hold up to
+    *alloc_size* bytes, so writing up to that many bytes will not reallocate
+    the buffer (avoiding an out-of-memory situation or memory fragmentation);
+    it is a MicroPython extension recommended only for special cases and
+    system-level libraries, not end-user applications. Instances also support
+    the context-manager protocol (usable in a ``with`` statement).
+
+    .. admonition:: Difference to CPython
+        :class: attention
+
+        The ``BytesIO(alloc_size)`` constructor is a MicroPython extension.
+
+    .. method:: read(size: int = -1) -> bytes
+
+        Read and return up to *size* bytes. If *size* is omitted or negative,
+        read and return all remaining contents.
+
+    .. method:: readline(size: int = -1) -> bytes
+
+        Read and return one line. If *size* is given, at most *size* bytes
+        are read.
+
+    .. method:: readinto(buf: bytearray) -> int
+
+        Read into the pre-allocated, writable buffer *buf* and return the
+        number of bytes read.
+
+    .. method:: write(b: bytes) -> int
+
+        Write the bytes-like object *b* and return the number of bytes
+        written.
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+
+        Change the stream position to *offset* relative to *whence*
+        (``0`` = start, ``1`` = current, ``2`` = end) and return the new
+        absolute position.
+
+    .. method:: tell() -> int
+
+        Return the current stream position.
+
+    .. method:: flush() -> None
+
+        Flush the write buffers. This is a no-op for an in-memory stream.
+
+    .. method:: close() -> None
+
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise :exc:`ValueError`.
+
+    .. method:: getvalue() -> bytes
+
+        Return the current contents of the underlying buffer.

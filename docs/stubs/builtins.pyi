@@ -351,6 +351,190 @@ class bytearray:
     plus in-place modification.
     """
     def __init__(self, source: int | str | Iterable[int] | bytes = b'', encoding: str = 'utf-8', errors: str = 'strict') -> None: ...
+    def append(self, val: int) -> None:
+        """
+        Append a single value (an integer in the range 0-255) to the end of
+        the bytearray, growing it by one byte.
+        """
+        ...
+    def center(self, width: int, fillbyte: bytes) -> bytes:
+        """
+        Return a copy of the contents centered in a sequence of length width,
+        padded with fillbyte. Unlike CPython, fillbyte is required. The
+        data is returned unchanged when width is not greater than the current
+        length.
+        """
+        ...
+    def count(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """
+        Return the number of non-overlapping occurrences of sub in the slice
+        [start:end].
+        """
+        ...
+    def endswith(self, suffix: bytes, start: int = 0, end: int = -1) -> bool:
+        """
+        Return True if the contents end with suffix. Unlike CPython,
+        suffix cannot be a tuple of values.
+        """
+        ...
+    def extend(self, iterable: Iterable[int]) -> None:
+        """
+        Append all items from iterable to the end of the bytearray. As an
+        extension to CPython, any object supporting the buffer protocol may be
+        used.
+        """
+        ...
+    def find(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """
+        Return the lowest index where sub is found within the slice
+        [start:end], or -1 if not found.
+        """
+        ...
+    def format(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Perform a string formatting operation using the contents as the format
+        string, returning the formatted result.
+        """
+        ...
+    def fromhex(self, string: str) -> bytearray:
+        """
+        Construct a bytearray from a string of hexadecimal digit
+        pairs. Whitespace between digit pairs is skipped; a non-hex character
+        raises ValueError.
+        """
+        ...
+    def hex(self, sep: str = '') -> str:
+        """
+        Return a string of two hexadecimal digits for each byte. If the
+        optional sep (a length-1 string) is given, it is inserted between
+        consecutive byte values.
+        """
+        ...
+    def index(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """Like find(), but raise ValueError when sub is not found."""
+        ...
+    def isalpha(self) -> bool:
+        """
+        Return True if all bytes are alphabetic ASCII characters and there
+        is at least one byte, otherwise False.
+        """
+        ...
+    def isdigit(self) -> bool:
+        """
+        Return True if all bytes are ASCII decimal digits and there is at
+        least one byte, otherwise False.
+        """
+        ...
+    def islower(self) -> bool:
+        """
+        Return True if all cased bytes are lowercase and there is at least
+        one cased byte, otherwise False.
+        """
+        ...
+    def isspace(self) -> bool:
+        """
+        Return True if all bytes are ASCII whitespace and there is at least
+        one byte, otherwise False.
+        """
+        ...
+    def isupper(self) -> bool:
+        """
+        Return True if all cased bytes are uppercase and there is at least
+        one cased byte, otherwise False.
+        """
+        ...
+    def join(self, iterable: Iterable[bytes]) -> bytes:
+        """
+        Return a bytes object which is the concatenation of the items in
+        iterable, using the bytearray contents as the separator.
+        """
+        ...
+    def lower(self) -> bytes:
+        """
+        Return a copy of the contents with all ASCII uppercase characters
+        converted to lowercase.
+        """
+        ...
+    def lstrip(self, chars: bytes | None = None) -> bytes:
+        """
+        Return a copy with leading bytes removed. chars specifies the set of
+        bytes to remove; if omitted or None, ASCII whitespace is removed.
+        """
+        ...
+    def partition(self, sep: bytes) -> tuple:
+        """
+        Split at the first occurrence of sep, returning (head, sep, tail).
+        If sep is not found, return the contents followed by two empty
+        objects.
+        """
+        ...
+    def replace(self, old: bytes, new: bytes, count: int = -1) -> bytes:
+        """
+        Return a copy with all occurrences of old replaced by new. If
+        count is given, only the first count occurrences are replaced.
+        """
+        ...
+    def rfind(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """
+        Return the highest index where sub is found within the slice
+        [start:end], or -1 if not found.
+        """
+        ...
+    def rindex(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """Like rfind(), but raise ValueError when sub is not found."""
+        ...
+    def rpartition(self, sep: bytes) -> tuple:
+        """
+        Split at the last occurrence of sep, returning (head, sep, tail).
+        If sep is not found, return two empty objects followed by the
+        contents.
+        """
+        ...
+    def rsplit(self, sep: bytes | None = None, maxsplit: int = -1) -> list:
+        """
+        Split at occurrences of sep into a list of pieces, performing at most
+        maxsplit splits counting from the right. If sep is None or
+        omitted, split on runs of ASCII whitespace.
+        """
+        ...
+    def rstrip(self, chars: bytes | None = None) -> bytes:
+        """
+        Return a copy with trailing bytes removed. chars specifies the set of
+        bytes to remove; if omitted or None, ASCII whitespace is removed.
+        """
+        ...
+    def split(self, sep: bytes | None = None, maxsplit: int = -1) -> list:
+        """
+        Split at occurrences of sep into a list of pieces. If sep is
+        None or omitted, split on runs of ASCII whitespace and
+        leading/trailing whitespace is ignored.
+        """
+        ...
+    def splitlines(self, keepends: bool = False) -> list:
+        r"""
+        Return a list of the lines, breaking at \n, \r and \r\n.
+        Line breaks are excluded unless keepends is true.
+        """
+        ...
+    def startswith(self, prefix: bytes, start: int = 0, end: int = -1) -> bool:
+        """
+        Return True if the contents start with prefix. Unlike CPython,
+        prefix cannot be a tuple, and end is accepted but ignored.
+        """
+        ...
+    def strip(self, chars: bytes | None = None) -> bytes:
+        """
+        Return a copy with leading and trailing bytes removed. chars
+        specifies the set of bytes to remove; if omitted or None, ASCII
+        whitespace is removed.
+        """
+        ...
+    def upper(self) -> bytes:
+        """
+        Return a copy of the contents with all ASCII lowercase characters
+        converted to uppercase.
+        """
+        ...
 
 class bytes:
     """
@@ -360,6 +544,184 @@ class bytes:
     b'...' syntax.
     """
     def __init__(self, source: int | str | Iterable[int] = b'', encoding: str = 'utf-8', errors: str = 'strict') -> None: ...
+    def center(self, width: int, fillbyte: bytes) -> bytes:
+        """
+        Return a copy centered in a sequence of length width, padded with
+        fillbyte (a length-1 bytes giving the pad byte). Unlike CPython,
+        fillbyte is required. The original object is returned unchanged when
+        width is not greater than its length.
+        """
+        ...
+    def count(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """
+        Return the number of non-overlapping occurrences of sub in the slice
+        [start:end].
+        """
+        ...
+    def decode(self, encoding: str = 'utf-8') -> str:
+        """
+        Return a str decoded from the bytes. In MicroPython the
+        encoding argument is accepted but effectively ignored (the bytes are
+        reinterpreted as UTF-8).
+        """
+        ...
+    def endswith(self, suffix: bytes, start: int = 0, end: int = -1) -> bool:
+        """
+        Return True if the bytes end with suffix. Unlike CPython,
+        suffix cannot be a tuple of values to try.
+        """
+        ...
+    def find(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """
+        Return the lowest index where subsequence sub is found within the
+        slice [start:end], or -1 if not found.
+        """
+        ...
+    def format(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Perform a string formatting operation using the bytes as the format
+        string, returning the formatted result.
+        """
+        ...
+    def fromhex(self, string: str) -> bytes:
+        """
+        Construct a bytes object from a string of hexadecimal digit
+        pairs. Whitespace between digit pairs is skipped; a non-hex character
+        raises ValueError.
+        """
+        ...
+    def hex(self, sep: str = '') -> str:
+        """
+        Return a string of two hexadecimal digits for each byte. If the
+        optional sep (a length-1 string) is given, it is inserted between
+        consecutive byte values.
+        """
+        ...
+    def index(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """Like find(), but raise ValueError when sub is not found."""
+        ...
+    def isalpha(self) -> bool:
+        """
+        Return True if all bytes are alphabetic ASCII characters and there
+        is at least one byte, otherwise False.
+        """
+        ...
+    def isdigit(self) -> bool:
+        """
+        Return True if all bytes are ASCII decimal digits and there is at
+        least one byte, otherwise False.
+        """
+        ...
+    def islower(self) -> bool:
+        """
+        Return True if all cased bytes are lowercase and there is at least
+        one cased byte, otherwise False.
+        """
+        ...
+    def isspace(self) -> bool:
+        """
+        Return True if all bytes are ASCII whitespace and there is at least
+        one byte, otherwise False.
+        """
+        ...
+    def isupper(self) -> bool:
+        """
+        Return True if all cased bytes are uppercase and there is at least
+        one cased byte, otherwise False.
+        """
+        ...
+    def join(self, iterable: Iterable[bytes]) -> bytes:
+        """
+        Return a bytes object which is the concatenation of the items in
+        iterable, using the bytes object itself as the separator.
+        """
+        ...
+    def lower(self) -> bytes:
+        """
+        Return a copy with all ASCII uppercase characters converted to
+        lowercase.
+        """
+        ...
+    def lstrip(self, chars: bytes | None = None) -> bytes:
+        """
+        Return a copy with leading bytes removed. chars specifies the set of
+        bytes to remove; if omitted or None, ASCII whitespace is removed.
+        """
+        ...
+    def partition(self, sep: bytes) -> tuple:
+        """
+        Split at the first occurrence of sep, returning (head, sep, tail).
+        If sep is not found, return the bytes followed by two empty bytes
+        objects.
+        """
+        ...
+    def replace(self, old: bytes, new: bytes, count: int = -1) -> bytes:
+        """
+        Return a copy with all occurrences of old replaced by new. If
+        count is given, only the first count occurrences are replaced.
+        """
+        ...
+    def rfind(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """
+        Return the highest index where sub is found within the slice
+        [start:end], or -1 if not found.
+        """
+        ...
+    def rindex(self, sub: bytes, start: int = 0, end: int = -1) -> int:
+        """Like rfind(), but raise ValueError when sub is not found."""
+        ...
+    def rpartition(self, sep: bytes) -> tuple:
+        """
+        Split at the last occurrence of sep, returning (head, sep, tail).
+        If sep is not found, return two empty bytes objects followed by the
+        bytes.
+        """
+        ...
+    def rsplit(self, sep: bytes | None = None, maxsplit: int = -1) -> list:
+        """
+        Split at occurrences of sep into a list of pieces, performing at most
+        maxsplit splits counting from the right. If sep is None or
+        omitted, split on runs of ASCII whitespace.
+        """
+        ...
+    def rstrip(self, chars: bytes | None = None) -> bytes:
+        """
+        Return a copy with trailing bytes removed. chars specifies the set of
+        bytes to remove; if omitted or None, ASCII whitespace is removed.
+        """
+        ...
+    def split(self, sep: bytes | None = None, maxsplit: int = -1) -> list:
+        """
+        Split at occurrences of sep into a list of pieces. If sep is
+        None or omitted, split on runs of ASCII whitespace and
+        leading/trailing whitespace is ignored.
+        """
+        ...
+    def splitlines(self, keepends: bool = False) -> list:
+        r"""
+        Return a list of the lines, breaking at \n, \r and \r\n.
+        Line breaks are excluded unless keepends is true.
+        """
+        ...
+    def startswith(self, prefix: bytes, start: int = 0, end: int = -1) -> bool:
+        """
+        Return True if the bytes start with prefix. Unlike CPython,
+        prefix cannot be a tuple, and end is accepted but ignored.
+        """
+        ...
+    def strip(self, chars: bytes | None = None) -> bytes:
+        """
+        Return a copy with leading and trailing bytes removed. chars
+        specifies the set of bytes to remove; if omitted or None, ASCII
+        whitespace is removed.
+        """
+        ...
+    def upper(self) -> bytes:
+        """
+        Return a copy with all ASCII lowercase characters converted to
+        uppercase.
+        """
+        ...
 
 class complex:
     """Create a complex number from a real and imaginary part, or from a string."""
@@ -368,6 +730,100 @@ class complex:
 class dict:
     """Create a new dictionary. Equivalent to CPython’s dict."""
     def __init__(self, *args, **kwargs) -> None: ...
+    def __delitem__(self, key: Any) -> None:
+        """
+        Delete self[key]. Implements del d[key]; raises KeyError
+        if key is not present.
+        """
+        ...
+    def __getitem__(self, key: Any) -> Any:
+        """
+        Return self[key]. Implements the indexing operator d[key];
+        raises KeyError if key is not present.
+        """
+        ...
+    def __setitem__(self, key: Any, value: Any) -> None:
+        """Set self[key] to value. Implements d[key] = value."""
+        ...
+    def clear(self) -> None:
+        """
+        Remove all items from the dictionary, leaving it empty. Raises
+        TypeError if the dictionary is fixed (read-only).
+        """
+        ...
+    def copy(self) -> dict:
+        """
+        Return a shallow copy of the dictionary. The returned object has the
+        same type as the original (dict or OrderedDict) but is not
+        fixed.
+        """
+        ...
+    def fromkeys(self, iterable: Iterable[Any], value: Any = None) -> dict:
+        """
+        Create a new dictionary with keys taken from iterable, each mapped to
+        value (defaulting to None). Called on the type, e.g.
+        dict.fromkeys(...).
+        """
+        ...
+    def get(self, key: Any, default: Any = None) -> Any:
+        """
+        Return the value for key if it is in the dictionary, otherwise return
+        default (which itself defaults to None, so this never raises
+        KeyError). The dictionary is not modified.
+        """
+        ...
+    def items(self) -> Any:
+        """
+        Return a dynamic view object over the (key, value) pairs that
+        reflects subsequent changes to the dictionary and supports iteration,
+        len(), the in operator and set-comparison operators.
+        """
+        ...
+    def keys(self) -> Any:
+        """
+        Return a dynamic view object over the keys that reflects subsequent
+        changes to the dictionary and supports iteration, len(), the
+        in operator and set-comparison operators.
+        """
+        ...
+    def pop(self, key: Any, default: Any = ...) -> Any:
+        """
+        Remove key from the dictionary and return its value. If key is not
+        present, return default if it was supplied; otherwise raise
+        KeyError. Raises TypeError if the dictionary is fixed.
+        """
+        ...
+    def popitem(self) -> tuple:
+        """
+        Remove and return an arbitrary (key, value) pair as a 2-tuple. For a
+        plain dict the chosen pair is unspecified; for an OrderedDict
+        the last inserted pair is removed (LIFO). Raises KeyError if the
+        dictionary is empty, or TypeError if it is fixed.
+        """
+        ...
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        """
+        If key is in the dictionary, return its value. Otherwise insert key
+        with a value of default (defaulting to None) and return that
+        value. Raises TypeError if the dictionary is fixed.
+        """
+        ...
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        """
+        Update the dictionary in place. At most one positional argument is
+        accepted: either another dictionary, or an iterable of two-element
+        (key, value) pairs (each must yield exactly two items or
+        ValueError is raised). Keyword arguments are then added as
+        string-keyed entries. Existing keys are overwritten. Raises
+        TypeError if the dictionary is fixed.
+        """
+        ...
+    def values(self) -> Any:
+        """
+        Return a dynamic view object over the values that reflects subsequent
+        changes to the dictionary and supports iteration and len().
+        """
+        ...
 
 class float:
     """Return a floating point number constructed from a number or string x."""
@@ -379,6 +835,44 @@ class frozenset:
     iterable. frozenset is an immutable, hashable variant of set.
     """
     def __init__(self, iterable: Iterable[Any] = ()) -> None: ...
+    def copy(self) -> frozenset:
+        """Return a shallow copy of the frozenset."""
+        ...
+    def difference(self, *others: Iterable[Any]) -> frozenset:
+        """
+        Return a new frozenset with elements from the frozenset that are not in
+        any of others. Each argument may be any iterable.
+        """
+        ...
+    def intersection(self, other: Iterable[Any]) -> frozenset:
+        """
+        Return a new frozenset with elements common to the frozenset and
+        other. In MicroPython only a single other argument is accepted
+        (CPython accepts multiple).
+        """
+        ...
+    def isdisjoint(self, other: Iterable[Any]) -> bool:
+        """Return True if the frozenset has no elements in common with other."""
+        ...
+    def issubset(self, other: Iterable[Any]) -> bool:
+        """Return True if every element of the frozenset is in other."""
+        ...
+    def issuperset(self, other: Iterable[Any]) -> bool:
+        """Return True if every element of other is in the frozenset."""
+        ...
+    def symmetric_difference(self, other: Iterable[Any]) -> frozenset:
+        """
+        Return a new frozenset with elements in either the frozenset or other
+        but not both. In MicroPython only a single other argument is accepted.
+        """
+        ...
+    def union(self, other: Iterable[Any]) -> frozenset:
+        """
+        Return a new frozenset with elements from the frozenset and other. In
+        MicroPython only a single other argument is accepted (CPython accepts
+        multiple).
+        """
+        ...
 
 class int:
     def __init__(self, x: str | bytes | int | float = 0, base: int = 10) -> None: ...
@@ -401,6 +895,62 @@ class int:
 class list:
     """Build a new list, optionally populated from items in iterable."""
     def __init__(self, iterable: Iterable[Any] = ()) -> None: ...
+    def append(self, object: Any) -> None:
+        """Append object to the end of the list."""
+        ...
+    def clear(self) -> None:
+        """Remove all items from the list, leaving it empty."""
+        ...
+    def copy(self) -> list:
+        """Return a shallow copy of the list."""
+        ...
+    def count(self, value: Any) -> int:
+        """Return the number of elements in the list that are equal to value."""
+        ...
+    def extend(self, iterable: Iterable[Any]) -> None:
+        """
+        Append all items from iterable to the end of the list. If iterable
+        is itself a list its items are copied directly; otherwise it is
+        iterated over.
+        """
+        ...
+    def index(self, value: Any, start: int = 0, stop: int = -1) -> int:
+        """
+        Return the index of the first element equal to value, searching the
+        slice [start:stop]. Raises ValueError if value is not
+        present.
+        """
+        ...
+    def insert(self, index: int, object: Any) -> None:
+        """
+        Insert object before position index. A negative index is
+        interpreted relative to the end of the list, and the index is clamped to
+        the valid range (so values past either end insert at the start or end).
+        """
+        ...
+    def pop(self, index: int = -1) -> Any:
+        """
+        Remove and return the item at index (the last item by default). Raises
+        IndexError if the list is empty or index is out of range.
+        """
+        ...
+    def remove(self, value: Any) -> None:
+        """
+        Remove the first element equal to value. Raises ValueError if
+        value is not present.
+        """
+        ...
+    def reverse(self) -> None:
+        """Reverse the items of the list in place."""
+        ...
+    def sort(self, *, key: Callable[[Any], Any] | None = None, reverse: bool = False) -> None:
+        """
+        Sort the items of the list in place. key and reverse are
+        keyword-only. key, if given, is a function applied to each element to
+        produce the comparison value; reverse sorts in descending order.
+        Unlike CPython, the MicroPython list sort is not stable.
+        """
+        ...
 
 class memoryview:
     """
@@ -421,6 +971,86 @@ class object:
 class set:
     """Return a new set object, optionally with elements taken from iterable."""
     def __init__(self, iterable: Iterable[Any] = ()) -> None: ...
+    def add(self, elem: Any) -> None:
+        """Add element elem to the set."""
+        ...
+    def clear(self) -> None:
+        """Remove all elements from the set."""
+        ...
+    def copy(self) -> set:
+        """Return a shallow copy of the set."""
+        ...
+    def difference(self, *others: Iterable[Any]) -> set:
+        """
+        Return a new set with elements from the set that are not in any of
+        others. Each argument may be any iterable.
+        """
+        ...
+    def difference_update(self, *others: Iterable[Any]) -> None:
+        """Remove from the set all elements found in any of others (in place)."""
+        ...
+    def discard(self, elem: Any) -> None:
+        """
+        Remove element elem from the set if it is present. Unlike
+        remove(), this does not raise an error if elem is absent.
+        """
+        ...
+    def intersection(self, other: Iterable[Any]) -> set:
+        """
+        Return a new set with elements common to the set and other. In
+        MicroPython only a single other argument is accepted (CPython accepts
+        multiple).
+        """
+        ...
+    def intersection_update(self, other: Iterable[Any]) -> None:
+        """
+        Update the set, keeping only elements also found in other (in place).
+        In MicroPython only a single other argument is accepted.
+        """
+        ...
+    def isdisjoint(self, other: Iterable[Any]) -> bool:
+        """Return True if the set has no elements in common with other."""
+        ...
+    def issubset(self, other: Iterable[Any]) -> bool:
+        """Return True if every element of the set is in other."""
+        ...
+    def issuperset(self, other: Iterable[Any]) -> bool:
+        """Return True if every element of other is in the set."""
+        ...
+    def pop(self) -> Any:
+        """
+        Remove and return an arbitrary element from the set. Raises
+        KeyError if the set is empty.
+        """
+        ...
+    def remove(self, elem: Any) -> None:
+        """
+        Remove element elem from the set. Raises KeyError if elem is
+        not contained in the set.
+        """
+        ...
+    def symmetric_difference(self, other: Iterable[Any]) -> set:
+        """
+        Return a new set with elements in either the set or other but not
+        both. In MicroPython only a single other argument is accepted.
+        """
+        ...
+    def symmetric_difference_update(self, other: Iterable[Any]) -> None:
+        """
+        Update the set, keeping only elements found in either the set or other
+        but not both (in place). In MicroPython only a single other argument
+        is accepted.
+        """
+        ...
+    def union(self, other: Iterable[Any]) -> set:
+        """
+        Return a new set with elements from the set and other. In MicroPython
+        only a single other argument is accepted (CPython accepts multiple).
+        """
+        ...
+    def update(self, *others: Iterable[Any]) -> None:
+        """Update the set, adding elements from all of others (in place)."""
+        ...
 
 class slice:
     """The slice builtin is the type that slice objects have."""
@@ -432,6 +1062,180 @@ class str:
     encoding and errors arguments control decoding.
     """
     def __init__(self, object: Any = '', encoding: str = 'utf-8', errors: str = 'strict') -> None: ...
+    def center(self, width: int) -> str:
+        """
+        Return a copy of the string centered in a field of length width, padded
+        with spaces. In MicroPython only a space is used as the fill character
+        (there is no fill-character argument), and the original string is
+        returned unchanged when width is not greater than its length.
+        """
+        ...
+    def count(self, sub: str, start: int = 0, end: int = -1) -> int:
+        """
+        Return the number of non-overlapping occurrences of sub in the slice
+        [start:end]. An empty sub counts each gap between characters.
+        """
+        ...
+    def encode(self, encoding: str = 'utf-8', errors: str = 'strict') -> bytes:
+        """
+        Return a bytes object encoding the string. MicroPython
+        effectively ignores the arguments and uses UTF-8; errors is accepted
+        but not acted upon. Equivalent to bytes(s, "utf-8").
+        """
+        ...
+    def endswith(self, suffix: str | tuple, start: int = 0, end: int = -1) -> bool:
+        """
+        Return True if the string ends with the given suffix, which may be
+        a single string or a tuple of strings to try. Optional start and end
+        restrict the comparison to the slice [start:end].
+        """
+        ...
+    def find(self, sub: str, start: int = 0, end: int = -1) -> int:
+        """
+        Return the lowest index in the string where substring sub is found
+        within the slice [start:end], or -1 if it is not found.
+        """
+        ...
+    def format(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Perform a string formatting operation, substituting replacement fields
+        delimited by braces {} with values from args and kwargs. Supports
+        the standard format-specification mini-language.
+        """
+        ...
+    def index(self, sub: str, start: int = 0, end: int = -1) -> int:
+        """
+        Like find(), but raise ValueError when the substring sub
+        is not found in the slice [start:end].
+        """
+        ...
+    def isalpha(self) -> bool:
+        """
+        Return True if all characters in the string are alphabetic and the
+        string is non-empty, otherwise False.
+        """
+        ...
+    def isdigit(self) -> bool:
+        """
+        Return True if all characters in the string are digits and the
+        string is non-empty, otherwise False.
+        """
+        ...
+    def islower(self) -> bool:
+        """
+        Return True if the string contains at least one alphabetic character
+        and all such characters are lowercase, otherwise False.
+        """
+        ...
+    def isspace(self) -> bool:
+        """
+        Return True if all characters in the string are whitespace and the
+        string is non-empty, otherwise False.
+        """
+        ...
+    def isupper(self) -> bool:
+        """
+        Return True if the string contains at least one alphabetic character
+        and all such characters are uppercase, otherwise False.
+        """
+        ...
+    def join(self, iterable: Iterable[str]) -> str:
+        """
+        Concatenate the strings in iterable, inserting this string as the
+        separator between elements. Items must be strings, otherwise
+        TypeError is raised.
+        """
+        ...
+    def lower(self) -> str:
+        """Return a copy of the string with all characters converted to lowercase."""
+        ...
+    def lstrip(self, chars: str | None = None) -> str:
+        """
+        Return a copy of the string with leading characters removed. If chars
+        is omitted or None, whitespace is stripped; otherwise chars is
+        treated as a set of characters to remove.
+        """
+        ...
+    def partition(self, sep: str) -> tuple:
+        """
+        Split the string at the first occurrence of sep and return a 3-tuple
+        (head, sep, tail). If sep is not found, return (self, "", "").
+        An empty sep raises ValueError.
+        """
+        ...
+    def replace(self, old: str, new: str, count: int = -1) -> str:
+        """
+        Return a copy of the string with all occurrences of substring old
+        replaced by new. If count is given and non-negative, only the first
+        count occurrences are replaced.
+        """
+        ...
+    def rfind(self, sub: str, start: int = 0, end: int = -1) -> int:
+        """
+        Return the highest index in the string where substring sub is found
+        within the slice [start:end], or -1 if it is not found.
+        """
+        ...
+    def rindex(self, sub: str, start: int = 0, end: int = -1) -> int:
+        """
+        Like rfind(), but raise ValueError when the substring sub
+        is not found in the slice [start:end].
+        """
+        ...
+    def rpartition(self, sep: str) -> tuple:
+        """
+        Split the string at the last occurrence of sep and return a 3-tuple
+        (head, sep, tail). If sep is not found, return ("", "", self).
+        An empty sep raises ValueError.
+        """
+        ...
+    def rsplit(self, sep: str | None = None, maxsplit: int = -1) -> list:
+        """
+        Split the string from the right into a list of substrings using sep as
+        the delimiter, performing at most maxsplit splits. With no maxsplit
+        (or a negative one) it behaves identically to split(); in
+        MicroPython rsplit(None, n) with a non-negative n raises
+        NotImplementedError.
+        """
+        ...
+    def rstrip(self, chars: str | None = None) -> str:
+        """
+        Return a copy of the string with trailing characters removed. If chars
+        is omitted or None, whitespace is stripped; otherwise chars is
+        treated as a set of characters to remove.
+        """
+        ...
+    def split(self, sep: str | None = None, maxsplit: int = -1) -> list:
+        """
+        Split the string into a list of substrings using sep as the delimiter,
+        performing at most maxsplit splits. If sep is omitted or None,
+        split on runs of whitespace with leading whitespace ignored; otherwise
+        an empty sep raises ValueError.
+        """
+        ...
+    def splitlines(self, keepends: bool = False) -> list:
+        r"""
+        Return a list of the lines in the string, breaking at \n, \r and
+        \r\n. Line breaks are not included unless keepends is true.
+        """
+        ...
+    def startswith(self, prefix: str | tuple, start: int = 0, end: int = -1) -> bool:
+        """
+        Return True if the string starts with the given prefix, which may
+        be a single string or a tuple of strings to try. Optional start and
+        end restrict the comparison to the slice [start:end].
+        """
+        ...
+    def strip(self, chars: str | None = None) -> str:
+        """
+        Return a copy of the string with leading and trailing characters
+        removed. If chars is omitted or None, whitespace is stripped;
+        otherwise chars is treated as a set of characters to remove.
+        """
+        ...
+    def upper(self) -> str:
+        """Return a copy of the string with all characters converted to uppercase."""
+        ...
 
 class tuple:
     """
@@ -439,4 +1243,14 @@ class tuple:
     immutable sequences.
     """
     def __init__(self, iterable: Iterable[Any] = ()) -> None: ...
+    def count(self, value: Any) -> int:
+        """Return the number of elements in the tuple that are equal to value."""
+        ...
+    def index(self, value: Any, start: int = 0, stop: int = -1) -> int:
+        """
+        Return the index of the first element equal to value, searching the
+        slice [start:stop]. Raises ValueError if value is not
+        present.
+        """
+        ...
 

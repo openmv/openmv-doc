@@ -17,9 +17,9 @@ The `ndarray` class itself is exposed both at the top level (as
 ``ulab.ndarray``) and through the `numpy` submodule (as
 ``numpy.ndarray``); both refer to the same type.
 
-The optional ``user`` and ``utils`` submodules — present only when the
+The optional ``user`` and ``utils`` submodules --- present only when the
 firmware was built with ``ULAB_HAS_USER_MODULE`` or
-``ULAB_HAS_UTILS_MODULE`` respectively — are not documented here.
+``ULAB_HAS_UTILS_MODULE`` respectively --- are not documented here.
 
 Submodules
 ----------

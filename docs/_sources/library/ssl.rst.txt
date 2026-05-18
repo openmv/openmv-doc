@@ -1,5 +1,5 @@
-:mod:`ssl` -- SSL/TLS module
-============================
+:mod:`ssl` --- SSL/TLS module
+=============================
 
 .. module:: ssl
    :synopsis: TLS/SSL wrapper for socket objects
@@ -19,7 +19,7 @@ Functions
 .. function:: ssl.wrap_socket(sock: Any, server_side: bool = False, key: Optional[bytes] = None, cert: Optional[bytes] = None, cert_reqs: int = CERT_NONE, cadata: Optional[bytes] = None, server_hostname: Optional[str] = None, do_handshake: bool = True) -> Any
 
     Wrap the given *sock* and return a new wrapped-socket object.  The implementation
-    of this function is to first create an `SSLContext` and then call the `SSLContext.wrap_socket`
+    of this function is to first create an :class:`SSLContext` and then call the :meth:`SSLContext.wrap_socket`
     method on that context object.  The arguments *sock*, *server_side* and *server_hostname* are
     passed through unchanged to the method call.  The argument *do_handshake* is passed through as
     *do_handshake_on_connect*.  The remaining arguments have the following behaviour:
@@ -127,8 +127,8 @@ DTLS support
    This is a MicroPython extension.
 
 On most ports, this module supports DTLS in client and server mode via the
-`PROTOCOL_DTLS_CLIENT` and `PROTOCOL_DTLS_SERVER` constants that can be used as
-the ``protocol`` argument of `SSLContext`.
+:data:`PROTOCOL_DTLS_CLIENT` and :data:`PROTOCOL_DTLS_SERVER` constants that can be used as
+the ``protocol`` argument of :class:`SSLContext`.
 
 In this case the underlying socket is expected to behave as a datagram socket (i.e.
 like the socket opened with ``socket.socket`` with ``socket.AF_INET`` as ``af`` and
@@ -146,7 +146,7 @@ for DTLS 1.2. This is transparent for DTLS clients, but there are relevant
 considerations when implementing a DTLS server in MicroPython:
 
 - The server should pass an additional argument *client_id* when calling
-  `SSLContext.wrap_socket()`. This ID must be a `bytes` object (or similar) with
+  :meth:`SSLContext.wrap_socket()`. This ID must be a `bytes` object (or similar) with
   a transport-specific identifier representing the client.
 
   The simplest approach is to convert the tuple of ``(client_ip, client_port)``
@@ -158,31 +158,59 @@ considerations when implementing a DTLS server in MicroPython:
                                    client_id=repr(client_addr).encode())
 
 - The first time a client connects, the server call to ``wrap_socket`` will fail
-  with a `OSError` error "Hello Verify Required". This is because the DTLS
+  with a :exc:`OSError` error "Hello Verify Required". This is because the DTLS
   "Hello Verify" cookie is not yet known by the client. If the same client
   connects a second time then ``wrap_socket`` will succeed.
 
-- DTLS cookies for "Hello Verify" are associated with the `SSLContext` object,
-  so the same `SSLContext` object should be used to wrap a subsequent connection
+- DTLS cookies for "Hello Verify" are associated with the :class:`SSLContext` object,
+  so the same :class:`SSLContext` object should be used to wrap a subsequent connection
   from the same client. The cookie implementation includes a timeout and has
   constant memory use regardless of how many clients connect, so it's OK to
-  reuse the same `SSLContext` object for the lifetime of the server.
+  reuse the same :class:`SSLContext` object for the lifetime of the server.
 
 Constants
 ---------
 
 .. data:: ssl.PROTOCOL_TLS_CLIENT
-          ssl.PROTOCOL_TLS_SERVER
-          ssl.PROTOCOL_DTLS_CLIENT (when DTLS support is enabled)
-          ssl.PROTOCOL_DTLS_SERVER (when DTLS support is enabled)
    :type: int
 
-    Supported values for the *protocol* parameter.
+    Supported value for the *protocol* parameter, selecting TLS client mode.
+
+.. data:: ssl.PROTOCOL_TLS_SERVER
+   :type: int
+
+    Supported value for the *protocol* parameter, selecting TLS server mode.
+
+.. data:: ssl.PROTOCOL_DTLS_CLIENT
+   :type: int
+
+    Supported value for the *protocol* parameter, selecting DTLS client mode.
+    Only available when DTLS support is enabled.
+
+.. data:: ssl.PROTOCOL_DTLS_SERVER
+   :type: int
+
+    Supported value for the *protocol* parameter, selecting DTLS server mode.
+    Only available when DTLS support is enabled.
 
 .. data:: ssl.CERT_NONE
-          ssl.CERT_OPTIONAL
-          ssl.CERT_REQUIRED
    :type: int
 
-    Supported values for *cert_reqs* parameter, and the :attr:`SSLContext.verify_mode`
-    attribute.
+    Supported value for the *cert_reqs* parameter, and the
+    :attr:`SSLContext.verify_mode` attribute.  No certificate verification is
+    performed on the peer.
+
+.. data:: ssl.CERT_OPTIONAL
+   :type: int
+
+    Supported value for the *cert_reqs* parameter, and the
+    :attr:`SSLContext.verify_mode` attribute.  Certificate verification is
+    optional.  Note that for mbedtls based ports this behaves like
+    :data:`ssl.CERT_NONE`.
+
+.. data:: ssl.CERT_REQUIRED
+   :type: int
+
+    Supported value for the *cert_reqs* parameter, and the
+    :attr:`SSLContext.verify_mode` attribute.  A valid certificate is required
+    from the peer.
