@@ -387,7 +387,7 @@ class SPIDisplay:
     backlight keyword-only. Pass a backlight controller module to use. By default
     the backlight is controlled via a GPIO pin.
     """
-    def __init__(self, width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool = ..., *, controller: object | None = None, backlight: object | None = None) -> None: ...
+    def __init__(self, width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool | None = None, *, controller: object | None = None, backlight: object | None = None) -> None: ...
     def backlight(self, value: int | None = None) -> int | None:
         """
         With value, sets the backlight intensity (0=off..100=full). Without arguments,

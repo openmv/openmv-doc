@@ -7,30 +7,25 @@
 The ``time`` module provides functions for getting the current time and date,
 measuring time intervals, and for delays.
 
-**Time Epoch**: The unix, windows, webassembly, alif, mimxrt and rp2 ports
-use the standard for POSIX systems epoch of 1970-01-01 00:00:00 UTC.
-The other embedded ports use an epoch of 2000-01-01 00:00:00 UTC.
-Epoch year may be determined with ``gmtime(0)[0]``.
+**Time Epoch**: The Alif- and i.MX RT-based OpenMV Cams use the POSIX epoch
+of 1970-01-01 00:00:00 UTC. The STM32-based OpenMV Cams use an epoch of
+2000-01-01 00:00:00 UTC. The epoch year can be determined at runtime with
+``gmtime(0)[0]``.
 
-**Maintaining actual calendar date/time**: This requires a
-Real Time Clock (RTC). On systems with underlying OS (including some
-RTOS), an RTC may be implicit. Setting and maintaining actual calendar
-time is responsibility of OS/RTOS and is done outside of MicroPython,
-it just uses OS API to query date/time. On baremetal ports however
-system time depends on :class:`machine.RTC` object. The current calendar time
-may be set using ``machine.RTC().datetime(tuple)`` function, and maintained
-by following means:
+**Maintaining actual calendar date/time**: This requires a Real Time Clock
+(RTC). On the OpenMV Cam the system time is provided by the
+:class:`machine.RTC` object. The current calendar time may be set with
+``machine.RTC().datetime(tuple)`` and is maintained by one of:
 
-* By a backup battery (which may be an additional, optional component for
-  a particular board).
-* Using networked time protocol (requires setup by a port/user).
-* Set manually by a user on each power-up (many boards then maintain
-  RTC time across hard resets, though some may require setting it again
-  in such case).
+* A backup battery (an optional component on some OpenMV Cams).
+* A networked time protocol such as :mod:`ntptime` (requires a network
+  connection).
+* Setting it manually on each power-up. The RTC is then typically maintained
+  across soft resets, but is lost on power loss unless a backup battery is
+  fitted.
 
-If actual calendar time is not maintained with a system/MicroPython RTC,
-functions below which require reference to current absolute time may
-behave not as expected.
+If the calendar time is not maintained, the functions below that reference
+the current absolute time will not behave as expected.
 
 Functions
 ---------
@@ -64,10 +59,9 @@ Functions
 
 .. function:: sleep(seconds: float) -> None
 
-   Sleep for the given number of seconds. Some boards may accept *seconds* as a
-   floating-point number to sleep for a fractional number of seconds. Note that
-   other boards may not accept a floating-point argument, for compatibility with
-   them use `sleep_ms()` and `sleep_us()` functions.
+   Sleep for the given number of seconds. *seconds* may be a floating-point
+   number, to sleep for a fractional number of seconds. For finer-grained or
+   integer-only delays use the `sleep_ms()` and `sleep_us()` functions.
 
    Calling :func:`sleep`, including ``sleep(0)`` is guaranteed to call pending callback
    functions.
@@ -127,9 +121,7 @@ Functions
    (resolution) of this function is not specified on ``time`` module level, but
    documentation for a specific port may provide more specific information. This
    function is intended for very fine benchmarking or very tight real-time loops.
-   Avoid using it in portable code.
-
-   Availability: Not every port implements this function.
+   Avoid using it in portable code. It is available on all OpenMV Cams.
 
 
 .. function:: ticks_add(ticks: int, delta: int) -> int
@@ -238,16 +230,13 @@ Functions
    .. admonition:: Difference to CPython
       :class: attention
 
-      In CPython, this function returns number of
-      seconds since Unix epoch, 1970-01-01 00:00 UTC, as a floating-point,
-      usually having microsecond precision. With MicroPython, only Unix port
-      uses the same Epoch, and if floating-point precision allows,
-      returns sub-second precision. Embedded hardware usually doesn't have
-      floating-point precision to represent both long time ranges and subsecond
-      precision, so they use integer value with second precision. Some embedded
-      hardware also lacks battery-powered RTC, so returns number of seconds
-      since last power-up or from other relative, hardware-specific point
-      (e.g. reset).
+      In CPython this function returns the number of seconds since the Unix
+      epoch (1970-01-01 00:00 UTC) as a floating-point value, usually with
+      microsecond precision. On the OpenMV Cam it returns an **integer** with
+      one-second precision -- the hardware cannot represent both a long time
+      range and sub-second precision in a float -- and the epoch differs by
+      board (see *Time Epoch* above). Without a battery-backed RTC that has
+      been set, it instead counts seconds since power-up/reset.
 
 .. function:: time_ns() -> int
 

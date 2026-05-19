@@ -423,7 +423,7 @@ Functions and types
       changes to the dictionary and supports iteration, :func:`len`, the
       ``in`` operator and set-comparison operators.
 
-   .. method:: pop(key: Any, default: Any = ...) -> Any
+   .. method:: pop(key: Any, default: Any = None) -> Any
 
       Remove *key* from the dictionary and return its value. If *key* is not
       present, return *default* if it was supplied; otherwise raise
@@ -546,7 +546,7 @@ Functions and types
       MicroPython only a single *other* argument is accepted (CPython accepts
       multiple).
 
-.. function:: getattr(obj: Any, name: str, default: Any = ...) -> Any
+.. function:: getattr(obj: Any, name: str, default: Any = None) -> Any
 
    Return the value of the named attribute of *obj*. If the attribute does not
    exist, *default* is returned if provided, otherwise :exc:`AttributeError` is
@@ -607,7 +607,7 @@ Functions and types
    Return ``True`` if *cls* is a subclass (direct, indirect, or virtual) of
    *classinfo*.
 
-.. function:: iter(obj: Any, sentinel: Any = ...) -> Iterator[Any]
+.. function:: iter(obj: Any, sentinel: Any = None) -> Iterator[Any]
 
    Return an iterator object. With one argument, *obj* must support the
    iteration protocol. With two arguments, *obj* must be callable and iteration
@@ -686,7 +686,7 @@ Functions and types
    Return an iterator that applies *function* to every item of *iterables*,
    yielding the results.
 
-.. function:: max(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = ...) -> Any
+.. function:: max(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = None) -> Any
 
    With a single iterable argument, return its largest item. With two or more
    arguments, return the largest argument.
@@ -698,12 +698,12 @@ Functions and types
     access and slicing of the underlying memory; slicing a memoryview returns
     another memoryview rather than a copy.
 
-.. function:: min(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = ...) -> Any
+.. function:: min(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = None) -> Any
 
    With a single iterable argument, return its smallest item. With two or more
    arguments, return the smallest argument.
 
-.. function:: next(iterator: Iterator[Any], default: Any = ...) -> Any
+.. function:: next(iterator: Iterator[Any], default: Any = None) -> Any
 
    Retrieve the next item from *iterator*. If *default* is given and the
    iterator is exhausted, *default* is returned instead of raising
@@ -1124,10 +1124,7 @@ Exceptions
     Raised by :func:`sys.exit` to request interpreter termination.  Unlike
     most exceptions, it does not produce a traceback when uncaught.
 
-    On non-embedded ports (i.e. Windows and Unix), an unhandled ``SystemExit``
-    exits the MicroPython process in a similar way to CPython.
-
-    On embedded ports, an unhandled ``SystemExit`` currently causes a
+    On the OpenMV Cam, an unhandled ``SystemExit`` currently causes a
     :ref:`soft_reset` of MicroPython.
 
 .. exception:: TypeError

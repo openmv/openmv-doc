@@ -8,10 +8,71 @@ This module provides access to Transport Layer Security (previously and
 widely known as “Secure Sockets Layer”) encryption and peer authentication
 facilities for network sockets, both client-side and server-side.
 
+.. tip::
+
+   **New to TLS on the camera?** Start with the :ref:`tls_certificates`
+   tutorial. It walks through choosing key types, creating and converting
+   certificates to the DER format the camera requires, getting them onto the
+   device, and verifying servers and clients -- with complete working
+   examples.
+
 .. note::
 
    MicroPython does not implement ``ssl.SSLError``. SSL/TLS failures are
    raised as ``OSError`` instead.
+
+Examples
+--------
+
+TLS client, verifying the server's certificate against a CA certificate
+(in DER format) stored on the filesystem::
+
+    import socket
+    import ssl
+    import ntptime
+
+    # CERT_REQUIRED checks the certificate's validity dates, so the clock
+    # must be set (see the certificates tutorial linked above).
+    ntptime.settime()
+
+    # Open a plain TCP connection.
+    addr = socket.getaddrinfo("example.com", 443)[0][-1]
+    sock = socket.socket()
+    sock.connect(addr)
+
+    # Wrap it for TLS and require a valid certificate.
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.load_verify_locations(cafile="ca.der")
+    ssock = ctx.wrap_socket(sock, server_hostname="example.com")
+
+    ssock.write(b"GET / HTTP/1.0\r\nHost: example.com\r\n\r\n")
+    print(ssock.read())
+    ssock.close()
+
+For a quick, **insecure** connection (no certificate validation) the
+:func:`ssl.wrap_socket` convenience function can be used instead::
+
+    ssock = ssl.wrap_socket(sock, server_hostname="example.com")
+
+TLS server, presenting its own certificate and private key (DER format)::
+
+    import socket
+    import ssl
+
+    sock = socket.socket()
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(socket.getaddrinfo("0.0.0.0", 8443)[0][-1])
+    sock.listen(1)
+
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.load_cert_chain("server.der", "server.key")
+
+    while True:
+        client, addr = sock.accept()
+        sclient = ctx.wrap_socket(client, server_side=True)
+        sclient.write(b"hello\n")
+        sclient.close()
 
 Functions
 ---------
@@ -25,17 +86,14 @@ Functions
     *do_handshake_on_connect*.  The remaining arguments have the following behaviour:
 
    - *cert_reqs* determines whether the peer (server or client) must present a valid certificate.
-     Note that for mbedtls based ports, ``ssl.CERT_NONE`` and ``ssl.CERT_OPTIONAL`` will not
-     validate any certificate, only ``ssl.CERT_REQUIRED`` will.
+     Note that ``ssl.CERT_NONE`` and ``ssl.CERT_OPTIONAL`` do not validate any
+     certificate; only ``ssl.CERT_REQUIRED`` does.
 
    - *cadata* is a bytes object containing the CA certificate chain (in DER format) that will
      validate the peer's certificate.  Currently only a single DER-encoded certificate is supported.
 
-   Depending on the underlying module implementation in a particular
-   :term:`MicroPython port`, some or all keyword arguments above may be not supported.
-
-class SSLContext
-----------------
+Classes
+-------
 
 .. class:: SSLContext(protocol: int, /)
 
@@ -85,8 +143,7 @@ class SSLContext
          For blocking sockets doing the handshake immediately is standard. For non-blocking
          sockets (i.e. when the *sock* passed into ``wrap_socket`` is in non-blocking mode)
          the handshake should generally be deferred because otherwise ``wrap_socket`` blocks
-         until it completes. Note that in AXTLS the handshake can be deferred until the first
-         read or write but it then blocks until completion.
+         until it completes.
 
        - *server_hostname* is for use as a client, and sets the hostname to check against the received
          server certificate.  It also sets the name for Server Name Indication (SNI), allowing the server
@@ -97,8 +154,11 @@ class SSLContext
 
        .. warning::
 
-          Some implementations of ``ssl`` module do NOT validate server certificates,
-          which makes an SSL connection established prone to man-in-the-middle attacks.
+          By default no certificate validation is performed
+          (:data:`ssl.CERT_NONE`). For a secure connection you must verify the
+          peer's certificate by setting *cert_reqs* /
+          :attr:`SSLContext.verify_mode` to :data:`ssl.CERT_REQUIRED`;
+          otherwise the connection is vulnerable to man-in-the-middle attacks.
 
           CPython's ``wrap_socket`` returns an ``SSLSocket`` object which has methods typical
           for sockets, such as ``send``, ``recv``, etc. MicroPython's ``wrap_socket``
@@ -126,17 +186,13 @@ DTLS support
 
    This is a MicroPython extension.
 
-On most ports, this module supports DTLS in client and server mode via the
+This module supports DTLS in client and server mode via the
 :data:`PROTOCOL_DTLS_CLIENT` and :data:`PROTOCOL_DTLS_SERVER` constants that can be used as
 the ``protocol`` argument of :class:`SSLContext`.
 
 In this case the underlying socket is expected to behave as a datagram socket (i.e.
 like the socket opened with ``socket.socket`` with ``socket.AF_INET`` as ``af`` and
 ``socket.SOCK_DGRAM`` as ``type``).
-
-DTLS is only supported on ports that use mbedTLS, and it is enabled by default
-in most configurations but can be manually disabled by defining
-``MICROPY_PY_SSL_DTLS`` to 0.
 
 DTLS server support
 ^^^^^^^^^^^^^^^^^^^
@@ -185,13 +241,11 @@ Constants
    :type: int
 
     Supported value for the *protocol* parameter, selecting DTLS client mode.
-    Only available when DTLS support is enabled.
 
 .. data:: ssl.PROTOCOL_DTLS_SERVER
    :type: int
 
     Supported value for the *protocol* parameter, selecting DTLS server mode.
-    Only available when DTLS support is enabled.
 
 .. data:: ssl.CERT_NONE
    :type: int
@@ -205,7 +259,7 @@ Constants
 
     Supported value for the *cert_reqs* parameter, and the
     :attr:`SSLContext.verify_mode` attribute.  Certificate verification is
-    optional.  Note that for mbedtls based ports this behaves like
+    optional.  Note that on the OpenMV Cam this behaves like
     :data:`ssl.CERT_NONE`.
 
 .. data:: ssl.CERT_REQUIRED

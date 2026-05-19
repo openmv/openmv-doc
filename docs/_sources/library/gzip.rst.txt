@@ -17,16 +17,17 @@ file or stream object.
 
 **Availability:**
 
-* This module is **not present by default** in official MicroPython firmware
-  releases as it duplicates functionality available in the :mod:`deflate
-  <deflate>` module.
+* This module is **not included on the OpenMV Cam** by default, as it
+  duplicates functionality already provided by the :mod:`deflate <deflate>`
+  module.
 
-* A copy of this module can be installed (or frozen)
+* A copy can be installed (or frozen into custom firmware)
   from :term:`micropython-lib` (`source <https://github.com/micropython/micropython-lib/blob/master/python-stdlib/gzip/gzip.py>`_).
   See :ref:`packages` for more information. This documentation describes that module.
 
-* Compression support will only be available if compression support is enabled
-  in the built-in :mod:`deflate <deflate>` module.
+* Compression is only available if compression is available in the built-in
+  :mod:`deflate <deflate>` module -- that is, not on the STM32-based OpenMV
+  Cams (see its availability note above).
 
 Functions
 ---------

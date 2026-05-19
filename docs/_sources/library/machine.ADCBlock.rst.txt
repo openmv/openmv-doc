@@ -22,7 +22,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: ADCBlock(id: int | str, *, bits: int = ...)
+.. class:: ADCBlock(id: int | str, *, bits: int | None = None)
 
    Access the ADC peripheral identified by *id*, which may be an integer
    or string.
@@ -34,14 +34,14 @@ Constructors
    Methods
    -------
 
-   .. method:: init(*, bits: int = ...) -> None
+   .. method:: init(*, bits: int | None = None) -> None
 
       Configure the ADC peripheral.  *bits* will set the resolution of the
       conversion process.
 
-   .. method:: connect(channel: int, *, sample_ns: int = ..., atten: int = ...) -> ADC
-               connect(source: Pin, *, sample_ns: int = ..., atten: int = ...) -> "ADC"
-               connect(channel: int, source: Pin, *, sample_ns: int = ..., atten: int = ...) -> "ADC"
+   .. method:: connect(channel: int, *, sample_ns: int | None = None, atten: int | None = None) -> ADC
+               connect(source: Pin, *, sample_ns: int | None = None, atten: int | None = None) -> "ADC"
+               connect(channel: int, source: Pin, *, sample_ns: int | None = None, atten: int | None = None) -> "ADC"
 
       Connect up a channel on the ADC peripheral so it is ready for sampling,
       and return an :ref:`ADC <machine.ADC>` object that represents that connection.

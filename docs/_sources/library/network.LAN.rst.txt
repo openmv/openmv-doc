@@ -19,7 +19,7 @@ Example usage, for a board with built-in LAN support::
 Constructors
 ------------
 
-.. class:: LAN(id: int, *, phy_type: int = ..., phy_addr: int = ..., ref_clk_mode: int = ...) -> None
+.. class:: LAN(id: int, *, phy_type: int | None = None, phy_addr: int | None = None, ref_clk_mode: int | None = None) -> None
 
    Create a LAN driver object, initialise the LAN module using the given
    PHY driver name, and return the LAN object.

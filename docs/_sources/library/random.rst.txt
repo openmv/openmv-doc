@@ -19,12 +19,6 @@ This module implements a pseudo-random number generator (PRNG).
      or equal to 1.
      In set notation: [0, 1] = {x | 0 <= x <= 1}.
 
-.. note::
-
-   The :func:`randrange`, :func:`randint` and :func:`choice` functions are only
-   available if the ``MICROPY_PY_RANDOM_EXTRA_FUNCS`` configuration option is
-   enabled.
-
 
 Functions for integers
 ----------------------
@@ -37,9 +31,7 @@ Functions for integers
 
     Return a random integer in the range [*a*, *b*].
 
-.. function:: randrange(stop: int) -> int
-              randrange(start: int, stop: int) -> int
-              randrange(start: int, stop: int, step: int) -> int
+.. function:: randrange(start: int, stop: Optional[int] = None, step: int = 1) -> int
 
     The first form returns a random integer from the range [0, *stop*).
     The second form returns a random integer from the range [*start*, *stop*).
@@ -66,13 +58,10 @@ Other Functions
 
 .. function:: seed(n: Optional[int] = None, /) -> None
 
-    Initialise the random number generator module with the seed *n* which should
-    be an integer.  When no argument (or ``None``) is passed in it will (if
-    supported by the port) initialise the PRNG with a true random number
-    (usually a hardware generated random number).
-
-    The ``None`` case only works if ``MICROPY_PY_RANDOM_SEED_INIT_FUNC`` is
-    enabled by the port, otherwise it raises :exc:`ValueError`.
+    Initialise the random number generator module with the seed *n*, which
+    should be an integer.  When no argument (or ``None``) is passed in, the
+    PRNG is initialised with a true random number from the hardware random
+    number generator.
 
 .. function:: choice(sequence: Any) -> Any
 

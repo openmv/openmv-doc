@@ -16,7 +16,7 @@ def randint(a: int, b: int) -> int:
 def random() -> float:
     """Return a random floating point number in the range [0.0, 1.0)."""
     ...
-def randrange(stop: int) -> int:
+def randrange(start: int, stop: int | None = None, step: int = 1) -> int:
     """
     The first form returns a random integer from the range [0, stop).
     The second form returns a random integer from the range [start, stop).
@@ -27,12 +27,10 @@ def randrange(stop: int) -> int:
     ...
 def seed(n: int | None = None, /) -> None:
     """
-    Initialise the random number generator module with the seed n which should
-    be an integer.  When no argument (or None) is passed in it will (if
-    supported by the port) initialise the PRNG with a true random number
-    (usually a hardware generated random number).
-    The None case only works if MICROPY_PY_RANDOM_SEED_INIT_FUNC is
-    enabled by the port, otherwise it raises ValueError.
+    Initialise the random number generator module with the seed n, which
+    should be an integer.  When no argument (or None) is passed in, the
+    PRNG is initialised with a true random number from the hardware random
+    number generator.
     """
     ...
 def uniform(a: float, b: float) -> float:

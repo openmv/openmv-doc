@@ -1785,11 +1785,15 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
    Geometric Methods
    ~~~~~~~~~~~~~~~~~
 
-   .. method:: linpolar(reverse:bool=False) -> Image
+   .. method:: linpolar(reverse:bool=False, *, x:Optional[int]=None, y:Optional[int]=None) -> Image
 
-      Re-project's and image from cartessian coordinates to linear polar coordinates.
+      Re-projects an image from Cartesian coordinates to linear polar coordinates.
 
       Set ``reverse=True`` to re-project in the opposite direction.
+
+      ``x`` and ``y`` specify the center coordinate of the transform in image
+      pixels. If ``x`` is ``None`` (the default) it is set to half the image
+      width; likewise ``y`` defaults to half the image height.
 
       Linear polar re-projection turns rotation of an image into x-translation.
 
@@ -1797,11 +1801,15 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
 
       This method is not available on the OpenMV Cam M4.
 
-   .. method:: logpolar(reverse:bool=False) -> Image
+   .. method:: logpolar(reverse:bool=False, *, x:Optional[int]=None, y:Optional[int]=None) -> Image
 
-      Re-project's and image from cartessian coordinates to log polar coordinates.
+      Re-projects an image from Cartesian coordinates to log polar coordinates.
 
       Set ``reverse=True`` to re-project in the opposite direction.
+
+      ``x`` and ``y`` specify the center coordinate of the transform in image
+      pixels. If ``x`` is ``None`` (the default) it is set to half the image
+      width; likewise ``y`` defaults to half the image height.
 
       Log polar re-projection turns rotation of an image into x-translation
       and scaling/zooming into y-translation.

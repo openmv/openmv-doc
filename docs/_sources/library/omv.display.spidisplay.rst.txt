@@ -8,7 +8,7 @@ The `SPIDisplay` class is used for driving SPI LCDs.
 Constructors
 ------------
 
-.. class:: SPIDisplay(width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool = ..., *, controller: Optional[object] = None, backlight: Optional[object] = None)
+.. class:: SPIDisplay(width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool | None = None, *, controller: Optional[object] = None, backlight: Optional[object] = None)
 
     ``width`` SPI LCD width in pixels (1..32767).
 

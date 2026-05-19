@@ -79,7 +79,7 @@ def filter(function: Callable[[Any], Any] | None, iterable: Iterable[Any]) -> It
     returns true. If function is None, the identity function is assumed.
     """
     ...
-def getattr(obj: Any, name: str, default: Any = ...) -> Any:
+def getattr(obj: Any, name: str, default: Any = None) -> Any:
     """
     Return the value of the named attribute of obj. If the attribute does not
     exist, default is returned if provided, otherwise AttributeError is
@@ -129,7 +129,7 @@ def issubclass(cls: type, classinfo: type | tuple) -> bool:
     classinfo.
     """
     ...
-def iter(obj: Any, sentinel: Any = ...) -> Iterator[Any]:
+def iter(obj: Any, sentinel: Any = None) -> Iterator[Any]:
     """
     Return an iterator object. With one argument, obj must support the
     iteration protocol. With two arguments, obj must be callable and iteration
@@ -148,19 +148,19 @@ def map(function: Callable[..., Any], *iterables: Iterable[Any]) -> Iterator[Any
     yielding the results.
     """
     ...
-def max(*args: Any, key: Callable[[Any], Any] | None = None, default: Any = ...) -> Any:
+def max(*args: Any, key: Callable[[Any], Any] | None = None, default: Any = None) -> Any:
     """
     With a single iterable argument, return its largest item. With two or more
     arguments, return the largest argument.
     """
     ...
-def min(*args: Any, key: Callable[[Any], Any] | None = None, default: Any = ...) -> Any:
+def min(*args: Any, key: Callable[[Any], Any] | None = None, default: Any = None) -> Any:
     """
     With a single iterable argument, return its smallest item. With two or more
     arguments, return the smallest argument.
     """
     ...
-def next(iterator: Iterator[Any], default: Any = ...) -> Any:
+def next(iterator: Iterator[Any], default: Any = None) -> Any:
     """
     Retrieve the next item from iterator. If default is given and the
     iterator is exhausted, default is returned instead of raising
@@ -313,9 +313,7 @@ class SystemExit(Exception):
     """
     Raised by sys.exit() to request interpreter termination.  Unlike
     most exceptions, it does not produce a traceback when uncaught.
-    On non-embedded ports (i.e. Windows and Unix), an unhandled SystemExit
-    exits the MicroPython process in a similar way to CPython.
-    On embedded ports, an unhandled SystemExit currently causes a
+    On the OpenMV Cam, an unhandled SystemExit currently causes a
     soft_reset of MicroPython.
     """
     ...
@@ -786,7 +784,7 @@ class dict:
         in operator and set-comparison operators.
         """
         ...
-    def pop(self, key: Any, default: Any = ...) -> Any:
+    def pop(self, key: Any, default: Any = None) -> Any:
         """
         Remove key from the dictionary and return its value. If key is not
         present, return default if it was supplied; otherwise raise

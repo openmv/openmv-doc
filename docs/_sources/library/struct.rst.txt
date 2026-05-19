@@ -68,6 +68,38 @@ The following data types are supported:
 
    Whitespace is not supported in format strings.
 
+Examples
+--------
+
+Pack and unpack little-endian values. The ``<`` prefix selects little-endian
+byte order with standard sizes and no alignment::
+
+    import struct
+
+    # Pack an unsigned short (H, 2 bytes) then an unsigned int (I, 4 bytes).
+    data = struct.pack("<HI", 7, 1000)
+    # data == b'\x07\x00\xe8\x03\x00\x00'
+
+    # Unpack returns a tuple of the values, in order.
+    struct.unpack("<HI", data)
+    # (7, 1000)
+
+    # calcsize() reports how many bytes the format needs.
+    struct.calcsize("<HI")
+    # 6
+
+Pack into and unpack from an existing buffer at a byte offset::
+
+    buf = bytearray(8)
+
+    # Write a little-endian signed int (i) at offset 2.
+    struct.pack_into("<i", buf, 2, -12345)
+    # buf == bytearray(b'\x00\x00\xc7\xcf\xff\xff\x00\x00')
+
+    # Read it back from the same offset.
+    struct.unpack_from("<i", buf, 2)
+    # (-12345,)
+
 Functions
 ---------
 

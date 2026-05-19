@@ -50,7 +50,7 @@ def any(a: ndarray | list | tuple, *, axis: int | None = None) -> ndarray | bool
     axis=None the flattened array is tested.
     """
     ...
-def arange(start: int | float, stop: int | float = ..., step: int | float = 1, *, dtype: int | None = None) -> ndarray:
+def arange(start: int | float, stop: int | float | None = None, step: int | float = 1, *, dtype: int | None = None) -> ndarray:
     """
     Return evenly spaced values over the half-open interval [start, stop).
     If only one positional argument is given, it is treated as stop with

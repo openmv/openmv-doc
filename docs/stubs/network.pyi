@@ -282,7 +282,7 @@ class LAN:
     or True, the clock is driven by the Ethernet controller, if set to LAN.IN
     or Pin.IN or False, the clock is driven by the PHY interface.
     """
-    def __init__(self, id: int, *, phy_type: int = ..., phy_addr: int = ..., ref_clk_mode: int = ...) -> None: ...
+    def __init__(self, id: int, *, phy_type: int | None = None, phy_addr: int | None = None, ref_clk_mode: int | None = None) -> None: ...
     def active(self, state: bool | None = None) -> bool:
         """
         With a parameter, it sets the interface active if state is true, otherwise it

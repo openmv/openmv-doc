@@ -16,6 +16,11 @@ type aliases that have no useful representation in MicroPython (:data:`CodeType`
 placeholders so that code which only references them keeps importing, but they
 will not match any real object via :func:`isinstance`.
 
+**Availability:** This module is part of :term:`micropython-lib`. It is
+included by default only on the OpenMV N6 and OpenMV AE3. On the other
+OpenMV Cams it can be installed with ``mip`` (or frozen into a custom
+firmware); see :ref:`packages`.
+
 Type aliases
 ------------
 

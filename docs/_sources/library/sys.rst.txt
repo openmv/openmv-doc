@@ -17,8 +17,8 @@ Functions
    function raises a :exc:`SystemExit` exception. If an argument is given, its
    value given as an argument to :exc:`SystemExit`.
 
-   On embedded ports (i.e. all ports but Windows and Unix), an unhandled
-   :exc:`SystemExit` currently causes a :ref:`soft_reset` of MicroPython.
+   On the OpenMV Cam, an unhandled :exc:`SystemExit` currently causes a
+   :ref:`soft_reset` of MicroPython.
 
 .. function:: atexit(func: Optional[Callable[[], None]]) -> Optional[Callable[[], None]]
 
@@ -53,9 +53,9 @@ Functions
    Enable tracing of bytecode execution.  For details see the `CPython
    documentation <https://docs.python.org/3/library/sys.html#sys.settrace>`_.
 
-   This function requires a custom MicroPython build as it is typically not
-   present in pre-built firmware (due to it affecting performance).  The relevant
-   configuration option is *MICROPY_PY_SYS_SETTRACE*.
+   This function is **not available on the OpenMV Cam**. It is disabled by
+   default because it slows down code execution; enabling it requires building
+   custom firmware.
 
 Constants
 ---------
@@ -97,10 +97,8 @@ Constants
    access this field using ``sys.implementation._build.split("-")``.  The
    elements that are currently used are:
 
-   * On the unix, webassembly and windows ports the first element is the variant
-     name, for example ``'standard'``.
-   * On microcontroller targets, the first element is the board name and the second
-     element (if present) is the board variant, for example ``'RPI_PICO2-RISCV'``
+   * On the OpenMV Cam the first element is the board name and the second
+     element (if present) is the board variant.
 
    The *_thread* entry was added in version 1.26.0 and if it exists then the
    target has the ``_thread`` module.  If the target enables the GIL (global
@@ -146,8 +144,8 @@ Constants
 .. data:: modules
    :type: dict
 
-   Dictionary of loaded modules. On some ports, it may not include builtin
-   modules.
+   Dictionary of loaded modules. On the OpenMV Cam this does not include
+   built-in modules.
 
 .. data:: path
    :type: list[str]
@@ -165,12 +163,12 @@ Constants
 .. data:: platform
    :type: str
 
-   The platform that MicroPython is running on. For OS/RTOS ports, this is
-   usually an identifier of the OS, e.g. ``"linux"``. For baremetal ports it
-   is an identifier of a board, e.g. ``"pyboard"`` for the original MicroPython
-   reference board. It thus can be used to distinguish one board from another.
-   If you need to check whether your program runs on MicroPython (vs other
-   Python implementation), use :data:`sys.implementation` instead.
+   The platform that MicroPython is running on. This is a port/board-defined
+   string -- for example ``"mimxrt"`` on the OpenMV RT1060 and ``"alif"`` on
+   the OpenMV AE3 (some older OpenMV Cams report a model-specific string such
+   as ``"OpenMV4-H7"``). To check whether your program runs on MicroPython
+   (versus another Python implementation), use :data:`sys.implementation`
+   instead.
 
 .. data:: ps1
    :type: str
@@ -208,7 +206,7 @@ Constants
    entries to store in an exception.  Set to 0 to disable adding tracebacks.  Defaults
    to 1000.
 
-   Note: this is not available on all ports.
+   Note: this attribute is not available on the OpenMV Cam.
 
 .. data:: version
    :type: str

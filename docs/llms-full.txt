@@ -37,6 +37,8 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
    numpy/index.rst
 
+   tls_certificates.rst
+
    production.rst
 
    more_information.rst
@@ -3511,6 +3513,652 @@ Where to go next
 * :doc:`/library/omv.ulab.numpy` -- complete API reference.
 
 
+.. _tls_certificates:
+
+Working with TLS certificates
+=============================
+
+The :mod:`ssl` module on the OpenMV Cam (built on mbedTLS) lets a script make
+encrypted, authenticated network connections. To do anything beyond plain
+encryption you need certificates. This page covers what they are, which key
+types and file formats the camera accepts, how to create self-signed
+certificates for development and obtain CA-signed ones for production, how to
+get them onto the camera and verify a remote server, how to protect the
+private key, and how certificate expiry and rotation affect a deployed device.
+
+.. note::
+
+   Self-signed certificates are appropriate for development, testing, and
+   closed deployments where you control both ends of the connection. For a
+   service that arbitrary clients (browsers, phones, third parties) must trust
+   without extra configuration you need a certificate signed by a public
+   Certificate Authority; see *CA-signed (publicly trusted) certificates*
+   below.
+
+Trust models
+------------
+
+A TLS connection can provide three increasing levels of assurance:
+
+* **Encryption only** -- the traffic is encrypted but neither side proves who
+  it is. Easy to set up (no certificate validation) but vulnerable to a
+  man-in-the-middle attack. Use only for local testing.
+* **Server authentication** -- the client verifies the server's certificate
+  against a trusted certificate (the familiar HTTPS model). The OpenMV Cam can
+  act as either the client (verifying a remote server) or the server
+  (presenting its own certificate).
+* **Mutual authentication (mTLS)** -- both ends present and verify
+  certificates. Used where the server must also be sure of the client's
+  identity.
+
+Choosing a key type
+-------------------
+
+The camera's mbedTLS build supports ECDSA on the NIST/SEC prime curves and
+RSA. There are three practical ways to make a key; **ECDSA P-256
+(prime256v1) is recommended**:
+
+* **ECDSA P-256 (prime256v1)** -- about 128-bit security with a 256-bit key.
+  Tiny keys and signatures, and by far the fastest handshake of the supported
+  options on a Cortex-M (elliptic-curve operations are much cheaper than RSA
+  private-key operations). Universally supported by TLS peers. This is the best
+  balance of security, speed, RAM/flash use and compatibility on an embedded
+  device, which is why it is the default choice here.
+* **ECDSA P-384 (secp384r1)** -- about 192-bit security. Still elliptic-curve,
+  so reasonably efficient, but larger and slower than P-256 for a security
+  margin that typical IoT deployments do not need. Use only if a long-lived
+  certificate or a compliance requirement calls for it.
+* **RSA-2048** -- about 112-bit security. Universally compatible, including
+  with very old peers, but RSA keys and certificates are much larger and RSA
+  private-key operations (done by the side presenting the certificate) are the
+  slowest and most memory-hungry option on a microcontroller. Use only when a
+  peer cannot do ECDSA.
+
+.. note::
+
+   **Ed25519 / Curve25519 keys are not supported.** The OpenMV Cam's mbedTLS
+   build does not enable EdDSA or Curve25519, so an Ed25519 certificate or key
+   will fail to load or handshake. Use one of the three options above.
+
+File format: use DER
+--------------------
+
+The mbedTLS build used by the OpenMV Cam does not include PEM parsing, so the
+camera reads certificates and keys only in **DER** form (the binary encoding).
+OpenSSL produces PEM (base64 text) by default, so every file you copy to the
+camera must be converted to DER first (shown below). You will need:
+
+* A **private key** -- kept secret, used by whichever side presents a
+  certificate.
+* A **certificate** -- the public part, presented to the other side during the
+  handshake.
+* A **CA / trust certificate** -- the certificate the *verifying* side loads to
+  decide whether the peer is trusted. For a self-signed setup this is simply
+  the peer's own certificate.
+
+Installing OpenSSL
+------------------
+
+The commands in this guide use the ``openssl`` command-line tool, run on your
+development machine -- not on the camera. It is often already installed; check
+with::
+
+    openssl version
+
+If it is missing, install it for your operating system:
+
+* **Linux** -- use the package manager, e.g. ``sudo apt install openssl``
+  (Debian/Ubuntu), ``sudo dnf install openssl`` (Fedora/RHEL) or
+  ``sudo pacman -S openssl`` (Arch).
+* **macOS** -- ``brew install openssl`` using `Homebrew
+  <https://brew.sh>`__.
+* **Windows** -- install a build such as `Win32/Win64 OpenSSL
+  <https://slproweb.com/products/Win32OpenSSL.html>`__, use a package
+  manager (``winget install ShiningLight.OpenSSL.Light`` or
+  ``choco install openssl``), or use the ``openssl`` that ships with
+  `Git for Windows <https://git-scm.com/download/win>`__ (run it from Git
+  Bash).
+
+Creating a self-signed certificate
+----------------------------------
+
+Run OpenSSL on your development machine. The ``subjectAltName`` (SAN) is what
+modern TLS clients check during hostname verification, so set it to the
+host name(s) and/or IP address(es) clients will use to reach the camera
+(``CN`` alone is legacy and is ignored by many clients). Replace
+``DNS:openmv`` / ``IP:192.168.1.50`` with the address your clients actually
+connect to.
+
+ECDSA P-256 -- recommended::
+
+    # Generate a P-256 private key.
+    openssl ecparam -name prime256v1 -genkey -noout -out server.key
+
+    # Self-signed certificate valid for one year, with a SAN.
+    openssl req -new -x509 -key server.key -out server.crt -days 365 \
+        -subj "/CN=openmv" -addext "subjectAltName=DNS:openmv,IP:192.168.1.50"
+
+ECDSA P-384 -- stronger, larger/slower::
+
+    openssl ecparam -name secp384r1 -genkey -noout -out server.key
+
+    openssl req -new -x509 -key server.key -out server.crt -days 365 \
+        -subj "/CN=openmv" -addext "subjectAltName=DNS:openmv,IP:192.168.1.50"
+
+RSA-2048 -- maximum compatibility::
+
+    openssl req -new -x509 -newkey rsa:2048 -nodes -keyout server.key \
+        -out server.crt -days 365 -subj "/CN=openmv" \
+        -addext "subjectAltName=DNS:openmv,IP:192.168.1.50"
+
+.. note::
+
+   A **client** certificate (used for mutual authentication, below) is created
+   with exactly these same commands -- there is nothing client-specific about
+   the certificate itself. Just generate a second, independent key/certificate
+   pair under different names (e.g. ``client.key`` / ``client.crt``) and use it
+   on the client as shown in the mTLS example. The ``subjectAltName`` only
+   matters for the side whose host name the peer verifies (the client checks
+   the server's name; nothing checks the client's), so it can be omitted for a
+   client-only certificate. The ``-subj`` / ``CN`` is likewise just a label on
+   a client certificate -- the server side here checks only that the
+   certificate chains to a trusted CA, it never matches the name -- so set it
+   to whatever identifies that client (e.g. ``/CN=sensor-01``). Keep some
+   ``-subj`` value regardless, so OpenSSL can generate the certificate
+   non-interactively.
+
+Certificate lifetime is set by ``-days``; certificates expire and must be
+regenerated and redeployed before then -- see `Certificate expiry and
+rotation`_ below.
+
+Converting to DER
+-----------------
+
+Convert both the certificate and the private key to DER before copying them to
+the camera::
+
+    openssl x509 -in server.crt -outform DER -out server.der
+    openssl pkey -in server.key -outform DER -out server.key.der
+
+Copying files to the camera
+---------------------------
+
+Copy the DER files to the camera's filesystem -- for example by dragging them
+onto the OpenMV Cam's USB drive, or with ``mpremote cp server.der :`` and
+``mpremote cp server.key.der :``. On the verifying side, also copy the CA /
+peer certificate in DER form.
+
+The DER files do not have to live on the writable filesystem. MicroPython can
+also mount a read-only **ROMFS** image at ``/rom``, and certificates placed
+there are loaded exactly like any other file -- e.g.
+``ctx.load_cert_chain("/rom/server.der", "/rom/server.key.der")``. A ROMFS
+image is prepared on your development machine (for example with
+``mpremote romfs``) and is read-only at runtime, so the certificate cannot be
+altered on the device -- useful for locking down a production unit. Note that a
+private key stored in ROMFS is still readable by code running on the camera;
+ROMFS protects against *modification*, not *extraction*. A ROMFS-resident
+certificate can only be replaced by rebuilding and reflashing the image, so
+weigh that against `Certificate expiry and rotation`_ below.
+
+Setting the clock
+-----------------
+
+:data:`ssl.CERT_REQUIRED` checks each certificate's validity period, so the
+camera's clock must be correct or verification fails (a freshly powered-up
+camera has no idea what time it is). With a working network connection, the
+:mod:`ntptime` module fetches the time over NTP and sets the on-board RTC
+(:class:`machine.RTC`), in UTC::
+
+    import ntptime
+
+    ntptime.settime()                 # query NTP and set machine.RTC (UTC)
+
+After this, :func:`time.localtime` and :class:`machine.RTC` reflect the
+current UTC time. Bringing the network interface up is board-specific and is
+not shown here; the examples below assume the camera is already connected.
+
+Using the certificate
+----------------------
+
+A complete **client** that sets the clock, opens a socket, verifies a
+self-signed server, and exchanges data::
+
+    import socket
+    import ssl
+    import ntptime
+
+    ntptime.settime()                 # correct clock for the validity check
+
+    # Open a plain TCP connection.
+    addr = socket.getaddrinfo("openmv", 8443)[0][-1]
+    sock = socket.socket()
+    sock.connect(addr)
+
+    # Wrap it for TLS, trusting the server's self-signed certificate.
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.load_verify_locations(cafile="server.der")
+    ssock = ctx.wrap_socket(sock, server_hostname="openmv")
+
+    ssock.write(b"hello\n")
+    print(ssock.read())
+    ssock.close()
+
+A complete **server** presenting its certificate and key::
+
+    import socket
+    import ssl
+    import ntptime
+
+    ntptime.settime()                 # correct clock for the validity check
+
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.load_cert_chain("server.der", "server.key.der")
+
+    sock = socket.socket()
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(socket.getaddrinfo("0.0.0.0", 8443)[0][-1])
+    sock.listen(1)
+
+    while True:
+        client, addr = sock.accept()
+        sclient = ctx.wrap_socket(client, server_side=True)
+        sclient.write(b"hello\n")
+        print(sclient.read())
+        sclient.close()
+
+For **mutual authentication (mTLS)** the server additionally requires and
+verifies a client certificate, and the client presents one of its own::
+
+    # Server side: also demand and verify a client certificate.
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.load_cert_chain("server.der", "server.key.der")
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.load_verify_locations(cafile="client.der")
+
+    # Client side: present a certificate of our own.
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.load_cert_chain("client.der", "client.key.der")
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.load_verify_locations(cafile="server.der")
+
+See the :mod:`ssl` module documentation for the full API.
+
+.. note::
+
+   Everything on this page applies unchanged to **DTLS** (TLS over UDP). The
+   keys, certificates, DER format, trust model, expiry concerns, and the
+   ``load_cert_chain`` / ``load_verify_locations`` calls are identical; only
+   the transport differs -- you wrap a ``socket.SOCK_DGRAM`` socket and select
+   :data:`ssl.PROTOCOL_DTLS_CLIENT` / :data:`ssl.PROTOCOL_DTLS_SERVER` instead
+   of the ``TLS`` protocol constants. The one extra wrinkle is a server-side
+   anti-spoofing cookie -- the first connection from a new client is expected
+   to fail and the client simply retries; see :ref:`dtls` for details.
+
+CA-signed (publicly trusted) certificates
+-----------------------------------------
+
+Self-signed certificates work when you control both ends. If instead arbitrary
+clients (browsers, phones, third-party software) must connect to the camera
+*without* being told to trust a custom certificate, the certificate has to be
+signed by a public Certificate Authority (CA) that those clients already
+trust. The TLS code on the camera is identical to the self-signed case --
+``load_cert_chain`` with a certificate and a key in DER form -- only how you
+obtain that certificate changes.
+
+The single most important point: **you generate the private key yourself and
+it never leaves your machine.** The CA never sees it. What you send the CA is
+a *certificate signing request* (CSR) -- a small file containing your public
+key and your domain name -- and what you get back is a *certificate* (your
+public key and name, signed by the CA). The key and the certificate are two
+separate files produced by two separate steps; the CA only ever handles the
+public half.
+
+The general flow, all done on a normal machine (never on the camera):
+
+#. **Get a domain name.** Public CAs certify a DNS name you control
+   (e.g. ``cam.example.com``); they will not issue for a bare IP address or a
+   made-up name like ``openmv``.
+
+#. **Generate a key and a CSR.** One OpenSSL command produces the private key
+   and the matching CSR. Use the same key type you would for a self-signed
+   certificate (see `Choosing a key type`_); ECDSA P-256 is recommended.
+
+   ECDSA P-256 -- recommended::
+
+       openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
+           -nodes -keyout domain.key -out domain.csr \
+           -subj "/CN=cam.example.com" \
+           -addext "subjectAltName=DNS:cam.example.com"
+
+   ECDSA P-384 -- stronger, larger/slower::
+
+       openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 \
+           -nodes -keyout domain.key -out domain.csr \
+           -subj "/CN=cam.example.com" \
+           -addext "subjectAltName=DNS:cam.example.com"
+
+   RSA-2048 -- maximum compatibility::
+
+       openssl req -new -newkey rsa:2048 \
+           -nodes -keyout domain.key -out domain.csr \
+           -subj "/CN=cam.example.com" \
+           -addext "subjectAltName=DNS:cam.example.com"
+
+   Keep ``domain.key`` secret -- this is the key file you will eventually put
+   on the camera. ``domain.csr`` is the file you hand to the CA; it contains
+   no secrets.
+
+#. **Submit the CSR and prove you control the domain.** This is where the two
+   common routes differ:
+
+   * An automated ACME CA such as `Let's Encrypt
+     <https://letsencrypt.org>`__, driven by a tool like ``certbot`` or
+     ``acme.sh``, does steps 2 and 3 for you: it generates the key, builds the
+     CSR, answers the challenge automatically (HTTP-01: serve a token over
+     port 80 on the domain, or DNS-01: publish a TXT record in its DNS) and
+     writes out the finished files.
+   * A commercial CA (bought directly or through a domain/hosting reseller):
+     you paste the ``domain.csr`` text into a web form, then prove control by
+     replying to a validation email, publishing a DNS record, or placing a
+     file on a web server for that domain. Once validated you download the
+     issued files.
+
+#. **Collect the issued files.** To make sense of what you receive, it helps
+   to know that certificates form a *chain of trust*: your domain's
+   certificate is signed by an intermediate CA, which is in turn signed by a
+   root CA. Each link vouches for the one below it. You end up with:
+
+   * Your **private key** (from step 2). The CA never had it; it stays on
+     your machine and is the key you eventually put on the camera.
+   * The **leaf** certificate -- also called the *end-entity* or *server*
+     certificate. This is the certificate for your specific domain
+     (``cam.example.com``): it contains your public key and your name, and is
+     signed by the CA's intermediate. This is the certificate the camera
+     presents to identify itself.
+   * One or more **intermediate CA certificates** (the "chain" or "CA
+     bundle"). A CA does not sign your leaf with its root directly -- the
+     root's key is kept offline and heavily protected -- so it signs with an
+     intermediate, which is itself signed by the root. The intermediate is the
+     link that connects your leaf up to the root.
+
+   The **root** certificate is the *trust anchor*: a self-signed certificate
+   belonging to the CA that sits at the top of the chain. You are not given it
+   and never deploy it, because every client already has it -- operating
+   systems, browsers, phones and language runtimes ship with a built-in
+   "trust store" of root certificates. A client trusts your leaf by walking
+   the chain: it already trusts the root, the root vouches for the
+   intermediate, and the intermediate vouches for your leaf. (This is exactly
+   the job your single ``server.der`` / ``cafile`` does in the self-signed
+   case -- there *you* are your own root.)
+
+   A **fullchain** file is simply the leaf and the intermediate(s)
+   concatenated into one file, leaf first, deliberately *without* the root
+   (sending the root is pointless -- a client only trusts roots it already
+   has). A normal server presents this entire fullchain so any client can walk
+   it. The camera cannot: it loads and presents a single certificate, which is
+   the reason for the limitation noted below.
+
+   File names you will actually see: an ACME tool such as ``certbot`` writes
+   ``privkey.pem`` (your key), ``cert.pem`` (the leaf alone), ``chain.pem``
+   (the intermediate(s) alone) and ``fullchain.pem`` (leaf + intermediate(s)).
+   A commercial CA usually gives you a ``.crt`` for the leaf and a
+   ``.ca-bundle`` for the intermediate(s), with the ``.key`` being the one you
+   generated yourself.
+
+#. **Convert and copy.** Convert the private key and the leaf certificate to
+   DER and copy them to the camera exactly as in `Converting to DER`_ and
+   `Copying files to the camera`_ above. The camera then presents them as its
+   server certificate and standard clients accept the connection
+   automatically, because they already trust the CA -- no client-side
+   configuration is needed.
+
+There is one embedded limitation to be aware of regarding the chain from
+step 4. The camera loads and presents **one** certificate -- the leaf. It
+cannot also send the intermediate certificate(s) the CA gave you.
+
+.. tip::
+
+   In practice:
+
+   * Clients that already have the CA's intermediate cached -- mainstream
+     browsers and HTTPS libraries usually do -- complete the chain themselves
+     and connect fine.
+   * Clients that rely on the *server* to supply the intermediate will fail
+     the handshake against the camera.
+
+   If every possible client must succeed, do not terminate public TLS on the
+   camera directly. Put a gateway / reverse proxy in front of it that serves
+   the full chain to the outside world, and have the proxy reach the camera
+   over the self-signed flow described above.
+
+Verifying a public server (camera as client)
+--------------------------------------------
+
+Everything above about a client "already having the root" is true of browsers,
+phones and PCs -- it is **not** true of the camera. MicroPython's :mod:`ssl`
+ships with no built-in trust store: a freshly flashed camera trusts no CA at
+all, and the default (:data:`ssl.CERT_NONE`) verifies nothing and is wide open
+to a man-in-the-middle. So when the camera is the *client* connecting out to a
+public TLS server (an HTTPS API, an MQTT broker, ...) and you want it to truly
+verify that server, you have to supply the trust anchor yourself.
+
+The mechanics are the same as the self-signed client example; the only
+difference is that the file you load is a real CA certificate instead of the
+peer's own certificate:
+
+#. **Get the CA certificate that anchors the server's chain.** "Anchors"
+   means the certificate at (or near) the top of the server's chain that you
+   choose as your starting point of trust. A TLS server sends its leaf and
+   usually its intermediate(s); it never sends its root. You must obtain that
+   trust anchor yourself and *independently of the server* -- simply trusting
+   whatever a server hands you would defeat the entire point of verification.
+
+   First find out which CA actually issued the server's certificate. For
+   example, against ``openmv.io``::
+
+       openssl s_client -connect openmv.io:443 -showcerts < /dev/null
+
+   The ``Certificate chain`` block lists each certificate with its subject
+   (``s:``) and issuer (``i:``); newer OpenSSL also prints ``a:`` (key type)
+   and ``v:`` (validity) lines you can ignore here::
+
+       Certificate chain
+        0 s:CN=openmv.io
+          i:C=US, O=Let's Encrypt, CN=E8
+        1 s:C=US, O=Let's Encrypt, CN=E8
+          i:C=US, O=Internet Security Research Group, CN=ISRG Root X1
+
+   Entry 0 is the leaf (``openmv.io``), issued by the intermediate ``E8``.
+   Entry 1 is that intermediate, issued by the root ``ISRG Root X1``. The
+   issuer (``i:``) of the topmost entry names the root -- here
+   ``ISRG Root X1``. (The intermediate is ``E8`` rather than the ``R10`` /
+   ``R11`` you may have seen elsewhere because ``openmv.io`` uses an ECDSA
+   certificate; Let's Encrypt signs ECDSA leaves with its ``E``-series
+   intermediates and RSA leaves with its ``R``-series ones. Both chain to
+   ``ISRG Root X1``.)
+
+   OpenSSL also prints ``depth=`` lines and may report the root with
+   ``Verification: OK``. That happens only because *your PC* already trusts
+   ``ISRG Root X1`` -- the server did **not** send it (a server never sends
+   its root), and the camera, having no trust store, will not have it either.
+   That is exactly why you must supply it.
+
+   Download *that* root from the CA's own published roots. Let's Encrypt
+   catalogues all of theirs on the `Let's Encrypt certificates page
+   <https://letsencrypt.org/certs/>`__; the direct file for ISRG Root X1 is
+   `isrgrootx1.pem <https://letsencrypt.org/certs/isrgrootx1.pem>`__ (they
+   also offer it pre-encoded as `isrgrootx1.der
+   <https://letsencrypt.org/certs/isrgrootx1.der>`__, which lets you skip the
+   DER conversion in the next step). Other CAs publish theirs on a similar
+   "root certificates" / "repository" page; the canonical public set is the
+   `Mozilla CA program (CCADB) <https://www.ccadb.org/>`__. Confirm you
+   fetched the right file by comparing its fingerprint against the value the
+   CA publishes (add ``-inform DER`` if you downloaded the ``.der``)::
+
+       openssl x509 -in isrgrootx1.pem -noout -subject -fingerprint -sha256
+
+   If you would rather not track a root, you can instead copy the
+   **intermediate** straight out of the ``-showcerts`` output (the second
+   ``-----BEGIN CERTIFICATE-----`` block), trust that, and accept that you
+   must refresh it whenever the CA rotates the intermediate -- far more often
+   than the root (see the trade-off below).
+
+#. **Convert it to DER**, exactly as before::
+
+       openssl x509 -in isrgrootx1.pem -outform DER -out ca.der
+
+#. **Copy** ``ca.der`` to the camera (filesystem or ROMFS) and load it as the
+   trust anchor::
+
+       import socket
+       import ssl
+       import ntptime
+
+       ntptime.settime()                  # validity check needs the clock
+
+       addr = socket.getaddrinfo("api.example.com", 443)[0][-1]
+       sock = socket.socket()
+       sock.connect(addr)
+
+       ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+       ctx.verify_mode = ssl.CERT_REQUIRED
+       ctx.load_verify_locations(cafile="ca.der")
+       ssock = ctx.wrap_socket(sock, server_hostname="api.example.com")
+
+   ``server_hostname`` is required here: it drives SNI and is the name checked
+   against the server certificate's ``subjectAltName``.
+
+.. tip::
+
+   **Common-case shortcut.** Let's Encrypt is the most widely used public CA,
+   and both its RSA and ECDSA certificates currently chain to ISRG Root X1
+   (as the ``openmv.io`` example above shows). If the servers your camera
+   talks to use Let's Encrypt, you can skip the inspection entirely: just put
+   `isrgrootx1.der <https://letsencrypt.org/certs/isrgrootx1.der>`__ on the
+   camera and ``load_verify_locations`` it.
+
+   This does **not** make TLS work to *every* site. A server whose
+   certificate comes from a different CA (DigiCert, Google Trust Services,
+   Amazon, Sectigo, ...) will still fail verification, and because the camera
+   trusts a single DER certificate per :class:`ssl.SSLContext` you cannot
+   bundle every root the way a browser does. When in doubt, identify the
+   server's actual CA as shown above and trust that root.
+
+Which certificate you trust is a trade-off:
+
+* **The root** (recommended). Long-lived -- often decades -- so ``ca.der``
+  rarely changes. It requires the server to send its intermediate so mbedTLS
+  can build the path leaf → intermediate → your trusted root; virtually every
+  correctly configured public server does.
+* **The intermediate.** Also works, and keeps working even if a server omits
+  the intermediate, but intermediates are rotated far more often than roots,
+  so you will have to refresh ``ca.der`` more frequently.
+* **The leaf itself** (certificate pinning). Tightest, but the leaf changes on
+  every renewal -- roughly every 90 days for Let's Encrypt -- so this only
+  makes sense when you also control the server and can push the new pin to
+  every camera in lockstep. This is exactly what the self-signed client
+  example does.
+
+.. note::
+
+   :meth:`ssl.SSLContext.load_verify_locations` takes a single DER-encoded CA
+   certificate, so the camera trusts exactly one anchor at a time. To reach
+   servers under different CAs, use a separate :class:`ssl.SSLContext` per
+   anchor. And because that certificate will itself eventually expire or be
+   rotated by the CA, treat it like any other certificate on the device --
+   see `Certificate expiry and rotation`_.
+
+Protecting the private key
+--------------------------
+
+Whenever the camera *presents* a certificate -- as a TLS server, or as the
+client in mTLS -- its private key has to live on the device, in plain DER, on
+the filesystem or in ROMFS. Stored that way it is readable by any code running
+on the camera and by anyone with physical access to it: the USB mass-storage
+drive, a REPL prompt, or the raw flash. ROMFS and read-only flags prevent *modification*, not
+*extraction*. **Treat any private key shipped on a device as recoverable by a
+determined attacker with physical or code access.**
+
+This does not make TLS pointless -- it shapes how you deploy it:
+
+* **Use a unique key and certificate per device.** Never flash one shared key
+  across the fleet: extracting it from a single unit would then let an
+  attacker impersonate every camera. Per-device keys keep a compromise to that
+  one device, which you can revoke or disable server-side.
+* **Keep certificates short-lived.** A stolen key is only useful while its
+  certificate is valid; short lifetimes plus routine rotation bound the
+  damage (see `Certificate expiry and rotation`_).
+* **Avoid putting a secret on the device at all when you can.** If you only
+  need to verify the *server* (server authentication, not mTLS), the camera
+  as a client stores only the CA certificate -- which is public -- and holds
+  no private key worth stealing.
+* **Never ship a key in a public firmware image.** A key baked into ROMFS in
+  a firmware build you distribute is not secret; anyone who downloads the
+  firmware has it. Per-device provisioning means programming the key *after*
+  the generic firmware, not inside it.
+* **Limit blast radius.** Scope whatever the certificate authenticates to
+  (least privilege), and make sure a single leaked device identity can be
+  revoked or disabled without affecting the rest.
+
+If your threat model includes attackers with physical access, design on the
+assumption that the device key *will* eventually leak and make that
+survivable, rather than assuming it can be kept secret on hardware that has no
+facility to do so.
+
+Certificate expiry and rotation
+-------------------------------
+
+Every certificate carries a validity window. Once it passes, a
+:data:`ssl.CERT_REQUIRED` peer rejects the connection -- so expiry is a real,
+scheduled outage, not a theoretical risk. The camera's clock must also be
+correct for the validity check to be evaluated honestly (set it with
+:func:`ntptime.settime`, as shown under *Setting the clock* above).
+
+* **Self-signed.** You picked the lifetime with ``-days``. When it lapses you
+  must regenerate the key/certificate and redeploy it: re-copy the DER files,
+  or rebuild and reflash the ROMFS image if the certificate is baked in. Pick a
+  ``-days`` value you will actually remember to act on.
+* **Public CA.** These are deliberately short-lived. Let's Encrypt issues
+  90-day certificates and expects automated renewal roughly every 60 days;
+  there is no "install once and forget" option.
+
+The broader trend is one-directional: the maximum validity of publicly-trusted
+TLS certificates keeps shrinking. It was 825 days, is currently capped at 398
+days, and the CA/Browser Forum has adopted a schedule that steps it down toward
+roughly 47 days by 2029. The takeaway for a device design is to assume
+certificates are short-lived and that rotation must be automated or at least
+routine -- do not ship a product that depends on a human swapping a ten-year
+certificate.
+
+Practically, on the camera: prefer designs where the certificate can be
+replaced without reflashing (a writable filesystem plus a remote-update path,
+or running the camera as a *client* that trusts a CA you rotate centrally). If
+a certificate must live in ROMFS, schedule firmware updates around its
+lifetime. In all cases keep the clock synchronised with :func:`ntptime.settime`
+so the validity check is accurate.
+
+Troubleshooting
+---------------
+
+* **The clock must be set.** If the camera's clock is wrong (for example not
+  yet set after power-up) the certificate validity check fails -- call
+  :func:`ntptime.settime` first, as shown above.
+* **Host name must match.** When the client passes ``server_hostname`` it must
+  match the certificate's ``subjectAltName`` (or ``CN`` on older stacks), or
+  verification fails.
+* **Wrong format.** A PEM file copied to the camera will not load -- convert
+  to DER as shown above.
+* **Certificate expired.** A connection that worked before and now fails with
+  :exc:`OSError` may simply have an expired certificate -- check the validity
+  dates and regenerate/redeploy as needed (see `Certificate expiry and
+  rotation`_ above).
+* **Ed25519 keys fail.** Use ECDSA P-256/P-384 or RSA, not Ed25519.
+* **Errors are** :exc:`OSError`. MicroPython does not implement
+  ``ssl.SSLError``; TLS failures (bad certificate, expired, unknown CA, format
+  error, handshake failure) are raised as :exc:`OSError`.
+
+
 Releasing your OpenMV Cam Scripts for Production
 ================================================
 
@@ -4993,7 +5641,7 @@ Functions and types
       changes to the dictionary and supports iteration, :func:`len`, the
       ``in`` operator and set-comparison operators.
 
-   .. method:: pop(key: Any, default: Any = ...) -> Any
+   .. method:: pop(key: Any, default: Any = None) -> Any
 
       Remove *key* from the dictionary and return its value. If *key* is not
       present, return *default* if it was supplied; otherwise raise
@@ -5116,7 +5764,7 @@ Functions and types
       MicroPython only a single *other* argument is accepted (CPython accepts
       multiple).
 
-.. function:: getattr(obj: Any, name: str, default: Any = ...) -> Any
+.. function:: getattr(obj: Any, name: str, default: Any = None) -> Any
 
    Return the value of the named attribute of *obj*. If the attribute does not
    exist, *default* is returned if provided, otherwise :exc:`AttributeError` is
@@ -5177,7 +5825,7 @@ Functions and types
    Return ``True`` if *cls* is a subclass (direct, indirect, or virtual) of
    *classinfo*.
 
-.. function:: iter(obj: Any, sentinel: Any = ...) -> Iterator[Any]
+.. function:: iter(obj: Any, sentinel: Any = None) -> Iterator[Any]
 
    Return an iterator object. With one argument, *obj* must support the
    iteration protocol. With two arguments, *obj* must be callable and iteration
@@ -5256,7 +5904,7 @@ Functions and types
    Return an iterator that applies *function* to every item of *iterables*,
    yielding the results.
 
-.. function:: max(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = ...) -> Any
+.. function:: max(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = None) -> Any
 
    With a single iterable argument, return its largest item. With two or more
    arguments, return the largest argument.
@@ -5268,12 +5916,12 @@ Functions and types
     access and slicing of the underlying memory; slicing a memoryview returns
     another memoryview rather than a copy.
 
-.. function:: min(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = ...) -> Any
+.. function:: min(*args: Any, key: Optional[Callable[[Any], Any]] = None, default: Any = None) -> Any
 
    With a single iterable argument, return its smallest item. With two or more
    arguments, return the smallest argument.
 
-.. function:: next(iterator: Iterator[Any], default: Any = ...) -> Any
+.. function:: next(iterator: Iterator[Any], default: Any = None) -> Any
 
    Retrieve the next item from *iterator*. If *default* is given and the
    iterator is exhausted, *default* is returned instead of raising
@@ -5693,10 +6341,7 @@ Exceptions
     Raised by :func:`sys.exit` to request interpreter termination.  Unlike
     most exceptions, it does not produce a traceback when uncaught.
 
-    On non-embedded ports (i.e. Windows and Unix), an unhandled ``SystemExit``
-    exits the MicroPython process in a similar way to CPython.
-
-    On embedded ports, an unhandled ``SystemExit`` currently causes a
+    On the OpenMV Cam, an unhandled ``SystemExit`` currently causes a
     :ref:`soft_reset` of MicroPython.
 
 .. exception:: TypeError
@@ -5864,8 +6509,6 @@ Classes
        :noindex:
 
        Return the field names and their values as an :class:`OrderedDict`.
-       (``namedtuple`` builds types dynamically, so this method has no fixed
-       host class to attach to in the API model.)
 
 .. class:: OrderedDict(*args: Any, **kwargs: Any)
 
@@ -5915,19 +6558,17 @@ Classes
 .. module:: errno
    :synopsis: system error codes
 
-This module provides access to symbolic error codes for :exc:`OSError` exception,
-along with the :data:`errorcode` dictionary mapping numeric codes back to
-their symbolic names.  The particular inventory of codes depends on the
-:term:`MicroPython port`.
+This module provides access to symbolic error codes for the :exc:`OSError`
+exception, along with the :data:`errorcode` dictionary mapping numeric codes
+back to their symbolic names.
 
 Constants
 ---------
 
 The error codes below are based on the ANSI C / POSIX standard; each is an
-integer whose symbolic name starts with ``E``. As noted above, the inventory
-of codes depends on the :term:`MicroPython port`; these are the codes provided
-by the default MicroPython build. An error code is usually accessed as
-``exc.errno`` where ``exc`` is an instance of :exc:`OSError`. Usage example::
+integer whose symbolic name starts with ``E``. These are the codes provided on
+the OpenMV Cam. An error code is usually accessed as ``exc.errno`` where
+``exc`` is an instance of :exc:`OSError`. Usage example::
 
     try:
         os.mkdir("my_dir")
@@ -6147,16 +6788,17 @@ file or stream object.
 
 **Availability:**
 
-* This module is **not present by default** in official MicroPython firmware
-  releases as it duplicates functionality available in the :mod:`deflate
-  <deflate>` module.
+* This module is **not included on the OpenMV Cam** by default, as it
+  duplicates functionality already provided by the :mod:`deflate <deflate>`
+  module.
 
-* A copy of this module can be installed (or frozen)
+* A copy can be installed (or frozen into custom firmware)
   from :term:`micropython-lib` (`source <https://github.com/micropython/micropython-lib/blob/master/python-stdlib/gzip/gzip.py>`_).
   See :ref:`packages` for more information. This documentation describes that module.
 
-* Compression support will only be available if compression support is enabled
-  in the built-in :mod:`deflate <deflate>` module.
+* Compression is only available if compression is available in the built-in
+  :mod:`deflate <deflate>` module -- that is, not on the STM32-based OpenMV
+  Cams (see its availability note above).
 
 Functions
 ---------
@@ -6244,23 +6886,19 @@ note at the :ref:`end of the deflate documentation <deflate_wbits>`.
 
 This module implements binary data hashing algorithms.  Each algorithm is
 exposed as a class whose instances accept incremental data via
-``update()`` and produce a fixed-size digest via ``digest()``.  The
-exact inventory of available algorithms depends on the board.  Among the
-algorithms which may be implemented:
+``update()`` and produce a fixed-size digest via ``digest()``.  The OpenMV
+Cam provides three algorithms:
 
-* SHA256 - The current generation, modern hashing algorithm (of SHA2 series).
-  It is suitable for cryptographically-secure purposes. Included in the
-  MicroPython core and any board is recommended to provide this, unless
-  it has particular code size constraints.
+* SHA256 - The current generation, modern hashing algorithm (of the SHA-2
+  series). It is suitable for cryptographically-secure purposes and is always
+  available.
 
-* SHA1 - A previous generation algorithm. Not recommended for new usages,
-  but SHA1 is a part of number of Internet standards and existing
-  applications, so boards targeting network connectivity and
-  interoperability will try to provide this.
+* SHA1 - A previous generation algorithm. Not recommended for new uses, but
+  SHA1 is part of a number of Internet standards and existing applications,
+  so it remains available.
 
-* MD5 - A legacy algorithm, not considered cryptographically secure. Only
-  selected boards, targeting interoperability with legacy applications,
-  will offer this.
+* MD5 - A legacy algorithm, not considered cryptographically secure. Provided
+  for interoperability with legacy applications.
 
 Classes
 -------
@@ -6402,9 +7040,8 @@ be short operations or not depends on each particular class' needs, but
 developers are strongly advised to favour no-short-operations behaviour
 for the reasons stated above. For example, MicroPython sockets are
 guaranteed to avoid short read/writes. Actually, at this time, there is
-no example of a short-operations stream class in the core, and one would
-be a port-specific class, where such a need is governed by hardware
-peculiarities.
+no example of a short-operations stream class in the core, and such a class
+would be specific to particular hardware.
 
 The no-short-operations behaviour gets tricky in case of non-blocking
 streams, blocking vs non-blocking behaviour being another CPython dichotomy,
@@ -6437,9 +7074,9 @@ Functions
 
 .. function:: open(name: str, mode: str = 'r', **kwargs) -> Any
 
-    Open a file. Builtin ``open()`` function is aliased to this function.
-    All ports (which provide access to file system) are required to support
-    *mode* parameter, but support for other arguments vary by port.
+    Open a file. The builtin ``open()`` function is aliased to this function.
+    The *mode* parameter is always supported; support for other arguments may
+    vary.
 
 Classes
 -------
@@ -6469,22 +7106,12 @@ Classes
         or a negative ``errno`` value on error.
 
 .. class:: StringIO(string: str = "")
-           StringIO(alloc_size: int)
 
     In-memory file-like object for text-mode input/output (similar to a
-    normal file opened with the "t" modifier). The first form initializes the
-    contents from the *string* parameter (which should be a normal string).
-    The second form creates an empty ``StringIO`` preallocated to hold up to
-    *alloc_size* bytes, so writing up to that many bytes will not reallocate
-    the buffer (avoiding an out-of-memory situation or memory fragmentation);
-    it is a MicroPython extension recommended only for special cases and
-    system-level libraries, not end-user applications. Instances also support
-    the context-manager protocol (usable in a ``with`` statement).
-
-    .. admonition:: Difference to CPython
-        :class: attention
-
-        The ``StringIO(alloc_size)`` constructor is a MicroPython extension.
+    normal file opened with the "t" modifier). Initial contents can be
+    specified with the *string* parameter (which should be a normal string).
+    Instances also support the context-manager protocol (usable in a ``with``
+    statement).
 
     .. method:: read(size: int = -1) -> str
 
@@ -6528,23 +7155,78 @@ Classes
 
         Return the current contents of the underlying buffer.
 
-.. class:: BytesIO(string: bytes = b"")
-           BytesIO(alloc_size: int)
+.. class:: StringIO(alloc_size: int)
+    :noindex:
 
-    In-memory file-like object for binary-mode input/output (similar to a
-    normal file opened with the "b" modifier). The first form initializes the
-    contents from the *string* parameter (which should be a bytes object).
-    The second form creates an empty ``BytesIO`` preallocated to hold up to
+    Create an empty ``StringIO`` object preallocated to hold up to
     *alloc_size* bytes, so writing up to that many bytes will not reallocate
-    the buffer (avoiding an out-of-memory situation or memory fragmentation);
-    it is a MicroPython extension recommended only for special cases and
-    system-level libraries, not end-user applications. Instances also support
-    the context-manager protocol (usable in a ``with`` statement).
+    the buffer (avoiding an out-of-memory situation or memory fragmentation).
+    This constructor is a MicroPython extension recommended only for special
+    cases and system-level libraries, not for end-user applications.
 
     .. admonition:: Difference to CPython
         :class: attention
 
-        The ``BytesIO(alloc_size)`` constructor is a MicroPython extension.
+        This constructor is a MicroPython extension.
+
+    .. method:: read(size: int = -1) -> str
+        :noindex:
+
+        Read and return up to *size* characters. If *size* is omitted or
+        negative, read and return all remaining contents.
+
+    .. method:: readline(size: int = -1) -> str
+        :noindex:
+
+        Read and return one line. If *size* is given, at most *size*
+        characters are read.
+
+    .. method:: readinto(buf: bytearray) -> int
+        :noindex:
+
+        Read into the pre-allocated, writable buffer *buf* and return the
+        number of bytes read.
+
+    .. method:: write(s: str) -> int
+        :noindex:
+
+        Write the string *s* and return the number of characters written.
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+        :noindex:
+
+        Change the stream position to *offset* relative to *whence*
+        (``0`` = start, ``1`` = current, ``2`` = end) and return the new
+        absolute position.
+
+    .. method:: tell() -> int
+        :noindex:
+
+        Return the current stream position.
+
+    .. method:: flush() -> None
+        :noindex:
+
+        Flush the write buffers. This is a no-op for an in-memory stream.
+
+    .. method:: close() -> None
+        :noindex:
+
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise :exc:`ValueError`.
+
+    .. method:: getvalue() -> str
+        :noindex:
+
+        Return the current contents of the underlying buffer.
+
+.. class:: BytesIO(string: bytes = b"")
+
+    In-memory file-like object for binary-mode input/output (similar to a
+    normal file opened with the "b" modifier). Initial contents can be
+    specified with the *string* parameter (which should be a bytes object).
+    Instances also support the context-manager protocol (usable in a ``with``
+    statement).
 
     .. method:: read(size: int = -1) -> bytes
 
@@ -6586,6 +7268,72 @@ Classes
         on a closed stream raise :exc:`ValueError`.
 
     .. method:: getvalue() -> bytes
+
+        Return the current contents of the underlying buffer.
+
+.. class:: BytesIO(alloc_size: int)
+    :noindex:
+
+    Create an empty ``BytesIO`` object preallocated to hold up to
+    *alloc_size* bytes, so writing up to that many bytes will not reallocate
+    the buffer (avoiding an out-of-memory situation or memory fragmentation).
+    This constructor is a MicroPython extension recommended only for special
+    cases and system-level libraries, not for end-user applications.
+
+    .. admonition:: Difference to CPython
+        :class: attention
+
+        This constructor is a MicroPython extension.
+
+    .. method:: read(size: int = -1) -> bytes
+        :noindex:
+
+        Read and return up to *size* bytes. If *size* is omitted or negative,
+        read and return all remaining contents.
+
+    .. method:: readline(size: int = -1) -> bytes
+        :noindex:
+
+        Read and return one line. If *size* is given, at most *size* bytes
+        are read.
+
+    .. method:: readinto(buf: bytearray) -> int
+        :noindex:
+
+        Read into the pre-allocated, writable buffer *buf* and return the
+        number of bytes read.
+
+    .. method:: write(b: bytes) -> int
+        :noindex:
+
+        Write the bytes-like object *b* and return the number of bytes
+        written.
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+        :noindex:
+
+        Change the stream position to *offset* relative to *whence*
+        (``0`` = start, ``1`` = current, ``2`` = end) and return the new
+        absolute position.
+
+    .. method:: tell() -> int
+        :noindex:
+
+        Return the current stream position.
+
+    .. method:: flush() -> None
+        :noindex:
+
+        Flush the write buffers. This is a no-op for an in-memory stream.
+
+    .. method:: close() -> None
+        :noindex:
+
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise :exc:`ValueError`.
+
+    .. method:: getvalue() -> bytes
+        :noindex:
 
         Return the current contents of the underlying buffer.
 
@@ -6782,7 +7530,7 @@ Functions
 
    Return the natural logarithm of the gamma function of ``x``.
 
-.. function:: log(x: float, base: float = ...) -> float
+.. function:: log(x: float, base: float = e) -> float
 
    With one argument, return the natural logarithm of *x*.
 
@@ -6866,11 +7614,11 @@ General functions
    underlying machine and/or its operating system.  The tuple has five fields
    in the following order, each of them being a string:
 
-        * ``sysname`` -- the name of the underlying system
-        * ``nodename`` -- the network name (can be the same as ``sysname``)
-        * ``release`` -- the version of the underlying system
-        * ``version`` -- the MicroPython version and build date
-        * ``machine`` -- an identifier for the underlying hardware (eg board, CPU)
+        * ``sysname`` -- The name of the underlying system
+        * ``nodename`` -- The network name (can be the same as ``sysname``)
+        * ``release`` -- The version of the underlying system
+        * ``version`` -- The MicroPython version and build date
+        * ``machine`` -- An identifier for the underlying hardware (e.g. board, CPU)
 
 .. function:: urandom(n: int) -> bytes
 
@@ -6918,6 +7666,10 @@ Filesystem access
 
    Remove a file.
 
+.. function:: unlink(path: str) -> None
+
+   Remove a file. This is an alias for :func:`remove`.
+
 .. function:: rmdir(path: str) -> None
 
    Remove a directory.
@@ -6936,24 +7688,29 @@ Filesystem access
 
    Returns a tuple with the filesystem information in the following order:
 
-        * ``f_bsize`` -- file system block size
-        * ``f_frsize`` -- fragment size
-        * ``f_blocks`` -- size of fs in f_frsize units
-        * ``f_bfree`` -- number of free blocks
-        * ``f_bavail`` -- number of free blocks for unprivileged users
-        * ``f_files`` -- number of inodes
-        * ``f_ffree`` -- number of free inodes
-        * ``f_favail`` -- number of free inodes for unprivileged users
-        * ``f_flag`` -- mount flags
-        * ``f_namemax`` -- maximum filename length
+        * ``f_bsize`` -- File system block size
+        * ``f_frsize`` -- Fragment size
+        * ``f_blocks`` -- Size of fs in f_frsize units
+        * ``f_bfree`` -- Number of free blocks
+        * ``f_bavail`` -- Number of free blocks for unprivileged users
+        * ``f_files`` -- Number of inodes
+        * ``f_ffree`` -- Number of free inodes
+        * ``f_favail`` -- Number of free inodes for unprivileged users
+        * ``f_flag`` -- Mount flags
+        * ``f_namemax`` -- Maximum filename length
 
-   Parameters related to inodes: ``f_files``, ``f_ffree``, ``f_avail``
-   and the ``f_flags`` parameter may return ``0`` as they can be unavailable
+   Parameters related to inodes: ``f_files``, ``f_ffree``, ``f_favail``
+   and the ``f_flag`` parameter may return ``0`` as they can be unavailable
    in a port-specific implementation.
 
 .. function:: sync() -> None
 
    Sync all filesystems.
+
+.. data:: sep
+   :type: str
+
+   The path-component separator used by the filesystem, the string ``'/'``.
 
 Terminal redirection and duplication
 ------------------------------------
@@ -6962,7 +7719,7 @@ Terminal redirection and duplication
 
    Duplicate or switch the MicroPython terminal (the REPL) on the given :std:term:`stream`-like
    object. The *stream_object* argument must be a native stream object, or derive
-   from ``io.IOBase`` and implement the ``readinto()`` and
+   from :class:`io.IOBase` and implement the ``readinto()`` and
    ``write()`` methods.  The stream should be in non-blocking mode and
    ``readinto()`` should return ``None`` if there is no data available for reading.
 
@@ -7017,29 +7774,57 @@ The following functions and classes have been moved to the :mod:`vfs` module.
 They are provided in this module only for backwards compatibility and will be
 removed in version 2 of MicroPython.
 
-.. function:: mount(fsobj: Any, mount_point: str, *, readonly: bool) -> None
+.. function:: mount(fsobj: Any, mount_point: str, *, readonly: bool = False) -> None
 
-    See :func:`vfs.mount`.
+    Mount the filesystem object *fsobj* at the location in the VFS given by the
+    *mount_point* string.  *fsobj* can be a VFS object that has a ``mount()``
+    method, or a block device.  If it's a block device then the filesystem type
+    is automatically detected (an exception is raised if no filesystem was
+    recognised).  *mount_point* may be ``'/'`` to mount *fsobj* at the root,
+    or ``'/<name>'`` to mount it at a subdirectory under the root.
 
-.. function:: umount(mount_point: str) -> None
+    If *readonly* is ``True`` then the filesystem is mounted read-only.
 
-    See :func:`vfs.umount`.
+    During the mount process the method ``mount()`` is called on the filesystem
+    object.
+
+    Will raise ``OSError(EPERM)`` if *mount_point* is already mounted.
+
+.. function:: mount() -> List[Tuple[Any, str]]
+    :noindex:
+
+    With no arguments to :func:`mount`, return a list of tuples representing
+    all active mountpoints.
+
+    The returned list has the form *[(fsobj, mount_point), ...]*.
+
+.. function:: umount(mount_point: Union[str, Any]) -> None
+
+    Unmount a filesystem. *mount_point* can be a string naming the mount
+    location, or a previously-mounted filesystem object.  During the unmount
+    process the method ``umount()`` is called on the filesystem object.
+
+    Will raise ``OSError(EINVAL)`` if *mount_point* is not found.
 
 .. class:: VfsFat(block_dev: AbstractBlockDev)
 
-    See :class:`vfs.VfsFat`.
+    Create a filesystem object that uses the FAT filesystem format.  Storage of
+    the FAT filesystem is provided by *block_dev*.
+    Objects created by this constructor can be mounted using :func:`mount`.
 
-.. class:: VfsLfs1(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32)
+    .. staticmethod:: mkfs(block_dev: AbstractBlockDev) -> None
 
-    See :class:`vfs.VfsLfs1`.
-
-.. class:: VfsLfs2(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32, mtime: bool = True)
-
-    See :class:`vfs.VfsLfs2`.
+        Build a FAT filesystem on *block_dev*.
 
 .. class:: VfsPosix(root: Optional[str] = None)
 
-    See :class:`vfs.VfsPosix`.
+    Create a filesystem object that accesses the host POSIX filesystem.
+    If *root* is specified then it should be a path in the host filesystem to
+    use as the root of the ``VfsPosix`` object.  Otherwise the current
+    directory of the host filesystem is used.
+
+    .. note:: ``VfsPosix`` is only available on the Unix port; it is not
+              present on the OpenMV Cam.
 
 
 :mod:`platform` --- access to underlying platform’s identifying data
@@ -7059,15 +7844,15 @@ Functions
    Returns a string identifying the underlying platform. This string is composed
    of several substrings in the following order, delimited by dashes (``-``):
 
-   - the name of the platform system (e.g. Unix, Windows or MicroPython)
+   - the name of the platform system (``MicroPython`` on the OpenMV Cam)
    - the MicroPython version
    - the architecture of the platform
    - the version of the underlying platform
    - the concatenation of the name of the libc that MicroPython is linked to
      and its corresponding version.
 
-   For example, this could be
-   ``"MicroPython-1.20.0-xtensa-IDFv4.2.4-with-newlib3.0.0"``.
+   For example, on an OpenMV Cam this could be
+   ``"MicroPython-1.25.0-armv7emsp"``.
 
 .. function:: python_compiler() -> str
 
@@ -7085,7 +7870,8 @@ Functions
    If no name for the processor is known, it will return an empty string
    instead.
 
-   This is currently available only on RISC-V targets (both 32 and 64 bits).
+   On the OpenMV Cam this always returns an empty string; a processor name is
+   currently only reported on RISC-V targets.
 
 
 :mod:`random` --- generate random numbers
@@ -7109,12 +7895,6 @@ This module implements a pseudo-random number generator (PRNG).
      or equal to 1.
      In set notation: [0, 1] = {x | 0 <= x <= 1}.
 
-.. note::
-
-   The :func:`randrange`, :func:`randint` and :func:`choice` functions are only
-   available if the ``MICROPY_PY_RANDOM_EXTRA_FUNCS`` configuration option is
-   enabled.
-
 Functions for integers
 ----------------------
 
@@ -7126,9 +7906,7 @@ Functions for integers
 
     Return a random integer in the range [*a*, *b*].
 
-.. function:: randrange(stop: int) -> int
-              randrange(start: int, stop: int) -> int
-              randrange(start: int, stop: int, step: int) -> int
+.. function:: randrange(start: int, stop: Optional[int] = None, step: int = 1) -> int
 
     The first form returns a random integer from the range [0, *stop*).
     The second form returns a random integer from the range [*start*, *stop*).
@@ -7153,13 +7931,10 @@ Other Functions
 
 .. function:: seed(n: Optional[int] = None, /) -> None
 
-    Initialise the random number generator module with the seed *n* which should
-    be an integer.  When no argument (or ``None``) is passed in it will (if
-    supported by the port) initialise the PRNG with a true random number
-    (usually a hardware generated random number).
-
-    The ``None`` case only works if ``MICROPY_PY_RANDOM_SEED_INIT_FUNC`` is
-    enabled by the port, otherwise it raises :exc:`ValueError`.
+    Initialise the random number generator module with the seed *n*, which
+    should be an integer.  When no argument (or ``None``) is passed in, the
+    PRNG is initialised with a true random number from the hardware random
+    number generator.
 
 .. function:: choice(sequence: Any) -> Any
 
@@ -7283,11 +8058,6 @@ Functions
 
    Compile regular expression, return `regex <regex>` object.
 
-.. function:: match(regex_str: str, string: str) -> "match | None"
-
-   Compile *regex_str* and match against *string*. Match always happens
-   from starting position in a string.
-
 .. function:: search(regex_str: str, string: str) -> "match | None"
 
    Compile *regex_str* and search it in a *string*. Unlike `match`, this will search
@@ -7308,14 +8078,6 @@ Functions
    If *count* is specified and non-zero then substitution will stop after
    this many substitutions are made.  The *flags* argument is ignored.
 
-   Note: availability of this function depends on :term:`MicroPython port`.
-
-.. data:: DEBUG
-   :type: int
-
-   Flag value, display debug information about compiled expression.
-   (Availability depends on :term:`MicroPython port`.)
-
 .. _regex:
 
 Regex objects
@@ -7329,24 +8091,59 @@ Compiled regular expression. Instances of this class are created using
 
    Compiled regular expression object returned by `re.compile()`.
 
-   .. method:: match(string: str, pos: int = 0, endpos: int = ...) -> "match | None"
-               search(string: str, pos: int = 0, endpos: int = ...) -> "match | None"
-               sub(replace: Union[str, Callable], string: str, count: int = 0, flags: int = 0, /) -> str
+   .. method:: match(string: str, pos: int = 0, endpos: int | None = None) -> "match | None"
 
-      Similar to the module-level functions :meth:`match`, :meth:`search`
-      and :meth:`sub`.
-      Using methods is (much) more efficient if the same regex is applied to
-      multiple strings.
+      Apply this compiled regex to *string*, anchored at the start of the
+      search region, and return a `match <match>` object, or ``None`` if the
+      regex does not match. This is the compiled-pattern equivalent of the
+      module-level :class:`match`, and is much more efficient when the same
+      pattern is applied to multiple strings.
 
-      The optional second parameter *pos* gives an index in the string where the
-      search is to start; it defaults to ``0``. This is not completely equivalent
-      to slicing the string; the ``'^'`` pattern character matches at the real
+      The optional parameter *pos* gives an index in *string* where the search
+      is to start; it defaults to ``0``. This is not completely equivalent to
+      slicing the string; the ``'^'`` pattern character matches at the real
       beginning of the string and at positions just after a newline, but not
       necessarily at the index where the search is to start.
 
-      The optional parameter *endpos* limits how far the string will be searched;
-      it will be as if the string is *endpos* characters long, so only the
-      characters from *pos* to ``endpos - 1`` will be searched for a match.
+      The optional parameter *endpos* limits how far *string* is searched; it
+      will be as if the string is *endpos* characters long, so only the
+      characters from *pos* to ``endpos - 1`` are searched. If *endpos* is
+      ``None`` (the default) the whole string is searched.
+
+   .. method:: search(string: str, pos: int = 0, endpos: int | None = None) -> "match | None"
+
+      Scan through *string* looking for the first location where this compiled
+      regex produces a match, and return a `match <match>` object, or ``None``
+      if no position matches. This is the compiled-pattern equivalent of the
+      module-level :func:`search` function, and is much more efficient when the
+      same pattern is applied to multiple strings.
+
+      The optional parameter *pos* gives an index in *string* where the search
+      is to start; it defaults to ``0``. This is not completely equivalent to
+      slicing the string; the ``'^'`` pattern character matches at the real
+      beginning of the string and at positions just after a newline, but not
+      necessarily at the index where the search is to start.
+
+      The optional parameter *endpos* limits how far *string* is searched; it
+      will be as if the string is *endpos* characters long, so only the
+      characters from *pos* to ``endpos - 1`` are searched. If *endpos* is
+      ``None`` (the default) the whole string is searched.
+
+   .. method:: sub(replace: Union[str, Callable], string: str, count: int = 0, flags: int = 0, /) -> str
+
+      Search for this compiled regex in *string*, replacing all matches with
+      *replace*, and return the new string. This is the compiled-pattern
+      equivalent of the module-level :func:`sub` function, and is much more
+      efficient when the same pattern is applied to multiple strings.
+
+      *replace* can be a string or a function. If it is a string then escape
+      sequences of the form ``\<number>`` and ``\g<number>`` can be used to
+      expand to the corresponding group (or an empty string for unmatched
+      groups). If *replace* is a function then it must take a single argument
+      (the match) and should return a replacement string.
+
+      If *count* is specified and non-zero then substitution will stop after
+      this many substitutions are made. The *flags* argument is ignored.
 
    .. method:: split(string: str, max_split: int = -1, /) -> List[str]
 
@@ -7357,40 +8154,23 @@ Compiled regular expression. Instances of this class are created using
 Match objects
 -------------
 
-Match objects as returned by `match()` and `search()` methods, and passed
-to the replacement function in `sub()`.
+A match object holds the result of a successful match.
 
-.. class:: match
-   :no-index:
+.. class:: match(regex_str: str, string: str)
 
-   Match object returned by `regex.match()`, `regex.search()`, and the
-   module-level `match()` and `search()` functions.
+   Match *regex_str* against *string*, anchored at the start of the string,
+   and return a match object, or ``None`` if it does not match. This is the
+   module-level shortcut: ``re.match(regex_str, string)`` is equivalent to
+   ``re.compile(regex_str).match(string)``.
+
+   The same match object is also returned by `search()`, by the
+   compiled-pattern `regex.match()` / `regex.search()` methods, and is passed
+   to the replacement function used by `sub()`.
 
    .. method:: group(index: int) -> str
 
       Return matching (sub)string. *index* is 0 for entire match,
       1 and above for each capturing group. Only numeric groups are supported.
-
-   .. method:: groups() -> Tuple[str, ...]
-
-      Return a tuple containing all the substrings of the groups of the match.
-
-      Note: availability of this method depends on :term:`MicroPython port`.
-
-   .. method:: start(index: int = 0) -> int
-               end(index: int = 0) -> int
-
-      Return the index in the original string of the start or end of the
-      substring group that was matched.  *index* defaults to the entire
-      group, otherwise it will select a group.
-
-      Note: availability of these methods depends on :term:`MicroPython port`.
-
-   .. method:: span(index: int = 0) -> Tuple[int, int]
-
-      Returns the 2-tuple ``(match.start(index), match.end(index))``.
-
-      Note: availability of this method depends on :term:`MicroPython port`.
 
 
 :mod:`select` --- wait for events on a set of streams
@@ -7399,113 +8179,195 @@ to the replacement function in `sub()`.
 .. module:: select
    :synopsis: wait for events on a set of streams
 
-This module provides functions to efficiently wait for events on multiple
-:std:term:`streams <stream>` (select streams which are ready for operations).
+This module provides functions to efficiently wait until one or more
+:std:term:`streams <stream>` (file-like objects implementing the stream
+protocol, such as sockets, UARTs and other I/O objects) is ready for reading
+or writing, instead of busy-waiting or blocking on a single object.
+
+The :class:`poll` object is the recommended interface: it scales to many
+streams and is allocation-free when used via :meth:`poll.ipoll`. The
+module-level :func:`select` function is a less efficient compatibility
+interface.
+
+Example using a :class:`poll` object::
+
+    import select
+
+    poller = select.poll()
+    poller.register(uart, select.POLLIN)
+
+    while True:
+        # Wait up to 1000 ms for the UART to have data.
+        for obj, event in poller.poll(1000):
+            if event & select.POLLIN:
+                print(obj.read())
+
+Example using the module-level :func:`select` function::
+
+    import select
+
+    # Wait up to 1 second for the socket to become readable.
+    rlist, wlist, xlist = select.select([sock], [], [], 1.0)
+    if rlist:
+        data = sock.recv(100)
 
 Functions
 ---------
 
-.. function:: poll() -> poll
-
-   Create a new `poll` object --- used to register a set of streams (or any
-   objects exposing the stream protocol) and efficiently wait until one
-   or more of them becomes readable or writable.
-
 .. function:: select(rlist: List, wlist: List, xlist: List, timeout: Optional[float] = None) -> Tuple[List, List, List]
 
-   Wait for activity on a set of objects.
+   Wait until one or more of the given stream objects is ready, or until
+   *timeout* expires.
 
-   This function is provided by some MicroPython ports for compatibility
-   and is not efficient. Usage of `poll` is recommended instead.
+   * *rlist* is a list of objects to monitor for readability.
+   * *wlist* is a list of objects to monitor for writability.
+   * *xlist* is a list of objects to monitor for an error or hang-up
+     condition.
+   * *timeout* is the maximum time to wait, in seconds (a float is accepted).
+     If it is omitted or ``None`` the call blocks indefinitely; ``0`` returns
+     immediately (a non-blocking poll).
+
+   Returns a 3-tuple of lists ``(rlist, wlist, xlist)``. Each returned list is
+   the subset of the corresponding input list containing the objects that
+   became ready for reading, ready for writing, or that signalled an
+   error/hang-up, respectively. If *timeout* elapses with nothing ready, all
+   three lists are empty.
+
+   This function is less efficient than :class:`poll` (it rebuilds its
+   internal poll set on every call); use :class:`poll` instead where
+   possible.
+
+Constants
+---------
+
+.. data:: POLLIN
+   :type: int
+
+   There is data available to read from the stream.
+
+.. data:: POLLOUT
+   :type: int
+
+   The stream can accept more data to be written.
+
+.. data:: POLLERR
+   :type: int
+
+   An error condition occurred on the stream. This is an *unsolicited* event:
+   it is reported by :meth:`poll.poll` / :meth:`poll.ipoll` even if it was not
+   requested in the *eventmask*, and it is not valid to pass it as an input
+   *eventmask*.
+
+.. data:: POLLHUP
+   :type: int
+
+   The stream was hung up / disconnected. This is an *unsolicited* event: it
+   is reported by :meth:`poll.poll` / :meth:`poll.ipoll` even if it was not
+   requested in the *eventmask*, and it is not valid to pass it as an input
+   *eventmask*.
 
 Classes
 -------
 
-.. class:: poll
-   :no-index:
+.. class:: poll()
 
-   Polling object returned by :func:`select.poll`. It maintains a set of
-   registered streams (or any objects exposing the stream protocol) and
-   efficiently waits until one or more of them becomes readable, writable,
-   or signals an exceptional condition.
+   Create a polling object that maintains a set of registered streams (or any
+   objects exposing the stream protocol) and efficiently waits until one or
+   more of them becomes readable, writable, or signals an exceptional
+   condition.
 
-   Streams are added with `register`, removed with `unregister`, and the
-   set of events to watch can be changed with `modify`. Once configured,
-   call `poll` to block until something is ready (or a timeout elapses),
-   or `ipoll` for an allocation-free iterator-based variant.
+   Streams are added with :meth:`register`, removed with :meth:`unregister`,
+   and the set of events to watch can be changed with :meth:`modify`. Once
+   configured, call :meth:`poll` to block until something is ready (or a
+   timeout elapses), or :meth:`ipoll` for an allocation-free iterator-based
+   variant.
 
    .. method:: register(obj: Any, eventmask: int = select.POLLIN | select.POLLOUT) -> None
 
-      Register :std:term:`stream` *obj* for polling. *eventmask* is logical OR of:
+      Register the :std:term:`stream` *obj* for polling, watching for the
+      events given by *eventmask* (the logical OR of):
 
-      * ``select.POLLIN``  - data available for reading
-      * ``select.POLLOUT`` - more data can be written
-
-      Note that flags like ``select.POLLHUP`` and ``select.POLLERR`` are
-      *not* valid as input eventmask (these are unsolicited events which
-      will be returned from `poll()` regardless of whether they are asked
-      for). This semantics is per POSIX.
+      * :data:`select.POLLIN`  -- data is available to read
+      * :data:`select.POLLOUT` -- the stream can accept more data to write
 
       *eventmask* defaults to ``select.POLLIN | select.POLLOUT``.
 
-      It is OK to call this function multiple times for the same *obj*.
-      Successive calls will update *obj*'s eventmask to the value of
-      *eventmask* (i.e. will behave as `modify()`).
+      :data:`select.POLLHUP` and :data:`select.POLLERR` are *not* valid in an
+      input *eventmask* -- they are unsolicited events that are reported by
+      :meth:`poll` / :meth:`ipoll` regardless of whether they were asked for
+      (this matches POSIX semantics).
+
+      It is OK to call this method more than once for the same *obj*: a
+      subsequent call updates *obj*'s event mask, behaving like
+      :meth:`modify`.
 
    .. method:: unregister(obj: Any) -> None
 
-      Unregister *obj* from polling.
+      Remove *obj* from the set of registered streams. It is not an error to
+      unregister an *obj* that is not currently registered (the call has no
+      effect in that case).
 
    .. method:: modify(obj: Any, eventmask: int) -> None
 
-      Modify the *eventmask* for *obj*. If *obj* is not registered, :exc:`OSError`
-      is raised with error of ENOENT.
+      Change the event mask for an already-registered *obj* to *eventmask*.
+      Raises :exc:`OSError` with :data:`errno.ENOENT` if *obj* is not
+      registered.
 
    .. method:: poll(timeout: int = -1, /) -> List[Tuple]
 
-      Wait for at least one of the registered objects to become ready or have an
-      exceptional condition, with optional timeout in milliseconds (if *timeout*
-      arg is not specified or -1, there is no timeout).
+      Block until at least one registered stream becomes ready or signals an
+      exceptional condition, then return the list of streams that fired.
 
-      Returns list of (``obj``, ``event``, ...) tuples. There may be other elements in
-      tuple, depending on a platform and version, so don't assume that its size is 2.
-      The ``event`` element specifies which events happened with a stream and
-      is a combination of ``select.POLL*`` constants described above. Note that
-      flags ``select.POLLHUP`` and ``select.POLLERR`` can be returned at any time
-      (even if were not asked for), and must be acted on accordingly (the
-      corresponding stream unregistered from poll and likely closed), because
-      otherwise all further invocations of `poll()` may return immediately with
-      these flags set for this stream again.
+      *timeout* is the maximum time to wait in **milliseconds**. If it is
+      omitted or ``-1`` the call blocks indefinitely; ``0`` returns
+      immediately (a non-blocking poll).
 
-      In case of timeout, an empty list is returned.
+      Returns a list of ``(obj, event, ...)`` tuples, one per stream that
+      fired. ``obj`` is the registered stream and ``event`` is the bitwise OR
+      of the :data:`select.POLLIN` / :data:`select.POLLOUT` /
+      :data:`select.POLLERR` / :data:`select.POLLHUP` flags that occurred.
+      Each tuple may contain additional implementation-defined elements, so do
+      not assume a length of exactly 2. If *timeout* elapses with nothing
+      ready, an empty list is returned.
 
-      Calling ``poll.poll`` is guaranteed to call pending callback functions
-      before entering the polling loop.
+      :data:`select.POLLHUP` and :data:`select.POLLERR` may be returned at any
+      time (even if not requested) and must be acted on -- typically by
+      unregistering and closing the affected stream -- otherwise subsequent
+      calls will keep returning immediately with these flags set for that
+      stream.
+
+      Any pending scheduled callbacks are guaranteed to run before the polling
+      loop is entered.
 
       .. admonition:: Difference to CPython
          :class: attention
 
-         Tuples returned may contain more than 2 elements as described above.
+         Returned tuples may contain more than 2 elements, as described above.
 
    .. method:: ipoll(timeout: int = -1, flags: int = 0, /) -> Iterator[Tuple]
 
-      Like :meth:`poll.poll`, but instead returns an iterator which yields a
-      `callee-owned tuple`. This function provides an efficient, allocation-free
-      way to poll on streams.
+      Like :meth:`poll`, but instead of building a list it returns an iterator
+      that yields one ``(obj, event, ...)`` tuple at a time. This avoids
+      allocating on each call, which is important for asynchronous I/O
+      schedulers.
 
-      If *flags* is 1, one-shot behaviour for events is employed: streams for
-      which events happened will have their event masks automatically reset
-      (equivalent to ``poll.modify(obj, 0)``), so new events for such a stream
-      won't be processed until new mask is set with `poll.modify()`. This
-      behaviour is useful for asynchronous I/O schedulers.
+      The yielded tuple is *callee-owned*: it is reused (overwritten) on the
+      next iteration, so its contents must be consumed within the loop body
+      and references to it must not be stored.
 
-      Calling ``poll.ipoll`` is guaranteed to call pending callback functions
-      before entering the polling loop.
+      *timeout* has the same meaning as for :meth:`poll`. If *flags* is ``1``,
+      one-shot behaviour is used: a stream whose event fired has its event
+      mask automatically cleared (equivalent to ``poll.modify(obj, 0)``), so
+      no further events are reported for it until its mask is set again with
+      :meth:`modify`.
+
+      Any pending scheduled callbacks are guaranteed to run before the polling
+      loop is entered.
 
       .. admonition:: Difference to CPython
          :class: attention
 
-         This function is a MicroPython extension.
+         This method is a MicroPython extension.
 
 
 :mod:`socket` --- socket module
@@ -7541,34 +8403,29 @@ returned by :func:`getaddrinfo` function, which must be used to resolve textual 
 Using :func:`getaddrinfo` is the most efficient (both in terms of memory and processing
 power) and portable way to work with addresses.
 
-However, ``socket`` module (note the difference with native MicroPython
-``socket`` module described here) provides CPython-compatible way to specify
-addresses using tuples, as described below. Note that depending on a
-:term:`MicroPython port`, ``socket`` module can be builtin or need to be
-installed from `micropython-lib` (as in the case of :term:`MicroPython Unix port`),
-and some ports still accept only numeric addresses in the tuple format,
-and require to use :func:`getaddrinfo` function to resolve domain names.
+The ``socket`` module also provides a CPython-compatible way to specify
+addresses using tuples, as described below. On the OpenMV Cam the ``socket``
+module is built in; numeric addresses may be given directly in the tuple
+format, but domain names must first be resolved with :func:`getaddrinfo`.
 
 Summing up:
 
-* Always use :func:`getaddrinfo` when writing portable applications.
-* Tuple addresses described below can be used as a shortcut for
-  quick hacks and interactive use, if your port supports them.
+* Always use :func:`getaddrinfo` to resolve host names.
+* Tuple addresses described below can be used as a shortcut for numeric
+  addresses, for quick hacks and interactive use.
 
-Tuple address format for ``socket`` module:
+Tuple address format for the ``socket`` module:
 
 * IPv4: *(ipv4_address, port)*, where *ipv4_address* is a string with
-  dot-notation numeric IPv4 address, e.g. ``"8.8.8.8"``, and *port* is and
-  integer port number in the range 1-65535. Note the domain names are not
-  accepted as *ipv4_address*, they should be resolved first using
-  :func:`socket.getaddrinfo()`.
+  dot-notation numeric IPv4 address, e.g. ``"8.8.8.8"``, and *port* is an
+  integer port number in the range 1-65535. Domain names are not accepted as
+  *ipv4_address*; resolve them first using :func:`getaddrinfo`.
 * IPv6: *(ipv6_address, port, flowinfo, scopeid)*, where *ipv6_address*
   is a string with colon-notation numeric IPv6 address, e.g. ``"2001:db8::1"``,
   and *port* is an integer port number in the range 1-65535. *flowinfo*
   must be 0. *scopeid* is the interface scope identifier for link-local
-  addresses. Note the domain names are not accepted as *ipv6_address*,
-  they should be resolved first using :func:`socket.getaddrinfo()`. Availability
-  of IPv6 support depends on a :term:`MicroPython port`.
+  addresses. Domain names are not accepted as *ipv6_address*; resolve them
+  first using :func:`getaddrinfo`.
 
 Functions
 ---------
@@ -7635,12 +8492,12 @@ Constants
 .. data:: AF_INET
    :type: int
 
-   IPv4 address family type. Availability depends on a particular :term:`MicroPython port`.
+   IPv4 address family.
 
 .. data:: AF_INET6
    :type: int
 
-   IPv6 address family type. Availability depends on a particular :term:`MicroPython port`.
+   IPv6 address family.
 
 .. data:: SOCK_STREAM
    :type: int
@@ -7652,42 +8509,88 @@ Constants
 
    Datagram (UDP) socket type.
 
-.. data:: IPPROTO_UDP
+.. data:: SOCK_RAW
    :type: int
 
-   UDP IP protocol number. Availability depends on a particular :term:`MicroPython port`.
-   Note that you don't need to specify this in a call to :class:`socket.socket()`,
-   because the :data:`SOCK_DGRAM` socket type automatically selects
-   :data:`IPPROTO_UDP`. Thus, the only real use of this constant
-   is as an argument to :meth:`~socket.socket.setsockopt()`.
+   Raw socket type.
+
+.. data:: IPPROTO_IP
+   :type: int
+
+   The IP protocol level. Used as the *level* argument to
+   :meth:`~socket.socket.setsockopt` together with the ``IP_*`` options.
 
 .. data:: IPPROTO_TCP
    :type: int
 
-   TCP IP protocol number. Availability depends on a particular :term:`MicroPython port`.
-   Note that you don't need to specify this in a call to :class:`socket.socket()`,
-   because the :data:`SOCK_STREAM` socket type automatically selects
-   :data:`IPPROTO_TCP`. Thus, the only real use of this constant
-   is as an argument to :meth:`~socket.socket.setsockopt()`.
+   The TCP protocol. You do not need to pass this to :class:`socket` (the
+   :data:`SOCK_STREAM` socket type selects it automatically); its only real
+   use is as the *level* argument to :meth:`~socket.socket.setsockopt`
+   together with the ``TCP_*`` options.
 
-.. data:: socket.SOL_*
+.. data:: SOL_SOCKET
    :type: int
 
-   Socket option levels (an argument to :meth:`~socket.socket.setsockopt()`). The exact
-   inventory depends on a :term:`MicroPython port`.
+   The socket option level. Used as the *level* argument to
+   :meth:`~socket.socket.setsockopt` together with the ``SO_*`` options.
 
-.. data:: socket.SO_*
+.. data:: SO_REUSEADDR
    :type: int
 
-   Socket options (an argument to :meth:`~socket.socket.setsockopt()`). The exact
-   inventory depends on a :term:`MicroPython port`.
+   Allow the socket to bind to an address/port that is still in the
+   ``TIME_WAIT`` state.
 
-.. only:: port_wipy
+.. data:: SO_BROADCAST
+   :type: int
 
-   .. data:: IPPROTO_SEC
-      :type: int
+   Permit sending datagrams to a broadcast address.
 
-      Special protocol value to create SSL-compatible socket.
+.. data:: SO_KEEPALIVE
+   :type: int
+
+   Enable periodic transmission of keep-alive probes on a connected socket.
+
+.. data:: SO_SNDTIMEO
+   :type: int
+
+   Send timeout, in milliseconds, passed as the *value* argument to
+   :meth:`~socket.socket.setsockopt`.
+
+.. data:: SO_RCVTIMEO
+   :type: int
+
+   Receive timeout, in milliseconds, passed as the *value* argument to
+   :meth:`~socket.socket.setsockopt`.
+
+.. data:: IP_ADD_MEMBERSHIP
+   :type: int
+
+   Join a multicast group. An :data:`IPPROTO_IP`-level
+   :meth:`~socket.socket.setsockopt` option.
+
+.. data:: IP_DROP_MEMBERSHIP
+   :type: int
+
+   Leave a multicast group. An :data:`IPPROTO_IP`-level
+   :meth:`~socket.socket.setsockopt` option.
+
+.. data:: TCP_NODELAY
+   :type: int
+
+   Disable Nagle's algorithm. An :data:`IPPROTO_TCP`-level
+   :meth:`~socket.socket.setsockopt` option.
+
+.. data:: MSG_PEEK
+   :type: int
+
+   For :meth:`~socket.socket.recv` / :meth:`~socket.socket.recvfrom`: return
+   data without removing it from the input queue.
+
+.. data:: MSG_DONTWAIT
+   :type: int
+
+   For :meth:`~socket.socket.recv` / :meth:`~socket.socket.recvfrom`: perform
+   the operation in non-blocking mode.
 
 Classes
 -------
@@ -7695,10 +8598,9 @@ Classes
 .. class:: socket(af: int = AF_INET, type: int = SOCK_STREAM, proto: int = IPPROTO_TCP, /)
 
    Create a new socket using the given address family, socket type and
-   protocol number. Note that specifying *proto* in most cases is not
-   required (and not recommended, as some MicroPython ports may omit
-   ``IPPROTO_*`` constants). Instead, *type* argument will select needed
-   protocol automatically::
+   protocol number. Specifying *proto* is in most cases not required (and not
+   recommended); the *type* argument selects the needed protocol
+   automatically::
 
         # Create STREAM TCP socket
         socket(AF_INET, SOCK_STREAM)
@@ -7718,7 +8620,7 @@ Classes
 
       Bind the socket to *address*. The socket must not already be bound.
 
-   .. method:: listen(backlog: int = ...) -> None
+   .. method:: listen(backlog: int = 2) -> None
 
       Enable a server to accept connections. If *backlog* is specified, it must be at least 0
       (if it's lower, it will be set to 0); and specifies the number of unaccepted connections
@@ -7758,9 +8660,9 @@ Classes
       Receive data from the socket. The return value is a bytes object representing the data
       received. The maximum amount of data to be received at once is specified by bufsize.
 
-      Most ports support the optional *flags* argument. Available *flags* are defined as constants
-      in the socket module and have the same meaning as in CPython. ``MSG_PEEK`` and ``MSG_DONTWAIT``
-      are supported on all ports which accept the *flags* argument.
+      The optional *flags* argument is a bitwise OR of message flags
+      (:data:`MSG_PEEK`, :data:`MSG_DONTWAIT`), which have the same meaning as
+      in CPython.
 
    .. method:: sendto(bytes: bytes, address: Any) -> int
 
@@ -7783,18 +8685,16 @@ Classes
 
    .. method:: settimeout(value: Optional[float]) -> None
 
-      **Note**: Not every port supports this method, see below.
-
       Set a timeout on blocking socket operations. The value argument can be a nonnegative floating
       point number expressing seconds, or None. If a non-zero value is given, subsequent socket operations
       will raise an :exc:`OSError` exception if the timeout period value has elapsed before the operation has
       completed. If zero is given, the socket is put in non-blocking mode. If None is given, the socket
       is put in blocking mode.
 
-      Not every :term:`MicroPython port` supports this method. A more portable and
-      generic solution is to use :func:`select.poll` object. This allows to wait on
-      multiple objects at the same time (and not just on sockets, but on generic
-      :std:term:`stream` objects which support polling). Example::
+      A portable and generic alternative is to use a :class:`select.poll`
+      object. This allows waiting on multiple objects at the same time (and
+      not just on sockets, but on generic :std:term:`stream` objects which
+      support polling). Example::
 
            # Instead of:
            s.settimeout(1.0)  # time in seconds
@@ -7843,7 +8743,7 @@ Classes
          Closing the file object returned by makefile() WILL close the
          original socket as well.
 
-   .. method:: read(size: int = ...) -> bytes
+   .. method:: read(size: int | None = None) -> bytes
 
       Read up to size bytes from the socket. Return a bytes object. If *size* is not given, it
       reads all data available from the socket until EOF; as such the method will not return until
@@ -7851,7 +8751,7 @@ Classes
       requested (no "short reads"). This may be not possible with
       non-blocking socket though, and then less data will be returned.
 
-   .. method:: readinto(buf: bytearray | memoryview, nbytes: int = ...) -> int
+   .. method:: readinto(buf: bytearray | memoryview, nbytes: int | None = None) -> int
 
       Read bytes into the *buf*.  If *nbytes* is specified then read at most
       that many bytes.  Otherwise, read at most *len(buf)* bytes. Just as
@@ -7891,10 +8791,71 @@ This module provides access to Transport Layer Security (previously and
 widely known as “Secure Sockets Layer”) encryption and peer authentication
 facilities for network sockets, both client-side and server-side.
 
+.. tip::
+
+   **New to TLS on the camera?** Start with the :ref:`tls_certificates`
+   tutorial. It walks through choosing key types, creating and converting
+   certificates to the DER format the camera requires, getting them onto the
+   device, and verifying servers and clients -- with complete working
+   examples.
+
 .. note::
 
    MicroPython does not implement ``ssl.SSLError``. SSL/TLS failures are
    raised as ``OSError`` instead.
+
+Examples
+--------
+
+TLS client, verifying the server's certificate against a CA certificate
+(in DER format) stored on the filesystem::
+
+    import socket
+    import ssl
+    import ntptime
+
+    # CERT_REQUIRED checks the certificate's validity dates, so the clock
+    # must be set (see the certificates tutorial linked above).
+    ntptime.settime()
+
+    # Open a plain TCP connection.
+    addr = socket.getaddrinfo("example.com", 443)[0][-1]
+    sock = socket.socket()
+    sock.connect(addr)
+
+    # Wrap it for TLS and require a valid certificate.
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.load_verify_locations(cafile="ca.der")
+    ssock = ctx.wrap_socket(sock, server_hostname="example.com")
+
+    ssock.write(b"GET / HTTP/1.0\r\nHost: example.com\r\n\r\n")
+    print(ssock.read())
+    ssock.close()
+
+For a quick, **insecure** connection (no certificate validation) the
+:func:`ssl.wrap_socket` convenience function can be used instead::
+
+    ssock = ssl.wrap_socket(sock, server_hostname="example.com")
+
+TLS server, presenting its own certificate and private key (DER format)::
+
+    import socket
+    import ssl
+
+    sock = socket.socket()
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(socket.getaddrinfo("0.0.0.0", 8443)[0][-1])
+    sock.listen(1)
+
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    ctx.load_cert_chain("server.der", "server.key")
+
+    while True:
+        client, addr = sock.accept()
+        sclient = ctx.wrap_socket(client, server_side=True)
+        sclient.write(b"hello\n")
+        sclient.close()
 
 Functions
 ---------
@@ -7908,17 +8869,14 @@ Functions
     *do_handshake_on_connect*.  The remaining arguments have the following behaviour:
 
    - *cert_reqs* determines whether the peer (server or client) must present a valid certificate.
-     Note that for mbedtls based ports, ``ssl.CERT_NONE`` and ``ssl.CERT_OPTIONAL`` will not
-     validate any certificate, only ``ssl.CERT_REQUIRED`` will.
+     Note that ``ssl.CERT_NONE`` and ``ssl.CERT_OPTIONAL`` do not validate any
+     certificate; only ``ssl.CERT_REQUIRED`` does.
 
    - *cadata* is a bytes object containing the CA certificate chain (in DER format) that will
      validate the peer's certificate.  Currently only a single DER-encoded certificate is supported.
 
-   Depending on the underlying module implementation in a particular
-   :term:`MicroPython port`, some or all keyword arguments above may be not supported.
-
-class SSLContext
-----------------
+Classes
+-------
 
 .. class:: SSLContext(protocol: int, /)
 
@@ -7968,8 +8926,7 @@ class SSLContext
          For blocking sockets doing the handshake immediately is standard. For non-blocking
          sockets (i.e. when the *sock* passed into ``wrap_socket`` is in non-blocking mode)
          the handshake should generally be deferred because otherwise ``wrap_socket`` blocks
-         until it completes. Note that in AXTLS the handshake can be deferred until the first
-         read or write but it then blocks until completion.
+         until it completes.
 
        - *server_hostname* is for use as a client, and sets the hostname to check against the received
          server certificate.  It also sets the name for Server Name Indication (SNI), allowing the server
@@ -7980,8 +8937,11 @@ class SSLContext
 
        .. warning::
 
-          Some implementations of ``ssl`` module do NOT validate server certificates,
-          which makes an SSL connection established prone to man-in-the-middle attacks.
+          By default no certificate validation is performed
+          (:data:`ssl.CERT_NONE`). For a secure connection you must verify the
+          peer's certificate by setting *cert_reqs* /
+          :attr:`SSLContext.verify_mode` to :data:`ssl.CERT_REQUIRED`;
+          otherwise the connection is vulnerable to man-in-the-middle attacks.
 
           CPython's ``wrap_socket`` returns an ``SSLSocket`` object which has methods typical
           for sockets, such as ``send``, ``recv``, etc. MicroPython's ``wrap_socket``
@@ -8009,17 +8969,13 @@ DTLS support
 
    This is a MicroPython extension.
 
-On most ports, this module supports DTLS in client and server mode via the
+This module supports DTLS in client and server mode via the
 :data:`PROTOCOL_DTLS_CLIENT` and :data:`PROTOCOL_DTLS_SERVER` constants that can be used as
 the ``protocol`` argument of :class:`SSLContext`.
 
 In this case the underlying socket is expected to behave as a datagram socket (i.e.
 like the socket opened with ``socket.socket`` with ``socket.AF_INET`` as ``af`` and
 ``socket.SOCK_DGRAM`` as ``type``).
-
-DTLS is only supported on ports that use mbedTLS, and it is enabled by default
-in most configurations but can be manually disabled by defining
-``MICROPY_PY_SSL_DTLS`` to 0.
 
 DTLS server support
 ^^^^^^^^^^^^^^^^^^^
@@ -8068,13 +9024,11 @@ Constants
    :type: int
 
     Supported value for the *protocol* parameter, selecting DTLS client mode.
-    Only available when DTLS support is enabled.
 
 .. data:: ssl.PROTOCOL_DTLS_SERVER
    :type: int
 
     Supported value for the *protocol* parameter, selecting DTLS server mode.
-    Only available when DTLS support is enabled.
 
 .. data:: ssl.CERT_NONE
    :type: int
@@ -8088,7 +9042,7 @@ Constants
 
     Supported value for the *cert_reqs* parameter, and the
     :attr:`SSLContext.verify_mode` attribute.  Certificate verification is
-    optional.  Note that for mbedtls based ports this behaves like
+    optional.  Note that on the OpenMV Cam this behaves like
     :data:`ssl.CERT_NONE`.
 
 .. data:: ssl.CERT_REQUIRED
@@ -8110,10 +9064,9 @@ This module provides support for template strings (t-strings) as defined in
 using the ``t`` prefix and provide access to both the literal string parts and
 interpolated values before they are combined.
 
-**Availability:** template strings require ``MICROPY_PY_TSTRINGS`` to be enabled
-at compile time. They are enabled by default at the full feature level, which
-includes the alif, mimxrt and samd (SAMD51 only) ports, the unix coverage variant
-and the webassembly pyscript variant.
+**Availability:** Template strings are **not** supported on the STM32-based
+OpenMV Cams. They are available only on the Alif- and i.MX RT-based OpenMV
+Cams.
 
 Classes
 -------
@@ -8401,6 +9354,38 @@ The following data types are supported:
 
    Whitespace is not supported in format strings.
 
+Examples
+--------
+
+Pack and unpack little-endian values. The ``<`` prefix selects little-endian
+byte order with standard sizes and no alignment::
+
+    import struct
+
+    # Pack an unsigned short (H, 2 bytes) then an unsigned int (I, 4 bytes).
+    data = struct.pack("<HI", 7, 1000)
+    # data == b'\x07\x00\xe8\x03\x00\x00'
+
+    # Unpack returns a tuple of the values, in order.
+    struct.unpack("<HI", data)
+    # (7, 1000)
+
+    # calcsize() reports how many bytes the format needs.
+    struct.calcsize("<HI")
+    # 6
+
+Pack into and unpack from an existing buffer at a byte offset::
+
+    buf = bytearray(8)
+
+    # Write a little-endian signed int (i) at offset 2.
+    struct.pack_into("<i", buf, 2, -12345)
+    # buf == bytearray(b'\x00\x00\xc7\xcf\xff\xff\x00\x00')
+
+    # Read it back from the same offset.
+    struct.unpack_from("<i", buf, 2)
+    # (-12345,)
+
 Functions
 ---------
 
@@ -8450,8 +9435,8 @@ Functions
    function raises a :exc:`SystemExit` exception. If an argument is given, its
    value given as an argument to :exc:`SystemExit`.
 
-   On embedded ports (i.e. all ports but Windows and Unix), an unhandled
-   :exc:`SystemExit` currently causes a :ref:`soft_reset` of MicroPython.
+   On the OpenMV Cam, an unhandled :exc:`SystemExit` currently causes a
+   :ref:`soft_reset` of MicroPython.
 
 .. function:: atexit(func: Optional[Callable[[], None]]) -> Optional[Callable[[], None]]
 
@@ -8486,9 +9471,9 @@ Functions
    Enable tracing of bytecode execution.  For details see the `CPython
    documentation <https://docs.python.org/3/library/sys.html#sys.settrace>`_.
 
-   This function requires a custom MicroPython build as it is typically not
-   present in pre-built firmware (due to it affecting performance).  The relevant
-   configuration option is *MICROPY_PY_SYS_SETTRACE*.
+   This function is **not available on the OpenMV Cam**. It is disabled by
+   default because it slows down code execution; enabling it requires building
+   custom firmware.
 
 Constants
 ---------
@@ -8530,10 +9515,8 @@ Constants
    access this field using ``sys.implementation._build.split("-")``.  The
    elements that are currently used are:
 
-   * On the unix, webassembly and windows ports the first element is the variant
-     name, for example ``'standard'``.
-   * On microcontroller targets, the first element is the board name and the second
-     element (if present) is the board variant, for example ``'RPI_PICO2-RISCV'``
+   * On the OpenMV Cam the first element is the board name and the second
+     element (if present) is the board variant.
 
    The *_thread* entry was added in version 1.26.0 and if it exists then the
    target has the ``_thread`` module.  If the target enables the GIL (global
@@ -8579,8 +9562,8 @@ Constants
 .. data:: modules
    :type: dict
 
-   Dictionary of loaded modules. On some ports, it may not include builtin
-   modules.
+   Dictionary of loaded modules. On the OpenMV Cam this does not include
+   built-in modules.
 
 .. data:: path
    :type: list[str]
@@ -8598,12 +9581,12 @@ Constants
 .. data:: platform
    :type: str
 
-   The platform that MicroPython is running on. For OS/RTOS ports, this is
-   usually an identifier of the OS, e.g. ``"linux"``. For baremetal ports it
-   is an identifier of a board, e.g. ``"pyboard"`` for the original MicroPython
-   reference board. It thus can be used to distinguish one board from another.
-   If you need to check whether your program runs on MicroPython (vs other
-   Python implementation), use :data:`sys.implementation` instead.
+   The platform that MicroPython is running on. This is a port/board-defined
+   string -- for example ``"mimxrt"`` on the OpenMV RT1060 and ``"alif"`` on
+   the OpenMV AE3 (some older OpenMV Cams report a model-specific string such
+   as ``"OpenMV4-H7"``). To check whether your program runs on MicroPython
+   (versus another Python implementation), use :data:`sys.implementation`
+   instead.
 
 .. data:: ps1
    :type: str
@@ -8641,7 +9624,7 @@ Constants
    entries to store in an exception.  Set to 0 to disable adding tracebacks.  Defaults
    to 1000.
 
-   Note: this is not available on all ports.
+   Note: this attribute is not available on the OpenMV Cam.
 
 .. data:: version
    :type: str
@@ -8669,30 +9652,25 @@ Constants
 The ``time`` module provides functions for getting the current time and date,
 measuring time intervals, and for delays.
 
-**Time Epoch**: The unix, windows, webassembly, alif, mimxrt and rp2 ports
-use the standard for POSIX systems epoch of 1970-01-01 00:00:00 UTC.
-The other embedded ports use an epoch of 2000-01-01 00:00:00 UTC.
-Epoch year may be determined with ``gmtime(0)[0]``.
+**Time Epoch**: The Alif- and i.MX RT-based OpenMV Cams use the POSIX epoch
+of 1970-01-01 00:00:00 UTC. The STM32-based OpenMV Cams use an epoch of
+2000-01-01 00:00:00 UTC. The epoch year can be determined at runtime with
+``gmtime(0)[0]``.
 
-**Maintaining actual calendar date/time**: This requires a
-Real Time Clock (RTC). On systems with underlying OS (including some
-RTOS), an RTC may be implicit. Setting and maintaining actual calendar
-time is responsibility of OS/RTOS and is done outside of MicroPython,
-it just uses OS API to query date/time. On baremetal ports however
-system time depends on :class:`machine.RTC` object. The current calendar time
-may be set using ``machine.RTC().datetime(tuple)`` function, and maintained
-by following means:
+**Maintaining actual calendar date/time**: This requires a Real Time Clock
+(RTC). On the OpenMV Cam the system time is provided by the
+:class:`machine.RTC` object. The current calendar time may be set with
+``machine.RTC().datetime(tuple)`` and is maintained by one of:
 
-* By a backup battery (which may be an additional, optional component for
-  a particular board).
-* Using networked time protocol (requires setup by a port/user).
-* Set manually by a user on each power-up (many boards then maintain
-  RTC time across hard resets, though some may require setting it again
-  in such case).
+* A backup battery (an optional component on some OpenMV Cams).
+* A networked time protocol such as :mod:`ntptime` (requires a network
+  connection).
+* Setting it manually on each power-up. The RTC is then typically maintained
+  across soft resets, but is lost on power loss unless a backup battery is
+  fitted.
 
-If actual calendar time is not maintained with a system/MicroPython RTC,
-functions below which require reference to current absolute time may
-behave not as expected.
+If the calendar time is not maintained, the functions below that reference
+the current absolute time will not behave as expected.
 
 Functions
 ---------
@@ -8726,10 +9704,9 @@ Functions
 
 .. function:: sleep(seconds: float) -> None
 
-   Sleep for the given number of seconds. Some boards may accept *seconds* as a
-   floating-point number to sleep for a fractional number of seconds. Note that
-   other boards may not accept a floating-point argument, for compatibility with
-   them use `sleep_ms()` and `sleep_us()` functions.
+   Sleep for the given number of seconds. *seconds* may be a floating-point
+   number, to sleep for a fractional number of seconds. For finer-grained or
+   integer-only delays use the `sleep_ms()` and `sleep_us()` functions.
 
    Calling :func:`sleep`, including ``sleep(0)`` is guaranteed to call pending callback
    functions.
@@ -8789,9 +9766,7 @@ Functions
    (resolution) of this function is not specified on ``time`` module level, but
    documentation for a specific port may provide more specific information. This
    function is intended for very fine benchmarking or very tight real-time loops.
-   Avoid using it in portable code.
-
-   Availability: Not every port implements this function.
+   Avoid using it in portable code. It is available on all OpenMV Cams.
 
 .. function:: ticks_add(ticks: int, delta: int) -> int
 
@@ -8897,16 +9872,13 @@ Functions
    .. admonition:: Difference to CPython
       :class: attention
 
-      In CPython, this function returns number of
-      seconds since Unix epoch, 1970-01-01 00:00 UTC, as a floating-point,
-      usually having microsecond precision. With MicroPython, only Unix port
-      uses the same Epoch, and if floating-point precision allows,
-      returns sub-second precision. Embedded hardware usually doesn't have
-      floating-point precision to represent both long time ranges and subsecond
-      precision, so they use integer value with second precision. Some embedded
-      hardware also lacks battery-powered RTC, so returns number of seconds
-      since last power-up or from other relative, hardware-specific point
-      (e.g. reset).
+      In CPython this function returns the number of seconds since the Unix
+      epoch (1970-01-01 00:00 UTC) as a floating-point value, usually with
+      microsecond precision. On the OpenMV Cam it returns an **integer** with
+      one-second precision -- the hardware cannot represent both a long time
+      range and sub-second precision in a float -- and the epoch differs by
+      board (see *Time Epoch* above). Without a battery-backed RTC that has
+      been set, it instead counts seconds since power-up/reset.
 
 .. function:: time_ns() -> int
 
@@ -8963,6 +9935,11 @@ type aliases that have no useful representation in MicroPython (:data:`CodeType`
 :data:`GetSetDescriptorType`, :data:`MemberDescriptorType`) are exposed as ``None``
 placeholders so that code which only references them keeps importing, but they
 will not match any real object via :func:`isinstance`.
+
+**Availability:** This module is part of :term:`micropython-lib`. It is
+included by default only on the OpenMV N6 and OpenMV AE3. On the other
+OpenMV Cams it can be installed with ``mip`` (or frozen into a custom
+firmware); see :ref:`packages`.
 
 Type aliases
 ------------
@@ -9099,18 +10076,20 @@ This module allows compression and decompression of binary data with the
 
 **Availability:**
 
-* From MicroPython v1.21 onwards, this module may not be present by default on
-  all MicroPython firmware as it duplicates functionality available in
-  the :mod:`deflate <deflate>` module.
+* This module is **not included on the OpenMV Cam** by default, as it
+  duplicates functionality already provided by the :mod:`deflate <deflate>`
+  module.
 
-* A copy of this module can be installed (or frozen)
+* A copy can be installed (or frozen into custom firmware)
   from :term:`micropython-lib` (`source <https://github.com/micropython/micropython-lib/blob/master/python-stdlib/zlib/zlib.py>`_).
   See :ref:`packages` for more information. This documentation describes that module.
 
-* Requires the built-in :mod:`deflate <deflate>` module (available since MicroPython v1.21)
+* It relies on the built-in :mod:`deflate <deflate>` module, which is present
+  on all OpenMV Cams.
 
-* Compression support will only be available if compression support is enabled
-  in the built-in :mod:`deflate <deflate>` module.
+* Compression is only available if compression is available in the built-in
+  :mod:`deflate <deflate>` module -- that is, not on the STM32-based OpenMV
+  Cams (see its availability note above).
 
 Functions
 ---------
@@ -9961,12 +10940,10 @@ This module allows compression and decompression of binary data with the
 
 * Added in MicroPython v1.21.
 
-* Decompression: Enabled via the ``MICROPY_PY_DEFLATE`` build option, on by default
-  on ports with the "extra features" level or higher (which is most boards).
+* **Decompression** is available on all OpenMV Cams.
 
-* Compression: Enabled via the ``MICROPY_PY_DEFLATE_COMPRESS`` build option, on
-  by default on ports with the "full features" level or higher (generally this means
-  you need to build your own firmware to enable this).
+* **Compression** is **not** available on the STM32-based OpenMV Cams. It is
+  available only on the Alif- and i.MX RT-based OpenMV Cams.
 
 Classes
 -------
@@ -10409,7 +11386,7 @@ Reset related functions
 
    Get the reset cause. See :ref:`constants <machine_constants>` for the possible return values.
 
-.. function:: bootloader(value: int = ..., /) -> None
+.. function:: bootloader(value: int | None = None, /) -> None
 
    Reset the device and enter its bootloader.  This is typically used to put the
    device into a state where it can be programmed with new firmware.
@@ -10452,7 +11429,7 @@ and then re-enabled to their previous state.  For example::
 Power related functions
 -----------------------
 
-.. function:: freq(hz: int = ..., /) -> int
+.. function:: freq(hz: int | None = None, /) -> int
 
     Returns the CPU frequency in hertz.
 
@@ -10475,8 +11452,8 @@ Power related functions
 
    .. note:: This function is deprecated, use :func:`lightsleep()` instead with no arguments.
 
-.. function:: lightsleep(time_ms: int = ..., /) -> None
-              deepsleep(time_ms: int = ..., /) -> None
+.. function:: lightsleep(time_ms: int | None = None, /) -> None
+              deepsleep(time_ms: int | None = None, /) -> None
 
    Stops execution in an attempt to enter a low power state.
 
@@ -10719,7 +11696,7 @@ Constructors
 
       Returns ``None``.
 
-   .. method:: value(x: Any = ..., /) -> int | None
+   .. method:: value(x: Any = None, /) -> int | None
 
       This method allows to set and get the value of the pin, depending on whether
       the argument ``x`` is supplied or not.
@@ -10751,7 +11728,7 @@ Constructors
 
       When setting the value this method returns ``None``.
 
-   .. method:: __call__(x: Any = ..., /) -> int | None
+   .. method:: __call__(x: Any = None, /) -> int | None
 
       Pin objects are callable.  The call method provides a (fast) shortcut to set
       and get the value of the pin.  It is equivalent to Pin.value([x]).
@@ -10820,21 +11797,21 @@ Constructors
 
       Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
 
-   .. method:: mode(mode: int = ..., /) -> int | None
+   .. method:: mode(mode: int | None = None, /) -> int | None
 
       Get or set the pin mode.
       See the constructor documentation for details of the ``mode`` argument.
 
       Availability: cc3200, stm32 ports.
 
-   .. method:: pull(pull: int = ..., /) -> int | None
+   .. method:: pull(pull: int | None = None, /) -> int | None
 
       Get or set the pin pull state.
       See the constructor documentation for details of the ``pull`` argument.
 
       Availability: cc3200, stm32 ports.
 
-   .. method:: drive(drive: int = ..., /) -> int | None
+   .. method:: drive(drive: int | None = None, /) -> int | None
 
       Get or set the pin drive strength.
       See the constructor documentation for details of the ``drive`` argument.
@@ -10987,7 +11964,7 @@ Constructors
    Methods
    -------
 
-   .. method:: value(x: Any = ..., /) -> int | None
+   .. method:: value(x: Any = None, /) -> int | None
 
       This method allows to set and get the value of the signal, depending on whether
       the argument ``x`` is supplied or not.
@@ -11063,7 +12040,7 @@ Constructors
 
       Toggles the LED state.
 
-   .. method:: value(v: int = ...) -> int | None
+   .. method:: value(v: int | None = None) -> int | None
 
       If ``v`` is given, sets the LED to the given value. If ``v`` is not given,
       returns the current LED value.
@@ -11092,7 +12069,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: ADC(id: int | Pin, *, sample_ns: int = ..., atten: int = ...)
+.. class:: ADC(id: int | Pin, *, sample_ns: int | None = None, atten: int | None = None)
 
    Access the ADC associated with a source identified by *id*.  This
    *id* may be an integer (usually specifying a channel number), a
@@ -11110,7 +12087,7 @@ Constructors
    Methods
    -------
 
-   .. method:: init(*, sample_ns: int = ..., atten: int = ...) -> None
+   .. method:: init(*, sample_ns: int | None = None, atten: int | None = None) -> None
 
       Apply the given settings to the ADC.  Only those arguments that are
       specified will be changed.  See the ADC constructor above for what the
@@ -11161,7 +12138,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: ADCBlock(id: int | str, *, bits: int = ...)
+.. class:: ADCBlock(id: int | str, *, bits: int | None = None)
 
    Access the ADC peripheral identified by *id*, which may be an integer
    or string.
@@ -11173,14 +12150,14 @@ Constructors
    Methods
    -------
 
-   .. method:: init(*, bits: int = ...) -> None
+   .. method:: init(*, bits: int | None = None) -> None
 
       Configure the ADC peripheral.  *bits* will set the resolution of the
       conversion process.
 
-   .. method:: connect(channel: int, *, sample_ns: int = ..., atten: int = ...) -> ADC
-               connect(source: Pin, *, sample_ns: int = ..., atten: int = ...) -> "ADC"
-               connect(channel: int, source: Pin, *, sample_ns: int = ..., atten: int = ...) -> "ADC"
+   .. method:: connect(channel: int, *, sample_ns: int | None = None, atten: int | None = None) -> ADC
+               connect(source: Pin, *, sample_ns: int | None = None, atten: int | None = None) -> "ADC"
+               connect(channel: int, source: Pin, *, sample_ns: int | None = None, atten: int | None = None) -> "ADC"
 
       Connect up a channel on the ADC peripheral so it is ready for sampling,
       and return an :ref:`ADC <machine.ADC>` object that represents that connection.
@@ -11226,7 +12203,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: PWM(dest: Pin | int, *, freq: int = ..., duty_u16: int = ..., duty_ns: int = ..., invert: bool = False)
+.. class:: PWM(dest: Pin | int, *, freq: int | None = None, duty_u16: int | None = None, duty_ns: int | None = None, invert: bool = False)
 
    Construct and return a new PWM object using the following parameters:
 
@@ -11247,7 +12224,7 @@ Constructors
    Methods
    -------
 
-   .. method:: init(*, freq: int = ..., duty_u16: int = ..., duty_ns: int = ...) -> None
+   .. method:: init(*, freq: int | None = None, duty_u16: int | None = None, duty_ns: int | None = None) -> None
 
       Modify settings for the PWM object.  See the above constructor for details
       about the parameters.
@@ -11256,7 +12233,7 @@ Constructors
 
       Disable the PWM output.
 
-   .. method:: freq(value: int = ..., /) -> int | None
+   .. method:: freq(value: int | None = None, /) -> int | None
 
       Get or set the current frequency of the PWM output.
 
@@ -11265,7 +12242,7 @@ Constructors
       With a single *value* argument the frequency is set to that value in Hz.  The
       method may raise a ``ValueError`` if the frequency is outside the valid range.
 
-   .. method:: duty_u16(value: int = ..., /) -> int | None
+   .. method:: duty_u16(value: int | None = None, /) -> int | None
 
       Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
       value in the range 0 to 65535 inclusive.
@@ -11275,7 +12252,7 @@ Constructors
       With a single *value* argument the duty cycle is set to that value, measured
       as the ratio ``value / 65535``.
 
-   .. method:: duty_ns(value: int = ..., /) -> int | None
+   .. method:: duty_ns(value: int | None = None, /) -> int | None
 
       Get or set the current pulse width of the PWM output, as a value in nanoseconds.
 
@@ -11803,7 +12780,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: I2C(id: int, *, scl: Pin = ..., sda: Pin = ..., freq: int = 400000, timeout: int = 50000)
+.. class:: I2C(id: int, *, scl: Pin | None = None, sda: Pin | None = None, freq: int = 400000, timeout: int = 50000)
 
    Construct and return a new I2C object using the following parameters:
 
@@ -12960,7 +13937,7 @@ Constructors
    Methods
    -------
 
-   .. method:: datetime(datetimetuple: tuple = ..., /) -> tuple | None
+   .. method:: datetime(datetimetuple: tuple | None = None, /) -> tuple | None
 
       Get or set the date and time of the RTC.
 
@@ -13023,7 +14000,7 @@ Constructors
          - ``wake`` specifies the sleep mode from where this interrupt can wake
            up the system.
 
-   .. method:: memory(data: bytes = ..., /) -> bytes | None
+   .. method:: memory(data: bytes | None = None, /) -> bytes | None
 
       ``RTC.memory(data)`` will write *data* to the RTC memory, where *data* is any
       object which supports the buffer protocol (including `bytes`, `bytearray`,
@@ -13552,7 +14529,7 @@ Constructors
       Stops the Counter, disabling any interrupts and releasing hardware resources.
       A Soft Reset should deinitialize all Counter objects.
 
-   .. method:: value(value: int = ..., /) -> int
+   .. method:: value(value: int | None = None, /) -> int
 
       Get, and optionally set, the counter value as a signed integer.
       Implementations must aim to do the get and set atomically (i.e. without
@@ -13572,7 +14549,7 @@ Constructors
       the counter (i.e. to measure the counts since the last call), and this will
       avoid this problem.
 
-   .. method:: cycles(value: int = ..., /) -> int
+   .. method:: cycles(value: int | None = None, /) -> int
 
       Get or set the current cycles counter of the counter as signed 16 bit integer.
       The value represents the overflow or underflow events of the count range.
@@ -13737,14 +14714,14 @@ Constructors
       Stops the Encoder, disabling any interrupts and releasing hardware resources.
       A Soft Reset should deinitialize all Encoder objects.
 
-   .. method:: value(value: int = ..., /) -> int
+   .. method:: value(value: int | None = None, /) -> int
 
       Get, and optionally set, the encoder value as a signed integer.
       Implementations should aim to do the get and set atomically.
 
       See :meth:`machine.Counter.value` for details about overflow of this value.
 
-   .. method:: cycles(value: int = ..., /) -> int
+   .. method:: cycles(value: int | None = None, /) -> int
 
       Get or set the current cycles counter of the counter as signed 16 bit integer.
       The value represents the overflow or underflow events of the count range.
@@ -14703,7 +15680,7 @@ Example usage, for a board with built-in LAN support::
 Constructors
 ------------
 
-.. class:: LAN(id: int, *, phy_type: int = ..., phy_addr: int = ..., ref_clk_mode: int = ...) -> None
+.. class:: LAN(id: int, *, phy_type: int | None = None, phy_addr: int | None = None, ref_clk_mode: int | None = None) -> None
 
    Create a LAN driver object, initialise the LAN module using the given
    PHY driver name, and return the LAN object.
@@ -19952,11 +20929,15 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
    Geometric Methods
    ~~~~~~~~~~~~~~~~~
 
-   .. method:: linpolar(reverse:bool=False) -> Image
+   .. method:: linpolar(reverse:bool=False, *, x:Optional[int]=None, y:Optional[int]=None) -> Image
 
-      Re-project's and image from cartessian coordinates to linear polar coordinates.
+      Re-projects an image from Cartesian coordinates to linear polar coordinates.
 
       Set ``reverse=True`` to re-project in the opposite direction.
+
+      ``x`` and ``y`` specify the center coordinate of the transform in image
+      pixels. If ``x`` is ``None`` (the default) it is set to half the image
+      width; likewise ``y`` defaults to half the image height.
 
       Linear polar re-projection turns rotation of an image into x-translation.
 
@@ -19964,11 +20945,15 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
 
       This method is not available on the OpenMV Cam M4.
 
-   .. method:: logpolar(reverse:bool=False) -> Image
+   .. method:: logpolar(reverse:bool=False, *, x:Optional[int]=None, y:Optional[int]=None) -> Image
 
-      Re-project's and image from cartessian coordinates to log polar coordinates.
+      Re-projects an image from Cartesian coordinates to log polar coordinates.
 
       Set ``reverse=True`` to re-project in the opposite direction.
+
+      ``x`` and ``y`` specify the center coordinate of the transform in image
+      pixels. If ``x`` is ``None`` (the default) it is set to half the image
+      width; likewise ``y`` defaults to half the image height.
 
       Log polar re-projection turns rotation of an image into x-translation
       and scaling/zooming into y-translation.
@@ -22324,7 +23309,7 @@ The `SPIDisplay` class is used for driving SPI LCDs.
 Constructors
 ------------
 
-.. class:: SPIDisplay(width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool = ..., *, controller: Optional[object] = None, backlight: Optional[object] = None)
+.. class:: SPIDisplay(width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool | None = None, *, controller: Optional[object] = None, backlight: Optional[object] = None)
 
     ``width`` SPI LCD width in pixels (1..32767).
 
@@ -24824,7 +25809,7 @@ Array construction
    Construct a new `ndarray` from a nested iterable of numbers. Equivalent
    alternate constructor for `numpy.ndarray`.
 
-.. function:: arange(start: int | float, stop: int | float = ..., step: int | float = 1, *, dtype: int | None = None) -> ndarray
+.. function:: arange(start: int | float, stop: int | float | None = None, step: int | float = 1, *, dtype: int | None = None) -> ndarray
 
    Return evenly spaced values over the half-open interval ``[start, stop)``.
    If only one positional argument is given, it is treated as ``stop`` with
@@ -56603,7 +57588,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Mon 18 May 2026 06:23:03 UTC
+Generated Tue 19 May 2026 03:02:30 UTC
 
 Literals
 --------
@@ -56786,7 +57771,7 @@ Sample code::
 Core language
 =============
 
-Generated Mon 18 May 2026 06:23:03 UTC
+Generated Tue 19 May 2026 03:02:30 UTC
 
 Classes
 -------
@@ -57388,7 +58373,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f859a605260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7f7f1ba05260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -57570,7 +58555,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Mon 18 May 2026 06:23:03 UTC
+Generated Tue 19 May 2026 03:02:30 UTC
 
 Exception
 ---------
@@ -58437,7 +59422,7 @@ Sample code::
 Modules
 =======
 
-Generated Mon 18 May 2026 06:23:03 UTC
+Generated Tue 19 May 2026 03:02:30 UTC
 
 .. Preamble section inserted into generated output
 
@@ -58737,7 +59722,7 @@ Sample code::
 +-------------------------+--------------------------------------------+
 | ::                      | ::                                         |
 |                         |                                            |
-|     7144283091105114990 |     Traceback (most recent call last):     |
+|     8838248828180450611 |     Traceback (most recent call last):     |
 |                         |       File "<stdin>", line 11, in <module> |
 |                         |     ValueError: bits must be 32 or less    |
 +-------------------------+--------------------------------------------+

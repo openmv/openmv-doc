@@ -119,7 +119,7 @@ Functions
 
    Return the natural logarithm of the gamma function of ``x``.
 
-.. function:: log(x: float, base: float = ...) -> float
+.. function:: log(x: float, base: float = e) -> float
 
    With one argument, return the natural logarithm of *x*.
 

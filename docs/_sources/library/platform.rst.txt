@@ -15,15 +15,15 @@ Functions
    Returns a string identifying the underlying platform. This string is composed
    of several substrings in the following order, delimited by dashes (``-``):
 
-   - the name of the platform system (e.g. Unix, Windows or MicroPython)
+   - the name of the platform system (``MicroPython`` on the OpenMV Cam)
    - the MicroPython version
    - the architecture of the platform
    - the version of the underlying platform
    - the concatenation of the name of the libc that MicroPython is linked to
      and its corresponding version.
 
-   For example, this could be
-   ``"MicroPython-1.20.0-xtensa-IDFv4.2.4-with-newlib3.0.0"``.
+   For example, on an OpenMV Cam this could be
+   ``"MicroPython-1.25.0-armv7emsp"``.
 
 .. function:: python_compiler() -> str
 
@@ -41,4 +41,5 @@ Functions
    If no name for the processor is known, it will return an empty string
    instead.
 
-   This is currently available only on RISC-V targets (both 32 and 64 bits).
+   On the OpenMV Cam this always returns an empty string; a processor name is
+   currently only reported on RISC-V targets.

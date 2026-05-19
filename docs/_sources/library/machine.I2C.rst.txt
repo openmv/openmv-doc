@@ -52,7 +52,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: I2C(id: int, *, scl: Pin = ..., sda: Pin = ..., freq: int = 400000, timeout: int = 50000)
+.. class:: I2C(id: int, *, scl: Pin | None = None, sda: Pin | None = None, freq: int = 400000, timeout: int = 50000)
 
    Construct and return a new I2C object using the following parameters:
 

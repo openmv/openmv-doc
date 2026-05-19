@@ -21,7 +21,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: ADC(id: int | Pin, *, sample_ns: int = ..., atten: int = ...)
+.. class:: ADC(id: int | Pin, *, sample_ns: int | None = None, atten: int | None = None)
 
    Access the ADC associated with a source identified by *id*.  This
    *id* may be an integer (usually specifying a channel number), a
@@ -39,7 +39,7 @@ Constructors
    Methods
    -------
 
-   .. method:: init(*, sample_ns: int = ..., atten: int = ...) -> None
+   .. method:: init(*, sample_ns: int | None = None, atten: int | None = None) -> None
 
       Apply the given settings to the ADC.  Only those arguments that are
       specified will be changed.  See the ADC constructor above for what the

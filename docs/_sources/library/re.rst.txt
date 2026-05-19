@@ -114,11 +114,6 @@ Functions
 
    Compile regular expression, return `regex <regex>` object.
 
-.. function:: match(regex_str: str, string: str) -> "match | None"
-
-   Compile *regex_str* and match against *string*. Match always happens
-   from starting position in a string.
-
 .. function:: search(regex_str: str, string: str) -> "match | None"
 
    Compile *regex_str* and search it in a *string*. Unlike `match`, this will search
@@ -139,14 +134,6 @@ Functions
    If *count* is specified and non-zero then substitution will stop after
    this many substitutions are made.  The *flags* argument is ignored.
 
-   Note: availability of this function depends on :term:`MicroPython port`.
-
-.. data:: DEBUG
-   :type: int
-
-   Flag value, display debug information about compiled expression.
-   (Availability depends on :term:`MicroPython port`.)
-
 
 .. _regex:
 
@@ -161,24 +148,59 @@ Compiled regular expression. Instances of this class are created using
 
    Compiled regular expression object returned by `re.compile()`.
 
-   .. method:: match(string: str, pos: int = 0, endpos: int = ...) -> "match | None"
-               search(string: str, pos: int = 0, endpos: int = ...) -> "match | None"
-               sub(replace: Union[str, Callable], string: str, count: int = 0, flags: int = 0, /) -> str
+   .. method:: match(string: str, pos: int = 0, endpos: int | None = None) -> "match | None"
 
-      Similar to the module-level functions :meth:`match`, :meth:`search`
-      and :meth:`sub`.
-      Using methods is (much) more efficient if the same regex is applied to
-      multiple strings.
+      Apply this compiled regex to *string*, anchored at the start of the
+      search region, and return a `match <match>` object, or ``None`` if the
+      regex does not match. This is the compiled-pattern equivalent of the
+      module-level :class:`match`, and is much more efficient when the same
+      pattern is applied to multiple strings.
 
-      The optional second parameter *pos* gives an index in the string where the
-      search is to start; it defaults to ``0``. This is not completely equivalent
-      to slicing the string; the ``'^'`` pattern character matches at the real
+      The optional parameter *pos* gives an index in *string* where the search
+      is to start; it defaults to ``0``. This is not completely equivalent to
+      slicing the string; the ``'^'`` pattern character matches at the real
       beginning of the string and at positions just after a newline, but not
       necessarily at the index where the search is to start.
 
-      The optional parameter *endpos* limits how far the string will be searched;
-      it will be as if the string is *endpos* characters long, so only the
-      characters from *pos* to ``endpos - 1`` will be searched for a match.
+      The optional parameter *endpos* limits how far *string* is searched; it
+      will be as if the string is *endpos* characters long, so only the
+      characters from *pos* to ``endpos - 1`` are searched. If *endpos* is
+      ``None`` (the default) the whole string is searched.
+
+   .. method:: search(string: str, pos: int = 0, endpos: int | None = None) -> "match | None"
+
+      Scan through *string* looking for the first location where this compiled
+      regex produces a match, and return a `match <match>` object, or ``None``
+      if no position matches. This is the compiled-pattern equivalent of the
+      module-level :func:`search` function, and is much more efficient when the
+      same pattern is applied to multiple strings.
+
+      The optional parameter *pos* gives an index in *string* where the search
+      is to start; it defaults to ``0``. This is not completely equivalent to
+      slicing the string; the ``'^'`` pattern character matches at the real
+      beginning of the string and at positions just after a newline, but not
+      necessarily at the index where the search is to start.
+
+      The optional parameter *endpos* limits how far *string* is searched; it
+      will be as if the string is *endpos* characters long, so only the
+      characters from *pos* to ``endpos - 1`` are searched. If *endpos* is
+      ``None`` (the default) the whole string is searched.
+
+   .. method:: sub(replace: Union[str, Callable], string: str, count: int = 0, flags: int = 0, /) -> str
+
+      Search for this compiled regex in *string*, replacing all matches with
+      *replace*, and return the new string. This is the compiled-pattern
+      equivalent of the module-level :func:`sub` function, and is much more
+      efficient when the same pattern is applied to multiple strings.
+
+      *replace* can be a string or a function. If it is a string then escape
+      sequences of the form ``\<number>`` and ``\g<number>`` can be used to
+      expand to the corresponding group (or an empty string for unmatched
+      groups). If *replace* is a function then it must take a single argument
+      (the match) and should return a replacement string.
+
+      If *count* is specified and non-zero then substitution will stop after
+      this many substitutions are made. The *flags* argument is ignored.
 
    .. method:: split(string: str, max_split: int = -1, /) -> List[str]
 
@@ -189,37 +211,20 @@ Compiled regular expression. Instances of this class are created using
 Match objects
 -------------
 
-Match objects as returned by `match()` and `search()` methods, and passed
-to the replacement function in `sub()`.
+A match object holds the result of a successful match.
 
-.. class:: match
-   :no-index:
+.. class:: match(regex_str: str, string: str)
 
-   Match object returned by `regex.match()`, `regex.search()`, and the
-   module-level `match()` and `search()` functions.
+   Match *regex_str* against *string*, anchored at the start of the string,
+   and return a match object, or ``None`` if it does not match. This is the
+   module-level shortcut: ``re.match(regex_str, string)`` is equivalent to
+   ``re.compile(regex_str).match(string)``.
+
+   The same match object is also returned by `search()`, by the
+   compiled-pattern `regex.match()` / `regex.search()` methods, and is passed
+   to the replacement function used by `sub()`.
 
    .. method:: group(index: int) -> str
 
       Return matching (sub)string. *index* is 0 for entire match,
       1 and above for each capturing group. Only numeric groups are supported.
-
-   .. method:: groups() -> Tuple[str, ...]
-
-      Return a tuple containing all the substrings of the groups of the match.
-
-      Note: availability of this method depends on :term:`MicroPython port`.
-
-   .. method:: start(index: int = 0) -> int
-               end(index: int = 0) -> int
-
-      Return the index in the original string of the start or end of the
-      substring group that was matched.  *index* defaults to the entire
-      group, otherwise it will select a group.
-
-      Note: availability of these methods depends on :term:`MicroPython port`.
-
-   .. method:: span(index: int = 0) -> Tuple[int, int]
-
-      Returns the 2-tuple ``(match.start(index), match.end(index))``.
-
-      Note: availability of this method depends on :term:`MicroPython port`.

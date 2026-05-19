@@ -4,19 +4,17 @@
 .. module:: errno
    :synopsis: system error codes
 
-This module provides access to symbolic error codes for :exc:`OSError` exception,
-along with the :data:`errorcode` dictionary mapping numeric codes back to
-their symbolic names.  The particular inventory of codes depends on the
-:term:`MicroPython port`.
+This module provides access to symbolic error codes for the :exc:`OSError`
+exception, along with the :data:`errorcode` dictionary mapping numeric codes
+back to their symbolic names.
 
 Constants
 ---------
 
 The error codes below are based on the ANSI C / POSIX standard; each is an
-integer whose symbolic name starts with ``E``. As noted above, the inventory
-of codes depends on the :term:`MicroPython port`; these are the codes provided
-by the default MicroPython build. An error code is usually accessed as
-``exc.errno`` where ``exc`` is an instance of :exc:`OSError`. Usage example::
+integer whose symbolic name starts with ``E``. These are the codes provided on
+the OpenMV Cam. An error code is usually accessed as ``exc.errno`` where
+``exc`` is an instance of :exc:`OSError`. Usage example::
 
     try:
         os.mkdir("my_dir")

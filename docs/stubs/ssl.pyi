@@ -11,7 +11,7 @@ CERT_OPTIONAL: int
 """
 Supported value for the cert_reqs parameter, and the
 SSLContext.verify_mode attribute.  Certificate verification is
-optional.  Note that for mbedtls based ports this behaves like
+optional.  Note that on the OpenMV Cam this behaves like
 ssl.CERT_NONE.
 """
 CERT_REQUIRED: int
@@ -21,15 +21,9 @@ SSLContext.verify_mode attribute.  A valid certificate is required
 from the peer.
 """
 PROTOCOL_DTLS_CLIENT: int
-"""
-Supported value for the protocol parameter, selecting DTLS client mode.
-Only available when DTLS support is enabled.
-"""
+"""Supported value for the protocol parameter, selecting DTLS client mode."""
 PROTOCOL_DTLS_SERVER: int
-"""
-Supported value for the protocol parameter, selecting DTLS server mode.
-Only available when DTLS support is enabled.
-"""
+"""Supported value for the protocol parameter, selecting DTLS server mode."""
 PROTOCOL_TLS_CLIENT: int
 """Supported value for the protocol parameter, selecting TLS client mode."""
 PROTOCOL_TLS_SERVER: int
@@ -43,13 +37,11 @@ def wrap_socket(sock: Any, server_side: bool = False, key: bytes | None = None, 
     passed through unchanged to the method call.  The argument do_handshake is passed through as
     do_handshake_on_connect.  The remaining arguments have the following behaviour:
     cert_reqs determines whether the peer (server or client) must present a valid certificate.
-    Note that for mbedtls based ports, ssl.CERT_NONE and ssl.CERT_OPTIONAL will not
-    validate any certificate, only ssl.CERT_REQUIRED will.
+    Note that ssl.CERT_NONE and ssl.CERT_OPTIONAL do not validate any
+    certificate; only ssl.CERT_REQUIRED does.
 
     cadata is a bytes object containing the CA certificate chain (in DER format) that will
     validate the peer’s certificate.  Currently only a single DER-encoded certificate is supported.
-    Depending on the underlying module implementation in a particular
-    MicroPython port, some or all keyword arguments above may be not supported.
     """
     ...
 
@@ -109,8 +101,7 @@ class SSLContext:
         For blocking sockets doing the handshake immediately is standard. For non-blocking
         sockets (i.e. when the sock passed into wrap_socket is in non-blocking mode)
         the handshake should generally be deferred because otherwise wrap_socket blocks
-        until it completes. Note that in AXTLS the handshake can be deferred until the first
-        read or write but it then blocks until completion.
+        until it completes.
 
         server_hostname is for use as a client, and sets the hostname to check against the received
         server certificate.  It also sets the name for Server Name Indication (SNI), allowing the server
@@ -118,8 +109,11 @@ class SSLContext:
 
         client_id is a MicroPython-specific extension argument used only when implementing a DTLS
         Server. See dtls for details.
-        Some implementations of ssl module do NOT validate server certificates,
-        which makes an SSL connection established prone to man-in-the-middle attacks.
+        By default no certificate validation is performed
+        (ssl.CERT_NONE). For a secure connection you must verify the
+        peer’s certificate by setting cert_reqs /
+        SSLContext.verify_mode to ssl.CERT_REQUIRED;
+        otherwise the connection is vulnerable to man-in-the-middle attacks.
 
         CPython’s wrap_socket returns an SSLSocket object which has methods typical
         for sockets, such as send, recv, etc. MicroPython’s wrap_socket

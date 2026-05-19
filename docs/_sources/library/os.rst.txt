@@ -17,11 +17,11 @@ General functions
    underlying machine and/or its operating system.  The tuple has five fields
    in the following order, each of them being a string:
 
-        * ``sysname`` -- the name of the underlying system
-        * ``nodename`` -- the network name (can be the same as ``sysname``)
-        * ``release`` -- the version of the underlying system
-        * ``version`` -- the MicroPython version and build date
-        * ``machine`` -- an identifier for the underlying hardware (eg board, CPU)
+        * ``sysname`` -- The name of the underlying system
+        * ``nodename`` -- The network name (can be the same as ``sysname``)
+        * ``release`` -- The version of the underlying system
+        * ``version`` -- The MicroPython version and build date
+        * ``machine`` -- An identifier for the underlying hardware (e.g. board, CPU)
 
 .. function:: urandom(n: int) -> bytes
 
@@ -69,6 +69,10 @@ Filesystem access
 
    Remove a file.
 
+.. function:: unlink(path: str) -> None
+
+   Remove a file. This is an alias for :func:`remove`.
+
 .. function:: rmdir(path: str) -> None
 
    Remove a directory.
@@ -87,24 +91,29 @@ Filesystem access
 
    Returns a tuple with the filesystem information in the following order:
 
-        * ``f_bsize`` -- file system block size
-        * ``f_frsize`` -- fragment size
-        * ``f_blocks`` -- size of fs in f_frsize units
-        * ``f_bfree`` -- number of free blocks
-        * ``f_bavail`` -- number of free blocks for unprivileged users
-        * ``f_files`` -- number of inodes
-        * ``f_ffree`` -- number of free inodes
-        * ``f_favail`` -- number of free inodes for unprivileged users
-        * ``f_flag`` -- mount flags
-        * ``f_namemax`` -- maximum filename length
+        * ``f_bsize`` -- File system block size
+        * ``f_frsize`` -- Fragment size
+        * ``f_blocks`` -- Size of fs in f_frsize units
+        * ``f_bfree`` -- Number of free blocks
+        * ``f_bavail`` -- Number of free blocks for unprivileged users
+        * ``f_files`` -- Number of inodes
+        * ``f_ffree`` -- Number of free inodes
+        * ``f_favail`` -- Number of free inodes for unprivileged users
+        * ``f_flag`` -- Mount flags
+        * ``f_namemax`` -- Maximum filename length
 
-   Parameters related to inodes: ``f_files``, ``f_ffree``, ``f_avail``
-   and the ``f_flags`` parameter may return ``0`` as they can be unavailable
+   Parameters related to inodes: ``f_files``, ``f_ffree``, ``f_favail``
+   and the ``f_flag`` parameter may return ``0`` as they can be unavailable
    in a port-specific implementation.
 
 .. function:: sync() -> None
 
    Sync all filesystems.
+
+.. data:: sep
+   :type: str
+
+   The path-component separator used by the filesystem, the string ``'/'``.
 
 Terminal redirection and duplication
 ------------------------------------
@@ -113,7 +122,7 @@ Terminal redirection and duplication
 
    Duplicate or switch the MicroPython terminal (the REPL) on the given :std:term:`stream`-like
    object. The *stream_object* argument must be a native stream object, or derive
-   from ``io.IOBase`` and implement the ``readinto()`` and
+   from :class:`io.IOBase` and implement the ``readinto()`` and
    ``write()`` methods.  The stream should be in non-blocking mode and
    ``readinto()`` should return ``None`` if there is no data available for reading.
 
@@ -168,26 +177,54 @@ The following functions and classes have been moved to the :mod:`vfs` module.
 They are provided in this module only for backwards compatibility and will be
 removed in version 2 of MicroPython.
 
-.. function:: mount(fsobj: Any, mount_point: str, *, readonly: bool) -> None
+.. function:: mount(fsobj: Any, mount_point: str, *, readonly: bool = False) -> None
 
-    See :func:`vfs.mount`.
+    Mount the filesystem object *fsobj* at the location in the VFS given by the
+    *mount_point* string.  *fsobj* can be a VFS object that has a ``mount()``
+    method, or a block device.  If it's a block device then the filesystem type
+    is automatically detected (an exception is raised if no filesystem was
+    recognised).  *mount_point* may be ``'/'`` to mount *fsobj* at the root,
+    or ``'/<name>'`` to mount it at a subdirectory under the root.
 
-.. function:: umount(mount_point: str) -> None
+    If *readonly* is ``True`` then the filesystem is mounted read-only.
 
-    See :func:`vfs.umount`.
+    During the mount process the method ``mount()`` is called on the filesystem
+    object.
+
+    Will raise ``OSError(EPERM)`` if *mount_point* is already mounted.
+
+.. function:: mount() -> List[Tuple[Any, str]]
+    :noindex:
+
+    With no arguments to :func:`mount`, return a list of tuples representing
+    all active mountpoints.
+
+    The returned list has the form *[(fsobj, mount_point), ...]*.
+
+.. function:: umount(mount_point: Union[str, Any]) -> None
+
+    Unmount a filesystem. *mount_point* can be a string naming the mount
+    location, or a previously-mounted filesystem object.  During the unmount
+    process the method ``umount()`` is called on the filesystem object.
+
+    Will raise ``OSError(EINVAL)`` if *mount_point* is not found.
 
 .. class:: VfsFat(block_dev: AbstractBlockDev)
 
-    See :class:`vfs.VfsFat`.
+    Create a filesystem object that uses the FAT filesystem format.  Storage of
+    the FAT filesystem is provided by *block_dev*.
+    Objects created by this constructor can be mounted using :func:`mount`.
 
-.. class:: VfsLfs1(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32)
+    .. staticmethod:: mkfs(block_dev: AbstractBlockDev) -> None
 
-    See :class:`vfs.VfsLfs1`.
-
-.. class:: VfsLfs2(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32, mtime: bool = True)
-
-    See :class:`vfs.VfsLfs2`.
+        Build a FAT filesystem on *block_dev*.
 
 .. class:: VfsPosix(root: Optional[str] = None)
 
-    See :class:`vfs.VfsPosix`.
+    Create a filesystem object that accesses the host POSIX filesystem.
+    If *root* is specified then it should be a path in the host filesystem to
+    use as the root of the ``VfsPosix`` object.  Otherwise the current
+    directory of the host filesystem is used.
+
+    .. note:: ``VfsPosix`` is only available on the Unix port; it is not
+              present on the OpenMV Cam.

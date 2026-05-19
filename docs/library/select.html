@@ -197,16 +197,25 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#functions">Functions</a><ul>
-<li><a class="reference internal" href="#select.poll"><code class="docutils literal notranslate"><span class="pre">poll()</span></code></a></li>
 <li><a class="reference internal" href="#select.select"><code class="docutils literal notranslate"><span class="pre">select()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#constants">Constants</a><ul>
+<li><a class="reference internal" href="#select.POLLIN"><code class="docutils literal notranslate"><span class="pre">POLLIN</span></code></a></li>
+<li><a class="reference internal" href="#select.POLLOUT"><code class="docutils literal notranslate"><span class="pre">POLLOUT</span></code></a></li>
+<li><a class="reference internal" href="#select.POLLERR"><code class="docutils literal notranslate"><span class="pre">POLLERR</span></code></a></li>
+<li><a class="reference internal" href="#select.POLLHUP"><code class="docutils literal notranslate"><span class="pre">POLLHUP</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#classes">Classes</a><ul>
+<li><a class="reference internal" href="#select.poll"><code class="docutils literal notranslate"><span class="pre">poll</span></code></a><ul>
 <li><a class="reference internal" href="#select.poll.register"><code class="docutils literal notranslate">register()</span></code></a></li>
 <li><a class="reference internal" href="#select.poll.unregister"><code class="docutils literal notranslate">unregister()</span></code></a></li>
 <li><a class="reference internal" href="#select.poll.modify"><code class="docutils literal notranslate">modify()</span></code></a></li>
 <li><a class="reference internal" href="#select.poll.poll"><code class="docutils literal notranslate">poll()</span></code></a></li>
 <li><a class="reference internal" href="#select.poll.ipoll"><code class="docutils literal notranslate">ipoll()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -232,7 +241,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/1a65e4420e8117e8138c65c307106d17857045fc/docs/library/select.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/dd88b0f9a7fd88dfb0006b86c3ff9ee2f4085b38/docs/library/select.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -306,111 +315,193 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="module-select">
 <span id="select-wait-for-events-on-a-set-of-streams"></span><h1><a class="reference internal" href="#module-select" title="select: wait for events on a set of streams"><code class="xref py py-mod docutils literal notranslate"><span class="pre">select</span></code></a> — wait for events on a set of streams<a class="headerlink" href="#module-select" title="Link to this heading">¶</a></h1>
-<p>This module provides functions to efficiently wait for events on multiple
-<a class="reference internal" href="../reference/glossary.html#term-stream"><span class="xref std std-term">streams</span></a> (select streams which are ready for operations).</p>
+<p>This module provides functions to efficiently wait until one or more
+<a class="reference internal" href="../reference/glossary.html#term-stream"><span class="xref std std-term">streams</span></a> (file-like objects implementing the stream
+protocol, such as sockets, UARTs and other I/O objects) is ready for reading
+or writing, instead of busy-waiting or blocking on a single object.</p>
+<p>The <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-class docutils literal notranslate"><span class="pre">poll</span></code></a> object is the recommended interface: it scales to many
+streams and is allocation-free when used via <a class="reference internal" href="#select.poll.ipoll" title="select.poll.ipoll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll.ipoll()</span></code></a>. The
+module-level <a class="reference internal" href="#module-select" title="select: wait for events on a set of streams"><code class="xref py py-func docutils literal notranslate"><span class="pre">select()</span></code></a> function is a less efficient compatibility
+interface.</p>
+<p>Example using a <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-class docutils literal notranslate"><span class="pre">poll</span></code></a> object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">select</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">poller</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span>
+</span><span data-line="4"><span class="n">poller</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">uart</span><span class="p">,</span> <span class="n">select</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">)</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="7">    <span class="c1"># Wait up to 1000 ms for the UART to have data.</span>
+</span><span data-line="8">    <span class="k">for</span> <span class="n">obj</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">poller</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+</span><span data-line="9">        <span class="k">if</span> <span class="n">event</span> <span class="o">&amp;</span> <span class="n">select</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">:</span>
+</span><span data-line="10">            <span class="nb">print</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Example using the module-level <a class="reference internal" href="#module-select" title="select: wait for events on a set of streams"><code class="xref py py-func docutils literal notranslate"><span class="pre">select()</span></code></a> function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">select</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="c1"># Wait up to 1 second for the socket to become readable.</span>
+</span><span data-line="4"><span class="n">rlist</span><span class="p">,</span> <span class="n">wlist</span><span class="p">,</span> <span class="n">xlist</span> <span class="o">=</span> <span class="n">select</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">sock</span><span class="p">],</span> <span class="p">[],</span> <span class="p">[],</span> <span class="mf">1.0</span><span class="p">)</span>
+</span><span data-line="5"><span class="k">if</span> <span class="n">rlist</span><span class="p">:</span>
+</span><span data-line="6">    <span class="n">data</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span></pre></div>
+</div>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="select.poll">
-<span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">poll</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">poll</span></span></span><a class="headerlink" href="#select.poll" title="Link to this definition">¶</a></dt>
-<dd><p>Create a new <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref any py py-func docutils literal notranslate"><span class="pre">poll</span></code></a> object — used to register a set of streams (or any
-objects exposing the stream protocol) and efficiently wait until one
-or more of them becomes readable or writable.</p>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="select.select">
 <span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">select</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rlist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wlist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlist</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#float" title="float"><span class="pre">float</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#select.select" title="Link to this definition">¶</a></dt>
-<dd><p>Wait for activity on a set of objects.</p>
-<p>This function is provided by some MicroPython ports for compatibility
-and is not efficient. Usage of <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref any py py-func docutils literal notranslate"><span class="pre">poll</span></code></a> is recommended instead.</p>
+<dd><p>Wait until one or more of the given stream objects is ready, or until
+<em>timeout</em> expires.</p>
+<ul class="simple">
+<li><p><em>rlist</em> is a list of objects to monitor for readability.</p></li>
+<li><p><em>wlist</em> is a list of objects to monitor for writability.</p></li>
+<li><p><em>xlist</em> is a list of objects to monitor for an error or hang-up
+condition.</p></li>
+<li><p><em>timeout</em> is the maximum time to wait, in seconds (a float is accepted).
+If it is omitted or <code class="docutils literal notranslate"><span class="pre">None</span></code> the call blocks indefinitely; <code class="docutils literal notranslate"><span class="pre">0</span></code> returns
+immediately (a non-blocking poll).</p></li>
+</ul>
+<p>Returns a 3-tuple of lists <code class="docutils literal notranslate"><span class="pre">(rlist,</span> <span class="pre">wlist,</span> <span class="pre">xlist)</span></code>. Each returned list is
+the subset of the corresponding input list containing the objects that
+became ready for reading, ready for writing, or that signalled an
+error/hang-up, respectively. If <em>timeout</em> elapses with nothing ready, all
+three lists are empty.</p>
+<p>This function is less efficient than <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-class docutils literal notranslate"><span class="pre">poll</span></code></a> (it rebuilds its
+internal poll set on every call); use <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-class docutils literal notranslate"><span class="pre">poll</span></code></a> instead where
+possible.</p>
+</dd></dl>
+
+</section>
+<section id="constants">
+<h2>Constants<a class="headerlink" href="#constants" title="Link to this heading">¶</a></h2>
+<dl class="py data">
+<dt class="sig sig-object py" id="select.POLLIN">
+<span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">POLLIN</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#select.POLLIN" title="Link to this definition">¶</a></dt>
+<dd><p>There is data available to read from the stream.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="select.POLLOUT">
+<span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">POLLOUT</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#select.POLLOUT" title="Link to this definition">¶</a></dt>
+<dd><p>The stream can accept more data to be written.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="select.POLLERR">
+<span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">POLLERR</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#select.POLLERR" title="Link to this definition">¶</a></dt>
+<dd><p>An error condition occurred on the stream. This is an <em>unsolicited</em> event:
+it is reported by <a class="reference internal" href="#select.poll.poll" title="select.poll.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll.poll()</span></code></a> / <a class="reference internal" href="#select.poll.ipoll" title="select.poll.ipoll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll.ipoll()</span></code></a> even if it was not
+requested in the <em>eventmask</em>, and it is not valid to pass it as an input
+<em>eventmask</em>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="select.POLLHUP">
+<span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">POLLHUP</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#select.POLLHUP" title="Link to this definition">¶</a></dt>
+<dd><p>The stream was hung up / disconnected. This is an <em>unsolicited</em> event: it
+is reported by <a class="reference internal" href="#select.poll.poll" title="select.poll.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll.poll()</span></code></a> / <a class="reference internal" href="#select.poll.ipoll" title="select.poll.ipoll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll.ipoll()</span></code></a> even if it was not
+requested in the <em>eventmask</em>, and it is not valid to pass it as an input
+<em>eventmask</em>.</p>
 </dd></dl>
 
 </section>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">poll</span></span></dt>
-<dd><p>Polling object returned by <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-func docutils literal notranslate"><span class="pre">select.poll()</span></code></a>. It maintains a set of
-registered streams (or any objects exposing the stream protocol) and
-efficiently waits until one or more of them becomes readable, writable,
-or signals an exceptional condition.</p>
-<p>Streams are added with <a class="reference internal" href="#select.poll.register" title="select.poll.register"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">register</span></code></a>, removed with <a class="reference internal" href="#select.poll.unregister" title="select.poll.unregister"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">unregister</span></code></a>, and the
-set of events to watch can be changed with <a class="reference internal" href="#select.poll.modify" title="select.poll.modify"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">modify</span></code></a>. Once configured,
-call <a class="reference internal" href="#select.poll.poll" title="select.poll.poll"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">poll</span></code></a> to block until something is ready (or a timeout elapses),
-or <a class="reference internal" href="#select.poll.ipoll" title="select.poll.ipoll"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">ipoll</span></code></a> for an allocation-free iterator-based variant.</p>
+<dt class="sig sig-object py" id="select.poll">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">select.</span></span><span class="sig-name descname"><span class="pre">poll</span></span><a class="headerlink" href="#select.poll" title="Link to this definition">¶</a></dt>
+<dd><p>Create a polling object that maintains a set of registered streams (or any
+objects exposing the stream protocol) and efficiently waits until one or
+more of them becomes readable, writable, or signals an exceptional
+condition.</p>
+<p>Streams are added with <a class="reference internal" href="#select.poll.register" title="select.poll.register"><code class="xref py py-meth docutils literal notranslate"><span class="pre">register()</span></code></a>, removed with <a class="reference internal" href="#select.poll.unregister" title="select.poll.unregister"><code class="xref py py-meth docutils literal notranslate"><span class="pre">unregister()</span></code></a>,
+and the set of events to watch can be changed with <a class="reference internal" href="#select.poll.modify" title="select.poll.modify"><code class="xref py py-meth docutils literal notranslate"><span class="pre">modify()</span></code></a>. Once
+configured, call <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a> to block until something is ready (or a
+timeout elapses), or <a class="reference internal" href="#select.poll.ipoll" title="select.poll.ipoll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ipoll()</span></code></a> for an allocation-free iterator-based
+variant.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="select.poll.register">
 <span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eventmask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">select.POLLIN</span> <span class="pre">|</span> <span class="pre">select.POLLOUT</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#select.poll.register" title="Link to this definition">¶</a></dt>
-<dd><p>Register <a class="reference internal" href="../reference/glossary.html#term-stream"><span class="xref std std-term">stream</span></a> <em>obj</em> for polling. <em>eventmask</em> is logical OR of:</p>
+<dd><p>Register the <a class="reference internal" href="../reference/glossary.html#term-stream"><span class="xref std std-term">stream</span></a> <em>obj</em> for polling, watching for the
+events given by <em>eventmask</em> (the logical OR of):</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">select.POLLIN</span></code>  - data available for reading</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">select.POLLOUT</span></code> - more data can be written</p></li>
+<li><p><a class="reference internal" href="#select.POLLIN" title="select.POLLIN"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLIN</span></code></a>  – data is available to read</p></li>
+<li><p><a class="reference internal" href="#select.POLLOUT" title="select.POLLOUT"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLOUT</span></code></a> – the stream can accept more data to write</p></li>
 </ul>
-<p>Note that flags like <code class="docutils literal notranslate"><span class="pre">select.POLLHUP</span></code> and <code class="docutils literal notranslate"><span class="pre">select.POLLERR</span></code> are
-<em>not</em> valid as input eventmask (these are unsolicited events which
-will be returned from <a class="reference internal" href="#select.poll.poll" title="select.poll.poll"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a> regardless of whether they are asked
-for). This semantics is per POSIX.</p>
 <p><em>eventmask</em> defaults to <code class="docutils literal notranslate"><span class="pre">select.POLLIN</span> <span class="pre">|</span> <span class="pre">select.POLLOUT</span></code>.</p>
-<p>It is OK to call this function multiple times for the same <em>obj</em>.
-Successive calls will update <em>obj</em>’s eventmask to the value of
-<em>eventmask</em> (i.e. will behave as <a class="reference internal" href="#select.poll.modify" title="select.poll.modify"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">modify()</span></code></a>).</p>
+<p><a class="reference internal" href="#select.POLLHUP" title="select.POLLHUP"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLHUP</span></code></a> and <a class="reference internal" href="#select.POLLERR" title="select.POLLERR"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLERR</span></code></a> are <em>not</em> valid in an
+input <em>eventmask</em> – they are unsolicited events that are reported by
+<a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a> / <a class="reference internal" href="#select.poll.ipoll" title="select.poll.ipoll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ipoll()</span></code></a> regardless of whether they were asked for
+(this matches POSIX semantics).</p>
+<p>It is OK to call this method more than once for the same <em>obj</em>: a
+subsequent call updates <em>obj</em>’s event mask, behaving like
+<a class="reference internal" href="#select.poll.modify" title="select.poll.modify"><code class="xref py py-meth docutils literal notranslate"><span class="pre">modify()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="select.poll.unregister">
 <span class="sig-name descname"><span class="pre">unregister</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#select.poll.unregister" title="Link to this definition">¶</a></dt>
-<dd><p>Unregister <em>obj</em> from polling.</p>
+<dd><p>Remove <em>obj</em> from the set of registered streams. It is not an error to
+unregister an <em>obj</em> that is not currently registered (the call has no
+effect in that case).</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="select.poll.modify">
 <span class="sig-name descname"><span class="pre">modify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eventmask</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#select.poll.modify" title="Link to this definition">¶</a></dt>
-<dd><p>Modify the <em>eventmask</em> for <em>obj</em>. If <em>obj</em> is not registered, <a class="reference internal" href="builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a>
-is raised with error of ENOENT.</p>
+<dd><p>Change the event mask for an already-registered <em>obj</em> to <em>eventmask</em>.
+Raises <a class="reference internal" href="builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> with <a class="reference internal" href="errno.html#errno.ENOENT" title="errno.ENOENT"><code class="xref py py-data docutils literal notranslate"><span class="pre">errno.ENOENT</span></code></a> if <em>obj</em> is not
+registered.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="select.poll.poll">
 <span class="sig-name descname"><span class="pre">poll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#select.poll.poll" title="Link to this definition">¶</a></dt>
-<dd><p>Wait for at least one of the registered objects to become ready or have an
-exceptional condition, with optional timeout in milliseconds (if <em>timeout</em>
-arg is not specified or -1, there is no timeout).</p>
-<p>Returns list of (<code class="docutils literal notranslate"><span class="pre">obj</span></code>, <code class="docutils literal notranslate"><span class="pre">event</span></code>, …) tuples. There may be other elements in
-tuple, depending on a platform and version, so don’t assume that its size is 2.
-The <code class="docutils literal notranslate"><span class="pre">event</span></code> element specifies which events happened with a stream and
-is a combination of <code class="docutils literal notranslate"><span class="pre">select.POLL*</span></code> constants described above. Note that
-flags <code class="docutils literal notranslate"><span class="pre">select.POLLHUP</span></code> and <code class="docutils literal notranslate"><span class="pre">select.POLLERR</span></code> can be returned at any time
-(even if were not asked for), and must be acted on accordingly (the
-corresponding stream unregistered from poll and likely closed), because
-otherwise all further invocations of <a class="reference internal" href="#select.poll.poll" title="select.poll.poll"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a> may return immediately with
-these flags set for this stream again.</p>
-<p>In case of timeout, an empty list is returned.</p>
-<p>Calling <code class="docutils literal notranslate"><span class="pre">poll.poll</span></code> is guaranteed to call pending callback functions
-before entering the polling loop.</p>
+<dd><p>Block until at least one registered stream becomes ready or signals an
+exceptional condition, then return the list of streams that fired.</p>
+<p><em>timeout</em> is the maximum time to wait in <strong>milliseconds</strong>. If it is
+omitted or <code class="docutils literal notranslate"><span class="pre">-1</span></code> the call blocks indefinitely; <code class="docutils literal notranslate"><span class="pre">0</span></code> returns
+immediately (a non-blocking poll).</p>
+<p>Returns a list of <code class="docutils literal notranslate"><span class="pre">(obj,</span> <span class="pre">event,</span> <span class="pre">...)</span></code> tuples, one per stream that
+fired. <code class="docutils literal notranslate"><span class="pre">obj</span></code> is the registered stream and <code class="docutils literal notranslate"><span class="pre">event</span></code> is the bitwise OR
+of the <a class="reference internal" href="#select.POLLIN" title="select.POLLIN"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLIN</span></code></a> / <a class="reference internal" href="#select.POLLOUT" title="select.POLLOUT"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLOUT</span></code></a> /
+<a class="reference internal" href="#select.POLLERR" title="select.POLLERR"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLERR</span></code></a> / <a class="reference internal" href="#select.POLLHUP" title="select.POLLHUP"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLHUP</span></code></a> flags that occurred.
+Each tuple may contain additional implementation-defined elements, so do
+not assume a length of exactly 2. If <em>timeout</em> elapses with nothing
+ready, an empty list is returned.</p>
+<p><a class="reference internal" href="#select.POLLHUP" title="select.POLLHUP"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLHUP</span></code></a> and <a class="reference internal" href="#select.POLLERR" title="select.POLLERR"><code class="xref py py-data docutils literal notranslate"><span class="pre">select.POLLERR</span></code></a> may be returned at any
+time (even if not requested) and must be acted on – typically by
+unregistering and closing the affected stream – otherwise subsequent
+calls will keep returning immediately with these flags set for that
+stream.</p>
+<p>Any pending scheduled callbacks are guaranteed to run before the polling
+loop is entered.</p>
 <div class="attention admonition">
 <p class="admonition-title">Difference to CPython</p>
-<p>Tuples returned may contain more than 2 elements as described above.</p>
+<p>Returned tuples may contain more than 2 elements, as described above.</p>
 </div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="select.poll.ipoll">
 <span class="sig-name descname"><span class="pre">ipoll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flags</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#select.poll.ipoll" title="Link to this definition">¶</a></dt>
-<dd><p>Like <a class="reference internal" href="#select.poll.poll" title="select.poll.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll.poll()</span></code></a>, but instead returns an iterator which yields a
-<a class="reference internal" href="../reference/glossary.html#term-callee-owned-tuple"><code class="xref any std std-term docutils literal notranslate"><span class="pre">callee-owned</span> <span class="pre">tuple</span></code></a>. This function provides an efficient, allocation-free
-way to poll on streams.</p>
-<p>If <em>flags</em> is 1, one-shot behaviour for events is employed: streams for
-which events happened will have their event masks automatically reset
-(equivalent to <code class="docutils literal notranslate"><span class="pre">poll.modify(obj,</span> <span class="pre">0)</span></code>), so new events for such a stream
-won’t be processed until new mask is set with <a class="reference internal" href="#select.poll.modify" title="select.poll.modify"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">poll.modify()</span></code></a>. This
-behaviour is useful for asynchronous I/O schedulers.</p>
-<p>Calling <code class="docutils literal notranslate"><span class="pre">poll.ipoll</span></code> is guaranteed to call pending callback functions
-before entering the polling loop.</p>
+<dd><p>Like <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a>, but instead of building a list it returns an iterator
+that yields one <code class="docutils literal notranslate"><span class="pre">(obj,</span> <span class="pre">event,</span> <span class="pre">...)</span></code> tuple at a time. This avoids
+allocating on each call, which is important for asynchronous I/O
+schedulers.</p>
+<p>The yielded tuple is <em>callee-owned</em>: it is reused (overwritten) on the
+next iteration, so its contents must be consumed within the loop body
+and references to it must not be stored.</p>
+<p><em>timeout</em> has the same meaning as for <a class="reference internal" href="#select.poll" title="select.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a>. If <em>flags</em> is <code class="docutils literal notranslate"><span class="pre">1</span></code>,
+one-shot behaviour is used: a stream whose event fired has its event
+mask automatically cleared (equivalent to <code class="docutils literal notranslate"><span class="pre">poll.modify(obj,</span> <span class="pre">0)</span></code>), so
+no further events are reported for it until its mask is set again with
+<a class="reference internal" href="#select.poll.modify" title="select.poll.modify"><code class="xref py py-meth docutils literal notranslate"><span class="pre">modify()</span></code></a>.</p>
+<p>Any pending scheduled callbacks are guaranteed to run before the polling
+loop is entered.</p>
 <div class="attention admonition">
 <p class="admonition-title">Difference to CPython</p>
-<p>This function is a MicroPython extension.</p>
+<p>This method is a MicroPython extension.</p>
 </div>
 </dd></dl>
 
@@ -447,7 +538,7 @@ before entering the polling loop.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 18 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 19 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

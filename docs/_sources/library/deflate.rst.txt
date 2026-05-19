@@ -12,12 +12,10 @@ This module allows compression and decompression of binary data with the
 
 * Added in MicroPython v1.21.
 
-* Decompression: Enabled via the ``MICROPY_PY_DEFLATE`` build option, on by default
-  on ports with the "extra features" level or higher (which is most boards).
+* **Decompression** is available on all OpenMV Cams.
 
-* Compression: Enabled via the ``MICROPY_PY_DEFLATE_COMPRESS`` build option, on
-  by default on ports with the "full features" level or higher (generally this means
-  you need to build your own firmware to enable this).
+* **Compression** is **not** available on the STM32-based OpenMV Cams. It is
+  available only on the Alif- and i.MX RT-based OpenMV Cams.
 
 Classes
 -------

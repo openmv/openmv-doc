@@ -2,31 +2,76 @@
 from typing import Any
 
 AF_INET: int
-"""IPv4 address family type. Availability depends on a particular MicroPython port."""
+"""IPv4 address family."""
 AF_INET6: int
-"""IPv6 address family type. Availability depends on a particular MicroPython port."""
-IPPROTO_SEC: int
-"""Special protocol value to create SSL-compatible socket."""
+"""IPv6 address family."""
+IPPROTO_IP: int
+"""
+The IP protocol level. Used as the level argument to
+setsockopt() together with the IP_* options.
+"""
 IPPROTO_TCP: int
 """
-TCP IP protocol number. Availability depends on a particular MicroPython port.
-Note that you don’t need to specify this in a call to socket.socket(),
-because the SOCK_STREAM socket type automatically selects
-IPPROTO_TCP. Thus, the only real use of this constant
-is as an argument to setsockopt().
+The TCP protocol. You do not need to pass this to socket (the
+SOCK_STREAM socket type selects it automatically); its only real
+use is as the level argument to setsockopt()
+together with the TCP_* options.
 """
-IPPROTO_UDP: int
+IP_ADD_MEMBERSHIP: int
 """
-UDP IP protocol number. Availability depends on a particular MicroPython port.
-Note that you don’t need to specify this in a call to socket.socket(),
-because the SOCK_DGRAM socket type automatically selects
-IPPROTO_UDP. Thus, the only real use of this constant
-is as an argument to setsockopt().
+Join a multicast group. An IPPROTO_IP-level
+setsockopt() option.
+"""
+IP_DROP_MEMBERSHIP: int
+"""
+Leave a multicast group. An IPPROTO_IP-level
+setsockopt() option.
+"""
+MSG_DONTWAIT: int
+"""
+For recv() / recvfrom(): perform
+the operation in non-blocking mode.
+"""
+MSG_PEEK: int
+"""
+For recv() / recvfrom(): return
+data without removing it from the input queue.
 """
 SOCK_DGRAM: int
 """Datagram (UDP) socket type."""
+SOCK_RAW: int
+"""Raw socket type."""
 SOCK_STREAM: int
 """Stream (TCP) socket type."""
+SOL_SOCKET: int
+"""
+The socket option level. Used as the level argument to
+setsockopt() together with the SO_* options.
+"""
+SO_BROADCAST: int
+"""Permit sending datagrams to a broadcast address."""
+SO_KEEPALIVE: int
+"""Enable periodic transmission of keep-alive probes on a connected socket."""
+SO_RCVTIMEO: int
+"""
+Receive timeout, in milliseconds, passed as the value argument to
+setsockopt().
+"""
+SO_REUSEADDR: int
+"""
+Allow the socket to bind to an address/port that is still in the
+TIME_WAIT state.
+"""
+SO_SNDTIMEO: int
+"""
+Send timeout, in milliseconds, passed as the value argument to
+setsockopt().
+"""
+TCP_NODELAY: int
+"""
+Disable Nagle’s algorithm. An IPPROTO_TCP-level
+setsockopt() option.
+"""
 
 def getaddrinfo(host: str, port: int, af: int = 0, type: int = 0, proto: int = 0, flags: int = 0, /) -> list[tuple]:
     """
@@ -81,10 +126,9 @@ def inet_pton(af: int, txt_addr: str) -> bytes:
 class socket:
     """
     Create a new socket using the given address family, socket type and
-    protocol number. Note that specifying proto in most cases is not
-    required (and not recommended, as some MicroPython ports may omit
-    IPPROTO_* constants). Instead, type argument will select needed
-    protocol automatically:
+    protocol number. Specifying proto is in most cases not required (and not
+    recommended); the type argument selects the needed protocol
+    automatically:
     # Create STREAM TCP socket
     socket(AF_INET, SOCK_STREAM)
     # Create DGRAM UDP socket
@@ -114,7 +158,7 @@ class socket:
     def connect(self, address: Any) -> None:
         """Connect to a remote socket at address."""
         ...
-    def listen(self, backlog: int = ...) -> None:
+    def listen(self, backlog: int = 2) -> None:
         """
         Enable a server to accept connections. If backlog is specified, it must be at least 0
         (if it’s lower, it will be set to 0); and specifies the number of unaccepted connections
@@ -137,7 +181,7 @@ class socket:
         original socket as well.
         """
         ...
-    def read(self, size: int = ...) -> bytes:
+    def read(self, size: int | None = None) -> bytes:
         """
         Read up to size bytes from the socket. Return a bytes object. If size is not given, it
         reads all data available from the socket until EOF; as such the method will not return until
@@ -146,7 +190,7 @@ class socket:
         non-blocking socket though, and then less data will be returned.
         """
         ...
-    def readinto(self, buf: bytearray | memoryview, nbytes: int = ...) -> int:
+    def readinto(self, buf: bytearray | memoryview, nbytes: int | None = None) -> int:
         """
         Read bytes into the buf.  If nbytes is specified then read at most
         that many bytes.  Otherwise, read at most len(buf) bytes. Just as
@@ -164,9 +208,9 @@ class socket:
         """
         Receive data from the socket. The return value is a bytes object representing the data
         received. The maximum amount of data to be received at once is specified by bufsize.
-        Most ports support the optional flags argument. Available flags are defined as constants
-        in the socket module and have the same meaning as in CPython. MSG_PEEK and MSG_DONTWAIT
-        are supported on all ports which accept the flags argument.
+        The optional flags argument is a bitwise OR of message flags
+        (MSG_PEEK, MSG_DONTWAIT), which have the same meaning as
+        in CPython.
         """
         ...
     def recvfrom(self, bufsize: int, flags: int = 0) -> tuple[bytes, tuple]:
@@ -220,16 +264,15 @@ class socket:
         ...
     def settimeout(self, value: float | None) -> None:
         """
-        Note: Not every port supports this method, see below.
         Set a timeout on blocking socket operations. The value argument can be a nonnegative floating
         point number expressing seconds, or None. If a non-zero value is given, subsequent socket operations
         will raise an OSError exception if the timeout period value has elapsed before the operation has
         completed. If zero is given, the socket is put in non-blocking mode. If None is given, the socket
         is put in blocking mode.
-        Not every MicroPython port supports this method. A more portable and
-        generic solution is to use select.poll() object. This allows to wait on
-        multiple objects at the same time (and not just on sockets, but on generic
-        stream objects which support polling). Example:
+        A portable and generic alternative is to use a select.poll
+        object. This allows waiting on multiple objects at the same time (and
+        not just on sockets, but on generic stream objects which
+        support polling). Example:
         # Instead of:
         s.settimeout(1.0)  # time in seconds
         s.read(10)  # may timeout

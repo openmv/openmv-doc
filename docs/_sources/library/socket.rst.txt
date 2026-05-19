@@ -31,34 +31,29 @@ returned by :func:`getaddrinfo` function, which must be used to resolve textual 
 Using :func:`getaddrinfo` is the most efficient (both in terms of memory and processing
 power) and portable way to work with addresses.
 
-However, ``socket`` module (note the difference with native MicroPython
-``socket`` module described here) provides CPython-compatible way to specify
-addresses using tuples, as described below. Note that depending on a
-:term:`MicroPython port`, ``socket`` module can be builtin or need to be
-installed from `micropython-lib` (as in the case of :term:`MicroPython Unix port`),
-and some ports still accept only numeric addresses in the tuple format,
-and require to use :func:`getaddrinfo` function to resolve domain names.
+The ``socket`` module also provides a CPython-compatible way to specify
+addresses using tuples, as described below. On the OpenMV Cam the ``socket``
+module is built in; numeric addresses may be given directly in the tuple
+format, but domain names must first be resolved with :func:`getaddrinfo`.
 
 Summing up:
 
-* Always use :func:`getaddrinfo` when writing portable applications.
-* Tuple addresses described below can be used as a shortcut for
-  quick hacks and interactive use, if your port supports them.
+* Always use :func:`getaddrinfo` to resolve host names.
+* Tuple addresses described below can be used as a shortcut for numeric
+  addresses, for quick hacks and interactive use.
 
-Tuple address format for ``socket`` module:
+Tuple address format for the ``socket`` module:
 
 * IPv4: *(ipv4_address, port)*, where *ipv4_address* is a string with
-  dot-notation numeric IPv4 address, e.g. ``"8.8.8.8"``, and *port* is and
-  integer port number in the range 1-65535. Note the domain names are not
-  accepted as *ipv4_address*, they should be resolved first using
-  :func:`socket.getaddrinfo()`.
+  dot-notation numeric IPv4 address, e.g. ``"8.8.8.8"``, and *port* is an
+  integer port number in the range 1-65535. Domain names are not accepted as
+  *ipv4_address*; resolve them first using :func:`getaddrinfo`.
 * IPv6: *(ipv6_address, port, flowinfo, scopeid)*, where *ipv6_address*
   is a string with colon-notation numeric IPv6 address, e.g. ``"2001:db8::1"``,
   and *port* is an integer port number in the range 1-65535. *flowinfo*
   must be 0. *scopeid* is the interface scope identifier for link-local
-  addresses. Note the domain names are not accepted as *ipv6_address*,
-  they should be resolved first using :func:`socket.getaddrinfo()`. Availability
-  of IPv6 support depends on a :term:`MicroPython port`.
+  addresses. Domain names are not accepted as *ipv6_address*; resolve them
+  first using :func:`getaddrinfo`.
 
 Functions
 ---------
@@ -125,12 +120,12 @@ Constants
 .. data:: AF_INET
    :type: int
 
-   IPv4 address family type. Availability depends on a particular :term:`MicroPython port`.
+   IPv4 address family.
 
 .. data:: AF_INET6
    :type: int
 
-   IPv6 address family type. Availability depends on a particular :term:`MicroPython port`.
+   IPv6 address family.
 
 .. data:: SOCK_STREAM
    :type: int
@@ -142,42 +137,88 @@ Constants
 
    Datagram (UDP) socket type.
 
-.. data:: IPPROTO_UDP
+.. data:: SOCK_RAW
    :type: int
 
-   UDP IP protocol number. Availability depends on a particular :term:`MicroPython port`.
-   Note that you don't need to specify this in a call to :class:`socket.socket()`,
-   because the :data:`SOCK_DGRAM` socket type automatically selects
-   :data:`IPPROTO_UDP`. Thus, the only real use of this constant
-   is as an argument to :meth:`~socket.socket.setsockopt()`.
+   Raw socket type.
+
+.. data:: IPPROTO_IP
+   :type: int
+
+   The IP protocol level. Used as the *level* argument to
+   :meth:`~socket.socket.setsockopt` together with the ``IP_*`` options.
 
 .. data:: IPPROTO_TCP
    :type: int
 
-   TCP IP protocol number. Availability depends on a particular :term:`MicroPython port`.
-   Note that you don't need to specify this in a call to :class:`socket.socket()`,
-   because the :data:`SOCK_STREAM` socket type automatically selects
-   :data:`IPPROTO_TCP`. Thus, the only real use of this constant
-   is as an argument to :meth:`~socket.socket.setsockopt()`.
+   The TCP protocol. You do not need to pass this to :class:`socket` (the
+   :data:`SOCK_STREAM` socket type selects it automatically); its only real
+   use is as the *level* argument to :meth:`~socket.socket.setsockopt`
+   together with the ``TCP_*`` options.
 
-.. data:: socket.SOL_*
+.. data:: SOL_SOCKET
    :type: int
 
-   Socket option levels (an argument to :meth:`~socket.socket.setsockopt()`). The exact
-   inventory depends on a :term:`MicroPython port`.
+   The socket option level. Used as the *level* argument to
+   :meth:`~socket.socket.setsockopt` together with the ``SO_*`` options.
 
-.. data:: socket.SO_*
+.. data:: SO_REUSEADDR
    :type: int
 
-   Socket options (an argument to :meth:`~socket.socket.setsockopt()`). The exact
-   inventory depends on a :term:`MicroPython port`.
+   Allow the socket to bind to an address/port that is still in the
+   ``TIME_WAIT`` state.
 
-.. only:: port_wipy
+.. data:: SO_BROADCAST
+   :type: int
 
-   .. data:: IPPROTO_SEC
-      :type: int
+   Permit sending datagrams to a broadcast address.
 
-      Special protocol value to create SSL-compatible socket.
+.. data:: SO_KEEPALIVE
+   :type: int
+
+   Enable periodic transmission of keep-alive probes on a connected socket.
+
+.. data:: SO_SNDTIMEO
+   :type: int
+
+   Send timeout, in milliseconds, passed as the *value* argument to
+   :meth:`~socket.socket.setsockopt`.
+
+.. data:: SO_RCVTIMEO
+   :type: int
+
+   Receive timeout, in milliseconds, passed as the *value* argument to
+   :meth:`~socket.socket.setsockopt`.
+
+.. data:: IP_ADD_MEMBERSHIP
+   :type: int
+
+   Join a multicast group. An :data:`IPPROTO_IP`-level
+   :meth:`~socket.socket.setsockopt` option.
+
+.. data:: IP_DROP_MEMBERSHIP
+   :type: int
+
+   Leave a multicast group. An :data:`IPPROTO_IP`-level
+   :meth:`~socket.socket.setsockopt` option.
+
+.. data:: TCP_NODELAY
+   :type: int
+
+   Disable Nagle's algorithm. An :data:`IPPROTO_TCP`-level
+   :meth:`~socket.socket.setsockopt` option.
+
+.. data:: MSG_PEEK
+   :type: int
+
+   For :meth:`~socket.socket.recv` / :meth:`~socket.socket.recvfrom`: return
+   data without removing it from the input queue.
+
+.. data:: MSG_DONTWAIT
+   :type: int
+
+   For :meth:`~socket.socket.recv` / :meth:`~socket.socket.recvfrom`: perform
+   the operation in non-blocking mode.
 
 Classes
 -------
@@ -185,10 +226,9 @@ Classes
 .. class:: socket(af: int = AF_INET, type: int = SOCK_STREAM, proto: int = IPPROTO_TCP, /)
 
    Create a new socket using the given address family, socket type and
-   protocol number. Note that specifying *proto* in most cases is not
-   required (and not recommended, as some MicroPython ports may omit
-   ``IPPROTO_*`` constants). Instead, *type* argument will select needed
-   protocol automatically::
+   protocol number. Specifying *proto* is in most cases not required (and not
+   recommended); the *type* argument selects the needed protocol
+   automatically::
 
         # Create STREAM TCP socket
         socket(AF_INET, SOCK_STREAM)
@@ -208,7 +248,7 @@ Classes
 
       Bind the socket to *address*. The socket must not already be bound.
 
-   .. method:: listen(backlog: int = ...) -> None
+   .. method:: listen(backlog: int = 2) -> None
 
       Enable a server to accept connections. If *backlog* is specified, it must be at least 0
       (if it's lower, it will be set to 0); and specifies the number of unaccepted connections
@@ -248,9 +288,9 @@ Classes
       Receive data from the socket. The return value is a bytes object representing the data
       received. The maximum amount of data to be received at once is specified by bufsize.
 
-      Most ports support the optional *flags* argument. Available *flags* are defined as constants
-      in the socket module and have the same meaning as in CPython. ``MSG_PEEK`` and ``MSG_DONTWAIT``
-      are supported on all ports which accept the *flags* argument.
+      The optional *flags* argument is a bitwise OR of message flags
+      (:data:`MSG_PEEK`, :data:`MSG_DONTWAIT`), which have the same meaning as
+      in CPython.
 
    .. method:: sendto(bytes: bytes, address: Any) -> int
 
@@ -273,18 +313,16 @@ Classes
 
    .. method:: settimeout(value: Optional[float]) -> None
 
-      **Note**: Not every port supports this method, see below.
-
       Set a timeout on blocking socket operations. The value argument can be a nonnegative floating
       point number expressing seconds, or None. If a non-zero value is given, subsequent socket operations
       will raise an :exc:`OSError` exception if the timeout period value has elapsed before the operation has
       completed. If zero is given, the socket is put in non-blocking mode. If None is given, the socket
       is put in blocking mode.
 
-      Not every :term:`MicroPython port` supports this method. A more portable and
-      generic solution is to use :func:`select.poll` object. This allows to wait on
-      multiple objects at the same time (and not just on sockets, but on generic
-      :std:term:`stream` objects which support polling). Example::
+      A portable and generic alternative is to use a :class:`select.poll`
+      object. This allows waiting on multiple objects at the same time (and
+      not just on sockets, but on generic :std:term:`stream` objects which
+      support polling). Example::
 
            # Instead of:
            s.settimeout(1.0)  # time in seconds
@@ -333,7 +371,7 @@ Classes
          Closing the file object returned by makefile() WILL close the
          original socket as well.
 
-   .. method:: read(size: int = ...) -> bytes
+   .. method:: read(size: int | None = None) -> bytes
 
       Read up to size bytes from the socket. Return a bytes object. If *size* is not given, it
       reads all data available from the socket until EOF; as such the method will not return until
@@ -341,7 +379,7 @@ Classes
       requested (no "short reads"). This may be not possible with
       non-blocking socket though, and then less data will be returned.
 
-   .. method:: readinto(buf: bytearray | memoryview, nbytes: int = ...) -> int
+   .. method:: readinto(buf: bytearray | memoryview, nbytes: int | None = None) -> int
 
       Read bytes into the *buf*.  If *nbytes* is specified then read at most
       that many bytes.  Otherwise, read at most *len(buf)* bytes. Just as

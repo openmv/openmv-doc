@@ -89,7 +89,7 @@ def ldexp(x: float, exp: int) -> float:
 def lgamma(x: float) -> float:
     """Return the natural logarithm of the gamma function of x."""
     ...
-def log(x: float, base: float = ...) -> float:
+def log(x: float, base: float = e) -> float:
     """
     With one argument, return the natural logarithm of x.
     With two arguments, return the logarithm of x to the given base.

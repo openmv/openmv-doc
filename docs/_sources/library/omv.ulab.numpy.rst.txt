@@ -245,7 +245,7 @@ Array construction
    Construct a new `ndarray` from a nested iterable of numbers. Equivalent
    alternate constructor for `numpy.ndarray`.
 
-.. function:: arange(start: int | float, stop: int | float = ..., step: int | float = 1, *, dtype: int | None = None) -> ndarray
+.. function:: arange(start: int | float, stop: int | float | None = None, step: int | float = 1, *, dtype: int | None = None) -> ndarray
 
    Return evenly spaced values over the half-open interval ``[start, stop)``.
    If only one positional argument is given, it is treated as ``stop`` with

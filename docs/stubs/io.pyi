@@ -3,26 +3,19 @@ from typing import Any
 
 def open(name: str, mode: str = 'r', **kwargs) -> Any:
     """
-    Open a file. Builtin open() function is aliased to this function.
-    All ports (which provide access to file system) are required to support
-    mode parameter, but support for other arguments vary by port.
+    Open a file. The builtin open() function is aliased to this function.
+    The mode parameter is always supported; support for other arguments may
+    vary.
     """
     ...
 
 class BytesIO:
     """
     In-memory file-like object for binary-mode input/output (similar to a
-    normal file opened with the “b” modifier). The first form initializes the
-    contents from the string parameter (which should be a bytes object).
-    The second form creates an empty BytesIO preallocated to hold up to
-    alloc_size bytes, so writing up to that many bytes will not reallocate
-    the buffer (avoiding an out-of-memory situation or memory fragmentation);
-    it is a MicroPython extension recommended only for special cases and
-    system-level libraries, not end-user applications. Instances also support
-    the context-manager protocol (usable in a with statement).
-    Difference to CPython
-
-    The BytesIO(alloc_size) constructor is a MicroPython extension.
+    normal file opened with the “b” modifier). Initial contents can be
+    specified with the string parameter (which should be a bytes object).
+    Instances also support the context-manager protocol (usable in a with
+    statement).
     """
     def __init__(self, string: bytes = b'') -> None: ...
     def close(self) -> None:
@@ -104,17 +97,10 @@ class IOBase:
 class StringIO:
     """
     In-memory file-like object for text-mode input/output (similar to a
-    normal file opened with the “t” modifier). The first form initializes the
-    contents from the string parameter (which should be a normal string).
-    The second form creates an empty StringIO preallocated to hold up to
-    alloc_size bytes, so writing up to that many bytes will not reallocate
-    the buffer (avoiding an out-of-memory situation or memory fragmentation);
-    it is a MicroPython extension recommended only for special cases and
-    system-level libraries, not end-user applications. Instances also support
-    the context-manager protocol (usable in a with statement).
-    Difference to CPython
-
-    The StringIO(alloc_size) constructor is a MicroPython extension.
+    normal file opened with the “t” modifier). Initial contents can be
+    specified with the string parameter (which should be a normal string).
+    Instances also support the context-manager protocol (usable in a with
+    statement).
     """
     def __init__(self, string: str = '') -> None: ...
     def close(self) -> None:

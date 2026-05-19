@@ -44,9 +44,8 @@ be short operations or not depends on each particular class' needs, but
 developers are strongly advised to favour no-short-operations behaviour
 for the reasons stated above. For example, MicroPython sockets are
 guaranteed to avoid short read/writes. Actually, at this time, there is
-no example of a short-operations stream class in the core, and one would
-be a port-specific class, where such a need is governed by hardware
-peculiarities.
+no example of a short-operations stream class in the core, and such a class
+would be specific to particular hardware.
 
 The no-short-operations behaviour gets tricky in case of non-blocking
 streams, blocking vs non-blocking behaviour being another CPython dichotomy,
@@ -79,9 +78,9 @@ Functions
 
 .. function:: open(name: str, mode: str = 'r', **kwargs) -> Any
 
-    Open a file. Builtin ``open()`` function is aliased to this function.
-    All ports (which provide access to file system) are required to support
-    *mode* parameter, but support for other arguments vary by port.
+    Open a file. The builtin ``open()`` function is aliased to this function.
+    The *mode* parameter is always supported; support for other arguments may
+    vary.
 
 Classes
 -------
@@ -111,22 +110,12 @@ Classes
         or a negative ``errno`` value on error.
 
 .. class:: StringIO(string: str = "")
-           StringIO(alloc_size: int)
 
     In-memory file-like object for text-mode input/output (similar to a
-    normal file opened with the "t" modifier). The first form initializes the
-    contents from the *string* parameter (which should be a normal string).
-    The second form creates an empty ``StringIO`` preallocated to hold up to
-    *alloc_size* bytes, so writing up to that many bytes will not reallocate
-    the buffer (avoiding an out-of-memory situation or memory fragmentation);
-    it is a MicroPython extension recommended only for special cases and
-    system-level libraries, not end-user applications. Instances also support
-    the context-manager protocol (usable in a ``with`` statement).
-
-    .. admonition:: Difference to CPython
-        :class: attention
-
-        The ``StringIO(alloc_size)`` constructor is a MicroPython extension.
+    normal file opened with the "t" modifier). Initial contents can be
+    specified with the *string* parameter (which should be a normal string).
+    Instances also support the context-manager protocol (usable in a ``with``
+    statement).
 
     .. method:: read(size: int = -1) -> str
 
@@ -170,23 +159,78 @@ Classes
 
         Return the current contents of the underlying buffer.
 
-.. class:: BytesIO(string: bytes = b"")
-           BytesIO(alloc_size: int)
+.. class:: StringIO(alloc_size: int)
+    :noindex:
 
-    In-memory file-like object for binary-mode input/output (similar to a
-    normal file opened with the "b" modifier). The first form initializes the
-    contents from the *string* parameter (which should be a bytes object).
-    The second form creates an empty ``BytesIO`` preallocated to hold up to
+    Create an empty ``StringIO`` object preallocated to hold up to
     *alloc_size* bytes, so writing up to that many bytes will not reallocate
-    the buffer (avoiding an out-of-memory situation or memory fragmentation);
-    it is a MicroPython extension recommended only for special cases and
-    system-level libraries, not end-user applications. Instances also support
-    the context-manager protocol (usable in a ``with`` statement).
+    the buffer (avoiding an out-of-memory situation or memory fragmentation).
+    This constructor is a MicroPython extension recommended only for special
+    cases and system-level libraries, not for end-user applications.
 
     .. admonition:: Difference to CPython
         :class: attention
 
-        The ``BytesIO(alloc_size)`` constructor is a MicroPython extension.
+        This constructor is a MicroPython extension.
+
+    .. method:: read(size: int = -1) -> str
+        :noindex:
+
+        Read and return up to *size* characters. If *size* is omitted or
+        negative, read and return all remaining contents.
+
+    .. method:: readline(size: int = -1) -> str
+        :noindex:
+
+        Read and return one line. If *size* is given, at most *size*
+        characters are read.
+
+    .. method:: readinto(buf: bytearray) -> int
+        :noindex:
+
+        Read into the pre-allocated, writable buffer *buf* and return the
+        number of bytes read.
+
+    .. method:: write(s: str) -> int
+        :noindex:
+
+        Write the string *s* and return the number of characters written.
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+        :noindex:
+
+        Change the stream position to *offset* relative to *whence*
+        (``0`` = start, ``1`` = current, ``2`` = end) and return the new
+        absolute position.
+
+    .. method:: tell() -> int
+        :noindex:
+
+        Return the current stream position.
+
+    .. method:: flush() -> None
+        :noindex:
+
+        Flush the write buffers. This is a no-op for an in-memory stream.
+
+    .. method:: close() -> None
+        :noindex:
+
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise :exc:`ValueError`.
+
+    .. method:: getvalue() -> str
+        :noindex:
+
+        Return the current contents of the underlying buffer.
+
+.. class:: BytesIO(string: bytes = b"")
+
+    In-memory file-like object for binary-mode input/output (similar to a
+    normal file opened with the "b" modifier). Initial contents can be
+    specified with the *string* parameter (which should be a bytes object).
+    Instances also support the context-manager protocol (usable in a ``with``
+    statement).
 
     .. method:: read(size: int = -1) -> bytes
 
@@ -228,5 +272,71 @@ Classes
         on a closed stream raise :exc:`ValueError`.
 
     .. method:: getvalue() -> bytes
+
+        Return the current contents of the underlying buffer.
+
+.. class:: BytesIO(alloc_size: int)
+    :noindex:
+
+    Create an empty ``BytesIO`` object preallocated to hold up to
+    *alloc_size* bytes, so writing up to that many bytes will not reallocate
+    the buffer (avoiding an out-of-memory situation or memory fragmentation).
+    This constructor is a MicroPython extension recommended only for special
+    cases and system-level libraries, not for end-user applications.
+
+    .. admonition:: Difference to CPython
+        :class: attention
+
+        This constructor is a MicroPython extension.
+
+    .. method:: read(size: int = -1) -> bytes
+        :noindex:
+
+        Read and return up to *size* bytes. If *size* is omitted or negative,
+        read and return all remaining contents.
+
+    .. method:: readline(size: int = -1) -> bytes
+        :noindex:
+
+        Read and return one line. If *size* is given, at most *size* bytes
+        are read.
+
+    .. method:: readinto(buf: bytearray) -> int
+        :noindex:
+
+        Read into the pre-allocated, writable buffer *buf* and return the
+        number of bytes read.
+
+    .. method:: write(b: bytes) -> int
+        :noindex:
+
+        Write the bytes-like object *b* and return the number of bytes
+        written.
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+        :noindex:
+
+        Change the stream position to *offset* relative to *whence*
+        (``0`` = start, ``1`` = current, ``2`` = end) and return the new
+        absolute position.
+
+    .. method:: tell() -> int
+        :noindex:
+
+        Return the current stream position.
+
+    .. method:: flush() -> None
+        :noindex:
+
+        Flush the write buffers. This is a no-op for an in-memory stream.
+
+    .. method:: close() -> None
+        :noindex:
+
+        Close the stream and free the underlying buffer. Further operations
+        on a closed stream raise :exc:`ValueError`.
+
+    .. method:: getvalue() -> bytes
+        :noindex:
 
         Return the current contents of the underlying buffer.

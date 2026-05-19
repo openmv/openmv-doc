@@ -2159,11 +2159,15 @@ class Image:
 
 
 
-    linpolar(reverse: bool = False) -> Image
+    linpolar(reverse: bool = False, *, x: int | None = None, y: int | None = None) -> Image
 
-    Re-project’s and image from cartessian coordinates to linear polar coordinates.
+    Re-projects an image from Cartesian coordinates to linear polar coordinates.
 
     Set reverse=True to re-project in the opposite direction.
+
+    x and y specify the center coordinate of the transform in image
+    pixels. If x is None (the default) it is set to half the image
+    width; likewise y defaults to half the image height.
 
     Linear polar re-projection turns rotation of an image into x-translation.
 
@@ -2173,11 +2177,15 @@ class Image:
 
 
 
-    logpolar(reverse: bool = False) -> Image
+    logpolar(reverse: bool = False, *, x: int | None = None, y: int | None = None) -> Image
 
-    Re-project’s and image from cartessian coordinates to log polar coordinates.
+    Re-projects an image from Cartesian coordinates to log polar coordinates.
 
     Set reverse=True to re-project in the opposite direction.
+
+    x and y specify the center coordinate of the transform in image
+    pixels. If x is None (the default) it is set to half the image
+    width; likewise y defaults to half the image height.
 
     Log polar re-projection turns rotation of an image into x-translation
     and scaling/zooming into y-translation.
@@ -3759,19 +3767,25 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
-    def linpolar(self, reverse: bool = False) -> Image:
+    def linpolar(self, reverse: bool = False, *, x: int | None = None, y: int | None = None) -> Image:
         """
-        Re-project’s and image from cartessian coordinates to linear polar coordinates.
+        Re-projects an image from Cartesian coordinates to linear polar coordinates.
         Set reverse=True to re-project in the opposite direction.
+        x and y specify the center coordinate of the transform in image
+        pixels. If x is None (the default) it is set to half the image
+        width; likewise y defaults to half the image height.
         Linear polar re-projection turns rotation of an image into x-translation.
         Not supported on compressed images or bayer images.
         This method is not available on the OpenMV Cam M4.
         """
         ...
-    def logpolar(self, reverse: bool = False) -> Image:
+    def logpolar(self, reverse: bool = False, *, x: int | None = None, y: int | None = None) -> Image:
         """
-        Re-project’s and image from cartessian coordinates to log polar coordinates.
+        Re-projects an image from Cartesian coordinates to log polar coordinates.
         Set reverse=True to re-project in the opposite direction.
+        x and y specify the center coordinate of the transform in image
+        pixels. If x is None (the default) it is set to half the image
+        width; likewise y defaults to half the image height.
         Log polar re-projection turns rotation of an image into x-translation
         and scaling/zooming into y-translation.
         Not supported on compressed images or bayer images.

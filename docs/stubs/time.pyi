@@ -60,10 +60,9 @@ def mktime(date_time_tuple: tuple[int, int, int, int, int, int, int, int]) -> in
     ...
 def sleep(seconds: float) -> None:
     """
-    Sleep for the given number of seconds. Some boards may accept seconds as a
-    floating-point number to sleep for a fractional number of seconds. Note that
-    other boards may not accept a floating-point argument, for compatibility with
-    them use sleep_ms() and sleep_us() functions.
+    Sleep for the given number of seconds. seconds may be a floating-point
+    number, to sleep for a fractional number of seconds. For finer-grained or
+    integer-only delays use the sleep_ms() and sleep_us() functions.
     Calling sleep(), including sleep(0) is guaranteed to call pending callback
     functions.
     """
@@ -120,8 +119,7 @@ def ticks_cpu() -> int:
     (resolution) of this function is not specified on time module level, but
     documentation for a specific port may provide more specific information. This
     function is intended for very fine benchmarking or very tight real-time loops.
-    Avoid using it in portable code.
-    Availability: Not every port implements this function.
+    Avoid using it in portable code. It is available on all OpenMV Cams.
     """
     ...
 def ticks_diff(ticks1: int, ticks2: int) -> int:
@@ -221,16 +219,13 @@ def time() -> int:
     localtime() without an argument is a better choice.
     Difference to CPython
 
-    In CPython, this function returns number of
-    seconds since Unix epoch, 1970-01-01 00:00 UTC, as a floating-point,
-    usually having microsecond precision. With MicroPython, only Unix port
-    uses the same Epoch, and if floating-point precision allows,
-    returns sub-second precision. Embedded hardware usually doesn’t have
-    floating-point precision to represent both long time ranges and subsecond
-    precision, so they use integer value with second precision. Some embedded
-    hardware also lacks battery-powered RTC, so returns number of seconds
-    since last power-up or from other relative, hardware-specific point
-    (e.g. reset).
+    In CPython this function returns the number of seconds since the Unix
+    epoch (1970-01-01 00:00 UTC) as a floating-point value, usually with
+    microsecond precision. On the OpenMV Cam it returns an integer with
+    one-second precision – the hardware cannot represent both a long time
+    range and sub-second precision in a float – and the epoch differs by
+    board (see Time Epoch above). Without a battery-backed RTC that has
+    been set, it instead counts seconds since power-up/reset.
     """
     ...
 def time_ns() -> int:
