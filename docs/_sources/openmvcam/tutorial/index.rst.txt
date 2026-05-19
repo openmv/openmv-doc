@@ -22,6 +22,8 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
    tls_certificates.rst
 
+   firmware_development.rst
+
    production.rst
 
    more_information.rst
