@@ -62,8 +62,10 @@ def run_sphinx(docs_dir):
     for name, entry in py.objects.items():
         objects[name] = entry.objtype
 
-    # Walk doctrees for signatures and docstrings
-    sigs = {}  # fullname -> (objtype, raw signature, docstring)
+    # Walk doctrees for signatures and docstrings. A single directive can
+    # carry multiple stacked signatures (overloaded callables / constructors),
+    # so each fqn maps to a *list* of raw signatures.
+    sigs = {}  # fullname -> (objtype, [raw signatures], docstring)
     for docname in sorted(app.env.found_docs):
         if docname == "index":
             continue
@@ -85,6 +87,10 @@ def run_sphinx(docs_dir):
                             parts.append(text)
                     doc = "\n".join(parts).strip()
                     break
+
+            # Group all signatures in this directive by their fqn (stacked
+            # signatures share both fqn and docstring).
+            by_fqn = {}  # fqn -> [raw, ...]
             for sig_node in node.children:
                 if not isinstance(sig_node, addnodes.desc_signature):
                     continue
@@ -93,10 +99,24 @@ def run_sphinx(docs_dir):
                 if not fullname:
                     continue
                 fqn = f"{module}.{fullname}" if module else fullname
-                raw = sig_node.astext()
-                # Prefer method signatures over class-level duplicates
-                if fqn not in sigs or objtype == "method":
-                    sigs[fqn] = (objtype, raw, doc)
+                by_fqn.setdefault(fqn, []).append(sig_node.astext())
+
+            for fqn, raws in by_fqn.items():
+                if fqn not in sigs:
+                    sigs[fqn] = (objtype, list(raws), doc)
+                    continue
+                # Prefer a real method directive over a class-level placeholder
+                # that Sphinx sometimes emits. Otherwise merge new signatures
+                # in.
+                existing_objtype, existing_raws, existing_doc = sigs[fqn]
+                if objtype == "method" and existing_objtype != "method":
+                    sigs[fqn] = (objtype, list(raws), doc)
+                else:
+                    merged = list(existing_raws)
+                    for raw in raws:
+                        if raw not in merged:
+                            merged.append(raw)
+                    sigs[fqn] = (existing_objtype, merged, existing_doc)
 
     shutil.rmtree(tmp)
     return objects, sigs
@@ -127,6 +147,18 @@ def sanitize_params(params):
         if not rest or all(t.startswith("**") for t in rest):
             toks.pop(i)
     return ", ".join(t for t in toks if t)
+
+
+def parse_attr_sig(raw):
+    """Parse a data/attribute signature ('name' or 'name: type').
+
+    Returns (name, type_str). ``type_str`` is empty when the source did
+    not specify a ``:type:`` annotation.
+    """
+    raw = raw.strip()
+    name_part, sep, type_ = raw.partition(":")
+    name = name_part.strip().rsplit(".", 1)[-1]
+    return name, type_.strip() if sep else ""
 
 
 def parse_sig(raw):
@@ -178,7 +210,7 @@ def build_modules(objects, sigs):
     """Organize domain objects into per-module data structures."""
     modules = defaultdict(lambda: {
         "functions": [],
-        "classes": defaultdict(lambda: {"params": "", "doc": "", "methods": []}),
+        "classes": defaultdict(lambda: {"overloads": [], "doc": "", "methods": []}),
         "constants": [],
         "exceptions": [],
     })
@@ -209,11 +241,12 @@ def build_modules(objects, sigs):
                 skipped.append(fqn)
                 continue
             if fqn in sigs:
-                _, params, ret = parse_sig(sigs[fqn][1])
+                overloads = [parse_sig(raw)[1:] for raw in sigs[fqn][1]]
                 doc = sigs[fqn][2]
             else:
-                params, ret, doc = "", "Any", ""
-            modules[mod]["functions"].append((fname, params, ret, doc))
+                overloads = [("", "Any")]
+                doc = ""
+            modules[mod]["functions"].append((fname, overloads, doc))
 
         elif objtype == "class":
             mod, rest = resolve_module(parts)
@@ -222,11 +255,14 @@ def build_modules(objects, sigs):
                 skipped.append(fqn)
                 continue
             if fqn in sigs:
-                _, params, ret = parse_sig(sigs[fqn][1])
+                # For classes the "ret" half of parse_sig is meaningless;
+                # we only need the constructor params list.
+                overloads = [parse_sig(raw)[1] for raw in sigs[fqn][1]]
                 doc = sigs[fqn][2]
             else:
-                params, doc = "", ""
-            modules[mod]["classes"][cname]["params"] = params
+                overloads = [""]
+                doc = ""
+            modules[mod]["classes"][cname]["overloads"] = overloads
             modules[mod]["classes"][cname]["doc"] = doc
 
         elif objtype == "method":
@@ -240,12 +276,13 @@ def build_modules(objects, sigs):
                 skipped.append(fqn)
                 continue
             if fqn in sigs:
-                _, params, ret = parse_sig(sigs[fqn][1])
+                overloads = [parse_sig(raw)[1:] for raw in sigs[fqn][1]]
                 doc = sigs[fqn][2]
             else:
-                params, ret, doc = "", "Any", ""
+                overloads = [("", "Any")]
+                doc = ""
             modules[mod]["classes"][cname]["methods"].append(
-                (mname, params, ret, doc)
+                (mname, overloads, doc)
             )
 
         elif objtype == "exception":
@@ -259,7 +296,12 @@ def build_modules(objects, sigs):
 
         elif objtype in ("data", "attribute"):
             mod, rest = resolve_module(parts)
-            doc = sigs[fqn][2] if fqn in sigs else ""
+            doc = ""
+            attr_type = ""
+            if fqn in sigs:
+                doc = sigs[fqn][2]
+                if sigs[fqn][1]:
+                    _, attr_type = parse_attr_sig(sigs[fqn][1][0])
             if objtype == "attribute" and len(rest) >= 2:
                 # Class attribute (e.g. Model.len)
                 cname = rest[-2]
@@ -269,13 +311,13 @@ def build_modules(objects, sigs):
                     continue
                 if "attrs" not in modules[mod]["classes"][cname]:
                     modules[mod]["classes"][cname]["attrs"] = []
-                modules[mod]["classes"][cname]["attrs"].append((aname, doc))
+                modules[mod]["classes"][cname]["attrs"].append((aname, doc, attr_type))
             else:
                 dname = rest[-1]
                 if not valid_identifier(dname):
                     skipped.append(fqn)
                     continue
-                modules[mod]["constants"].append((dname, doc))
+                modules[mod]["constants"].append((dname, doc, attr_type))
 
     # Move empty-string module to "builtins", filtering out
     # non-builtin objects that lack a .. module:: directive.
@@ -301,14 +343,14 @@ def build_modules(objects, sigs):
     if "" in modules:
         orphans = modules.pop("")
         filtered = {
-            "functions": [(n, p, r, d) for n, p, r, d in orphans["functions"]
+            "functions": [(n, ov, d) for n, ov, d in orphans["functions"]
                           if n in BUILTIN_NAMES],
             "classes": defaultdict(
-                lambda: {"params": "", "doc": "", "methods": []},
+                lambda: {"overloads": [], "doc": "", "methods": []},
                 {k: v for k, v in orphans["classes"].items()
                  if k in BUILTIN_NAMES},
             ),
-            "constants": [(n, d) for n, d in orphans["constants"]
+            "constants": [(n, d, t) for n, d, t in orphans["constants"]
                           if n in BUILTIN_NAMES],
             "exceptions": [(n, d) for n, d in orphans["exceptions"]
                            if n in BUILTIN_NAMES],
@@ -344,14 +386,17 @@ def find_module_refs(module, all_module_names):
     refs = set()
     mod_name = module.get("_name", "")
     sigs = []
-    for _, params, ret, _doc in module["functions"]:
-        sigs.append(params)
-        sigs.append(ret)
-    for cls in module["classes"].values():
-        sigs.append(cls["params"])
-        for _, params, ret, _doc in cls["methods"]:
+    for _, overloads, _doc in module["functions"]:
+        for params, ret in overloads:
             sigs.append(params)
             sigs.append(ret)
+    for cls in module["classes"].values():
+        for params in cls.get("overloads", []):
+            sigs.append(params)
+        for _, overloads, _doc in cls["methods"]:
+            for params, ret in overloads:
+                sigs.append(params)
+                sigs.append(ret)
     blob = " ".join(sigs)
     for name in all_module_names:
         if name and name != mod_name and name + "." in blob:
@@ -393,7 +438,7 @@ def format_docstring(doc, indent=0):
 TYPING_NAMES = (
     "Any", "Awaitable", "Callable", "Coroutine", "Dict", "FrozenSet",
     "Generator", "Iterable", "Iterator", "List", "Mapping", "Optional",
-    "Sequence", "Set", "Tuple", "Type", "Union",
+    "Sequence", "Set", "Tuple", "Type", "Union", "overload",
 )
 
 
@@ -450,14 +495,16 @@ def _modernize_types(s):
 def _modernize_module(module):
     """Apply `_modernize_types` to all signatures stored in `module`."""
     module["functions"] = [
-        (n, _modernize_types(p), _modernize_types(r), d)
-        for n, p, r, d in module["functions"]
+        (n, [(_modernize_types(p), _modernize_types(r)) for p, r in overloads], d)
+        for n, overloads, d in module["functions"]
     ]
     for cls in module["classes"].values():
-        cls["params"] = _modernize_types(cls.get("params", ""))
+        cls["overloads"] = [
+            _modernize_types(p) for p in cls.get("overloads", [])
+        ]
         cls["methods"] = [
-            (n, _modernize_types(p), _modernize_types(r), d)
-            for n, p, r, d in cls["methods"]
+            (n, [(_modernize_types(p), _modernize_types(r)) for p, r in overloads], d)
+            for n, overloads, d in cls["methods"]
         ]
 
 
@@ -465,20 +512,32 @@ def _collect_typing_names(module):
     """Return the set of typing names referenced in the module's signatures."""
     used = set()
     blobs = []
-    for _, params, ret, _ in module["functions"]:
-        blobs.append(params)
-        blobs.append(ret)
-    for cls in module["classes"].values():
-        blobs.append(cls.get("params", ""))
-        for _, params, ret, _ in cls["methods"]:
+    has_overloads = False
+    for _, overloads, _ in module["functions"]:
+        if len(overloads) > 1:
+            has_overloads = True
+        for params, ret in overloads:
             blobs.append(params)
             blobs.append(ret)
+    for cls in module["classes"].values():
+        if len(cls.get("overloads", [])) > 1:
+            has_overloads = True
+        for params in cls.get("overloads", []):
+            blobs.append(params)
+        for _, overloads, _ in cls["methods"]:
+            if len(overloads) > 1:
+                has_overloads = True
+            for params, ret in overloads:
+                blobs.append(params)
+                blobs.append(ret)
     text = " ".join(blobs)
     for name in TYPING_NAMES:
         if re.search(rf"\b{name}\b", text):
             used.add(name)
     # `Any` is emitted unconditionally for class attributes (`name: Any`).
     used.add("Any")
+    if has_overloads:
+        used.add("overload")
     return used
 
 
@@ -499,6 +558,45 @@ def _split_top_level(s, sep):
     return parts
 
 
+def _emit_callable(lines, name, overloads, doc, indent, is_method):
+    """Emit a function or method, using ``@overload`` if more than one signature.
+
+    Stub conventions: when overloaded, every signature is prefixed with
+    ``@overload`` and the docstring is attached to the last overload so that
+    Pyright/Pylance pick it up in hover.
+    """
+    prefix = " " * indent
+    body_indent = indent + 4
+    if not overloads:
+        overloads = [("", "Any")]
+    overloaded = len(overloads) > 1
+    self_arg = "self" if is_method else ""
+
+    def _sig_line(params, ret):
+        if is_method:
+            args = f"self, {params}" if params else "self"
+        else:
+            args = params
+        return f"{prefix}def {name}({args}) -> {ret}:"
+
+    if overloaded:
+        for i, (params, ret) in enumerate(overloads):
+            lines.append(f"{prefix}@overload")
+            lines.append(_sig_line(params, ret))
+            if i == len(overloads) - 1:
+                ds = format_docstring(doc, indent=body_indent)
+                if ds:
+                    lines.extend(ds)
+            lines.append(f"{' ' * body_indent}...")
+    else:
+        params, ret = overloads[0]
+        lines.append(_sig_line(params, ret))
+        ds = format_docstring(doc, indent=body_indent)
+        if ds:
+            lines.extend(ds)
+        lines.append(f"{' ' * body_indent}...")
+
+
 def emit_pyi(mod_name, module, out_path, all_module_names):
     """Write a .pyi stub file for one module."""
     module["_name"] = mod_name
@@ -513,22 +611,15 @@ def emit_pyi(mod_name, module, out_path, all_module_names):
         lines.append(f"import {ref}")
     lines.append("")
 
-    for name, doc in module["constants"]:
-        lines.append(f"{name}: int")
+    for name, doc, ctype in module["constants"]:
+        lines.append(f"{name}: {ctype or 'int'}")
         lines.extend(format_docstring(doc, indent=0))
 
     if module["constants"]:
         lines.append("")
 
-    for name, params, ret, doc in module["functions"]:
-        if params:
-            lines.append(f"def {name}({params}) -> {ret}:")
-        else:
-            lines.append(f"def {name}() -> {ret}:")
-        ds = format_docstring(doc, indent=4)
-        if ds:
-            lines.extend(ds)
-        lines.append("    ...")
+    for name, overloads, doc in module["functions"]:
+        _emit_callable(lines, name, overloads, doc, indent=0, is_method=False)
 
     if module["functions"]:
         lines.append("")
@@ -548,25 +639,28 @@ def emit_pyi(mod_name, module, out_path, all_module_names):
     for cls_name, cls in sorted(module["classes"].items()):
         lines.append(f"class {cls_name}:")
         lines.extend(format_docstring(cls.get("doc", ""), indent=4))
-        ctor = cls["params"]
-        if ctor:
-            lines.append(f"    def __init__(self, {ctor}) -> None: ...")
-        else:
-            lines.append(f"    def __init__(self) -> None: ...")
 
-        for aname, adoc in cls.get("attrs", []):
-            lines.append(f"    {aname}: Any")
+        ctor_overloads = cls.get("overloads", [""]) or [""]
+        if len(ctor_overloads) > 1:
+            for ctor in ctor_overloads:
+                lines.append("    @overload")
+                if ctor:
+                    lines.append(f"    def __init__(self, {ctor}) -> None: ...")
+                else:
+                    lines.append("    def __init__(self) -> None: ...")
+        else:
+            ctor = ctor_overloads[0]
+            if ctor:
+                lines.append(f"    def __init__(self, {ctor}) -> None: ...")
+            else:
+                lines.append("    def __init__(self) -> None: ...")
+
+        for aname, adoc, atype in cls.get("attrs", []):
+            lines.append(f"    {aname}: {atype or 'Any'}")
             lines.extend(format_docstring(adoc, indent=4))
 
-        for mname, params, ret, doc in cls["methods"]:
-            if params:
-                lines.append(f"    def {mname}(self, {params}) -> {ret}:")
-            else:
-                lines.append(f"    def {mname}(self) -> {ret}:")
-            ds = format_docstring(doc, indent=8)
-            if ds:
-                lines.extend(ds)
-            lines.append("        ...")
+        for mname, overloads, doc in cls["methods"]:
+            _emit_callable(lines, mname, overloads, doc, indent=4, is_method=True)
 
         lines.append("")
 

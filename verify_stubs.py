@@ -125,8 +125,17 @@ def main():
         if objtype in ("data", "attribute"):
             if objtype == "attribute" and len(rest) >= 2:
                 c = m["classes"].get(rest[-2])
-                return bool(c) and any(n == rest[-1] for n, _ in c.get("attrs", []))
-            return any(n == rest[-1] for n, _ in m["constants"])
+                return bool(c) and any(n == rest[-1] for n, *_ in c.get("attrs", []))
+            return any(n == rest[-1] for n, *_ in m["constants"])
+        return False
+
+    def is_overload(fn):
+        """True if `fn` is decorated with @overload."""
+        for d in fn.decorator_list:
+            if isinstance(d, ast.Name) and d.id == "overload":
+                return True
+            if isinstance(d, ast.Attribute) and d.attr == "overload":
+                return True
         return False
 
     problems = []
@@ -146,8 +155,19 @@ def main():
         if not in_model(fqn, objtype):
             problems.append(f"[A missing-from-model] {objtype} {fqn}")
 
-    # ---- parse emitted stubs into {fqn: (kind, signature)} ----------------
+    # ---- parse emitted stubs into {fqn: (kind, [signatures...])} ----------
+    # Functions/methods store a list because an overloaded callable emits
+    # multiple `@overload`-decorated definitions under the same name.
     emitted = {}
+
+    def _add_callable(key, kind, fn):
+        existing = emitted.get(key)
+        sig = sig_str(fn.args, fn.returns)
+        if existing is None:
+            emitted[key] = (kind, [sig])
+        else:
+            existing[1].append(sig)
+
     for f in sorted(args.pyi_dir.rglob("*.pyi")):
         rel = f.relative_to(args.pyi_dir)
         mod = (".".join(rel.parent.parts) if f.name == "__init__.pyi"
@@ -159,43 +179,69 @@ def main():
             continue
         for node in tree.body:
             if isinstance(node, ast.FunctionDef):
-                emitted[f"{mod}.{node.name}"] = ("function", sig_str(node.args, node.returns))
+                _add_callable(f"{mod}.{node.name}", "function", node)
             elif isinstance(node, ast.ClassDef):
                 emitted[f"{mod}.{node.name}"] = ("class", None)
                 for sub in node.body:
                     if isinstance(sub, ast.FunctionDef):
-                        emitted[f"{mod}.{node.name}.{sub.name}"] = (
-                            "method", sig_str(sub.args, sub.returns))
+                        _add_callable(f"{mod}.{node.name}.{sub.name}", "method", sub)
                     elif isinstance(sub, ast.AnnAssign) and isinstance(sub.target, ast.Name):
                         emitted[f"{mod}.{node.name}.{sub.target.id}"] = ("attribute", None)
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
                 emitted[f"{mod}.{node.target.id}"] = ("data", None)
 
+    def _match_overloads(expected_list, actual_list):
+        """True if both lists describe the same set of overloads (order matters)."""
+        if len(expected_list) != len(actual_list):
+            return False
+        for exp, act in zip(expected_list, actual_list):
+            if norm(exp) != norm(act):
+                return False
+        return True
+
     # ---- Layers B + C: model -> files, with signature equivalence ---------
     for mod, m in modules.items():
         if not mod or mod == "builtins":
             continue
-        for n, p, r, _ in m["functions"]:
+        for n, overloads, _ in m["functions"]:
             key = f"{mod}.{n}"
             if key not in emitted:
                 problems.append(f"[B missing fn] {key}")
                 continue
-            if norm(expected_sig(p, r, False)) != norm(emitted[key][1]):
-                problems.append(f"[C fn sig] {key}\n    docs: "
-                                f"{expected_sig(p, r, False)}\n    pyi : {emitted[key][1]}")
+            expected = [expected_sig(p, r, False) for p, r in overloads]
+            actual = emitted[key][1]
+            if not _match_overloads(expected, actual):
+                problems.append(
+                    f"[C fn sig] {key}\n    docs: {expected}\n    pyi : {actual}"
+                )
         for cn, c in m["classes"].items():
             if f"{mod}.{cn}" not in emitted:
                 problems.append(f"[B missing class] {mod}.{cn}")
                 continue
-            for mn, p, r, _ in c["methods"]:
+            # Constructor overloads -> __init__.
+            ctor_overloads = c.get("overloads", [])
+            if ctor_overloads:
+                init_key = f"{mod}.{cn}.__init__"
+                expected_init = [expected_sig(p, "None", True) for p in ctor_overloads]
+                actual_init = emitted.get(init_key, ("method", []))[1]
+                if not _match_overloads(expected_init, actual_init):
+                    problems.append(
+                        f"[C ctor sig] {init_key}\n    docs: {expected_init}\n"
+                        f"    pyi : {actual_init}"
+                    )
+            for mn, overloads, _ in c["methods"]:
                 key = f"{mod}.{cn}.{mn}"
                 if key not in emitted:
                     problems.append(f"[B missing method] {key}")
                     continue
-                if norm(expected_sig(p, r, True)) != norm(emitted[key][1]):
-                    problems.append(f"[C method sig] {key}\n    docs: "
-                                    f"{expected_sig(p, r, True)}\n    pyi : {emitted[key][1]}")
-        for cnm, _ in m["constants"]:
+                expected = [expected_sig(p, r, True) for p, r in overloads]
+                actual = emitted[key][1]
+                if not _match_overloads(expected, actual):
+                    problems.append(
+                        f"[C method sig] {key}\n    docs: {expected}\n"
+                        f"    pyi : {actual}"
+                    )
+        for cnm, *_ in m["constants"]:
             if f"{mod}.{cnm}" not in emitted:
                 problems.append(f"[B missing const] {mod}.{cnm}")
         for en, _ in m.get("exceptions", []):
