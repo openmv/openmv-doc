@@ -57,10 +57,14 @@ To output a continuous sine-wave at 12-bit resolution::
     from array import array
     from pyb import DAC
 
-    # create a buffer containing a sine-wave, using half-word samples
-    buf = array('H', 2048 + int(2047 * math.sin(2 * math.pi * i / 128)) for i in range(128))
+    # 128-sample sine wave, half-word samples centred at 2048 (12-bit mid).
+    N = 128
+    buf = array("H", (
+        2048 + int(2047 * math.sin(2 * math.pi * i / N))
+        for i in range(N)
+    ))
 
-    # output the sine-wave at 400Hz
+    # Output the sine wave at 400Hz.
     dac = DAC(1, bits=12)
     dac.write_timed(buf, 400 * len(buf), mode=DAC.CIRCULAR)
 
@@ -76,8 +80,8 @@ Constructors
    to depends on the OpenMV Cam.
 
    ``bits`` is an integer specifying the resolution, and can be 8 or 12.
-   The maximum value for the write and write_timed methods will be
-   2\*\*``bits``-1.
+   The maximum value accepted by :meth:`write` and :meth:`write_timed`
+   is ``(2**bits) - 1`` (255 for 8-bit, 4095 for 12-bit).
 
    The *buffering* parameter selects the behaviour of the DAC op-amp output
    buffer, whose purpose is to reduce the output impedance.  It can be
@@ -118,9 +122,9 @@ Constructors
 
    .. method:: write(value: int) -> None
 
-      Direct access to the DAC output.  The minimum value is 0.  The maximum
-      value is 2\*\*``bits``-1, where ``bits`` is set when creating the DAC
-      object or by using the ``init`` method.
+      Direct access to the DAC output. The minimum value is ``0``; the
+      maximum is ``(2**bits) - 1``, where ``bits`` is set when creating
+      the DAC object or via :meth:`init`.
 
    .. method:: write_timed(data: Union[bytes, bytearray, "array.array"], freq: Union[int, Timer], *, mode: int = DAC.NORMAL) -> None
 
@@ -148,10 +152,12 @@ Constructors
    .. data:: NORMAL
       :type: int
 
-      NORMAL mode does a single transmission of the waveform in the data buffer,
+      ``NORMAL`` mode does a single transmission of the waveform in the
+      data buffer.
 
    .. data:: CIRCULAR
       :type: int
 
-      CIRCULAR mode does a transmission of the waveform in the data buffer, and wraps around
-      to the start of the data buffer every time it reaches the end of the table.
+      ``CIRCULAR`` mode transmits the waveform in the data buffer and
+      wraps around to the start of the buffer every time it reaches the
+      end, producing a continuous loop until :meth:`deinit` is called.

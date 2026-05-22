@@ -4,8 +4,21 @@
 .. module:: romfs
    :synopsis: ROMFS helper utilities
 
-The ``romfs`` module provides helper utilities for inspecting the read-only
-filesystem (ROMFS) mounted at ``/rom``.
+The :mod:`romfs` module provides helper utilities for inspecting the
+read-only filesystem (ROMFS) that the OpenMV firmware mounts at
+``/rom``. See :ref:`romfs` for an end-to-end description of the ROMFS
+filesystem itself, how images are built and deployed, and the
+underlying :class:`vfs.VfsRom` / :func:`vfs.rom_ioctl` APIs.
+
+This module focuses on the *physical layout* of an already-mounted
+ROMFS rather than its filesystem semantics. Because ``.mpy`` bytecode
+files in a ROMFS are executed directly from flash (memory-mapped, zero
+copy), MicroPython needs each file's payload to be aligned to a
+sufficient boundary -- typically 4 bytes for plain ``.mpy`` files and
+up to 16 bytes when a file contains native-code blobs or aligned data
+references. :func:`ls_romfs` reports the address, size and largest
+power-of-two alignment of every file so a deployed image can be
+spot-checked from the REPL before relying on zero-copy imports.
 
 Functions
 ---------

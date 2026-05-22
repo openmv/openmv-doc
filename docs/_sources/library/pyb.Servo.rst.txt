@@ -30,23 +30,26 @@ Constructors
 
 .. class:: Servo(id: int)
 
-   Create a servo object. ``id`` selects which servo channel to use; each
-   channel is wired to a fixed header pin. The number of available
+   Create a servo object. ``id`` is the 1-based servo channel number;
+   each channel is wired to a fixed header pin and the number of
    channels depends on the OpenMV Cam:
 
    .. list-table::
       :header-rows: 1
-      :widths: 32 16 52
+      :widths: 44 18 18 20
 
       * - Camera
-        - Channels
-        - Channel → header pin
+        - Servo(1)
+        - Servo(2)
+        - Servo(3)
       * - OpenMV Cam M7 / H7
-        - 4
-        - ``Servo(1)`` → ``P7``, ``Servo(2)`` → ``P8``, ``Servo(3)`` → ``P9``, ``Servo(4)`` → ``P10``
+        - ``P7``
+        - ``P8``
+        - ``P9``
       * - OpenMV Cam M4 / H7 Plus / Pure Thermal
-        - 2
-        - ``Servo(1)`` → ``P7``, ``Servo(2)`` → ``P8``
+        - ``P7``
+        - ``P8``
+        - --
 
    ``pyb.Servo`` is not available on the OpenMV Cam N6.
 

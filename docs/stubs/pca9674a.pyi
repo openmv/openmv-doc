@@ -4,14 +4,20 @@ import machine
 
 class PCA9674A:
     """
-    Creates an interface to the I/O expander.
+    Create an interface to a PCA9674A I/O expander.
     bus is the machine.I2C bus the expander is connected to.
 
-    irq_pin is the pin label connected to the expander’s IRQ output.
+    irq_pin is the pin label on the host MCU connected to the
+    expander’s INT output. The driver configures it as an input
+    with a pull-up and watches for its falling edge.
 
-    address is the I2C address of the expander.
+    address is the 7-bit I2C address of the expander
+    (0x38 – 0x3F). Defaults to 0x3F.
 
-    callback is invoked on the falling edge of irq_pin when any pin state changes.
+    callback is invoked on the falling edge of irq_pin when any
+    pin state changes. It receives the PCA9674A instance as
+    its only argument; the new pin state can be read with
+    read(). Pass None (the default) for polled use.
     """
     def __init__(self, bus: machine.I2C, irq_pin: str, address: int = 63, callback: Callable | None = None) -> None: ...
     def read(self) -> int:

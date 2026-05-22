@@ -3,7 +3,7 @@ Arduino Portenta H7
 
 The Arduino Portenta H7 is a 66 × 25 mm industrial dev board built
 around the STMicroelectronics STM32H747XI — a dual‑core SoC combining
-a Cortex‑M7 at 480 MHz with a Cortex‑M4 at 240 MHz. The OpenMV
+a Cortex‑M7 at 400 MHz with a Cortex‑M4 at 200 MHz. The OpenMV
 firmware runs entirely on the M7 core and is designed to be used with
 the **Portenta Vision Shield** (Ethernet or LoRa edition), which adds
 a Himax HM01B0 / HM0360 camera, dual PDM microphones, and a microSD
@@ -20,8 +20,8 @@ For full datasheet, photos, and dimensions see the
 Highlights
 ----------
 
-* **STMicroelectronics STM32H747XI** dual Cortex‑M7 (480 MHz) +
-  Cortex‑M4 (240 MHz). OpenMV firmware runs on the M7 core only;
+* **STMicroelectronics STM32H747XI** dual Cortex‑M7 (400 MHz) +
+  Cortex‑M4 (200 MHz). OpenMV firmware runs on the M7 core only;
   the M4 core is exposed through :doc:`openamp </library/openamp>`
   for Inter‑Processor Communication.
 * **8 MB external SDRAM** plus **2 MB internal flash** and **16 MB

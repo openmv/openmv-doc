@@ -13,8 +13,8 @@ class BlazeFace:
     None.
     nms_threshold IoU threshold for non-maximum suppression.
     nms_sigma Sigma for soft-NMS score decay.
-    Returns [((x, y, w, h), score, keypoints)] from __call__, where
-    keypoints is a list of (x, y) points.
+    Returns a list of ((x, y, w, h), score, keypoints) tuples from
+    __call__, where keypoints is a list of (x, y) points.
     """
     def __init__(self, threshold: float = 0.6, anchors: ndarray | None = None, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
@@ -27,8 +27,8 @@ class BlazePalm:
     None.
     nms_threshold IoU threshold for non-maximum suppression.
     nms_sigma Sigma for soft-NMS score decay.
-    Returns [((x, y, w, h), score, keypoints)] from __call__, where
-    keypoints is a list of (x, y) points.
+    Returns a list of ((x, y, w, h), score, keypoints) tuples from
+    __call__, where keypoints is a list of (x, y) points.
     """
     def __init__(self, threshold: float = 0.6, anchors: ndarray | None = None, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
@@ -38,8 +38,8 @@ class FaceLandmarks:
     threshold Score threshold (after sigmoid) for accepting a detection.
     nms_threshold IoU threshold for non-maximum suppression.
     nms_sigma Sigma for soft-NMS score decay.
-    Returns ((x, y, w, h), score, keypoints) from __call__, where
-    keypoints is a list of (x, y, z) points.
+    Returns a list of ((x, y, w, h), score, keypoints) tuples from
+    __call__, where keypoints is a list of (x, y, z) points.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
@@ -63,9 +63,9 @@ class MoveNet:
     value are excluded from the bounding box and mean score.
     nms_threshold IoU threshold for non-maximum suppression.
     nms_sigma Sigma for soft-NMS score decay.
-    Returns ((x, y, w, h), score, keypoints) from __call__, where
-    keypoints is a list of (x, y, score) points in input pixel
-    coordinates.
+    Returns a list of ((x, y, w, h), score, keypoints) tuples from
+    __call__, where keypoints is a list of (x, y, score) points
+    in input pixel coordinates.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
@@ -87,7 +87,8 @@ class mediapipe_detection_postprocess:
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """
         Run post-processing on model outputs and return a list of
-        ((x, y, w, h), score, keypoints) tuples.
+        ((x, y, w, h), score, keypoints) tuples. Returns an empty tuple
+        () when no detection clears the score threshold.
         """
         ...
     def detection_post_process(self, ih: int, iw: int, nms: ml.utils.NMS, model: ml.Model, inputs: list, outputs: list, score_idx: int, cords_idx: int, t: float, anchors: ndarray) -> None:

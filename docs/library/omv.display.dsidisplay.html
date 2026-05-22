@@ -251,7 +251,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/omv.display.dsidisplay.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/e596bf0ac5fe30d539c3f6f4808c0e49129f6efa/docs/library/omv.display.dsidisplay.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -329,7 +329,42 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="class-dsidisplay-dsi-display-driver">
 <h1>class DSIDisplay – DSI Display Driver<a class="headerlink" href="#class-dsidisplay-dsi-display-driver" title="Link to this heading">¶</a></h1>
-<p>The <a class="reference internal" href="#display.DSIDisplay" title="display.DSIDisplay"><code class="xref any py py-class docutils literal notranslate"><span class="pre">DSIDisplay</span></code></a> class is used for driving MIPI DSI LCDs.</p>
+<p>The <a class="reference internal" href="#display.DSIDisplay" title="display.DSIDisplay"><code class="xref py py-class docutils literal notranslate"><span class="pre">DSIDisplay</span></code></a> class drives MIPI-DSI panels through the
+STM32 DSI host controller. MIPI DSI is a packetised serial display
+protocol that uses one clock lane plus one or more data lanes as
+differential pairs, which lets it carry high-resolution content (up
+to 1080p) over far fewer wires than 24-bit parallel RGB. Pixels
+stream directly from an SDRAM-backed framebuffer at the chosen
+refresh rate, so the CPU is not involved in refresh.</p>
+<p>Panel resolution is selected through <code class="docutils literal notranslate"><span class="pre">framesize</span></code> using the constants
+in the <a class="reference internal" href="omv.display.html#module-display" title="display: display driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">display</span></code></a> module (<code class="docutils literal notranslate"><span class="pre">QVGA</span></code>, <code class="docutils literal notranslate"><span class="pre">VGA</span></code>, <code class="docutils literal notranslate"><span class="pre">HD</span></code>, <code class="docutils literal notranslate"><span class="pre">FHD</span></code>,
+…). Panel-specific initialisation sequences are plugged in via the
+<code class="docutils literal notranslate"><span class="pre">controller</span></code> keyword argument – <a class="reference internal" href="omv.display.ST7701.html#display.ST7701" title="display.ST7701"><code class="xref py py-class docutils literal notranslate"><span class="pre">ST7701</span></code></a> covers the common
+ST7701-based 480x800 DSI panels. DCS commands can be issued
+out-of-band via <code class="xref py py-meth docutils literal notranslate"><span class="pre">bus_write()</span></code> / <code class="xref py py-meth docutils literal notranslate"><span class="pre">bus_read()</span></code>. Backlight
+brightness is driven
+as a simple GPIO by default, or by <a class="reference internal" href="omv.display.DACBacklight.html#display.DACBacklight" title="display.DACBacklight"><code class="xref py py-class docutils literal notranslate"><span class="pre">DACBacklight</span></code></a> /
+<a class="reference internal" href="omv.display.PWMBacklight.html#display.PWMBacklight" title="display.PWMBacklight"><code class="xref py py-class docutils literal notranslate"><span class="pre">PWMBacklight</span></code></a> if passed as <code class="docutils literal notranslate"><span class="pre">backlight</span></code>.</p>
+<p>Frames are presented by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">write()</span></code> with an
+<a class="reference internal" href="omv.image.Image.html#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">image.Image</span></code></a>. The driver handles RGB conversion, scaling,
+ROI, palette and orientation transforms internally.</p>
+<p>Example – mirror the camera onto an ST7701-based 480x800 DSI panel:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">display</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">csi0</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="6"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="7"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="n">lcd</span> <span class="o">=</span> <span class="n">display</span><span class="o">.</span><span class="n">DSIDisplay</span><span class="p">(</span><span class="n">framesize</span><span class="o">=</span><span class="n">display</span><span class="o">.</span><span class="n">TFWVGA</span><span class="p">,</span>
+</span><span data-line="11">                         <span class="n">controller</span><span class="o">=</span><span class="n">display</span><span class="o">.</span><span class="n">ST7701</span><span class="p">())</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="14">    <span class="n">lcd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(),</span> <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">SCALE_ASPECT_KEEP</span><span class="p">)</span>
+</span></pre></div>
+</div>
 <section id="constructors">
 <h2>Constructors<a class="headerlink" href="#constructors" title="Link to this heading">¶</a></h2>
 <dl class="py class">

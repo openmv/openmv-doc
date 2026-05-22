@@ -13,8 +13,11 @@ UART objects can be created and initialised using::
 
     from pyb import UART
 
-    uart = UART(3, 9600, timeout_char=1000)                         # init with given baudrate
-    uart.init(9600, bits=8, parity=None, stop=1, timeout_char=1000) # init with given parameters
+    # init with the given baudrate
+    uart = UART(3, 9600, timeout_char=1000)
+
+    # init with explicit parameters
+    uart.init(9600, bits=8, parity=None, stop=1, timeout_char=1000)
 
 Bits can be 7, 8 or 9.  Parity can be None, 0 (even) or 1 (odd).  Stop can be 1 or 2.
 
@@ -57,17 +60,14 @@ Constructors
 
    .. list-table::
       :header-rows: 1
-      :widths: 20 20 60
+      :widths: 30 30
 
       * - Signal
         - Header pin
-        - Notes
       * - ``TX``
         - ``P4``
-        -
       * - ``RX``
         - ``P5``
-        -
 
    Additional UART buses are available on some boards:
 
@@ -172,23 +172,30 @@ Constructors
 
    .. method:: writechar(char: int) -> None
 
-      Write a single character on the bus.  ``char`` is an integer to write.
-      Return value: ``None``. See note below if CTS flow control is used.
+      Write a single character on the bus. ``char`` is an integer to
+      write. See the *CTS flow control* section below for blocking
+      semantics when CTS flow control is enabled.
 
    .. method:: sendbreak() -> None
 
-      Send a break condition on the bus.  This drives the bus low for a duration
-      of 13 bits.
-      Return value: ``None``.
+      Send a break condition on the bus. This drives the bus low for a
+      duration of 13 bits.
 
    Constants
    ---------
 
    .. data:: RTS
-             CTS
       :type: int
 
-      to select the flow control type.
+      Bit flag for the ``flow`` argument of :meth:`init`; enables RTS
+      (request-to-send) hardware flow control on the receive path.
+
+   .. data:: CTS
+      :type: int
+
+      Bit flag for the ``flow`` argument of :meth:`init`; enables CTS
+      (clear-to-send) hardware flow control on the transmit path. May
+      be OR-ed with :data:`RTS` to enable both directions.
 
 Flow Control
 ------------

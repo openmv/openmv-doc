@@ -146,7 +146,36 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
     color_palette is a color palette enum or a 256-pixel RGB565 image used as a lookup table on
     the grayscale source value.
     alpha_palette is a 256-pixel GRAYSCALE image used as an alpha lookup table.
-    hint is a logical OR of the same flags accepted by fir.draw_ir().
+    hint is a logical OR of:
+    image.AREA: Use area scaling when downscaling.
+
+    image.BILINEAR: Use bilinear scaling.
+
+    image.BICUBIC: Use bicubic scaling.
+
+    image.CENTER: Center the image on the destination.
+
+    image.HMIRROR: Horizontally mirror.
+
+    image.VFLIP: Vertically flip.
+
+    image.TRANSPOSE: Transpose (swap x/y).
+
+    image.EXTRACT_RGB_CHANNEL_FIRST: Apply rgb_channel extraction before scaling.
+
+    image.APPLY_COLOR_PALETTE_FIRST: Apply color palette before scaling.
+
+    image.SCALE_ASPECT_KEEP: Fit inside the destination keeping aspect ratio.
+
+    image.SCALE_ASPECT_EXPAND: Fill the destination keeping aspect ratio (crops).
+
+    image.SCALE_ASPECT_IGNORE: Fill the destination ignoring aspect ratio (stretches).
+
+    image.ROTATE_90: Rotate by 90 degrees.
+
+    image.ROTATE_180: Rotate by 180 degrees.
+
+    image.ROTATE_270: Rotate by 270 degrees.
     scale is a 2-tuple (min, max) controlling the min/max temperature (in celsius) used to
     scale the IR array. Defaults to the actual IR min and max.
     pixformat controls the output pixel format. Must be image.GRAYSCALE or image.RGB565.

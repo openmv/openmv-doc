@@ -211,29 +211,35 @@ on each board. All the modules in *Common*, *Frozen Python helpers*, and
 *Networking helpers* (above) are available on every camera board unless
 otherwise noted.
 
-.. rubric:: OPENMV_N6 (STM32N6)
+.. rubric:: OpenMV N6
 
-OpenMV N6 (STM32N6 --- STMicroelectronics' first NPU-equipped MCU):
+STM32N657 (Cortex-M55 @ 800 MHz) with a 1 GHz on-chip NPU rated at
+600 GOPS INT8. Pairs the NPU with the PAG7936 1 MP global-shutter
+sensor.
 
 * :mod:`pyb` --- functions related to the board
 * :mod:`stm` --- functionality specific to STM32 MCUs
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
 
-.. rubric:: OPENMV_AE3 (Alif Ensemble E3)
+.. rubric:: OpenMV AE3
 
-OpenMV AE3 (Alif Ensemble E3 MCU):
+Alif Ensemble E3 dual-core SoC: Cortex-M55 @ 400 MHz (HP) plus
+Cortex-M55 @ 160 MHz (HE), with two on-chip NPUs (400 MHz / 204 GOPS HP
+NPU + 160 MHz / 46 GOPS HE NPU).
 
 * :mod:`alif` --- Alif Ensemble SoC functions
 * :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
 * :mod:`romfs` --- ROMFS helper utilities
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
 
-.. rubric:: OPENMV_RT1060 (i.MX RT1060)
+.. rubric:: OpenMV Cam RT1062
 
-OpenMV RT1060:
+Low-power machine-vision board around the NXP i.MX RT1062
+(Cortex-M7 @ 600 MHz). Combines USB-C high-speed networking, Wi-Fi /
+Bluetooth and 10/100 Ethernet.
 
-* :mod:`mimxrt` --- functionality specific to NXP i.MXRT
+* :mod:`mimxrt` --- functionality specific to NXP i.MX RT
 * :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
 * :mod:`onewire` --- 1-Wire bus protocol
 * :mod:`ds18x20` --- DS18x20 temperature sensor driver
@@ -242,9 +248,11 @@ OpenMV RT1060:
 * :mod:`tb6612` --- TB6612 motor driver
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
 
-.. rubric:: OPENMVPT (Pure Thermal, STM32H7 + DVI/HDMI)
+.. rubric:: OpenMV Pure Thermal
 
-OpenMV Pure Thermal:
+Full-system thermal imaging board around the STM32H743
+(Cortex-M7 @ 480 MHz) with 64 MB external SDRAM, 32 MB QSPI flash, a
+hardware JPEG codec and DVI/HDMI output.
 
 * :mod:`pyb` --- functions related to the board
 * :mod:`stm` --- functionality specific to STM32 MCUs
@@ -257,9 +265,10 @@ OpenMV Pure Thermal:
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
 
-.. rubric:: OPENMV2 / OPENMV3 / OPENMV4 / OPENMV4P (STM32)
+.. rubric:: OpenMV Cam H7 Plus
 
-Legacy STM32-based OpenMV camera boards:
+STM32H743 (Cortex-M7 @ 480 MHz) with 32 MB external SDRAM, 32 MB QSPI
+flash, a hardware JPEG codec and the OV5640 5MP camera module.
 
 * :mod:`pyb` --- functions related to the board
 * :mod:`stm` --- functionality specific to STM32 MCUs
@@ -270,21 +279,65 @@ Legacy STM32-based OpenMV camera boards:
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
 
-.. rubric:: ARDUINO_GIGA (STM32H7 + touchscreen)
+.. rubric:: OpenMV Cam H7
 
-Arduino Giga R1 WiFi:
+STM32H743 (Cortex-M7 @ 480 MHz) with 1 MB internal SRAM, 2 MB internal
+flash and a hardware JPEG codec.
 
 * :mod:`pyb` --- functions related to the board
 * :mod:`stm` --- functionality specific to STM32 MCUs
 * :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
 * :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
 * :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
-* :mod:`gt911` --- GT911 5-point capacitive touch controller
-* :mod:`ft5x06` --- capacitive touchscreen driver
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
 
-.. rubric:: ARDUINO_PORTENTA_H7 (STM32H7)
+.. rubric:: OpenMV Cam M7
 
-Arduino Portenta H7:
+STM32F765 (Cortex-M7 @ 216 MHz) with 512 KB internal SRAM and 2 MB
+internal flash. Bundled with the OV7725 sensor.
+
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
+
+.. rubric:: OpenMV Cam M4
+
+STM32F427 (Cortex-M4 @ 180 MHz) with 256 KB internal SRAM and 1 MB
+internal flash. Bundled with the OV7725 sensor.
+
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`ssd1306` --- OLED driver
+* :mod:`tb6612` --- TB6612 motor driver
+
+.. rubric:: Arduino Nicla Vision
+
+22.86 × 22.86 mm machine-vision board around the STM32H747AII6
+dual-core SoC: Cortex-M7 @ 400 MHz plus Cortex-M4 @ 200 MHz.
+
+* :mod:`pyb` --- functions related to the board
+* :mod:`stm` --- functionality specific to STM32 MCUs
+* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+
+.. rubric:: Arduino Portenta H7
+
+66 × 25 mm industrial dev board around the STM32H747XI dual-core SoC:
+Cortex-M7 @ 400 MHz plus Cortex-M4 @ 200 MHz.
 
 * :mod:`pyb` --- functions related to the board
 * :mod:`stm` --- functionality specific to STM32 MCUs
@@ -296,23 +349,38 @@ Arduino Portenta H7:
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
 
-.. rubric:: ARDUINO_NICLA_VISION (STM32H7)
+.. rubric:: Arduino Giga R1 WiFi
 
-Arduino Nicla Vision:
+101 × 53 mm Mega-form-factor board around the STM32H747XI dual-core
+SoC: Cortex-M7 @ 480 MHz plus Cortex-M4 @ 240 MHz, with an on-board
+800x480 touchscreen.
 
 * :mod:`pyb` --- functions related to the board
 * :mod:`stm` --- functionality specific to STM32 MCUs
-* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
 * :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
-* :mod:`ds18x20` --- DS18x20 temperature sensor driver
 * :mod:`onewire` --- 1-Wire bus protocol
 * :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+* :mod:`gt911` --- GT911 5-point capacitive touch controller
+* :mod:`ft5x06` --- capacitive touchscreen driver
 
-.. rubric:: ARDUINO_NANO_33_BLE_SENSE (Nordic nRF52840)
+.. rubric:: Arduino Nano RP2040 Connect
 
-Arduino Nano 33 BLE Sense --- board-specific :doc:`imu <imu>` wrapper
-that selects between the LSM9DS1 (Rev 1) and BMI270 + BMM150 (Rev 2)
-sensor sets, plus:
+RP2040-based Nano-form-factor board with the U-blox NINA-W102
+Wi-Fi/Bluetooth module. *No longer actively supported; the last OpenMV
+firmware release for this board is retained for archival use.*
+
+* :mod:`espflash` --- ESP32 ROM bootloader firmware flasher
+* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
+* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
+* :mod:`onewire` --- 1-Wire bus protocol
+* :mod:`ds18x20` --- DS18x20 temperature sensor driver
+* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
+
+.. rubric:: Arduino Nano 33 BLE Sense
+
+Nordic nRF52840 Nano-form-factor board with the on-board Arduino
+sensor suite. *No longer actively supported; the last OpenMV firmware
+release for this board is retained for archival use.*
 
 * :mod:`ubluepy` --- Bluetooth LE peripheral and central API on the
   Nordic SoftDevice
@@ -323,28 +391,6 @@ sensor sets, plus:
 * :mod:`lps22h` --- LPS22HB/HH pressure sensor
 * :mod:`hs3003` --- HS3003 humidity/temperature sensor
 * :mod:`apds9960` --- proximity, gesture, and color sensor driver
-* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` --- 1-Wire bus protocol
-* :mod:`ds18x20` --- DS18x20 temperature sensor driver
-* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
-
-.. rubric:: ARDUINO_NANO_RP2040_CONNECT / RPI_PICO (RP2)
-
-RP2040-based boards. The Arduino Nano RP2040 Connect adds a few extra
-companion-chip drivers; the Raspberry Pi Pico ships only with the core
-upstream drivers.
-
-Arduino Nano RP2040 Connect:
-
-* :mod:`espflash` --- ESP32 ROM bootloader firmware flasher
-* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
-* :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
-* :mod:`onewire` --- 1-Wire bus protocol
-* :mod:`ds18x20` --- DS18x20 temperature sensor driver
-* :mod:`neopixel` --- control of WS2812 / NeoPixel LEDs
-
-Raspberry Pi Pico:
-
 * :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors
 * :mod:`onewire` --- 1-Wire bus protocol
 * :mod:`ds18x20` --- DS18x20 temperature sensor driver

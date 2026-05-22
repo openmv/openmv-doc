@@ -229,7 +229,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/mimxrt.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/e596bf0ac5fe30d539c3f6f4808c0e49129f6efa/docs/library/mimxrt.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -310,30 +310,70 @@ i.MXRT family of microcontrollers.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="mimxrt.Flash">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">mimxrt.</span></span><span class="sig-name descname"><span class="pre">Flash</span></span><a class="headerlink" href="#mimxrt.Flash" title="Link to this definition">¶</a></dt>
-<dd><p>Gets the singleton object for accessing the SPI flash memory. This class
-gives access to the on-board SPI flash memory.</p>
+<dd><p>Get the singleton object that exposes the user-storage region of the
+on-board QSPI flash as a <a class="reference internal" href="vfs.html#vfs.AbstractBlockDev" title="vfs.AbstractBlockDev"><code class="xref py py-class docutils literal notranslate"><span class="pre">vfs.AbstractBlockDev</span></code></a>-compatible block
+device. Block numbers are relative to the start of that region, not
+the physical start of flash.</p>
 <p>In most cases, to store persistent data on the device, you’ll want to
-use a higher-level abstraction, for example the filesystem via Python’s
-standard file API, but this interface is useful to <a class="reference internal" href="../reference/filesystem.html#filesystem"><span class="std std-ref">customise the
-filesystem configuration</span></a> or implement a low-level storage
-system for your application.</p>
+use a higher-level abstraction – for example the filesystem via
+Python’s standard file API. This interface is useful to
+<a class="reference internal" href="../reference/filesystem.html#filesystem"><span class="std std-ref">customise the filesystem configuration</span></a> or
+implement a low-level storage system for your application.</p>
+<p>The object also implements the buffer protocol, allowing read-only
+memory-mapped access to the entire flash storage region via the QSPI
+XIP base. This makes a zero-copy view of the region available without
+issuing any flash reads:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">flash</span> <span class="o">=</span> <span class="n">mimxrt</span><span class="o">.</span><span class="n">Flash</span><span class="p">()</span>
+</span><span data-line="2"><span class="n">view</span> <span class="o">=</span> <span class="nb">memoryview</span><span class="p">(</span><span class="n">flash</span><span class="p">)</span>
+</span><span data-line="3"><span class="n">magic</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">view</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>      <span class="c1"># read the first 4 bytes directly from XIP</span>
+</span></pre></div>
+</div>
+<p>The block size used by the underlying flash sectors can be queried at
+runtime with <a class="reference internal" href="#mimxrt.Flash.ioctl" title="mimxrt.Flash.ioctl"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ioctl(5,</span> <span class="pre">0)</span></code></a>.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="mimxrt.Flash.readblocks">
 <span class="sig-name descname"><span class="pre">readblocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bytearray" title="bytearray"><span class="pre">bytearray</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mimxrt.Flash.readblocks" title="Link to this definition">¶</a></dt>
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">readblocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bytearray" title="bytearray"><span class="pre">bytearray</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span></dt>
+<dd><p>Read bytes from the flash into <code class="docutils literal notranslate"><span class="pre">buf</span></code>. Two overloads expose the
+simple and extended interfaces:</p>
+<p><strong>Simple form</strong> (<code class="docutils literal notranslate"><span class="pre">readblocks(block_num,</span> <span class="pre">buf)</span></code>): reads whole
+blocks starting at block index <code class="docutils literal notranslate"><span class="pre">block_num</span></code>. <code class="docutils literal notranslate"><span class="pre">len(buf)</span></code> must be
+a multiple of the flash block size.</p>
+<p><strong>Extended form</strong> (<code class="docutils literal notranslate"><span class="pre">readblocks(block_num,</span> <span class="pre">buf,</span> <span class="pre">offset)</span></code>): reads
+<code class="docutils literal notranslate"><span class="pre">len(buf)</span></code> bytes – not necessarily a whole number of blocks –
+starting at byte <code class="docutils literal notranslate"><span class="pre">offset</span></code> within block <code class="docutils literal notranslate"><span class="pre">block_num</span></code>.
+<code class="docutils literal notranslate"><span class="pre">len(buf)</span></code> has no alignment constraint.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="mimxrt.Flash.writeblocks">
 <span class="sig-name descname"><span class="pre">writeblocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bytes" title="bytes"><span class="pre">bytes</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mimxrt.Flash.writeblocks" title="Link to this definition">¶</a></dt>
 <dt class="sig sig-object py">
 <span class="sig-name descname"><span class="pre">writeblocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_num</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bytes" title="bytes"><span class="pre">bytes</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span></dt>
+<dd><p>Write bytes from <code class="docutils literal notranslate"><span class="pre">buf</span></code> to the flash. Two overloads expose the
+simple and extended interfaces:</p>
+<p><strong>Simple form</strong> (<code class="docutils literal notranslate"><span class="pre">writeblocks(block_num,</span> <span class="pre">buf)</span></code>): writes whole
+blocks starting at block index <code class="docutils literal notranslate"><span class="pre">block_num</span></code>. <code class="docutils literal notranslate"><span class="pre">len(buf)</span></code> must be
+a multiple of the flash block size. Each affected block is erased
+automatically before being written.</p>
+<p><strong>Extended form</strong> (<code class="docutils literal notranslate"><span class="pre">writeblocks(block_num,</span> <span class="pre">buf,</span> <span class="pre">offset)</span></code>):
+writes <code class="docutils literal notranslate"><span class="pre">len(buf)</span></code> bytes – not necessarily a whole number of
+blocks – starting at byte <code class="docutils literal notranslate"><span class="pre">offset</span></code> within block <code class="docutils literal notranslate"><span class="pre">block_num</span></code>.
+<code class="docutils literal notranslate"><span class="pre">len(buf)</span></code> has no alignment constraint, and <strong>no implicit erase
+is performed</strong> – the caller must ensure the affected blocks have
+been erased via a prior <a class="reference internal" href="#mimxrt.Flash.ioctl" title="mimxrt.Flash.ioctl"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ioctl(6,</span> <span class="pre">block_num)</span></code></a> call.</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">OSError</span></code> if the underlying flash erase or write
+operation fails.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="mimxrt.Flash.ioctl">
 <span class="sig-name descname"><span class="pre">ioctl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#mimxrt.Flash.ioctl" title="Link to this definition">¶</a></dt>
-<dd><p>These methods implement the simple and extended
-<a class="reference internal" href="vfs.html#block-device-interface"><span class="std std-ref">block protocol</span></a> defined by
-<a class="reference internal" href="vfs.html#vfs.AbstractBlockDev" title="vfs.AbstractBlockDev"><code class="xref py py-class docutils literal notranslate"><span class="pre">vfs.AbstractBlockDev</span></code></a>.</p>
-<p>The block size can be queried by calling <code class="docutils literal notranslate"><span class="pre">ioctl(5,</span> <span class="pre">0)</span></code>. Block numbers
-are relative to the start of the user flash storage area, not the physical
-start of flash memory.</p>
+<dd><p>Standard <a class="reference internal" href="vfs.html#vfs.AbstractBlockDev" title="vfs.AbstractBlockDev"><code class="xref py py-class docutils literal notranslate"><span class="pre">vfs.AbstractBlockDev</span></code></a> ioctl entry point. See
+<a class="reference internal" href="vfs.html#vfs.AbstractBlockDev.ioctl" title="vfs.AbstractBlockDev.ioctl"><code class="xref py py-meth docutils literal notranslate"><span class="pre">vfs.AbstractBlockDev.ioctl()</span></code></a> for the full list of <code class="docutils literal notranslate"><span class="pre">cmd</span></code>
+values. <code class="docutils literal notranslate"><span class="pre">cmd=5</span></code> returns the flash block size in bytes; <code class="docutils literal notranslate"><span class="pre">cmd=6</span></code>
+erases the block with index <code class="docutils literal notranslate"><span class="pre">arg</span></code>.</p>
 </dd></dl>
 
 </dd></dl>

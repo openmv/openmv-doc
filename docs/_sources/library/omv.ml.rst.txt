@@ -28,7 +28,7 @@ Sub Modules
 class Model -- Model Container
 ------------------------------
 
-.. class:: Model(path: str, postprocess: object = None) -> Model
+.. class:: Model(path: str, *, postprocess: object = None) -> Model
 
    Loads a TensorFlow Lite model from ``path`` into memory and prepares it for inference. ``path``
    may be a file on the filesystem or the name of a model built into the firmware image.

@@ -4,7 +4,28 @@
 .. module:: display
    :synopsis: display driver
 
-The ``display`` module is used for driving SPI LCDs, 24-bit parallel LCDs, MIPI DSI LCDs, HDMI output, and Display Port output.
+The :mod:`display` module exposes drivers for external displays that
+can be attached to an OpenMV Cam. Four interfaces are supported:
+
+- SPI-attached TFTs (the smaller 16-bit displays such as the SSD1351),
+  via :class:`SPIDisplay`.
+- 24-bit parallel RGB panels driven by the LTDC/LCD-TFT controller,
+  via :class:`RGBDisplay`. The same parallel bus also feeds external
+  HDMI / DisplayPort converters (e.g. a TFP410), so HDMI and
+  DisplayPort outputs are configured through :class:`RGBDisplay` too.
+- MIPI-DSI panels, via :class:`DSIDisplay`.
+- NTSC analog video on the OpenMV TV shield, via :class:`TVDisplay`.
+
+Panel-specific initialisation lives in dedicated controller classes
+(:class:`SSD1351` for SPI panels, :class:`ST7701` for DSI panels) that
+are passed to the display constructor through the ``controller``
+argument. Backlight brightness is driven by :class:`DACBacklight` or
+:class:`PWMBacklight`, hooked in via the ``backlight`` argument.
+
+The constants below select the output frame size and are accepted as
+the ``framesize`` argument by every display class. Once constructed a
+display object accepts :class:`image.Image` buffers via its
+``write()`` method to present a frame.
 
 Classes
 -------

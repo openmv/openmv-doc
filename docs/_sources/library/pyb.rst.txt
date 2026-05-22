@@ -87,9 +87,13 @@ Reset related functions
 
 .. function:: bootloader() -> None
 
-   Reset into the DFU bootloader without needing the BOOT pin to be
-   asserted at reset. Useful for triggering firmware updates from running
-   code.
+   Reset into OpenMV's own USB DFU bootloader, ready for a firmware
+   update. This is the recommended way to invoke DFU from running code
+   -- no BOOT pin needs to be asserted at reset.
+
+   Not available on the OpenMV Cam N6 (the ``pyb`` legacy compatibility
+   layer is disabled on that board); use :func:`machine.bootloader`
+   instead.
 
 .. function:: fault_debug(value: bool) -> None
 
@@ -317,12 +321,36 @@ Miscellaneous functions
 Constants
 ---------
 
+Both of the constants below are ready-made 5-tuples in the form
+
+   ``(subclass, protocol, max_packet_size, polling_interval_ms, report_descriptor)``
+
+suitable for passing as the ``hid`` argument of :func:`usb_mode` to make the
+OpenMV Cam appear to the host as a USB HID device. ``subclass = 1`` means
+"boot interface" and ``protocol`` selects the boot device class
+(``1`` = keyboard, ``2`` = mouse). The fifth element is a ``bytes`` object
+holding the HID report descriptor used when the host enumerates the device.
+
 .. data:: pyb.hid_mouse
-          pyb.hid_keyboard
    :type: tuple
 
-   A tuple of (subclass, protocol, max packet length, polling interval, report
-   descriptor) to set appropriate values for a USB mouse or keyboard.
+   Pre-built HID descriptor for a 3-button boot mouse with relative X/Y
+   movement. The tuple is ``(1, 2, 4, 8, <mouse report descriptor>)``:
+   boot subclass, mouse protocol, 4-byte input reports (button mask + X +
+   Y + wheel), polled every 8 ms. The built-in report descriptor is the
+   one used by ``pyb.USB_HID().send((buttons, dx, dy, wheel))``.
+
+.. data:: pyb.hid_keyboard
+   :type: tuple
+
+   Pre-built HID descriptor for a USB boot keyboard. The tuple is
+   ``(1, 1, 8, 8, <keyboard report descriptor>)``: boot subclass,
+   keyboard protocol, 8-byte input reports (modifier byte, one reserved
+   byte, six concurrent key codes), polled every 8 ms. The built-in
+   report descriptor matches the standard 8-byte HID boot-keyboard
+   layout, so the report sent via :meth:`USB_HID.send` should be a
+   ``bytes`` of the form
+   ``(modifiers, 0, key1, key2, key3, key4, key5, key6)``.
 
 Classes
 -------
@@ -331,6 +359,7 @@ Classes
    :maxdepth: 1
 
    pyb.ADC.rst
+   pyb.ADCAll.rst
    pyb.CAN.rst
    pyb.DAC.rst
    pyb.ExtInt.rst
@@ -338,10 +367,12 @@ Classes
    pyb.I2C.rst
    pyb.LED.rst
    pyb.Pin.rst
+   pyb.PinAF.rst
    pyb.RTC.rst
    pyb.Servo.rst
    pyb.SPI.rst
    pyb.Timer.rst
+   pyb.TimerChannel.rst
    pyb.UART.rst
    pyb.USB_HID.rst
    pyb.USB_VCP.rst

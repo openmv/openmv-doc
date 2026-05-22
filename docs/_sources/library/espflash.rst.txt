@@ -15,13 +15,17 @@ The driver toggles ``RESET`` and ``GPIO0`` to put the ESP32 into download mode,
 then issues SLIP-framed commands to read the flash size, configure the SPI
 interface, write the firmware image and verify it via an MD5 digest.
 
-Example::
+Example for the Arduino Nano RP2040 Connect (the only OpenMV-supported
+board where ``espflash`` is currently frozen). The NINA-W102's reset and
+boot-strap pins are RP2040 ``GPIO 3`` and ``GPIO 2`` respectively, and
+the NINA's ``UART0`` is wired to RP2040 ``UART1`` (``TX = GPIO 8``,
+``RX = GPIO 9``)::
 
     from machine import Pin, UART
     from espflash import ESPFlash
 
-    reset = Pin("ESP_RESET", Pin.OUT)
-    gpio0 = Pin("ESP_GPIO0", Pin.OUT)
+    reset = Pin(3, Pin.OUT)                                    # NINA RESET
+    gpio0 = Pin(2, Pin.OUT)                                    # NINA GPIO0
     uart = UART(1, 115200, timeout=1000)
 
     esp = ESPFlash(reset, gpio0, uart)

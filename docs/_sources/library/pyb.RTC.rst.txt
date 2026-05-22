@@ -39,7 +39,7 @@ Constructors
 
       ``weekday`` is 1-7 for Monday through Sunday.
 
-      ``subseconds`` counts down from 255 to 0
+      ``subseconds`` counts down from 255 to 0.
 
    .. method:: wakeup(timeout: Optional[int], callback: Optional[Callable[[RTC], None]] = None) -> None
 
@@ -49,8 +49,9 @@ Constructors
 
       If ``timeout`` is ``None`` then the wakeup timer is disabled.
 
-      If ``callback`` is given then it is executed at every trigger of the
-      wakeup timer.  ``callback`` must take exactly one argument.
+      If ``callback`` is given then it is executed at every trigger of
+      the wakeup timer. ``callback`` must take exactly one argument --
+      the :class:`RTC` instance that fired the wakeup.
 
    .. method:: info() -> int
 

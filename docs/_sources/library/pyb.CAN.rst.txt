@@ -4,26 +4,43 @@
 class CAN -- controller area network communication bus
 ======================================================
 
-CAN implements support for classic CAN (available on F4 and F7 MCUs) and
-CAN FD (H7 series) controllers. At the physical level the CAN bus consists
+CAN implements support for both classic CAN (bxCAN, used on the OpenMV
+Cam M4 and M7) and CAN FD (FDCAN, used on the OpenMV Cam H7, H7 Plus and
+Pure Thermal) controllers. At the physical level the CAN bus consists
 of two lines, RX and TX. To connect an OpenMV Cam to a CAN bus you must
-use a CAN transceiver to convert the CAN logic signals from the MCU to the
-correct voltage levels on the bus.
+use a CAN transceiver to convert the CAN logic signals from the MCU to
+the correct voltage levels on the bus.
 
-Example usage for classic CAN controller in Loopback (transceiver-less) mode::
+Classic CAN in loopback (transceiver-less) mode::
 
     from pyb import CAN
+
     can = CAN(1, CAN.LOOPBACK)
-    can.setfilter(0, CAN.LIST16, 0, (123, 124, 125, 126))  # set a filter to receive messages with id=123, 124, 125 and 126
-    can.send('message!', 123)   # send a message with id 123
-    can.recv(0)                 # receive message on FIFO 0
 
-Example usage for CAN FD controller with all of the possible options enabled::
+    # Accept messages with id 123, 124, 125 or 126.
+    can.setfilter(0, CAN.LIST16, 0, (123, 124, 125, 126))
 
-    # FD frame + BRS mode + Extended frame ID. 500 Kbit/s for arbitration phase, 1Mbit/s for data phase.
-    can = CAN(1, CAN.NORMAL, baudrate=500_000, brs_baudrate=1_000_000, sample_point=80)
+    can.send("message!", 123)   # send a message with id 123
+    can.recv(0)                 # receive a message on FIFO 0
+
+CAN FD with all of the optional features enabled (FD frame, bit-rate
+switching, extended frame IDs; 500 kbit/s arbitration phase,
+1 Mbit/s data phase)::
+
+    from pyb import CAN
+
+    can = CAN(
+        1,
+        CAN.NORMAL,
+        baudrate=500_000,
+        brs_baudrate=1_000_000,
+        sample_point=80,
+    )
+
+    # Accept any id in the range 0xFFF0 .. 0xFFFF.
     can.setfilter(0, CAN.RANGE, 0, (0xFFF0, 0xFFFF))
-    can.send('a'*64, 0xFFFF, fdf=True, brs=True, extframe=True)
+
+    can.send(b"a" * 64, 0xFFFF, fdf=True, brs=True, extframe=True)
     can.recv(0)
 
 The following CAN module functions and their arguments are available
@@ -121,9 +138,12 @@ Constructors
       The baud rate will be 1/bittime, where the bittime is 1 + BS1 + BS2 multiplied
       by the time quanta tq.
 
-      For example, with PCLK1=42MHz, prescaler=100, sjw=1, bs1=6, bs2=8, the value of
-      tq is 2.38 microseconds.  The bittime is 35.7 microseconds, and the baudrate
-      is 28kHz.
+      For example, on the OpenMV Cam H7 (PCLK1 = 100 MHz), 250 kbps CAN
+      with a 75% sample point can be configured as
+      ``prescaler=25, sjw=1, bs1=11, bs2=4``: ``tq = 25 / 100 MHz =
+      250 ns``, ``bittime = (1 + 11 + 4) × 250 ns = 4 µs``, sample
+      point = ``(1 + 11) / 16 = 75%``, and the baudrate is
+      ``1 / 4 µs = 250 kHz``.
 
       See the bxCAN / FDCAN section of the STM32 reference manual for the
       OpenMV Cam's MCU for more details.
@@ -188,48 +208,69 @@ Constructors
       - *fifo* is which fifo (0 or 1) a message should be stored in, if it is accepted by this filter.
       - *params* is an array of values the defines the filter. The contents of the array depends on the *mode* argument.
 
-      +-----------+---------------------------------------------------------+
-      |*mode*     |Contents of *params* array for classic CAN controller    |
-      +===========+=========================================================+
-      |CAN.LIST16 |Four 16 bit ids that will be accepted                    |
-      +-----------+---------------------------------------------------------+
-      |CAN.LIST32 |Two 32 bit ids that will be accepted                     |
-      +-----------+---------------------------------------------------------+
-      |CAN.MASK16 |Two 16 bit id/mask pairs. E.g. (1, 3, 4, 4)              |
-      |           | | The first pair, 1 and 3 will accept all ids           |
-      |           | | that have bit 0 = 1 and bit 1 = 0.                    |
-      |           | | The second pair, 4 and 4, will accept all ids         |
-      |           | | that have bit 2 = 1.                                  |
-      +-----------+---------------------------------------------------------+
-      |CAN.MASK32 |As with CAN.MASK16 but with only one 32 bit id/mask pair.|
-      +-----------+---------------------------------------------------------+
+      Contents of *params* array for **classic CAN** controllers
+      (OpenMV Cam M4 / M7):
 
-      +-----------+---------------------------------------------------------+
-      |*mode*     |Contents of *params* array for CAN FD controller         |
-      +===========+=========================================================+
-      |CAN.RANGE  |Two ids that represent a range of accepted ids.          |
-      +-----------+---------------------------------------------------------+
-      |CAN.DUAL   |Two ids that will be accepted. For example (1, 2)        |
-      +-----------+---------------------------------------------------------+
-      |CAN.MASK   |One filter ID and a mask. For example (0x111, 0x7FF)     |
-      +-----------+---------------------------------------------------------+
+      .. list-table::
+         :header-rows: 1
+         :widths: 22 78
 
-      - *rtr* For classic CAN controllers, this is an array of booleans that states if
-        a filter should accept a remote transmission request message. If this argument
-        is not given then it defaults to ``False`` for all entries. The length of the
-        array depends on the *mode* argument. For CAN FD, this argument is ignored.
+         * - *mode*
+           - Contents of *params*
+         * - ``CAN.LIST16``
+           - Four 16-bit IDs that will be accepted.
+         * - ``CAN.LIST32``
+           - Two 32-bit IDs that will be accepted.
+         * - ``CAN.MASK16``
+           - Two 16-bit id/mask pairs, e.g. ``(1, 3, 4, 4)``. The first
+             pair (``1, 3``) accepts all IDs with bit 0 = 1 and bit 1 = 0;
+             the second pair (``4, 4``) accepts all IDs with bit 2 = 1.
+         * - ``CAN.MASK32``
+           - One 32-bit id/mask pair (otherwise the same as
+             ``CAN.MASK16``).
 
-      +-----------+----------------------+
-      |*mode*     |length of *rtr* array |
-      +===========+======================+
-      |CAN.LIST16 |4                     |
-      +-----------+----------------------+
-      |CAN.LIST32 |2                     |
-      +-----------+----------------------+
-      |CAN.MASK16 |2                     |
-      +-----------+----------------------+
-      |CAN.MASK32 |1                     |
-      +-----------+----------------------+
+      Contents of *params* array for **CAN FD** controllers
+      (OpenMV Cam H7 / H7 Plus / Pure Thermal):
+
+      .. list-table::
+         :header-rows: 1
+         :widths: 22 78
+
+         * - *mode*
+           - Contents of *params*
+         * - ``CAN.RANGE``
+           - Two IDs forming a range of accepted IDs.
+         * - ``CAN.DUAL``
+           - Two IDs that will be accepted (e.g. ``(1, 2)``).
+         * - ``CAN.MASK``
+           - One ``(id, mask)`` pair (e.g. ``(0x111, 0x7FF)``).
+
+      - *rtr* For classic CAN controllers, this is an array of booleans
+        that states whether a filter should accept a remote transmission
+        request message. If this argument is not given it defaults to
+        ``False`` for all entries. The length depends on *mode*:
+
+        .. list-table::
+           :header-rows: 1
+           :widths: 22 22 56
+
+           * - *mode*
+             - ``len(rtr)``
+             - Notes
+           * - ``CAN.LIST16``
+             - 4
+             -
+           * - ``CAN.LIST32``
+             - 2
+             -
+           * - ``CAN.MASK16``
+             - 2
+             -
+           * - ``CAN.MASK32``
+             - 1
+             -
+
+        For CAN FD this argument is ignored.
 
       - *extframe* If True the frame will have an extended identifier (29 bits),
         otherwise a standard identifier (11 bits) is used.
@@ -310,23 +351,27 @@ Constructors
 
    .. method:: rxcallback(fifo: int, fun: Optional[Callable[[CAN, int], None]]) -> None
 
-      Register a function to be called when a message is accepted into a empty fifo:
+      Register a function to be called when a message is accepted into an empty FIFO:
 
-      - *fifo* is the receiving fifo.
-      - *fun* is the function to be called when the fifo becomes non empty.
+      - *fifo* is the receiving FIFO.
+      - *fun* is the function to be called when the FIFO becomes non-empty.
 
-      The callback function takes two arguments the first is the can object it self the second is
-      a integer that indicates the reason for the callback.
+      The callback function takes two arguments: the first is the CAN object
+      itself; the second is an integer that indicates the reason for the
+      callback:
 
-      +--------+------------------------------------------------+
-      | Reason |                                                |
-      +========+================================================+
-      | 0      | A message has been accepted into a empty FIFO. |
-      +--------+------------------------------------------------+
-      | 1      | The FIFO is full                               |
-      +--------+------------------------------------------------+
-      | 2      | A message has been lost due to a full FIFO     |
-      +--------+------------------------------------------------+
+      .. list-table::
+         :header-rows: 1
+         :widths: 14 86
+
+         * - Reason
+           - Meaning
+         * - ``0``
+           - A message has been accepted into an empty FIFO.
+         * - ``1``
+           - The FIFO is full.
+         * - ``2``
+           - A message has been lost due to a full FIFO.
 
       Example use of rxcallback::
 
@@ -345,34 +390,104 @@ Constructors
    Constants
    ---------
 
+   Bus-mode constants (``mode`` argument of :meth:`init`):
+
    .. data:: NORMAL
-             LOOPBACK
-             SILENT
-             SILENT_LOOPBACK
       :type: int
 
-      The mode of the CAN bus used in :meth:`~CAN.init()`.
+      The controller participates normally on the bus -- transmits its
+      own frames and acknowledges valid received frames.
+
+   .. data:: LOOPBACK
+      :type: int
+
+      Internal loopback mode: the controller is disconnected from the
+      pins and routes transmitted frames straight back to the receive
+      path. Useful for self-tests without a transceiver.
+
+   .. data:: SILENT
+      :type: int
+
+      Listen-only mode: the controller receives frames but never drives
+      the bus (no ACK, no transmissions). Useful for bus sniffing.
+
+   .. data:: SILENT_LOOPBACK
+      :type: int
+
+      Combines :data:`SILENT` and :data:`LOOPBACK`: no pin activity and
+      no acknowledgements, with internal loopback of TX into RX.
+
+   Controller-state constants (returned by :meth:`state`):
 
    .. data:: STOPPED
-             ERROR_ACTIVE
-             ERROR_WARNING
-             ERROR_PASSIVE
-             BUS_OFF
       :type: int
 
-      Possible states of the CAN controller returned from :meth:`~CAN.state()`.
+      The controller is completely off and reset.
+
+   .. data:: ERROR_ACTIVE
+      :type: int
+
+      The controller is on and in the Error Active state (both TEC and
+      REC are less than 96).
+
+   .. data:: ERROR_WARNING
+      :type: int
+
+      The controller is on and in the Error Warning state (at least one
+      of TEC or REC is 96 or greater).
+
+   .. data:: ERROR_PASSIVE
+      :type: int
+
+      The controller is on and in the Error Passive state (at least one
+      of TEC or REC is 128 or greater).
+
+   .. data:: BUS_OFF
+      :type: int
+
+      The controller is on but not participating in bus activity (TEC
+      overflowed beyond 255).
+
+   Classic-CAN filter modes (``mode`` argument of :meth:`setfilter` on
+   the OpenMV Cam M4 / M7):
 
    .. data:: LIST16
-             MASK16
-             LIST32
-             MASK32
       :type: int
 
-      The operation mode of a filter used in :meth:`~CAN.setfilter()` for classic CAN.
+      The filter ``params`` array holds four 16-bit IDs that will be
+      accepted.
+
+   .. data:: LIST32
+      :type: int
+
+      The filter ``params`` array holds two 32-bit IDs that will be
+      accepted.
+
+   .. data:: MASK16
+      :type: int
+
+      The filter ``params`` array holds two 16-bit ``(id, mask)`` pairs.
+
+   .. data:: MASK32
+      :type: int
+
+      The filter ``params`` array holds one 32-bit ``(id, mask)`` pair.
+
+   CAN FD filter modes (``mode`` argument of :meth:`setfilter` on the
+   OpenMV Cam H7 / H7 Plus / Pure Thermal):
+
+   .. data:: RANGE
+      :type: int
+
+      The filter ``params`` array holds two IDs forming a range of
+      accepted IDs.
 
    .. data:: DUAL
-             RANGE
-             MASK
       :type: int
 
-      The operation mode of a filter used in :meth:`~CAN.setfilter()` for CAN FD.
+      The filter ``params`` array holds two specific IDs to accept.
+
+   .. data:: MASK
+      :type: int
+
+      The filter ``params`` array holds one ``(id, mask)`` pair.

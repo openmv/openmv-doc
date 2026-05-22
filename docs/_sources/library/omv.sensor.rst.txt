@@ -10,7 +10,17 @@
    (see :doc:`omv.csi`) instead. No new features will be added to this module
    and it may be removed in a future release.
 
-The ``sensor`` module provides legacy access to the camera sensor.
+The :mod:`sensor` module is the legacy module-level interface to the
+primary camera sensor on an OpenMV Cam. Every call is a free function
+that operates on a single hidden ``CSI`` instance, which limits
+support for boards with more than one camera. It is preserved for
+backwards compatibility with older OpenMV scripts; new code should
+use the object-oriented :mod:`csi` module instead.
+
+The function names follow the older ``set_pixformat`` /
+``set_framesize`` style. Each function corresponds one-to-one to a
+method on :class:`csi.CSI`; see the :mod:`csi` module for the
+complete capability set and per-argument descriptions.
 
 Example usage::
 

@@ -29,12 +29,36 @@ def draw_depth(image: image.Image, depth: list[float], x: int = 0, y: int = 0, x
     table on the grayscale depth value.
     alpha_palette if not None is a 256-pixel GRAYSCALE image used as an
     alpha lookup table modulating alpha per pixel.
-    hint is a logical OR of image flags such as image.BILINEAR,
-    image.BICUBIC, image.AREA, image.CENTER, image.HMIRROR,
-    image.VFLIP, image.TRANSPOSE, image.EXTRACT_RGB_CHANNEL_FIRST,
-    image.APPLY_COLOR_PALETTE_FIRST, image.SCALE_ASPECT_KEEP,
-    image.SCALE_ASPECT_EXPAND, image.SCALE_ASPECT_IGNORE,
-    image.ROTATE_90, image.ROTATE_180, image.ROTATE_270.
+    hint is a logical OR of:
+    image.AREA: Use area scaling when downscaling.
+
+    image.BILINEAR: Use bilinear scaling.
+
+    image.BICUBIC: Use bicubic scaling.
+
+    image.CENTER: Center the image on the destination.
+
+    image.HMIRROR: Horizontally mirror.
+
+    image.VFLIP: Vertically flip.
+
+    image.TRANSPOSE: Transpose (swap x/y).
+
+    image.EXTRACT_RGB_CHANNEL_FIRST: Apply rgb_channel extraction before scaling.
+
+    image.APPLY_COLOR_PALETTE_FIRST: Apply color palette before scaling.
+
+    image.SCALE_ASPECT_KEEP: Fit inside the destination keeping aspect ratio.
+
+    image.SCALE_ASPECT_EXPAND: Fill the destination keeping aspect ratio (crops).
+
+    image.SCALE_ASPECT_IGNORE: Fill the destination ignoring aspect ratio (stretches).
+
+    image.ROTATE_90: Rotate by 90 degrees.
+
+    image.ROTATE_180: Rotate by 180 degrees.
+
+    image.ROTATE_270: Rotate by 270 degrees.
     scale is a two-value tuple (min, max) controlling the min and max
     depth (in mm) used to scale the depth image. Defaults to the depth array’s
     actual min and max.
@@ -101,8 +125,36 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
     256-pixel RGB565 image used as a color lookup table.
     alpha_palette if not None is a 256-pixel GRAYSCALE image used as an
     alpha lookup table.
-    hint is a logical OR of image scaling/orientation flags (see
-    draw_depth).
+    hint is a logical OR of:
+    image.AREA: Use area scaling when downscaling.
+
+    image.BILINEAR: Use bilinear scaling.
+
+    image.BICUBIC: Use bicubic scaling.
+
+    image.CENTER: Center the image on the destination.
+
+    image.HMIRROR: Horizontally mirror.
+
+    image.VFLIP: Vertically flip.
+
+    image.TRANSPOSE: Transpose (swap x/y).
+
+    image.EXTRACT_RGB_CHANNEL_FIRST: Apply rgb_channel extraction before scaling.
+
+    image.APPLY_COLOR_PALETTE_FIRST: Apply color palette before scaling.
+
+    image.SCALE_ASPECT_KEEP: Fit inside the destination keeping aspect ratio.
+
+    image.SCALE_ASPECT_EXPAND: Fill the destination keeping aspect ratio (crops).
+
+    image.SCALE_ASPECT_IGNORE: Fill the destination ignoring aspect ratio (stretches).
+
+    image.ROTATE_90: Rotate by 90 degrees.
+
+    image.ROTATE_180: Rotate by 180 degrees.
+
+    image.ROTATE_270: Rotate by 270 degrees.
     scale is a two-value tuple (min, max) controlling the min and max
     depth (in mm) used to scale the image. Defaults to the frame’s actual
     min/max.

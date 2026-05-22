@@ -38,31 +38,31 @@ Constructors
    settings, if any); if extra arguments are given the bus is initialised
    with them. See :meth:`init` for the available parameters.
 
-   ``SPI(2)`` is wired to the same header pins on every STM32 OpenMV Cam:
+   ``SPI(2)`` is wired to the same header pins on every STM32 OpenMV
+   Cam; the OpenMV Cam N6 additionally exposes ``SPI(4)``:
 
    .. list-table::
       :header-rows: 1
-      :widths: 28 28 44
+      :widths: 40 15 15 15 15
 
-      * - Signal
-        - Header pin
-        - Notes
-      * - ``NSS``
+      * - Bus
+        - NSS
+        - SCK
+        - MISO
+        - MOSI
+      * - ``SPI(2)`` (all STM32 OpenMV Cams)
         - ``P3``
-        - Not driven by the SPI peripheral; free to use as a normal GPIO chip-select.
-      * - ``SCK``
         - ``P2``
-        -
-      * - ``MISO``
         - ``P1``
-        -
-      * - ``MOSI``
         - ``P0``
-        -
+      * - ``SPI(4)`` (OpenMV Cam N6 only)
+        - ``P15``
+        - ``P16``
+        - ``P17``
+        - ``P18``
 
-   On the OpenMV Cam N6 ``SPI(4)`` is additionally available on header
-   pins ``P15`` (``NSS``), ``P16`` (``SCK``), ``P17`` (``MISO``) and
-   ``P18`` (``MOSI``).
+   ``NSS`` is not driven by the SPI peripheral on either bus; it is
+   free to use as a normal GPIO chip-select.
 
    Methods
    -------
@@ -115,8 +115,6 @@ Constructors
         - ``send`` is the data to send (an integer to send, or a buffer object).
         - ``timeout`` is the timeout in milliseconds to wait for the send.
 
-      Return value: ``None``.
-
    .. method:: send_recv(send: Union[int, bytes, bytearray], recv: Optional[bytearray] = None, *, timeout: int = 5000) -> bytes
 
       Send and receive data on the bus at the same time:
@@ -133,13 +131,25 @@ Constructors
    ---------
 
    .. data:: CONTROLLER
-             PERIPHERAL
       :type: int
 
-      for initialising the SPI bus to controller or peripheral mode
+      Initialise the SPI bus as master (controller) -- the OpenMV Cam
+      drives ``SCK`` and ``MOSI`` and is in charge of the transaction.
+
+   .. data:: PERIPHERAL
+      :type: int
+
+      Initialise the SPI bus as slave (peripheral) -- the OpenMV Cam
+      responds to clock pulses driven by a remote controller.
+
+   .. data:: MSB
+      :type: int
+
+      Pass to ``firstbit`` to transmit/receive the most-significant bit
+      first (the most common ordering).
 
    .. data:: LSB
-             MSB
       :type: int
 
-      set the first bit to be the least or most significant bit
+      Pass to ``firstbit`` to transmit/receive the least-significant bit
+      first.

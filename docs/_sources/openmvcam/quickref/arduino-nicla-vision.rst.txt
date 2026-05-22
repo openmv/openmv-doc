@@ -3,7 +3,7 @@ Arduino Nicla Vision
 
 The Arduino Nicla Vision is a 22.86 × 22.86 mm machine‑vision board
 built around the STMicroelectronics STM32H747AII6 — a dual‑core SoC
-combining a Cortex‑M7 at 480 MHz with a Cortex‑M4 at 240 MHz. The
+combining a Cortex‑M7 at 400 MHz with a Cortex‑M4 at 200 MHz. The
 OpenMV firmware runs entirely on the M7 core. The board pairs the
 MCU with the GC2145 2 MP colour CMOS sensor, an LSM6DSOX 6‑axis IMU,
 an MP34DT06 MEMS microphone, a VL53L1CB time‑of‑flight ranger,
@@ -20,8 +20,8 @@ For full datasheet, photos, and dimensions see the
 Highlights
 ----------
 
-* **STMicroelectronics STM32H747AII6** dual Cortex‑M7 (480 MHz) +
-  Cortex‑M4 (240 MHz). OpenMV firmware runs on the M7 core only.
+* **STMicroelectronics STM32H747AII6** dual Cortex‑M7 (400 MHz) +
+  Cortex‑M4 (200 MHz). OpenMV firmware runs on the M7 core only.
 * **2 MB internal flash** plus **16 MB external QSPI flash** (used
   for the application + ROMFS).
 * **1 MB internal SRAM**.

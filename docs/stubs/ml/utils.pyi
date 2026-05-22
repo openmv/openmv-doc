@@ -22,15 +22,23 @@ def draw_keypoints(image: image.Image, keypoints: ndarray, radius: int = 4, colo
     fill if True fills the keypoint circles.
     """
     ...
-def draw_predictions(image: image.Image, boxes: list[tuple[float, float, float, float]], labels: list[str], colors: list[tuple[int, int, int]], format: str = 'pascal_voc', font_width: int = 8, font_height: int = 10, text_color: tuple[int, int, int] = (255, 255, 255)) -> None:
+def draw_predictions(image: image.Image, boxes: list[tuple[float, float, float, float]], labels: list[str], colors: list[tuple[int, int, int]], scores: list[float] | None = None, format: str = 'pascal_voc', font_width: int = 8, font_height: int = 10, text_color: tuple[int, int, int] = (255, 255, 255)) -> None:
     """
-    Draws bounding boxes with text labels onto image.
+    Draws bounding boxes (or centerpoint markers) with text labels onto image.
     boxes is a list of (x, y, w, h) tuples.
     labels is a list of label strings, one per box.
     colors is a list of (r, g, b) tuples, one per box.
-    format is "pascal_voc" to interpret box values as normalized
-    (xmin, ymin, xmax, ymax) in the range 0.0 to 1.0; any other value treats the
-    box values as absolute pixel (x, y, w, h).
+    scores if not None, a list of per-box confidence scores. When supplied
+    each rendered label is suffixed with the score formatted as " %.2f".
+    format controls how the box coordinates are interpreted:
+    "pascal_voc" – normalized (xmin, ymin, xmax, ymax) in the range
+    0.0 to 1.0.
+
+    "point" – absolute pixel (x, y, w, h); a filled circle marker is
+    drawn at the box centre instead of a rectangle (useful for centerpoint
+    detectors).
+
+    any other value – absolute pixel (x, y, w, h); drawn as a rectangle.
     font_width is the width in pixels of each character in the label.
     font_height is the height in pixels of the label background.
     text_color is the (r, g, b) color used for the label text.
@@ -51,9 +59,6 @@ def draw_skeleton(image: image.Image, keypoints: ndarray, lines: list[tuple[int,
     ...
 def logit(x: ndarray) -> ndarray:
     """Returns the logit of all values in the passed ndarray."""
-    ...
-def mod(a: ndarray, b: ndarray) -> ndarray:
-    """Returns the element-wise modulo a - (b * (a // b))."""
     ...
 def quantize(model: ml.Model, value: ndarray, index: int = 0) -> ndarray:
     """

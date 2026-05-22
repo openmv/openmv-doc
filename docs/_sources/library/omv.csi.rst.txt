@@ -6,7 +6,23 @@
 .. module:: csi
    :synopsis: camera sensors
 
-The ``csi`` module is used for controlling camera sensors.
+The :mod:`csi` module is the modern, object-oriented interface to
+the camera sensor(s) on an OpenMV Cam. Each physical sensor is
+represented by a :class:`CSI` instance, so the multispectral imager
+boards that pair a colour sensor with a thermal or event sensor can
+drive each one independently by passing a different ``cid`` to the
+constructor. Single-sensor cams just instantiate one :class:`CSI`.
+
+A :class:`CSI` object owns the full sensor configuration -- pixel
+format, framesize / window, exposure / gain / white-balance, hardware
+mirror and flip, colour-bar test pattern, frame-rate clock, ROI for
+auto-exposure, and chip-specific :meth:`ioctl <CSI.ioctl>` commands.
+Frames are captured with :meth:`CSI.snapshot`, which returns an
+:class:`image.Image` backed by the frame buffer.
+
+This module supersedes the legacy :mod:`sensor` module (which exposed
+the same functionality as module-level functions tied to a single
+hidden sensor). New code should use :class:`CSI`.
 
 Example usage::
 

@@ -15,6 +15,30 @@ allows packs to be nested so that a single root pack can describe a gateway
 fronting multiple devices. Inbound payloads can drive actuator callbacks on
 existing records.
 
+Example usage::
+
+    from senml import SenmlPack, SenmlRecord, SenmlUnits
+
+    # A pack collects readings for one device, identified by URN.
+    pack = SenmlPack("urn:dev:mac:0024befffe804ff1")
+
+    # Add a temperature reading in degrees Celsius.
+    pack.add(SenmlRecord(
+        "temperature",
+        unit=SenmlUnits.SENML_UNIT_DEGREES_CELSIUS,
+        value=23.4,
+    ))
+
+    # Add a humidity reading in %RH.
+    pack.add(SenmlRecord(
+        "humidity",
+        unit=SenmlUnits.SENML_UNIT_RELATIVE_HUMIDITY,
+        value=51.2,
+    ))
+
+    # Render the pack as a SenML/JSON document.
+    print(pack.to_json())
+
 Classes
 -------
 
@@ -473,29 +497,3 @@ Classes
 
       ``"S/m"`` -- siemens per metre (electrical conductivity).
 
-Examples
---------
-
-.. code:: python
-
-   from senml import SenmlPack, SenmlRecord, SenmlUnits
-
-   # A pack collects readings for one device, identified by URN.
-   pack = SenmlPack("urn:dev:mac:0024befffe804ff1")
-
-   # Add a temperature reading in degrees Celsius.
-   pack.add(SenmlRecord(
-       "temperature",
-       unit=SenmlUnits.SENML_UNIT_DEGREES_CELSIUS,
-       value=23.4,
-   ))
-
-   # Add a humidity reading in %RH.
-   pack.add(SenmlRecord(
-       "humidity",
-       unit=SenmlUnits.SENML_UNIT_RELATIVE_HUMIDITY,
-       value=51.2,
-   ))
-
-   # Render the pack as a SenML/JSON document.
-   print(pack.to_json())

@@ -101,7 +101,7 @@ Constructors
         - ``callback`` - as per Timer.callback()
 
         - ``deadtime`` - specifies the amount of "dead" or inactive time between
-          transitions on complimentary channels (both channels will be inactive)
+          transitions on complementary channels (both channels will be inactive
           for this time). ``deadtime`` may be an integer between 0 and 1008, with
           the following restrictions: 0-128 in steps of 1. 128-256 in steps of
           2, 256-512 in steps of 8, and 512-1008 in steps of 16. ``deadtime``
@@ -165,7 +165,7 @@ Constructors
           - ``Timer.OC_TIMING`` --- indicates that no pin is driven.
           - ``Timer.OC_ACTIVE`` --- the pin will be made active when a compare match occurs (active is determined by polarity)
           - ``Timer.OC_INACTIVE`` --- the pin will be made inactive when a compare match occurs.
-          - ``Timer.OC_TOGGLE`` --- the pin will be toggled when an compare match occurs.
+          - ``Timer.OC_TOGGLE`` --- the pin will be toggled when a compare match occurs.
           - ``Timer.OC_FORCED_ACTIVE`` --- the pin is forced active (compare match is ignored).
           - ``Timer.OC_FORCED_INACTIVE`` --- the pin is forced inactive (compare match is ignored).
           - ``Timer.IC`` --- configure the timer in Input Capture mode.
@@ -203,7 +203,7 @@ Constructors
           - ``Timer.BOTH`` - captures on both edges.
 
         Note that capture only works on the primary channel, and not on the
-        complimentary channels.
+        complementary channels.
 
       Notes for Timer.ENC modes:
 
@@ -213,24 +213,14 @@ Constructors
         - Only works on CH1 and CH2 (and not on CH1N or CH2N)
         - The channel number is ignored when setting the encoder mode.
 
-      PWM Example::
+      PWM example -- on every STM32 OpenMV Cam ``TIM4`` channels 1
+      and 2 are routed to header pins ``P7`` and ``P8`` respectively::
 
-          timer = pyb.Timer(2, freq=1000)
-          ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P1, pulse_width=8000)
-          ch3 = timer.channel(3, pyb.Timer.PWM, pin=pyb.Pin.board.P2, pulse_width=16000)
-
-      PWM motor example with complementary outputs, dead time, break input
-      and break callback (the timer/pin/AF combinations and CPU-pin names
-      below are illustrative -- pick a set valid for your OpenMV Cam's MCU)::
-
-          from pyb import Timer
-          from machine import Pin  # machine.Pin supports alt mode and irq on the same pin.
-          pin_t8_1  = Pin(Pin.cpu.C6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1
-          pin_t8_1n = Pin(Pin.cpu.A7, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1N
-          pin_bkin  = Pin(Pin.cpu.A6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_BKIN
-          pin_bkin.irq(handler=break_callback, trigger=Pin.IRQ_FALLING)
-          timer = pyb.Timer(8, freq=1000, deadtime=1008, brk=Timer.BRK_LOW)
-          ch1 = timer.channel(1, pyb.Timer.PWM, pulse_width_percent=30)
+          timer = pyb.Timer(4, freq=1000)
+          ch1 = timer.channel(1, pyb.Timer.PWM, pin=pyb.Pin.board.P7,
+                              pulse_width=8000)
+          ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P8,
+                              pulse_width=16000)
 
    .. method:: counter(value: Optional[int] = None) -> Optional[int]
 
@@ -255,65 +245,131 @@ Constructors
    Constants
    ---------
 
+   Counter-mode constants (``mode`` argument of :meth:`init`):
+
    .. data:: UP
-             DOWN
-             CENTER
       :type: int
 
-      Configures the timer to count Up, Down, or from 0 to ARR and then back down to 0.
+      Count from ``0`` up to ARR (the default mode).
+
+   .. data:: DOWN
+      :type: int
+
+      Count from ARR down to ``0``.
+
+   .. data:: CENTER
+      :type: int
+
+      Count from ``0`` up to ARR and then back down to ``0``.
+
+   Break-mode constants (``brk`` argument of :meth:`init`):
 
    .. data:: BRK_OFF
-             BRK_LOW
-             BRK_HIGH
       :type: int
 
-      Configures the break mode when passed to the ``brk`` keyword argument.
+      Break input is disabled.
 
-class TimerChannel --- setup a channel for a timer
-==================================================
+   .. data:: BRK_LOW
+      :type: int
 
-Timer channels are used to generate/capture a signal using a timer.
+      Break input is active-low.
 
-TimerChannel objects are created using the Timer.channel() method.
+   .. data:: BRK_HIGH
+      :type: int
 
-Methods
--------
+      Break input is active-high.
 
-.. class:: timerchannel
+   Channel-mode constants (``mode`` argument of :meth:`channel`):
 
-   Timer channel object returned by :meth:`Timer.channel`.
+   .. data:: PWM
+      :type: int
 
-   .. method:: callback(fun: Optional[Callable[[Timer], None]]) -> None
+      Configure the channel for PWM output (active high).
 
-      Set the function to be called when the timer channel triggers.
-      ``fun`` is passed 1 argument, the timer object.
-      If ``fun`` is ``None`` then the callback will be disabled.
+   .. data:: PWM_INVERTED
+      :type: int
 
-   .. method:: capture(value: Optional[int] = None) -> Optional[int]
+      Configure the channel for PWM output (active low).
 
-      Get or set the capture value associated with a channel.
-      capture, compare, and pulse_width are all aliases for the same function.
-      capture is the logical name to use when the channel is in input capture mode.
+   .. data:: OC_TIMING
+      :type: int
 
-   .. method:: compare(value: Optional[int] = None) -> Optional[int]
+      Output-compare timing mode; no pin is driven.
 
-      Get or set the compare value associated with a channel.
-      capture, compare, and pulse_width are all aliases for the same function.
-      compare is the logical name to use when the channel is in output compare mode.
+   .. data:: OC_ACTIVE
+      :type: int
 
-   .. method:: pulse_width(value: Optional[int] = None) -> Optional[int]
+      Output-compare active mode; the pin is made active on compare match.
 
-      Get or set the pulse width value associated with a channel.
-      capture, compare, and pulse_width are all aliases for the same function.
-      pulse_width is the logical name to use when the channel is in PWM mode.
+   .. data:: OC_INACTIVE
+      :type: int
 
-      In edge aligned mode, a pulse_width of ``period + 1`` corresponds to a duty cycle of 100%
-      In center aligned mode, a pulse width of ``period`` corresponds to a duty cycle of 100%
+      Output-compare inactive mode; the pin is made inactive on compare match.
 
-   .. method:: pulse_width_percent(value: Optional[Union[int, float]] = None) -> Optional[Union[int, float]]
+   .. data:: OC_TOGGLE
+      :type: int
 
-      Get or set the pulse width percentage associated with a channel.  The value
-      is a number between 0 and 100 and sets the percentage of the timer period
-      for which the pulse is active.  The value can be an integer or
-      floating-point number for more accuracy.  For example, a value of 25 gives
-      a duty cycle of 25%.
+      Output-compare toggle mode; the pin toggles on compare match.
+
+   .. data:: OC_FORCED_ACTIVE
+      :type: int
+
+      Output-compare forced-active mode; the pin is forced active and the
+      compare match is ignored.
+
+   .. data:: OC_FORCED_INACTIVE
+      :type: int
+
+      Output-compare forced-inactive mode; the pin is forced inactive and
+      the compare match is ignored.
+
+   .. data:: IC
+      :type: int
+
+      Configure the channel for input-capture mode.
+
+   .. data:: ENC_A
+      :type: int
+
+      Encoder mode: the counter only changes when CH1 changes.
+
+   .. data:: ENC_B
+      :type: int
+
+      Encoder mode: the counter only changes when CH2 changes.
+
+   .. data:: ENC_AB
+      :type: int
+
+      Encoder mode: the counter changes whenever CH1 or CH2 changes.
+
+   Output-compare polarity (``polarity`` argument of :meth:`channel` in
+   OC modes):
+
+   .. data:: HIGH
+      :type: int
+
+      Output is active-high.
+
+   .. data:: LOW
+      :type: int
+
+      Output is active-low.
+
+   Input-capture polarity (``polarity`` argument of :meth:`channel` in
+   IC mode):
+
+   .. data:: RISING
+      :type: int
+
+      Capture on the rising edge.
+
+   .. data:: FALLING
+      :type: int
+
+      Capture on the falling edge.
+
+   .. data:: BOTH
+      :type: int
+
+      Capture on either edge.

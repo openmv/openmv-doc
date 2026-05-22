@@ -4,22 +4,29 @@
 .. module:: fir
    :synopsis: thermal sensor driver (fir == far infrared)
 
-The ``fir`` module is used for controlling the thermal sensors.
+The :mod:`fir` module drives Far-Infrared (FIR) thermopile arrays
+attached to an OpenMV Cam over I2C -- 8x8, 16x4, 16x12 and 32x24
+sensors are supported (see the constants at the bottom of this
+page). Each frame returns a per-pixel temperature in degrees Celsius,
+which can be rendered as a standalone thermal image with
+:func:`snapshot` or composited onto a visible-light frame from the
+CSI sensor with :func:`draw_ir`, normally through a colour palette
+such as :data:`image.PALETTE_RAINBOW` or
+:data:`image.PALETTE_IRONBOW`.
 
 Example usage::
 
-    import csi, fir
+    import csi
+    import fir
 
-    # Setup camera.
     csi0 = csi.CSI()
     csi0.reset()
     csi0.pixformat(csi.RGB565)
     csi0.framesize(csi.QVGA)
-    csi0.snapshot(time=2000)
+
     fir.init()
 
-    # Show image.
-    while(True):
+    while True:
         img = csi0.snapshot()
         ta, ir, to_min, to_max = fir.read_ir()
         fir.draw_ir(img, ir)
@@ -186,7 +193,23 @@ Functions
 
    ``alpha_palette`` is a 256-pixel GRAYSCALE image used as an alpha lookup table.
 
-   ``hint`` is a logical OR of the same flags accepted by `fir.draw_ir()`.
+   ``hint`` is a logical OR of:
+
+      * `image.AREA`: Use area scaling when downscaling.
+      * `image.BILINEAR`: Use bilinear scaling.
+      * `image.BICUBIC`: Use bicubic scaling.
+      * `image.CENTER`: Center the image on the destination.
+      * `image.HMIRROR`: Horizontally mirror.
+      * `image.VFLIP`: Vertically flip.
+      * `image.TRANSPOSE`: Transpose (swap x/y).
+      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply rgb_channel extraction before scaling.
+      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
+      * `image.SCALE_ASPECT_KEEP`: Fit inside the destination keeping aspect ratio.
+      * `image.SCALE_ASPECT_EXPAND`: Fill the destination keeping aspect ratio (crops).
+      * `image.SCALE_ASPECT_IGNORE`: Fill the destination ignoring aspect ratio (stretches).
+      * `image.ROTATE_90`: Rotate by 90 degrees.
+      * `image.ROTATE_180`: Rotate by 180 degrees.
+      * `image.ROTATE_270`: Rotate by 270 degrees.
 
    ``scale`` is a 2-tuple ``(min, max)`` controlling the min/max temperature (in celsius) used to
    scale the IR array. Defaults to the actual IR min and max.

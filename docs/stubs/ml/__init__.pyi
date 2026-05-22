@@ -13,7 +13,7 @@ class Model:
     name as path; if found, each line is loaded into Model.labels. Otherwise Model.labels
     is None.
     """
-    def __init__(self, path: str, postprocess: object = None) -> None: ...
+    def __init__(self, path: str, *, postprocess: object = None) -> None: ...
     input_dtype: list[str]
     """
     A list of single-character strings giving the dtype of each input tensor:

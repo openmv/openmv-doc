@@ -241,7 +241,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/omv.display.displaydata.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/e596bf0ac5fe30d539c3f6f4808c0e49129f6efa/docs/library/omv.display.displaydata.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -319,8 +319,39 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="class-displaydata-display-data">
 <h1>class DisplayData – Display Data<a class="headerlink" href="#class-displaydata-display-data" title="Link to this heading">¶</a></h1>
-<p>The <a class="reference internal" href="#display.DisplayData" title="display.DisplayData"><code class="xref any py py-class docutils literal notranslate"><span class="pre">DisplayData</span></code></a> class provides access to display data channels (CEC/DDC) for an
-attached DisplayPort/HDMI display.</p>
+<p>The <a class="reference internal" href="#display.DisplayData" title="display.DisplayData"><code class="xref py py-class docutils literal notranslate"><span class="pre">DisplayData</span></code></a> class provides access to the side-channel
+links of an attached HDMI / DisplayPort display:</p>
+<ul class="simple">
+<li><p><strong>DDC</strong> (Display Data Channel) is an I2C bus that carries the
+display’s EDID – a structured block describing the panel
+capabilities (manufacturer, supported resolutions and refresh
+rates, colour and audio formats, …). Source devices query it
+once at startup to discover what the sink supports.</p></li>
+<li><p><strong>CEC</strong> (Consumer Electronics Control) is a single-wire
+bidirectional bus that lets connected HDMI / DisplayPort devices
+exchange short control packets – power on/off, input switching,
+volume, remote-control forwarding, etc.</p></li>
+</ul>
+<p>Either or both channels can be enabled at construction. The raw EDID
+is read with <code class="xref py py-meth docutils literal notranslate"><span class="pre">display_id()</span></code>; CEC frames can be sent with
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">send_frame()</span></code>, polled synchronously via <code class="xref py py-meth docutils literal notranslate"><span class="pre">receive_frame()</span></code>,
+or routed to a callback with <code class="xref py py-meth docutils literal notranslate"><span class="pre">frame_callback()</span></code>.</p>
+<p>Example – query the connected display’s EDID and listen for CEC
+frames addressed to logical address 0:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">display</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">data</span> <span class="o">=</span> <span class="n">display</span><span class="o">.</span><span class="n">DisplayData</span><span class="p">(</span><span class="n">cec</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ddc</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="c1"># Read the EDID once at startup.</span>
+</span><span data-line="6"><span class="n">edid</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">display_id</span><span class="p">()</span>
+</span><span data-line="7"><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;EDID:&quot;</span><span class="p">,</span> <span class="n">edid</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="k">def</span><span class="w"> </span><span class="nf">on_frame</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+</span><span data-line="10">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;CEC from </span><span class="si">{:#x}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="n">data</span><span class="o">.</span><span class="n">frame_callback</span><span class="p">(</span><span class="n">on_frame</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span></pre></div>
+</div>
 <section id="constructors">
 <h2>Constructors<a class="headerlink" href="#constructors" title="Link to this heading">¶</a></h2>
 <dl class="py class">

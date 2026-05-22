@@ -14,7 +14,6 @@ Example::
     from machine import I2C
     import ssd1306
 
-    # OpenMV Cam default external I2C bus (SCL=P4, SDA=P5).
     i2c = I2C(2)
     oled = ssd1306.SSD1306_I2C(128, 64, i2c)
     oled.fill(0)

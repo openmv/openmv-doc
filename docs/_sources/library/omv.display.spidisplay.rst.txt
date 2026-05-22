@@ -3,7 +3,39 @@
 class SPIDisplay -- SPI Display Driver
 ======================================
 
-The `SPIDisplay` class is used for driving SPI LCDs.
+The :class:`SPIDisplay` class drives small SPI-attached TFT and OLED
+panels -- most commonly the SSD1351 128x160 RGB OLED on the OpenMV
+LCD Shield. The driver owns the SPI bus and a GPIO chip-select /
+DC line internally, so callers only configure the panel geometry,
+refresh rate and any orientation flags. Panel-specific initialisation
+(register sequences, RAM-write framing) is supplied through the
+``controller`` keyword argument -- pass an :class:`SSD1351` instance
+to drive the LCD Shield, or implement your own controller class for
+other panels.
+
+Frames are presented by calling :meth:`write` with an
+:class:`image.Image`. The driver converts the source to RGB565 and
+applies scaling, ROI, palette and orientation transforms internally,
+so the caller does not need to pre-size the image. Backlight
+brightness can be left as a simple on/off GPIO (default) or driven by
+:class:`DACBacklight` / :class:`PWMBacklight` by passing one as the
+``backlight`` keyword argument.
+
+Example -- mirror the camera onto the OpenMV LCD Shield's SSD1351
+OLED::
+
+    import csi
+    import display
+
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize((128, 160))        # matches the SSD1351 panel
+
+    lcd = display.SPIDisplay(controller=display.SSD1351())
+
+    while True:
+        lcd.write(csi0.snapshot())
 
 Constructors
 ------------

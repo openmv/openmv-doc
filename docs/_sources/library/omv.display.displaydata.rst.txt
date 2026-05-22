@@ -3,8 +3,39 @@
 class DisplayData -- Display Data
 =================================
 
-The `DisplayData` class provides access to display data channels (CEC/DDC) for an
-attached DisplayPort/HDMI display.
+The :class:`DisplayData` class provides access to the side-channel
+links of an attached HDMI / DisplayPort display:
+
+- **DDC** (Display Data Channel) is an I2C bus that carries the
+  display's EDID -- a structured block describing the panel
+  capabilities (manufacturer, supported resolutions and refresh
+  rates, colour and audio formats, ...). Source devices query it
+  once at startup to discover what the sink supports.
+- **CEC** (Consumer Electronics Control) is a single-wire
+  bidirectional bus that lets connected HDMI / DisplayPort devices
+  exchange short control packets -- power on/off, input switching,
+  volume, remote-control forwarding, etc.
+
+Either or both channels can be enabled at construction. The raw EDID
+is read with :meth:`display_id`; CEC frames can be sent with
+:meth:`send_frame`, polled synchronously via :meth:`receive_frame`,
+or routed to a callback with :meth:`frame_callback`.
+
+Example -- query the connected display's EDID and listen for CEC
+frames addressed to logical address 0::
+
+    import display
+
+    data = display.DisplayData(cec=True, ddc=True)
+
+    # Read the EDID once at startup.
+    edid = data.display_id()
+    print("EDID:", edid)
+
+    def on_frame(src, payload):
+        print("CEC from {:#x}: {}".format(src, payload))
+
+    data.frame_callback(on_frame, 0)
 
 Constructors
 ------------

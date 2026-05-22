@@ -14,7 +14,8 @@ class BMI270:
     cs
 
     Reserved for SPI mode. Must be left as None; SPI is not
-    currently implemented.
+    currently implemented and supplying a non-I2C bus raises
+    ValueError.
 
     address
 

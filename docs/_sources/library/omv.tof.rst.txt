@@ -4,25 +4,30 @@
 .. module:: tof
    :synopsis: time-of-flight sensor driver
 
-The ``tof`` module is used for controlling the time-of-flight sensor.
+The :mod:`tof` module drives time-of-flight (ToF) ranging sensors
+attached to an OpenMV Cam over I2C. Each frame returns a per-pixel
+depth value in millimetres for an 8x8 zone grid (VL53L5CX /
+VL53L8CX), which can be rendered as a standalone depth image with
+:func:`snapshot` or composited onto a visible-light frame from the
+CSI sensor with :func:`draw_depth`, normally through a colour palette
+such as :data:`image.PALETTE_DEPTH`.
 
 Example usage::
 
-    import csi, tof
+    import csi
+    import tof
 
-    # Setup camera.
     csi0 = csi.CSI()
     csi0.reset()
     csi0.pixformat(csi.RGB565)
     csi0.framesize(csi.QVGA)
-    csi0.snapshot(time=2000)
+
     tof.init()
 
-    # Show image.
-    while(True):
+    while True:
         img = csi0.snapshot()
         depth, depth_min, depth_max = tof.read_depth()
-        tof.draw_depth(image, depth)
+        tof.draw_depth(img, depth)
         print("====================")
         print("Min depth in mm seen: %0.2f" % depth_min)
         print("Max depth in mm seen: %0.2f" % depth_max)
@@ -127,12 +132,23 @@ Functions
    ``alpha_palette`` if not ``None`` is a 256-pixel GRAYSCALE image used as an
    alpha lookup table modulating ``alpha`` per pixel.
 
-   ``hint`` is a logical OR of `image` flags such as `image.BILINEAR`,
-   `image.BICUBIC`, `image.AREA`, `image.CENTER`, `image.HMIRROR`,
-   `image.VFLIP`, `image.TRANSPOSE`, `image.EXTRACT_RGB_CHANNEL_FIRST`,
-   `image.APPLY_COLOR_PALETTE_FIRST`, `image.SCALE_ASPECT_KEEP`,
-   `image.SCALE_ASPECT_EXPAND`, `image.SCALE_ASPECT_IGNORE`,
-   `image.ROTATE_90`, `image.ROTATE_180`, `image.ROTATE_270`.
+   ``hint`` is a logical OR of:
+
+      * `image.AREA`: Use area scaling when downscaling.
+      * `image.BILINEAR`: Use bilinear scaling.
+      * `image.BICUBIC`: Use bicubic scaling.
+      * `image.CENTER`: Center the image on the destination.
+      * `image.HMIRROR`: Horizontally mirror.
+      * `image.VFLIP`: Vertically flip.
+      * `image.TRANSPOSE`: Transpose (swap x/y).
+      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply rgb_channel extraction before scaling.
+      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
+      * `image.SCALE_ASPECT_KEEP`: Fit inside the destination keeping aspect ratio.
+      * `image.SCALE_ASPECT_EXPAND`: Fill the destination keeping aspect ratio (crops).
+      * `image.SCALE_ASPECT_IGNORE`: Fill the destination ignoring aspect ratio (stretches).
+      * `image.ROTATE_90`: Rotate by 90 degrees.
+      * `image.ROTATE_180`: Rotate by 180 degrees.
+      * `image.ROTATE_270`: Rotate by 270 degrees.
 
    ``scale`` is a two-value tuple ``(min, max)`` controlling the min and max
    depth (in mm) used to scale the depth image. Defaults to the depth array's
@@ -177,8 +193,23 @@ Functions
    ``alpha_palette`` if not ``None`` is a 256-pixel GRAYSCALE image used as an
    alpha lookup table.
 
-   ``hint`` is a logical OR of `image` scaling/orientation flags (see
-   `draw_depth`).
+   ``hint`` is a logical OR of:
+
+      * `image.AREA`: Use area scaling when downscaling.
+      * `image.BILINEAR`: Use bilinear scaling.
+      * `image.BICUBIC`: Use bicubic scaling.
+      * `image.CENTER`: Center the image on the destination.
+      * `image.HMIRROR`: Horizontally mirror.
+      * `image.VFLIP`: Vertically flip.
+      * `image.TRANSPOSE`: Transpose (swap x/y).
+      * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply rgb_channel extraction before scaling.
+      * `image.APPLY_COLOR_PALETTE_FIRST`: Apply color palette before scaling.
+      * `image.SCALE_ASPECT_KEEP`: Fit inside the destination keeping aspect ratio.
+      * `image.SCALE_ASPECT_EXPAND`: Fill the destination keeping aspect ratio (crops).
+      * `image.SCALE_ASPECT_IGNORE`: Fill the destination ignoring aspect ratio (stretches).
+      * `image.ROTATE_90`: Rotate by 90 degrees.
+      * `image.ROTATE_180`: Rotate by 180 degrees.
+      * `image.ROTATE_270`: Rotate by 270 degrees.
 
    ``scale`` is a two-value tuple ``(min, max)`` controlling the min and max
    depth (in mm) used to scale the image. Defaults to the frame's actual

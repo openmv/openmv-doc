@@ -4,6 +4,25 @@
 .. module:: gt911
    :synopsis: GT911 5-Point Capacitive Touch Controller driver.
 
+The :mod:`gt911` module provides a driver for the Goodix GT911
+projected-capacitive touchscreen controller, a common pairing with
+4.3"--7" 800x480 LCD panels. The controller tracks up to five
+simultaneous touch points and reports each as an ``(x, y, size,
+id)`` tuple where ``id`` is stable across reads for as long as the
+finger remains on the panel.
+
+The driver communicates with the chip over I2C and uses two extra
+GPIOs:
+
+- a **reset** line, held low during power-up and toggled together with
+  the IRQ line to select the GT911's 7-bit I2C address (``0x5D`` when
+  IRQ is low during reset, ``0x14`` when IRQ is high);
+- an **interrupt** line, asserted by the controller when a touch
+  event occurs.
+
+After construction, applications can poll for touches with
+:meth:`GT911.read_points` or supply a ``touch_callback`` to be
+invoked on the IRQ pin's falling edge.
 
 class GT911 -- 5-Point Capacitive Touch Controller
 --------------------------------------------------

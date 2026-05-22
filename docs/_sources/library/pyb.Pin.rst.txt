@@ -4,71 +4,70 @@
 class Pin -- control I/O pins
 =============================
 
-A pin is the basic object to control I/O pins.  It has methods to set
-the mode of the pin (input, output, etc) and methods to get and set the
-digital logic level. For analog control of a pin, see the ADC class.
+A :class:`Pin` object represents a single GPIO on the STM32. It
+provides methods to configure the pin's mode (input, output,
+alternate function, analog) and pull resistors, and to read or drive
+its digital level. For analog sampling see :class:`pyb.ADC`; for
+alternate-function enumeration see :class:`PinAF`.
 
-Usage Model:
-
-All board pins are predefined as ``pyb.Pin.board.<name>``. On the OpenMV
-Cam the I/O header pins are ``P0`` ... ``P9``::
+All header pins are predefined as ``pyb.Pin.board.<name>``. Most
+STM32 OpenMV Cams expose the I/O header pins ``P0`` ... ``P9``; the
+OpenMV Cam N6 exposes additional pins up to ``P18``::
 
     p0 = pyb.Pin.board.P0
-
     g = pyb.Pin(pyb.Pin.board.P0, pyb.Pin.IN)
 
-CPU pins -- the underlying STM32 port/pin -- are available as
+The underlying STM32 port/pin can also be addressed directly through
 ``pyb.Pin.cpu.<name>``, named as the port letter followed by the pin
 number (for example ``pyb.Pin.cpu.A0``). The mapping of each OpenMV
 header pin to a CPU pin is fixed by the board.
 
-Pins can also be selected by string name::
+Pins may also be selected by string name::
 
     g = pyb.Pin("P0", pyb.Pin.OUT_PP)
 
-Users can add their own names::
+User-defined names can be added with :meth:`Pin.dict`::
 
-    MyMapperDict = { "LeftMotorDir" : pyb.Pin.cpu.C12 }
+    MyMapperDict = {"LeftMotorDir": pyb.Pin.cpu.A0}
     pyb.Pin.dict(MyMapperDict)
     g = pyb.Pin("LeftMotorDir", pyb.Pin.OUT_OD)
 
-and can query mappings::
+and queried back::
 
     pin = pyb.Pin("LeftMotorDir")
 
-Users can also add their own mapping function::
+Alternatively, a custom mapping function can be installed with
+:meth:`Pin.mapper`::
 
     def MyMapper(pin_name):
-       if pin_name == "LeftMotorDir":
-           return pyb.Pin.cpu.A0
+        if pin_name == "LeftMotorDir":
+            return pyb.Pin.cpu.A0
 
     pyb.Pin.mapper(MyMapper)
 
-So, if you were to call ``pyb.Pin("LeftMotorDir", pyb.Pin.OUT_PP)``,
-``"LeftMotorDir"`` is passed directly to the mapper function.
+so a call to ``pyb.Pin("LeftMotorDir", pyb.Pin.OUT_PP)`` passes
+``"LeftMotorDir"`` directly to the mapper.
 
-To summarise, the following order determines how things get mapped into
-an ordinal pin number:
+The following order determines how a name gets mapped to a physical
+pin:
 
-1. Directly specify a pin object
-2. User supplied mapping function
-3. User supplied mapping (object must be usable as a dictionary key)
-4. Supply a string which matches a board pin
-5. Supply a string which matches a CPU port/pin
+1. A :class:`Pin` object is passed directly.
+2. The user-supplied mapper function returns a pin.
+3. The user-supplied dictionary contains a matching key.
+4. The string matches a board pin name (``P0``, ``P1``, ...).
+5. The string matches a CPU port/pin name (``A0``, ``B7``, ...).
 
-You can set ``pyb.Pin.debug(True)`` to get some debug information about
-how a particular object gets mapped to a pin.
-
-All pin objects go through the pin mapper to come up with one of the
-gpio pins.
+Call ``pyb.Pin.debug(True)`` to print diagnostic information about
+how each object is mapped to a pin.
 
 Constructors
 ------------
 
 .. class:: Pin(id: Union[str, Pin], *args, **kwargs)
 
-   Create a new Pin object associated with the id.  If additional arguments are given,
-   they are used to initialise the pin.  See :meth:`pin.init`.
+   Create a new Pin object associated with the given ``id``. If additional
+   arguments are given they are forwarded to :meth:`Pin.init` to configure
+   the pin.
 
    Class methods
    -------------
@@ -116,11 +115,10 @@ Constructors
 
         - *value* if not None will set the port output value before enabling the pin.
 
-        - *alt* can be used when mode is ``Pin.ALT`` , ``Pin.AF_PP`` or ``Pin.AF_OD`` to
-          set the index or name of one of the alternate functions associated with a pin.
-          This arg was previously called *af* which can still be used if needed.
-
-      Returns: ``None``.
+        - *alt* can be used when mode is ``Pin.ALT``, ``Pin.AF_PP`` or
+          ``Pin.AF_OD`` to set the index or name of one of the alternate
+          functions associated with a pin. This argument was previously
+          called ``af`` which can still be used if needed.
 
    .. method:: value(value: Optional[Any] = None) -> Optional[int]
 
@@ -180,105 +178,52 @@ Constructors
    Constants
    ---------
 
-   .. data:: ALT
-      :type: int
-
-      initialise the pin to alternate-function mode for input or output
-
-   .. data:: AF_OD
-      :type: int
-
-      initialise the pin to alternate-function mode with an open-drain drive
-
-   .. data:: AF_PP
-      :type: int
-
-      initialise the pin to alternate-function mode with a push-pull drive
-
-   .. data:: ANALOG
-      :type: int
-
-      initialise the pin to analog mode
-
    .. data:: IN
       :type: int
 
-      initialise the pin to input mode
-
-   .. data:: OUT_OD
-      :type: int
-
-      initialise the pin to output mode with an open-drain drive
+      Configure the pin as a digital input (high-impedance).
 
    .. data:: OUT_PP
       :type: int
 
-      initialise the pin to output mode with a push-pull drive
+      Configure the pin as a digital output with a push-pull driver.
 
-   .. data:: PULL_DOWN
+   .. data:: OUT_OD
       :type: int
 
-      enable the pull-down resistor on the pin
+      Configure the pin as a digital output with an open-drain driver.
+
+   .. data:: ANALOG
+      :type: int
+
+      Configure the pin as an analog input (e.g. for use with :class:`ADC`).
+
+   .. data:: ALT
+      :type: int
+
+      Configure the pin as an alternate function (input or output).
+
+   .. data:: AF_PP
+      :type: int
+
+      Configure the pin as an alternate function with a push-pull driver.
+
+   .. data:: AF_OD
+      :type: int
+
+      Configure the pin as an alternate function with an open-drain driver.
 
    .. data:: PULL_NONE
       :type: int
 
-      don't enable any pull up or down resistors on the pin
+      Disable both pull-up and pull-down resistors on the pin.
 
    .. data:: PULL_UP
       :type: int
 
-      enable the pull-up resistor on the pin
+      Enable the internal pull-up resistor on the pin.
 
-class PinAF -- Pin Alternate Functions
-======================================
+   .. data:: PULL_DOWN
+      :type: int
 
-A Pin represents a physical pin on the microprocessor. Each pin
-can have a variety of functions (GPIO, I2C SDA, etc). Each PinAF
-object represents a particular function for a pin.
-
-Usage Model::
-
-    p3 = pyb.Pin.board.P3
-    p3_af = p3.af_list()
-
-``p3_af`` now contains an array of PinAF objects available on pin ``P3``
-(the exact list depends on the STM32 MCU on the OpenMV Cam in use).
-
-Normally each peripheral configures the alternate function automatically,
-but sometimes the same function is available on multiple pins and finer
-control is desired.
-
-To configure ``P3`` to expose ``TIM2_CH3`` (if that function is available
-on this pin), you could use::
-
-   pin = pyb.Pin(pyb.Pin.board.P3, mode=pyb.Pin.ALT, alt=pyb.Pin.AF1_TIM2)
-
-or::
-
-   pin = pyb.Pin(pyb.Pin.board.P3, mode=pyb.Pin.ALT, alt=1)
-
-Methods
--------
-
-.. class:: pinaf
-
-   Pin alternate function object returned by :meth:`Pin.af_list`.
-
-   .. method:: __str__() -> str
-
-      Return a string describing the alternate function.
-
-   .. method:: index() -> int
-
-      Return the alternate function index.
-
-   .. method:: name() -> str
-
-      Return the name of the alternate function.
-
-   .. method:: reg() -> int
-
-      Return the base register associated with the peripheral assigned to this
-      alternate function. For example, if the alternate function were TIM2_CH3
-      this would return stm.TIM2
+      Enable the internal pull-down resistor on the pin.

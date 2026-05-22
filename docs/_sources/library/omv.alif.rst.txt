@@ -45,29 +45,55 @@ Classes
    all remaining bytes from ``start``.
 
    The object also implements the buffer protocol, allowing read-only
-   memory-mapped access to the flash region via the OSPI XIP base.
+   memory-mapped access to the flash region via the OSPI XIP base. This
+   makes a zero-copy view of the entire region available without
+   issuing any flash reads::
+
+      flash = alif.Flash()
+      view = memoryview(flash)
+      magic = bytes(view[:4])      # read the first 4 bytes directly from XIP
 
    .. method:: readblocks(block_num:int, buf:bytearray) -> int
                readblocks(block_num:int, buf:bytearray, offset:int) -> int
 
-      Reads from the flash starting at the block ``block_num`` (and an
-      optional byte ``offset`` within that block) into ``buf``. The number
-      of bytes read is determined by the length of ``buf``.
+      Read bytes from the flash into ``buf``. Two overloads expose the
+      simple and extended interfaces:
 
-      Returns ``0`` on success or a negative error code.
+      **Simple form** (``readblocks(block_num, buf)``): reads whole
+      blocks starting at block index ``block_num``. ``len(buf)`` must be
+      a multiple of the flash block size.
+
+      **Extended form** (``readblocks(block_num, buf, offset)``): reads
+      ``len(buf)`` bytes -- not necessarily a whole number of blocks --
+      starting at byte ``offset`` within block ``block_num``.
+      ``len(buf)`` has no alignment constraint.
+
+      Returns ``0`` on success or a negative error code. Note that the
+      standard MicroPython block-device protocol returns ``None``; the
+      ``alif`` driver intentionally exposes the underlying OSPI status
+      code so callers that bypass :mod:`vfs` can react to hardware
+      errors.
 
    .. method:: writeblocks(block_num:int, buf:bytes) -> int
                writeblocks(block_num:int, buf:bytes, offset:int) -> int
 
-      Writes ``buf`` to the flash starting at the block ``block_num`` (and
-      an optional byte ``offset`` within that block).
+      Write bytes from ``buf`` to the flash. Two overloads expose the
+      simple and extended interfaces:
 
-      When called without ``offset``, the affected blocks are erased
-      before being written. When called with ``offset``, the data is
-      written without erasing first (the caller must ensure the target
-      region has already been erased).
+      **Simple form** (``writeblocks(block_num, buf)``): writes whole
+      blocks starting at block index ``block_num``. ``len(buf)`` must be
+      a multiple of the flash block size. Each affected block is erased
+      automatically before being written.
 
-      Returns ``0`` on success or a negative error code.
+      **Extended form** (``writeblocks(block_num, buf, offset)``):
+      writes ``len(buf)`` bytes -- not necessarily a whole number of
+      blocks -- starting at byte ``offset`` within block ``block_num``.
+      ``len(buf)`` has no alignment constraint, and **no implicit erase
+      is performed** -- the caller must ensure the affected blocks have
+      been erased via a prior :meth:`ioctl(6, block_num) <ioctl>` call.
+
+      Returns ``0`` on success or a negative error code (see
+      :meth:`readblocks` for the rationale).
 
    .. method:: ioctl(cmd:int, arg:int) -> int
 

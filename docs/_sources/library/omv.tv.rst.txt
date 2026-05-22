@@ -3,22 +3,39 @@
 class TVDisplay -- TV Shield Driver
 ===================================
 
-The `TVDisplay` class is used for driving the TV shield (NTSC analog video output, 352x240).
+The :class:`TVDisplay` class drives the OpenMV TV Shield, which
+converts an RGB565 framebuffer into an NTSC composite video signal
+(352x240, 60 fields/s interlaced) suitable for any television or
+analog video monitor.
+
+Two shield variants are supported:
+
+- The wired **TV Shield**, which exposes the composite signal on a
+  single RCA jack.
+- The **Wireless TV Shield**, which feeds the same signal into a
+  2.4 GHz analog video transmitter. The receiver channel (1--8) is
+  selected at runtime via :meth:`ioctl` with
+  :data:`display.IOCTL_CHANNEL`; until that call is made no channel
+  is selected.
+
+Resolution and framing are fixed -- :class:`TVDisplay` does not take a
+``framesize`` argument. Frames are presented by passing an
+:class:`image.Image` to :meth:`write`, which handles scaling, ROI,
+palette and orientation transforms internally.
 
 Example usage::
 
-    import csi, display
+    import csi
+    import display
 
-    # Setup camera.
     csi0 = csi.CSI()
     csi0.reset()
     csi0.pixformat(csi.RGB565)
-    csi0.framesize(csi.SIF)
-    csi0.snapshot(time=2000)
+    csi0.framesize(csi.SIF)              # 352x240, matches the TV output
+
     tv = display.TVDisplay()
 
-    # Show image.
-    while(True):
+    while True:
         tv.write(csi0.snapshot())
 
 Constructors
@@ -73,8 +90,23 @@ Constructors
       ``alpha_palette`` if not ``-1`` can be a 256 pixel in total GRAYSCALE image to use as an alpha
       palette which modulates the ``alpha`` value of the input image at a per-pixel level.
 
-      ``hint`` can be a logical OR of the flags defined in the `image` module (e.g. `image.BILINEAR`,
-      `image.CENTER`, `image.SCALE_ASPECT_KEEP`, etc.). See `display.SPIDisplay.write` for the full list.
+      ``hint`` logical OR of the flags:
+
+         * `image.AREA`: Use area scaling when downscaling.
+         * `image.BILINEAR`: Use bilinear scaling.
+         * `image.BICUBIC`: Use bicubic scaling.
+         * `image.CENTER`: Center the image on the display (after scaling).
+         * `image.HMIRROR`: Horizontally mirror the image.
+         * `image.VFLIP`: Vertically flip the image.
+         * `image.TRANSPOSE`: Transpose the image (swap x/y).
+         * `image.EXTRACT_RGB_CHANNEL_FIRST`: Apply ``rgb_channel`` extraction before scaling.
+         * `image.APPLY_COLOR_PALETTE_FIRST`: Apply ``color_palette`` before scaling.
+         * `image.SCALE_ASPECT_KEEP`: Scale to fit inside the display.
+         * `image.SCALE_ASPECT_EXPAND`: Scale to fill the display (cropping).
+         * `image.SCALE_ASPECT_IGNORE`: Scale to fill the display (stretching).
+         * `image.ROTATE_90`: Rotate by 90 degrees (``VFLIP | TRANSPOSE``).
+         * `image.ROTATE_180`: Rotate by 180 degrees (``HMIRROR | VFLIP``).
+         * `image.ROTATE_270`: Rotate by 270 degrees (``HMIRROR | TRANSPOSE``).
 
    .. method:: clear(display_off: bool = False) -> None
 
@@ -88,4 +120,4 @@ Constructors
 
       Pass `display.IOCTL_CHANNEL` as ``cmd`` to set or get the wireless TV shield broadcast channel.
       With a second argument (1-8) the channel is set; with no second argument the current channel
-      is returned. The default is channel 8.
+      is returned. No channel is selected until the first set call is made.

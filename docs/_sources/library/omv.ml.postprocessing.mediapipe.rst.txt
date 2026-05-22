@@ -40,7 +40,8 @@ anchor-based bounding boxes and keypoints, then performs NMS.
     .. method:: mediapipe_detection_postprocess.__call__(model: ml.Model, inputs: list, outputs: list) -> list
 
         Run post-processing on model outputs and return a list of
-        ``((x, y, w, h), score, keypoints)`` tuples.
+        ``((x, y, w, h), score, keypoints)`` tuples. Returns an empty tuple
+        ``()`` when no detection clears the score threshold.
 
     .. method:: mediapipe_detection_postprocess.detection_post_process(ih: int, iw: int, nms: ml.utils.NMS, model: ml.Model, inputs: list, outputs: list, score_idx: int, cords_idx: int, t: float, anchors: ndarray) -> None
 
@@ -68,8 +69,8 @@ Post-processes BlazeFace model output.
 
     ``nms_sigma`` Sigma for soft-NMS score decay.
 
-    Returns ``[((x, y, w, h), score, keypoints)]`` from ``__call__``, where
-    ``keypoints`` is a list of ``(x, y)`` points.
+    Returns a list of ``((x, y, w, h), score, keypoints)`` tuples from
+    ``__call__``, where ``keypoints`` is a list of ``(x, y)`` points.
 
 
 class BlazePalm -- Palm Detection
@@ -91,8 +92,8 @@ Post-processes BlazePalm model output.
 
     ``nms_sigma`` Sigma for soft-NMS score decay.
 
-    Returns ``[((x, y, w, h), score, keypoints)]`` from ``__call__``, where
-    ``keypoints`` is a list of ``(x, y)`` points.
+    Returns a list of ``((x, y, w, h), score, keypoints)`` tuples from
+    ``__call__``, where ``keypoints`` is a list of ``(x, y)`` points.
 
 
 class FaceLandmarks -- Face Landmarks
@@ -110,8 +111,8 @@ Post-processes FaceLandmarks model output.
 
     ``nms_sigma`` Sigma for soft-NMS score decay.
 
-    Returns ``((x, y, w, h), score, keypoints)`` from ``__call__``, where
-    ``keypoints`` is a list of ``(x, y, z)`` points.
+    Returns a list of ``((x, y, w, h), score, keypoints)`` tuples from
+    ``__call__``, where ``keypoints`` is a list of ``(x, y, z)`` points.
 
 
 class HandLandmarks -- Hand Landmarks
@@ -151,6 +152,6 @@ Post-processes MoveNet single-pose model output.
 
     ``nms_sigma`` Sigma for soft-NMS score decay.
 
-    Returns ``((x, y, w, h), score, keypoints)`` from ``__call__``, where
-    ``keypoints`` is a list of ``(x, y, score)`` points in input pixel
-    coordinates.
+    Returns a list of ``((x, y, w, h), score, keypoints)`` tuples from
+    ``__call__``, where ``keypoints`` is a list of ``(x, y, score)`` points
+    in input pixel coordinates.

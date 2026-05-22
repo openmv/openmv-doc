@@ -38,7 +38,7 @@ class MicroSpeech:
         Not normally called directly.
         """
         ...
-    def listen(self, timeout: int = 0, callback: callable = None, threshold: float = 0.65, filter: list[str] = [Yes, No]) -> tuple[str, numpy.ndarray]:
+    def listen(self, timeout: int = 0, callback: callable = None, threshold: float = 0.65, filter: list[str] = ['Yes', 'No']) -> tuple[str, numpy.ndarray]:
         """
         Listens for a spoken word and returns a tuple of (label, average_scores) once a label whose
         averaged score is above threshold and is contained in filter is detected. Calls

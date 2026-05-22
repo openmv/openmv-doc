@@ -4,7 +4,22 @@
 .. module:: omv
    :synopsis: OpenMV Cam Information
 
-The ``omv`` module is used to get OpenMV Cam information.
+The :mod:`omv` module exposes runtime information about the OpenMV
+Cam itself -- the firmware version, the underlying MCU architecture,
+the board model and a stable board ID -- so that scripts can adapt
+their behaviour to the hardware they are running on. It also reports
+whether the OpenMV IDE is currently attached over the debug protocol
+via :func:`debug_mode`, which is useful for switching between live
+preview and standalone operation.
+
+Example usage::
+
+    import omv
+
+    print("board:       ", omv.board_type(), omv.board_id())
+    print("arch:        ", omv.arch())
+    print("firmware:    ", omv.version_string())
+    print("IDE attached:", omv.debug_mode())
 
 Functions
 ---------

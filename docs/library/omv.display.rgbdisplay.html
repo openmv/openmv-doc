@@ -248,7 +248,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/omv.display.rgbdisplay.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/e596bf0ac5fe30d539c3f6f4808c0e49129f6efa/docs/library/omv.display.rgbdisplay.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -326,7 +326,40 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="class-rgbdisplay-rgb-display-driver">
 <h1>class RGBDisplay – RGB Display Driver<a class="headerlink" href="#class-rgbdisplay-rgb-display-driver" title="Link to this heading">¶</a></h1>
-<p>The <a class="reference internal" href="#display.RGBDisplay" title="display.RGBDisplay"><code class="xref any py py-class docutils literal notranslate"><span class="pre">RGBDisplay</span></code></a> class drives 24-bit parallel RGB LCDs via the LTDC controller.</p>
+<p>The <a class="reference internal" href="#display.RGBDisplay" title="display.RGBDisplay"><code class="xref py py-class docutils literal notranslate"><span class="pre">RGBDisplay</span></code></a> class drives 24-bit parallel RGB LCDs through
+the STM32 LTDC (LCD-TFT) controller. The LTDC streams pixels directly
+out of an SDRAM-backed framebuffer at the chosen pixel clock, so high
+refresh rates (up to 120 Hz) are possible without CPU involvement.</p>
+<p>On the OpenMV Cam Pure Thermal the same 24-bit parallel bus also
+feeds an on-board TFP410 HDMI encoder, so its HDMI output is driven
+through this class too – use <code class="docutils literal notranslate"><span class="pre">display_on=False</span></code> to blank the
+on-board LCD while still clocking pixels to the encoder.</p>
+<p>Panel resolution is selected through <code class="docutils literal notranslate"><span class="pre">framesize</span></code> using the constants
+defined in the <a class="reference internal" href="omv.display.html#module-display" title="display: display driver"><code class="xref py py-mod docutils literal notranslate"><span class="pre">display</span></code></a> module (<code class="docutils literal notranslate"><span class="pre">QVGA</span></code>, <code class="docutils literal notranslate"><span class="pre">VGA</span></code>, <code class="docutils literal notranslate"><span class="pre">WVGA</span></code>,
+<code class="docutils literal notranslate"><span class="pre">HD</span></code>, <code class="docutils literal notranslate"><span class="pre">FHD</span></code>, …). Panel-specific initialisation sequences are
+plugged in via the <code class="docutils literal notranslate"><span class="pre">controller</span></code> keyword argument (for example
+<a class="reference internal" href="omv.display.ST7701.html#display.ST7701" title="display.ST7701"><code class="xref py py-class docutils literal notranslate"><span class="pre">ST7701</span></code></a> for ST7701-based panels). Backlight brightness is
+driven as a simple GPIO by default, or by <a class="reference internal" href="omv.display.DACBacklight.html#display.DACBacklight" title="display.DACBacklight"><code class="xref py py-class docutils literal notranslate"><span class="pre">DACBacklight</span></code></a> /
+<a class="reference internal" href="omv.display.PWMBacklight.html#display.PWMBacklight" title="display.PWMBacklight"><code class="xref py py-class docutils literal notranslate"><span class="pre">PWMBacklight</span></code></a> if one is passed as <code class="docutils literal notranslate"><span class="pre">backlight</span></code>.</p>
+<p>Frames are presented by calling <code class="xref py py-meth docutils literal notranslate"><span class="pre">write()</span></code> with an
+<a class="reference internal" href="omv.image.Image.html#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">image.Image</span></code></a>. The driver handles RGB conversion, scaling,
+ROI, palette and orientation transforms internally.</p>
+<p>Example – mirror the camera onto a 480x272 panel at 60 Hz:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">display</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">csi0</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="6"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="7"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="n">lcd</span> <span class="o">=</span> <span class="n">display</span><span class="o">.</span><span class="n">RGBDisplay</span><span class="p">(</span><span class="n">framesize</span><span class="o">=</span><span class="n">display</span><span class="o">.</span><span class="n">FHVGA</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="mi">60</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="13">    <span class="n">lcd</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(),</span> <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">SCALE_ASPECT_KEEP</span><span class="p">)</span>
+</span></pre></div>
+</div>
 <section id="constructors">
 <h2>Constructors<a class="headerlink" href="#constructors" title="Link to this heading">¶</a></h2>
 <dl class="py class">
@@ -335,9 +368,11 @@ data-aria-dark="Switch to auto color mode">
 <dd><blockquote>
 <div><p><code class="docutils literal notranslate"><span class="pre">framesize</span></code> One of the standard supported resolutions (see the <a class="reference internal" href="omv.display.html#module-display" title="display: display driver"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">display</span></code></a> module constants).</p>
 <p><code class="docutils literal notranslate"><span class="pre">refresh</span></code> Sets the screen refresh rate in hertz (30-120). This controls the RGB LCD pixel clock.</p>
-<p><code class="docutils literal notranslate"><span class="pre">display_on</span></code> Enables the display. Pass <code class="docutils literal notranslate"><span class="pre">False</span></code> when the 24-bit parallel LCD output is shared
-by multiple devices (e.g. the TFP410 chip for driving HDMI displays) to keep the display off
-while still driving the data bus.</p>
+<p><code class="docutils literal notranslate"><span class="pre">display_on</span></code> Enables the local LCD output. Pass <code class="docutils literal notranslate"><span class="pre">False</span></code> on the OpenMV Cam
+Pure Thermal, whose 24-bit parallel bus drives both the on-board LCD and the
+TFP410 HDMI encoder – this keeps the on-board LCD blanked while still feeding
+the HDMI encoder. On other OpenMV Cams there is no shared sink and this can
+be left at its default.</p>
 <p><code class="docutils literal notranslate"><span class="pre">triple_buffer</span></code> If <code class="docutils literal notranslate"><span class="pre">True</span></code>, makes updates to the screen non-blocking at the cost of 3x the
 display size in RAM.</p>
 <p><code class="docutils literal notranslate"><span class="pre">portrait</span></code> Swaps the framesize width and height.</p>

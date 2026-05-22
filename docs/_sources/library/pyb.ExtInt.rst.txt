@@ -4,11 +4,16 @@
 class ExtInt -- configure I/O pins to interrupt on external events
 ==================================================================
 
-The STM32 has 22 external interrupt lines: lines 0-15 are routed from GPIO
-pins, and lines 16-21 are tied to internal sources (RTC alarm, RTC wakeup,
-USB wakeup, etc.). Each GPIO line *N* can be driven by pin *PxN* on any one
-GPIO port at a time -- for example line 0 may map to ``PA0``, ``PB0``,
-``PC0``, etc.
+STM32 MCUs split the external interrupt controller (EXTI) into two
+ranges: lines 0-15 are driven from GPIO pins, and the lines above 15 are
+tied to internal sources (RTC alarm, RTC wakeup, USB wakeup, etc.). The
+total line count and the mapping of internal lines above 15 are
+MCU-specific; consult the EXTI section of the reference manual for the
+OpenMV Cam's MCU for the exact assignments.
+
+Each GPIO line *N* can be driven by pin *PxN* on any one GPIO port at a
+time -- for example line 0 may map to ``PA0``, ``PB0``, ``PC0`` or any
+other port-A through port-K pin 0, but only one at a time.
 
 Example::
 
@@ -30,19 +35,17 @@ that yourself.
 
 Registering two callbacks on the same pin raises an exception.
 
-If ``pin`` is passed as an integer, it is assumed to identify one of the
-internal interrupt lines and must be in the range ``16``-``21``. Any other
-pin value is resolved through the standard pin mapper.
+If ``pin`` is passed as an integer it is assumed to identify one of the
+internal interrupt lines and must be ``>= 16`` and below the MCU's total
+EXTI line count. Any other pin value is resolved through the standard
+pin mapper.
 
 In addition to the ``IRQ_*`` modes there are ``EVT_RISING``, ``EVT_FALLING``
 and ``EVT_RISING_FALLING`` event modes that route a transition to the
 processor's event input (used with the ``WFE`` instruction for low-power
 wait). The ``EVT_*`` modes do not invoke the Python callback and are
-intended for sleep / power-management use; the ``IRQ_*`` modes are what
-ordinary application code should use.
-
-A C-level API is also provided so internal drivers can claim EXTI lines;
-see ``extint.h`` in the firmware source.
+intended for sleep / power-management use; ordinary application code
+should use the ``IRQ_*`` modes.
 
 
 Constructors
@@ -110,17 +113,36 @@ Constructors
    Constants
    ---------
 
-   .. data:: IRQ_FALLING
-      :type: int
-
-      Interrupt on a falling edge.
-
    .. data:: IRQ_RISING
       :type: int
 
-      Interrupt on a rising edge.
+      Trigger an interrupt on a rising edge. The Python callback runs.
+
+   .. data:: IRQ_FALLING
+      :type: int
+
+      Trigger an interrupt on a falling edge. The Python callback runs.
 
    .. data:: IRQ_RISING_FALLING
       :type: int
 
-      Interrupt on a rising or falling edge.
+      Trigger an interrupt on either edge. The Python callback runs.
+
+   .. data:: EVT_RISING
+      :type: int
+
+      Route a rising edge to the Cortex event input. No Python callback
+      is invoked; intended for use with the ``WFE`` instruction in
+      low-power code.
+
+   .. data:: EVT_FALLING
+      :type: int
+
+      Route a falling edge to the Cortex event input. No Python callback
+      is invoked.
+
+   .. data:: EVT_RISING_FALLING
+      :type: int
+
+      Route either edge to the Cortex event input. No Python callback
+      is invoked.

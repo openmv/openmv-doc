@@ -48,10 +48,17 @@ A controller must specify the recipient's address::
 
 A controller also has these methods::
 
-    i2c.is_ready(0x42)           # check if peripheral 0x42 is ready
-    i2c.scan()                   # scan the bus and return a list of responding addresses
-    i2c.mem_read(3, 0x42, 2)     # read 3 bytes from peripheral 0x42 starting at memaddr 2
-    i2c.mem_write("abc", 0x42, 2, timeout=1000)  # write 3 bytes to peripheral 0x42 at memaddr 2
+    # Check if peripheral 0x42 is ready.
+    i2c.is_ready(0x42)
+
+    # Scan the bus and return a list of responding addresses.
+    i2c.scan()
+
+    # Read 3 bytes from peripheral 0x42 starting at memaddr 2.
+    i2c.mem_read(3, 0x42, 2)
+
+    # Write 3 bytes to peripheral 0x42 at memaddr 2.
+    i2c.mem_write("abc", 0x42, 2, timeout=1000)
 
 Constructors
 ------------
@@ -97,19 +104,19 @@ Constructors
 
    .. method:: init(mode: int, *, addr: int = 0x12, baudrate: int = 400000, gencall: bool = False, dma: bool = False) -> None
 
-     Initialise the I2C bus with the given parameters:
+      Initialise the I2C bus with the given parameters:
 
-        - ``mode`` must be either ``I2C.CONTROLLER`` or ``I2C.PERIPHERAL``
-        - ``addr`` is the 7-bit address (only sensible for a peripheral)
-        - ``baudrate`` is the SCL clock rate (only sensible for a controller)
-        - ``gencall`` is whether to support general call mode
-        - ``dma`` is whether to allow the use of DMA for the I2C transfers (note
-          that DMA transfers have more precise timing but currently do not handle bus
-          errors properly)
+        - ``mode`` must be either ``I2C.CONTROLLER`` or ``I2C.PERIPHERAL``.
+        - ``addr`` is the 7-bit address (only sensible for a peripheral).
+        - ``baudrate`` is the SCL clock rate (only sensible for a controller).
+        - ``gencall`` is whether to support general-call mode.
+        - ``dma`` is whether to allow the use of DMA for the I2C transfers
+          (note that DMA transfers have more precise timing but currently
+          do not handle bus errors properly).
 
       The actual clock frequency may be lower than the requested frequency.
-      This is dependent on the platform hardware. The actual rate may be determined
-      by printing the I2C object.
+      This is dependent on the platform hardware. The actual rate may be
+      determined by printing the I2C object.
 
    .. method:: is_ready(addr: int) -> bool
 
@@ -132,14 +139,13 @@ Constructors
 
       Write to the memory of an I2C device:
 
-        - ``data`` can be an integer or a buffer to write from
-        - ``addr`` is the I2C device address
-        - ``memaddr`` is the memory location within the I2C device
-        - ``timeout`` is the timeout in milliseconds to wait for the write
-        - ``addr_size`` selects width of memaddr: 8 or 16 bits
+        - ``data`` can be an integer or a buffer to write from.
+        - ``addr`` is the I2C device address.
+        - ``memaddr`` is the memory location within the I2C device.
+        - ``timeout`` is the timeout in milliseconds to wait for the write.
+        - ``addr_size`` selects width of ``memaddr``: 8 or 16 bits.
 
-      Returns ``None``.
-      This is only valid in controller mode.
+      Only valid in controller mode.
 
    .. method:: recv(recv: Union[int, bytearray], addr: int = 0x00, *, timeout: int = 5000) -> bytes
 
@@ -157,11 +163,9 @@ Constructors
 
       Send data on the bus:
 
-        - ``send`` is the data to send (an integer to send, or a buffer object)
-        - ``addr`` is the address to send to (only required in controller mode)
-        - ``timeout`` is the timeout in milliseconds to wait for the send
-
-      Return value: ``None``.
+        - ``send`` is the data to send (an integer to send, or a buffer object).
+        - ``addr`` is the address to send to (only required in controller mode).
+        - ``timeout`` is the timeout in milliseconds to wait for the send.
 
    .. method:: scan() -> List[int]
 
@@ -174,9 +178,12 @@ Constructors
    .. data:: CONTROLLER
       :type: int
 
-      for initialising the bus to controller mode
+      Initialises the bus as the master (controller) -- it drives ``SCL``
+      and initiates transactions.
 
    .. data:: PERIPHERAL
       :type: int
 
-      for initialising the bus to peripheral mode
+      Initialises the bus as a slave (peripheral) that listens on the
+      ``addr`` set in :meth:`init` and responds to transactions started
+      by a controller on the same bus.

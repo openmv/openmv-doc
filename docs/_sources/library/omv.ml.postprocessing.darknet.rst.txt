@@ -41,7 +41,8 @@ Post-processor for YOLO V2 model outputs.
 
         Returns a list of per-class lists of ``((x, y, w, h), score)`` tuples.
         E.g. ``[[((x, y, w, h), score), ...], ...]``. Empty class lists are kept
-        so each list index matches the model's class index.
+        so each list index matches the model's class index. Returns an empty
+        tuple ``()`` when no detection clears the score threshold.
 
 
 class YoloLC -- YOLO LC

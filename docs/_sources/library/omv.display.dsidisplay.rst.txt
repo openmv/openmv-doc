@@ -3,7 +3,44 @@
 class DSIDisplay -- DSI Display Driver
 ======================================
 
-The `DSIDisplay` class is used for driving MIPI DSI LCDs.
+The :class:`DSIDisplay` class drives MIPI-DSI panels through the
+STM32 DSI host controller. MIPI DSI is a packetised serial display
+protocol that uses one clock lane plus one or more data lanes as
+differential pairs, which lets it carry high-resolution content (up
+to 1080p) over far fewer wires than 24-bit parallel RGB. Pixels
+stream directly from an SDRAM-backed framebuffer at the chosen
+refresh rate, so the CPU is not involved in refresh.
+
+Panel resolution is selected through ``framesize`` using the constants
+in the :mod:`display` module (``QVGA``, ``VGA``, ``HD``, ``FHD``,
+...). Panel-specific initialisation sequences are plugged in via the
+``controller`` keyword argument -- :class:`ST7701` covers the common
+ST7701-based 480x800 DSI panels. DCS commands can be issued
+out-of-band via :meth:`bus_write` / :meth:`bus_read`. Backlight
+brightness is driven
+as a simple GPIO by default, or by :class:`DACBacklight` /
+:class:`PWMBacklight` if passed as ``backlight``.
+
+Frames are presented by calling :meth:`write` with an
+:class:`image.Image`. The driver handles RGB conversion, scaling,
+ROI, palette and orientation transforms internally.
+
+Example -- mirror the camera onto an ST7701-based 480x800 DSI panel::
+
+    import csi
+    import display
+    import image
+
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
+
+    lcd = display.DSIDisplay(framesize=display.TFWVGA,
+                             controller=display.ST7701())
+
+    while True:
+        lcd.write(csi0.snapshot(), hint=image.SCALE_ASPECT_KEEP)
 
 Constructors
 ------------

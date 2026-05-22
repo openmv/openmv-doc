@@ -16,6 +16,37 @@ For when the camera board is lying on a table face up:
    * Y points down below the camera sensor (towards the bottom of the board).
    * Z points in the reverse direction of the camera sensor (into the table).
 
+Example usage -- poll the raw accelerometer, gyro and temperature::
+
+    import imu
+    import time
+
+    while True:
+        ax, ay, az = imu.acceleration_mg()
+        gx, gy, gz = imu.angular_rate_mdps()
+        t = imu.temperature_c()
+        print("accel (mg)  : {:8.1f} {:8.1f} {:8.1f}".format(ax, ay, az))
+        print("gyro  (mdps): {:8.1f} {:8.1f} {:8.1f}".format(gx, gy, gz))
+        print("temp  (degC): {:5.1f}".format(t))
+        time.sleep_ms(200)
+
+Example usage -- detect which way the camera is tilted::
+
+    import imu
+    import time
+
+    while True:
+        r = imu.roll()
+        if abs(r - 90) < 15:
+            print("camera rotated left")
+        elif abs(r - 270) < 15:
+            print("camera rotated right")
+        elif abs(r - 180) < 15:
+            print("camera upside down")
+        else:
+            print("camera upright")
+        time.sleep_ms(100)
+
 Functions
 ---------
 

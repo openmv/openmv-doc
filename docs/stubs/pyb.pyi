@@ -3,120 +3,264 @@ from typing import Any, Callable, overload
 import array
 
 BUS_OFF: int
-"""Possible states of the CAN controller returned from state()."""
+"""
+The controller is on but not participating in bus activity (TEC
+overflowed beyond 255).
+"""
 DUAL: int
-"""The operation mode of a filter used in setfilter() for CAN FD."""
+"""The filter params array holds two specific IDs to accept."""
 ERROR_ACTIVE: int
-"""Possible states of the CAN controller returned from state()."""
+"""
+The controller is on and in the Error Active state (both TEC and
+REC are less than 96).
+"""
 ERROR_PASSIVE: int
-"""Possible states of the CAN controller returned from state()."""
+"""
+The controller is on and in the Error Passive state (at least one
+of TEC or REC is 128 or greater).
+"""
 ERROR_WARNING: int
-"""Possible states of the CAN controller returned from state()."""
+"""
+The controller is on and in the Error Warning state (at least one
+of TEC or REC is 96 or greater).
+"""
 LIST16: int
-"""The operation mode of a filter used in setfilter() for classic CAN."""
+"""
+The filter params array holds four 16-bit IDs that will be
+accepted.
+"""
 LIST32: int
-"""The operation mode of a filter used in setfilter() for classic CAN."""
+"""
+The filter params array holds two 32-bit IDs that will be
+accepted.
+"""
 LOOPBACK: int
-"""The mode of the CAN bus used in init()."""
+"""
+Internal loopback mode: the controller is disconnected from the
+pins and routes transmitted frames straight back to the receive
+path. Useful for self-tests without a transceiver.
+"""
 MASK: int
-"""The operation mode of a filter used in setfilter() for CAN FD."""
+"""The filter params array holds one (id, mask) pair."""
 MASK16: int
-"""The operation mode of a filter used in setfilter() for classic CAN."""
+"""The filter params array holds two 16-bit (id, mask) pairs."""
 MASK32: int
-"""The operation mode of a filter used in setfilter() for classic CAN."""
+"""The filter params array holds one 32-bit (id, mask) pair."""
 NORMAL: int
-"""The mode of the CAN bus used in init()."""
+"""
+The controller participates normally on the bus – transmits its
+own frames and acknowledges valid received frames.
+"""
 RANGE: int
-"""The operation mode of a filter used in setfilter() for CAN FD."""
+"""
+The filter params array holds two IDs forming a range of
+accepted IDs.
+"""
 SILENT: int
-"""The mode of the CAN bus used in init()."""
+"""
+Listen-only mode: the controller receives frames but never drives
+the bus (no ACK, no transmissions). Useful for bus sniffing.
+"""
 SILENT_LOOPBACK: int
-"""The mode of the CAN bus used in init()."""
+"""
+Combines SILENT and LOOPBACK: no pin activity and
+no acknowledgements, with internal loopback of TX into RX.
+"""
 STOPPED: int
-"""Possible states of the CAN controller returned from state()."""
+"""The controller is completely off and reset."""
 CIRCULAR: int
 """
-CIRCULAR mode does a transmission of the waveform in the data buffer, and wraps around
-to the start of the data buffer every time it reaches the end of the table.
+CIRCULAR mode transmits the waveform in the data buffer and
+wraps around to the start of the buffer every time it reaches the
+end, producing a continuous loop until deinit() is called.
 """
 NORMAL: int
-"""NORMAL mode does a single transmission of the waveform in the data buffer,"""
+"""
+NORMAL mode does a single transmission of the waveform in the
+data buffer.
+"""
+EVT_FALLING: int
+"""
+Route a falling edge to the Cortex event input. No Python callback
+is invoked.
+"""
+EVT_RISING: int
+"""
+Route a rising edge to the Cortex event input. No Python callback
+is invoked; intended for use with the WFE instruction in
+low-power code.
+"""
+EVT_RISING_FALLING: int
+"""
+Route either edge to the Cortex event input. No Python callback
+is invoked.
+"""
 IRQ_FALLING: int
-"""Interrupt on a falling edge."""
+"""Trigger an interrupt on a falling edge. The Python callback runs."""
 IRQ_RISING: int
-"""Interrupt on a rising edge."""
+"""Trigger an interrupt on a rising edge. The Python callback runs."""
 IRQ_RISING_FALLING: int
-"""Interrupt on a rising or falling edge."""
+"""Trigger an interrupt on either edge. The Python callback runs."""
 CONTROLLER: int
-"""for initialising the bus to controller mode"""
+"""
+Initialises the bus as the master (controller) – it drives SCL
+and initiates transactions.
+"""
 PERIPHERAL: int
-"""for initialising the bus to peripheral mode"""
+"""
+Initialises the bus as a slave (peripheral) that listens on the
+addr set in init() and responds to transactions started
+by a controller on the same bus.
+"""
 AF_OD: int
-"""initialise the pin to alternate-function mode with an open-drain drive"""
+"""Configure the pin as an alternate function with an open-drain driver."""
 AF_PP: int
-"""initialise the pin to alternate-function mode with a push-pull drive"""
+"""Configure the pin as an alternate function with a push-pull driver."""
 ALT: int
-"""initialise the pin to alternate-function mode for input or output"""
+"""Configure the pin as an alternate function (input or output)."""
 ANALOG: int
-"""initialise the pin to analog mode"""
+"""Configure the pin as an analog input (e.g. for use with ADC)."""
 IN: int
-"""initialise the pin to input mode"""
+"""Configure the pin as a digital input (high-impedance)."""
 OUT_OD: int
-"""initialise the pin to output mode with an open-drain drive"""
+"""Configure the pin as a digital output with an open-drain driver."""
 OUT_PP: int
-"""initialise the pin to output mode with a push-pull drive"""
+"""Configure the pin as a digital output with a push-pull driver."""
 PULL_DOWN: int
-"""enable the pull-down resistor on the pin"""
+"""Enable the internal pull-down resistor on the pin."""
 PULL_NONE: int
-"""don’t enable any pull up or down resistors on the pin"""
+"""Disable both pull-up and pull-down resistors on the pin."""
 PULL_UP: int
-"""enable the pull-up resistor on the pin"""
+"""Enable the internal pull-up resistor on the pin."""
 CONTROLLER: int
-"""for initialising the SPI bus to controller or peripheral mode"""
+"""
+Initialise the SPI bus as master (controller) – the OpenMV Cam
+drives SCK and MOSI and is in charge of the transaction.
+"""
 LSB: int
-"""set the first bit to be the least or most significant bit"""
+"""
+Pass to firstbit to transmit/receive the least-significant bit
+first.
+"""
 MSB: int
-"""set the first bit to be the least or most significant bit"""
+"""
+Pass to firstbit to transmit/receive the most-significant bit
+first (the most common ordering).
+"""
 PERIPHERAL: int
-"""for initialising the SPI bus to controller or peripheral mode"""
+"""
+Initialise the SPI bus as slave (peripheral) – the OpenMV Cam
+responds to clock pulses driven by a remote controller.
+"""
+BOTH: int
+"""Capture on either edge."""
 BRK_HIGH: int
-"""Configures the break mode when passed to the brk keyword argument."""
+"""Break input is active-high."""
 BRK_LOW: int
-"""Configures the break mode when passed to the brk keyword argument."""
+"""Break input is active-low."""
 BRK_OFF: int
-"""Configures the break mode when passed to the brk keyword argument."""
+"""Break input is disabled."""
 CENTER: int
-"""Configures the timer to count Up, Down, or from 0 to ARR and then back down to 0."""
+"""Count from 0 up to ARR and then back down to 0."""
 DOWN: int
-"""Configures the timer to count Up, Down, or from 0 to ARR and then back down to 0."""
+"""Count from ARR down to 0."""
+ENC_A: int
+"""Encoder mode: the counter only changes when CH1 changes."""
+ENC_AB: int
+"""Encoder mode: the counter changes whenever CH1 or CH2 changes."""
+ENC_B: int
+"""Encoder mode: the counter only changes when CH2 changes."""
+FALLING: int
+"""Capture on the falling edge."""
+HIGH: int
+"""Output is active-high."""
+IC: int
+"""Configure the channel for input-capture mode."""
+LOW: int
+"""Output is active-low."""
+OC_ACTIVE: int
+"""Output-compare active mode; the pin is made active on compare match."""
+OC_FORCED_ACTIVE: int
+"""
+Output-compare forced-active mode; the pin is forced active and the
+compare match is ignored.
+"""
+OC_FORCED_INACTIVE: int
+"""
+Output-compare forced-inactive mode; the pin is forced inactive and
+the compare match is ignored.
+"""
+OC_INACTIVE: int
+"""Output-compare inactive mode; the pin is made inactive on compare match."""
+OC_TIMING: int
+"""Output-compare timing mode; no pin is driven."""
+OC_TOGGLE: int
+"""Output-compare toggle mode; the pin toggles on compare match."""
+PWM: int
+"""Configure the channel for PWM output (active high)."""
+PWM_INVERTED: int
+"""Configure the channel for PWM output (active low)."""
+RISING: int
+"""Capture on the rising edge."""
 UP: int
-"""Configures the timer to count Up, Down, or from 0 to ARR and then back down to 0."""
+"""Count from 0 up to ARR (the default mode)."""
 CTS: int
-"""to select the flow control type."""
+"""
+Bit flag for the flow argument of init(); enables CTS
+(clear-to-send) hardware flow control on the transmit path. May
+be OR-ed with RTS to enable both directions.
+"""
 RTS: int
-"""to select the flow control type."""
+"""
+Bit flag for the flow argument of init(); enables RTS
+(request-to-send) hardware flow control on the receive path.
+"""
 CTS: int
-"""to select the flow control type."""
+"""
+Flow-control flag for init(). Enabling CTS makes the
+device honour the host’s flow control during writes (blocking
+until the host is ready to receive). May be OR-ed with
+RTS.
+"""
 IRQ_RX: int
-"""IRQ trigger values for USB_VCP.irq()."""
+"""
+irq() trigger: fires when new data is available for reading
+from the USB VCP object.
+"""
 RTS: int
-"""to select the flow control type."""
+"""
+Flow-control flag for init(). Enabling RTS makes the
+device throttle the host’s transmission when the read buffer is
+full.
+"""
 hid_keyboard: tuple
 """
-A tuple of (subclass, protocol, max packet length, polling interval, report
-descriptor) to set appropriate values for a USB mouse or keyboard.
+Pre-built HID descriptor for a USB boot keyboard. The tuple is
+(1, 1, 8, 8, <keyboard report descriptor>): boot subclass,
+keyboard protocol, 8-byte input reports (modifier byte, one reserved
+byte, six concurrent key codes), polled every 8 ms. The built-in
+report descriptor matches the standard 8-byte HID boot-keyboard
+layout, so the report sent via USB_HID.send() should be a
+bytes of the form
+(modifiers, 0, key1, key2, key3, key4, key5, key6).
 """
 hid_mouse: tuple
 """
-A tuple of (subclass, protocol, max packet length, polling interval, report
-descriptor) to set appropriate values for a USB mouse or keyboard.
+Pre-built HID descriptor for a 3-button boot mouse with relative X/Y
+movement. The tuple is (1, 2, 4, 8, <mouse report descriptor>):
+boot subclass, mouse protocol, 4-byte input reports (button mask + X +
+Y + wheel), polled every 8 ms. The built-in report descriptor is the
+one used by pyb.USB_HID().send((buttons, dx, dy, wheel)).
 """
 
 def bootloader() -> None:
     """
-    Reset into the DFU bootloader without needing the BOOT pin to be
-    asserted at reset. Useful for triggering firmware updates from running
-    code.
+    Reset into OpenMV’s own USB DFU bootloader, ready for a firmware
+    update. This is the recommended way to invoke DFU from running code
+    – no BOOT pin needs to be asserted at reset.
+    Not available on the OpenMV Cam N6 (the pyb legacy compatibility
+    layer is disabled on that board); use machine.bootloader()
+    instead.
     """
     ...
 def delay(ms: int) -> None:
@@ -426,33 +570,32 @@ class ADC:
 
     Example using a Timer object (preferred way):
 
-    adc = pyb.ADC(pyb.Pin("P5"))        # create an ADC on pin P5
-    tim = pyb.Timer(6, freq=10)         # create a timer running at 10Hz
-    buf = bytearray(100)                # creat a buffer to store the samples
-    adc.read_timed(buf, tim)            # sample 100 values, taking 10s
+    adc = pyb.ADC(pyb.Pin.board.P6)    # create an ADC on pin P6
+    tim = pyb.Timer(6, freq=10)        # create a timer running at 10Hz
+    buf = bytearray(100)               # buffer to hold the samples
+    adc.read_timed(buf, tim)           # sample 100 values, taking 10s
 
     Example using an integer for the frequency:
 
-    adc = pyb.ADC(pyb.Pin("P5"))        # create an ADC on pin P5
-    buf = bytearray(100)                # create a buffer of 100 bytes
-    adc.read_timed(buf, 10)             # read analog values into buf at 10Hz
-    #   this will take 10 seconds to finish
-    for val in buf:                     # loop over all values
-    print(val)                      # print the value out
+    adc = pyb.ADC(pyb.Pin.board.P6)    # create an ADC on pin P6
+    buf = bytearray(100)               # buffer of 100 bytes
+    adc.read_timed(buf, 10)            # read 100 samples at 10Hz (10s total)
+
+    for val in buf:
+    print(val)
 
     This function does not allocate any heap memory. It has blocking behaviour:
     it does not return to the calling program until the buffer is full.
 
 
 
-    read_timed_multi(adcs: Tuple[ADC, ...], bufs: Tuple[bytearray | 'array.array', ...], timer: Timer) -> bool
+    static read_timed_multi(adcs: Tuple[ADC, ...], bufs: Tuple[bytearray | 'array.array', ...], timer: Timer) -> bool
 
-    This is a static method. It can be used to extract relative timing or
-    phase data from multiple ADC’s.
+    Extract relative timing or phase data from multiple ADCs.
 
-    It reads analog values from multiple ADC’s into buffers at a rate set by
-    the timer object. Each time the timer triggers a sample is rapidly
-    read from each ADC in turn.
+    Reads analog values from multiple ADCs into buffers at a rate set
+    by the timer object. Each time the timer triggers a sample is
+    rapidly read from each ADC in turn.
 
     ADC and buffer instances are passed in tuples with each ADC having an
     associated buffer. All buffers must be of the same type and length and
@@ -466,19 +609,25 @@ class ADC:
     timer must be a Timer object. The timer must already be initialised
     and running at the desired sampling frequency.
 
-    Example reading 3 ADCs:
+    The STM32 OpenMV Cams expose only one ADC-capable header pin
+    (P6), so on stock hardware read_timed_multi is only
+    useful with a single ADC. Wire up additional analog inputs via
+    pyb.Pin cpu references to use it with more than
+    one ADC.
 
-    adc0 = pyb.ADC(pyb.Pin.board.P0)    # Create ADCs
-    adc1 = pyb.ADC(pyb.Pin.board.P1)
-    adc2 = pyb.ADC(pyb.Pin.board.P2)
-    tim = pyb.Timer(8, freq=100)        # Create timer
-    rx0 = array.array('H', (0 for i in range(100))) # ADC buffers of
-    rx1 = array.array('H', (0 for i in range(100))) # 100 16-bit words
-    rx2 = array.array('H', (0 for i in range(100)))
-    # read analog values into buffers at 100Hz (takes one second)
-    pyb.ADC.read_timed_multi((adc0, adc1, adc2), (rx0, rx1, rx2), tim)
-    for n in range(len(rx0)):
-    print(rx0[n], rx1[n], rx2[n])
+    Example reading one ADC:
+
+    import array
+
+    adc = pyb.ADC(pyb.Pin.board.P6)
+    tim = pyb.Timer(8, freq=100)
+    rx = array.array("H", (0 for i in range(100)))
+
+    # Sample 100 values at 100Hz (takes one second).
+    pyb.ADC.read_timed_multi((adc,), (rx,), tim)
+
+    for val in rx:
+    print(val)
 
     This function does not allocate any heap memory. It has blocking behaviour:
     it does not return to the calling program until the buffers are full.
@@ -517,28 +666,27 @@ class ADC:
         integer which specifies the frequency (in Hz) to sample at.  In this case
         Timer(6) will be automatically configured to run at the given frequency.
         Example using a Timer object (preferred way):
-        adc = pyb.ADC(pyb.Pin("P5"))        # create an ADC on pin P5
-        tim = pyb.Timer(6, freq=10)         # create a timer running at 10Hz
-        buf = bytearray(100)                # creat a buffer to store the samples
-        adc.read_timed(buf, tim)            # sample 100 values, taking 10s
+        adc = pyb.ADC(pyb.Pin.board.P6)    # create an ADC on pin P6
+        tim = pyb.Timer(6, freq=10)        # create a timer running at 10Hz
+        buf = bytearray(100)               # buffer to hold the samples
+        adc.read_timed(buf, tim)           # sample 100 values, taking 10s
         Example using an integer for the frequency:
-        adc = pyb.ADC(pyb.Pin("P5"))        # create an ADC on pin P5
-        buf = bytearray(100)                # create a buffer of 100 bytes
-        adc.read_timed(buf, 10)             # read analog values into buf at 10Hz
-        #   this will take 10 seconds to finish
-        for val in buf:                     # loop over all values
-        print(val)                      # print the value out
+        adc = pyb.ADC(pyb.Pin.board.P6)    # create an ADC on pin P6
+        buf = bytearray(100)               # buffer of 100 bytes
+        adc.read_timed(buf, 10)            # read 100 samples at 10Hz (10s total)
+
+        for val in buf:
+        print(val)
         This function does not allocate any heap memory. It has blocking behaviour:
         it does not return to the calling program until the buffer is full.
         """
         ...
     def read_timed_multi(self, adcs: tuple[ADC, ...], bufs: tuple[bytearray | 'array.array', ...], timer: Timer) -> bool:
         """
-        This is a static method. It can be used to extract relative timing or
-        phase data from multiple ADC’s.
-        It reads analog values from multiple ADC’s into buffers at a rate set by
-        the timer object. Each time the timer triggers a sample is rapidly
-        read from each ADC in turn.
+        Extract relative timing or phase data from multiple ADCs.
+        Reads analog values from multiple ADCs into buffers at a rate set
+        by the timer object. Each time the timer triggers a sample is
+        rapidly read from each ADC in turn.
         ADC and buffer instances are passed in tuples with each ADC having an
         associated buffer. All buffers must be of the same type and length and
         the number of buffers must equal the number of ADC’s.
@@ -548,18 +696,23 @@ class ADC:
         bytearray) then the sample resolution will be reduced to 8 bits.
         timer must be a Timer object. The timer must already be initialised
         and running at the desired sampling frequency.
-        Example reading 3 ADCs:
-        adc0 = pyb.ADC(pyb.Pin.board.P0)    # Create ADCs
-        adc1 = pyb.ADC(pyb.Pin.board.P1)
-        adc2 = pyb.ADC(pyb.Pin.board.P2)
-        tim = pyb.Timer(8, freq=100)        # Create timer
-        rx0 = array.array('H', (0 for i in range(100))) # ADC buffers of
-        rx1 = array.array('H', (0 for i in range(100))) # 100 16-bit words
-        rx2 = array.array('H', (0 for i in range(100)))
-        # read analog values into buffers at 100Hz (takes one second)
-        pyb.ADC.read_timed_multi((adc0, adc1, adc2), (rx0, rx1, rx2), tim)
-        for n in range(len(rx0)):
-        print(rx0[n], rx1[n], rx2[n])
+        The STM32 OpenMV Cams expose only one ADC-capable header pin
+        (P6), so on stock hardware read_timed_multi is only
+        useful with a single ADC. Wire up additional analog inputs via
+        pyb.Pin cpu references to use it with more than
+        one ADC.
+        Example reading one ADC:
+        import array
+
+        adc = pyb.ADC(pyb.Pin.board.P6)
+        tim = pyb.Timer(8, freq=100)
+        rx = array.array("H", (0 for i in range(100)))
+
+        # Sample 100 values at 100Hz (takes one second).
+        pyb.ADC.read_timed_multi((adc,), (rx,), tim)
+
+        for val in rx:
+        print(val)
         This function does not allocate any heap memory. It has blocking behaviour:
         it does not return to the calling program until the buffers are full.
         The function returns True if all samples were acquired with correct
@@ -573,6 +726,121 @@ class ADC:
         ADC’s the limit is around 140kHz, and for four it is around 110kHz.
         At high sample rates disabling interrupts for the duration can reduce the
         risk of sporadic data loss.
+        """
+        ...
+
+class ADCAll:
+    """
+    Provides simultaneous access to every ADC channel on the MCU,
+    including the internal channels for die temperature, the internal
+    1.21 V reference, and VBAT. Constructing this object switches all
+    masked external ADC pins to analog-input mode.
+    resolution is the ADC conversion resolution in bits (typically
+    8, 10 or 12).
+
+    mask is a 32-bit bitmask selecting which channels to enable;
+    bit N enables channel N. Defaults to 0xffffffff (all
+    channels). The internal channels live at bits 16 (temperature),
+    17 (VBAT) and 18 (VREF), so to enable only the internal
+    channels pass 0x70000.
+    The on-chip temperature sensor is factory calibrated and accurate to
+    roughly ±1 °C, but it measures the die temperature – which is
+    typically tens of degrees above ambient when the MCU is active.
+    Readings are only meaningful as a proxy for ambient on a freshly
+    woken board.
+    Analog input voltages must never exceed the actual supply voltage.
+    Methods
+
+
+
+    read_channel(channel: int) -> int
+
+    Read the given ADC channel. External channels (0 – 15)
+    return unscaled raw values at the configured resolution; the
+    internal channels (16–18) return raw values too, but the
+    dedicated helpers below convert them to voltages.
+
+
+
+    read_core_temp() -> float
+
+    Return the on-die temperature in degrees Celsius, computed from
+    the internal temperature channel and the factory calibration
+    values stored in the MCU.
+
+
+
+    read_core_vbat() -> float
+
+    Return the backup-battery voltage in volts. The reading is taken
+    through an on-chip voltage divider (so the headroom does not
+    restrict the ADC’s input range) and scaled back to the actual
+    battery voltage. The divider is only active during the ADC
+    conversion, so the standby drain on the backup battery is
+    negligible.
+
+
+
+    read_core_vref() -> float
+
+    Return the internal 1.21 V (nominal) reference voltage in volts,
+    measured with the MCU supply as the ADC reference. This is the
+    raw conversion result.
+
+
+
+    read_vref() -> float
+
+    Return the MCU supply voltage in volts. Computed by measuring the
+    internal voltage reference and back-scaling using its factory
+    calibration value. With a healthy 3.3 V rail the reading will be
+    close to 3.3. The MCU continues to operate – and ADC
+    conversions remain meaningful – with a supply as low as around
+    2 V, provided the appropriate MCU clock, flash access speed and
+    programming-mode settings are observed.
+    """
+    def __init__(self, resolution: int, mask: int = 0xffffffff) -> None: ...
+    def read_channel(self, channel: int) -> int:
+        """
+        Read the given ADC channel. External channels (0 – 15)
+        return unscaled raw values at the configured resolution; the
+        internal channels (16–18) return raw values too, but the
+        dedicated helpers below convert them to voltages.
+        """
+        ...
+    def read_core_temp(self) -> float:
+        """
+        Return the on-die temperature in degrees Celsius, computed from
+        the internal temperature channel and the factory calibration
+        values stored in the MCU.
+        """
+        ...
+    def read_core_vbat(self) -> float:
+        """
+        Return the backup-battery voltage in volts. The reading is taken
+        through an on-chip voltage divider (so the headroom does not
+        restrict the ADC’s input range) and scaled back to the actual
+        battery voltage. The divider is only active during the ADC
+        conversion, so the standby drain on the backup battery is
+        negligible.
+        """
+        ...
+    def read_core_vref(self) -> float:
+        """
+        Return the internal 1.21 V (nominal) reference voltage in volts,
+        measured with the MCU supply as the ADC reference. This is the
+        raw conversion result.
+        """
+        ...
+    def read_vref(self) -> float:
+        """
+        Return the MCU supply voltage in volts. Computed by measuring the
+        internal voltage reference and back-scaling using its factory
+        calibration value. With a healthy 3.3 V rail the reading will be
+        close to 3.3. The MCU continues to operate – and ADC
+        conversions remain meaningful – with a supply as low as around
+        2 V, provided the appropriate MCU clock, flash access speed and
+        programming-mode settings are observed.
         """
         ...
 
@@ -676,9 +944,12 @@ class CAN:
     The baud rate will be 1/bittime, where the bittime is 1 + BS1 + BS2 multiplied
     by the time quanta tq.
 
-    For example, with PCLK1=42MHz, prescaler=100, sjw=1, bs1=6, bs2=8, the value of
-    tq is 2.38 microseconds.  The bittime is 35.7 microseconds, and the baudrate
-    is 28kHz.
+    For example, on the OpenMV Cam H7 (PCLK1 = 100 MHz), 250 kbps CAN
+    with a 75% sample point can be configured as
+    prescaler=25, sjw=1, bs1=11, bs2=4: tq = 25 / 100 MHz =
+    250 ns, bittime = (1 + 11 + 4) × 250 ns = 4 µs, sample
+    point = (1 + 11) / 16 = 75%, and the baudrate is
+    1 / 4 µs = 250 kHz.
 
     See the bxCAN / FDCAN section of the STM32 reference manual for the
     OpenMV Cam’s MCU for more details.
@@ -767,37 +1038,38 @@ class CAN:
 
     params is an array of values the defines the filter. The contents of the array depends on the mode argument.
 
+    Contents of params array for classic CAN controllers
+    (OpenMV Cam M4 / M7):
+
 
 
 
 
     mode
 
-    Contents of params array for classic CAN controller
+    Contents of params
 
     CAN.LIST16
 
-    Four 16 bit ids that will be accepted
+    Four 16-bit IDs that will be accepted.
 
     CAN.LIST32
 
-    Two 32 bit ids that will be accepted
+    Two 32-bit IDs that will be accepted.
 
     CAN.MASK16
 
-    Two 16 bit id/mask pairs. E.g. (1, 3, 4, 4)
-
-    The first pair, 1 and 3 will accept all ids
-
-    that have bit 0 = 1 and bit 1 = 0.
-
-    The second pair, 4 and 4, will accept all ids
-
-    that have bit 2 = 1.
+    Two 16-bit id/mask pairs, e.g. (1, 3, 4, 4). The first
+    pair (1, 3) accepts all IDs with bit 0 = 1 and bit 1 = 0;
+    the second pair (4, 4) accepts all IDs with bit 2 = 1.
 
     CAN.MASK32
 
-    As with CAN.MASK16 but with only one 32 bit id/mask pair.
+    One 32-bit id/mask pair (otherwise the same as
+    CAN.MASK16).
+
+    Contents of params array for CAN FD controllers
+    (OpenMV Cam H7 / H7 Plus / Pure Thermal):
 
 
 
@@ -805,24 +1077,26 @@ class CAN:
 
     mode
 
-    Contents of params array for CAN FD controller
+    Contents of params
 
     CAN.RANGE
 
-    Two ids that represent a range of accepted ids.
+    Two IDs forming a range of accepted IDs.
 
     CAN.DUAL
 
-    Two ids that will be accepted. For example (1, 2)
+    Two IDs that will be accepted (e.g. (1, 2)).
 
     CAN.MASK
 
-    One filter ID and a mask. For example (0x111, 0x7FF)
+    One (id, mask) pair (e.g. (0x111, 0x7FF)).
 
-    rtr For classic CAN controllers, this is an array of booleans that states if
-    a filter should accept a remote transmission request message. If this argument
-    is not given then it defaults to False for all entries. The length of the
-    array depends on the mode argument. For CAN FD, this argument is ignored.
+    rtr For classic CAN controllers, this is an array of booleans
+    that states whether a filter should accept a remote transmission
+    request message. If this argument is not given it defaults to
+    False for all entries. The length depends on mode:
+
+
 
 
 
@@ -830,23 +1104,35 @@ class CAN:
 
     mode
 
-    length of rtr array
+    len(rtr)
+
+    Notes
 
     CAN.LIST16
 
     4
 
+
+
     CAN.LIST32
 
     2
+
+
 
     CAN.MASK16
 
     2
 
+
+
     CAN.MASK32
 
     1
+
+
+
+    For CAN FD this argument is ignored.
 
     extframe If True the frame will have an extended identifier (29 bits),
     otherwise a standard identifier (11 bits) is used.
@@ -949,14 +1235,15 @@ class CAN:
 
     rxcallback(fifo: int, fun: Callable[[CAN, int], None] | None) -> None
 
-    Register a function to be called when a message is accepted into a empty fifo:
+    Register a function to be called when a message is accepted into an empty FIFO:
 
-    fifo is the receiving fifo.
+    fifo is the receiving FIFO.
 
-    fun is the function to be called when the fifo becomes non empty.
+    fun is the function to be called when the FIFO becomes non-empty.
 
-    The callback function takes two arguments the first is the can object it self the second is
-    a integer that indicates the reason for the callback.
+    The callback function takes two arguments: the first is the CAN object
+    itself; the second is an integer that indicates the reason for the
+    callback:
 
 
 
@@ -964,19 +1251,19 @@ class CAN:
 
     Reason
 
-
+    Meaning
 
     0
 
-    A message has been accepted into a empty FIFO.
+    A message has been accepted into an empty FIFO.
 
     1
 
-    The FIFO is full
+    The FIFO is full.
 
     2
 
-    A message has been lost due to a full FIFO
+    A message has been lost due to a full FIFO.
 
     Example use of rxcallback:
 
@@ -993,53 +1280,123 @@ class CAN:
     can.rxcallback(0, cb0)
     Constants
 
+    Bus-mode constants (mode argument of init()):
+
 
 
     NORMAL: int
 
+    The controller participates normally on the bus – transmits its
+    own frames and acknowledges valid received frames.
+
+
+
     LOOPBACK: int
+
+    Internal loopback mode: the controller is disconnected from the
+    pins and routes transmitted frames straight back to the receive
+    path. Useful for self-tests without a transceiver.
+
+
 
     SILENT: int
 
+    Listen-only mode: the controller receives frames but never drives
+    the bus (no ACK, no transmissions). Useful for bus sniffing.
+
+
+
     SILENT_LOOPBACK: int
 
-    The mode of the CAN bus used in init().
+    Combines SILENT and LOOPBACK: no pin activity and
+    no acknowledgements, with internal loopback of TX into RX.
+
+    Controller-state constants (returned by state()):
 
 
 
     STOPPED: int
 
+    The controller is completely off and reset.
+
+
+
     ERROR_ACTIVE: int
+
+    The controller is on and in the Error Active state (both TEC and
+    REC are less than 96).
+
+
 
     ERROR_WARNING: int
 
+    The controller is on and in the Error Warning state (at least one
+    of TEC or REC is 96 or greater).
+
+
+
     ERROR_PASSIVE: int
+
+    The controller is on and in the Error Passive state (at least one
+    of TEC or REC is 128 or greater).
+
+
 
     BUS_OFF: int
 
-    Possible states of the CAN controller returned from state().
+    The controller is on but not participating in bus activity (TEC
+    overflowed beyond 255).
+
+    Classic-CAN filter modes (mode argument of setfilter() on
+    the OpenMV Cam M4 / M7):
 
 
 
     LIST16: int
 
-    MASK16: int
+    The filter params array holds four 16-bit IDs that will be
+    accepted.
+
+
 
     LIST32: int
 
+    The filter params array holds two 32-bit IDs that will be
+    accepted.
+
+
+
+    MASK16: int
+
+    The filter params array holds two 16-bit (id, mask) pairs.
+
+
+
     MASK32: int
 
-    The operation mode of a filter used in setfilter() for classic CAN.
+    The filter params array holds one 32-bit (id, mask) pair.
+
+    CAN FD filter modes (mode argument of setfilter() on the
+    OpenMV Cam H7 / H7 Plus / Pure Thermal):
+
+
+
+    RANGE: int
+
+    The filter params array holds two IDs forming a range of
+    accepted IDs.
 
 
 
     DUAL: int
 
-    RANGE: int
+    The filter params array holds two specific IDs to accept.
+
+
 
     MASK: int
 
-    The operation mode of a filter used in setfilter() for CAN FD.
+    The filter params array holds one (id, mask) pair.
     """
     def __init__(self, bus: int | str, *args, **kwargs) -> None: ...
     def any(self, fifo: int) -> bool:
@@ -1152,9 +1509,12 @@ class CAN:
         The baud rate will be 1/bittime, where the bittime is 1 + BS1 + BS2 multiplied
         by the time quanta tq.
 
-        For example, with PCLK1=42MHz, prescaler=100, sjw=1, bs1=6, bs2=8, the value of
-        tq is 2.38 microseconds.  The bittime is 35.7 microseconds, and the baudrate
-        is 28kHz.
+        For example, on the OpenMV Cam H7 (PCLK1 = 100 MHz), 250 kbps CAN
+        with a 75% sample point can be configured as
+        prescaler=25, sjw=1, bs1=11, bs2=4: tq = 25 / 100 MHz =
+        250 ns, bittime = (1 + 11 + 4) × 250 ns = 4 µs, sample
+        point = (1 + 11) / 16 = 75%, and the baudrate is
+        1 / 4 µs = 250 kHz.
 
         See the bxCAN / FDCAN section of the STM32 reference manual for the
         OpenMV Cam’s MCU for more details.
@@ -1208,27 +1568,28 @@ class CAN:
         ...
     def rxcallback(self, fifo: int, fun: Callable[[CAN, int], None] | None) -> None:
         """
-        Register a function to be called when a message is accepted into a empty fifo:
-        fifo is the receiving fifo.
+        Register a function to be called when a message is accepted into an empty FIFO:
+        fifo is the receiving FIFO.
 
-        fun is the function to be called when the fifo becomes non empty.
-        The callback function takes two arguments the first is the can object it self the second is
-        a integer that indicates the reason for the callback.
+        fun is the function to be called when the FIFO becomes non-empty.
+        The callback function takes two arguments: the first is the CAN object
+        itself; the second is an integer that indicates the reason for the
+        callback:
         Reason
 
-
+        Meaning
 
         0
 
-        A message has been accepted into a empty FIFO.
+        A message has been accepted into an empty FIFO.
 
         1
 
-        The FIFO is full
+        The FIFO is full.
 
         2
 
-        A message has been lost due to a full FIFO
+        A message has been lost due to a full FIFO.
         Example use of rxcallback:
         def cb0(bus, reason):
         print('cb0')
@@ -1285,71 +1646,90 @@ class CAN:
         fifo is which fifo (0 or 1) a message should be stored in, if it is accepted by this filter.
 
         params is an array of values the defines the filter. The contents of the array depends on the mode argument.
+        Contents of params array for classic CAN controllers
+        (OpenMV Cam M4 / M7):
         mode
 
-        Contents of params array for classic CAN controller
+        Contents of params
 
         CAN.LIST16
 
-        Four 16 bit ids that will be accepted
+        Four 16-bit IDs that will be accepted.
 
         CAN.LIST32
 
-        Two 32 bit ids that will be accepted
+        Two 32-bit IDs that will be accepted.
 
         CAN.MASK16
 
-        Two 16 bit id/mask pairs. E.g. (1, 3, 4, 4)
-
-        The first pair, 1 and 3 will accept all ids
-
-        that have bit 0 = 1 and bit 1 = 0.
-
-        The second pair, 4 and 4, will accept all ids
-
-        that have bit 2 = 1.
+        Two 16-bit id/mask pairs, e.g. (1, 3, 4, 4). The first
+        pair (1, 3) accepts all IDs with bit 0 = 1 and bit 1 = 0;
+        the second pair (4, 4) accepts all IDs with bit 2 = 1.
 
         CAN.MASK32
 
-        As with CAN.MASK16 but with only one 32 bit id/mask pair.
+        One 32-bit id/mask pair (otherwise the same as
+        CAN.MASK16).
+        Contents of params array for CAN FD controllers
+        (OpenMV Cam H7 / H7 Plus / Pure Thermal):
         mode
 
-        Contents of params array for CAN FD controller
+        Contents of params
 
         CAN.RANGE
 
-        Two ids that represent a range of accepted ids.
+        Two IDs forming a range of accepted IDs.
 
         CAN.DUAL
 
-        Two ids that will be accepted. For example (1, 2)
+        Two IDs that will be accepted (e.g. (1, 2)).
 
         CAN.MASK
 
-        One filter ID and a mask. For example (0x111, 0x7FF)
-        rtr For classic CAN controllers, this is an array of booleans that states if
-        a filter should accept a remote transmission request message. If this argument
-        is not given then it defaults to False for all entries. The length of the
-        array depends on the mode argument. For CAN FD, this argument is ignored.
+        One (id, mask) pair (e.g. (0x111, 0x7FF)).
+        rtr For classic CAN controllers, this is an array of booleans
+        that states whether a filter should accept a remote transmission
+        request message. If this argument is not given it defaults to
+        False for all entries. The length depends on mode:
+
+
+
+
+
+
+
         mode
 
-        length of rtr array
+        len(rtr)
+
+        Notes
 
         CAN.LIST16
 
         4
 
+
+
         CAN.LIST32
 
         2
+
+
 
         CAN.MASK16
 
         2
 
+
+
         CAN.MASK32
 
         1
+
+
+
+        For CAN FD this argument is ignored.
+
         extframe If True the frame will have an extended identifier (29 bits),
         otherwise a standard identifier (11 bits) is used.
         """
@@ -1380,8 +1760,8 @@ class DAC:
     selecting DAC channel 1 or 2. The physical pin each channel is routed
     to depends on the OpenMV Cam.
     bits is an integer specifying the resolution, and can be 8 or 12.
-    The maximum value for the write and write_timed methods will be
-    2**``bits``-1.
+    The maximum value accepted by write() and write_timed()
+    is (2**bits) - 1 (255 for 8-bit, 4095 for 12-bit).
     The buffering parameter selects the behaviour of the DAC op-amp output
     buffer, whose purpose is to reduce the output impedance.  It can be
     None to select the default (buffering enabled for DAC.noise(),
@@ -1428,9 +1808,9 @@ class DAC:
 
     write(value: int) -> None
 
-    Direct access to the DAC output.  The minimum value is 0.  The maximum
-    value is 2**``bits``-1, where bits is set when creating the DAC
-    object or by using the init method.
+    Direct access to the DAC output. The minimum value is 0; the
+    maximum is (2**bits) - 1, where bits is set when creating
+    the DAC object or via init().
 
 
 
@@ -1459,14 +1839,16 @@ class DAC:
 
     NORMAL: int
 
-    NORMAL mode does a single transmission of the waveform in the data buffer,
+    NORMAL mode does a single transmission of the waveform in the
+    data buffer.
 
 
 
     CIRCULAR: int
 
-    CIRCULAR mode does a transmission of the waveform in the data buffer, and wraps around
-    to the start of the data buffer every time it reaches the end of the table.
+    CIRCULAR mode transmits the waveform in the data buffer and
+    wraps around to the start of the buffer every time it reaches the
+    end, producing a continuous loop until deinit() is called.
     """
     def __init__(self, port: int | Pin, bits: int = 8, *, buffering: bool | None = None) -> None: ...
     def deinit(self) -> None:
@@ -1494,9 +1876,9 @@ class DAC:
         ...
     def write(self, value: int) -> None:
         """
-        Direct access to the DAC output.  The minimum value is 0.  The maximum
-        value is 2**``bits``-1, where bits is set when creating the DAC
-        object or by using the init method.
+        Direct access to the DAC output. The minimum value is 0; the
+        maximum is (2**bits) - 1, where bits is set when creating
+        the DAC object or via init().
         """
         ...
     def write_timed(self, data: bytes | bytearray | 'array.array', freq: int | Timer, *, mode: int = DAC.NORMAL) -> None:
@@ -1590,21 +1972,43 @@ class ExtInt:
 
 
 
-    IRQ_FALLING: int
-
-    Interrupt on a falling edge.
-
-
-
     IRQ_RISING: int
 
-    Interrupt on a rising edge.
+    Trigger an interrupt on a rising edge. The Python callback runs.
+
+
+
+    IRQ_FALLING: int
+
+    Trigger an interrupt on a falling edge. The Python callback runs.
 
 
 
     IRQ_RISING_FALLING: int
 
-    Interrupt on a rising or falling edge.
+    Trigger an interrupt on either edge. The Python callback runs.
+
+
+
+    EVT_RISING: int
+
+    Route a rising edge to the Cortex event input. No Python callback
+    is invoked; intended for use with the WFE instruction in
+    low-power code.
+
+
+
+    EVT_FALLING: int
+
+    Route a falling edge to the Cortex event input. No Python callback
+    is invoked.
+
+
+
+    EVT_RISING_FALLING: int
+
+    Route either edge to the Cortex event input. No Python callback
+    is invoked.
     """
     def __init__(self, pin: int | str | Pin, mode: int, pull: int, callback: Callable[[int], None]) -> None: ...
     def disable(self) -> None:
@@ -1631,11 +2035,72 @@ class ExtInt:
 
 class Flash:
     """
-    Create and return a block device that represents the flash device presented
-    to the USB mass storage interface.
-    It includes a virtual partition table at the start, and the actual flash
-    starts at block 0x100.
-    This constructor is deprecated and will be removed in a future version of MicroPython.
+    Construct a vfs.AbstractBlockDev-compatible block device for
+    the on-board flash. Two forms exist:
+    Flash() (no arguments): returns the legacy singleton object that
+    exposes the whole flash with a virtual partition table prepended.
+    The actual flash data starts at block 0x100. This form is
+    deprecated and will be removed in a future MicroPython release.
+
+    Flash(start=..., len=...): returns a fresh block device that
+    accesses the flash starting at byte offset start (default
+    0) for len bytes (default: the remainder of the device).
+    Both values must be a multiple of the underlying block size
+    (typically 512 bytes for internal flash; the external SPI/QSPI/XSPI
+    parts use a larger erase-sector size).
+    Methods
+
+
+
+    readblocks(block_num: int, buf: bytearray) -> None
+
+    readblocks(block_num: int, buf: bytearray, offset: int) -> None
+
+    Read bytes from the flash into buf. Two overloads expose the
+    simple and extended interfaces:
+
+    Simple form (readblocks(block_num, buf)): reads whole
+    blocks starting at block index block_num. len(buf) must be
+    a multiple of the flash block size.
+
+    Extended form (readblocks(block_num, buf, offset)): reads
+    len(buf) bytes – not necessarily a whole number of blocks –
+    starting at byte offset within block block_num.
+    len(buf) has no alignment constraint. Only supported on
+    objects created with explicit start / len arguments, not
+    on the deprecated singleton.
+
+
+
+    writeblocks(block_num: int, buf: bytes | bytearray) -> None
+
+    writeblocks(block_num: int, buf: bytes | bytearray, offset: int) -> None
+
+    Write bytes from buf to the flash. Two overloads expose the
+    simple and extended interfaces:
+
+    Simple form (writeblocks(block_num, buf)): writes whole
+    blocks starting at block index block_num. len(buf) must be
+    a multiple of the flash block size. Each affected block is erased
+    automatically before being written.
+
+    Extended form (writeblocks(block_num, buf, offset)):
+    writes len(buf) bytes – not necessarily a whole number of
+    blocks – starting at byte offset within block block_num.
+    len(buf) has no alignment constraint, and no implicit erase
+    is performed – the caller must ensure the affected blocks have
+    been erased via a prior ioctl(6, block_num) call.
+    Only supported on objects created with explicit start /
+    len arguments.
+
+
+
+    ioctl(cmd: int, arg: int) -> int | None
+
+    Standard vfs.AbstractBlockDev ioctl entry point. See
+    vfs.AbstractBlockDev.ioctl() for the full list of cmd
+    values. cmd=5 returns the flash block size in bytes;
+    cmd=6 erases the block with index arg.
     """
     @overload
     def __init__(self) -> None: ...
@@ -1643,8 +2108,10 @@ class Flash:
     def __init__(self, *, start: int = -1, len: int = -1) -> None: ...
     def ioctl(self, cmd: int, arg: int) -> int | None:
         """
-        These methods implement the simple and extended block protocol defined by
-        vfs.AbstractBlockDev.
+        Standard vfs.AbstractBlockDev ioctl entry point. See
+        vfs.AbstractBlockDev.ioctl() for the full list of cmd
+        values. cmd=5 returns the flash block size in bytes;
+        cmd=6 erases the block with index arg.
         """
         ...
     @overload
@@ -1653,8 +2120,17 @@ class Flash:
     @overload
     def readblocks(self, block_num: int, buf: bytearray, offset: int) -> None:
         """
-        These methods implement the simple and extended block protocol defined by
-        vfs.AbstractBlockDev.
+        Read bytes from the flash into buf. Two overloads expose the
+        simple and extended interfaces:
+        Simple form (readblocks(block_num, buf)): reads whole
+        blocks starting at block index block_num. len(buf) must be
+        a multiple of the flash block size.
+        Extended form (readblocks(block_num, buf, offset)): reads
+        len(buf) bytes – not necessarily a whole number of blocks –
+        starting at byte offset within block block_num.
+        len(buf) has no alignment constraint. Only supported on
+        objects created with explicit start / len arguments, not
+        on the deprecated singleton.
         """
         ...
     @overload
@@ -1663,8 +2139,20 @@ class Flash:
     @overload
     def writeblocks(self, block_num: int, buf: bytes | bytearray, offset: int) -> None:
         """
-        These methods implement the simple and extended block protocol defined by
-        vfs.AbstractBlockDev.
+        Write bytes from buf to the flash. Two overloads expose the
+        simple and extended interfaces:
+        Simple form (writeblocks(block_num, buf)): writes whole
+        blocks starting at block index block_num. len(buf) must be
+        a multiple of the flash block size. Each affected block is erased
+        automatically before being written.
+        Extended form (writeblocks(block_num, buf, offset)):
+        writes len(buf) bytes – not necessarily a whole number of
+        blocks – starting at byte offset within block block_num.
+        len(buf) has no alignment constraint, and no implicit erase
+        is performed – the caller must ensure the affected blocks have
+        been erased via a prior ioctl(6, block_num) call.
+        Only supported on objects created with explicit start /
+        len arguments.
         """
         ...
 
@@ -1711,21 +2199,21 @@ class I2C:
 
     Initialise the I2C bus with the given parameters:
 
-    mode must be either I2C.CONTROLLER or I2C.PERIPHERAL
+    mode must be either I2C.CONTROLLER or I2C.PERIPHERAL.
 
-    addr is the 7-bit address (only sensible for a peripheral)
+    addr is the 7-bit address (only sensible for a peripheral).
 
-    baudrate is the SCL clock rate (only sensible for a controller)
+    baudrate is the SCL clock rate (only sensible for a controller).
 
-    gencall is whether to support general call mode
+    gencall is whether to support general-call mode.
 
-    dma is whether to allow the use of DMA for the I2C transfers (note
-    that DMA transfers have more precise timing but currently do not handle bus
-    errors properly)
+    dma is whether to allow the use of DMA for the I2C transfers
+    (note that DMA transfers have more precise timing but currently
+    do not handle bus errors properly).
 
     The actual clock frequency may be lower than the requested frequency.
-    This is dependent on the platform hardware. The actual rate may be determined
-    by printing the I2C object.
+    This is dependent on the platform hardware. The actual rate may be
+    determined by printing the I2C object.
 
 
 
@@ -1758,18 +2246,17 @@ class I2C:
 
     Write to the memory of an I2C device:
 
-    data can be an integer or a buffer to write from
+    data can be an integer or a buffer to write from.
 
-    addr is the I2C device address
+    addr is the I2C device address.
 
-    memaddr is the memory location within the I2C device
+    memaddr is the memory location within the I2C device.
 
-    timeout is the timeout in milliseconds to wait for the write
+    timeout is the timeout in milliseconds to wait for the write.
 
-    addr_size selects width of memaddr: 8 or 16 bits
+    addr_size selects width of memaddr: 8 or 16 bits.
 
-    Returns None.
-    This is only valid in controller mode.
+    Only valid in controller mode.
 
 
 
@@ -1793,13 +2280,11 @@ class I2C:
 
     Send data on the bus:
 
-    send is the data to send (an integer to send, or a buffer object)
+    send is the data to send (an integer to send, or a buffer object).
 
-    addr is the address to send to (only required in controller mode)
+    addr is the address to send to (only required in controller mode).
 
-    timeout is the timeout in milliseconds to wait for the send
-
-    Return value: None.
+    timeout is the timeout in milliseconds to wait for the send.
 
 
 
@@ -1813,13 +2298,16 @@ class I2C:
 
     CONTROLLER: int
 
-    for initialising the bus to controller mode
+    Initialises the bus as the master (controller) – it drives SCL
+    and initiates transactions.
 
 
 
     PERIPHERAL: int
 
-    for initialising the bus to peripheral mode
+    Initialises the bus as a slave (peripheral) that listens on the
+    addr set in init() and responds to transactions started
+    by a controller on the same bus.
     """
     def __init__(self, bus: int | str, *args, **kwargs) -> None: ...
     def deinit(self) -> None:
@@ -1828,21 +2316,20 @@ class I2C:
     def init(self, mode: int, *, addr: int = 0x12, baudrate: int = 400000, gencall: bool = False, dma: bool = False) -> None:
         """
         Initialise the I2C bus with the given parameters:
-        mode must be either I2C.CONTROLLER or I2C.PERIPHERAL
+        mode must be either I2C.CONTROLLER or I2C.PERIPHERAL.
 
-        addr is the 7-bit address (only sensible for a peripheral)
+        addr is the 7-bit address (only sensible for a peripheral).
 
-        baudrate is the SCL clock rate (only sensible for a controller)
+        baudrate is the SCL clock rate (only sensible for a controller).
 
-        gencall is whether to support general call mode
+        gencall is whether to support general-call mode.
 
-        dma is whether to allow the use of DMA for the I2C transfers (note
-        that DMA transfers have more precise timing but currently do not handle bus
-        errors properly)
-
+        dma is whether to allow the use of DMA for the I2C transfers
+        (note that DMA transfers have more precise timing but currently
+        do not handle bus errors properly).
         The actual clock frequency may be lower than the requested frequency.
-        This is dependent on the platform hardware. The actual rate may be determined
-        by printing the I2C object.
+        This is dependent on the platform hardware. The actual rate may be
+        determined by printing the I2C object.
         """
         ...
     def is_ready(self, addr: int) -> bool:
@@ -1867,17 +2354,16 @@ class I2C:
     def mem_write(self, data: int | bytes | bytearray, addr: int, memaddr: int, *, timeout: int = 5000, addr_size: int = 8) -> None:
         """
         Write to the memory of an I2C device:
-        data can be an integer or a buffer to write from
+        data can be an integer or a buffer to write from.
 
-        addr is the I2C device address
+        addr is the I2C device address.
 
-        memaddr is the memory location within the I2C device
+        memaddr is the memory location within the I2C device.
 
-        timeout is the timeout in milliseconds to wait for the write
+        timeout is the timeout in milliseconds to wait for the write.
 
-        addr_size selects width of memaddr: 8 or 16 bits
-        Returns None.
-        This is only valid in controller mode.
+        addr_size selects width of memaddr: 8 or 16 bits.
+        Only valid in controller mode.
         """
         ...
     def recv(self, recv: int | bytearray, addr: int = 0x00, *, timeout: int = 5000) -> bytes:
@@ -1902,20 +2388,19 @@ class I2C:
     def send(self, send: int | bytes | bytearray, addr: int = 0x00, *, timeout: int = 5000) -> None:
         """
         Send data on the bus:
-        send is the data to send (an integer to send, or a buffer object)
+        send is the data to send (an integer to send, or a buffer object).
 
-        addr is the address to send to (only required in controller mode)
+        addr is the address to send to (only required in controller mode).
 
-        timeout is the timeout in milliseconds to wait for the send
-        Return value: None.
+        timeout is the timeout in milliseconds to wait for the send.
         """
         ...
 
 class LED:
     """
-    Create an LED object associated with the given LED. id is the LED
-    number; the colour/function and how many LEDs are present depend on
-    the OpenMV Cam:
+    Create an LED object associated with the given LED. id is the
+    1-based LED number; the colour/function and the number of LEDs
+    present depend on the OpenMV Cam:
     Camera
 
     LED(1)
@@ -1925,8 +2410,6 @@ class LED:
     LED(3)
 
     LED(4)
-
-    Notes
 
     OpenMV Cam M4 / M7 / H7 / H7 Plus
 
@@ -1938,8 +2421,6 @@ class LED:
 
     IR
 
-
-
     OpenMV Cam Pure Thermal
 
     Red
@@ -1950,8 +2431,6 @@ class LED:
 
     White
 
-
-
     OpenMV Cam N6
 
     Red
@@ -1961,8 +2440,10 @@ class LED:
     Blue
 
     –
-
-    No fourth LED.
+    The LED objects are simple GPIO wrappers: there are only three
+    operations – on(), off() and toggle(). For
+    colour blending, drive several LEDs at once (e.g. red + green for
+    amber).
     Methods
 
 
@@ -1981,22 +2462,23 @@ class LED:
 
 
 
-    off() -> None
-
-    Turn the LED off.
-
-
-
     on() -> None
 
-    Turn the LED on, to maximum intensity.
+    Drive the LED to its on state.
+
+
+
+    off() -> None
+
+    Drive the LED to its off state.
 
 
 
     toggle() -> None
 
-    Toggle the LED between on (maximum intensity) and off.  If the LED is at
-    non-zero intensity then it is considered “on” and toggle will turn it off.
+    Flip the LED’s current state. If it was on it goes off, and vice
+    versa. Useful for heartbeat blinkers in a polled loop or timer
+    callback.
     """
     def __init__(self, id: int) -> None: ...
     def intensity(self, value: int | None = None) -> int | None:
@@ -2012,22 +2494,24 @@ class LED:
         """
         ...
     def off(self) -> None:
-        """Turn the LED off."""
+        """Drive the LED to its off state."""
         ...
     def on(self) -> None:
-        """Turn the LED on, to maximum intensity."""
+        """Drive the LED to its on state."""
         ...
     def toggle(self) -> None:
         """
-        Toggle the LED between on (maximum intensity) and off.  If the LED is at
-        non-zero intensity then it is considered “on” and toggle will turn it off.
+        Flip the LED’s current state. If it was on it goes off, and vice
+        versa. Useful for heartbeat blinkers in a polled loop or timer
+        callback.
         """
         ...
 
 class Pin:
     """
-    Create a new Pin object associated with the id.  If additional arguments are given,
-    they are used to initialise the pin.  See pin.init().
+    Create a new Pin object associated with the given id. If additional
+    arguments are given they are forwarded to Pin.init() to configure
+    the pin.
     Class methods
 
 
@@ -2086,11 +2570,10 @@ class Pin:
 
     value if not None will set the port output value before enabling the pin.
 
-    alt can be used when mode is Pin.ALT , Pin.AF_PP or Pin.AF_OD to
-    set the index or name of one of the alternate functions associated with a pin.
-    This arg was previously called af which can still be used if needed.
-
-    Returns: None.
+    alt can be used when mode is Pin.ALT, Pin.AF_PP or
+    Pin.AF_OD to set the index or name of one of the alternate
+    functions associated with a pin. This argument was previously
+    called af which can still be used if needed.
 
 
 
@@ -2173,63 +2656,63 @@ class Pin:
 
 
 
-    ALT: int
-
-    initialise the pin to alternate-function mode for input or output
-
-
-
-    AF_OD: int
-
-    initialise the pin to alternate-function mode with an open-drain drive
-
-
-
-    AF_PP: int
-
-    initialise the pin to alternate-function mode with a push-pull drive
-
-
-
-    ANALOG: int
-
-    initialise the pin to analog mode
-
-
-
     IN: int
 
-    initialise the pin to input mode
-
-
-
-    OUT_OD: int
-
-    initialise the pin to output mode with an open-drain drive
+    Configure the pin as a digital input (high-impedance).
 
 
 
     OUT_PP: int
 
-    initialise the pin to output mode with a push-pull drive
+    Configure the pin as a digital output with a push-pull driver.
 
 
 
-    PULL_DOWN: int
+    OUT_OD: int
 
-    enable the pull-down resistor on the pin
+    Configure the pin as a digital output with an open-drain driver.
+
+
+
+    ANALOG: int
+
+    Configure the pin as an analog input (e.g. for use with ADC).
+
+
+
+    ALT: int
+
+    Configure the pin as an alternate function (input or output).
+
+
+
+    AF_PP: int
+
+    Configure the pin as an alternate function with a push-pull driver.
+
+
+
+    AF_OD: int
+
+    Configure the pin as an alternate function with an open-drain driver.
 
 
 
     PULL_NONE: int
 
-    don’t enable any pull up or down resistors on the pin
+    Disable both pull-up and pull-down resistors on the pin.
 
 
 
     PULL_UP: int
 
-    enable the pull-up resistor on the pin
+    Enable the internal pull-up resistor on the pin.
+
+
+
+    PULL_DOWN: int
+
+    Enable the internal pull-down resistor on the pin.
     """
     def __init__(self, id: str | Pin, *args, **kwargs) -> None: ...
     def __str__(self) -> str:
@@ -2288,10 +2771,10 @@ class Pin:
 
         value if not None will set the port output value before enabling the pin.
 
-        alt can be used when mode is Pin.ALT , Pin.AF_PP or Pin.AF_OD to
-        set the index or name of one of the alternate functions associated with a pin.
-        This arg was previously called af which can still be used if needed.
-        Returns: None.
+        alt can be used when mode is Pin.ALT, Pin.AF_PP or
+        Pin.AF_OD to set the index or name of one of the alternate
+        functions associated with a pin. This argument was previously
+        called af which can still be used if needed.
         """
         ...
     def mapper(self, fun: Callable[[str], Pin] | None = None) -> Callable[[str], Pin] | None:
@@ -2334,6 +2817,69 @@ class Pin:
         """
         ...
 
+class PinAF:
+    """
+    PinAF objects are not constructed directly. Use
+    Pin.af_list() to enumerate the alternate functions available
+    on a given pin.
+    Methods
+
+
+
+    __str__() -> str
+
+    Return a string describing the alternate function (its name and
+    index).
+
+
+
+    index() -> int
+
+    Return the alternate-function index. The same integer is
+    accepted by the alt argument of Pin.init().
+
+
+
+    name() -> str
+
+    Return the name of the alternate function, for example
+    "TIM2_CH3".
+
+
+
+    reg() -> int
+
+    Return the base register address of the peripheral assigned to
+    this alternate function. For example, if the alternate function
+    were TIM2_CH3 this would return stm.TIM2.
+    """
+    def __init__(self) -> None: ...
+    def __str__(self) -> str:
+        """
+        Return a string describing the alternate function (its name and
+        index).
+        """
+        ...
+    def index(self) -> int:
+        """
+        Return the alternate-function index. The same integer is
+        accepted by the alt argument of Pin.init().
+        """
+        ...
+    def name(self) -> str:
+        """
+        Return the name of the alternate function, for example
+        "TIM2_CH3".
+        """
+        ...
+    def reg(self) -> int:
+        """
+        Return the base register address of the peripheral assigned to
+        this alternate function. For example, if the alternate function
+        were TIM2_CH3 this would return stm.TIM2.
+        """
+        ...
+
 class RTC:
     """
     Create an RTC object.
@@ -2355,7 +2901,7 @@ class RTC:
 
     weekday is 1-7 for Monday through Sunday.
 
-    subseconds counts down from 255 to 0
+    subseconds counts down from 255 to 0.
 
 
 
@@ -2367,8 +2913,9 @@ class RTC:
 
     If timeout is None then the wakeup timer is disabled.
 
-    If callback is given then it is executed at every trigger of the
-    wakeup timer.  callback must take exactly one argument.
+    If callback is given then it is executed at every trigger of
+    the wakeup timer. callback must take exactly one argument –
+    the RTC instance that fired the wakeup.
 
 
 
@@ -2438,7 +2985,7 @@ class RTC:
         The 8-tuple has the following format:
         (year, month, day, weekday, hours, minutes, seconds, subseconds)
         weekday is 1-7 for Monday through Sunday.
-        subseconds counts down from 255 to 0
+        subseconds counts down from 255 to 0.
         """
         ...
     def info(self) -> int:
@@ -2468,8 +3015,9 @@ class RTC:
         milliseconds. This trigger can wake the board from both sleep
         states: pyb.stop() and pyb.standby().
         If timeout is None then the wakeup timer is disabled.
-        If callback is given then it is executed at every trigger of the
-        wakeup timer.  callback must take exactly one argument.
+        If callback is given then it is executed at every trigger of
+        the wakeup timer. callback must take exactly one argument –
+        the RTC instance that fired the wakeup.
         """
         ...
 
@@ -2480,37 +3028,39 @@ class SPI:
     object is created but not initialised (it retains the previous bus
     settings, if any); if extra arguments are given the bus is initialised
     with them. See init() for the available parameters.
-    SPI(2) is wired to the same header pins on every STM32 OpenMV Cam:
-    Signal
-
-    Header pin
-
-    Notes
+    SPI(2) is wired to the same header pins on every STM32 OpenMV
+    Cam; the OpenMV Cam N6 additionally exposes SPI(4):
+    Bus
 
     NSS
 
-    P3
-
-    Not driven by the SPI peripheral; free to use as a normal GPIO chip-select.
-
     SCK
-
-    P2
-
-
 
     MISO
 
-    P1
-
-
-
     MOSI
 
+    SPI(2) (all STM32 OpenMV Cams)
+
+    P3
+
+    P2
+
+    P1
+
     P0
-    On the OpenMV Cam N6 SPI(4) is additionally available on header
-    pins P15 (NSS), P16 (SCK), P17 (MISO) and
-    P18 (MOSI).
+
+    SPI(4) (OpenMV Cam N6 only)
+
+    P15
+
+    P16
+
+    P17
+
+    P18
+    NSS is not driven by the SPI peripheral on either bus; it is
+    free to use as a normal GPIO chip-select.
     Methods
 
 
@@ -2579,8 +3129,6 @@ class SPI:
 
     timeout is the timeout in milliseconds to wait for the send.
 
-    Return value: None.
-
 
 
     send_recv(send: int | bytes | bytearray, recv: bytearray | None = None, *, timeout: int = 5000) -> bytes
@@ -2602,17 +3150,29 @@ class SPI:
 
     CONTROLLER: int
 
+    Initialise the SPI bus as master (controller) – the OpenMV Cam
+    drives SCK and MOSI and is in charge of the transaction.
+
+
+
     PERIPHERAL: int
 
-    for initialising the SPI bus to controller or peripheral mode
+    Initialise the SPI bus as slave (peripheral) – the OpenMV Cam
+    responds to clock pulses driven by a remote controller.
+
+
+
+    MSB: int
+
+    Pass to firstbit to transmit/receive the most-significant bit
+    first (the most common ordering).
 
 
 
     LSB: int
 
-    MSB: int
-
-    set the first bit to be the least or most significant bit
+    Pass to firstbit to transmit/receive the least-significant bit
+    first.
     """
     def __init__(self, bus: int | str, *args, **kwargs) -> None: ...
     def deinit(self) -> None:
@@ -2667,7 +3227,6 @@ class SPI:
         send is the data to send (an integer to send, or a buffer object).
 
         timeout is the timeout in milliseconds to wait for the send.
-        Return value: None.
         """
         ...
     def send_recv(self, send: int | bytes | bytearray, recv: bytearray | None = None, *, timeout: int = 5000) -> bytes:
@@ -2686,26 +3245,32 @@ class SPI:
 
 class Servo:
     """
-    Create a servo object. id selects which servo channel to use; each
-    channel is wired to a fixed header pin. The number of available
+    Create a servo object. id is the 1-based servo channel number;
+    each channel is wired to a fixed header pin and the number of
     channels depends on the OpenMV Cam:
     Camera
 
-    Channels
+    Servo(1)
 
-    Channel → header pin
+    Servo(2)
+
+    Servo(3)
 
     OpenMV Cam M7 / H7
 
-    4
+    P7
 
-    Servo(1) → P7, Servo(2) → P8, Servo(3) → P9, Servo(4) → P10
+    P8
+
+    P9
 
     OpenMV Cam M4 / H7 Plus / Pure Thermal
 
-    2
+    P7
 
-    Servo(1) → P7, Servo(2) → P8
+    P8
+
+    –
     pyb.Servo is not available on the OpenMV Cam N6.
     Methods
 
@@ -2864,7 +3429,7 @@ class Timer:
     callback - as per Timer.callback()
 
     deadtime - specifies the amount of “dead” or inactive time between
-    transitions on complimentary channels (both channels will be inactive)
+    transitions on complementary channels (both channels will be inactive
     for this time). deadtime may be an integer between 0 and 1008, with
     the following restrictions: 0-128 in steps of 1. 128-256 in steps of
     2, 256-512 in steps of 8, and 512-1008 in steps of 16. deadtime
@@ -2940,7 +3505,7 @@ class Timer:
 
     Timer.OC_INACTIVE — the pin will be made inactive when a compare match occurs.
 
-    Timer.OC_TOGGLE — the pin will be toggled when an compare match occurs.
+    Timer.OC_TOGGLE — the pin will be toggled when a compare match occurs.
 
     Timer.OC_FORCED_ACTIVE — the pin is forced active (compare match is ignored).
 
@@ -2988,7 +3553,7 @@ class Timer:
     Timer.BOTH - captures on both edges.
 
     Note that capture only works on the primary channel, and not on the
-    complimentary channels.
+    complementary channels.
 
     Notes for Timer.ENC modes:
 
@@ -3001,24 +3566,14 @@ class Timer:
 
     The channel number is ignored when setting the encoder mode.
 
-    PWM Example:
+    PWM example – on every STM32 OpenMV Cam TIM4 channels 1
+    and 2 are routed to header pins P7 and P8 respectively:
 
-    timer = pyb.Timer(2, freq=1000)
-    ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P1, pulse_width=8000)
-    ch3 = timer.channel(3, pyb.Timer.PWM, pin=pyb.Pin.board.P2, pulse_width=16000)
-
-    PWM motor example with complementary outputs, dead time, break input
-    and break callback (the timer/pin/AF combinations and CPU-pin names
-    below are illustrative – pick a set valid for your OpenMV Cam’s MCU):
-
-    from pyb import Timer
-    from machine import Pin  # machine.Pin supports alt mode and irq on the same pin.
-    pin_t8_1  = Pin(Pin.cpu.C6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1
-    pin_t8_1n = Pin(Pin.cpu.A7, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1N
-    pin_bkin  = Pin(Pin.cpu.A6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_BKIN
-    pin_bkin.irq(handler=break_callback, trigger=Pin.IRQ_FALLING)
-    timer = pyb.Timer(8, freq=1000, deadtime=1008, brk=Timer.BRK_LOW)
-    ch1 = timer.channel(1, pyb.Timer.PWM, pulse_width_percent=30)
+    timer = pyb.Timer(4, freq=1000)
+    ch1 = timer.channel(1, pyb.Timer.PWM, pin=pyb.Pin.board.P7,
+    pulse_width=8000)
+    ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P8,
+    pulse_width=16000)
 
 
 
@@ -3051,25 +3606,157 @@ class Timer:
     Get the frequency of the source of the timer.
     Constants
 
+    Counter-mode constants (mode argument of init()):
+
 
 
     UP: int
 
+    Count from 0 up to ARR (the default mode).
+
+
+
     DOWN: int
+
+    Count from ARR down to 0.
+
+
 
     CENTER: int
 
-    Configures the timer to count Up, Down, or from 0 to ARR and then back down to 0.
+    Count from 0 up to ARR and then back down to 0.
+
+    Break-mode constants (brk argument of init()):
 
 
 
     BRK_OFF: int
 
+    Break input is disabled.
+
+
+
     BRK_LOW: int
+
+    Break input is active-low.
+
+
 
     BRK_HIGH: int
 
-    Configures the break mode when passed to the brk keyword argument.
+    Break input is active-high.
+
+    Channel-mode constants (mode argument of channel()):
+
+
+
+    PWM: int
+
+    Configure the channel for PWM output (active high).
+
+
+
+    PWM_INVERTED: int
+
+    Configure the channel for PWM output (active low).
+
+
+
+    OC_TIMING: int
+
+    Output-compare timing mode; no pin is driven.
+
+
+
+    OC_ACTIVE: int
+
+    Output-compare active mode; the pin is made active on compare match.
+
+
+
+    OC_INACTIVE: int
+
+    Output-compare inactive mode; the pin is made inactive on compare match.
+
+
+
+    OC_TOGGLE: int
+
+    Output-compare toggle mode; the pin toggles on compare match.
+
+
+
+    OC_FORCED_ACTIVE: int
+
+    Output-compare forced-active mode; the pin is forced active and the
+    compare match is ignored.
+
+
+
+    OC_FORCED_INACTIVE: int
+
+    Output-compare forced-inactive mode; the pin is forced inactive and
+    the compare match is ignored.
+
+
+
+    IC: int
+
+    Configure the channel for input-capture mode.
+
+
+
+    ENC_A: int
+
+    Encoder mode: the counter only changes when CH1 changes.
+
+
+
+    ENC_B: int
+
+    Encoder mode: the counter only changes when CH2 changes.
+
+
+
+    ENC_AB: int
+
+    Encoder mode: the counter changes whenever CH1 or CH2 changes.
+
+    Output-compare polarity (polarity argument of channel() in
+    OC modes):
+
+
+
+    HIGH: int
+
+    Output is active-high.
+
+
+
+    LOW: int
+
+    Output is active-low.
+
+    Input-capture polarity (polarity argument of channel() in
+    IC mode):
+
+
+
+    RISING: int
+
+    Capture on the rising edge.
+
+
+
+    FALLING: int
+
+    Capture on the falling edge.
+
+
+
+    BOTH: int
+
+    Capture on either edge.
     """
     def __init__(self, id: int, *args, **kwargs) -> None: ...
     def callback(self, fun: Callable[[Timer], None] | None) -> None:
@@ -3100,7 +3787,7 @@ class Timer:
 
         Timer.OC_INACTIVE — the pin will be made inactive when a compare match occurs.
 
-        Timer.OC_TOGGLE — the pin will be toggled when an compare match occurs.
+        Timer.OC_TOGGLE — the pin will be toggled when a compare match occurs.
 
         Timer.OC_FORCED_ACTIVE — the pin is forced active (compare match is ignored).
 
@@ -3142,7 +3829,7 @@ class Timer:
         Timer.BOTH - captures on both edges.
 
         Note that capture only works on the primary channel, and not on the
-        complimentary channels.
+        complementary channels.
         Notes for Timer.ENC modes:
         Requires 2 pins, so one or both pins will need to be configured to use
         the appropriate timer AF using the Pin API.
@@ -3152,21 +3839,13 @@ class Timer:
         Only works on CH1 and CH2 (and not on CH1N or CH2N)
 
         The channel number is ignored when setting the encoder mode.
-        PWM Example:
-        timer = pyb.Timer(2, freq=1000)
-        ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P1, pulse_width=8000)
-        ch3 = timer.channel(3, pyb.Timer.PWM, pin=pyb.Pin.board.P2, pulse_width=16000)
-        PWM motor example with complementary outputs, dead time, break input
-        and break callback (the timer/pin/AF combinations and CPU-pin names
-        below are illustrative – pick a set valid for your OpenMV Cam’s MCU):
-        from pyb import Timer
-        from machine import Pin  # machine.Pin supports alt mode and irq on the same pin.
-        pin_t8_1  = Pin(Pin.cpu.C6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1
-        pin_t8_1n = Pin(Pin.cpu.A7, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1N
-        pin_bkin  = Pin(Pin.cpu.A6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_BKIN
-        pin_bkin.irq(handler=break_callback, trigger=Pin.IRQ_FALLING)
-        timer = pyb.Timer(8, freq=1000, deadtime=1008, brk=Timer.BRK_LOW)
-        ch1 = timer.channel(1, pyb.Timer.PWM, pulse_width_percent=30)
+        PWM example – on every STM32 OpenMV Cam TIM4 channels 1
+        and 2 are routed to header pins P7 and P8 respectively:
+        timer = pyb.Timer(4, freq=1000)
+        ch1 = timer.channel(1, pyb.Timer.PWM, pin=pyb.Pin.board.P7,
+        pulse_width=8000)
+        ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P8,
+        pulse_width=16000)
         """
         ...
     def counter(self, value: int | None = None) -> int | None:
@@ -3223,7 +3902,7 @@ class Timer:
         callback - as per Timer.callback()
 
         deadtime - specifies the amount of “dead” or inactive time between
-        transitions on complimentary channels (both channels will be inactive)
+        transitions on complementary channels (both channels will be inactive
         for this time). deadtime may be an integer between 0 and 1008, with
         the following restrictions: 0-128 in steps of 1. 128-256 in steps of
         2, 256-512 in steps of 8, and 512-1008 in steps of 16. deadtime
@@ -3264,6 +3943,98 @@ class Timer:
         """Get the frequency of the source of the timer."""
         ...
 
+class TimerChannel:
+    """
+    TimerChannel objects are not constructed directly. Use
+    Timer.channel() to obtain one.
+    Methods
+
+
+
+    callback(fun: Callable[[Timer], None] | None) -> None
+
+    Set the function to be called when the timer channel triggers.
+    fun is passed 1 argument, the timer object.
+    If fun is None then the callback will be disabled.
+
+
+
+    capture(value: int | None = None) -> int | None
+
+    Get or set the capture value associated with a channel.
+    capture, compare, and pulse_width are all aliases for the same function.
+    capture is the logical name to use when the channel is in input capture mode.
+
+
+
+    compare(value: int | None = None) -> int | None
+
+    Get or set the compare value associated with a channel.
+    capture, compare, and pulse_width are all aliases for the same function.
+    compare is the logical name to use when the channel is in output compare mode.
+
+
+
+    pulse_width(value: int | None = None) -> int | None
+
+    Get or set the pulse width value associated with a channel.
+    capture, compare, and pulse_width are all aliases for the same function.
+    pulse_width is the logical name to use when the channel is in PWM mode.
+
+    In edge aligned mode, a pulse_width of period + 1 corresponds to a duty cycle of 100%
+    In center aligned mode, a pulse width of period corresponds to a duty cycle of 100%
+
+
+
+    pulse_width_percent(value: int | float | None = None) -> int | float | None
+
+    Get or set the pulse width percentage associated with a channel.  The value
+    is a number between 0 and 100 and sets the percentage of the timer period
+    for which the pulse is active.  The value can be an integer or
+    floating-point number for more accuracy.  For example, a value of 25 gives
+    a duty cycle of 25%.
+    """
+    def __init__(self) -> None: ...
+    def callback(self, fun: Callable[[Timer], None] | None) -> None:
+        """
+        Set the function to be called when the timer channel triggers.
+        fun is passed 1 argument, the timer object.
+        If fun is None then the callback will be disabled.
+        """
+        ...
+    def capture(self, value: int | None = None) -> int | None:
+        """
+        Get or set the capture value associated with a channel.
+        capture, compare, and pulse_width are all aliases for the same function.
+        capture is the logical name to use when the channel is in input capture mode.
+        """
+        ...
+    def compare(self, value: int | None = None) -> int | None:
+        """
+        Get or set the compare value associated with a channel.
+        capture, compare, and pulse_width are all aliases for the same function.
+        compare is the logical name to use when the channel is in output compare mode.
+        """
+        ...
+    def pulse_width(self, value: int | None = None) -> int | None:
+        """
+        Get or set the pulse width value associated with a channel.
+        capture, compare, and pulse_width are all aliases for the same function.
+        pulse_width is the logical name to use when the channel is in PWM mode.
+        In edge aligned mode, a pulse_width of period + 1 corresponds to a duty cycle of 100%
+        In center aligned mode, a pulse width of period corresponds to a duty cycle of 100%
+        """
+        ...
+    def pulse_width_percent(self, value: int | float | None = None) -> int | float | None:
+        """
+        Get or set the pulse width percentage associated with a channel.  The value
+        is a number between 0 and 100 and sets the percentage of the timer period
+        for which the pulse is active.  The value can be an integer or
+        floating-point number for more accuracy.  For example, a value of 25 gives
+        a duty cycle of 25%.
+        """
+        ...
+
 class UART:
     """
     Construct a UART object on the given bus (an integer peripheral
@@ -3276,13 +4047,9 @@ class UART:
 
     Header pin
 
-    Notes
-
     TX
 
     P4
-
-
 
     RX
 
@@ -3423,25 +4190,32 @@ class UART:
 
     writechar(char: int) -> None
 
-    Write a single character on the bus.  char is an integer to write.
-    Return value: None. See note below if CTS flow control is used.
+    Write a single character on the bus. char is an integer to
+    write. See the CTS flow control section below for blocking
+    semantics when CTS flow control is enabled.
 
 
 
     sendbreak() -> None
 
-    Send a break condition on the bus.  This drives the bus low for a duration
-    of 13 bits.
-    Return value: None.
+    Send a break condition on the bus. This drives the bus low for a
+    duration of 13 bits.
     Constants
 
 
 
     RTS: int
 
+    Bit flag for the flow argument of init(); enables RTS
+    (request-to-send) hardware flow control on the receive path.
+
+
+
     CTS: int
 
-    to select the flow control type.
+    Bit flag for the flow argument of init(); enables CTS
+    (clear-to-send) hardware flow control on the transmit path. May
+    be OR-ed with RTS to enable both directions.
     """
     def __init__(self, bus: int | str, *args, **kwargs) -> None: ...
     def any(self) -> int:
@@ -3512,9 +4286,8 @@ class UART:
         ...
     def sendbreak(self) -> None:
         """
-        Send a break condition on the bus.  This drives the bus low for a duration
-        of 13 bits.
-        Return value: None.
+        Send a break condition on the bus. This drives the bus low for a
+        duration of 13 bits.
         """
         ...
     def write(self, buf: bytes | bytearray | str) -> int | None:
@@ -3529,56 +4302,70 @@ class UART:
         ...
     def writechar(self, char: int) -> None:
         """
-        Write a single character on the bus.  char is an integer to write.
-        Return value: None. See note below if CTS flow control is used.
+        Write a single character on the bus. char is an integer to
+        write. See the CTS flow control section below for blocking
+        semantics when CTS flow control is enabled.
         """
         ...
 
 class USB_HID:
     """
-    Create a new USB_HID object.
+    Create a new USB_HID object. There is only one HID interface, so the
+    constructor returns the singleton object.
     Methods
-
-
-
-    recv(data: int | bytearray, *, timeout: int = 5000) -> bytes | int
-
-    Receive data on the bus:
-
-    data can be an integer, which is the number of bytes to receive,
-    or a mutable buffer, which will be filled with received bytes.
-
-    timeout is the timeout in milliseconds to wait for the receive.
-
-    Return value: if data is an integer then a new buffer of the bytes received,
-    otherwise the number of bytes read into data is returned.
 
 
 
     send(data: Tuple[int, ...] | List[int] | bytes | bytearray) -> None
 
-    Send data over the USB HID interface:
+    Send an HID input report to the USB host.
 
-    data is the data to send (a tuple/list of integers, or a
-    bytearray).
+    data is a tuple/list of integers or a bytes-like buffer
+    whose layout depends on the report descriptor in use. For the
+    built-in mouse descriptor the report is
+    (buttons, dx, dy, wheel); for the keyboard descriptor it is
+    (modifiers, 0, key1, key2, key3, key4, key5, key6). See
+    pyb.hid_mouse and pyb.hid_keyboard.
+
+
+
+    recv(data: int | bytearray, *, timeout: int = 5000) -> bytes | int
+
+    Receive an HID output report from the USB host (e.g. keyboard LED
+    state). Returns immediately if a report is already buffered.
+
+    data is either an int (the number of bytes to read into a
+    fresh buffer) or a mutable buffer to fill with received bytes.
+
+    timeout is the maximum time in milliseconds to wait for a
+    report.
+
+    If data is an integer a fresh bytes object is returned;
+    otherwise the number of bytes written into data is returned.
     """
     def __init__(self) -> None: ...
     def recv(self, data: int | bytearray, *, timeout: int = 5000) -> bytes | int:
         """
-        Receive data on the bus:
-        data can be an integer, which is the number of bytes to receive,
-        or a mutable buffer, which will be filled with received bytes.
+        Receive an HID output report from the USB host (e.g. keyboard LED
+        state). Returns immediately if a report is already buffered.
+        data is either an int (the number of bytes to read into a
+        fresh buffer) or a mutable buffer to fill with received bytes.
 
-        timeout is the timeout in milliseconds to wait for the receive.
-        Return value: if data is an integer then a new buffer of the bytes received,
-        otherwise the number of bytes read into data is returned.
+        timeout is the maximum time in milliseconds to wait for a
+        report.
+        If data is an integer a fresh bytes object is returned;
+        otherwise the number of bytes written into data is returned.
         """
         ...
     def send(self, data: tuple[int, ...] | list[int] | bytes | bytearray) -> None:
         """
-        Send data over the USB HID interface:
-        data is the data to send (a tuple/list of integers, or a
-        bytearray).
+        Send an HID input report to the USB host.
+        data is a tuple/list of integers or a bytes-like buffer
+        whose layout depends on the report descriptor in use. For the
+        built-in mouse descriptor the report is
+        (buttons, dx, dy, wheel); for the keyboard descriptor it is
+        (modifiers, 0, key1, key2, key3, key4, key5, key6). See
+        pyb.hid_mouse and pyb.hid_keyboard.
         """
         ...
 
@@ -3592,9 +4379,10 @@ class USB_VCP:
 
     init(*, flow: int = -1) -> None
 
-    Configure the USB VCP port.  If the flow argument is not -1 then the value sets
-    the flow control, which can be a bitwise-or of USB_VCP.RTS and USB_VCP.CTS.
-    RTS is used to control read behaviour and CTS, to control write behaviour.
+    Configure the USB VCP port. If the flow argument is not -1 it
+    sets the flow control, a bitwise-OR of USB_VCP.RTS and
+    USB_VCP.CTS. RTS gates read behaviour; CTS gates
+    write behaviour.
 
 
 
@@ -3725,15 +4513,25 @@ class USB_VCP:
 
     RTS: int
 
+    Flow-control flag for init(). Enabling RTS makes the
+    device throttle the host’s transmission when the read buffer is
+    full.
+
+
+
     CTS: int
 
-    to select the flow control type.
+    Flow-control flag for init(). Enabling CTS makes the
+    device honour the host’s flow control during writes (blocking
+    until the host is ready to receive). May be OR-ed with
+    RTS.
 
 
 
     IRQ_RX: int
 
-    IRQ trigger values for USB_VCP.irq().
+    irq() trigger: fires when new data is available for reading
+    from the USB VCP object.
     """
     def __init__(self, id: int = 0) -> None: ...
     def any(self) -> bool:
@@ -3750,9 +4548,10 @@ class USB_VCP:
         ...
     def init(self, *, flow: int = -1) -> None:
         """
-        Configure the USB VCP port.  If the flow argument is not -1 then the value sets
-        the flow control, which can be a bitwise-or of USB_VCP.RTS and USB_VCP.CTS.
-        RTS is used to control read behaviour and CTS, to control write behaviour.
+        Configure the USB VCP port. If the flow argument is not -1 it
+        sets the flow control, a bitwise-OR of USB_VCP.RTS and
+        USB_VCP.CTS. RTS gates read behaviour; CTS gates
+        write behaviour.
         """
         ...
     def irq(self, handler: Callable[[USB_VCP], None] | None = None, trigger: int = IRQ_RX, hard: bool = False) -> None:
@@ -3835,69 +4634,6 @@ class USB_VCP:
         """
         Write the bytes from buf to the serial device.
         Returns the number of bytes written.
-        """
-        ...
-
-class pinaf:
-    """Pin alternate function object returned by Pin.af_list()."""
-    def __init__(self) -> None: ...
-    def __str__(self) -> str:
-        """Return a string describing the alternate function."""
-        ...
-    def index(self) -> int:
-        """Return the alternate function index."""
-        ...
-    def name(self) -> str:
-        """Return the name of the alternate function."""
-        ...
-    def reg(self) -> int:
-        """
-        Return the base register associated with the peripheral assigned to this
-        alternate function. For example, if the alternate function were TIM2_CH3
-        this would return stm.TIM2
-        """
-        ...
-
-class timerchannel:
-    """Timer channel object returned by Timer.channel()."""
-    def __init__(self) -> None: ...
-    def callback(self, fun: Callable[[Timer], None] | None) -> None:
-        """
-        Set the function to be called when the timer channel triggers.
-        fun is passed 1 argument, the timer object.
-        If fun is None then the callback will be disabled.
-        """
-        ...
-    def capture(self, value: int | None = None) -> int | None:
-        """
-        Get or set the capture value associated with a channel.
-        capture, compare, and pulse_width are all aliases for the same function.
-        capture is the logical name to use when the channel is in input capture mode.
-        """
-        ...
-    def compare(self, value: int | None = None) -> int | None:
-        """
-        Get or set the compare value associated with a channel.
-        capture, compare, and pulse_width are all aliases for the same function.
-        compare is the logical name to use when the channel is in output compare mode.
-        """
-        ...
-    def pulse_width(self, value: int | None = None) -> int | None:
-        """
-        Get or set the pulse width value associated with a channel.
-        capture, compare, and pulse_width are all aliases for the same function.
-        pulse_width is the logical name to use when the channel is in PWM mode.
-        In edge aligned mode, a pulse_width of period + 1 corresponds to a duty cycle of 100%
-        In center aligned mode, a pulse width of period corresponds to a duty cycle of 100%
-        """
-        ...
-    def pulse_width_percent(self, value: int | float | None = None) -> int | float | None:
-        """
-        Get or set the pulse width percentage associated with a channel.  The value
-        is a number between 0 and 100 and sets the percentage of the timer period
-        for which the pulse is active.  The value can be an integer or
-        floating-point number for more accuracy.  For example, a value of 25 gives
-        a duty cycle of 25%.
         """
         ...
 

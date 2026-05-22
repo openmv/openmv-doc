@@ -151,19 +151,20 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="webrepl.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">webrepl</span></code> &#8212; WebREPL server</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyb</span></code> &#8212; functions related to the board</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pyb.ADC.html">class ADC &#8211; analog to digital conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyb.ADCAll.html">class ADCAll &#8211; access all ADC channels</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.CAN.html">class CAN &#8211; controller area network communication bus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.DAC.html">class DAC &#8211; digital to analog conversion</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.ExtInt.html">class ExtInt &#8211; configure I/O pins to interrupt on external events</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.Flash.html">class Flash &#8211; access to built-in flash storage</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.I2C.html">class I2C &#8211; a two-wire serial protocol</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyb.LED.html">class LED &#8211; LED object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyb.LED.html">class LED &#8211; on-board LED</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.Pin.html">class Pin &#8211; control I/O pins</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyb.Pin.html#class-pinaf-pin-alternate-functions">class PinAF &#8211; Pin Alternate Functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyb.PinAF.html">class PinAF &#8211; pin alternate functions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.RTC.html">class RTC &#8211; real time clock</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.Servo.html">class Servo &#8211; 3-wire hobby servo driver</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.SPI.html">class SPI &#8211; a controller-driven serial protocol</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.Timer.html">class Timer &#8211; control internal timers</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pyb.Timer.html#class-timerchannel-setup-a-channel-for-a-timer">class TimerChannel &#8212; setup a channel for a timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pyb.TimerChannel.html">class TimerChannel &#8211; setup a channel for a timer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.UART.html">class UART &#8211; duplex serial communication bus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.USB_HID.html">class USB_HID &#8211; USB Human Interface Device (HID)</a></li>
 <li class="toctree-l3"><a class="reference internal" href="pyb.USB_VCP.html">class USB_VCP &#8211; USB virtual comm port</a></li>
@@ -285,7 +286,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/pyb.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/e596bf0ac5fe30d539c3f6f4808c0e49129f6efa/docs/library/pyb.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -449,9 +450,12 @@ button.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pyb.bootloader">
 <span class="sig-prename descclassname"><span class="pre">pyb.</span></span><span class="sig-name descname"><span class="pre">bootloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#pyb.bootloader" title="Link to this definition">¶</a></dt>
-<dd><p>Reset into the DFU bootloader without needing the BOOT pin to be
-asserted at reset. Useful for triggering firmware updates from running
-code.</p>
+<dd><p>Reset into OpenMV’s own USB DFU bootloader, ready for a firmware
+update. This is the recommended way to invoke DFU from running code
+– no BOOT pin needs to be asserted at reset.</p>
+<p>Not available on the OpenMV Cam N6 (the <code class="docutils literal notranslate"><span class="pre">pyb</span></code> legacy compatibility
+layer is disabled on that board); use <a class="reference internal" href="machine.html#machine.bootloader" title="machine.bootloader"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.bootloader()</span></code></a>
+instead.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -742,13 +746,36 @@ it is supported by the hardware.</p>
 </section>
 <section id="constants">
 <h2>Constants<a class="headerlink" href="#constants" title="Link to this heading">¶</a></h2>
+<p>Both of the constants below are ready-made 5-tuples in the form</p>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">(subclass,</span> <span class="pre">protocol,</span> <span class="pre">max_packet_size,</span> <span class="pre">polling_interval_ms,</span> <span class="pre">report_descriptor)</span></code></p>
+</div></blockquote>
+<p>suitable for passing as the <code class="docutils literal notranslate"><span class="pre">hid</span></code> argument of <a class="reference internal" href="#pyb.usb_mode" title="pyb.usb_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">usb_mode()</span></code></a> to make the
+OpenMV Cam appear to the host as a USB HID device. <code class="docutils literal notranslate"><span class="pre">subclass</span> <span class="pre">=</span> <span class="pre">1</span></code> means
+“boot interface” and <code class="docutils literal notranslate"><span class="pre">protocol</span></code> selects the boot device class
+(<code class="docutils literal notranslate"><span class="pre">1</span></code> = keyboard, <code class="docutils literal notranslate"><span class="pre">2</span></code> = mouse). The fifth element is a <code class="docutils literal notranslate"><span class="pre">bytes</span></code> object
+holding the HID report descriptor used when the host enumerates the device.</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="pyb.pyb.hid_mouse">
 <span class="sig-prename descclassname"><span class="pre">pyb.</span></span><span class="sig-name descname"><span class="pre">hid_mouse</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#tuple" title="tuple"><span class="pre">tuple</span></a></span><a class="headerlink" href="#pyb.pyb.hid_mouse" title="Link to this definition">¶</a></dt>
+<dd><p>Pre-built HID descriptor for a 3-button boot mouse with relative X/Y
+movement. The tuple is <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">2,</span> <span class="pre">4,</span> <span class="pre">8,</span> <span class="pre">&lt;mouse</span> <span class="pre">report</span> <span class="pre">descriptor&gt;)</span></code>:
+boot subclass, mouse protocol, 4-byte input reports (button mask + X +
+Y + wheel), polled every 8 ms. The built-in report descriptor is the
+one used by <code class="docutils literal notranslate"><span class="pre">pyb.USB_HID().send((buttons,</span> <span class="pre">dx,</span> <span class="pre">dy,</span> <span class="pre">wheel))</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="pyb.pyb.hid_keyboard">
 <span class="sig-prename descclassname"><span class="pre">pyb.</span></span><span class="sig-name descname"><span class="pre">hid_keyboard</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#tuple" title="tuple"><span class="pre">tuple</span></a></span><a class="headerlink" href="#pyb.pyb.hid_keyboard" title="Link to this definition">¶</a></dt>
-<dd><p>A tuple of (subclass, protocol, max packet length, polling interval, report
-descriptor) to set appropriate values for a USB mouse or keyboard.</p>
+<dd><p>Pre-built HID descriptor for a USB boot keyboard. The tuple is
+<code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1,</span> <span class="pre">8,</span> <span class="pre">8,</span> <span class="pre">&lt;keyboard</span> <span class="pre">report</span> <span class="pre">descriptor&gt;)</span></code>: boot subclass,
+keyboard protocol, 8-byte input reports (modifier byte, one reserved
+byte, six concurrent key codes), polled every 8 ms. The built-in
+report descriptor matches the standard 8-byte HID boot-keyboard
+layout, so the report sent via <a class="reference internal" href="pyb.USB_HID.html#pyb.USB_HID.send" title="pyb.USB_HID.send"><code class="xref py py-meth docutils literal notranslate"><span class="pre">USB_HID.send()</span></code></a> should be a
+<code class="docutils literal notranslate"><span class="pre">bytes</span></code> of the form
+<code class="docutils literal notranslate"><span class="pre">(modifiers,</span> <span class="pre">0,</span> <span class="pre">key1,</span> <span class="pre">key2,</span> <span class="pre">key3,</span> <span class="pre">key4,</span> <span class="pre">key5,</span> <span class="pre">key6)</span></code>.</p>
 </dd></dl>
 
 </section>
@@ -757,19 +784,20 @@ descriptor) to set appropriate values for a USB mouse or keyboard.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="pyb.ADC.html">class ADC – analog to digital conversion</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyb.ADCAll.html">class ADCAll – access all ADC channels</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.CAN.html">class CAN – controller area network communication bus</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.DAC.html">class DAC – digital to analog conversion</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.ExtInt.html">class ExtInt – configure I/O pins to interrupt on external events</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.Flash.html">class Flash – access to built-in flash storage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.I2C.html">class I2C – a two-wire serial protocol</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyb.LED.html">class LED – LED object</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyb.LED.html">class LED – on-board LED</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.Pin.html">class Pin – control I/O pins</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyb.Pin.html#class-pinaf-pin-alternate-functions">class PinAF – Pin Alternate Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyb.PinAF.html">class PinAF – pin alternate functions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.RTC.html">class RTC – real time clock</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.Servo.html">class Servo – 3-wire hobby servo driver</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.SPI.html">class SPI – a controller-driven serial protocol</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.Timer.html">class Timer – control internal timers</a></li>
-<li class="toctree-l1"><a class="reference internal" href="pyb.Timer.html#class-timerchannel-setup-a-channel-for-a-timer">class TimerChannel — setup a channel for a timer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pyb.TimerChannel.html">class TimerChannel – setup a channel for a timer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.UART.html">class UART – duplex serial communication bus</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.USB_HID.html">class USB_HID – USB Human Interface Device (HID)</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pyb.USB_VCP.html">class USB_VCP – USB virtual comm port</a></li>

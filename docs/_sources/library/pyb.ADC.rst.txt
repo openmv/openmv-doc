@@ -8,16 +8,12 @@ Usage::
 
     import pyb
 
-    adc = pyb.ADC(pin)                  # create an analog object from a pin
-    val = adc.read()                    # read an analog value
+    adc = pyb.ADC("P6")
+    val = adc.read()
 
-    adc = pyb.ADCAll(resolution)        # create an ADCAll object
-    adc = pyb.ADCAll(resolution, mask)  # create an ADCAll object for selected analog channels
-    val = adc.read_channel(channel)     # read the given channel
-    val = adc.read_core_temp()          # read MCU temperature
-    val = adc.read_core_vbat()          # read MCU VBAT
-    val = adc.read_core_vref()          # read MCU VREF
-    val = adc.read_vref()               # read MCU supply voltage
+See :class:`pyb.ADCAll` for simultaneous access to every ADC channel
+plus the MCU's internal die-temperature, ``VBAT`` and ``VREFINT``
+sensors.
 
 
 Constructors
@@ -55,31 +51,30 @@ Constructors
 
       Example using a Timer object (preferred way)::
 
-          adc = pyb.ADC(pyb.Pin("P5"))        # create an ADC on pin P5
-          tim = pyb.Timer(6, freq=10)         # create a timer running at 10Hz
-          buf = bytearray(100)                # creat a buffer to store the samples
-          adc.read_timed(buf, tim)            # sample 100 values, taking 10s
+          adc = pyb.ADC(pyb.Pin.board.P6)    # create an ADC on pin P6
+          tim = pyb.Timer(6, freq=10)        # create a timer running at 10Hz
+          buf = bytearray(100)               # buffer to hold the samples
+          adc.read_timed(buf, tim)           # sample 100 values, taking 10s
 
       Example using an integer for the frequency::
 
-          adc = pyb.ADC(pyb.Pin("P5"))        # create an ADC on pin P5
-          buf = bytearray(100)                # create a buffer of 100 bytes
-          adc.read_timed(buf, 10)             # read analog values into buf at 10Hz
-                                              #   this will take 10 seconds to finish
-          for val in buf:                     # loop over all values
-              print(val)                      # print the value out
+          adc = pyb.ADC(pyb.Pin.board.P6)    # create an ADC on pin P6
+          buf = bytearray(100)               # buffer of 100 bytes
+          adc.read_timed(buf, 10)            # read 100 samples at 10Hz (10s total)
+
+          for val in buf:
+              print(val)
 
       This function does not allocate any heap memory. It has blocking behaviour:
       it does not return to the calling program until the buffer is full.
 
-   .. method:: read_timed_multi(adcs: Tuple[ADC, ...], bufs: Tuple[Union[bytearray, "array.array"], ...], timer: Timer) -> bool
+   .. staticmethod:: read_timed_multi(adcs: Tuple[ADC, ...], bufs: Tuple[Union[bytearray, "array.array"], ...], timer: Timer) -> bool
 
-      This is a static method. It can be used to extract relative timing or
-      phase data from multiple ADC's.
+      Extract relative timing or phase data from multiple ADCs.
 
-      It reads analog values from multiple ADC's into buffers at a rate set by
-      the *timer* object. Each time the timer triggers a sample is rapidly
-      read from each ADC in turn.
+      Reads analog values from multiple ADCs into buffers at a rate set
+      by the *timer* object. Each time the timer triggers a sample is
+      rapidly read from each ADC in turn.
 
       ADC and buffer instances are passed in tuples with each ADC having an
       associated buffer. All buffers must be of the same type and length and
@@ -93,19 +88,25 @@ Constructors
       *timer* must be a Timer object. The timer must already be initialised
       and running at the desired sampling frequency.
 
-      Example reading 3 ADCs::
+      The STM32 OpenMV Cams expose only one ADC-capable header pin
+      (``P6``), so on stock hardware ``read_timed_multi`` is only
+      useful with a single ADC. Wire up additional analog inputs via
+      :class:`pyb.Pin` ``cpu`` references to use it with more than
+      one ADC.
 
-          adc0 = pyb.ADC(pyb.Pin.board.P0)    # Create ADCs
-          adc1 = pyb.ADC(pyb.Pin.board.P1)
-          adc2 = pyb.ADC(pyb.Pin.board.P2)
-          tim = pyb.Timer(8, freq=100)        # Create timer
-          rx0 = array.array('H', (0 for i in range(100))) # ADC buffers of
-          rx1 = array.array('H', (0 for i in range(100))) # 100 16-bit words
-          rx2 = array.array('H', (0 for i in range(100)))
-          # read analog values into buffers at 100Hz (takes one second)
-          pyb.ADC.read_timed_multi((adc0, adc1, adc2), (rx0, rx1, rx2), tim)
-          for n in range(len(rx0)):
-              print(rx0[n], rx1[n], rx2[n])
+      Example reading one ADC::
+
+          import array
+
+          adc = pyb.ADC(pyb.Pin.board.P6)
+          tim = pyb.Timer(8, freq=100)
+          rx = array.array("H", (0 for i in range(100)))
+
+          # Sample 100 values at 100Hz (takes one second).
+          pyb.ADC.read_timed_multi((adc,), (rx,), tim)
+
+          for val in rx:
+              print(val)
 
       This function does not allocate any heap memory. It has blocking behaviour:
       it does not return to the calling program until the buffers are full.
@@ -123,45 +124,3 @@ Constructors
       At high sample rates disabling interrupts for the duration can reduce the
       risk of sporadic data loss.
 
-The ADCAll Object
------------------
-
-Instantiating this changes all masked ADC pins to analog inputs. The preprocessed MCU temperature,
-VREF and VBAT data can be accessed on ADC channels 16, 17 and 18 respectively.
-Appropriate scaling is handled according to reference voltage used (usually 3.3V).
-The temperature sensor on the chip is factory calibrated and allows to read the die temperature
-to +/- 1 degree centigrade. Although this sounds pretty accurate, don't forget that the MCU's internal
-temperature is measured. Depending on processing loads and I/O subsystems active the die temperature
-may easily be tens of degrees above ambient temperature. A board woken up after a long standby period
-will show correct ambient temperature within the limits mentioned above.
-
-The ``ADCAll`` ``read_core_vbat()``, ``read_vref()`` and ``read_core_vref()`` methods read
-the backup battery voltage, reference voltage and the (1.21V nominal) reference voltage using the
-actual supply as a reference. All results are floating point numbers giving direct voltage values.
-
-``read_core_vbat()`` returns the voltage of the backup battery. This voltage is also adjusted according
-to the actual supply voltage. To avoid analog input overload the battery voltage is measured
-via a voltage divider and scaled according to the divider value. To prevent excessive loads
-to the backup battery, the voltage divider is only active during ADC conversion.
-
-``read_vref()`` is evaluated by measuring the internal voltage reference and back-scaling it using the
-factory calibration value of the internal voltage reference. In most cases the reading will be close
-to 3.3 V. If the board is operated from a battery, the supply voltage may drop below 3.3 V; the board
-still operates as long as the MCU's electrical specifications are met. With appropriate MCU clock,
-flash access speed and programming-mode settings the supply can fall as low as around 2 V and still
-yield useful ADC conversions.
-
-It is very important to make sure analog input voltages never exceed actual supply voltage.
-
-Other analog input channels (0..15) will return unscaled integer values according to the selected
-precision.
-
-To avoid unwanted activation of analog inputs (channel 0..15) a second parameter can be specified.
-This parameter is a binary pattern where each requested analog input has the corresponding bit set.
-The default value is 0xffffffff which means all analog inputs are active. If just the internal
-channels (16..18) are required, the mask value should be 0x70000.
-
-Example::
-
-    adcall = pyb.ADCAll(12, 0x70000) # 12 bit resolution, internal channels
-    temp = adcall.read_core_temp()

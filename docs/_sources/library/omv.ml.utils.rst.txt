@@ -19,10 +19,6 @@ Functions
 
     Returns the sigmoid of all values in the passed ``ndarray``.
 
-.. function:: mod(a: ndarray, b: ndarray) -> ndarray
-
-    Returns the element-wise modulo ``a - (b * (a // b))``.
-
 .. function:: threshold(scores: ndarray, threshold: float, scale: float, find_max: bool = False, find_max_axis: int = 1) -> ndarray
 
     Thresholds ``scores`` (a quantized ``ndarray`` of int8, uint8, int16, or uint16) by a quantized
@@ -60,9 +56,9 @@ Functions
 
     ``index`` selects which tensor output of the ``model`` to dequantize against.
 
-.. function:: draw_predictions(image: image.Image, boxes: list[tuple[float, float, float, float]], labels: list[str], colors: list[tuple[int, int, int]], format: str = "pascal_voc", font_width: int = 8, font_height: int = 10, text_color: tuple[int, int, int] = (255, 255, 255)) -> None
+.. function:: draw_predictions(image: image.Image, boxes: list[tuple[float, float, float, float]], labels: list[str], colors: list[tuple[int, int, int]], scores: list[float] | None = None, format: str = "pascal_voc", font_width: int = 8, font_height: int = 10, text_color: tuple[int, int, int] = (255, 255, 255)) -> None
 
-    Draws bounding boxes with text labels onto ``image``.
+    Draws bounding boxes (or centerpoint markers) with text labels onto ``image``.
 
     ``boxes`` is a list of ``(x, y, w, h)`` tuples.
 
@@ -70,9 +66,17 @@ Functions
 
     ``colors`` is a list of ``(r, g, b)`` tuples, one per box.
 
-    ``format`` is ``"pascal_voc"`` to interpret box values as normalized
-    ``(xmin, ymin, xmax, ymax)`` in the range 0.0 to 1.0; any other value treats the
-    box values as absolute pixel ``(x, y, w, h)``.
+    ``scores`` if not ``None``, a list of per-box confidence scores. When supplied
+    each rendered label is suffixed with the score formatted as ``" %.2f"``.
+
+    ``format`` controls how the box coordinates are interpreted:
+
+       * ``"pascal_voc"`` -- normalized ``(xmin, ymin, xmax, ymax)`` in the range
+         ``0.0`` to ``1.0``.
+       * ``"point"`` -- absolute pixel ``(x, y, w, h)``; a filled circle marker is
+         drawn at the box centre instead of a rectangle (useful for centerpoint
+         detectors).
+       * any other value -- absolute pixel ``(x, y, w, h)``; drawn as a rectangle.
 
     ``font_width`` is the width in pixels of each character in the label.
 

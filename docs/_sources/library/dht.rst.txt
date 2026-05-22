@@ -5,16 +5,14 @@
    :synopsis: DHT11 and DHT22 temperature/humidity sensor driver
 
 The :mod:`dht` module provides drivers for the DHT11 and DHT22 (also known
-as AM2302) low-cost temperature and humidity sensors. The single-wire
-protocol is implemented in C by the underlying port (``machine.dht_readinto``,
-``esp.dht_readinto`` or ``pyb.dht_readinto`` depending on platform).
+as AM2302) low-cost temperature and humidity sensors.
 
 Example::
 
     from machine import Pin
     from dht import DHT22
 
-    d = DHT22(Pin("P4"))
+    d = DHT22(Pin("P7"))
     d.measure()
     print(d.temperature(), d.humidity())
 

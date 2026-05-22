@@ -9,7 +9,7 @@ as the ``backlight`` argument to any display constructor that accepts a backligh
 Constructors
 ------------
 
-.. class:: PWMBacklight(pin: machine.Pin, timer: int = 3, channel: int = 3, frequency: int = 200)
+.. class:: PWMBacklight(pin: pyb.Pin, timer: int = 3, channel: int = 3, frequency: int = 200)
 
    Creates a PWM-driven backlight controller.
 

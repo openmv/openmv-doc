@@ -14,7 +14,7 @@ Example::
     from machine import Pin
     from onewire import OneWire
 
-    ow = OneWire(Pin("P5"))
+    ow = OneWire(Pin("P7"))
     devices = ow.scan()
     for rom in devices:
         print(rom)

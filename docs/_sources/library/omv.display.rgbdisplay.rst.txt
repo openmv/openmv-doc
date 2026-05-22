@@ -3,7 +3,43 @@
 class RGBDisplay -- RGB Display Driver
 ======================================
 
-The `RGBDisplay` class drives 24-bit parallel RGB LCDs via the LTDC controller.
+The :class:`RGBDisplay` class drives 24-bit parallel RGB LCDs through
+the STM32 LTDC (LCD-TFT) controller. The LTDC streams pixels directly
+out of an SDRAM-backed framebuffer at the chosen pixel clock, so high
+refresh rates (up to 120 Hz) are possible without CPU involvement.
+
+On the OpenMV Cam Pure Thermal the same 24-bit parallel bus also
+feeds an on-board TFP410 HDMI encoder, so its HDMI output is driven
+through this class too -- use ``display_on=False`` to blank the
+on-board LCD while still clocking pixels to the encoder.
+
+Panel resolution is selected through ``framesize`` using the constants
+defined in the :mod:`display` module (``QVGA``, ``VGA``, ``WVGA``,
+``HD``, ``FHD``, ...). Panel-specific initialisation sequences are
+plugged in via the ``controller`` keyword argument (for example
+:class:`ST7701` for ST7701-based panels). Backlight brightness is
+driven as a simple GPIO by default, or by :class:`DACBacklight` /
+:class:`PWMBacklight` if one is passed as ``backlight``.
+
+Frames are presented by calling :meth:`write` with an
+:class:`image.Image`. The driver handles RGB conversion, scaling,
+ROI, palette and orientation transforms internally.
+
+Example -- mirror the camera onto a 480x272 panel at 60 Hz::
+
+    import csi
+    import display
+    import image
+
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
+
+    lcd = display.RGBDisplay(framesize=display.FHVGA, refresh=60)
+
+    while True:
+        lcd.write(csi0.snapshot(), hint=image.SCALE_ASPECT_KEEP)
 
 Constructors
 ------------
@@ -14,9 +50,11 @@ Constructors
 
     ``refresh`` Sets the screen refresh rate in hertz (30-120). This controls the RGB LCD pixel clock.
 
-    ``display_on`` Enables the display. Pass ``False`` when the 24-bit parallel LCD output is shared
-    by multiple devices (e.g. the TFP410 chip for driving HDMI displays) to keep the display off
-    while still driving the data bus.
+    ``display_on`` Enables the local LCD output. Pass ``False`` on the OpenMV Cam
+    Pure Thermal, whose 24-bit parallel bus drives both the on-board LCD and the
+    TFP410 HDMI encoder -- this keeps the on-board LCD blanked while still feeding
+    the HDMI encoder. On other OpenMV Cams there is no shared sink and this can
+    be left at its default.
 
     ``triple_buffer`` If ``True``, makes updates to the screen non-blocking at the cost of 3x the
     display size in RAM.

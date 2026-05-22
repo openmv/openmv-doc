@@ -22,9 +22,10 @@ Constructors
 
    .. method:: init(*, flow: int = -1) -> None
 
-      Configure the USB VCP port.  If the *flow* argument is not -1 then the value sets
-      the flow control, which can be a bitwise-or of ``USB_VCP.RTS`` and ``USB_VCP.CTS``.
-      RTS is used to control read behaviour and CTS, to control write behaviour.
+      Configure the USB VCP port. If the *flow* argument is not ``-1`` it
+      sets the flow control, a bitwise-OR of :data:`USB_VCP.RTS` and
+      :data:`USB_VCP.CTS`. ``RTS`` gates read behaviour; ``CTS`` gates
+      write behaviour.
 
    .. method:: setinterrupt(chr: int) -> None
 
@@ -127,12 +128,22 @@ Constructors
    ---------
 
    .. data:: RTS
-             CTS
       :type: int
 
-      to select the flow control type.
+      Flow-control flag for :meth:`init`. Enabling ``RTS`` makes the
+      device throttle the host's transmission when the read buffer is
+      full.
+
+   .. data:: CTS
+      :type: int
+
+      Flow-control flag for :meth:`init`. Enabling ``CTS`` makes the
+      device honour the host's flow control during writes (blocking
+      until the host is ready to receive). May be OR-ed with
+      :data:`RTS`.
 
    .. data:: IRQ_RX
       :type: int
 
-      IRQ trigger values for :meth:`USB_VCP.irq`.
+      :meth:`irq` trigger: fires when new data is available for reading
+      from the USB VCP object.
