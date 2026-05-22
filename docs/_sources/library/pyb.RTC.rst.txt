@@ -43,8 +43,8 @@ Constructors
 
    .. method:: wakeup(timeout: Optional[int], callback: Optional[Callable[[RTC], None]] = None) -> None
 
-      Set the RTC wakeup timer to trigger repeatedly at every ``timeout``
-      milliseconds.  This trigger can wake the pyboard from both the sleep
+      Set the RTC wakeup timer to trigger repeatedly every ``timeout``
+      milliseconds. This trigger can wake the board from both sleep
       states: :meth:`pyb.stop` and :meth:`pyb.standby`.
 
       If ``timeout`` is ``None`` then the wakeup timer is disabled.
@@ -54,25 +54,33 @@ Constructors
 
    .. method:: info() -> int
 
-      Get information about the startup time and reset source.
+      Get information about the startup time and reset source. The returned
+      32-bit integer is a bit-packed value:
 
-       - The lower 0xffff are the number of milliseconds the RTC took to
-         start up.
-       - Bit 0x10000 is set if a power-on reset occurred.
-       - Bit 0x20000 is set if an external reset occurred
+      .. list-table::
+         :header-rows: 1
+         :widths: 30 70
+
+         * - Bits
+           - Meaning
+         * - ``0x0000FFFF``
+           - Number of milliseconds the RTC took to start up.
+         * - ``0x00010000``
+           - Set if a power-on reset occurred.
+         * - ``0x00020000``
+           - Set if an external reset occurred.
 
    .. method:: calibration(cal: Optional[int] = None) -> Optional[int]
 
-      Get or set RTC calibration.
+      Get or set the RTC smooth-calibration value.
 
       With no arguments, ``calibration()`` returns the current calibration
-      value, which is an integer in the range [-511 : 512].  With one
-      argument it sets the RTC calibration.
+      value, an integer in the range ``[-511, 512]``. With one argument it
+      sets the calibration.
 
-      The RTC Smooth Calibration mechanism adjusts the RTC clock rate by
-      adding or subtracting the given number of ticks from the 32768 Hz
-      clock over a 32 second period (corresponding to 2^20 clock ticks.)
-      Each tick added will speed up the clock by 1 part in 2^20, or 0.954
-      ppm; likewise the RTC clock it slowed by negative values. The
-      usable calibration range is:
-      (-511 * 0.954) ~= -487.5 ppm up to (512 * 0.954) ~= 488.5 ppm
+      The smooth-calibration mechanism adjusts the RTC clock rate by adding
+      or subtracting the given number of ticks from the 32768 Hz clock over
+      a 32-second period (2^20 clock ticks). Each positive tick speeds the
+      clock up by 1 part in 2^20 (≈0.954 ppm); negative values slow the
+      clock by the same amount per tick. The usable calibration range is
+      therefore approximately ``-487.5 ppm`` to ``+488.5 ppm``.

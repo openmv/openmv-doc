@@ -20,8 +20,18 @@ sub-fields.
 .. seealso::
 
     Module :mod:`struct`
-        Standard Python way to access binary data structures (doesn't scale
-        well to large and complex structures).
+        The standard Python module for packing and unpacking binary
+        data. :mod:`struct` operates on whole buffers at a time using a
+        compact format string (e.g. ``'<HBB4sI'``), which works well for
+        a few fixed fields but scales poorly to large or deeply-nested
+        structures: every read or write re-parses the format string,
+        unions and bitfields are not supported, and there is no way to
+        get a typed view into an existing buffer. :mod:`uctypes`
+        complements :mod:`struct` by letting you describe the layout
+        once, attach it to a memory region (RAM, peripheral registers,
+        a ``bytearray``) and then access individual fields as named
+        attributes -- avoiding repeated parsing and copying, and adding
+        support for nested structs, arrays, unions and bitfields.
 
 Usage examples::
 
@@ -229,38 +239,89 @@ Module contents
    so it can be both written too, and you will access current value
    at the given memory address.
 
+Scalar integer types. Each occupies the obvious number of bytes
+(``1``, ``2``, ``4`` or ``8``) and is read/written using the
+endianness of the structure's layout type (one of :data:`NATIVE`,
+:data:`LITTLE_ENDIAN`, or :data:`BIG_ENDIAN`).
+
 .. data:: UINT8
-          INT8
-          UINT16
-          INT16
-          UINT32
-          INT32
-          UINT64
-          INT64
    :type: int
 
-   Integer types for structure descriptors. Constants for 8, 16, 32,
-   and 64 bit types are provided, both signed and unsigned.
+   Unsigned 8-bit integer. Range ``0`` -- ``255``.
+
+.. data:: INT8
+   :type: int
+
+   Signed 8-bit integer. Range ``-128`` -- ``127``.
+
+.. data:: UINT16
+   :type: int
+
+   Unsigned 16-bit integer. Range ``0`` -- ``65535``.
+
+.. data:: INT16
+   :type: int
+
+   Signed 16-bit integer. Range ``-32768`` -- ``32767``.
+
+.. data:: UINT32
+   :type: int
+
+   Unsigned 32-bit integer. Range ``0`` -- ``0xFFFFFFFF``.
+
+.. data:: INT32
+   :type: int
+
+   Signed 32-bit integer. Range ``-0x80000000`` -- ``0x7FFFFFFF``.
+
+.. data:: UINT64
+   :type: int
+
+   Unsigned 64-bit integer. Range ``0`` -- ``0xFFFFFFFFFFFFFFFF``.
+
+.. data:: INT64
+   :type: int
+
+   Signed 64-bit integer. Range ``-0x8000000000000000`` -- ``0x7FFFFFFFFFFFFFFF``.
 
 .. data:: FLOAT32
-          FLOAT64
    :type: int
 
-   Floating-point types for structure descriptors.
+   IEEE 754 single-precision floating-point (4 bytes). Reads and writes
+   are converted to/from a Python ``float``.
+
+.. data:: FLOAT64
+   :type: int
+
+   IEEE 754 double-precision floating-point (8 bytes). Reads and writes
+   are converted to/from a Python ``float``.
 
 .. data:: VOID
    :type: int
 
-   ``VOID`` is an alias for ``UINT8``, and is provided to conveniently define
-   C's void pointers: ``(uctypes.PTR, uctypes.VOID)``.
+   Alias for :data:`UINT8`. Provided so that C-style ``void *`` fields
+   can be described idiomatically as ``(uctypes.PTR, uctypes.VOID)``.
 
 .. data:: PTR
-          ARRAY
    :type: int
 
-   Type constants for pointers and arrays. Note that there is no explicit
-   constant for structures, it's implicit: an aggregate type without ``PTR``
-   or ``ARRAY`` flags is a structure.
+   Marks a descriptor field as a pointer to another type. A pointer
+   field is written as a two-tuple
+   ``(offset | PTR, target_type_or_descriptor)``. Dereferencing the
+   pointer yields a typed view into the address it holds.
+
+.. data:: ARRAY
+   :type: int
+
+   Marks a descriptor field as a fixed-length array of another type.
+   An array field is either ``(offset | ARRAY, count | element_type)``
+   for arrays of scalars or
+   ``(offset | ARRAY, count, element_descriptor)`` for arrays of
+   structures. The number of elements is fixed at descriptor time.
+
+There is no explicit constant for structures: an aggregate descriptor
+that uses neither :data:`PTR` nor :data:`ARRAY` is treated as a
+structure.
 
 Structure descriptors and instantiating structure objects
 ---------------------------------------------------------

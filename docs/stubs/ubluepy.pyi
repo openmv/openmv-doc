@@ -34,7 +34,7 @@ PRIMARY: int
 """Service-type constant for primary services (1)."""
 SECONDARY: int
 """Service-type constant for secondary services (2)."""
-constants: int
+constants: type
 """Container exposing the constants below."""
 ADDR_TYPE_PUBLIC: int
 """Public Bluetooth Device Address (0)."""
@@ -61,7 +61,7 @@ UUID_CCCD: int
 Standard Bluetooth UUID for the Client Characteristic
 Configuration Descriptor (0x2902).
 """
-ad_types: int
+ad_types: type
 """
 Namespace of advertising-data AD-type constants from the
 Bluetooth Core Specification Supplement.

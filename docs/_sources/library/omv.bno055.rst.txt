@@ -202,31 +202,126 @@ Axis placements
 ~~~~~~~~~~~~~~~
 
 The following 2-byte values are passed to :meth:`BNO055.axis` to remap the
-device coordinate system. They correspond to the eight standard placement
-orientations listed in the BNO055 datasheet.
+device coordinate system. Each constant is the ``(AXIS_MAP_CONFIG,
+AXIS_MAP_SIGN)`` register pair from the BNO055 datasheet (Section 3.4,
+*Axis remap*), pre-encoded for one of the eight standard placement
+orientations.
+
+Choose the constant whose output axes match how the chip is physically
+mounted on the host PCB:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 18 18 18 18 12 16
+
+   * - Constant
+     - Output X
+     - Output Y
+     - Output Z
+     - Bytes
+     - Mounting
+   * - :data:`AXIS_P0`
+     - ``-Yc``
+     - ``+Xc``
+     - ``+Zc``
+     - ``21 04``
+     - face-up, 90° CCW from P1
+   * - :data:`AXIS_P1`
+     - ``+Xc``
+     - ``+Yc``
+     - ``+Zc``
+     - ``24 00``
+     - face-up, datasheet default
+   * - :data:`AXIS_P2`
+     - ``-Xc``
+     - ``-Yc``
+     - ``+Zc``
+     - ``24 06``
+     - face-up, rotated 180°
+   * - :data:`AXIS_P3`
+     - ``+Yc``
+     - ``-Xc``
+     - ``+Zc``
+     - ``21 02``
+     - face-up, 90° CW from P1
+   * - :data:`AXIS_P4`
+     - ``+Xc``
+     - ``-Yc``
+     - ``-Zc``
+     - ``24 03``
+     - face-down, flipped about X (constructor default)
+   * - :data:`AXIS_P5`
+     - ``+Yc``
+     - ``+Xc``
+     - ``-Zc``
+     - ``21 01``
+     - face-down, rotated 90° CCW from P4
+   * - :data:`AXIS_P6`
+     - ``-Yc``
+     - ``-Xc``
+     - ``-Zc``
+     - ``21 07``
+     - face-down, rotated 180° from P4
+   * - :data:`AXIS_P7`
+     - ``-Xc``
+     - ``+Yc``
+     - ``-Zc``
+     - ``24 05``
+     - face-down, rotated 90° CW from P4
+
+``Xc`` / ``Yc`` / ``Zc`` denote the chip's intrinsic axes (as printed in
+the BNO055 datasheet). The "Output" columns are the axes the device
+delivers via :meth:`BNO055.euler`, :meth:`BNO055.gyro`, etc. ``P0``
+through ``P3`` are the four 90° rotations of the chip in the
+component-side-up orientation; ``P4`` through ``P7`` are the same four
+rotations after flipping the chip onto its back.
 
 .. data:: AXIS_P0
    :type: bytes
 
+   Chip face up, rotated 90° CCW from :data:`AXIS_P1`. Output axes:
+   ``X = -Yc``, ``Y = +Xc``, ``Z = +Zc``.
+
 .. data:: AXIS_P1
    :type: bytes
+
+   Chip face up in the BNO055 datasheet's default orientation. No remap
+   is applied: ``X = +Xc``, ``Y = +Yc``, ``Z = +Zc``.
 
 .. data:: AXIS_P2
    :type: bytes
 
+   Chip face up, rotated 180° from :data:`AXIS_P1`. Output axes:
+   ``X = -Xc``, ``Y = -Yc``, ``Z = +Zc``.
+
 .. data:: AXIS_P3
    :type: bytes
+
+   Chip face up, rotated 90° CW from :data:`AXIS_P1`. Output axes:
+   ``X = +Yc``, ``Y = -Xc``, ``Z = +Zc``.
 
 .. data:: AXIS_P4
    :type: bytes
 
-   Default axis placement used by the constructor.
+   Chip flipped onto its back (component side down) relative to
+   :data:`AXIS_P1`. Output axes: ``X = +Xc``, ``Y = -Yc``, ``Z = -Zc``.
+   This is the placement used by the :class:`BNO055` constructor when
+   no ``axis`` argument is supplied.
 
 .. data:: AXIS_P5
    :type: bytes
 
+   Chip face down, rotated 90° CCW from :data:`AXIS_P4`. Output axes:
+   ``X = +Yc``, ``Y = +Xc``, ``Z = -Zc``.
+
 .. data:: AXIS_P6
    :type: bytes
 
+   Chip face down, rotated 180° from :data:`AXIS_P4`. Output axes:
+   ``X = -Yc``, ``Y = -Xc``, ``Z = -Zc``.
+
 .. data:: AXIS_P7
    :type: bytes
+
+   Chip face down, rotated 90° CW from :data:`AXIS_P4`. Output axes:
+   ``X = -Xc``, ``Y = +Yc``, ``Z = -Zc``.

@@ -231,7 +231,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/7b9e177ac287c9289ba7ce634d01e7c1a7167154/docs/library/omv.rtsp.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/omv.rtsp.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -307,12 +307,34 @@ data-aria-dark="Switch to auto color mode">
 <span id="rtsp-rtsp-library"></span><h1><a class="reference internal" href="#module-rtsp" title="rtsp: rtsp library"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rtsp</span></code></a> — rtsp library<a class="headerlink" href="#module-rtsp" title="Link to this heading">¶</a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">rtsp</span></code> module on the OpenMV Cam allows you to stream video from your OpenMV Cam to any
 compatible RTSP client (like <a class="reference external" href="https://www.videolan.org/vlc/index.html">VLC</a>).</p>
-<p>Example usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">server</span> <span class="o">=</span> <span class="n">rtsp</span><span class="o">.</span><span class="n">rtsp_server</span><span class="p">(</span><span class="n">network_if</span><span class="p">)</span>
-</span><span data-line="2"><span class="n">server</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="k">lambda</span> <span class="n">pathname</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">sensor</span><span class="o">.</span><span class="n">snapshot</span><span class="p">())</span>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">network</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">rtsp</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">csi0</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="7"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="8"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="9"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">VGA</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="n">wlan</span> <span class="o">=</span> <span class="n">network</span><span class="o">.</span><span class="n">WLAN</span><span class="p">(</span><span class="n">network</span><span class="o">.</span><span class="n">STA_IF</span><span class="p">)</span>
+</span><span data-line="12"><span class="n">wlan</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="13"><span class="n">wlan</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s2">&quot;your-ssid&quot;</span><span class="p">,</span> <span class="s2">&quot;your-password&quot;</span><span class="p">)</span>
+</span><span data-line="14"><span class="k">while</span> <span class="ow">not</span> <span class="n">wlan</span><span class="o">.</span><span class="n">isconnected</span><span class="p">():</span>
+</span><span data-line="15">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="n">server</span> <span class="o">=</span> <span class="n">rtsp</span><span class="o">.</span><span class="n">rtsp_server</span><span class="p">(</span><span class="n">wlan</span><span class="p">)</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="c1"># Called each time the server needs a new frame to send.</span>
+</span><span data-line="20"><span class="k">def</span><span class="w"> </span><span class="nf">image_callback</span><span class="p">(</span><span class="n">pathname</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+</span><span data-line="21">    <span class="k">return</span> <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</span><span data-line="22">
+</span><span data-line="23"><span class="c1"># Does not return; streams to any RTSP client that connects.</span>
+</span><span data-line="24"><span class="n">server</span><span class="o">.</span><span class="n">stream</span><span class="p">(</span><span class="n">image_callback</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="mi">70</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>See the example scripts in OpenMV IDE under <code class="docutils literal notranslate"><span class="pre">Web</span> <span class="pre">Servers</span></code>.</p>
+<p>Connect a client to <code class="docutils literal notranslate"><span class="pre">rtsp://&lt;camera-ip&gt;:554/</span></code> to view the stream.</p>
 <section id="class-rtsp-server-rtsp-server-class">
 <h2>class rtsp_server – rtsp_server class<a class="headerlink" href="#class-rtsp-server-rtsp-server-class" title="Link to this heading">¶</a></h2>
 <p>The <a class="reference internal" href="#rtsp.rtsp_server" title="rtsp.rtsp_server"><code class="xref any py py-class docutils literal notranslate"><span class="pre">rtsp_server</span></code></a> class creates a single connection RTSP web server on your OpenMV Cam.</p>
@@ -398,7 +420,7 @@ It receives <code class="docutils literal notranslate"><span class="pre">pathnam
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 19 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 22 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

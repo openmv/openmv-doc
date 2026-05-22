@@ -74,24 +74,23 @@ different way.
 Constructors
 ------------
 
-.. class:: Signal(pin_obj: Pin, invert: bool = False)
-           Signal(pin_arguments..., *, invert: bool = False)
+.. class:: Signal(pin_obj: Pin, *, invert: bool = False)
+           Signal(*pin_args: Any, invert: bool = False, **pin_kwargs: Any)
 
-   Create a Signal object. There're two ways to create it:
+   Create a Signal object. There are two ways to construct it:
 
-   * By wrapping existing Pin object - universal method which works for
-     any board.
-   * By passing required Pin parameters directly to Signal constructor,
-     skipping the need to create intermediate Pin object. Available on
-     many, but not all boards.
+   * **Wrap an existing Pin object** -- universal, works on any board.
+   * **Pass Pin constructor arguments directly** -- the same positional
+     and keyword arguments accepted by :class:`Pin` are forwarded to an
+     internally-created Pin. Available on many, but not all boards.
 
-   The arguments are:
+   Arguments:
 
-     - ``pin_obj`` is existing Pin object.
-
-     - ``pin_arguments`` are the same arguments as can be passed to Pin constructor.
-
-     - ``invert`` - if True, the signal will be inverted (active low).
+   - ``pin_obj`` -- an existing :class:`Pin` instance to wrap.
+   - ``pin_args`` / ``pin_kwargs`` -- the arguments to forward to the
+     :class:`Pin` constructor when constructing the underlying pin
+     in-line.
+   - ``invert`` -- if ``True`` the signal is inverted (active low).
 
    Methods
    -------

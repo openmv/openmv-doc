@@ -4,44 +4,65 @@
 class SPI -- a controller-driven serial protocol
 ================================================
 
-SPI is a serial protocol that is driven by a controller.  At the physical level
-there are 3 lines: SCK, MOSI, MISO.
+SPI is a synchronous serial protocol driven by a controller. At the
+physical level it uses three lines (``SCK``, ``MOSI``, ``MISO``) plus a
+per-peripheral chip-select line.
 
-See usage model of I2C; SPI is very similar.  Main difference is
-parameters to init the SPI bus::
+Usage is similar to :class:`I2C`; the main difference is the parameters
+passed when initialising the bus::
 
     from pyb import SPI
-    spi = SPI(2, SPI.MASTER, baudrate=600000, polarity=1, phase=0, crc=0x7)
+    spi = SPI(2, SPI.CONTROLLER, baudrate=600000, polarity=1, phase=0, crc=0x7)
 
-Only required parameter is mode, SPI.CONTROLLER or SPI.PERIPHERAL.  Polarity can be
-0 or 1, and is the level the idle clock line sits at.  Phase can be 0 or 1
-to sample data on the first or second clock edge respectively.  Crc can be
-None for no CRC, or a polynomial specifier.
+The only required parameter is *mode* (``SPI.CONTROLLER`` or
+``SPI.PERIPHERAL``). ``polarity`` is the idle level of ``SCK`` (``0`` or
+``1``). ``phase`` selects whether data is sampled on the first (``0``) or
+second (``1``) clock edge. ``crc`` is either ``None`` (no CRC) or a CRC
+polynomial.
 
-Additional methods for SPI::
+Transferring data::
 
-    data = spi.send_recv(b'1234')        # send 4 bytes and receive 4 bytes
+    data = spi.send_recv(b"1234")        # send 4 bytes and receive 4 bytes
     buf = bytearray(4)
-    spi.send_recv(b'1234', buf)          # send 4 bytes and receive 4 into buf
-    spi.send_recv(buf, buf)              # send/recv 4 bytes from/to buf
+    spi.send_recv(b"1234", buf)          # send 4 bytes and receive 4 into buf
+    spi.send_recv(buf, buf)              # send/receive 4 bytes through buf
 
 Constructors
 ------------
 
 .. class:: SPI(bus: Union[int, str], *args, **kwargs)
 
-   Construct an SPI object on the given bus.  ``bus`` can be 2.
-   With no additional parameters, the SPI object is created but
-   not initialised (it has the settings from the last initialisation of
-   the bus, if any).  If extra arguments are given, the bus is initialised.
-   See ``init`` for parameters of initialisation.
+   Construct an SPI object on the given ``bus`` (an integer SPI peripheral
+   index, e.g. ``2`` for ``SPI2``). With no additional parameters the
+   object is created but not initialised (it retains the previous bus
+   settings, if any); if extra arguments are given the bus is initialised
+   with them. See :meth:`init` for the available parameters.
 
-   The physical pins of the SPI buses are:
+   ``SPI(2)`` is wired to the same header pins on every STM32 OpenMV Cam:
 
-     - ``SPI(2)``: ``(NSS, SCK, MISO, MOSI) = (P3, P2, P1, P0) = (PB12, PB13, PB14, PB15)``
+   .. list-table::
+      :header-rows: 1
+      :widths: 28 28 44
 
-   At the moment, the NSS pin is not used by the SPI driver and is free
-   for other use.
+      * - Signal
+        - Header pin
+        - Notes
+      * - ``NSS``
+        - ``P3``
+        - Not driven by the SPI peripheral; free to use as a normal GPIO chip-select.
+      * - ``SCK``
+        - ``P2``
+        -
+      * - ``MISO``
+        - ``P1``
+        -
+      * - ``MOSI``
+        - ``P0``
+        -
+
+   On the OpenMV Cam N6 ``SPI(4)`` is additionally available on header
+   pins ``P15`` (``NSS``), ``P16`` (``SCK``), ``P17`` (``MISO``) and
+   ``P18`` (``MOSI``).
 
    Methods
    -------
@@ -66,14 +87,14 @@ Constructors
         - ``ti`` True indicates Texas Instruments, as opposed to Motorola, signal conventions.
         - ``crc`` can be None for no CRC, or a polynomial specifier.
 
-      Note that the SPI clock frequency will not always be the requested baudrate.
-      The hardware only supports baudrates that are the APB bus frequency
-      divided by a prescaler, which can be 2, 4, 8, 16, 32,
-      64, 128 or 256.  SPI(2) is on AHB1.  For precise
-      control over the SPI clock frequency, specify ``prescaler`` instead of
-      ``baudrate``.
+      The SPI clock frequency may not match ``baudrate`` exactly. The
+      hardware only supports clocks that are the parent APB bus frequency
+      divided by a power-of-two prescaler (``2, 4, 8, 16, 32, 64, 128`` or
+      ``256``); the driver picks the highest one that does not exceed the
+      requested ``baudrate``. ``SPI(2)`` is on APB1. For precise control
+      over the clock, set ``prescaler`` directly instead of ``baudrate``.
 
-      Printing the SPI object will show you the computed baudrate and the chosen
+      Printing the SPI object shows the computed baud rate and chosen
       prescaler.
 
    .. method:: recv(recv: Union[int, bytearray], *, timeout: int = 5000) -> bytes

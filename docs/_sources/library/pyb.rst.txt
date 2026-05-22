@@ -4,15 +4,16 @@
 .. module:: pyb
    :synopsis: functions related to the board
 
-.. note::
+.. warning::
 
-   The ``pyb`` module is deprecated and has been for a long time. Use
-   the cross-port :mod:`machine` module (see :doc:`machine`) for new
-   code. ``pyb`` is retained for backwards compatibility with older
-   OpenMV / pyboard scripts but no new features will be added, and it
-   may be removed on future board builds.
+   **The pyb module is deprecated.** Use the cross-port :mod:`machine`
+   module for new code -- it provides the same functionality on every
+   OpenMV Cam regardless of MCU family, whereas ``pyb`` exists only on
+   the STM32-based boards. ``pyb`` is retained for backwards compatibility
+   with older scripts, no new features will be added, and it may be
+   removed in a future release.
 
-The ``pyb`` module contains specific functions related to the board.
+The ``pyb`` module contains STM32-specific functions related to the board.
 
 Time related functions
 ----------------------
@@ -86,7 +87,9 @@ Reset related functions
 
 .. function:: bootloader() -> None
 
-   Activate the bootloader without BOOT\* pins.
+   Reset into the DFU bootloader without needing the BOOT pin to be
+   asserted at reset. Useful for triggering firmware updates from running
+   code.
 
 .. function:: fault_debug(value: bool) -> None
 
@@ -121,41 +124,39 @@ Interrupt related functions
 
 .. function:: freq(sysclk: Optional[int] = None, hclk: Optional[int] = None, pclk1: Optional[int] = None, pclk2: Optional[int] = None) -> Optional[Tuple[int, int, int, int]]
 
-   If given no arguments, returns a tuple of clock frequencies:
-   (sysclk, hclk, pclk1, pclk2).
-   These correspond to:
+   If given no arguments, returns a tuple of clock frequencies
+   ``(sysclk, hclk, pclk1, pclk2)`` in hertz:
 
-    - sysclk: frequency of the CPU
-    - hclk: frequency of the AHB bus, core memory and DMA
-    - pclk1: frequency of the APB1 bus
-    - pclk2: frequency of the APB2 bus
+   .. list-table::
+      :header-rows: 1
+      :widths: 18 82
 
-   If given any arguments then the function sets the frequency of the CPU,
-   and the buses if additional arguments are given.  Frequencies are given in
-   Hz.  Eg freq(120000000) sets sysclk (the CPU frequency) to 120MHz.  Note that
-   not all values are supported and the largest supported frequency not greater
-   than the given value will be selected.
+      * - Field
+        - Meaning
+      * - ``sysclk``
+        - CPU frequency
+      * - ``hclk``
+        - AHB bus, core memory and DMA frequency
+      * - ``pclk1``
+        - APB1 bus frequency
+      * - ``pclk2``
+        - APB2 bus frequency
 
-   Supported sysclk frequencies are (in MHz): 8, 16, 24, 30, 32, 36, 40, 42, 48,
-   54, 56, 60, 64, 72, 84, 96, 108, 120, 144, 168.
+   If given any arguments then the function sets the CPU frequency (and
+   bus frequencies if additional arguments are supplied). Frequencies are
+   in hertz; the largest supported frequency not greater than the given
+   value is selected. The set of valid ``sysclk`` frequencies and the
+   maximum ``hclk`` / ``pclk1`` / ``pclk2`` values depend on the MCU --
+   refer to the relevant STM32 reference manual for the OpenMV Cam in
+   use. The bus frequencies are derived from ``sysclk`` via prescalers
+   the driver picks to best match the requested values.
 
-   The maximum frequency of hclk is 168MHz, of pclk1 is 42MHz, and of pclk2 is
-   84MHz.  Be sure not to set frequencies above these values.
+   .. warning::
 
-   The hclk, pclk1 and pclk2 frequencies are derived from the sysclk frequency
-   using a prescaler (divider).  Supported prescalers for hclk are: 1, 2, 4, 8,
-   16, 64, 128, 256, 512.  Supported prescalers for pclk1 and pclk2 are: 1, 2,
-   4, 8.  A prescaler will be chosen to best match the requested frequency.
-
-   A sysclk frequency of
-   8MHz uses the HSE (external crystal) directly and 16MHz uses the HSI
-   (internal oscillator) directly.  The higher frequencies use the HSE to
-   drive the PLL (phase locked loop), and then use the output of the PLL.
-
-   Note that if you change the frequency while the USB is enabled then the USB
-   may become unreliable. It is best to change the frequency in :ref:`boot.py`,
-   before the USB peripheral is started. Also note that sysclk frequencies below
-   36MHz do not allow the USB to function correctly.
+      Changing the frequency while USB is enabled may make USB
+      unreliable. Change it from :ref:`boot.py`, before the USB
+      peripheral is started, and do not select a ``sysclk`` value too
+      low for the USB clock requirements of the MCU.
 
 Power related functions
 -----------------------
@@ -172,23 +173,19 @@ Power related functions
 
 .. function:: stop() -> None
 
-   Put the OpenMV Cam in a "sleeping" state.
-
-   This reduces power consumption to less than 500 uA.  To wake from this
-   sleep state requires an external interrupt or a real-time-clock event.
-   Upon waking execution continues where it left off.
-
-   See :meth:`rtc.wakeup` to configure a real-time-clock wakeup event.
+   Put the OpenMV Cam into the STM32 *stop* low-power state. Execution
+   continues from this point on wake-up. Wake-up requires an external
+   interrupt or a real-time-clock event; see :meth:`pyb.RTC.wakeup` to
+   configure one. The exact achievable current draw depends on the
+   board and on which peripherals are left clocked.
 
 .. function:: standby() -> None
 
-   Put the OpenMV Cam into a "deep sleep" state.
-
-   This reduces power consumption to less than 50 uA.  To wake from this
-   sleep state requires a real-time-clock event.
-   Upon waking the system undergoes a hard reset.
-
-   See :meth:`rtc.wakeup` to configure a real-time-clock wakeup event.
+   Put the OpenMV Cam into the STM32 *standby* deep-sleep state. This
+   is the lowest power-down level; the device exits via a hard reset
+   when woken, so execution does not resume in place. Wake-up requires
+   a real-time-clock event; see :meth:`pyb.RTC.wakeup` to configure
+   one. The exact achievable current draw depends on the board.
 
 Miscellaneous functions
 -----------------------
@@ -220,36 +217,35 @@ Miscellaneous functions
 
 .. function:: mount(device: Any, mountpoint: str, *, readonly: bool = False, mkfs: bool = False) -> None
 
-   .. note:: This function is deprecated. Mounting and unmounting devices should
-      be performed by :meth:`vfs.mount` and :meth:`vfs.umount` instead.
+   .. note::
 
-   Mount a block device and make it available as part of the filesystem.
-   ``device`` must be an object that provides the block protocol. (The
-   following is also deprecated. See :class:`vfs.AbstractBlockDev` for the
-   correct way to create a block device.)
+      This function is deprecated. Use :func:`vfs.mount` / :func:`vfs.umount`
+      and a :class:`vfs.AbstractBlockDev`-derived block device instead.
 
-    - ``readblocks(self, blocknum, buf)``
-    - ``writeblocks(self, blocknum, buf)`` (optional)
-    - ``count(self)``
-    - ``sync(self)`` (optional)
+   Mount a block device under ``mountpoint``. ``device`` must implement the
+   legacy pyb block-device protocol (also deprecated -- see
+   :class:`vfs.AbstractBlockDev` for the modern interface):
 
-   ``readblocks`` and ``writeblocks`` should copy data between ``buf`` and
-   the block device, starting from block number ``blocknum`` on the device.
-   ``buf`` will be a bytearray with length a multiple of 512.  If
-   ``writeblocks`` is not defined then the device is mounted read-only.
-   The return value of these two functions is ignored.
+   .. list-table::
+      :header-rows: 1
+      :widths: 38 62
 
-   ``count`` should return the number of blocks available on the device.
-   ``sync``, if implemented, should sync the data on the device.
+      * - Method
+        - Purpose
+      * - ``readblocks(self, blocknum, buf)``
+        - Copy ``buf`` worth of bytes from the device starting at block
+          ``blocknum``. ``buf`` length is a multiple of 512.
+      * - ``writeblocks(self, blocknum, buf)`` *(optional)*
+        - Write ``buf`` to the device starting at block ``blocknum``. If
+          omitted, the device is mounted read-only.
+      * - ``count(self)``
+        - Return the number of 512-byte blocks on the device.
+      * - ``sync(self)`` *(optional)*
+        - Flush any cached writes.
 
-   The parameter ``mountpoint`` is the location in the root of the filesystem
-   to mount the device.  It must begin with a forward-slash.
-
-   If ``readonly`` is ``True``, then the device is mounted read-only,
-   otherwise it is mounted read-write.
-
-   If ``mkfs`` is ``True``, then a new filesystem is created if one does not
-   already exist.
+   ``mountpoint`` is the path in the root of the filesystem to mount the
+   device at; it must begin with a forward slash. ``readonly`` forces a
+   read-only mount. ``mkfs`` creates a new filesystem if none is present.
 
 .. function:: repl_uart(uart: Optional[UART] = None) -> Optional[UART]
 
@@ -274,15 +270,27 @@ Miscellaneous functions
    If called with *modestr* provided, attempts to configure the USB mode.
    The following values of *modestr* are understood:
 
-   - ``None``: disables USB
-   - ``'VCP'``: enable with VCP (Virtual COM Port) interface
-   - ``'MSC'``: enable with MSC (mass storage device class) interface
-   - ``'VCP+MSC'``: enable with VCP and MSC
-   - ``'VCP+HID'``: enable with VCP and HID (human interface device)
-   - ``'VCP+MSC+HID'``: enabled with VCP, MSC and HID (only available on PYBD boards)
+   .. list-table::
+      :header-rows: 1
+      :widths: 28 72
 
-   For backwards compatibility, ``'CDC'`` is understood to mean
-   ``'VCP'`` (and similarly for ``'CDC+MSC'`` and ``'CDC+HID'``).
+      * - *modestr*
+        - Configures
+      * - ``None``
+        - Disables USB.
+      * - ``'VCP'``
+        - VCP (Virtual COM Port) only.
+      * - ``'MSC'``
+        - MSC (USB mass storage class) only.
+      * - ``'VCP+MSC'``
+        - VCP and MSC.
+      * - ``'VCP+HID'``
+        - VCP and HID (human interface device).
+      * - ``'VCP+MSC+HID'``
+        - VCP, MSC and HID together. Not supported on every OpenMV Cam.
+
+   For backwards compatibility, ``'CDC'`` is understood to mean ``'VCP'``
+   (and similarly for ``'CDC+MSC'`` and ``'CDC+HID'``).
 
    The *port* parameter should be an integer (0, 1, ...) and selects which
    USB port to use if the board supports multiple ports.  A value of -1 uses

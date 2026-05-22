@@ -35,23 +35,85 @@ indicate, l2cap recv/send, pair) are awaitable and support timeouts.
 * **Security** --- JSON-backed key/secret management, initiate pairing,
   query encryption / authentication state.
 
-The package is delivered as a meta-package built from several optional
-sub-packages, any combination of which may be installed:
+Examples
+--------
 
-* ``aioble-core`` --- core BLE functionality required by every aioble user.
-* ``aioble-central`` --- Central (and Observer) role: scanning and
-  connecting.
-* ``aioble-client`` --- GATT client (typically used by central-role
-  devices, but can also be used on peripherals).
-* ``aioble-peripheral`` --- Peripheral (and Broadcaster) role: advertising.
-* ``aioble-server`` --- GATT server (typically used by peripheral-role
-  devices, but can also be used on centrals).
-* ``aioble-l2cap`` --- L2CAP connection-oriented-channel support.
-* ``aioble-security`` --- pairing and bonding support.
+Scan for nearby BLE devices and print each one as it is seen::
 
-Installing the meta-package ``aioble`` pulls all of them in.
+    import aioble
+    import asyncio
 
-Requires MicroPython v1.17 or higher.
+    async def find_devices():
+        async with aioble.scan(duration_ms=5000, active=True) as scanner:
+            async for result in scanner:
+                print(result.device.addr_hex(), result.rssi, result.name())
+
+    asyncio.run(find_devices())
+
+Connect to a peripheral advertising the Heart Rate service as a **central**
+and subscribe to its measurement notifications::
+
+    import aioble
+    import asyncio
+    import bluetooth
+
+    _HR_SERVICE = bluetooth.UUID(0x180D)
+    _HR_MEASUREMENT = bluetooth.UUID(0x2A37)
+
+    async def connect_and_read():
+        device = None
+        async with aioble.scan(duration_ms=5000, active=True) as scanner:
+            async for result in scanner:
+                if _HR_SERVICE in result.services():
+                    device = result.device
+                    break
+        if device is None:
+            return
+
+        async with await device.connect() as conn:
+            service = await conn.service(_HR_SERVICE)
+            char = await service.characteristic(_HR_MEASUREMENT)
+            await char.subscribe(notify=True)
+            while True:
+                data = await char.notified()
+                print("notify:", data)
+
+    asyncio.run(connect_and_read())
+
+Act as a **peripheral**: register a GATT service, advertise it, and push
+notifications to whoever connects::
+
+    import aioble
+    import asyncio
+    import bluetooth
+    import struct
+
+    _ENV_SERVICE = bluetooth.UUID(0x181A)
+    _TEMP_CHAR = bluetooth.UUID(0x2A6E)
+
+    def encode_temperature(deg_c):
+        # Bluetooth Temperature (0x2A6E) is sint16 little-endian, 0.01 degC units.
+        return struct.pack("<h", round(deg_c * 100))
+
+    service = aioble.Service(_ENV_SERVICE)
+    temp_char = aioble.Characteristic(service, _TEMP_CHAR, read=True, notify=True)
+    aioble.register_services(service)
+
+    async def peripheral_task():
+        while True:
+            connection = await aioble.advertise(
+                interval_us=250000,
+                name="openmv-sensor",
+                services=[_ENV_SERVICE],
+                appearance=0x0300,
+            )
+            print("connected:", connection.device.addr_hex())
+            async with connection:
+                while connection.is_connected():
+                    temp_char.write(encode_temperature(23.68), send_update=True)
+                    await asyncio.sleep(1)
+
+    asyncio.run(peripheral_task())
 
 Module-level functions
 ----------------------

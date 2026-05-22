@@ -14,38 +14,38 @@ class Model:
     is None.
     """
     def __init__(self, path: str, postprocess: object = None) -> None: ...
-    input_dtype: Any
+    input_dtype: list[str]
     """
     A list of single-character strings giving the dtype of each input tensor:
     'b' (int8), 'B' (uint8), 'h' (int16), 'H' (uint16), 'f' (float32).
     """
-    input_scale: Any
+    input_scale: list[float]
     """A list of floats giving the quantization scale of each input tensor."""
-    input_shape: Any
+    input_shape: list[tuple[int, ...]]
     """A list of tuples giving the shape of each input tensor."""
-    input_zero_point: Any
+    input_zero_point: list[int]
     """A list of ints giving the quantization zero point of each input tensor."""
-    labels: Any
+    labels: list[str]
     """
     List of label strings loaded from the .txt file alongside the model, or None if no such
     file exists.
     """
-    len: Any
+    len: int
     """The size of the loaded model in bytes."""
-    output_dtype: Any
+    output_dtype: list[str]
     """
     A list of single-character strings giving the dtype of each output tensor:
     'b' (int8), 'B' (uint8), 'h' (int16), 'H' (uint16), 'f' (float32).
     """
-    output_scale: Any
+    output_scale: list[float]
     """A list of floats giving the quantization scale of each output tensor."""
-    output_shape: Any
+    output_shape: list[tuple[int, ...]]
     """A list of tuples giving the shape of each output tensor."""
-    output_zero_point: Any
+    output_zero_point: list[int]
     """A list of ints giving the quantization zero point of each output tensor."""
-    postprocess: Any
+    postprocess: object
     """The post-processing callable supplied to the constructor, or None."""
-    ram: Any
+    ram: int
     """The amount of RAM used by the model’s tensor arena, in bytes."""
     def predict(self, inputs: list, *, callback: object = None) -> list:
         """

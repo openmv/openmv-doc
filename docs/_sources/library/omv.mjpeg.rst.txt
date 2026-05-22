@@ -9,7 +9,9 @@ clips as compressed image data. Use `gif` for short clips.
 
 Example usage::
 
-    import csi, mjpeg, time
+    import csi
+    import mjpeg
+    import time
 
     # Setup camera.
     csi0 = csi.CSI()
@@ -17,14 +19,13 @@ Example usage::
     csi0.pixformat(csi.RGB565)
     csi0.framesize(csi.QVGA)
     csi0.snapshot(time=2000)
-    c = time.clock()
 
     # Create the mjpeg object.
     m = mjpeg.Mjpeg("example.mjpeg")
 
-    # Add frames.
-    for i in range(100):
-        c.tick()
+    # Record for 20 seconds.
+    start = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), start) < 20000:
         m.add_frame(csi0.snapshot())
 
     # Finalize.

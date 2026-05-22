@@ -4,20 +4,38 @@
 class DAC -- digital to analog conversion
 =========================================
 
-The DAC is used to output analog values (a specific voltage) on pin X5 or pin X6.
-The voltage will be between 0 and 3.3V.
+The DAC outputs analog voltages between 0 V and 3.3 V on one of two STM32
+DAC channels.
 
-*This module will undergo changes to the API.*
+On every STM32 OpenMV Cam that exposes ``pyb.DAC`` (M4 / M7 / H7 / H7
+Plus / Pure Thermal) the channels are wired as follows:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 24 28 48
+
+   * - DAC channel
+     - Header pin
+     - STM32 pin
+   * - ``DAC(1)``
+     - *(not on header)*
+     - ``PA4``
+   * - ``DAC(2)``
+     - ``P6``
+     - ``PA5``
+
+The OpenMV Cam N6 does not have a DAC peripheral; ``pyb.DAC`` is
+unavailable on that board.
 
 Example usage::
 
     from pyb import DAC
 
-    dac = DAC(1)            # create DAC 1 on pin X5
-    dac.write(128)          # write a value to the DAC (makes X5 1.65V)
+    dac = DAC(1)            # create DAC channel 1
+    dac.write(128)          # write a value to the DAC (approximately 1.65 V)
 
-    dac = DAC(1, bits=12)   # use 12 bit resolution
-    dac.write(4095)         # output maximum value, 3.3V
+    dac = DAC(1, bits=12)   # use 12-bit resolution
+    dac.write(4095)         # output maximum value, 3.3 V
 
 To output a continuous sine-wave::
 
@@ -53,8 +71,9 @@ Constructors
 
    Construct a new DAC object.
 
-   ``port`` can be a pin object, or an integer (1 or 2).
-   DAC(1) is on pin X5 and DAC(2) is on pin X6.
+   ``port`` can be a :class:`Pin` object, or an integer (``1`` or ``2``)
+   selecting DAC channel 1 or 2. The physical pin each channel is routed
+   to depends on the OpenMV Cam.
 
    ``bits`` is an integer specifying the resolution, and can be 8 or 12.
    The maximum value for the write and write_timed methods will be

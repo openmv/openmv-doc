@@ -7,9 +7,8 @@
 This module provides a driver for WS2812 / NeoPixel LED strips. The driver
 relies on `machine.bitstream()` to generate the precisely timed signal the LEDs
 expect, so it works on any port whose ``machine`` module implements
-``bitstream``. On the OpenMV-supported Arduino Giga and Nano boards the module
-is included by default; on other ports it can be installed with :term:`mip`
-or copied from :term:`micropython-lib`.
+``bitstream``. It is included by default on the current OpenMV Cams and on
+the supported Arduino boards.
 
 The application sets pixel data via item assignment or `NeoPixel.fill()` and
 then calls `NeoPixel.write()` to update the strip. Each pixel is exposed as an
@@ -21,9 +20,8 @@ Example::
     import machine
     import neopixel
 
-    # 32 LED strip connected to pin X8.
-    p = machine.Pin.board.X8
-    n = neopixel.NeoPixel(p, 32)
+    # 32 LED strip connected to pin P8.
+    n = neopixel.NeoPixel(machine.Pin("P8"), 32)
 
     # Draw a red gradient.
     for i in range(32):

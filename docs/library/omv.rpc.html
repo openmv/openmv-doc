@@ -280,7 +280,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/7b9e177ac287c9289ba7ce634d01e7c1a7167154/docs/library/omv.rpc.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/omv.rpc.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -360,9 +360,41 @@ allows for the reverse too if you want your OpenMV Cam to be able to execute rem
 (or python) calls on another microcontroller or computer.</p>
 <section id="how-to-use-the-library">
 <h2>How to use the Library<a class="headerlink" href="#how-to-use-the-library" title="Link to this heading">¶</a></h2>
-<p>Please checkout the example scripts in OpenMV IDE under <code class="docutils literal notranslate"><span class="pre">Remote</span> <span class="pre">Control</span></code>.</p>
-<p>You will need to edit the example code to choose which interface you want to use and to play with
-the settings the scripts use.</p>
+<p>A minimal <strong>slave</strong> that exposes one callback over UART:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">rpc</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">csi0</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="6"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="n">interface</span> <span class="o">=</span> <span class="n">rpc</span><span class="o">.</span><span class="n">rpc_uart_slave</span><span class="p">(</span><span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="k">def</span><span class="w"> </span><span class="nf">snapshot</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>
+</span><span data-line="12">    <span class="k">return</span> <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span><span class="o">.</span><span class="n">bytearray</span><span class="p">()</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="n">interface</span><span class="o">.</span><span class="n">register_callback</span><span class="p">(</span><span class="n">snapshot</span><span class="p">)</span>
+</span><span data-line="15"><span class="n">interface</span><span class="o">.</span><span class="n">loop</span><span class="p">()</span>  <span class="c1"># Does not return.</span>
+</span></pre></div>
+</div>
+<p>The matching <strong>master</strong> that asks the slave for a JPEG frame:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">rpc</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">interface</span> <span class="o">=</span> <span class="n">rpc</span><span class="o">.</span><span class="n">rpc_uart_master</span><span class="p">(</span><span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">result</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;snapshot&quot;</span><span class="p">)</span>
+</span><span data-line="6"><span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="7">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;communication failed&quot;</span><span class="p">)</span>
+</span><span data-line="8"><span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="9">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;remote function not registered on the slave&quot;</span><span class="p">)</span>
+</span><span data-line="10"><span class="k">else</span><span class="p">:</span>
+</span><span data-line="11">    <span class="c1"># result is a memoryview of the JPEG bytes returned by the slave.</span>
+</span><span data-line="12">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;received&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">),</span> <span class="s2">&quot;bytes&quot;</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Swap <code class="docutils literal notranslate"><span class="pre">rpc_uart_master</span></code> / <code class="docutils literal notranslate"><span class="pre">rpc_uart_slave</span></code> for the matching <code class="docutils literal notranslate"><span class="pre">can</span></code>,
+<code class="docutils literal notranslate"><span class="pre">i2c</span></code> or <code class="docutils literal notranslate"><span class="pre">spi</span></code> pair to use a different transport.</p>
 <p>In general, for the controller device to use the <code class="docutils literal notranslate"><span class="pre">rpc</span></code> library you will create an interface object
 using the <code class="docutils literal notranslate"><span class="pre">rpc</span></code> library. For example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">interface</span> <span class="o">=</span> <span class="n">rpc</span><span class="o">.</span><span class="n">rpc_uart_master</span><span class="p">(</span><span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
@@ -691,7 +723,7 @@ TX. Both devices must share a common ground.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 19 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 22 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

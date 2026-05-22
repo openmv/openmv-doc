@@ -18,29 +18,29 @@ class ModbusRTU:
     initialized to zero.
     """
     def __init__(self, uart: machine.UART, slave_id: int = 0x01, register_num: int = 30) -> None: ...
-    CRC16_TABLE: Any
+    CRC16_TABLE: list[int]
     """
     Precomputed 256-entry lookup table for the Modbus CRC-16 polynomial,
     used by crc16().
     """
-    REGISTER: Any
+    REGISTER: list[int]
     """
     List of length register_num holding the current 16-bit register
     values. Reads and writes performed via incoming Modbus requests update
     this list. Application code may read from or write to this list directly
     to exchange data with the Modbus master.
     """
-    SLAVE_ID: Any
+    SLAVE_ID: int
     """
     The Modbus slave address this instance will respond to. Set from the
     slave_id constructor argument.
     """
-    register_num: Any
+    register_num: int
     """
     The number of 16-bit holding registers, set from the register_num
     constructor argument.
     """
-    uart: Any
+    uart: machine.UART
     """The UART instance passed to the constructor, used for all I/O."""
     def any(self) -> int:
         """

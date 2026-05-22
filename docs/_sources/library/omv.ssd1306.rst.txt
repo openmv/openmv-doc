@@ -11,10 +11,11 @@ transport variants are supported: I2C (:class:`SSD1306_I2C`) and SPI
 
 Example::
 
-    from machine import I2C, Pin
+    from machine import I2C
     import ssd1306
 
-    i2c = I2C(0, scl=Pin(22), sda=Pin(21))
+    # OpenMV Cam default external I2C bus (SCL=P4, SDA=P5).
+    i2c = I2C(2)
     oled = ssd1306.SSD1306_I2C(128, 64, i2c)
     oled.fill(0)
     oled.text("Hello", 0, 0)

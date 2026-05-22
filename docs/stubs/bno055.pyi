@@ -10,15 +10,48 @@ ACCONLY_MODE: int
 """Accelerometer-only non-fusion mode (0x01)."""
 AMG_MODE: int
 """Accelerometer + magnetometer + gyroscope non-fusion mode (0x07)."""
-AXIS_P0: int
-AXIS_P1: int
-AXIS_P2: int
-AXIS_P3: int
-AXIS_P4: int
-"""Default axis placement used by the constructor."""
-AXIS_P5: int
-AXIS_P6: int
-AXIS_P7: int
+AXIS_P0: bytes
+"""
+Chip face up, rotated 90° CCW from AXIS_P1. Output axes:
+X = -Yc, Y = +Xc, Z = +Zc.
+"""
+AXIS_P1: bytes
+"""
+Chip face up in the BNO055 datasheet’s default orientation. No remap
+is applied: X = +Xc, Y = +Yc, Z = +Zc.
+"""
+AXIS_P2: bytes
+"""
+Chip face up, rotated 180° from AXIS_P1. Output axes:
+X = -Xc, Y = -Yc, Z = +Zc.
+"""
+AXIS_P3: bytes
+"""
+Chip face up, rotated 90° CW from AXIS_P1. Output axes:
+X = +Yc, Y = -Xc, Z = +Zc.
+"""
+AXIS_P4: bytes
+"""
+Chip flipped onto its back (component side down) relative to
+AXIS_P1. Output axes: X = +Xc, Y = -Yc, Z = -Zc.
+This is the placement used by the BNO055 constructor when
+no axis argument is supplied.
+"""
+AXIS_P5: bytes
+"""
+Chip face down, rotated 90° CCW from AXIS_P4. Output axes:
+X = +Yc, Y = +Xc, Z = -Zc.
+"""
+AXIS_P6: bytes
+"""
+Chip face down, rotated 180° from AXIS_P4. Output axes:
+X = -Yc, Y = -Xc, Z = -Zc.
+"""
+AXIS_P7: bytes
+"""
+Chip face down, rotated 90° CW from AXIS_P4. Output axes:
+X = -Xc, Y = +Yc, Z = -Zc.
+"""
 COMPASS_MODE: int
 """Compass fusion mode using accelerometer + magnetometer (0x09)."""
 CONFIG_MODE: int

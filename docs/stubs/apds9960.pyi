@@ -10,7 +10,7 @@ APDS9960_AGAIN_4X: int
 """4x ALS gain (1). Default applied by the constructor."""
 APDS9960_AGAIN_64X: int
 """64x ALS gain (3)."""
-APDS9960_DEV_ID: int
+APDS9960_DEV_ID: list
 """
 Default list of valid device-ID register values
 ([0xAB, 0x9C, 0xA8, -0x55]).

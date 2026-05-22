@@ -4,34 +4,63 @@ from typing import Any
 class aes:
     """
     Create a new AES cipher object, suitable for encryption or decryption.
-    After initialization, the cipher object can be used only for one
-    direction — running decrypt() after encrypt() (or vice versa)
-    is not supported.
-    Parameters are:
-    key is an encryption/decryption key (bytes-like).
+    After initialisation, the cipher object can be used only for one
+    direction — running decrypt() after encrypt() (or vice
+    versa) is not supported.
+    Parameters:
+    key – the encryption/decryption key. Must be exactly 16 bytes
+    (AES-128) or 32 bytes (AES-256); AES-192 is not supported. Any
+    buffer-protocol object is accepted.
 
-    mode is:
+    mode – selects the block-cipher mode:
 
-    1 (or cryptolib.MODE_ECB if it exists) for Electronic Code Book (ECB).
 
-    2 (or cryptolib.MODE_CBC if it exists) for Cipher Block Chaining (CBC).
 
-    6 (or cryptolib.MODE_CTR if it exists) for Counter mode (CTR).
 
-    IV is an initialization vector for CBC mode.
 
-    For Counter mode, IV is the initial value for the counter.
+
+
+    Value
+
+    Name
+
+    Description
+
+    1
+
+    ECB
+
+    Electronic Code Book. Each 16-byte block is encrypted
+    independently; identical plaintext blocks produce identical
+    ciphertext. Generally not recommended for new designs.
+
+    2
+
+    CBC
+
+    Cipher Block Chaining. Each block is XORed with the previous
+    ciphertext block before encryption. Requires a 16-byte
+    IV.
+
+    ECB and CBC both require the input length to be a multiple of the
+    16-byte AES block size.
+
+    IV – the 16-byte initialisation vector for CBC mode. Ignored
+    for ECB.
     """
     def __init__(self, key: bytes | bytearray | memoryview, mode: int, IV: bytes | bytearray | memoryview | None = None) -> None: ...
     def decrypt(self, in_buf: bytes | bytearray | memoryview, out_buf: bytearray | memoryview | None = None) -> bytes:
-        """Like encrypt(), but for decryption."""
+        """Like encrypt(), but reverses the operation."""
         ...
     def encrypt(self, in_buf: bytes | bytearray | memoryview, out_buf: bytearray | memoryview | None = None) -> bytes:
         """
-        Encrypt in_buf. If no out_buf is given result is returned as a
-        newly allocated bytes object. Otherwise, result is written into
-        mutable buffer out_buf. in_buf and out_buf can also refer
-        to the same mutable buffer, in which case data is encrypted in-place.
+        Encrypt in_buf. The buffer length must be a multiple of 16
+        bytes; pad the plaintext yourself before calling.
+        If out_buf is omitted the result is returned as a newly
+        allocated bytes object. Otherwise the ciphertext is
+        written into the mutable buffer out_buf, which must be at
+        least as long as in_buf. in_buf and out_buf may refer
+        to the same buffer for in-place encryption.
         """
         ...
 

@@ -4,76 +4,89 @@
 class I2C -- a two-wire serial protocol
 =======================================
 
-I2C is a two-wire protocol for communicating between devices.  At the physical
-level it consists of 2 wires: SCL and SDA, the clock and data lines respectively.
-OpenMV Cam does not provide Pullups on the SDA or SCL lines and external pullups
-are required on both SDA and SCL lines for the I2C bus to be functional.
+I2C is a two-wire protocol for communicating between devices. At the
+physical level it consists of two lines, ``SCL`` (clock) and ``SDA``
+(data). The OpenMV Cam does **not** provide on-board pull-ups on either
+line -- external pull-ups are required on both ``SCL`` and ``SDA`` for the
+bus to function.
 
-I2C objects are created attached to a specific bus.  They can be initialised
-when created, or initialised later on.
+I2C objects are attached to a specific bus and may be initialised at
+construction time or later via :meth:`init`.
 
 Example::
 
     from pyb import I2C
 
-    i2c = I2C(2)                         # create on bus 2
-    i2c = I2C(2, I2C.MASTER)             # create and init as a master
-    i2c.init(I2C.MASTER, baudrate=20000) # init as a master
-    i2c.init(I2C.SLAVE, addr=0x42)       # init as a slave with given address
-    i2c.deinit()                         # turn off the peripheral
+    i2c = I2C(2)                              # create on bus 2 (uninitialised)
+    i2c = I2C(2, I2C.CONTROLLER)              # create and init as a controller
+    i2c.init(I2C.CONTROLLER, baudrate=20000)  # init as a controller
+    i2c.init(I2C.PERIPHERAL, addr=0x42)       # init as a peripheral with the given address
+    i2c.deinit()                              # turn off the peripheral
 
-Printing the i2c object gives you information about its configuration.
+Printing the ``I2C`` object shows its configuration.
 
-The basic methods are send and recv::
+The basic methods are :meth:`send` and :meth:`recv`::
 
-    i2c.send('abc')      # send 3 bytes
+    i2c.send("abc")      # send 3 bytes
     i2c.send(0x42)       # send a single byte, given by the number
     data = i2c.recv(3)   # receive 3 bytes
 
-To receive inplace, first create a bytearray::
+To receive in place, first create a ``bytearray``::
 
     data = bytearray(3)  # create a buffer
     i2c.recv(data)       # receive 3 bytes, writing them into data
 
 You can specify a timeout (in ms)::
 
-    i2c.send(b'123', timeout=2000)   # timeout after 2 seconds
+    i2c.send(b"123", timeout=2000)   # timeout after 2 seconds
 
 A controller must specify the recipient's address::
 
     i2c.init(I2C.CONTROLLER)
-    i2c.send('123', 0x42)        # send 3 bytes to peripheral with address 0x42
-    i2c.send(b'456', addr=0x42)  # keyword for address
+    i2c.send("123", 0x42)        # send 3 bytes to peripheral with address 0x42
+    i2c.send(b"456", addr=0x42)  # keyword for address
 
-Master also has other methods::
+A controller also has these methods::
 
     i2c.is_ready(0x42)           # check if peripheral 0x42 is ready
-    i2c.scan()                   # scan for peripherals on the bus, returning
-                                 #   a list of valid addresses
-    i2c.mem_read(3, 0x42, 2)     # read 3 bytes from memory of peripheral 0x42,
-                                 #   starting at address 2 in the peripheral
-    i2c.mem_write('abc', 0x42, 2, timeout=1000) # write 'abc' (3 bytes) to memory of peripheral 0x42
-                                                # starting at address 2 in the peripheral, timeout after 1 second
+    i2c.scan()                   # scan the bus and return a list of responding addresses
+    i2c.mem_read(3, 0x42, 2)     # read 3 bytes from peripheral 0x42 starting at memaddr 2
+    i2c.mem_write("abc", 0x42, 2, timeout=1000)  # write 3 bytes to peripheral 0x42 at memaddr 2
 
 Constructors
 ------------
 
 .. class:: I2C(bus: Union[int, str], *args, **kwargs)
 
-   Construct an I2C object on the given bus.  ``bus`` can be 2 or 4.
-   With no additional parameters, the I2C object is created but not
-   initialised (it has the settings from the last initialisation of
-   the bus, if any).  If extra arguments are given, the bus is initialised.
-   See ``init`` for parameters of initialisation.
+   Construct an I2C object on the given ``bus`` (an integer peripheral
+   index, e.g. ``2`` for ``I2C2``). With no additional parameters the
+   object is created but not initialised (it retains the previous bus
+   settings, if any); if extra arguments are given the bus is initialised.
+   See :meth:`init` for the available parameters.
 
-   The physical pins of the I2C busses on the OpenMV Cam are:
+   ``I2C(2)`` is wired to the same header pins on every OpenMV Cam that
+   exposes ``pyb.I2C`` (M4 / M7 / H7 / H7 Plus / Pure Thermal):
 
-     - ``I2C(2)`` is on the Y position: ``(SCL, SDA) = (P4, P5) = (PB10, PB11)``
+   .. list-table::
+      :header-rows: 1
+      :widths: 24 24 52
 
-   The physical pins of the I2C busses on the OpenMV Cam M7 are:
+      * - Signal
+        - Header pin
+        - Notes
+      * - ``SCL``
+        - ``P4``
+        -
+      * - ``SDA``
+        - ``P5``
+        -
 
-     - ``I2C(2)`` is on the Y position: ``(SCL, SDA) = (P4, P5) = (PB10, PB11)``
-     - ``I2C(4)`` is on the Y position: ``(SCL, SDA) = (P7, P8) = (PD12, PD13)``
+   ``I2C(4)`` is additionally available on the OpenMV Cam M7, H7, H7 Plus
+   and Pure Thermal with ``SCL`` on header pin ``P7`` and ``SDA`` on
+   header pin ``P8``.
+
+   The OpenMV Cam N6 does not expose ``pyb.I2C``; use :class:`machine.I2C`
+   instead.
 
    Methods
    -------

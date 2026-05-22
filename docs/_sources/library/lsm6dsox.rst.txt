@@ -14,14 +14,15 @@ ST's Unico-GUI tool.
 Example::
 
     import time
-    from machine import Pin, SPI, I2C
+    from machine import I2C
     from lsm6dsox import LSM6DSOX
 
-    # Init in I2C mode.
-    lsm = LSM6DSOX(I2C(0, scl=Pin(13), sda=Pin(12)))
+    # Use the I2C bus the LSM6DSOX is wired to on your board.
+    lsm = LSM6DSOX(I2C(1))
 
-    # Or init in SPI mode.
-    # lsm = LSM6DSOX(SPI(5), cs=Pin(10))
+    # SPI alternative (replace cs= with your board's chip-select pin):
+    # from machine import SPI, Pin
+    # lsm = LSM6DSOX(SPI(1), cs=Pin("CS"))
 
     while True:
         print("Accelerometer: x:{:>8.3f} y:{:>8.3f} z:{:>8.3f}".format(*lsm.accel()))

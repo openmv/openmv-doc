@@ -53,7 +53,9 @@ Constructors
 
    Construct a new timer object of the given id.  If additional
    arguments are given, then the timer is initialised by ``init(...)``.
-   ``id`` can be 1 to 14.
+   The set of valid ``id`` values depends on the STM32 MCU on the OpenMV
+   Cam in use; consult the STM32 reference manual for the available
+   general-purpose and advanced-control timers.
 
    Methods
    -------
@@ -72,10 +74,13 @@ Constructors
           view this as the frequency with which the timer goes through one complete cycle.
 
         - ``prescaler`` [0-0xffff] - specifies the value to be loaded into the
-          timer's Prescaler Register (PSC). The timer clock source is divided by
-          (``prescaler + 1``) to arrive at the timer clock. Timers 2-7 and 12-14
-          have a clock source of 84 MHz (pyb.freq()[2] \* 2), and Timers 1, and 8-11
-          have a clock source of 168 MHz (pyb.freq()[3] \* 2).
+          timer's Prescaler Register (PSC). The timer clock source is divided
+          by ``(prescaler + 1)`` to derive the timer clock. The clock source
+          comes from the timer's parent APB bus and is **MCU-dependent**.
+          On STM32, timers on APB1 typically clock at ``2 * pclk1`` and
+          timers on APB2 at ``2 * pclk2``; read the current bus frequencies
+          with :func:`pyb.freq` and consult the STM32 reference manual for
+          your OpenMV Cam's MCU.
 
         - ``period`` [0-0xffff] for timers 1, 3, 4, and 6-15. [0-0x3fffffff] for timers 2 & 5.
           Specifies the value to be loaded into the timer's AutoReload
@@ -211,17 +216,19 @@ Constructors
       PWM Example::
 
           timer = pyb.Timer(2, freq=1000)
-          ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.X2, pulse_width=8000)
-          ch3 = timer.channel(3, pyb.Timer.PWM, pin=pyb.Pin.board.X3, pulse_width=16000)
+          ch2 = timer.channel(2, pyb.Timer.PWM, pin=pyb.Pin.board.P1, pulse_width=8000)
+          ch3 = timer.channel(3, pyb.Timer.PWM, pin=pyb.Pin.board.P2, pulse_width=16000)
 
-      PWM Motor Example with complementary outputs, dead time, break input and break callback::
+      PWM motor example with complementary outputs, dead time, break input
+      and break callback (the timer/pin/AF combinations and CPU-pin names
+      below are illustrative -- pick a set valid for your OpenMV Cam's MCU)::
 
           from pyb import Timer
-          from machine import Pin # machine.Pin supports alt mode and irq on the same pin.
-          pin_t8_1 = Pin(Pin.board.Y1, mode=Pin.ALT, af=Pin.AF3_TIM8)   # Pin PC6, TIM8_CH1
-          pin_t8_1n = Pin(Pin.board.X8, mode=Pin.ALT, af=Pin.AF3_TIM8)  # Pin PA7, TIM8_CH1N
-          pin_bkin = Pin(Pin.board.X7, mode=Pin.ALT, af=Pin.AF3_TIM8)   # Pin PA6, TIM8_BKIN
-          pin_bkin.irq(handler=break_callabck, trigger=Pin.IRQ_FALLING)
+          from machine import Pin  # machine.Pin supports alt mode and irq on the same pin.
+          pin_t8_1  = Pin(Pin.cpu.C6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1
+          pin_t8_1n = Pin(Pin.cpu.A7, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_CH1N
+          pin_bkin  = Pin(Pin.cpu.A6, mode=Pin.ALT, af=Pin.AF3_TIM8)  # TIM8_BKIN
+          pin_bkin.irq(handler=break_callback, trigger=Pin.IRQ_FALLING)
           timer = pyb.Timer(8, freq=1000, deadtime=1008, brk=Timer.BRK_LOW)
           ch1 = timer.channel(1, pyb.Timer.PWM, pulse_width_percent=30)
 

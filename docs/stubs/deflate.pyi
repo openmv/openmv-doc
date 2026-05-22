@@ -2,13 +2,38 @@
 from typing import Any
 
 AUTO: int
-"""Supported values for the format parameter."""
+"""
+For decompression, auto-detect the input format by inspecting the
+stream’s first bytes (zlib or gzip). For compression, generate a
+raw deflate stream with no header or trailer (equivalent to
+RAW).
+"""
 GZIP: int
-"""Supported values for the format parameter."""
+"""
+A gzip-wrapped deflate stream as defined by
+RFC 1952: a
+header with optional filename/timestamp metadata, the deflate
+payload, and a trailing CRC-32 plus uncompressed length. This is
+the format produced by the gzip command-line tool and by
+gzip.GzipFile. The header does not record the window size,
+so the decompressor must assume 32 KiB unless wbits is set.
+"""
 RAW: int
-"""Supported values for the format parameter."""
+"""
+A raw deflate stream (no header, no trailer, no checksum). Because
+the stream contains no metadata, the decompressor cannot recover
+the window size from the data, so wbits should be set
+explicitly when decompressing – otherwise the default 256-byte
+window may be too small.
+"""
 ZLIB: int
-"""Supported values for the format parameter."""
+"""
+A zlib-wrapped deflate stream as defined by
+RFC 1950: a
+2-byte header that records the window size, the deflate payload,
+and a trailing Adler-32 checksum. Compact and self-describing;
+well suited to embedded use.
+"""
 
 class DeflateIO:
     """

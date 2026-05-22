@@ -16,7 +16,7 @@ listen_s: int
 The currently-active listening socket, or None if the server is
 stopped. Set by start and cleared by stop.
 """
-static_host: int
+static_host: str
 """
 Base URL of the WebREPL static client used by send_html. Defaults to
 "https://micropython.org/webrepl/". May be overridden by setting

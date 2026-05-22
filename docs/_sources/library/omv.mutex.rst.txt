@@ -12,6 +12,25 @@ Lock acquisition and release is performed via a context manager (``with``
 statement), which blocks until the mutex is available. A non-blocking
 :meth:`Mutex.test` method is also provided.
 
+Example::
+
+    from mutex import Mutex
+
+    mtx = Mutex()
+
+    # Acquire for a critical section (blocks if already held).
+    with mtx:
+        # ... protected code, e.g. shared buffer access ...
+        pass
+
+    # Or try without blocking.
+    if mtx.test():
+        try:
+            # ... protected code ...
+            pass
+        finally:
+            mtx.release()
+
 
 class Mutex -- mutex object
 ---------------------------

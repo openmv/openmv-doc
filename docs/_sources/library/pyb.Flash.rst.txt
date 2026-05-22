@@ -49,6 +49,6 @@ Methods
 Hardware Note
 -------------
 
-The OpenMV Cam H7 Plus has external QSPI flash and the firmware is configured
-to use that as the primary flash storage. The other STM32-based OpenMV Cams
-use the internal flash inside the :term:`MCU`.
+The OpenMV Cam **H7 Plus**, **Pure Thermal**, and **N6** use an external
+SPI/QSPI/XSPI flash chip for primary storage. The other STM32-based OpenMV
+Cams use the internal flash inside the :term:`MCU`.

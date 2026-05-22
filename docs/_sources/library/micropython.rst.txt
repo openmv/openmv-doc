@@ -81,26 +81,29 @@ Functions
    should be used to compute differences in stack usage at different points.
 
 .. function:: heap_lock() -> None
-              heap_unlock() -> int
-              heap_locked() -> int
 
-   Lock or unlock the heap.  When locked no memory allocation can occur and a
+   Lock the heap. While locked, no memory allocation can occur and a
    `MemoryError` will be raised if any heap allocation is attempted.
-   `heap_locked()` returns a true value if the heap is currently locked.
 
-   These functions can be nested, ie `heap_lock()` can be called multiple times
-   in a row and the lock-depth will increase, and then `heap_unlock()` must be
-   called the same number of times to make the heap available again.
+   Locks nest: calling `heap_lock()` multiple times increases the lock
+   depth. The heap remains locked until `heap_unlock()` has been called
+   the same number of times.
 
-   Both `heap_unlock()` and `heap_locked()` return the current lock depth
-   (after unlocking for the former) as a non-negative integer, with 0 meaning
-   the heap is not locked.
+   If the REPL becomes active with the heap locked then it will be
+   forcefully unlocked.
 
-   If the REPL becomes active with the heap locked then it will be forcefully
-   unlocked.
+.. function:: heap_unlock() -> int
 
-   Note: `heap_locked()` is not enabled on most ports by default,
-   requires ``MICROPY_PY_MICROPYTHON_HEAP_LOCKED``.
+   Decrement the heap lock depth by one and return the new depth as a
+   non-negative integer. A return value of ``0`` means the heap is no
+   longer locked and allocations are once again permitted.
+
+.. function:: heap_locked() -> int
+
+   Return the current heap lock depth as a non-negative integer; ``0``
+   means the heap is not locked.
+
+   Note: this function is not available on the OpenMV Cam.
 
 .. function:: kbd_intr(chr: int) -> None
 
@@ -166,27 +169,27 @@ Classes
 
 .. class:: RingIO(size: int)
            RingIO(buffer: Union[bytes, bytearray, memoryview])
-   :noindex:
 
-   Provides a fixed-size ringbuffer for bytes with a stream interface. Can be
-   considered like a fifo queue variant of `io.BytesIO`.
+   Provides a fixed-size ringbuffer for bytes with a stream interface. Can
+   be considered a FIFO-queue variant of `io.BytesIO`. The two constructor
+   forms differ only in how the backing buffer is supplied:
 
-   When created with integer size a suitable buffer will be allocated.
-   Alternatively a `bytearray` or similar buffer protocol object can be provided
-   to the constructor for in-place use.
+   - ``RingIO(size)`` allocates the backing buffer internally. The classic
+     ringbuffer algorithm reserves one byte for tracking, so the allocated
+     buffer is one byte larger than ``size`` and the instance can hold the
+     full ``size`` bytes of data. For example, ``RingIO(16)`` allocates a
+     17-byte buffer and holds 16 bytes of data.
 
-   The classic ringbuffer algorithm is used which allows for any size buffer
-   to be used however one byte will be consumed for tracking. If initialised
-   with an integer size this will be accounted for, for example ``RingIO(16)``
-   will allocate a 17 byte buffer internally so it can hold 16 bytes of data.
-   When passing in a pre-allocated buffer however one byte less than its
-   original length will be available for storage, eg. ``RingIO(bytearray(16))``
-   will only hold 15 bytes of data.
+   - ``RingIO(buffer)`` uses the supplied ``buffer`` in place rather than
+     allocating one. Because one byte is reserved for tracking, the
+     instance can hold ``len(buffer) - 1`` bytes of data. For example,
+     ``RingIO(bytearray(16))`` holds 15 bytes of data.
 
-   A RingIO instance can be IRQ / thread safe when used to pass data in a single
-   direction eg. when written to in an IRQ and read from in a non-IRQ function
-   (or vice versa). This does not hold if you try to eg. write to a single instance
-   from both IRQ and non-IRQ code, this would often cause data corruption.
+   A RingIO instance is IRQ-/thread-safe when used to pass data in a single
+   direction (for example written to from an IRQ and read from a non-IRQ
+   function, or vice versa). This does not hold if a single instance is
+   written to from both IRQ and non-IRQ contexts, which would often cause
+   data corruption.
 
     .. method:: RingIO.any() -> int
 

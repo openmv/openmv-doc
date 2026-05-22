@@ -10,24 +10,25 @@ digital logic level. For analog control of a pin, see the ADC class.
 
 Usage Model:
 
-All Board Pins are predefined as pyb.Pin.board.Name::
+All board pins are predefined as ``pyb.Pin.board.<name>``. On the OpenMV
+Cam the I/O header pins are ``P0`` ... ``P9``::
 
-    x1_pin = pyb.Pin.board.X1
+    p0 = pyb.Pin.board.P0
 
-    g = pyb.Pin(pyb.Pin.board.X1, pyb.Pin.IN)
+    g = pyb.Pin(pyb.Pin.board.P0, pyb.Pin.IN)
 
-CPU pins which correspond to the board pins are available
-as ``pyb.Pin.cpu.Name``. For the CPU pins, the names are the port letter
-followed by the pin number. On the PYBv1.0, ``pyb.Pin.board.X1`` and
-``pyb.Pin.cpu.A0`` are the same pin.
+CPU pins -- the underlying STM32 port/pin -- are available as
+``pyb.Pin.cpu.<name>``, named as the port letter followed by the pin
+number (for example ``pyb.Pin.cpu.A0``). The mapping of each OpenMV
+header pin to a CPU pin is fixed by the board.
 
-You can also use strings::
+Pins can also be selected by string name::
 
-    g = pyb.Pin('X1', pyb.Pin.OUT_PP)
+    g = pyb.Pin("P0", pyb.Pin.OUT_PP)
 
 Users can add their own names::
 
-    MyMapperDict = { 'LeftMotorDir' : pyb.Pin.cpu.C12 }
+    MyMapperDict = { "LeftMotorDir" : pyb.Pin.cpu.C12 }
     pyb.Pin.dict(MyMapperDict)
     g = pyb.Pin("LeftMotorDir", pyb.Pin.OUT_OD)
 
@@ -43,8 +44,8 @@ Users can also add their own mapping function::
 
     pyb.Pin.mapper(MyMapper)
 
-So, if you were to call: ``pyb.Pin("LeftMotorDir", pyb.Pin.OUT_PP)``
-then ``"LeftMotorDir"`` is passed directly to the mapper function.
+So, if you were to call ``pyb.Pin("LeftMotorDir", pyb.Pin.OUT_PP)``,
+``"LeftMotorDir"`` is passed directly to the mapper function.
 
 To summarise, the following order determines how things get mapped into
 an ordinal pin number:
@@ -108,9 +109,10 @@ Constructors
            - ``Pin.PULL_UP`` - enable the pull-up resistor;
            - ``Pin.PULL_DOWN`` - enable the pull-down resistor.
 
-          When a pin has the ``Pin.PULL_UP`` or ``Pin.PULL_DOWN`` pull-mode enabled,
-          that pin has an effective 40k Ohm resistor pulling it to 3V3 or GND
-          respectively (except pin Y5 which has 11k Ohm resistors).
+          When a pin has the ``Pin.PULL_UP`` or ``Pin.PULL_DOWN`` pull-mode
+          enabled, that pin is pulled to 3V3 or GND respectively through an
+          internal resistor (typically tens of kOhm -- see the electrical
+          characteristics in the STM32 datasheet for the OpenMV Cam in use).
 
         - *value* if not None will set the port output value before enabling the pin.
 
@@ -237,26 +239,24 @@ object represents a particular function for a pin.
 
 Usage Model::
 
-    x3 = pyb.Pin.board.X3
-    x3_af = x3.af_list()
+    p3 = pyb.Pin.board.P3
+    p3_af = p3.af_list()
 
-x3_af will now contain an array of PinAF objects which are available on
-pin X3.
+``p3_af`` now contains an array of PinAF objects available on pin ``P3``
+(the exact list depends on the STM32 MCU on the OpenMV Cam in use).
 
-For the pyboard, x3_af would contain:
-    [Pin.AF1_TIM2, Pin.AF2_TIM5, Pin.AF3_TIM9, Pin.AF7_USART2]
-
-Normally, each peripheral would configure the alternate function automatically,
-but sometimes the same function is available on multiple pins, and having more
+Normally each peripheral configures the alternate function automatically,
+but sometimes the same function is available on multiple pins and finer
 control is desired.
 
-To configure X3 to expose TIM2_CH3, you could use::
+To configure ``P3`` to expose ``TIM2_CH3`` (if that function is available
+on this pin), you could use::
 
-   pin = pyb.Pin(pyb.Pin.board.X3, mode=pyb.Pin.ALT, alt=pyb.Pin.AF1_TIM2)
+   pin = pyb.Pin(pyb.Pin.board.P3, mode=pyb.Pin.ALT, alt=pyb.Pin.AF1_TIM2)
 
 or::
 
-   pin = pyb.Pin(pyb.Pin.board.X3, mode=pyb.Pin.ALT, alt=1)
+   pin = pyb.Pin(pyb.Pin.board.P3, mode=pyb.Pin.ALT, alt=1)
 
 Methods
 -------

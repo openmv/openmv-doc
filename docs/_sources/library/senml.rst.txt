@@ -15,8 +15,6 @@ allows packs to be nested so that a single root pack can describe a gateway
 fronting multiple devices. Inbound payloads can drive actuator callbacks on
 existing records.
 
-CBOR encoding/decoding requires the ``cbor2`` package.
-
 Classes
 -------
 
@@ -185,37 +183,295 @@ Classes
 
 .. class:: SenmlUnits
 
-   Enumeration object whose attributes are the SenML unit symbols defined by
-   `RFC 8428 <https://datatracker.ietf.org/doc/html/rfc8428>`_. Each
+   Namespace class whose class attributes are the SenML unit symbols defined
+   by `RFC 8428 <https://datatracker.ietf.org/doc/html/rfc8428>`_. Each
    attribute resolves to the unit's string code, suitable for assignment to
    `SenmlRecord.unit` or :attr:`SenmlPack.base_unit`.
 
-   Examples of available unit attributes:
+   .. attribute:: SENML_UNIT_METER
+      :type: str
 
-   - ``SENML_UNIT_METER`` -> ``"m"``
-   - ``SENML_UNIT_KILOGRAM`` -> ``"kg"``
-   - ``SENML_UNIT_SECOND`` -> ``"s"``
-   - ``SENML_UNIT_AMPERE`` -> ``"A"``
-   - ``SENML_UNIT_KELVIN`` -> ``"K"``
-   - ``SENML_UNIT_DEGREES_CELSIUS`` -> ``"Cel"``
-   - ``SENML_UNIT_HERTZ`` -> ``"Hz"``
-   - ``SENML_UNIT_VOLT`` -> ``"V"``
-   - ``SENML_UNIT_WATT`` -> ``"W"``
-   - ``SENML_UNIT_PASCAL`` -> ``"Pa"``
-   - ``SENML_UNIT_LUX`` -> ``"lx"``
-   - ``SENML_UNIT_RELATIVE_HUMIDITY`` -> ``"%RH"``
-   - ``SENML_UNIT_VELOCITY`` -> ``"m/s"``
-   - ``SENML_UNIT_ACCELERATION`` -> ``"m/s2"``
-   - ``SENML_UNIT_DEGREES_LATITUDE`` -> ``"lat"``
-   - ``SENML_UNIT_DEGREES_LONGITUDE`` -> ``"lon"``
-   - ``SENML_UNIT_BIT_PER_SECOND`` -> ``"bit/s"``
-   - ``SENML_UNIT_COUNTER`` -> ``"count"``
-   - ``SENML_UNIT_RATIO`` -> ``"//"``
-   - ``SENML_UNIT_BPM`` -> ``"beat/min"``
+      ``"m"`` -- metre.
 
-   See the SenML unit registry in
-   `RFC 8428 Section 12.1 <https://datatracker.ietf.org/doc/html/rfc8428#section-12.1>`_
-   for the complete list.
+   .. attribute:: SENML_UNIT_KILOGRAM
+      :type: str
+
+      ``"kg"`` -- kilogram.
+
+   .. attribute:: SENML_UNIT_GRAM
+      :type: str
+
+      ``"g"`` -- gram.
+
+   .. attribute:: SENML_UNIT_SECOND
+      :type: str
+
+      ``"s"`` -- second.
+
+   .. attribute:: SENML_UNIT_AMPERE
+      :type: str
+
+      ``"A"`` -- ampere.
+
+   .. attribute:: SENML_UNIT_KELVIN
+      :type: str
+
+      ``"K"`` -- kelvin.
+
+   .. attribute:: SENML_UNIT_CANDELA
+      :type: str
+
+      ``"cd"`` -- candela.
+
+   .. attribute:: SENML_UNIT_MOLE
+      :type: str
+
+      ``"mol"`` -- mole.
+
+   .. attribute:: SENML_UNIT_HERTZ
+      :type: str
+
+      ``"Hz"`` -- hertz.
+
+   .. attribute:: SENML_UNIT_RADIAN
+      :type: str
+
+      ``"rad"`` -- radian.
+
+   .. attribute:: SENML_UNIT_STERADIAN
+      :type: str
+
+      ``"sr"`` -- steradian.
+
+   .. attribute:: SENML_UNIT_NEWTON
+      :type: str
+
+      ``"N"`` -- newton.
+
+   .. attribute:: SENML_UNIT_PASCAL
+      :type: str
+
+      ``"Pa"`` -- pascal.
+
+   .. attribute:: SENML_UNIT_JOULE
+      :type: str
+
+      ``"J"`` -- joule.
+
+   .. attribute:: SENML_UNIT_WATT
+      :type: str
+
+      ``"W"`` -- watt.
+
+   .. attribute:: SENML_UNIT_COULOMB
+      :type: str
+
+      ``"C"`` -- coulomb.
+
+   .. attribute:: SENML_UNIT_VOLT
+      :type: str
+
+      ``"V"`` -- volt.
+
+   .. attribute:: SENML_UNIT_FARAD
+      :type: str
+
+      ``"F"`` -- farad.
+
+   .. attribute:: SENML_UNIT_OHM
+      :type: str
+
+      ``"Ohm"`` -- ohm.
+
+   .. attribute:: SENML_UNIT_SIEMENS
+      :type: str
+
+      ``"S"`` -- siemens.
+
+   .. attribute:: SENML_UNIT_WEBER
+      :type: str
+
+      ``"Wb"`` -- weber.
+
+   .. attribute:: SENML_UNIT_TESLA
+      :type: str
+
+      ``"T"`` -- tesla.
+
+   .. attribute:: SENML_UNIT_HENRY
+      :type: str
+
+      ``"H"`` -- henry.
+
+   .. attribute:: SENML_UNIT_DEGREES_CELSIUS
+      :type: str
+
+      ``"Cel"`` -- degrees Celsius.
+
+   .. attribute:: SENML_UNIT_LUMEN
+      :type: str
+
+      ``"lm"`` -- lumen.
+
+   .. attribute:: SENML_UNIT_LUX
+      :type: str
+
+      ``"lx"`` -- lux.
+
+   .. attribute:: SENML_UNIT_BECQUEREL
+      :type: str
+
+      ``"Bq"`` -- becquerel.
+
+   .. attribute:: SENML_UNIT_GRAY
+      :type: str
+
+      ``"Gy"`` -- gray.
+
+   .. attribute:: SENML_UNIT_SIEVERT
+      :type: str
+
+      ``"Sv"`` -- sievert.
+
+   .. attribute:: SENML_UNIT_KATAL
+      :type: str
+
+      ``"kat"`` -- katal.
+
+   .. attribute:: SENML_UNIT_SQUARE_METER
+      :type: str
+
+      ``"m2"`` -- square metre.
+
+   .. attribute:: SENML_UNIT_CUBIC_METER
+      :type: str
+
+      ``"m3"`` -- cubic metre.
+
+   .. attribute:: SENML_UNIT_LITER
+      :type: str
+
+      ``"l"`` -- litre.
+
+   .. attribute:: SENML_UNIT_VELOCITY
+      :type: str
+
+      ``"m/s"`` -- velocity.
+
+   .. attribute:: SENML_UNIT_ACCELERATION
+      :type: str
+
+      ``"m/s2"`` -- acceleration.
+
+   .. attribute:: SENML_UNIT_CUBIC_METER_PER_SECOND
+      :type: str
+
+      ``"m3/s"`` -- volumetric flow rate.
+
+   .. attribute:: SENML_UNIT_LITER_PER_SECOND
+      :type: str
+
+      ``"l/s"`` -- litre per second.
+
+   .. attribute:: SENML_UNIT_WATT_PER_SQUARE_METER
+      :type: str
+
+      ``"W/m2"`` -- irradiance.
+
+   .. attribute:: SENML_UNIT_CANDELA_PER_SQUARE_METER
+      :type: str
+
+      ``"cd/m2"`` -- luminance.
+
+   .. attribute:: SENML_UNIT_BIT
+      :type: str
+
+      ``"bit"`` -- bit.
+
+   .. attribute:: SENML_UNIT_BIT_PER_SECOND
+      :type: str
+
+      ``"bit/s"`` -- bit per second.
+
+   .. attribute:: SENML_UNIT_DEGREES_LATITUDE
+      :type: str
+
+      ``"lat"`` -- degrees latitude.
+
+   .. attribute:: SENML_UNIT_DEGREES_LONGITUDE
+      :type: str
+
+      ``"lon"`` -- degrees longitude.
+
+   .. attribute:: SENML_UNIT_PH
+      :type: str
+
+      ``"pH"`` -- acidity (pH).
+
+   .. attribute:: SENML_UNIT_DECIBEL
+      :type: str
+
+      ``"db"`` -- decibel.
+
+   .. attribute:: SENML_UNIT_DECIBEL_RELATIVE_TO_1_W
+      :type: str
+
+      ``"dBW"`` -- decibel relative to 1 W.
+
+   .. attribute:: SENML_UNIT_BEL
+      :type: str
+
+      ``"Bspl"`` -- bel (sound pressure level).
+
+   .. attribute:: SENML_UNIT_COUNTER
+      :type: str
+
+      ``"count"`` -- counter.
+
+   .. attribute:: SENML_UNIT_RATIO
+      :type: str
+
+      ``"//"`` -- ratio (dimensionless).
+
+   .. attribute:: SENML_UNIT_RELATIVE_HUMIDITY
+      :type: str
+
+      ``"%RH"`` -- relative humidity.
+
+   .. attribute:: SENML_UNIT_PERCENTAGE_REMAINING_BATTERY_LEVEL
+      :type: str
+
+      ``"%EL"`` -- remaining battery level as a percentage.
+
+   .. attribute:: SENML_UNIT_SECONDS_REMAINING_BATTERY_LEVEL
+      :type: str
+
+      ``"EL"`` -- remaining battery level in seconds.
+
+   .. attribute:: SENML_UNIT_EVENT_RATE_PER_SECOND
+      :type: str
+
+      ``"1/s"`` -- event rate per second.
+
+   .. attribute:: SENML_UNIT_EVENT_RATE_PER_MINUTE
+      :type: str
+
+      ``"1/min"`` -- event rate per minute.
+
+   .. attribute:: SENML_UNIT_BPM
+      :type: str
+
+      ``"beat/min"`` -- beats per minute.
+
+   .. attribute:: SENML_UNIT_BEATS
+      :type: str
+
+      ``"beats"`` -- beats.
+
+   .. attribute:: SENML_UNIT_SIEMENS_PER_METER
+      :type: str
+
+      ``"S/m"`` -- siemens per metre (electrical conductivity).
 
 Examples
 --------
@@ -224,9 +480,22 @@ Examples
 
    from senml import SenmlPack, SenmlRecord, SenmlUnits
 
+   # A pack collects readings for one device, identified by URN.
    pack = SenmlPack("urn:dev:mac:0024befffe804ff1")
-   temp = SenmlRecord("temperature", unit=SenmlUnits.SENML_UNIT_DEGREES_CELSIUS, value=23.4)
-   hum = SenmlRecord("humidity", unit=SenmlUnits.SENML_UNIT_RELATIVE_HUMIDITY, value=51.2)
-   pack.add(temp)
-   pack.add(hum)
+
+   # Add a temperature reading in degrees Celsius.
+   pack.add(SenmlRecord(
+       "temperature",
+       unit=SenmlUnits.SENML_UNIT_DEGREES_CELSIUS,
+       value=23.4,
+   ))
+
+   # Add a humidity reading in %RH.
+   pack.add(SenmlRecord(
+       "humidity",
+       unit=SenmlUnits.SENML_UNIT_RELATIVE_HUMIDITY,
+       value=51.2,
+   ))
+
+   # Render the pack as a SenML/JSON document.
    print(pack.to_json())

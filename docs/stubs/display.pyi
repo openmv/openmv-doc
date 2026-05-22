@@ -498,33 +498,33 @@ class SPIDisplay:
 class SSD1351:
     """Creates an SSD1351 display controller object."""
     def __init__(self) -> None: ...
-    CLOCK_DIV: Any
+    CLOCK_DIV: int
     """Set front clock divider / oscillator frequency command (0xB3)."""
-    COMMAND_LOCK: Any
+    COMMAND_LOCK: int
     """Set command lock command (0xFD)."""
-    CONTRAST_ABC: Any
+    CONTRAST_ABC: int
     """Set contrast for color A, B, C command (0xC1)."""
-    CONTRAST_MASTER: Any
+    CONTRAST_MASTER: int
     """Master contrast current control command (0xC7)."""
-    DISPLAY_ENHANCEMENT: Any
+    DISPLAY_ENHANCEMENT: int
     """Display enhancement command (0xB2)."""
-    DISPLAY_OFF: Any
+    DISPLAY_OFF: int
     """Set sleep mode on / display off command (0xAE)."""
-    DISPLAY_OFFSET: Any
+    DISPLAY_OFFSET: int
     """Set display offset command (0xA2)."""
-    DISPLAY_ON: Any
+    DISPLAY_ON: int
     """Set sleep mode off / display on command (0xAF)."""
-    MUX_RATIO: Any
+    MUX_RATIO: int
     """Set MUX ratio command (0xCA)."""
-    PRECHARGE: Any
+    PRECHARGE: int
     """Set phase length / precharge command (0xB1)."""
-    PRECHARGE2: Any
+    PRECHARGE2: int
     """Set second precharge period command (0xB6)."""
-    PRECHARGE_LEVEL: Any
+    PRECHARGE_LEVEL: int
     """Set precharge voltage level command (0xBB)."""
-    SET_REMAP: Any
+    SET_REMAP: int
     """Set re-map / dual COM line mode command (0xA0)."""
-    WRITE_RAM: Any
+    WRITE_RAM: int
     """Write to display RAM command (0x5C)."""
     def display_off(self, display_controller: display.SPIDisplay) -> None:
         """
@@ -557,61 +557,61 @@ class ST7701:
     DSIDisplay() which will invoke ST7701.init() automatically.
     """
     def __init__(self) -> None: ...
-    DCS_EXIT_SLEEP_MODE: Any
+    DCS_EXIT_SLEEP_MODE: int
     """Exit sleep mode (0x11)."""
-    DCS_SET_DISPLAY_ON: Any
+    DCS_SET_DISPLAY_ON: int
     """Set display on (0x29)."""
-    DCS_SOFT_RESET: Any
+    DCS_SOFT_RESET: int
     """Soft reset (0x01)."""
-    DSI_CMD2_BK0_INVSEL: Any
+    DSI_CMD2_BK0_INVSEL: int
     """Inversion select (0xC2)."""
-    DSI_CMD2_BK0_LNESET: Any
+    DSI_CMD2_BK0_LNESET: int
     """Display line setting (0xC0)."""
-    DSI_CMD2_BK0_NVGAMCTRL: Any
+    DSI_CMD2_BK0_NVGAMCTRL: int
     """Negative voltage gamma control (0xB1)."""
-    DSI_CMD2_BK0_PORCTRL: Any
+    DSI_CMD2_BK0_PORCTRL: int
     """Porch control (0xC1)."""
-    DSI_CMD2_BK0_PVGAMCTRL: Any
+    DSI_CMD2_BK0_PVGAMCTRL: int
     """Positive voltage gamma control (0xB0)."""
-    DSI_CMD2_BK0_SEL: Any
+    DSI_CMD2_BK0_SEL: int
     """Bank 0 select value (0x10)."""
-    DSI_CMD2_BK1_CCCTRL: Any
+    DSI_CMD2_BK1_CCCTRL: int
     """Charge control (0xE3)."""
-    DSI_CMD2_BK1_DGMLUTR: Any
+    DSI_CMD2_BK1_DGMLUTR: int
     """Digital gamma LUT (0xB9)."""
-    DSI_CMD2_BK1_MIPISET1: Any
+    DSI_CMD2_BK1_MIPISET1: int
     """MIPI setting 1 (0xD0)."""
-    DSI_CMD2_BK1_NRCTRL: Any
+    DSI_CMD2_BK1_NRCTRL: int
     """Noise reduction control (0xE1)."""
-    DSI_CMD2_BK1_PWCTLR1: Any
+    DSI_CMD2_BK1_PWCTLR1: int
     """Power control 1 (0xB7)."""
-    DSI_CMD2_BK1_PWCTLR2: Any
+    DSI_CMD2_BK1_PWCTLR2: int
     """Power control 2 (0xB8)."""
-    DSI_CMD2_BK1_SECTRL: Any
+    DSI_CMD2_BK1_SECTRL: int
     """Setting control (0xE0)."""
-    DSI_CMD2_BK1_SEL: Any
+    DSI_CMD2_BK1_SEL: int
     """Bank 1 select value (0x11)."""
-    DSI_CMD2_BK1_SKCTRL: Any
+    DSI_CMD2_BK1_SKCTRL: int
     """Skew control (0xE4)."""
-    DSI_CMD2_BK1_SPD1: Any
+    DSI_CMD2_BK1_SPD1: int
     """Source pre-drive 1 (0xC1)."""
-    DSI_CMD2_BK1_SPD2: Any
+    DSI_CMD2_BK1_SPD2: int
     """Source pre-drive 2 (0xC2)."""
-    DSI_CMD2_BK1_SRPCTRL: Any
+    DSI_CMD2_BK1_SRPCTRL: int
     """Source pre-charge control (0xE2)."""
-    DSI_CMD2_BK1_TESTCMD: Any
+    DSI_CMD2_BK1_TESTCMD: int
     """Test command (0xB3)."""
-    DSI_CMD2_BK1_VCOM: Any
+    DSI_CMD2_BK1_VCOM: int
     """VCOM set (0xB1)."""
-    DSI_CMD2_BK1_VGHSS: Any
+    DSI_CMD2_BK1_VGHSS: int
     """VGH set (0xB2)."""
-    DSI_CMD2_BK1_VGLS: Any
+    DSI_CMD2_BK1_VGLS: int
     """VGL set (0xB5)."""
-    DSI_CMD2_BK1_VRHS: Any
+    DSI_CMD2_BK1_VRHS: int
     """VRH set (0xB0)."""
-    DSI_CMD2_BKX_SEL: Any
+    DSI_CMD2_BKX_SEL: int
     """Command 2 bank select register (0xFF)."""
-    DSI_CMD2_BKX_SEL_NONE: Any
+    DSI_CMD2_BKX_SEL_NONE: int
     """Bank disable value (0x00)."""
     def init(self, dc: display.DSIDisplay, dt: Any) -> None:
         """

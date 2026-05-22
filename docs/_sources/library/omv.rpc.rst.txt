@@ -12,10 +12,41 @@ allows for the reverse too if you want your OpenMV Cam to be able to execute rem
 How to use the Library
 ----------------------
 
-Please checkout the example scripts in OpenMV IDE under ``Remote Control``.
+A minimal **slave** that exposes one callback over UART::
 
-You will need to edit the example code to choose which interface you want to use and to play with
-the settings the scripts use.
+    import rpc
+    import csi
+
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
+
+    interface = rpc.rpc_uart_slave(baudrate=115200)
+
+    def snapshot(_):
+        return csi0.snapshot().compress().bytearray()
+
+    interface.register_callback(snapshot)
+    interface.loop()  # Does not return.
+
+The matching **master** that asks the slave for a JPEG frame::
+
+    import rpc
+
+    interface = rpc.rpc_uart_master(baudrate=115200)
+
+    result = interface.call("snapshot")
+    if result is None:
+        print("communication failed")
+    elif len(result) == 0:
+        print("remote function not registered on the slave")
+    else:
+        # result is a memoryview of the JPEG bytes returned by the slave.
+        print("received", len(result), "bytes")
+
+Swap ``rpc_uart_master`` / ``rpc_uart_slave`` for the matching ``can``,
+``i2c`` or ``spi`` pair to use a different transport.
 
 In general, for the controller device to use the ``rpc`` library you will create an interface object
 using the ``rpc`` library. For example::

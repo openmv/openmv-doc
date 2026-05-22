@@ -152,20 +152,21 @@ Exceptions
 Classes
 -------
 
-.. class:: Lora(uart: pyb.UART = None, rst_pin: pyb.Pin = None, boot_pin: pyb.Pin = None, band: int = BAND_EU868, poll_ms: int = 300000, debug: bool = False)
+.. class:: Lora(uart: machine.UART | None = None, rst_pin: machine.Pin | None = None, boot_pin: machine.Pin | None = None, band: int = BAND_EU868, poll_ms: int = 300000, debug: bool = False)
 
    Construct a new modem driver. The constructor initializes (or auto-creates)
    the UART and reset/boot pins, hardware-resets the module, performs autobaud
    synchronization, reboots the module, queries its firmware version, and
    configures the requested regional ``band``.
 
-   :param uart: Pre-configured :class:`pyb.UART` instance used to talk to the
-       modem. If ``None``, the driver opens ``UART(8, 19200)`` with 8N2 framing
-       (the Portenta Vision Shield default).
-   :param rst_pin: :class:`pyb.Pin` driving the modem's reset line. If ``None``,
-       ``PC6`` is configured as a push-pull output.
-   :param boot_pin: :class:`pyb.Pin` driving the modem's boot-select line. If
-       ``None``, ``PG7`` is configured as a push-pull output pulled low.
+   :param uart: Pre-configured :py:class:`machine.UART` instance used to talk
+       to the modem. If ``None``, the driver opens ``UART(8, 19200)`` with 8N2
+       framing (the Portenta Vision Shield default).
+   :param rst_pin: :py:class:`machine.Pin` driving the modem's reset line. If
+       ``None``, ``"PC6"`` is configured as a push-pull output.
+   :param boot_pin: :py:class:`machine.Pin` driving the modem's boot-select
+       line. If ``None``, ``"PG7"`` is configured as a push-pull output pulled
+       low.
    :param band: Regional band to configure. One of the ``BAND_*`` constants.
    :param poll_ms: Interval in milliseconds between automatic empty uplinks
        triggered by :meth:`poll` to keep the downlink window open.

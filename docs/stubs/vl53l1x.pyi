@@ -2,7 +2,7 @@
 from typing import Any
 import machine
 
-VL51L1X_DEFAULT_CONFIGURATION: int
+VL51L1X_DEFAULT_CONFIGURATION: bytes
 """
 Default 91-byte configuration block written to the device starting at
 register 0x2D during construction. The block sets the interrupt

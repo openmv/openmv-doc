@@ -70,18 +70,13 @@ class RemoteProc:
         Shutdown stops the remote processor and releases all of its resources. The exact behavior
         is platform-dependent, however typically it disables power and clocks to the remote core.
         This function is also used as the finaliser (i.e., called when RemoteProc object is
-        collected). Note that on the STM32H7, it’s not possible to stop and then restart the
-        Cortex-M4 core, so a complete system reset is performed on a call to this function.
+        collected).
         """
         ...
     def start(self) -> None:
         """Starts the remote processor."""
         ...
     def stop(self) -> None:
-        """
-        Stops the remote processor. The exact behavior is platform-dependent. On the STM32H7 for
-        example it’s not possible to stop and then restart the Cortex-M4 core, so a complete
-        system reset is performed on a call to this function.
-        """
+        """Stops the remote processor. The exact behavior is platform-dependent."""
         ...
 

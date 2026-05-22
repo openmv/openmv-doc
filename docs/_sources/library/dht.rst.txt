@@ -14,7 +14,7 @@ Example::
     from machine import Pin
     from dht import DHT22
 
-    d = DHT22(Pin(4))
+    d = DHT22(Pin("P4"))
     d.measure()
     print(d.temperature(), d.humidity())
 

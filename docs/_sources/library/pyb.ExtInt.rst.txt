@@ -4,48 +4,45 @@
 class ExtInt -- configure I/O pins to interrupt on external events
 ==================================================================
 
-There are a total of 22 interrupt lines. 16 of these can come from GPIO pins
-and the remaining 6 are from internal sources.
+The STM32 has 22 external interrupt lines: lines 0-15 are routed from GPIO
+pins, and lines 16-21 are tied to internal sources (RTC alarm, RTC wakeup,
+USB wakeup, etc.). Each GPIO line *N* can be driven by pin *PxN* on any one
+GPIO port at a time -- for example line 0 may map to ``PA0``, ``PB0``,
+``PC0``, etc.
 
-For lines 0 through 15, a given line can map to the corresponding line from an
-arbitrary port. So line 0 can map to Px0 where x is A, B, C, ... and
-line 1 can map to Px1 where x is A, B, C, ... ::
+Example::
 
     def callback(line):
         print("line =", line)
 
-Note: ExtInt will automatically configure the gpio line as an input. ::
-
     extint = pyb.ExtInt(pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, callback)
 
-Now every time a falling edge is seen on the pin, the callback will be
-called. Caution: mechanical pushbuttons have "bounce" and pushing or
-releasing a switch will often generate multiple edges.
-See: http://www.eng.utah.edu/~cs5780/debouncing.pdf for a detailed
-explanation, along with various techniques for debouncing.
+Every falling edge on ``pin`` then invokes ``callback``. ``ExtInt``
+automatically configures the GPIO line as an input; you do not need to do
+that yourself.
 
-Trying to register 2 callbacks onto the same pin will throw an exception.
+.. note::
 
-If pin is passed as an integer, then it is assumed to map to one of the
-internal interrupt sources, and must be in the range 16 through 22.
+   Mechanical pushbuttons "bounce" and a single press or release often
+   generates multiple edges. See for example
+   `this debouncing primer
+   <http://www.eng.utah.edu/~cs5780/debouncing.pdf>`__ for techniques.
 
-All other pin objects go through the pin mapper to come up with one of the
-gpio pins. ::
+Registering two callbacks on the same pin raises an exception.
 
-    extint = pyb.ExtInt(pin, mode, pull, callback)
+If ``pin`` is passed as an integer, it is assumed to identify one of the
+internal interrupt lines and must be in the range ``16``-``21``. Any other
+pin value is resolved through the standard pin mapper.
 
-Valid modes are pyb.ExtInt.IRQ_RISING, pyb.ExtInt.IRQ_FALLING,
-pyb.ExtInt.IRQ_RISING_FALLING, pyb.ExtInt.EVT_RISING,
-pyb.ExtInt.EVT_FALLING, and pyb.ExtInt.EVT_RISING_FALLING.
+In addition to the ``IRQ_*`` modes there are ``EVT_RISING``, ``EVT_FALLING``
+and ``EVT_RISING_FALLING`` event modes that route a transition to the
+processor's event input (used with the ``WFE`` instruction for low-power
+wait). The ``EVT_*`` modes do not invoke the Python callback and are
+intended for sleep / power-management use; the ``IRQ_*`` modes are what
+ordinary application code should use.
 
-Only the IRQ_xxx modes have been tested. The EVT_xxx modes have
-something to do with sleep mode and the WFE instruction.
-
-Valid pull values are pyb.Pin.PULL_UP, pyb.Pin.PULL_DOWN, pyb.Pin.PULL_NONE.
-
-There is also a C API, so that drivers which require EXTI interrupt lines
-can also use this code. See extint.h for the available functions and
-usrsw.h for an example of using this.
+A C-level API is also provided so internal drivers can claim EXTI lines;
+see ``extint.h`` in the firmware source.
 
 
 Constructors
@@ -53,20 +50,31 @@ Constructors
 
 .. class:: ExtInt(pin: Union[int, str, Pin], mode: int, pull: int, callback: Callable[[int], None])
 
-   Create an ExtInt object:
+   Create an ``ExtInt`` object.
 
-     - ``pin`` is the pin on which to enable the interrupt (can be a pin object or any valid pin name).
-     - ``mode`` can be one of:
-       - ``ExtInt.IRQ_RISING`` - trigger on a rising edge;
-       - ``ExtInt.IRQ_FALLING`` - trigger on a falling edge;
-       - ``ExtInt.IRQ_RISING_FALLING`` - trigger on a rising or falling edge.
-     - ``pull`` can be one of:
-       - ``pyb.Pin.PULL_NONE`` - no pull up or down resistors;
-       - ``pyb.Pin.PULL_UP`` - enable the pull-up resistor;
-       - ``pyb.Pin.PULL_DOWN`` - enable the pull-down resistor.
-     - ``callback`` is the function to call when the interrupt triggers.  The
-       callback function must accept exactly 1 argument, which is the line that
-       triggered the interrupt.
+   - ``pin`` -- the pin to enable the interrupt on. May be a :class:`Pin`
+     object, a pin-name string, or an integer in the range ``16``-``21`` to
+     select an internal interrupt source.
+   - ``mode`` -- the trigger mode. One of:
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 36 64
+
+        * - Constant
+          - Trigger
+        * - :data:`ExtInt.IRQ_RISING`
+          - Rising edge.
+        * - :data:`ExtInt.IRQ_FALLING`
+          - Falling edge.
+        * - :data:`ExtInt.IRQ_RISING_FALLING`
+          - Either rising or falling edge.
+
+   - ``pull`` -- the pin pull configuration. One of
+     :data:`pyb.Pin.PULL_NONE`, :data:`pyb.Pin.PULL_UP` or
+     :data:`pyb.Pin.PULL_DOWN`.
+   - ``callback`` -- callable invoked on the trigger. Must accept exactly
+     one argument: the EXTI line number that fired.
 
 
    Class methods
@@ -74,7 +82,7 @@ Constructors
 
    .. classmethod:: regs() -> None
 
-      Dump the values of the EXTI registers.
+      Dump the contents of the EXTI peripheral registers (for debugging).
 
 
    Methods
@@ -82,20 +90,21 @@ Constructors
 
    .. method:: disable() -> None
 
-      Disable the interrupt associated with the ExtInt object.
-      This could be useful for debouncing.
+      Disable the interrupt associated with this ``ExtInt`` object. Useful
+      for software debouncing.
 
    .. method:: enable() -> None
 
-      Enable a disabled interrupt.
+      Re-enable an interrupt previously disabled with :meth:`disable`.
 
    .. method:: line() -> int
 
-      Return the line number that the pin is mapped to.
+      Return the EXTI line number this object is mapped to.
 
    .. method:: swint() -> None
 
-      Trigger the callback from software.
+      Trigger the callback from software (as if the configured edge had
+      occurred on the line).
 
 
    Constants
@@ -104,14 +113,14 @@ Constructors
    .. data:: IRQ_FALLING
       :type: int
 
-      interrupt on a falling edge
+      Interrupt on a falling edge.
 
    .. data:: IRQ_RISING
       :type: int
 
-      interrupt on a rising edge
+      Interrupt on a rising edge.
 
    .. data:: IRQ_RISING_FALLING
       :type: int
 
-      interrupt on a rising or falling edge
+      Interrupt on a rising or falling edge.

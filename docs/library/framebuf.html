@@ -199,8 +199,12 @@ data-aria-dark="Switch to auto color mode">
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#class-framebuffer">class FrameBuffer</a></li>
 <li><a class="reference internal" href="#constructors">Constructors</a><ul>
-<li><a class="reference internal" href="#framebuf.FrameBuffer"><code class="docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a><ul>
+<li><a class="reference internal" href="#framebuf.FrameBuffer"><code class="docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#drawing-methods">Drawing methods</a><ul>
 <li><a class="reference internal" href="#framebuf.FrameBuffer.fill"><code class="docutils literal notranslate">fill()</span></code></a></li>
+<li><a class="reference internal" href="#framebuf.FrameBuffer.fill_rect"><code class="docutils literal notranslate">fill_rect()</span></code></a></li>
 <li><a class="reference internal" href="#framebuf.FrameBuffer.pixel"><code class="docutils literal notranslate">pixel()</span></code></a></li>
 <li><a class="reference internal" href="#framebuf.FrameBuffer.hline"><code class="docutils literal notranslate">hline()</span></code></a></li>
 <li><a class="reference internal" href="#framebuf.FrameBuffer.vline"><code class="docutils literal notranslate">vline()</span></code></a></li>
@@ -213,16 +217,9 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#framebuf.FrameBuffer.blit"><code class="docutils literal notranslate">blit()</span></code></a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li><a class="reference internal" href="#constants">Constants</a><ul>
-<li><a class="reference internal" href="#framebuf.framebuf.MONO_VLSB"><code class="docutils literal notranslate">MONO_VLSB</span></code></a></li>
-<li><a class="reference internal" href="#framebuf.framebuf.MONO_HLSB"><code class="docutils literal notranslate">MONO_HLSB</span></code></a></li>
-<li><a class="reference internal" href="#framebuf.framebuf.MONO_HMSB"><code class="docutils literal notranslate">MONO_HMSB</span></code></a></li>
-<li><a class="reference internal" href="#framebuf.framebuf.RGB565"><code class="docutils literal notranslate">RGB565</span></code></a></li>
-<li><a class="reference internal" href="#framebuf.framebuf.GS2_HMSB"><code class="docutils literal notranslate">GS2_HMSB</span></code></a></li>
-<li><a class="reference internal" href="#framebuf.framebuf.GS4_HMSB"><code class="docutils literal notranslate">GS4_HMSB</span></code></a></li>
-<li><a class="reference internal" href="#framebuf.framebuf.GS8"><code class="docutils literal notranslate">GS8</span></code></a></li>
+<li><a class="reference internal" href="#constants">Constants</a></li>
+<li><a class="reference internal" href="#legacy-constructor">Legacy constructor</a><ul>
+<li><a class="reference internal" href="#framebuf.FrameBuffer1"><code class="docutils literal notranslate"><span class="pre">FrameBuffer1()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -248,7 +245,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/7b9e177ac287c9289ba7ce634d01e7c1a7167154/docs/library/framebuf.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/framebuf.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -322,21 +319,29 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="module-framebuf">
 <span id="framebuf-frame-buffer-manipulation"></span><h1><a class="reference internal" href="#module-framebuf" title="framebuf: Frame buffer manipulation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">framebuf</span></code></a> — frame buffer manipulation<a class="headerlink" href="#module-framebuf" title="Link to this heading">¶</a></h1>
-<p>This module provides a general frame buffer which can be used to create
-bitmap images, which can then be sent to a display.</p>
+<p>The <a class="reference internal" href="#module-framebuf" title="framebuf: Frame buffer manipulation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">framebuf</span></code></a> module provides a small, allocation-free pixel
+buffer with primitive drawing operations. It is intended for driving
+external displays (OLEDs, LCDs, e-paper, etc.).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For image-processing work on captured frames, use OpenMV’s much
+richer <a class="reference internal" href="omv.image.Image.html#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">image.Image</span></code></a> class instead – it offers far more
+drawing primitives, colour conversions and analysis features than
+<a class="reference internal" href="#module-framebuf" title="framebuf: Frame buffer manipulation"><code class="xref py py-mod docutils literal notranslate"><span class="pre">framebuf</span></code></a>.</p>
+</div>
 <section id="class-framebuffer">
 <h2>class FrameBuffer<a class="headerlink" href="#class-framebuffer" title="Link to this heading">¶</a></h2>
-<p>The FrameBuffer class provides a pixel buffer which can be drawn upon with
-pixels, lines, rectangles, ellipses, polygons, text and even other
-FrameBuffers. It is useful when generating output for displays.</p>
-<p>For example:</p>
+<p>A <a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a> wraps a user-supplied buffer-protocol object
+(typically a <a class="reference internal" href="builtins.html#bytearray" title="bytearray"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytearray</span></code></a>) and exposes methods to draw pixels,
+lines, rectangles, ellipses, polygons, text and other <a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a>s into it.</p>
+<p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">framebuf</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="c1"># FrameBuffer needs 2 bytes for every RGB565 pixel</span>
+</span><span data-line="3"><span class="c1"># FrameBuffer needs 2 bytes for every RGB565 pixel.</span>
 </span><span data-line="4"><span class="n">fbuf</span> <span class="o">=</span> <span class="n">framebuf</span><span class="o">.</span><span class="n">FrameBuffer</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">*</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="n">framebuf</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
 </span><span data-line="5">
 </span><span data-line="6"><span class="n">fbuf</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span><span data-line="7"><span class="n">fbuf</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s1">&#39;MicroPython!&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">fbuf</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="s2">&quot;MicroPython!&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
 </span><span data-line="8"><span class="n">fbuf</span><span class="o">.</span><span class="n">hline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
 </span></pre></div>
 </div>
@@ -346,214 +351,230 @@ FrameBuffers. It is useful when generating output for displays.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">FrameBuffer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span><a class="headerlink" href="#framebuf.FrameBuffer" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Construct a FrameBuffer object.  The parameters are:</p>
-<blockquote>
-<div><ul class="simple">
-<li><p><em>buffer</em> is an object with a buffer protocol which must be large
-enough to contain every pixel defined by the width, height and
-format of the FrameBuffer.</p></li>
-<li><p><em>width</em> is the width of the FrameBuffer in pixels</p></li>
-<li><p><em>height</em> is the height of the FrameBuffer in pixels</p></li>
-<li><p><em>format</em> specifies the type of pixel used in the FrameBuffer;
-permissible values are listed under Constants below. These set the
-number of bits used to encode a color value and the layout of these
-bits in <em>buffer</em>.
-Where a color value c is passed to a method, c is a small integer
-with an encoding that is dependent on the format of the FrameBuffer.</p></li>
-<li><p><em>stride</em> is the number of pixels between each horizontal line
-of pixels in the FrameBuffer. This defaults to <em>width</em> but may
-need adjustments when implementing a FrameBuffer within another
-larger FrameBuffer or screen. The <em>buffer</em> size must accommodate
-an increased step size.</p></li>
+<dd><p>Construct a <a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a> object.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer</span></code> – any object supporting the buffer protocol; must be
+large enough to hold <code class="docutils literal notranslate"><span class="pre">stride</span> <span class="pre">*</span> <span class="pre">height</span></code> pixels at the chosen
+<code class="docutils literal notranslate"><span class="pre">format</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">width</span></code> – width of the frame buffer in pixels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">height</span></code> – height of the frame buffer in pixels.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">format</span></code> – pixel format; one of the constants listed under
+<a class="reference internal" href="#framebuf-constants"><span class="std std-ref">Constants</span></a> below. The format determines both the
+size of each pixel in <code class="docutils literal notranslate"><span class="pre">buffer</span></code> and how a colour integer <code class="docutils literal notranslate"><span class="pre">c</span></code>
+passed to any drawing method is interpreted.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stride</span></code> – number of pixels per horizontal row, including any
+padding. Defaults to <code class="docutils literal notranslate"><span class="pre">width</span></code>. Set this to use a sub-region of a
+larger buffer.</p></li>
 </ul>
-</div></blockquote>
-<p>One must specify valid <em>buffer</em>, <em>width</em>, <em>height</em>, <em>format</em> and
-optionally <em>stride</em>.  Invalid <em>buffer</em> size or dimensions may lead to
-unexpected errors.</p>
-</div></blockquote>
+<p>Passing a <code class="docutils literal notranslate"><span class="pre">buffer</span></code> that is too small, or invalid dimensions, will
+produce undefined results – the constructor does not validate every
+combination.</p>
+</dd></dl>
+
+</section>
+<section id="drawing-methods">
+<h2>Drawing methods<a class="headerlink" href="#drawing-methods" title="Link to this heading">¶</a></h2>
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.fill">
-<span class="sig-name descname"><span class="pre">fill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.fill" title="Link to this definition">¶</a></dt>
-<dd><p>Fill the entire FrameBuffer with the specified color.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">fill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.fill" title="Link to this definition">¶</a></dt>
+<dd><p>Fill the entire frame buffer with colour <code class="docutils literal notranslate"><span class="pre">c</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="framebuf.FrameBuffer.fill_rect">
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">fill_rect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.fill_rect" title="Link to this definition">¶</a></dt>
+<dd><p>Fill a <code class="docutils literal notranslate"><span class="pre">w</span></code> x <code class="docutils literal notranslate"><span class="pre">h</span></code> rectangle at <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> with colour <code class="docutils literal notranslate"><span class="pre">c</span></code>.
+Equivalent to <a class="reference internal" href="#framebuf.FrameBuffer.rect" title="framebuf.FrameBuffer.rect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rect()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">f=True</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.pixel">
-<span class="sig-name descname"><span class="pre">pixel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.pixel" title="Link to this definition">¶</a></dt>
-<dd><p>If <em>c</em> is not given, get the color value of the specified pixel.
-If <em>c</em> is given, set the specified pixel to the given color.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">pixel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.pixel" title="Link to this definition">¶</a></dt>
+<dd><p>With no <code class="docutils literal notranslate"><span class="pre">c</span></code> argument, return the colour value of the pixel at
+<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code>. With <code class="docutils literal notranslate"><span class="pre">c</span></code> given, set that pixel to colour <code class="docutils literal notranslate"><span class="pre">c</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.hline">
-<span class="sig-name descname"><span class="pre">hline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.hline" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">hline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.hline" title="Link to this definition">¶</a></dt>
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.vline">
-<span class="sig-name descname"><span class="pre">vline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.vline" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">vline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.vline" title="Link to this definition">¶</a></dt>
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.line">
-<span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.line" title="Link to this definition">¶</a></dt>
-<dd><p>Draw a line from a set of coordinates using the given color and
-a thickness of 1 pixel. The <a class="reference internal" href="#framebuf.FrameBuffer.line" title="framebuf.FrameBuffer.line"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">line</span></code></a> method draws the line up to
-a second set of coordinates whereas the <a class="reference internal" href="#framebuf.FrameBuffer.hline" title="framebuf.FrameBuffer.hline"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">hline</span></code></a> and <a class="reference internal" href="#framebuf.FrameBuffer.vline" title="framebuf.FrameBuffer.vline"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">vline</span></code></a>
-methods draw horizontal and vertical lines respectively up to
-a given length.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">line</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.line" title="Link to this definition">¶</a></dt>
+<dd><p>Draw a 1-pixel-thick line in colour <code class="docutils literal notranslate"><span class="pre">c</span></code>. <a class="reference internal" href="#framebuf.FrameBuffer.hline" title="framebuf.FrameBuffer.hline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">hline()</span></code></a> and
+<a class="reference internal" href="#framebuf.FrameBuffer.vline" title="framebuf.FrameBuffer.vline"><code class="xref py py-meth docutils literal notranslate"><span class="pre">vline()</span></code></a> draw a horizontal/vertical line of the given length;
+<a class="reference internal" href="#framebuf.FrameBuffer.line" title="framebuf.FrameBuffer.line"><code class="xref py py-meth docutils literal notranslate"><span class="pre">line()</span></code></a> draws a line between two arbitrary points.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.rect">
-<span class="sig-name descname"><span class="pre">rect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.rect" title="Link to this definition">¶</a></dt>
-<dd><p>Draw a rectangle at the given location, size and color.</p>
-<p>The optional <em>f</em> parameter can be set to <code class="docutils literal notranslate"><span class="pre">True</span></code> to fill the rectangle.
-Otherwise just a one pixel outline is drawn.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">rect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.rect" title="Link to this definition">¶</a></dt>
+<dd><p>Draw a rectangle at <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> of size <code class="docutils literal notranslate"><span class="pre">w</span></code> x <code class="docutils literal notranslate"><span class="pre">h</span></code> in colour <code class="docutils literal notranslate"><span class="pre">c</span></code>.
+If <code class="docutils literal notranslate"><span class="pre">f</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code> the rectangle is filled; otherwise only a 1-pixel
+outline is drawn.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.ellipse">
-<span class="sig-name descname"><span class="pre">ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">yr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.ellipse" title="Link to this definition">¶</a></dt>
-<dd><p>Draw an ellipse at the given location. Radii <em>xr</em> and <em>yr</em> define the
-geometry; equal values cause a circle to be drawn. The <em>c</em> parameter
-defines the color.</p>
-<p>The optional <em>f</em> parameter can be set to <code class="docutils literal notranslate"><span class="pre">True</span></code> to fill the ellipse.
-Otherwise just a one pixel outline is drawn.</p>
-<p>The optional <em>m</em> parameter enables drawing to be restricted to certain
-quadrants of the ellipse. The LS four bits determine which quadrants are
-to be drawn, with bit 0 specifying Q1, b1 Q2, b2 Q3 and b3 Q4. Quadrants
-are numbered counterclockwise with Q1 being top right.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">ellipse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">yr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.ellipse" title="Link to this definition">¶</a></dt>
+<dd><p>Draw an ellipse centred on <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> with x-radius <code class="docutils literal notranslate"><span class="pre">xr</span></code> and
+y-radius <code class="docutils literal notranslate"><span class="pre">yr</span></code> in colour <code class="docutils literal notranslate"><span class="pre">c</span></code>. Equal radii produce a circle.
+<code class="docutils literal notranslate"><span class="pre">f=True</span></code> fills the shape instead of just outlining it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">m</span></code> is a bitmask that restricts drawing to specific quadrants
+(numbered counter-clockwise from the top-right):</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 18.0%" />
+<col style="width: 16.0%" />
+<col style="width: 66.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Bit</p></th>
+<th class="head"><p>Quadrant</p></th>
+<th class="head"><p>Region</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>bit 0</p></td>
+<td><p>Q1</p></td>
+<td><p>Top-right</p></td>
+</tr>
+<tr class="row-odd"><td><p>bit 1</p></td>
+<td><p>Q2</p></td>
+<td><p>Top-left</p></td>
+</tr>
+<tr class="row-even"><td><p>bit 2</p></td>
+<td><p>Q3</p></td>
+<td><p>Bottom-left</p></td>
+</tr>
+<tr class="row-odd"><td><p>bit 3</p></td>
+<td><p>Q4</p></td>
+<td><p>Bottom-right</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The default <code class="docutils literal notranslate"><span class="pre">m=0</span></code> draws all four quadrants.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.poly">
-<span class="sig-name descname"><span class="pre">poly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.poly" title="Link to this definition">¶</a></dt>
-<dd><p>Given a list of coordinates, draw an arbitrary (convex or concave) closed
-polygon at the given x, y location using the given color.</p>
-<p>The <em>coords</em> must be specified as a <a class="reference internal" href="array.html#module-array" title="array: efficient arrays of numeric data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">array</span></code></a> of integers, e.g.
-<code class="docutils literal notranslate"><span class="pre">array('h',</span> <span class="pre">[x0,</span> <span class="pre">y0,</span> <span class="pre">x1,</span> <span class="pre">y1,</span> <span class="pre">...</span> <span class="pre">xn,</span> <span class="pre">yn])</span></code>.</p>
-<p>The optional <em>f</em> parameter can be set to <code class="docutils literal notranslate"><span class="pre">True</span></code> to fill the polygon.
-Otherwise just a one pixel outline is drawn.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">poly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.poly" title="Link to this definition">¶</a></dt>
+<dd><p>Draw an arbitrary closed polygon (convex or concave) at offset
+<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> in colour <code class="docutils literal notranslate"><span class="pre">c</span></code>. <code class="docutils literal notranslate"><span class="pre">coords</span></code> must be an <a class="reference internal" href="array.html#module-array" title="array: efficient arrays of numeric data"><code class="xref py py-mod docutils literal notranslate"><span class="pre">array</span></code></a> of
+signed 16-bit integers laid out as
+<code class="docutils literal notranslate"><span class="pre">array('h',</span> <span class="pre">[x0,</span> <span class="pre">y0,</span> <span class="pre">x1,</span> <span class="pre">y1,</span> <span class="pre">...,</span> <span class="pre">xn,</span> <span class="pre">yn])</span></code>. <code class="docutils literal notranslate"><span class="pre">f=True</span></code> fills the
+polygon instead of just outlining it.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.text">
-<span class="sig-name descname"><span class="pre">text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#str" title="str"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.text" title="Link to this definition">¶</a></dt>
-<dd><p>Write text to the FrameBuffer using the coordinates as the upper-left
-corner of the text. The color of the text can be defined by the optional
-argument but is otherwise a default value of 1. All characters have
-dimensions of 8x8 pixels and there is currently no way to change the font.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#str" title="str"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.text" title="Link to this definition">¶</a></dt>
+<dd><p>Draw the string <code class="docutils literal notranslate"><span class="pre">s</span></code> with its top-left corner at <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> in
+colour <code class="docutils literal notranslate"><span class="pre">c</span></code>. The built-in font is fixed at 8x8 pixels and cannot
+be changed. <code class="docutils literal notranslate"><span class="pre">c</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.scroll">
-<span class="sig-name descname"><span class="pre">scroll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ystep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.scroll" title="Link to this definition">¶</a></dt>
-<dd><p>Shift the contents of the FrameBuffer by the given vector. This may
-leave a footprint of the previous colors in the FrameBuffer.</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">scroll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xstep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ystep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.scroll" title="Link to this definition">¶</a></dt>
+<dd><p>Shift the buffer contents by <code class="docutils literal notranslate"><span class="pre">(xstep,</span> <span class="pre">ystep)</span></code>. Pixels shifted in
+from outside the buffer are not cleared, so a “ghost” of the
+previous contents may remain at the trailing edge.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="framebuf.FrameBuffer.blit">
-<span class="sig-name descname"><span class="pre">blit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fbuf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><span class="pre">FrameBuffer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><span class="pre">FrameBuffer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.blit" title="Link to this definition">¶</a></dt>
-<dd><p>Draw another FrameBuffer on top of the current one at the given coordinates.
-If <em>key</em> is specified then it should be a color integer and the
-corresponding color will be considered transparent: all pixels with that
-color value will not be drawn. (If the <em>palette</em> is specified then the <em>key</em>
-is compared to the value from <em>palette</em>, not to the value directly from
-<em>fbuf</em>.)</p>
-<p><em>fbuf</em> can be another FrameBuffer instance, or a tuple or list of the form:</p>
+<span class="sig-prename descclassname"><span class="pre">FrameBuffer.</span></span><span class="sig-name descname"><span class="pre">blit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fbuf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><span class="pre">FrameBuffer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">palette</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><span class="pre">FrameBuffer</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer.blit" title="Link to this definition">¶</a></dt>
+<dd><p>Draw another frame buffer <code class="docutils literal notranslate"><span class="pre">fbuf</span></code> on top of this one with its
+top-left corner at <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code>.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">key</span></code> is given, any source pixel matching that colour value
+is treated as transparent and not drawn. When a <code class="docutils literal notranslate"><span class="pre">palette</span></code> is
+provided, the comparison is made against the palette output, not
+the raw <code class="docutils literal notranslate"><span class="pre">fbuf</span></code> value.</p>
+<p><code class="docutils literal notranslate"><span class="pre">fbuf</span></code> can be a <a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a> instance or a tuple/list
+matching the constructor signature:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="nb">format</span><span class="p">)</span>
+</span><span data-line="2"><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="nb">format</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>or:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="nb">format</span><span class="p">,</span> <span class="n">stride</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>This matches the signature of the FrameBuffer constructor, and the elements
-of the tuple/list are the same as the arguments to the constructor except that
-the <em>buffer</em> here can be read-only.</p>
-<p>The <em>palette</em> argument enables blitting between FrameBuffers with differing
-formats. Typical usage is to render a monochrome or grayscale glyph/icon to
-a color display. The <em>palette</em> is a FrameBuffer instance whose format is
-that of the current FrameBuffer. The <em>palette</em> height is one pixel and its
-pixel width is the number of colors in the source FrameBuffer. The <em>palette</em>
-for an N-bit source needs 2**N pixels; the <em>palette</em> for a monochrome source
-would have 2 pixels representing background and foreground colors. The
-application assigns a color to each pixel in the <em>palette</em>. The color of the
-current pixel will be that of that <em>palette</em> pixel whose x position is the
-color of the corresponding source pixel.</p>
-</dd></dl>
-
+<p>When the source is a tuple/list, <code class="docutils literal notranslate"><span class="pre">buffer</span></code> may be read-only.</p>
+<p><code class="docutils literal notranslate"><span class="pre">palette</span></code> allows blitting between buffers of different formats –
+for example, rendering a monochrome glyph into an RGB565 buffer. It
+is a <a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a> whose format matches the destination, with
+height 1 and width equal to the number of source colours (<code class="docutils literal notranslate"><span class="pre">2**N</span></code>
+for an N-bit-per-pixel source). Source pixel value <code class="docutils literal notranslate"><span class="pre">i</span></code> is replaced
+with the colour at <code class="docutils literal notranslate"><span class="pre">palette[i,</span> <span class="pre">0]</span></code> before drawing.</p>
 </dd></dl>
 
 </section>
 <section id="constants">
-<h2>Constants<a class="headerlink" href="#constants" title="Link to this heading">¶</a></h2>
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.MONO_VLSB">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">MONO_VLSB</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.MONO_VLSB" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Monochrome (1-bit) color format
-This defines a mapping where the bits in a byte are vertically mapped with
-bit 0 being nearest the top of the screen. Consequently each byte occupies
-8 vertical pixels. Subsequent bytes appear at successive horizontal
-locations until the rightmost edge is reached. Further bytes are rendered
-at locations starting at the leftmost edge, 8 pixels lower.</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.MONO_HLSB">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">MONO_HLSB</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.MONO_HLSB" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Monochrome (1-bit) color format
-This defines a mapping where the bits in a byte are horizontally mapped.
-Each byte occupies 8 horizontal pixels with bit 7 being the leftmost.
-Subsequent bytes appear at successive horizontal locations until the
-rightmost edge is reached. Further bytes are rendered on the next row, one
-pixel lower.</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.MONO_HMSB">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">MONO_HMSB</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.MONO_HMSB" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Monochrome (1-bit) color format
-This defines a mapping where the bits in a byte are horizontally mapped.
-Each byte occupies 8 horizontal pixels with bit 0 being the leftmost.
-Subsequent bytes appear at successive horizontal locations until the
-rightmost edge is reached. Further bytes are rendered on the next row, one
-pixel lower.</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.RGB565">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">RGB565</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.RGB565" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Red Green Blue (16-bit, 5+6+5) color format</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.GS2_HMSB">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">GS2_HMSB</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.GS2_HMSB" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Grayscale (2-bit) color format</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.GS4_HMSB">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">GS4_HMSB</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.GS4_HMSB" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Grayscale (4-bit) color format</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="framebuf.framebuf.GS8">
-<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">GS8</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#framebuf.framebuf.GS8" title="Link to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Grayscale (8-bit) color format</p>
-</div></blockquote>
+<span id="framebuf-constants"></span><h2>Constants<a class="headerlink" href="#constants" title="Link to this heading">¶</a></h2>
+<p>The following <code class="docutils literal notranslate"><span class="pre">format</span></code> values are accepted by the constructor. The
+“bytes per pixel” column is the multiplier needed when sizing the
+backing buffer.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 22.0%" />
+<col style="width: 14.0%" />
+<col style="width: 64.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Bytes/pixel</p></th>
+<th class="head"><p>Pixel layout</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MONO_VLSB</span></code></p></td>
+<td><p>0.125</p></td>
+<td><p>Monochrome (1-bit). Each byte holds 8 vertically-stacked pixels
+with bit 0 nearest the top. Rows of 8 pixels advance left-to-right
+across the buffer, then wrap to the next 8-pixel row.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">MONO_HLSB</span></code></p></td>
+<td><p>0.125</p></td>
+<td><p>Monochrome (1-bit). Each byte holds 8 horizontal pixels with bit
+7 leftmost. Rows advance one pixel at a time vertically.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MONO_HMSB</span></code></p></td>
+<td><p>0.125</p></td>
+<td><p>Monochrome (1-bit). Like <code class="docutils literal notranslate"><span class="pre">MONO_HLSB</span></code> but with bit 0 leftmost.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GS2_HMSB</span></code></p></td>
+<td><p>0.25</p></td>
+<td><p>2-bit greyscale (4 levels), packed horizontally most-significant
+bit first.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GS4_HMSB</span></code></p></td>
+<td><p>0.5</p></td>
+<td><p>4-bit greyscale (16 levels), packed horizontally most-significant
+nibble first.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GS8</span></code></p></td>
+<td><p>1</p></td>
+<td><p>8-bit greyscale (256 levels).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">RGB565</span></code></p></td>
+<td><p>2</p></td>
+<td><p>16-bit RGB with 5 red, 6 green and 5 blue bits.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">framebuf.MVLSB</span></code> is a deprecated alias for <code class="docutils literal notranslate"><span class="pre">framebuf.MONO_VLSB</span></code>;
+prefer the latter in new code.</p>
+</section>
+<section id="legacy-constructor">
+<h2>Legacy constructor<a class="headerlink" href="#legacy-constructor" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="framebuf.FrameBuffer1">
+<span class="sig-prename descclassname"><span class="pre">framebuf.</span></span><span class="sig-name descname"><span class="pre">FrameBuffer1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buffer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">stride</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="positional-only-separator o"><abbr title="Positional-only parameter separator (PEP 570)"><span class="pre">/</span></abbr></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><span class="pre">FrameBuffer</span></a></span></span><a class="headerlink" href="#framebuf.FrameBuffer1" title="Link to this definition">¶</a></dt>
+<dd><p>Deprecated shortcut for <code class="docutils literal notranslate"><span class="pre">FrameBuffer(buffer,</span> <span class="pre">width,</span> <span class="pre">height,</span>
+<span class="pre">framebuf.MONO_VLSB,</span> <span class="pre">stride)</span></code>. Retained for backwards compatibility;
+use the full <a class="reference internal" href="#framebuf.FrameBuffer" title="framebuf.FrameBuffer"><code class="xref py py-class docutils literal notranslate"><span class="pre">FrameBuffer</span></code></a> constructor instead.</p>
 </dd></dl>
 
 </section>
@@ -587,7 +608,7 @@ pixel lower.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 19 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 22 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

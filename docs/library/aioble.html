@@ -197,6 +197,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#examples">Examples</a></li>
 <li><a class="reference internal" href="#module-level-functions">Module-level functions</a><ul>
 <li><a class="reference internal" href="#aioble.config"><code class="docutils literal notranslate"><span class="pre">config()</span></code></a></li>
 <li><a class="reference internal" href="#aioble.stop"><code class="docutils literal notranslate"><span class="pre">stop()</span></code></a></li>
@@ -335,7 +336,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/7b9e177ac287c9289ba7ce634d01e7c1a7167154/docs/library/aioble.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/aioble.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -438,22 +439,86 @@ manage channel flow control.</p></li>
 <li><p><strong>Security</strong> — JSON-backed key/secret management, initiate pairing,
 query encryption / authentication state.</p></li>
 </ul>
-<p>The package is delivered as a meta-package built from several optional
-sub-packages, any combination of which may be installed:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-core</span></code> — core BLE functionality required by every aioble user.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-central</span></code> — Central (and Observer) role: scanning and
-connecting.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-client</span></code> — GATT client (typically used by central-role
-devices, but can also be used on peripherals).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-peripheral</span></code> — Peripheral (and Broadcaster) role: advertising.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-server</span></code> — GATT server (typically used by peripheral-role
-devices, but can also be used on centrals).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-l2cap</span></code> — L2CAP connection-oriented-channel support.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">aioble-security</span></code> — pairing and bonding support.</p></li>
-</ul>
-<p>Installing the meta-package <code class="docutils literal notranslate"><span class="pre">aioble</span></code> pulls all of them in.</p>
-<p>Requires MicroPython v1.17 or higher.</p>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<p>Scan for nearby BLE devices and print each one as it is seen:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">aioble</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">find_devices</span><span class="p">():</span>
+</span><span data-line="5">    <span class="k">async</span> <span class="k">with</span> <span class="n">aioble</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">duration_ms</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">scanner</span><span class="p">:</span>
+</span><span data-line="6">        <span class="k">async</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">scanner</span><span class="p">:</span>
+</span><span data-line="7">            <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">addr_hex</span><span class="p">(),</span> <span class="n">result</span><span class="o">.</span><span class="n">rssi</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">name</span><span class="p">())</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">find_devices</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Connect to a peripheral advertising the Heart Rate service as a <strong>central</strong>
+and subscribe to its measurement notifications:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">aioble</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">bluetooth</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">_HR_SERVICE</span> <span class="o">=</span> <span class="n">bluetooth</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="mh">0x180D</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">_HR_MEASUREMENT</span> <span class="o">=</span> <span class="n">bluetooth</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="mh">0x2A37</span><span class="p">)</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">connect_and_read</span><span class="p">():</span>
+</span><span data-line="9">    <span class="n">device</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="10">    <span class="k">async</span> <span class="k">with</span> <span class="n">aioble</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="n">duration_ms</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">scanner</span><span class="p">:</span>
+</span><span data-line="11">        <span class="k">async</span> <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">scanner</span><span class="p">:</span>
+</span><span data-line="12">            <span class="k">if</span> <span class="n">_HR_SERVICE</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">services</span><span class="p">():</span>
+</span><span data-line="13">                <span class="n">device</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">device</span>
+</span><span data-line="14">                <span class="k">break</span>
+</span><span data-line="15">    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="16">        <span class="k">return</span>
+</span><span data-line="17">
+</span><span data-line="18">    <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">device</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+</span><span data-line="19">        <span class="n">service</span> <span class="o">=</span> <span class="k">await</span> <span class="n">conn</span><span class="o">.</span><span class="n">service</span><span class="p">(</span><span class="n">_HR_SERVICE</span><span class="p">)</span>
+</span><span data-line="20">        <span class="n">char</span> <span class="o">=</span> <span class="k">await</span> <span class="n">service</span><span class="o">.</span><span class="n">characteristic</span><span class="p">(</span><span class="n">_HR_MEASUREMENT</span><span class="p">)</span>
+</span><span data-line="21">        <span class="k">await</span> <span class="n">char</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="n">notify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="22">        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="23">            <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">char</span><span class="o">.</span><span class="n">notified</span><span class="p">()</span>
+</span><span data-line="24">            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;notify:&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+</span><span data-line="25">
+</span><span data-line="26"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">connect_and_read</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Act as a <strong>peripheral</strong>: register a GATT service, advertise it, and push
+notifications to whoever connects:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">aioble</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">bluetooth</span>
+</span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">_ENV_SERVICE</span> <span class="o">=</span> <span class="n">bluetooth</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="mh">0x181A</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">_TEMP_CHAR</span> <span class="o">=</span> <span class="n">bluetooth</span><span class="o">.</span><span class="n">UUID</span><span class="p">(</span><span class="mh">0x2A6E</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="k">def</span><span class="w"> </span><span class="nf">encode_temperature</span><span class="p">(</span><span class="n">deg_c</span><span class="p">):</span>
+</span><span data-line="10">    <span class="c1"># Bluetooth Temperature (0x2A6E) is sint16 little-endian, 0.01 degC units.</span>
+</span><span data-line="11">    <span class="k">return</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;h&quot;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">deg_c</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="n">service</span> <span class="o">=</span> <span class="n">aioble</span><span class="o">.</span><span class="n">Service</span><span class="p">(</span><span class="n">_ENV_SERVICE</span><span class="p">)</span>
+</span><span data-line="14"><span class="n">temp_char</span> <span class="o">=</span> <span class="n">aioble</span><span class="o">.</span><span class="n">Characteristic</span><span class="p">(</span><span class="n">service</span><span class="p">,</span> <span class="n">_TEMP_CHAR</span><span class="p">,</span> <span class="n">read</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">notify</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="15"><span class="n">aioble</span><span class="o">.</span><span class="n">register_services</span><span class="p">(</span><span class="n">service</span><span class="p">)</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">peripheral_task</span><span class="p">():</span>
+</span><span data-line="18">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="19">        <span class="n">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioble</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span>
+</span><span data-line="20">            <span class="n">interval_us</span><span class="o">=</span><span class="mi">250000</span><span class="p">,</span>
+</span><span data-line="21">            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;openmv-sensor&quot;</span><span class="p">,</span>
+</span><span data-line="22">            <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">_ENV_SERVICE</span><span class="p">],</span>
+</span><span data-line="23">            <span class="n">appearance</span><span class="o">=</span><span class="mh">0x0300</span><span class="p">,</span>
+</span><span data-line="24">        <span class="p">)</span>
+</span><span data-line="25">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;connected:&quot;</span><span class="p">,</span> <span class="n">connection</span><span class="o">.</span><span class="n">device</span><span class="o">.</span><span class="n">addr_hex</span><span class="p">())</span>
+</span><span data-line="26">        <span class="k">async</span> <span class="k">with</span> <span class="n">connection</span><span class="p">:</span>
+</span><span data-line="27">            <span class="k">while</span> <span class="n">connection</span><span class="o">.</span><span class="n">is_connected</span><span class="p">():</span>
+</span><span data-line="28">                <span class="n">temp_char</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encode_temperature</span><span class="p">(</span><span class="mf">23.68</span><span class="p">),</span> <span class="n">send_update</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="29">                <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="30">
+</span><span data-line="31"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">peripheral_task</span><span class="p">())</span>
+</span></pre></div>
+</div>
+</section>
 <section id="module-level-functions">
 <h2>Module-level functions<a class="headerlink" href="#module-level-functions" title="Link to this heading">¶</a></h2>
 <dl class="py function">
@@ -1335,7 +1400,7 @@ IRQ.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 19 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 22 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

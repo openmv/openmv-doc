@@ -248,7 +248,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/7b9e177ac287c9289ba7ce634d01e7c1a7167154/docs/library/uctypes.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/1448fd8ca6b19c11e75d20a7ccb36e8f8f62cfaf/docs/library/uctypes.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -337,8 +337,18 @@ may lead to crashes, data loss, and even hardware malfunction.</p>
 <div class="admonition seealso">
 <p class="admonition-title">See also</p>
 <dl class="simple">
-<dt>Module <a class="reference internal" href="struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a></dt><dd><p>Standard Python way to access binary data structures (doesn’t scale
-well to large and complex structures).</p>
+<dt>Module <a class="reference internal" href="struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a></dt><dd><p>The standard Python module for packing and unpacking binary
+data. <a class="reference internal" href="struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a> operates on whole buffers at a time using a
+compact format string (e.g. <code class="docutils literal notranslate"><span class="pre">'&lt;HBB4sI'</span></code>), which works well for
+a few fixed fields but scales poorly to large or deeply-nested
+structures: every read or write re-parses the format string,
+unions and bitfields are not supported, and there is no way to
+get a typed view into an existing buffer. <a class="reference internal" href="#module-uctypes" title="uctypes: access binary data in a structured way"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uctypes</span></code></a>
+complements <a class="reference internal" href="struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a> by letting you describe the layout
+once, attach it to a memory region (RAM, peripheral registers,
+a <code class="docutils literal notranslate"><span class="pre">bytearray</span></code>) and then access individual fields as named
+attributes – avoiding repeated parsing and copying, and adding
+support for nested structs, arrays, unions and bitfields.</p>
 </dd>
 </dl>
 </div>
@@ -558,52 +568,101 @@ so it can be both written too, and you will access current value
 at the given memory address.</p>
 </dd></dl>
 
+<p>Scalar integer types. Each occupies the obvious number of bytes
+(<code class="docutils literal notranslate"><span class="pre">1</span></code>, <code class="docutils literal notranslate"><span class="pre">2</span></code>, <code class="docutils literal notranslate"><span class="pre">4</span></code> or <code class="docutils literal notranslate"><span class="pre">8</span></code>) and is read/written using the
+endianness of the structure’s layout type (one of <a class="reference internal" href="#uctypes.NATIVE" title="uctypes.NATIVE"><code class="xref py py-data docutils literal notranslate"><span class="pre">NATIVE</span></code></a>,
+<a class="reference internal" href="#uctypes.LITTLE_ENDIAN" title="uctypes.LITTLE_ENDIAN"><code class="xref py py-data docutils literal notranslate"><span class="pre">LITTLE_ENDIAN</span></code></a>, or <a class="reference internal" href="#uctypes.BIG_ENDIAN" title="uctypes.BIG_ENDIAN"><code class="xref py py-data docutils literal notranslate"><span class="pre">BIG_ENDIAN</span></code></a>).</p>
 <dl class="py data">
 <dt class="sig sig-object py" id="uctypes.UINT8">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT8</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.UINT8" title="Link to this definition">¶</a></dt>
+<dd><p>Unsigned 8-bit integer. Range <code class="docutils literal notranslate"><span class="pre">0</span></code> – <code class="docutils literal notranslate"><span class="pre">255</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.INT8">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT8</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.INT8" title="Link to this definition">¶</a></dt>
+<dd><p>Signed 8-bit integer. Range <code class="docutils literal notranslate"><span class="pre">-128</span></code> – <code class="docutils literal notranslate"><span class="pre">127</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.UINT16">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT16</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.UINT16" title="Link to this definition">¶</a></dt>
+<dd><p>Unsigned 16-bit integer. Range <code class="docutils literal notranslate"><span class="pre">0</span></code> – <code class="docutils literal notranslate"><span class="pre">65535</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.INT16">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT16</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.INT16" title="Link to this definition">¶</a></dt>
+<dd><p>Signed 16-bit integer. Range <code class="docutils literal notranslate"><span class="pre">-32768</span></code> – <code class="docutils literal notranslate"><span class="pre">32767</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.UINT32">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT32</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.UINT32" title="Link to this definition">¶</a></dt>
+<dd><p>Unsigned 32-bit integer. Range <code class="docutils literal notranslate"><span class="pre">0</span></code> – <code class="docutils literal notranslate"><span class="pre">0xFFFFFFFF</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.INT32">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT32</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.INT32" title="Link to this definition">¶</a></dt>
+<dd><p>Signed 32-bit integer. Range <code class="docutils literal notranslate"><span class="pre">-0x80000000</span></code> – <code class="docutils literal notranslate"><span class="pre">0x7FFFFFFF</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.UINT64">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT64</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.UINT64" title="Link to this definition">¶</a></dt>
+<dd><p>Unsigned 64-bit integer. Range <code class="docutils literal notranslate"><span class="pre">0</span></code> – <code class="docutils literal notranslate"><span class="pre">0xFFFFFFFFFFFFFFFF</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.INT64">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT64</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.INT64" title="Link to this definition">¶</a></dt>
-<dd><p>Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.</p>
+<dd><p>Signed 64-bit integer. Range <code class="docutils literal notranslate"><span class="pre">-0x8000000000000000</span></code> – <code class="docutils literal notranslate"><span class="pre">0x7FFFFFFFFFFFFFFF</span></code>.</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="uctypes.FLOAT32">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">FLOAT32</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.FLOAT32" title="Link to this definition">¶</a></dt>
+<dd><p>IEEE 754 single-precision floating-point (4 bytes). Reads and writes
+are converted to/from a Python <code class="docutils literal notranslate"><span class="pre">float</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="uctypes.FLOAT64">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">FLOAT64</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.FLOAT64" title="Link to this definition">¶</a></dt>
-<dd><p>Floating-point types for structure descriptors.</p>
+<dd><p>IEEE 754 double-precision floating-point (8 bytes). Reads and writes
+are converted to/from a Python <code class="docutils literal notranslate"><span class="pre">float</span></code>.</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="uctypes.VOID">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">VOID</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.VOID" title="Link to this definition">¶</a></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">VOID</span></code> is an alias for <code class="docutils literal notranslate"><span class="pre">UINT8</span></code>, and is provided to conveniently define
-C’s void pointers: <code class="docutils literal notranslate"><span class="pre">(uctypes.PTR,</span> <span class="pre">uctypes.VOID)</span></code>.</p>
+<dd><p>Alias for <a class="reference internal" href="#uctypes.UINT8" title="uctypes.UINT8"><code class="xref py py-data docutils literal notranslate"><span class="pre">UINT8</span></code></a>. Provided so that C-style <code class="docutils literal notranslate"><span class="pre">void</span> <span class="pre">*</span></code> fields
+can be described idiomatically as <code class="docutils literal notranslate"><span class="pre">(uctypes.PTR,</span> <span class="pre">uctypes.VOID)</span></code>.</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="uctypes.PTR">
 <span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">PTR</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.PTR" title="Link to this definition">¶</a></dt>
-<dt class="sig sig-object py" id="uctypes.ARRAY">
-<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">ARRAY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.ARRAY" title="Link to this definition">¶</a></dt>
-<dd><p>Type constants for pointers and arrays. Note that there is no explicit
-constant for structures, it’s implicit: an aggregate type without <code class="docutils literal notranslate"><span class="pre">PTR</span></code>
-or <code class="docutils literal notranslate"><span class="pre">ARRAY</span></code> flags is a structure.</p>
+<dd><p>Marks a descriptor field as a pointer to another type. A pointer
+field is written as a two-tuple
+<code class="docutils literal notranslate"><span class="pre">(offset</span> <span class="pre">|</span> <span class="pre">PTR,</span> <span class="pre">target_type_or_descriptor)</span></code>. Dereferencing the
+pointer yields a typed view into the address it holds.</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.ARRAY">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">ARRAY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><a class="headerlink" href="#uctypes.ARRAY" title="Link to this definition">¶</a></dt>
+<dd><p>Marks a descriptor field as a fixed-length array of another type.
+An array field is either <code class="docutils literal notranslate"><span class="pre">(offset</span> <span class="pre">|</span> <span class="pre">ARRAY,</span> <span class="pre">count</span> <span class="pre">|</span> <span class="pre">element_type)</span></code>
+for arrays of scalars or
+<code class="docutils literal notranslate"><span class="pre">(offset</span> <span class="pre">|</span> <span class="pre">ARRAY,</span> <span class="pre">count,</span> <span class="pre">element_descriptor)</span></code> for arrays of
+structures. The number of elements is fixed at descriptor time.</p>
+</dd></dl>
+
+<p>There is no explicit constant for structures: an aggregate descriptor
+that uses neither <a class="reference internal" href="#uctypes.PTR" title="uctypes.PTR"><code class="xref py py-data docutils literal notranslate"><span class="pre">PTR</span></code></a> nor <a class="reference internal" href="#uctypes.ARRAY" title="uctypes.ARRAY"><code class="xref py py-data docutils literal notranslate"><span class="pre">ARRAY</span></code></a> is treated as a
+structure.</p>
 </section>
 <section id="structure-descriptors-and-instantiating-structure-objects">
 <h2>Structure descriptors and instantiating structure objects<a class="headerlink" href="#structure-descriptors-and-instantiating-structure-objects" title="Link to this heading">¶</a></h2>
@@ -699,7 +758,7 @@ synthetic case).</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 19 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 22 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

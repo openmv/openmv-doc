@@ -2,7 +2,7 @@
 from typing import Any
 import machine
 
-ORDER: int
+ORDER: tuple[int, int, int, int]
 """
 Class attribute that maps the user-facing channel order to the wire
 order. Defaults to (1, 0, 2, 3), i.e. user-supplied (R, G, B[, W])

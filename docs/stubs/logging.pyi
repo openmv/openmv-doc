@@ -121,9 +121,9 @@ class Formatter:
 class Handler:
     """Base class for all handlers. Sub-classes implement emit()."""
     def __init__(self, level: int = NOTSET) -> None: ...
-    formatter: Any
+    formatter: 'Formatter | None'
     """The active Formatter, or None."""
-    level: Any
+    level: int
     """The handler’s threshold level."""
     def close(self) -> None:
         """
@@ -148,19 +148,19 @@ class LogRecord:
     record per logger to reduce allocations.
     """
     def __init__(self) -> None: ...
-    asctime: Any
+    asctime: str | None
     """Human-readable timestamp; populated lazily by Formatter."""
-    ct: Any
+    ct: float
     """Creation time as returned by time.time()."""
-    levelname: Any
+    levelname: str
     """Textual level name."""
-    levelno: Any
+    levelno: int
     """Numeric level of this record."""
-    message: Any
+    message: str
     """The fully-formatted log message."""
-    msecs: Any
+    msecs: int
     """Millisecond component of ct."""
-    name: Any
+    name: str
     """The originating logger’s name."""
     def set(self, name: str, level: int, message: str) -> None:
         """
@@ -175,17 +175,17 @@ class Logger:
     so that getLogger can return the same instance for the same name.
     """
     def __init__(self, name: str, level: int = NOTSET) -> None: ...
-    handlers: Any
+    handlers: list
     """
     The list of Handler instances attached to this logger. When empty,
     messages are dispatched to the root logger’s handlers.
     """
-    level: Any
+    level: int
     """
     The configured numeric level. 0 (NOTSET) means
     “inherit”.
     """
-    name: Any
+    name: str
     """The logger’s dotted name."""
     def addHandler(self, handler: Handler) -> None:
         """Attach handler to this logger."""
@@ -247,7 +247,7 @@ class StreamHandler:
     def __init__(self, stream=None) -> None: ...
     stream: Any
     """The destination stream object."""
-    terminator: Any
+    terminator: str
     r"""String appended after every formatted record. Defaults to "\n"."""
     def close(self) -> None:
         """Flush the underlying stream when it exposes a flush method."""

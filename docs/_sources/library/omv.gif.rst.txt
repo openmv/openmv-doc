@@ -16,7 +16,9 @@ you want to share. Use `mjpeg` for long clips.
 
 Example usage::
 
-    import csi, gif
+    import csi
+    import gif
+    import time
 
     # Setup camera.
     csi0 = csi.CSI()
@@ -28,8 +30,9 @@ Example usage::
     # Create the gif object.
     g = gif.Gif("example.gif")
 
-    # Add frames.
-    for i in range(100):
+    # Record for 4 seconds.
+    start = time.ticks_ms()
+    while time.ticks_diff(time.ticks_ms(), start) < 4000:
         g.add_frame(csi0.snapshot())
 
     # Finalize.

@@ -93,11 +93,11 @@ Constructors
       *timer* must be a Timer object. The timer must already be initialised
       and running at the desired sampling frequency.
 
-      Example reading 3 ADC's::
+      Example reading 3 ADCs::
 
-          adc0 = pyb.ADC(pyb.Pin.board.X1)    # Create ADC's
-          adc1 = pyb.ADC(pyb.Pin.board.X2)
-          adc2 = pyb.ADC(pyb.Pin.board.X3)
+          adc0 = pyb.ADC(pyb.Pin.board.P0)    # Create ADCs
+          adc1 = pyb.ADC(pyb.Pin.board.P1)
+          adc2 = pyb.ADC(pyb.Pin.board.P2)
           tim = pyb.Timer(8, freq=100)        # Create timer
           rx0 = array.array('H', (0 for i in range(100))) # ADC buffers of
           rx1 = array.array('H', (0 for i in range(100))) # 100 16-bit words
@@ -132,8 +132,8 @@ Appropriate scaling is handled according to reference voltage used (usually 3.3V
 The temperature sensor on the chip is factory calibrated and allows to read the die temperature
 to +/- 1 degree centigrade. Although this sounds pretty accurate, don't forget that the MCU's internal
 temperature is measured. Depending on processing loads and I/O subsystems active the die temperature
-may easily be tens of degrees above ambient temperature. On the other hand a pyboard woken up after a
-long standby period will show correct ambient temperature within limits mentioned above.
+may easily be tens of degrees above ambient temperature. A board woken up after a long standby period
+will show correct ambient temperature within the limits mentioned above.
 
 The ``ADCAll`` ``read_core_vbat()``, ``read_vref()`` and ``read_core_vref()`` methods read
 the backup battery voltage, reference voltage and the (1.21V nominal) reference voltage using the
@@ -144,12 +144,12 @@ to the actual supply voltage. To avoid analog input overload the battery voltage
 via a voltage divider and scaled according to the divider value. To prevent excessive loads
 to the backup battery, the voltage divider is only active during ADC conversion.
 
-``read_vref()`` is evaluated by measuring the internal voltage reference and backscale it using
-factory calibration value of the internal voltage reference. In most cases the reading would be close
-to 3.3V. If the pyboard is operated from a battery, the supply voltage may drop to values below 3.3V.
-The pyboard will still operate fine as long as the operating conditions are met. With proper settings
-of MCU clock, flash access speed and programming mode it is possible to run the pyboard down to
-2 V and still get useful ADC conversion.
+``read_vref()`` is evaluated by measuring the internal voltage reference and back-scaling it using the
+factory calibration value of the internal voltage reference. In most cases the reading will be close
+to 3.3 V. If the board is operated from a battery, the supply voltage may drop below 3.3 V; the board
+still operates as long as the MCU's electrical specifications are met. With appropriate MCU clock,
+flash access speed and programming-mode settings the supply can fall as low as around 2 V and still
+yield useful ADC conversions.
 
 It is very important to make sure analog input voltages never exceed actual supply voltage.
 

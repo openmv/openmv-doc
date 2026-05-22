@@ -3,36 +3,32 @@ from typing import Any
 
 ARRAY: int
 """
-Type constants for pointers and arrays. Note that there is no explicit
-constant for structures, it’s implicit: an aggregate type without PTR
-or ARRAY flags is a structure.
+Marks a descriptor field as a fixed-length array of another type.
+An array field is either (offset | ARRAY, count | element_type)
+for arrays of scalars or
+(offset | ARRAY, count, element_descriptor) for arrays of
+structures. The number of elements is fixed at descriptor time.
 """
 BIG_ENDIAN: int
 """Layout type for a big-endian packed structure."""
 FLOAT32: int
-"""Floating-point types for structure descriptors."""
+"""
+IEEE 754 single-precision floating-point (4 bytes). Reads and writes
+are converted to/from a Python float.
+"""
 FLOAT64: int
-"""Floating-point types for structure descriptors."""
+"""
+IEEE 754 double-precision floating-point (8 bytes). Reads and writes
+are converted to/from a Python float.
+"""
 INT16: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Signed 16-bit integer. Range -32768 – 32767."""
 INT32: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Signed 32-bit integer. Range -0x80000000 – 0x7FFFFFFF."""
 INT64: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Signed 64-bit integer. Range -0x8000000000000000 – 0x7FFFFFFFFFFFFFFF."""
 INT8: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Signed 8-bit integer. Range -128 – 127."""
 LITTLE_ENDIAN: int
 """
 Layout type for a little-endian packed structure. (Packed means that every
@@ -46,34 +42,23 @@ conforming to the ABI of the system on which MicroPython runs.
 """
 PTR: int
 """
-Type constants for pointers and arrays. Note that there is no explicit
-constant for structures, it’s implicit: an aggregate type without PTR
-or ARRAY flags is a structure.
+Marks a descriptor field as a pointer to another type. A pointer
+field is written as a two-tuple
+(offset | PTR, target_type_or_descriptor). Dereferencing the
+pointer yields a typed view into the address it holds.
 """
 UINT16: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Unsigned 16-bit integer. Range 0 – 65535."""
 UINT32: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Unsigned 32-bit integer. Range 0 – 0xFFFFFFFF."""
 UINT64: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Unsigned 64-bit integer. Range 0 – 0xFFFFFFFFFFFFFFFF."""
 UINT8: int
-"""
-Integer types for structure descriptors. Constants for 8, 16, 32,
-and 64 bit types are provided, both signed and unsigned.
-"""
+"""Unsigned 8-bit integer. Range 0 – 255."""
 VOID: int
 """
-VOID is an alias for UINT8, and is provided to conveniently define
-C’s void pointers: (uctypes.PTR, uctypes.VOID).
+Alias for UINT8. Provided so that C-style void * fields
+can be described idiomatically as (uctypes.PTR, uctypes.VOID).
 """
 
 def addressof(obj: Any) -> int:

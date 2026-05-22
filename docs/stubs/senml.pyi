@@ -32,19 +32,19 @@ class SenmlPack:
     The callback supplied at construction time. May be re-assigned at
     runtime.
     """
-    base_sum: Any
+    base_sum: int | float | None
     """Optional base sum (bs) added to each record’s sum field."""
-    base_time: Any
+    base_time: int | float | None
     """Optional base time (bt) added to each record’s timestamp."""
-    base_unit: Any
+    base_unit: str | None
     """Optional base unit (bu) – typically a value from SenmlUnits."""
-    base_value: Any
+    base_value: int | float | None
     """
     Optional base value (bv) added to each record’s numeric value when
     encoding and subtracted on decoding. Setting a non-numeric value
     raises Exception.
     """
-    name: Any
+    name: str
     """The pack’s base name (bn)."""
     def add(self, item: SenmlRecord | SenmlPack) -> None:
         """
@@ -118,15 +118,15 @@ class SenmlRecord:
     The callback supplied at construction time. May be re-assigned at
     runtime.
     """
-    name: Any
+    name: str
     """Record name (n)."""
-    sum: Any
+    sum: int | float | None
     """Integrated sum field (s)."""
-    time: Any
+    time: int | float | None
     """Timestamp associated with this measurement (t)."""
-    unit: Any
+    unit: str | None
     """Unit string (u)."""
-    update_time: Any
+    update_time: int | float | None
     """
     Maximum time before the sensor will provide an updated reading
     (ut).
@@ -147,53 +147,124 @@ class SenmlRecord:
 
 class SenmlUnits:
     """
-    Enumeration object whose attributes are the SenML unit symbols defined by
-    RFC 8428. Each
+    Namespace class whose class attributes are the SenML unit symbols defined
+    by RFC 8428. Each
     attribute resolves to the unit’s string code, suitable for assignment to
     SenmlRecord.unit or SenmlPack.base_unit.
-    Examples of available unit attributes:
-    SENML_UNIT_METER -> "m"
-
-    SENML_UNIT_KILOGRAM -> "kg"
-
-    SENML_UNIT_SECOND -> "s"
-
-    SENML_UNIT_AMPERE -> "A"
-
-    SENML_UNIT_KELVIN -> "K"
-
-    SENML_UNIT_DEGREES_CELSIUS -> "Cel"
-
-    SENML_UNIT_HERTZ -> "Hz"
-
-    SENML_UNIT_VOLT -> "V"
-
-    SENML_UNIT_WATT -> "W"
-
-    SENML_UNIT_PASCAL -> "Pa"
-
-    SENML_UNIT_LUX -> "lx"
-
-    SENML_UNIT_RELATIVE_HUMIDITY -> "%RH"
-
-    SENML_UNIT_VELOCITY -> "m/s"
-
-    SENML_UNIT_ACCELERATION -> "m/s2"
-
-    SENML_UNIT_DEGREES_LATITUDE -> "lat"
-
-    SENML_UNIT_DEGREES_LONGITUDE -> "lon"
-
-    SENML_UNIT_BIT_PER_SECOND -> "bit/s"
-
-    SENML_UNIT_COUNTER -> "count"
-
-    SENML_UNIT_RATIO -> "//"
-
-    SENML_UNIT_BPM -> "beat/min"
-    See the SenML unit registry in
-    RFC 8428 Section 12.1
-    for the complete list.
     """
     def __init__(self) -> None: ...
+    SENML_UNIT_ACCELERATION: str
+    """"m/s2" – acceleration."""
+    SENML_UNIT_AMPERE: str
+    """"A" – ampere."""
+    SENML_UNIT_BEATS: str
+    """"beats" – beats."""
+    SENML_UNIT_BECQUEREL: str
+    """"Bq" – becquerel."""
+    SENML_UNIT_BEL: str
+    """"Bspl" – bel (sound pressure level)."""
+    SENML_UNIT_BIT: str
+    """"bit" – bit."""
+    SENML_UNIT_BIT_PER_SECOND: str
+    """"bit/s" – bit per second."""
+    SENML_UNIT_BPM: str
+    """"beat/min" – beats per minute."""
+    SENML_UNIT_CANDELA: str
+    """"cd" – candela."""
+    SENML_UNIT_CANDELA_PER_SQUARE_METER: str
+    """"cd/m2" – luminance."""
+    SENML_UNIT_COULOMB: str
+    """"C" – coulomb."""
+    SENML_UNIT_COUNTER: str
+    """"count" – counter."""
+    SENML_UNIT_CUBIC_METER: str
+    """"m3" – cubic metre."""
+    SENML_UNIT_CUBIC_METER_PER_SECOND: str
+    """"m3/s" – volumetric flow rate."""
+    SENML_UNIT_DECIBEL: str
+    """"db" – decibel."""
+    SENML_UNIT_DECIBEL_RELATIVE_TO_1_W: str
+    """"dBW" – decibel relative to 1 W."""
+    SENML_UNIT_DEGREES_CELSIUS: str
+    """"Cel" – degrees Celsius."""
+    SENML_UNIT_DEGREES_LATITUDE: str
+    """"lat" – degrees latitude."""
+    SENML_UNIT_DEGREES_LONGITUDE: str
+    """"lon" – degrees longitude."""
+    SENML_UNIT_EVENT_RATE_PER_MINUTE: str
+    """"1/min" – event rate per minute."""
+    SENML_UNIT_EVENT_RATE_PER_SECOND: str
+    """"1/s" – event rate per second."""
+    SENML_UNIT_FARAD: str
+    """"F" – farad."""
+    SENML_UNIT_GRAM: str
+    """"g" – gram."""
+    SENML_UNIT_GRAY: str
+    """"Gy" – gray."""
+    SENML_UNIT_HENRY: str
+    """"H" – henry."""
+    SENML_UNIT_HERTZ: str
+    """"Hz" – hertz."""
+    SENML_UNIT_JOULE: str
+    """"J" – joule."""
+    SENML_UNIT_KATAL: str
+    """"kat" – katal."""
+    SENML_UNIT_KELVIN: str
+    """"K" – kelvin."""
+    SENML_UNIT_KILOGRAM: str
+    """"kg" – kilogram."""
+    SENML_UNIT_LITER: str
+    """"l" – litre."""
+    SENML_UNIT_LITER_PER_SECOND: str
+    """"l/s" – litre per second."""
+    SENML_UNIT_LUMEN: str
+    """"lm" – lumen."""
+    SENML_UNIT_LUX: str
+    """"lx" – lux."""
+    SENML_UNIT_METER: str
+    """"m" – metre."""
+    SENML_UNIT_MOLE: str
+    """"mol" – mole."""
+    SENML_UNIT_NEWTON: str
+    """"N" – newton."""
+    SENML_UNIT_OHM: str
+    """"Ohm" – ohm."""
+    SENML_UNIT_PASCAL: str
+    """"Pa" – pascal."""
+    SENML_UNIT_PERCENTAGE_REMAINING_BATTERY_LEVEL: str
+    """"%EL" – remaining battery level as a percentage."""
+    SENML_UNIT_PH: str
+    """"pH" – acidity (pH)."""
+    SENML_UNIT_RADIAN: str
+    """"rad" – radian."""
+    SENML_UNIT_RATIO: str
+    """"//" – ratio (dimensionless)."""
+    SENML_UNIT_RELATIVE_HUMIDITY: str
+    """"%RH" – relative humidity."""
+    SENML_UNIT_SECOND: str
+    """"s" – second."""
+    SENML_UNIT_SECONDS_REMAINING_BATTERY_LEVEL: str
+    """"EL" – remaining battery level in seconds."""
+    SENML_UNIT_SIEMENS: str
+    """"S" – siemens."""
+    SENML_UNIT_SIEMENS_PER_METER: str
+    """"S/m" – siemens per metre (electrical conductivity)."""
+    SENML_UNIT_SIEVERT: str
+    """"Sv" – sievert."""
+    SENML_UNIT_SQUARE_METER: str
+    """"m2" – square metre."""
+    SENML_UNIT_STERADIAN: str
+    """"sr" – steradian."""
+    SENML_UNIT_TESLA: str
+    """"T" – tesla."""
+    SENML_UNIT_VELOCITY: str
+    """"m/s" – velocity."""
+    SENML_UNIT_VOLT: str
+    """"V" – volt."""
+    SENML_UNIT_WATT: str
+    """"W" – watt."""
+    SENML_UNIT_WATT_PER_SQUARE_METER: str
+    """"W/m2" – irradiance."""
+    SENML_UNIT_WEBER: str
+    """"Wb" – weber."""
 

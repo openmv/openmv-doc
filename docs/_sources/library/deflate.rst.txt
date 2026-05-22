@@ -6,16 +6,57 @@
 
 This module allows compression and decompression of binary data with the
 `DEFLATE algorithm <https://en.wikipedia.org/wiki/DEFLATE>`_
-(commonly used in the zlib library and gzip archiver).
+(commonly used in the zlib library and gzip archiver). Added in
+MicroPython v1.21.
 
-**Availability:**
+Availability on OpenMV-supported boards:
 
-* Added in MicroPython v1.21.
+.. list-table::
+   :header-rows: 1
+   :widths: 50 25 25
 
-* **Decompression** is available on all OpenMV Cams.
-
-* **Compression** is **not** available on the STM32-based OpenMV Cams. It is
-  available only on the Alif- and i.MX RT-based OpenMV Cams.
+   * - Board
+     - Decompression
+     - Compression
+   * - OpenMV Cam N6
+     - Yes
+     - No
+   * - OpenMV AE3
+     - Yes
+     - Yes
+   * - OpenMV Cam RT1062
+     - Yes
+     - Yes
+   * - OpenMV Cam Pure Thermal
+     - Yes
+     - No
+   * - OpenMV Cam M4
+     - Yes
+     - No
+   * - OpenMV Cam M7
+     - Yes
+     - No
+   * - OpenMV Cam H7
+     - Yes
+     - No
+   * - OpenMV Cam H7 Plus
+     - Yes
+     - No
+   * - Arduino Giga
+     - Yes
+     - No
+   * - Arduino Portenta H7
+     - Yes
+     - No
+   * - Arduino Nicla Vision
+     - Yes
+     - No
+   * - Arduino Nano 33 BLE Sense
+     - Yes
+     - No
+   * - Arduino Nano RP2040 Connect
+     - Yes
+     - No
 
 Classes
 -------
@@ -66,13 +107,45 @@ Classes
 Constants
 ---------
 
+The four ``format`` constants select the framing applied around the
+raw deflate bit-stream.
+
 .. data:: deflate.AUTO
-          deflate.RAW
-          deflate.ZLIB
-          deflate.GZIP
    :type: int
 
-    Supported values for the *format* parameter.
+   For decompression, auto-detect the input format by inspecting the
+   stream's first bytes (zlib or gzip). For compression, generate a
+   raw deflate stream with no header or trailer (equivalent to
+   :data:`RAW`).
+
+.. data:: deflate.RAW
+   :type: int
+
+   A raw deflate stream (no header, no trailer, no checksum). Because
+   the stream contains no metadata, the decompressor cannot recover
+   the window size from the data, so *wbits* should be set
+   explicitly when decompressing -- otherwise the default 256-byte
+   window may be too small.
+
+.. data:: deflate.ZLIB
+   :type: int
+
+   A zlib-wrapped deflate stream as defined by
+   `RFC 1950 <https://datatracker.ietf.org/doc/html/rfc1950>`__: a
+   2-byte header that records the window size, the deflate payload,
+   and a trailing Adler-32 checksum. Compact and self-describing;
+   well suited to embedded use.
+
+.. data:: deflate.GZIP
+   :type: int
+
+   A gzip-wrapped deflate stream as defined by
+   `RFC 1952 <https://datatracker.ietf.org/doc/html/rfc1952>`__: a
+   header with optional filename/timestamp metadata, the deflate
+   payload, and a trailing CRC-32 plus uncompressed length. This is
+   the format produced by the ``gzip`` command-line tool and by
+   :class:`gzip.GzipFile`. The header does not record the window size,
+   so the decompressor must assume 32 KiB unless *wbits* is set.
 
 Examples
 --------
@@ -85,7 +158,7 @@ file from storage:
    import deflate
 
    # Writing a zlib-compressed stream (uses the default window size of 256 bytes).
-   with open("data.gz", "wb") as f:
+   with open("data.z", "wb") as f:
        with deflate.DeflateIO(f, deflate.ZLIB) as d:
            # Use d.write(...) etc
 

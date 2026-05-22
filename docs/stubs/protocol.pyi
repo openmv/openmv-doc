@@ -26,21 +26,99 @@ CHANNEL_ID_STREAM: int
 CHANNEL_ID_TRANSPORT: int
 """Reserved channel ID for the active transport."""
 
-def init(crc: bool = True, seq: bool = True, ack: bool = True, events: bool = True, max_payload: int = OMV_PROTOCOL_MAX_PAYLOAD_SIZE, rtx_retries: int = OMV_PROTOCOL_DEF_RTX_RETRIES, rtx_timeout_ms: int = OMV_PROTOCOL_DEF_RTX_TIMEOUT_MS, lock_interval_ms: int = OMV_PROTOCOL_MIN_LOCK_INTERVAL_MS, poll_ms: int = 0) -> None:
+def init(crc: bool = True, seq: bool = True, ack: bool = True, events: bool = True, max_payload: int = ..., rtx_retries: int = 3, rtx_timeout_ms: int = 500, lock_interval_ms: int = 10, poll_ms: int = 0) -> None:
     """
-    Initialize the protocol stack and register the default logical data
-    channels (stdin, stdout, stream and, if compiled in,
-    profile). Raises RuntimeError if initialization fails.
+    Initialize (or reconfigure) the protocol stack and register the default
+    logical data channels (stdin, stdout, stream and, if compiled
+    in, profile). Raises RuntimeError if initialization fails. The
+    firmware boots with a default USB protocol stack already running, so
+    calling this is needed only to change the transport or override the
+    default framing parameters.
     crc enables CRC validation on protocol frames.
     seq enables sequence number tracking.
     ack enables per-frame acknowledgements.
     events enables channel event notifications.
-    max_payload is the maximum payload size in bytes.
-    rtx_retries is the number of retransmission attempts.
-    rtx_timeout_ms is the retransmission timeout in milliseconds.
+    max_payload is the maximum payload size in bytes. If omitted the
+    per-camera default below is used; it is derived from each board’s
+    protocol buffer size as buffer - 10 (header) - 4 (CRC).
+    Camera
+
+    Buffer size
+
+    Max payload
+
+    OpenMV Cam M4 (OPENMV2)
+
+    512
+
+    498
+
+    OpenMV Cam M7 (OPENMV3)
+
+    512
+
+    498
+
+    OpenMV Cam H7 (OPENMV4)
+
+    512
+
+    498
+
+    OpenMV Cam H7 Plus (OPENMV4P)
+
+    4096
+
+    4082
+
+    OpenMV Pure Thermal (OPENMVPT)
+
+    4096
+
+    4082
+
+    OpenMV Cam RT1062 (OPENMV_RT1060)
+
+    4096
+
+    4082
+
+    OpenMV Cam N6 (OPENMV_N6)
+
+    8192
+
+    8178
+
+    OpenMV AE3 (OPENMV_AE3)
+
+    8192
+
+    8178
+
+    Arduino Portenta H7 (ARDUINO_PORTENTA_H7)
+
+    4096
+
+    4082
+
+    Arduino Giga (ARDUINO_GIGA)
+
+    4096
+
+    4082
+
+    Arduino Nicla Vision (ARDUINO_NICLA_VISION)
+
+    4096
+
+    4082
+    rtx_retries is the number of retransmission attempts. Default 3.
+    rtx_timeout_ms is the retransmission timeout in milliseconds (doubled
+    after each timeout). Default 500.
     lock_interval_ms is the minimum lock interval in milliseconds.
-    poll_ms is the polling interval in milliseconds (0 disables timer
-    polling).
+    Default 10.
+    poll_ms is the polling interval in milliseconds. 0 (the default)
+    disables timer polling.
     """
     ...
 def is_active() -> bool:
@@ -49,7 +127,7 @@ def is_active() -> bool:
     is active, otherwise False.
     """
     ...
-def register(name: str, backend: object, flags: int = 0) -> ProtocolChannel:
+def register(name: str, *, backend: object, flags: int = 0) -> ProtocolChannel:
     """
     Register a Python backend object as a new logical channel and return
     a ProtocolChannel handle. The backend object’s available methods
@@ -58,10 +136,11 @@ def register(name: str, backend: object, flags: int = 0) -> ProtocolChannel:
     and protocol.CHANNEL_FLAG_LOCK are added to flags automatically
     when the corresponding methods are implemented.
     name is the channel name as a string. Truncated to the firmware’s
-    channel-name buffer size.
+    channel-name buffer size. Required.
     backend is the Python object implementing the backend interface.
+    Required. Typically passed by keyword (backend=...).
     flags is additional channel flag bits (see the CHANNEL_FLAG_*
-    constants).
+    constants). Optional; defaults to 0.
     Raises RuntimeError if the channel cannot be registered (e.g. no
     free channel slots).
     """
@@ -154,4 +233,65 @@ class backend:
     describe the optional interface a Python backend may implement.
     """
     def __init__(self) -> None: ...
+    def flush(self) -> object:
+        """Flush any pending data. Return any non-None value on success."""
+        ...
+    def init(self) -> object:
+        """
+        Called once when the channel is initialized. Return any non-None
+        value on success; an exception or missing return is treated as an error.
+        """
+        ...
+    def ioctl(self, cmd: int, length: int, arg: bytearray | None) -> int:
+        """
+        Handle an ioctl. arg is None if length is zero, otherwise a
+        bytearray referencing the C buffer. Return 0 or None on
+        success, or a negative integer on error.
+        """
+        ...
+    def is_active(self) -> bool:
+        """
+        For transport channels, return True if the underlying transport is
+        currently connected.
+        """
+        ...
+    def lock(self) -> bool:
+        """Acquire the channel for a transfer. Return True on success."""
+        ...
+    def poll(self) -> bool:
+        """Return True if the channel has data ready to be read by the host."""
+        ...
+    def read(self, offset: int, size: int) -> bytes:
+        """
+        Return up to size bytes starting at offset as a bytes-like
+        object that supports the buffer protocol.
+        """
+        ...
+    def readp(self, offset: int, size: int) -> bytes:
+        """
+        Zero-copy variant of read. Returns a buffer whose underlying memory
+        is read directly by the protocol layer; the buffer must remain valid
+        for the duration of the transfer.
+        """
+        ...
+    def shape(self) -> tuple:
+        """
+        Return a tuple of up to four integers describing the data shape (e.g.
+        image dimensions). Up to four elements are consumed by the protocol
+        layer.
+        """
+        ...
+    def size(self) -> int:
+        """Return the number of bytes currently readable from the channel."""
+        ...
+    def unlock(self) -> bool:
+        """Release the channel after a transfer. Return True on success."""
+        ...
+    def write(self, offset: int, data: bytearray) -> int:
+        """
+        Write data at offset. data is a bytearray referencing
+        the C buffer directly. Return the number of bytes written, or 0 on
+        default success.
+        """
+        ...
 

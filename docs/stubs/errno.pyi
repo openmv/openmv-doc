@@ -51,7 +51,7 @@ EPERM: int
 """Operation not permitted."""
 ETIMEDOUT: int
 """Connection or operation timed out."""
-errorcode: int
+errorcode: dict[int, str]
 """
 Dictionary mapping each numeric error code to a string with its symbolic
 name:

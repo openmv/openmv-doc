@@ -47,20 +47,50 @@ Constructors
 
 .. class:: UART(bus: Union[int, str], *args, **kwargs)
 
-   Construct a UART object on the given bus.  ``bus`` can be 1/3.
-   With no additional parameters, the UART object is created but not
-   initialised (it has the settings from the last initialisation of
-   the bus, if any).  If extra arguments are given, the bus is initialised.
-   See ``init`` for parameters of initialisation.
+   Construct a UART object on the given ``bus`` (an integer peripheral
+   index, e.g. ``3`` for ``UART3``). With no additional parameters the
+   object is created but not initialised (it retains the previous bus
+   settings, if any); if extra arguments are given the bus is initialised.
+   See :meth:`init` for the available parameters.
 
-   The physical pins of the UART bus are for the OpenMV Cam:
+   ``UART(3)`` is wired to the same header pins on every STM32 OpenMV Cam:
 
-     - ``UART(3)``: ``(TX, RX) = (P4, P5) = (PB10, PB11)``
+   .. list-table::
+      :header-rows: 1
+      :widths: 20 20 60
 
-   The physical pins of the UART busses are for the OpenMV Cam M7 and H7:
+      * - Signal
+        - Header pin
+        - Notes
+      * - ``TX``
+        - ``P4``
+        -
+      * - ``RX``
+        - ``P5``
+        -
 
-     - ``UART(1)``: ``(TX, RX) = (P1, P0) = (PB14, PB15)``
-     - ``UART(3)``: ``(TX, RX) = (P4, P5) = (PB10, PB11)``
+   Additional UART buses are available on some boards:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: 14 18 18 50
+
+      * - Bus
+        - TX pin
+        - RX pin
+        - Available on
+      * - ``UART(1)``
+        - ``P1``
+        - ``P0``
+        - OpenMV Cam M7 / H7 / H7 Plus / Pure Thermal
+      * - ``UART(4)``
+        - ``P2``
+        - ``P3``
+        - OpenMV Cam N6
+      * - ``UART(7)``
+        - ``P14``
+        - ``P13``
+        - OpenMV Cam N6
 
    Methods
    -------
@@ -163,18 +193,23 @@ Constructors
 Flow Control
 ------------
 
-``UART(3)`` support RTS/CTS hardware flow control using the following pins:
+``UART(3)`` supports RTS/CTS hardware flow control. On the OpenMV Cam M7,
+H7, H7 Plus and Pure Thermal the flow-control pins are:
 
-    - ``UART(3)`` is on :``(TX, RX, nRTS, nCTS) = (P4, P5, P1, P2) = (PB10, PB11, PB14, PB13)``
+    ``(TX, RX, nRTS, nCTS) = (P4, P5, P1, P2)``
 
-In the following paragraphs the term "target" refers to the device connected to
-the UART.
+On the OpenMV Cam N6 only ``nRTS`` is exposed (on header pin ``P7``);
+``nCTS`` is not routed to the I/O header.
 
-When the UART's ``init()`` method is called with ``flow`` set to one or both of
-``UART.RTS`` and ``UART.CTS`` the relevant flow control pins are configured.
-``nRTS`` is an active low output, ``nCTS`` is an active low input with pullup
-enabled. To achieve flow control the Pyboard's ``nCTS`` signal should be connected
-to the target's ``nRTS`` and the Pyboard's ``nRTS`` to the target's ``nCTS``.
+In the following paragraphs the term "target" refers to the device
+connected to the UART.
+
+When the UART's :meth:`init` method is called with ``flow`` set to one or
+both of ``UART.RTS`` and ``UART.CTS``, the relevant flow-control pins are
+configured. ``nRTS`` is an active-low output and ``nCTS`` is an active-low
+input with pull-up enabled. To wire up flow control, connect the OpenMV
+Cam's ``nCTS`` to the target's ``nRTS`` and the OpenMV Cam's ``nRTS`` to
+the target's ``nCTS``.
 
 CTS: target controls OpenMV Cam transmitter
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

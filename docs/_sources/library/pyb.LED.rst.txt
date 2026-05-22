@@ -12,9 +12,38 @@ Constructors
 
 .. class:: LED(id: int)
 
-   Create an LED object associated with the given LED:
+   Create an LED object associated with the given LED. ``id`` is the LED
+   number; the colour/function and how many LEDs are present depend on
+   the OpenMV Cam:
 
-     - ``id`` is the LED number, 1-4.
+   .. list-table::
+      :header-rows: 1
+      :widths: 24 14 14 14 14 20
+
+      * - Camera
+        - LED(1)
+        - LED(2)
+        - LED(3)
+        - LED(4)
+        - Notes
+      * - OpenMV Cam M4 / M7 / H7 / H7 Plus
+        - Red
+        - Green
+        - Blue
+        - IR
+        -
+      * - OpenMV Cam Pure Thermal
+        - Red
+        - Green
+        - Blue
+        - White
+        -
+      * - OpenMV Cam N6
+        - Red
+        - Green
+        - Blue
+        - --
+        - No fourth LED.
 
 
    Methods

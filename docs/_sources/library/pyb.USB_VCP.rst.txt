@@ -14,10 +14,8 @@ Constructors
 
 .. class:: USB_VCP(id: int = 0)
 
-   Create a new USB_VCP object.  The *id* argument specifies which USB VCP port to
-   use.
-
-   Create a new USB_VCP object.
+   Create a new ``USB_VCP`` object. The *id* argument selects which USB VCP
+   port to use when more than one is exposed.
 
    Methods
    -------

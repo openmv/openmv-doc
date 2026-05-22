@@ -60,45 +60,46 @@ represented by VFS classes.
 
         Build a FAT filesystem on *block_dev*.
 
-.. class:: VfsLfs1(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32)
+.. class:: VfsRom(buffer: Union[bytes, bytearray, memoryview])
 
-    Create a filesystem object that uses the `littlefs v1 filesystem format`_.
-    Storage of the littlefs filesystem is provided by *block_dev*, which must
-    support the :ref:`extended interface <block-device-interface>`.
+    Create a filesystem object that uses the :ref:`ROMFS read-only
+    filesystem format <romfs>`. ``buffer`` must be an object supporting the
+    buffer protocol (``bytes``, ``bytearray`` or ``memoryview``) that
+    contains a valid ROMFS image.
+
     Objects created by this constructor can be mounted using :func:`mount`.
 
-    See :ref:`filesystem` for more information.
+    See :ref:`romfs` for full details, including how to build and deploy
+    ROMFS images with :ref:`mpremote <mpremote>`.
 
-    .. staticmethod:: mkfs(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32) -> None
+.. function:: rom_ioctl(op: int, *args: Any) -> Any
 
-        Build a Lfs1 filesystem on *block_dev*.
+    Low-level interface for accessing the read-only memory (ROM)
+    partition(s) of the device. The supported operations are:
 
-    .. note:: There are reports of littlefs v1 failing in certain situations,
-              for details see `littlefs issue 347`_.
+    .. list-table::
+       :header-rows: 1
+       :widths: 38 62
 
-.. class:: VfsLfs2(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32, mtime: bool = True)
+       * - Call
+         - Behaviour
+       * - ``rom_ioctl(1)``
+         - Return the number of available ROM partitions.
+       * - ``rom_ioctl(2, id)``
+         - Return partition ``id`` as a ``memoryview``.
+       * - ``rom_ioctl(3, id, length)``
+         - Erase the first ``length`` bytes of partition ``id`` in
+           preparation for writing. Returns the minimum write alignment
+           in bytes.
+       * - ``rom_ioctl(4, id, offset, buf)``
+         - Write ``buf`` to partition ``id`` at byte ``offset``.
+       * - ``rom_ioctl(5, id)``
+         - Finalise a write sequence to partition ``id`` (flushes
+           caches, etc.).
 
-    Create a filesystem object that uses the `littlefs v2 filesystem format`_.
-    Storage of the littlefs filesystem is provided by *block_dev*, which must
-    support the :ref:`extended interface <block-device-interface>`.
-    Objects created by this constructor can be mounted using :func:`mount`.
-
-    The *mtime* argument enables modification timestamps for files, stored using
-    littlefs attributes.  This option can be disabled or enabled differently each
-    mount time and timestamps will only be added or updated if *mtime* is enabled,
-    otherwise the timestamps will remain untouched.  Littlefs v2 filesystems without
-    timestamps will work without reformatting and timestamps will be added
-    transparently to existing files once they are opened for writing.  When *mtime*
-    is enabled `os.stat` on files without timestamps will return 0 for the timestamp.
-
-    See :ref:`filesystem` for more information.
-
-    .. staticmethod:: mkfs(block_dev: AbstractBlockDev, readsize: int = 32, progsize: int = 32, lookahead: int = 32) -> None
-
-        Build a Lfs2 filesystem on *block_dev*.
-
-    .. note:: There are reports of littlefs v2 failing in certain situations,
-              for details see `littlefs issue 295`_.
+    These operations are normally invoked indirectly by
+    :ref:`mpremote <mpremote>` when deploying a ROMFS image; most
+    applications do not need to call them directly.
 
 .. class:: VfsPosix(root: Optional[str] = None)
 
@@ -107,10 +108,10 @@ represented by VFS classes.
     as the root of the ``VfsPosix`` object.  Otherwise the current directory of
     the host filesystem is used.
 
-.. _littlefs v1 filesystem format: https://github.com/ARMmbed/littlefs/tree/v1
-.. _littlefs v2 filesystem format: https://github.com/ARMmbed/littlefs
-.. _littlefs issue 295: https://github.com/ARMmbed/littlefs/issues/295
-.. _littlefs issue 347: https://github.com/ARMmbed/littlefs/issues/347
+    .. note::
+
+       :class:`VfsPosix` is only available on the MicroPython Unix port; it
+       is not present in OpenMV Cam firmware.
 
 Block devices
 -------------
@@ -139,9 +140,9 @@ methods (see below), in order to support a variety of use cases.  A given block
 device may implement one form or the other, or both at the same time. The second
 form (with the offset parameter) is referred to as the "extended interface".
 
-Some filesystems (such as littlefs) that require more control over write
-operations, for example writing to sub-block regions without erasing, may require
-that the block device supports the extended interface.
+Some filesystems require more control over write operations -- for example,
+writing to sub-block regions without erasing -- and need the block device to
+support the extended interface.
 
 .. class:: AbstractBlockDev
 
@@ -154,38 +155,39 @@ that the block device supports the extended interface.
     .. method:: readblocks(block_num: int, buf: bytearray) -> None
                 readblocks(block_num: int, buf: bytearray, offset: int) -> None
 
-        The first form reads aligned, multiples of blocks.
-        Starting at the block given by the index *block_num*, read blocks from
-        the device into *buf* (an array of bytes).
-        The number of blocks to read is given by the length of *buf*,
-        which will be a multiple of the block size.
+        Read bytes from the device into *buf*. Two overloads expose the
+        :ref:`simple and extended <block-device-interface>` interfaces.
 
-        The second form allows reading at arbitrary locations within a block,
-        and arbitrary lengths.
-        Starting at block index *block_num*, and byte offset within that block
-        of *offset*, read bytes from the device into *buf* (an array of bytes).
-        The number of bytes to read is given by the length of *buf*.
+        **Simple form** (``readblocks(block_num, buf)``): reads whole
+        blocks starting at block index *block_num*. ``len(buf)`` must be
+        a multiple of the block size, and the number of blocks read is
+        ``len(buf) // block_size``.
+
+        **Extended form** (``readblocks(block_num, buf, offset)``):
+        reads ``len(buf)`` bytes -- not necessarily a whole number of
+        blocks -- starting at byte ``offset`` within block *block_num*.
+        Use this form when the filesystem needs sub-block read access.
 
     .. method:: writeblocks(block_num: int, buf: bytes) -> None
                 writeblocks(block_num: int, buf: bytes, offset: int) -> None
 
-        The first form writes aligned, multiples of blocks, and requires that the
-        blocks that are written to be first erased (if necessary) by this method.
-        Starting at the block given by the index *block_num*, write blocks from
-        *buf* (an array of bytes) to the device.
-        The number of blocks to write is given by the length of *buf*,
-        which will be a multiple of the block size.
+        Write bytes from *buf* to the device.
 
-        The second form allows writing at arbitrary locations within a block,
-        and arbitrary lengths.  Only the bytes being written should be changed,
-        and the caller of this method must ensure that the relevant blocks are
-        erased via a prior ``ioctl`` call.
-        Starting at block index *block_num*, and byte offset within that block
-        of *offset*, write bytes from *buf* (an array of bytes) to the device.
-        The number of bytes to write is given by the length of *buf*.
+        **Simple form** (``writeblocks(block_num, buf)``): writes whole
+        blocks starting at block index *block_num*. ``len(buf)`` must be
+        a multiple of the block size, and the number of blocks written
+        is ``len(buf) // block_size``. The implementation is responsible
+        for erasing each destination block first if the underlying
+        hardware requires it.
 
-        Note that implementations must never implicitly erase blocks if the offset
-        argument is specified, even if it is zero.
+        **Extended form** (``writeblocks(block_num, buf, offset)``):
+        writes ``len(buf)`` bytes -- not necessarily a whole number of
+        blocks -- starting at byte ``offset`` within block *block_num*.
+        Only the bytes being written may change; the caller is
+        responsible for ensuring affected blocks have been erased via a
+        prior :meth:`ioctl(6, block_num) <ioctl>` call. Implementations
+        of this form **must never** implicitly erase a block, even when
+        ``offset`` is zero.
 
     .. method:: ioctl(op: int, arg: int) -> Optional[int]
 
@@ -202,15 +204,15 @@ that the block device supports the extended interface.
             (*arg* is unused)
           - 6 -- erase a block, *arg* is the block number to erase
 
-       As a minimum ``ioctl(4, ...)`` must be intercepted; for littlefs
-       ``ioctl(6, ...)`` must also be intercepted. The need for others is
-       hardware dependent.
+       As a minimum ``ioctl(4, ...)`` must be intercepted; filesystems that
+       use the extended interface additionally require ``ioctl(6, ...)``.
+       The need for the other operations is hardware-dependent.
 
-       Prior to any call to ``writeblocks(block, ...)`` littlefs issues
-       ``ioctl(6, block)``. This enables a device driver to erase the block
-       prior to a write if the hardware requires it. Alternatively a driver
-       might intercept ``ioctl(6, block)`` and return 0 (success). In this case
-       the driver assumes responsibility for detecting the need for erasure.
+       Before any call to ``writeblocks(block, ...)`` a filesystem that uses
+       the extended interface issues ``ioctl(6, block)`` so the driver can
+       erase the block first if the hardware requires it. A driver may
+       instead intercept ``ioctl(6, block)`` and return 0 (success), taking
+       on the responsibility for detecting when erasure is needed itself.
 
        Unless otherwise stated ``ioctl(op, arg)`` can return ``None``.
        Consequently an implementation can ignore unused values of ``op``. Where

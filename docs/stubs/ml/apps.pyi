@@ -16,19 +16,19 @@ class MicroSpeech:
     initialized with channels=1, frequency=16000, and samples=320).
     """
     def __init__(self, preprocessor: ml.Model = None, micro_speech: ml.Model = None, labels: list[str] = None, **kwargs) -> None: ...
-    _AUDIO_FREQUENCY: Any
+    _AUDIO_FREQUENCY: int
     """Audio sample rate in Hz (16000)."""
-    _AVERAGE_WINDOW_SAMPLES: Any
+    _AVERAGE_WINDOW_SAMPLES: int
     """Number of prediction frames averaged over the smoothing window (1020 // _SLICE_TIME_MS)."""
-    _CATEGORY_COUNT: Any
+    _CATEGORY_COUNT: int
     """Number of output categories (4)."""
-    _SAMPLES_PER_STEP: Any
+    _SAMPLES_PER_STEP: int
     """Audio samples per 10 ms step (160)."""
-    _SLICE_COUNT: Any
+    _SLICE_COUNT: int
     """Number of spectrogram slices stored (49)."""
-    _SLICE_SIZE: Any
+    _SLICE_SIZE: int
     """Number of features per spectrogram slice (40)."""
-    _SLICE_TIME_MS: Any
+    _SLICE_TIME_MS: int
     """Time span of one slice in milliseconds (30)."""
     def audio_callback(self, buf: bytes) -> None:
         """

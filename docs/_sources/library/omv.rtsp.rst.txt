@@ -7,12 +7,34 @@
 The ``rtsp`` module on the OpenMV Cam allows you to stream video from your OpenMV Cam to any
 compatible RTSP client (like `VLC <https://www.videolan.org/vlc/index.html>`_).
 
-Example usage::
+Example::
 
-    server = rtsp.rtsp_server(network_if)
-    server.stream(lambda pathname, session: sensor.snapshot())
+    import network
+    import rtsp
+    import csi
+    import time
 
-See the example scripts in OpenMV IDE under ``Web Servers``.
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.VGA)
+
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect("your-ssid", "your-password")
+    while not wlan.isconnected():
+        time.sleep_ms(100)
+
+    server = rtsp.rtsp_server(wlan)
+
+    # Called each time the server needs a new frame to send.
+    def image_callback(pathname, session):
+        return csi0.snapshot()
+
+    # Does not return; streams to any RTSP client that connects.
+    server.stream(image_callback, quality=70)
+
+Connect a client to ``rtsp://<camera-ip>:554/`` to view the stream.
 
 
 class rtsp_server -- rtsp_server class

@@ -4,10 +4,11 @@
 class CAN -- controller area network communication bus
 ======================================================
 
-CAN implements support for classic CAN (available on F4, F7 MCUs) and CAN FD (H7 series) controllers.
-At the physical level CAN bus consists of 2 lines: RX and TX.  Note that to connect the pyboard to a
-CAN bus you must use a CAN transceiver to convert the CAN logic signals from the pyboard to the correct
-voltage levels on the bus.
+CAN implements support for classic CAN (available on F4 and F7 MCUs) and
+CAN FD (H7 series) controllers. At the physical level the CAN bus consists
+of two lines, RX and TX. To connect an OpenMV Cam to a CAN bus you must
+use a CAN transceiver to convert the CAN logic signals from the MCU to the
+correct voltage levels on the bus.
 
 Example usage for classic CAN controller in Loopback (transceiver-less) mode::
 
@@ -33,16 +34,33 @@ Constructors
 
 .. class:: CAN(bus: Union[int, str], *args, **kwargs)
 
-   Construct a CAN object on the given bus.  *bus* can be 1-2, or ``'YA'`` or ``'YB'``.
-   With no additional parameters, the CAN object is created but not
-   initialised (it has the settings from the last initialisation of
-   the bus, if any).  If extra arguments are given, the bus is initialised.
-   See :meth:`CAN.init` for parameters of initialisation.
+   Construct a CAN object on the given ``bus`` (an integer peripheral
+   index, e.g. ``1`` for ``CAN1``, ``2`` for ``CAN2``). With no additional
+   parameters the object is created but not initialised (it retains the
+   previous bus settings, if any); if extra arguments are given the bus is
+   initialised. See :meth:`CAN.init` for the available parameters.
 
-   The physical pins of the CAN buses are:
+   ``CAN(2)`` is wired to the same header pins on every OpenMV Cam that
+   exposes ``pyb.CAN`` (M4 / M7 / H7 / H7 Plus / Pure Thermal):
 
-     - ``CAN(1)`` is on ``YA``: ``(RX, TX) = (Y3, Y4) = (PB8, PB9)``
-     - ``CAN(2)`` is on ``YB``: ``(RX, TX) = (Y5, Y6) = (PB12, PB13)``
+   .. list-table::
+      :header-rows: 1
+      :widths: 24 24 52
+
+      * - Signal
+        - Header pin
+        - Notes
+      * - ``RX``
+        - ``P3``
+        -
+      * - ``TX``
+        - ``P2``
+        -
+
+   The CAN peripheral provides logic-level signals only; an external CAN
+   transceiver is required to drive a real CAN bus.
+
+   ``pyb.CAN`` is not available on the OpenMV Cam N6.
 
    Methods
    -------
@@ -107,7 +125,8 @@ Constructors
       tq is 2.38 microseconds.  The bittime is 35.7 microseconds, and the baudrate
       is 28kHz.
 
-      See page 680 of the STM32F405 datasheet for more details.
+      See the bxCAN / FDCAN section of the STM32 reference manual for the
+      OpenMV Cam's MCU for more details.
 
    .. method:: deinit() -> None
 
@@ -150,11 +169,11 @@ Constructors
 
       - TEC value
       - REC value
-      - number of times the controller enterted the Error Warning state (wrapped
+      - number of times the controller entered the Error Warning state (wrapped
         around to 0 after 65535)
-      - number of times the controller enterted the Error Passive state (wrapped
+      - number of times the controller entered the Error Passive state (wrapped
         around to 0 after 65535)
-      - number of times the controller enterted the Bus Off state (wrapped
+      - number of times the controller entered the Bus Off state (wrapped
         around to 0 after 65535)
       - number of pending TX messages
       - number of pending RX messages on fifo 0

@@ -89,6 +89,13 @@ Endpoint class
 RemoteProc class
 ----------------
 
+.. warning::
+
+   On the STM32H7 the second AMP core is a Cortex-M4 that cannot be
+   stopped and then restarted in-place. Calling :meth:`RemoteProc.stop`
+   or :meth:`RemoteProc.shutdown` on that platform therefore performs a
+   complete system reset rather than a per-core stop.
+
 .. class:: RemoteProc(entry: Union[str, int])
 
    The RemoteProc object provides processor Life Cycle Management (LCM) support, such as
@@ -104,14 +111,11 @@ RemoteProc class
 
    .. method:: stop() -> None
 
-      Stops the remote processor. The exact behavior is platform-dependent. On the STM32H7 for
-      example it's not possible to stop and then restart the Cortex-M4 core, so a complete
-      system reset is performed on a call to this function.
+      Stops the remote processor. The exact behavior is platform-dependent.
 
    .. method:: shutdown() -> None
 
       Shutdown stops the remote processor and releases all of its resources. The exact behavior
       is platform-dependent, however typically it disables power and clocks to the remote core.
       This function is also used as the finaliser (i.e., called when ``RemoteProc`` object is
-      collected). Note that on the STM32H7, it's not possible to stop and then restart the
-      Cortex-M4 core, so a complete system reset is performed on a call to this function.
+      collected).
