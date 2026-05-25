@@ -7,9 +7,7 @@
 The ``machine`` module contains specific functions related to the hardware
 on a particular board. Most functions in this module allow to achieve direct
 and unrestricted access to and control of hardware blocks on a system
-(like CPU, timers, buses, etc.). Used incorrectly, this can lead to
-malfunction, lockups, crashes of your board, and in extreme cases, hardware
-damage.
+(like CPU, timers, buses, etc.).
 
 Memory access
 -------------
@@ -37,22 +35,24 @@ regardless of the access width.
    ``int`` in the range 0-0xFFFFFFFF; ``mem32[addr] = value`` writes the low
    32 bits. ``addr`` must be aligned to 4 bytes.
 
-Example use (registers are specific to an stm32 microcontroller):
+Example use (registers are specific to an STM32H7 microcontroller --
+on the OpenMV Cam H7 / H7 Plus / Pure Thermal the header pin ``P0``
+is wired to ``PB15``):
 
 .. code-block:: python3
 
     import machine
     from micropython import const
 
-    GPIOA = const(0x48000000)
+    GPIOB = const(0x58020400)
     GPIO_BSRR = const(0x18)
     GPIO_IDR = const(0x10)
 
-    # set PA2 high
-    machine.mem32[GPIOA + GPIO_BSRR] = 1 << 2
+    # set P0 (PB15) high via the GPIOB bit-set/reset register
+    machine.mem32[GPIOB + GPIO_BSRR] = 1 << 15
 
-    # read PA3
-    value = (machine.mem32[GPIOA + GPIO_IDR] >> 3) & 1
+    # read P0 (PB15) directly out of the GPIOB input-data register
+    value = (machine.mem32[GPIOB + GPIO_IDR] >> 15) & 1
 
 Reset related functions
 -----------------------
@@ -71,13 +71,14 @@ Reset related functions
 
    Get the reset cause. See :ref:`constants <machine_constants>` for the possible return values.
 
-.. function:: bootloader(value: int | None = None, /) -> None
+.. function:: bootloader(value: int | None = None, /) -> NoReturn
 
-   Reset the device and enter its bootloader.  This is typically used to put the
-   device into a state where it can be programmed with new firmware.
+   Reset the camera into its DFU / serial-download bootloader, ready
+   to be re-flashed with new firmware. This call never returns; the
+   board reboots straight into the bootloader.
 
-   Some ports support passing in an optional *value* argument which can control
-   which bootloader to enter, what to pass to it, or other things.
+   The ``value`` argument is accepted for cross-port compatibility
+   but is ignored on every OpenMV-supported board.
 
 Interrupt related functions
 ---------------------------
@@ -114,11 +115,22 @@ and then re-enabled to their previous state.  For example::
 Power related functions
 -----------------------
 
-.. function:: freq(hz: int | None = None, /) -> int
+.. function:: freq(hz: int | None = None, /) -> int | tuple[int, ...]
 
-    Returns the CPU frequency in hertz.
+    Return the MCU clock frequencies.
 
-    On some ports this can also be used to set the CPU frequency by passing in *hz*.
+    On the STM32 ports (every OpenMV Cam M4/M7/H7/H7+/PT/N6 and the
+    Arduino-branded variants) the return value is a tuple of the
+    internal clocks in Hz. On the STM32N6 (OpenMV Cam N6) the tuple
+    is ``(CPUCLK, SYSCLK, HCLK, PCLK1, PCLK2, PCLK4, PCLK5)``; on the
+    other STM32 cams it is ``(SYSCLK, HCLK, PCLK1, PCLK2)``.
+
+    On the mimxrt port (OpenMV Cam RT1062) and the alif port
+    (OpenMV Cam AE3) the return value is a single integer -- the CPU
+    frequency in Hz.
+
+    Calling ``freq(hz)`` to set the clock raises ``NotImplementedError``
+    on every OpenMV-supported board.
 
 .. function:: idle() -> None
 
@@ -138,54 +150,77 @@ Power related functions
    .. note:: This function is deprecated, use :func:`lightsleep()` instead with no arguments.
 
 .. function:: lightsleep(time_ms: int | None = None, /) -> None
-              deepsleep(time_ms: int | None = None, /) -> None
 
-   Stops execution in an attempt to enter a low power state.
+   Stop execution and enter a low-power state with full RAM and
+   peripheral retention. The MCU clock is gated; when the function
+   returns, execution resumes from the point :func:`lightsleep` was
+   called with every subsystem still operational.
 
-   If *time_ms* is specified then this will be the maximum time in milliseconds that
-   the sleep will last for.  Otherwise the sleep can last indefinitely.
+   If ``time_ms`` is specified it is the maximum sleep duration in
+   milliseconds. With or without a timeout, execution may resume
+   early if any configured wake source fires (a :class:`Pin` IRQ, an
+   :class:`RTC` alarm, an enabled peripheral interrupt, ...). Wake
+   sources must be set up *before* the call.
 
-   With or without a timeout, execution may resume at any time if there are events
-   that require processing.  Such events, or wake sources, should be configured before
-   sleeping, like `Pin` change or `RTC` timeout.
+   Power saving is more modest than :func:`deepsleep` but the
+   wake-up is instantaneous and no state is lost.
 
-   The precise behaviour and power-saving capabilities of lightsleep and deepsleep is
-   highly dependent on the underlying hardware, but the general properties are:
+.. function:: deepsleep(time_ms: int | None = None, /) -> NoReturn
 
-   * A lightsleep has full RAM and state retention.  Upon wake execution is resumed
-     from the point where the sleep was requested, with all subsystems operational.
+   Stop execution and enter the deepest available low-power state.
+   RAM contents, peripheral state and network connections may all be
+   lost. When the MCU wakes it boots from the start of the main
+   script, similar to a power-on or hard reset; :func:`reset_cause`
+   will then return :data:`DEEPSLEEP_RESET` so the script can
+   distinguish a deepsleep wake from other reset causes.
 
-   * A deepsleep may not retain RAM or any other state of the system (for example
-     peripherals or network interfaces).  Upon wake execution is resumed from the main
-     script, similar to a hard or power-on reset. The `reset_cause()` function will
-     return `machine.DEEPSLEEP` and this can be used to distinguish a deepsleep wake
-     from other resets.
+   If ``time_ms`` is specified the MCU schedules a wake-up after
+   that many milliseconds (or sooner, if another configured wake
+   source fires first). Pass nothing to sleep until an external
+   wake source triggers.
+
+   This call never returns -- handle resumed execution at the top of
+   the main script, gated on :func:`reset_cause`.
 
 Miscellaneous functions
 -----------------------
 
 .. function:: unique_id() -> bytes
 
-   Returns a byte string with a unique identifier of a board/SoC. It will vary
-   from a board/SoC instance to another, if underlying hardware allows. Length
-   varies by hardware (so use substring of a full value if you expect a short
-   ID). In some MicroPython ports, ID corresponds to the network MAC address.
+   Return a ``bytes`` object containing a unique identifier for this
+   board. The value is read out of the MCU's hardware (typically the
+   factory-programmed device serial number), so it is stable across
+   reboots and differs from one board to the next.
+
+   The length depends on the MCU family -- 12 bytes on STM32, 8
+   bytes on the mimxrt and alif ports. If your application needs a
+   fixed-length ID, slice or hash the returned value.
 
 .. function:: time_pulse_us(pin: Pin, pulse_level: int, timeout_us: int = 1000000, /) -> int
 
-   Time a pulse on the given *pin*, and return the duration of the pulse in
-   microseconds.  The *pulse_level* argument should be 0 to time a low pulse
-   or 1 to time a high pulse.
+   Measure the width of a single pulse on ``pin`` and return its
+   duration in microseconds.
 
-   If the current input value of the pin is different to *pulse_level*,
-   the function first (*) waits until the pin input becomes equal to *pulse_level*,
-   then (**) times the duration that the pin is equal to *pulse_level*.
-   If the pin is already equal to *pulse_level* then timing starts straight away.
+   ``pin`` must be configured as a digital input.
 
-   The function will return -2 if there was timeout waiting for condition marked
-   (*) above, and -1 if there was timeout during the main measurement, marked (**)
-   above. The timeout is the same for both cases and given by *timeout_us* (which
-   is in microseconds).
+   ``pulse_level`` is the pulse polarity to time: ``1`` for a high
+   pulse, ``0`` for a low pulse.
+
+   The function works in two phases. First, if the pin is not
+   already at ``pulse_level``, it waits for the pin to transition to
+   ``pulse_level`` (the start of the pulse). Then it measures the
+   time the pin stays at ``pulse_level`` before transitioning back
+   (the end of the pulse). The measured time is returned in
+   microseconds.
+
+   ``timeout_us`` bounds *each* phase independently (so a worst-case
+   call lasts up to ``2 * timeout_us``). On timeout the function
+   returns a negative value identifying which phase timed out:
+
+      * ``-2`` -- timed out waiting for the leading edge (the pin
+        never reached ``pulse_level``).
+      * ``-1`` -- timed out waiting for the trailing edge (the pulse
+        was longer than ``timeout_us``).
 
 .. function:: bitstream(pin: Pin, encoding: int, timing: tuple, data: bytes, /) -> None
 
@@ -202,9 +237,8 @@ Miscellaneous functions
        ``(400, 850, 800, 450)`` is the timing specification for WS2812 RGB LEDs
        at 800kHz.
 
-   The accuracy of the timing varies between ports. On Cortex M0 at 48MHz, it is
-   at best +/- 120ns, however on faster MCUs (ESP8266, ESP32, STM32, Pyboard), it
-   will be closer to +/-30ns.
+   Timing accuracy is hardware-dependent; faster MCUs produce
+   tighter pulses (typically tens of nanoseconds).
 
    .. note:: For controlling WS2812 / NeoPixel strips, see the :mod:`neopixel`
       module for a higher-level API.
@@ -214,28 +248,39 @@ Miscellaneous functions
 Constants
 ---------
 
-.. data:: machine.IDLE
-          machine.SLEEP
-          machine.DEEPSLEEP
+The constants below are returned by :func:`reset_cause` and identify
+why the MCU last reset. Available on the STM32 and mimxrt ports;
+the alif port (OpenMV Cam AE3) does not currently expose reset-cause
+constants and its :func:`reset_cause` always returns ``0``.
+
+.. data:: PWRON_RESET
    :type: int
 
-    IRQ wake values.
+   Reset caused by power being applied to the chip. STM32 and
+   mimxrt ports.
 
-.. data:: machine.PWRON_RESET
-          machine.HARD_RESET
-          machine.WDT_RESET
-          machine.DEEPSLEEP_RESET
-          machine.SOFT_RESET
+.. data:: WDT_RESET
    :type: int
 
-    Reset causes.
+   Reset caused by the watchdog timer expiring. STM32 and mimxrt
+   ports.
 
-.. data:: machine.WLAN_WAKE
-          machine.PIN_WAKE
-          machine.RTC_WAKE
+.. data:: SOFT_RESET
    :type: int
 
-    Wake-up reasons.
+   Reset caused by :func:`soft_reset` (the Python interpreter
+   restarted without a hardware reset). STM32 and mimxrt ports.
+
+.. data:: HARD_RESET
+   :type: int
+
+   Reset caused by the NRST pin being asserted (external reset
+   button). STM32 ports only.
+
+.. data:: DEEPSLEEP_RESET
+   :type: int
+
+   Reset caused by waking from deep-sleep. STM32 ports only.
 
 Classes
 -------
@@ -247,7 +292,6 @@ Classes
    machine.Signal.rst
    machine.LED.rst
    machine.ADC.rst
-   machine.ADCBlock.rst
    machine.PWM.rst
    machine.UART.rst
    machine.SPI.rst

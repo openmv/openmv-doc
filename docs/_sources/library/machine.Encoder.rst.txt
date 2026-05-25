@@ -1,160 +1,162 @@
 .. currentmodule:: machine
 .. _machine.Encoder:
 
-class Encoder -- quadrature decoding
-====================================
+class Encoder -- quadrature decoder
+===================================
 
-Encoder implements decoding of quadrature signals as commonly output from
-rotary encoders, by counting either up or down depending on the order of two
-input pulses.
+The :class:`Encoder` class wraps the i.MX RT QENC hardware block
+configured as a quadrature decoder. It tracks a two-phase signal
+(``phase_a`` / ``phase_b``) coming from a rotary encoder, increments
+or decrements a 32-bit position counter according to the phase
+relationship, and can be combined with optional ``index`` / ``reset``
+inputs for absolute referencing.
 
-Minimal ESP32 example usage::
+Available on the OpenMV Cam RT1062 (mimxrt port) only. On the
+STM32-based OpenMV cams, use :class:`pyb.Timer` configured for
+encoder mode (:data:`Timer.ENC_AB <pyb.Timer.ENC_AB>`) instead. Not
+exposed on the OpenMV Cam AE3 (alif port).
+
+Example usage::
 
     from machine import Pin, Encoder
 
-    encoder = Encoder(0, Pin(0, Pin.IN), Pin(1, Pin.IN))   # create Encoder for pins 0, 1 and begin counting
-    value = encoder.value()                                # retrieve current count
-
-Availability: **ESP32, MIMXRT**
+    enc = Encoder(0, Pin("P0", Pin.IN), Pin("P1", Pin.IN), phases=4)
+    enc.value(0)
+    # ... rotate the encoder ...
+    print("position:", enc.value())
 
 Constructors
 ------------
 
-.. class:: Encoder(id: int, phase_a: Pin | None = None, phase_b: Pin | None = None, *, filter_ns: int = 0, phases: int = 1, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None)
+.. class:: Encoder(id: int, phase_a: Pin | None = None, phase_b: Pin | None = None, *, phases: int = 1, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None)
 
-   Returns the singleton Encoder object for the the given *id*. Values of *id*
-   depend on a particular port and its hardware. Values 0, 1, etc. are commonly
-   used to select hardware block #0, #1, etc.
+   Construct (or fetch the singleton for) the QENC encoder block
+   identified by ``id``. The same arguments are also accepted by
+   :meth:`init` to re-configure an existing instance.
 
-   Additional arguments are passed to the :meth:`init` method described below,
-   and will cause the Encoder instance to be re-initialised and reset.
+   ``phase_a`` / ``phase_b`` are the two quadrature input pins.
 
-   On ESP32, the *id* corresponds to a PCNT unit.
+   ``phases`` (keyword-only) selects the decoding granularity. The
+   QENC supports ``1`` (count one edge per pulse pair), ``2`` (both
+   edges of phase A) or ``4`` ("4x decoding" -- every edge of both
+   phases is counted). Default ``1``.
+
+   ``filter_ns`` (keyword-only) -- minimum input-stable time in
+   nanoseconds. The driver uses the longest hardware filter that is
+   less than or equal to this value. ``0`` (the default) disables
+   filtering.
+
+   ``max`` / ``min`` (keyword-only) -- modulo range of the position
+   counter. When the counter rolls past ``max`` it wraps to ``min``
+   and the cycles counter increments (decrements when moving the
+   other way). Passing both as ``0`` disables the range.
+
+   ``index`` (keyword-only) -- a :class:`Pin` whose rising edge
+   reloads the position counter to ``min`` and updates the cycles
+   counter according to direction; typical use is a Z-channel mark
+   on a rotary encoder.
+
+   ``reset`` (keyword-only) -- a :class:`Pin` whose rising edge
+   reloads the position counter to the start value (without changing
+   the cycles counter).
+
+   ``match`` (keyword-only) -- position value at which an
+   :data:`IRQ_MATCH` interrupt fires. Pass ``None`` to disable.
+
+   ``match_pin`` (keyword-only) -- a :class:`Pin` driven high while
+   the position counter equals ``match`` and low otherwise.
 
    Methods
    -------
 
-   .. method:: init(phase_a: Pin | None = None, phase_b: Pin | None = None, *, filter_ns: int = 0, phases: int = 1, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None
+   .. method:: init(phase_a: Pin | None = None, phase_b: Pin | None = None, *, phases: int = 1, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None
 
-      Initialise and reset the Encoder with the given parameters:
-
-      - *phase_a* specifies the first input pin as a
-        :ref:`machine.Pin <machine.Pin>` object.
-
-      - *phase_b* specifies the second input pin as a
-        :ref:`machine.Pin <machine.Pin>` object.
-
-      These pins may be omitted on ports that have predefined pins for a given
-      hardware block.
-
-      Additional keyword-only parameters that may be supported by a port are:
-
-      - *filter_ns* specifies a minimum period of time in nanoseconds that the
-        source signal needs to be stable for a pulse to be counted. Implementations
-        should use the longest filter supported by the hardware that is less than
-        or equal to this value. The default is 0 (no filter). *(Supported on ESP32 and MIMXRT)*
-
-      - *phases* specifies the number of signal edges to count and thus the
-        granularity of the decoding. e.g. 4 phases corresponds to "4x quadrature
-        decoding", and will result in four counts per pulse. Ports may support
-        either 1, 2, or 4 phases and the default is 1 phase. *(Supported on ESP32 and MIMXRT)*
-
-      - *max* Specify the upper counting range. The position counter will count up
-        from a *min* start value up to *max*, then roll over to the init value and
-        increase the cycles counter by one. When counting down, the cycles counter
-        decreases at the transition from *min* to *max*. The range is reset by defining
-        both *max* and *min* to 0. The default value is the hardware's counter range.
-        *(Supported by MIMXRT and the ESP32 PCNT module)*
-
-      - *min*. Specify the lower counting range. The default value is 0.
-        *(Supported by MIMXRT and the ESP32 PCNT module)*
-
-      - *index* A Pin specifier telling to which pin the index pulse is connected.
-        At a rising slope of the index pulse the encoder counter is set to the min value
-        and the cycles counter is increased or decreased by one, depending on
-        the input levels. A *value* of *None* disables the index input.
-        *(Supported on MIMXRT)*
-
-      - *reset* A Pin specifier telling to which pin the reset pulse is connected.
-        At a rising slope of the reset pulse the position counter is set to the init
-        value, but the cycles counter is not changed. A *value* of *None* disables the reset input.
-        *(Supported on MIMXRT)*
-
-      - *match* Set the counter value at which the interrupt IRQ_MATCH shall trigger.
-        The value is not checked for being in the bounds of the counter range. This option
-        if equivalent to the *threshold* options of the ESP32 PCNT module.
-        A *value* of *None* resets the match value and disables the IRQ_MATCH interrupt.
-        *(Supported on MIMXRT)*
-
-      - *match_pin* A Pin specifier telling to which pin the match output is connected.
-        This output will have a high level as long as the position counter matches the
-        match value. The signal is generated by the encoder logic and requires no
-        further software support. The pulse width is defined by the input signal frequency
-        and can be very short, like 20ns, or stay, if the counter stops at the match position.
-        A *value* of *None* disables the match output. *(Supported on MIMXRT)*
+      Re-initialise the encoder with the given parameters and reset
+      its position and cycles counters. Accepts the same keyword
+      arguments as the constructor.
 
    .. method:: deinit() -> None
 
-      Stops the Encoder, disabling any interrupts and releasing hardware resources.
-      A Soft Reset should deinitialize all Encoder objects.
+      Stop the encoder, disable any pending interrupts and release
+      the QENC hardware resources. A soft reset deinitialises all
+      :class:`Encoder` instances automatically.
 
-   .. method:: value(value: int | None = None, /) -> int
+   .. method:: value() -> int
+               value(value: int, /) -> int
 
-      Get, and optionally set, the encoder value as a signed integer.
-      Implementations should aim to do the get and set atomically.
+      Get or set the signed position counter.
 
-      See :meth:`machine.Counter.value` for details about overflow of this value.
+      With no argument, return the current position.
 
-   .. method:: cycles(value: int | None = None, /) -> int
+      With a single ``value`` argument, atomically set the position
+      counter to ``value`` and return the previous count. The common
+      idiom ``enc.value(0)`` resets the counter at the start of a
+      measurement window.
 
-      Get or set the current cycles counter of the counter as signed 16 bit integer.
-      The value represents the overflow or underflow events of the count range.
-      With no arguments the actual cycles counter value is returned.
-      With a single *value* argument the cycles counter is set to that value. The
-      base counter is not changed. The method returns the previous value.
-      *(Supported on MIMXRT)*
+   .. method:: cycles() -> int
+               cycles(value: int, /) -> int
+
+      Get or set the cycles counter, a signed 16-bit integer that
+      tracks how many times the position counter has rolled past
+      ``max`` / ``min``.
+
+      With no argument, return the current cycles count.
+
+      With a single ``value`` argument, set the cycles counter to
+      ``value`` (without touching the position counter) and return
+      the previous count.
 
    .. method:: irq(handler: Callable[[Encoder], None] | None = None, trigger: int = 0, hard: bool = False) -> None
 
-      Specifies, that the *handler* is called when the respective *event* happens.
+      Register a callback to be invoked when one of the supported
+      QENC events fires. The handler receives the :class:`Encoder`
+      object as its only argument; the specific event can be
+      identified inside the handler via ``irq.flags()``.
 
-      *event* may be:
-       - Encoder.IRQ_RESET Triggered with a transition at the *reset* input.
-       - Encoder.IRQ_INDEX Triggered with a transition at the *index* input.
-       - Encoder.IRQ_MATCH Triggered when the position counter matches the *match* value. For fast signals,
-         the actual position counter value when retrieved in the callback may be different from the trigger value.
-       - Encoder.IRQ_ROLL_OVER Triggered when the position counter rolls over from the highest
-         to the lowest value.
-       - Encoder.IRQ_ROLL_UNDER Triggered when the position counter rolls under from the lowest
-         to the highest value.
+      ``trigger`` is a bitmask of one or more :data:`IRQ_*`
+      constants:
 
-      The callback function *handler* receives a single argument, which is the Encoder object. All
-      events share the same callback. The event which triggers the callback can be identified
-      with the irq.flags() method. The argument *hard* specifies, whether the callback is called
-      as a hard interrupt or as regular scheduled function. Hard interrupts have always a short latency,
-      but are limited in that they must not allocate memory. Regular scheduled functions are not limited
-      in what can be used, but depending on the load of the device execution may be delayed.
-      Under low load, the difference in latency is minor.
+         * :data:`IRQ_RESET` -- the ``reset`` pin asserted.
+         * :data:`IRQ_INDEX` -- the ``index`` pin asserted.
+         * :data:`IRQ_MATCH` -- the position counter reached
+           ``match``. Match is one-shot and must be re-armed by
+           re-installing the IRQ.
+         * :data:`IRQ_ROLL_OVER` -- the position counter wrapped
+           from ``max`` to ``min``.
+         * :data:`IRQ_ROLL_UNDER` -- the position counter wrapped
+           from ``min`` to ``max``.
 
-      The default arguments values are trigger=0, handler=None, hard=False. The callback will be
-      disabled, when called with handler=None.
-
-      The position match event is triggered as long as the position and match value are identical.
-      Therefore the position match callback is run in a one-shot fashion, and has to be enabled
-      again when the position has changed. It will be enabled by re-defining the trigger with either
-      :meth:`Encoder.irq()` or :meth:`irq().trigger()`. For ESP32, Encoder interrupts are handled
-      by the PCNT unit.
-
-      *(Supported on MIMXRT)*
+      ``hard=True`` registers a hard interrupt handler (lower
+      latency, but the handler must not allocate). The default is a
+      scheduled callback. Pass ``handler=None`` to disable the
+      interrupt.
 
    Constants
    ---------
 
    .. data:: IRQ_RESET
-             IRQ_INDEX
-             IRQ_MATCH
-             IRQ_ROLL_OVER
-             IRQ_ROLL_UNDER
       :type: int
 
-      Select the IRQ trigger event.  *(Supported on MIMXRT)*
+      :meth:`irq` trigger flag for the ``reset`` pin event.
+
+   .. data:: IRQ_INDEX
+      :type: int
+
+      :meth:`irq` trigger flag for the ``index`` pin event.
+
+   .. data:: IRQ_MATCH
+      :type: int
+
+      :meth:`irq` trigger flag for the position-match event.
+
+   .. data:: IRQ_ROLL_OVER
+      :type: int
+
+      :meth:`irq` trigger flag for a counter roll-over (``max`` ->
+      ``min``).
+
+   .. data:: IRQ_ROLL_UNDER
+      :type: int
+
+      :meth:`irq` trigger flag for a counter roll-under (``min`` ->
+      ``max``).

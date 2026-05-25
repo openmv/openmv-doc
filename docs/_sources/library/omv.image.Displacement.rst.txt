@@ -4,30 +4,42 @@ class Displacement -- Displacement object
 =========================================
 
 The displacement object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
-returned by `Image.find_displacement()` with the fields:
+returned by `Image.find_displacement()`. It encodes the rigid alignment
+estimated by phase correlation between two images: a translation in
+pixels, and -- when ``find_displacement(..., logpolar=True)`` is used --
+a rotation in radians plus a scale factor.
+
+Fields are accessible by attribute name (``displacement.x_translation``)
+or by index (``displacement[0]``). The object has no public constructor.
 
 .. class:: displacement
 
-   Please call `Image.find_displacement()` to create this object. It has no
-   public constructor.
+   Please call `Image.find_displacement()` to create this object.
 
-   .. method:: x_translation() -> float
+   .. attribute:: x_translation
 
-      X translation in pixels between the two images. Index ``[0]``.
+      X-axis translation in pixels between the two images. Float.
+      Index ``[0]``.
 
-   .. method:: y_translation() -> float
+   .. attribute:: y_translation
 
-      Y translation in pixels between the two images. Index ``[1]``.
+      Y-axis translation in pixels between the two images. Float.
+      Index ``[1]``.
 
-   .. method:: rotation() -> float
+   .. attribute:: rotation
 
-      Rotation in radians between the two images. Index ``[2]``.
+      Rotation in radians between the two images. Only meaningful when
+      ``find_displacement(..., logpolar=True)`` is used; otherwise 0.0.
+      Float. Index ``[2]``.
 
-   .. method:: scale() -> float
+   .. attribute:: scale
 
-      Scale change between the two images. Index ``[3]``.
+      Scale change between the two images. Only meaningful when
+      ``find_displacement(..., logpolar=True)`` is used; otherwise 1.0.
+      Float. Index ``[3]``.
 
-   .. method:: response() -> float
+   .. attribute:: response
 
-      Quality of the displacement match between the two images, in the range 0-1.
-      Index ``[4]``.
+      Quality of the phase-correlation match in the range 0.0 -- 1.0,
+      where 1.0 is a perfect match. Use this to reject low-confidence
+      results. Float. Index ``[4]``.

@@ -3,18 +3,25 @@
 class HaarCascade -- Feature Descriptor
 =======================================
 
-The Haar Cascade feature descriptor is used by `Image.find_features()`. The
-underlying class name is ``Cascade``. Instances have no methods or attributes
-of their own and are created by `image.HaarCascade()`.
+The Haar Cascade feature descriptor is an opaque handle used by
+`Image.find_features()` to run Viola-Jones object detection on an image. It
+holds the multi-stage classifier produced by training a Haar feature cascade
+(for example, the built-in ``"frontalface"`` and ``"eye"`` cascades, or a
+binary cascade file loaded from disk).
 
-Construction
-------------
+Cascade objects are created via the `image.HaarCascade()` factory function;
+there is no public constructor. Once created, the cascade is passed directly
+to `Image.find_features()` and the same cascade may be reused across many
+frames.
 
-The class has no public constructor. Use `image.HaarCascade()` to load a
-cascade and obtain a ``Cascade`` instance. The ``Cascade`` class itself
-exposes no methods or attributes --- it's an opaque handle used by
-`Image.find_features()`.
+The underlying class is ``Cascade``. Its ``repr()`` shows the window size and
+the number of stages, features, and rectangles in the cascade, e.g.::
+
+    >>> print(image.HaarCascade("frontalface"))
+    {"width":25, "height":25, "n_stages":25, "n_features":2913, "n_rectangles":6383}
 
 .. class:: Cascade
 
-   Opaque cascade handle returned by `image.HaarCascade()`.
+   Opaque cascade handle returned by `image.HaarCascade()`. The instance has
+   no public methods or attributes -- it can only be passed to
+   `Image.find_features()`.

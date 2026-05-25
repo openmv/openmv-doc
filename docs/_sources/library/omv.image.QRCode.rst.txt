@@ -3,113 +3,110 @@
 class QRCode -- QRCode object
 =============================
 
-The qrcode object is returned by `Image.find_qrcodes()`. It is an attrtuple
-with 16 fields.
+The qrcode object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `Image.find_qrcodes()`. Each instance describes a decoded
+QR-code: its bounding box, decoded payload, decoder metadata (version, ECC
+level, mask, data type, ECI), the four detected corners, and convenience
+boolean flags identifying the encoding of the payload.
+
+Fields are accessible by attribute name (``qrcode.payload``) or by index
+(``qrcode[0]``). The object has no public constructor.
 
 .. class:: qrcode
 
-   Please call `Image.find_qrcodes()` to create this object. It has no public
-   constructor.
+   Please call `Image.find_qrcodes()` to create this object.
 
-   .. method:: x() -> int
+   Bounding box and corners
+   ------------------------
 
-      Returns the qrcode's bounding box x coordinate (int).
+   .. attribute:: x
 
-      You may also get this value doing ``[0]`` on the object.
+      Bounding box top-left x coordinate, in pixels. Integer. Index ``[0]``.
 
-   .. method:: y() -> int
+   .. attribute:: y
 
-      Returns the qrcode's bounding box y coordinate (int).
+      Bounding box top-left y coordinate, in pixels. Integer. Index ``[1]``.
 
-      You may also get this value doing ``[1]`` on the object.
+   .. attribute:: w
 
-   .. method:: w() -> int
+      Bounding box width, in pixels. Integer. Index ``[2]``.
 
-      Returns the qrcode's bounding box w coordinate (int).
+   .. attribute:: h
 
-      You may also get this value doing ``[2]`` on the object.
+      Bounding box height, in pixels. Integer. Index ``[3]``.
 
-   .. method:: h() -> int
+   .. attribute:: corners
 
-      Returns the qrcode's bounding box h coordinate (int).
+      4-tuple of ``(x, y)`` integer tuples for the four detected corners
+      of the QR code, sorted clockwise starting from the top-left corner.
+      Index ``[10]``.
 
-      You may also get this value doing ``[3]`` on the object.
+   .. attribute:: rect
 
-   .. method:: payload() -> str
+      ``(x, y, w, h)`` 4-tuple of the bounding box. Suitable for passing
+      directly to drawing/cropping methods such as `Image.draw_rectangle()`
+      or `Image.crop()`. Index ``[15]``.
 
-      Returns the payload string of the qrcode (str).
+   Decoded payload
+   ---------------
 
-      You may also get this value doing ``[4]`` on the object.
+   .. attribute:: payload
 
-   .. method:: version() -> int
+      Decoded payload string. Index ``[4]``.
 
-      Returns the version number of the qrcode (int).
+   Decoder metadata
+   ----------------
 
-      You may also get this value doing ``[5]`` on the object.
+   .. attribute:: version
 
-   .. method:: ecc_level() -> int
+      QR-code version, 1 -- 40. Higher versions encode more data and have
+      larger modules. Integer. Index ``[5]``.
 
-      Returns the ecc_level of the qrcode (int).
+   .. attribute:: ecc_level
 
-      You may also get this value doing ``[6]`` on the object.
+      Error-correction level, 0 -- 3 (corresponding to L / M / Q / H).
+      Higher values reserve more codewords for error correction.
+      Integer. Index ``[6]``.
 
-   .. method:: mask() -> int
+   .. attribute:: mask
 
-      Returns the mask of the qrcode (int).
+      Mask pattern, 0 -- 7. Used by the QR-code encoder to choose the
+      module pattern that minimises decoder confusion. Integer.
+      Index ``[7]``.
 
-      You may also get this value doing ``[7]`` on the object.
+   .. attribute:: data_type
 
-   .. method:: data_type() -> int
+      Encoding of the payload as the decoder reported it. One of the
+      following bitmask values: ``1`` numeric, ``2`` alphanumeric,
+      ``4`` binary, ``8`` Kanji. See the per-flag attributes below for a
+      friendlier form. Integer. Index ``[8]``.
 
-      Returns the data type of the qrcode (int).
+   .. attribute:: eci
 
-      You may also get this value doing ``[8]`` on the object.
+      Extended Channel Interpretation value. Encodes the text encoding
+      used for the bytes in the payload (e.g. UTF-8 versus ISO-8859-1).
+      Integer. Index ``[9]``.
 
-   .. method:: eci() -> int
+   Encoding flags
+   --------------
 
-      Returns the eci of the qrcode (int). The eci stores the encoding of data
-      bytes in the QR Code.
+   .. attribute:: is_numeric
 
-      You may also get this value doing ``[9]`` on the object.
+      ``True`` if ``data_type`` indicates a numeric payload. Index ``[11]``.
 
-   .. method:: corners() -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]
+   .. attribute:: is_alphanumeric
 
-      Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-      Corners are returned in sorted clock-wise order starting from the top
-      left.
+      ``True`` if ``data_type`` indicates an alphanumeric payload.
+      Index ``[12]``.
 
-      You may also get this value doing ``[10]`` on the object.
+   .. attribute:: is_binary
 
-   .. method:: is_numeric() -> bool
+      ``True`` if ``data_type`` indicates a binary payload. Check ``eci``
+      to determine the text encoding when this is ``True``. Index ``[13]``.
 
-      Returns True if the data_type of the qrcode is numeric.
+   .. attribute:: is_kanji
 
-      You may also get this value doing ``[11]`` on the object.
-
-   .. method:: is_alphanumeric() -> bool
-
-      Returns True if the data_type of the qrcode is alphanumeric.
-
-      You may also get this value doing ``[12]`` on the object.
-
-   .. method:: is_binary() -> bool
-
-      Returns True if the data_type of the qrcode is binary. Check `eci()` to
-      determine the text encoding when this is True.
-
-      You may also get this value doing ``[13]`` on the object.
-
-   .. method:: is_kanji() -> bool
-
-      Returns True if the data_type of the qrcode is Kanji. Kanji symbols are
-      10-bits per character and MicroPython does not parse this encoding; the
-      payload must be treated as a byte array.
-
-      You may also get this value doing ``[14]`` on the object.
-
-   .. method:: rect() -> Tuple[int, int, int, int]
-
-      Returns a rectangle tuple (x, y, w, h) of the qrcode's bounding box for
-      use with other `image` methods like `Image.draw_rectangle()`.
-
-      You may also get this value doing ``[15]`` on the object.
+      ``True`` if ``data_type`` indicates a Kanji payload. Kanji symbols
+      are 10 bits per character and MicroPython does not parse this
+      encoding -- the payload must be treated as a byte array.
+      Index ``[14]``.

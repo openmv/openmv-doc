@@ -3,25 +3,32 @@
 class Circle -- Circle object
 =============================
 
-The circle object is an attrtuple returned by `Image.find_circles()`. It
-has 4 fields accessible as attributes or by index ``[0..3]``.
+The circle object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `Image.find_circles()`. Each circle is described by its
+centre, its radius, and a Hough-space magnitude that captures how strongly
+the edge pixels in the image voted for it.
+
+Fields are accessible by attribute name (``circle.x``) or by index
+(``circle[0]``). The object has no public constructor.
 
 .. class:: circle
 
    Please call `Image.find_circles()` to create this object.
 
-   .. method:: x() -> int
+   .. attribute:: x
 
-      Returns the circle's x position. Index ``[0]``.
+      Centre x coordinate, in pixels. Integer. Index ``[0]``.
 
-   .. method:: y() -> int
+   .. attribute:: y
 
-      Returns the circle's y position. Index ``[1]``.
+      Centre y coordinate, in pixels. Integer. Index ``[1]``.
 
-   .. method:: r() -> int
+   .. attribute:: r
 
-      Returns the circle's radius. Index ``[2]``.
+      Radius, in pixels. Integer. Index ``[2]``.
 
-   .. method:: magnitude() -> int
+   .. attribute:: magnitude
 
-      Returns the circle's magnitude from the Hough transform. Index ``[3]``.
+      Magnitude of the circle in Hough-space. Higher values mean more
+      edge pixels voted for this circle -- treat this as a confidence
+      score. Integer. Index ``[3]``.

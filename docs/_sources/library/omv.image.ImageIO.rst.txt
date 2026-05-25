@@ -1,99 +1,175 @@
+.. currentmodule:: image
+
 class ImageIO -- ImageIO object
 ===============================
 
-.. currentmodule:: image
+The :class:`ImageIO` class records and plays back streams of
+:class:`Image` frames in OpenMV's native on-disk format. A single stream
+can hold heterogeneous frames (different pixel formats / sizes) and
+records the inter-frame interval for each one so playback re-creates the
+original frame rate.
 
-The `ImageIO` class allows you to read/write OpenMV `Image` objects in their native form to
-disk or to memory, providing fast random-access read/write of frames.
+There are two backing stores:
 
-.. class:: ImageIO(path:Union[str, Tuple[int, int, int]], mode:Union[str, int])
+* **File stream** -- frames are read from / appended to a file on the
+  filesystem. The file starts with a 16-byte magic header
+  ``OMV IMG STR Vx.y`` followed by per-frame chunks. The current
+  writer emits ``V2.0``; older ``V1.0`` and ``V1.1`` files are still
+  readable.
+* **Memory stream** -- frames are read from / written to a fixed-size
+  RAM buffer allocated at construction time. Useful for round-tripping
+  frames through filters that need a recording without touching the
+  filesystem.
 
-   Creates an ImageIO object.
+.. class:: ImageIO(path: Union[str, Tuple[int, int, int]], mode: Union[str, int])
 
-   If ``path`` is a string, it is treated as a file path on disk. ``mode`` must be ``'r'`` to
-   open for reading or ``'w'`` to open for writing.
+   Create an :class:`ImageIO` stream.
 
-   If ``path`` is a 3-value tuple ``(w, h, pixformat)``, it is treated as in-memory storage.
-   ``mode`` is then the integer number of image buffers (frames) to pre-allocate. The in-memory
-   storage buffer is not allowed to grow after allocation. ``pixformat`` is a pixformat constant
-   such as `image.GRAYSCALE`, `image.RGB565`, `image.BAYER`, or `image.JPEG`.
+   If ``path`` is a **string**, a file stream is opened at that path.
+   ``mode`` must be one of:
+
+      * ``'r'`` -- open an existing file for reading. The magic header
+        is validated and the version (``V1.0`` / ``V1.1`` / ``V2.0``)
+        is recorded for use by :meth:`version`.
+      * ``'w'`` -- truncate / create the file and write a fresh ``V2.0``
+        magic header. Frames are appended on each :meth:`write`.
+
+   If ``path`` is a **3-tuple** ``(w, h, pixformat)``, a memory stream
+   is allocated. ``mode`` is then the integer **number of frame slots**
+   to pre-allocate. The buffer is sized for ``count`` frames of
+   ``(w, h, pixformat)`` and is **not allowed to grow** after creation.
+   ``pixformat`` is one of `image.BINARY`, `image.GRAYSCALE`,
+   `image.RGB565`, `image.BAYER`, `image.YUV422`, `image.JPEG`, or
+   `image.PNG`. For the compressed formats (`image.JPEG`, `image.PNG`)
+   the per-slot size is estimated at 2 bpp; frames larger than the
+   estimate raise ``ValueError`` at :meth:`write` time.
+
+   Inspection
+   ----------
 
    .. method:: type() -> int
 
-      Returns whether the ImageIO object is a `FILE_STREAM` or `MEMORY_STREAM`.
+      Return the stream backing store: :data:`FILE_STREAM` for a file
+      stream, :data:`MEMORY_STREAM` for a memory stream.
 
    .. method:: is_closed() -> bool
 
-      Returns ``True`` if the ImageIO object is closed and can no longer be used.
+      Return ``True`` if :meth:`close` has been called on this object.
+      Once closed the stream raises ``OSError("Stream closed")`` on
+      any further read/write/seek.
 
    .. method:: count() -> int
 
-      Returns the number of frames stored.
+      Return the number of frames currently stored in the stream. For
+      file streams this grows as :meth:`write` appends frames; for
+      memory streams this is fixed at construction time.
 
    .. method:: offset() -> int
 
-      Returns the current image index offset.
+      Return the current frame index. Incremented by :meth:`read` and
+      :meth:`write`, reset by :meth:`seek`.
 
    .. method:: version() -> Optional[int]
 
-      Returns the stream version if the object is a `FILE_STREAM`. Returns ``None`` for
-      `MEMORY_STREAM` objects.
+      Return the on-disk format version for file streams (``10`` for
+      ``V1.0``, ``11`` for ``V1.1``, ``20`` for ``V2.0``). Returns
+      ``None`` for memory streams.
 
    .. method:: buffer_size() -> Optional[int]
 
-      Returns the per-frame buffer size in bytes for `MEMORY_STREAM` objects. Returns ``None``
-      for `FILE_STREAM` objects.
-
-      For memory streams, ``buffer_size() * count() == size()``.
+      Return the per-slot pixel buffer size in bytes for memory
+      streams (the slot size minus the internal :class:`Image`
+      bookkeeping header). Returns ``None`` for file streams. Use this
+      together with :meth:`count` to check whether a particular frame
+      size will fit.
 
    .. method:: size() -> int
 
-      Returns the total number of bytes used on disk or in memory.
+      Return the total bytes consumed by the stream -- the file size
+      on disk for file streams, or the full RAM-buffer size
+      (``count * per_slot_size`` including the per-slot header) for
+      memory streams.
 
-   .. method:: write(img:Image) -> ImageIO
+   I/O
+   ---
 
-      Writes ``img`` to the stream. For file streams, the file grows as new images are appended.
-      For memory streams, the image is written to the current pre-allocated slot before the
-      offset advances.
+   .. method:: write(img: Image) -> ImageIO
 
-      Returns the ImageIO object.
+      Append (file stream) or store-at-offset (memory stream) ``img``
+      and advance :meth:`offset` by one.
 
-   .. method:: read(copy_to_fb:bool=True, *, loop:bool=True, pause:bool=True) -> Optional[Image]
+      For file streams the file grows as frames are appended. Writing
+      at a non-end offset truncates the rest of the file so the count
+      can shrink.
 
-      Returns the next image from the stream and advances the offset.
+      For memory streams the frame is written into the current slot;
+      writing past the last slot raises ``EOFError("End of stream")``
+      and writing a frame larger than :meth:`buffer_size` raises
+      ``ValueError("Invalid frame size")``.
 
-      ``copy_to_fb`` if ``True``, the image is loaded into the frame buffer (like
-      `sensor.snapshot()`). If ``False``, the image is allocated on the MicroPython heap.
+      Returns ``self`` so calls can be chained.
 
-      ``loop`` if ``True``, automatically seeks to the beginning of the stream when the end is
-      reached. If ``False``, returns ``None`` at end-of-stream (file streams only).
+   .. method:: read(copy_to_fb: bool = True, *, loop: bool = True, pause: bool = True) -> Optional[Image]
 
-      ``pause`` if ``True``, pauses for the originally recorded inter-frame interval to match
-      the source frame rate.
+      Read the frame at the current :meth:`offset`, advance the
+      offset, and return the new :class:`Image`. Mirrors the playback
+      half of :meth:`write`.
 
-   .. method:: seek(offset:int) -> ImageIO
+      ``copy_to_fb`` -- when ``True`` (default) the decoded frame is
+      placed in the camera frame buffer (the same place a
+      `csi.CSI.snapshot()` lands), so the returned :class:`Image` is
+      drawable through the IDE preview. When ``False`` the frame is
+      allocated on the MicroPython heap instead.
 
-      Seeks to the image slot number ``offset``. Works for both file and memory streams.
+      ``loop`` (file streams only) -- when ``True`` (default) reading
+      past the last frame seeks back to the first frame and continues.
+      When ``False`` the call returns ``None`` once the end of the
+      file is reached.
 
-      Returns the ImageIO object.
+      ``pause`` -- when ``True`` (default) the call blocks until the
+      originally-recorded inter-frame interval has elapsed, so
+      playback runs at the recording's native frame rate. Set to
+      ``False`` for as-fast-as-possible playback.
+
+   .. method:: seek(offset: int) -> ImageIO
+
+      Move :meth:`offset` to frame ``offset``. ``offset`` must be
+      non-negative; memory-stream offsets must also be less than
+      :meth:`count`.
+
+      File-stream seeks walk the file frame-by-frame from the start
+      since frame chunks are variable-sized -- expect O(offset) time
+      for large jumps.
+
+      Returns ``self`` so calls can be chained.
 
    .. method:: sync() -> ImageIO
 
-      Flushes pending data to disk for file streams. No-op for memory streams.
+      Flush pending writes to disk for file streams (calls the
+      underlying file-system ``sync``). No-op for memory streams.
 
-      Returns the ImageIO object.
+      Returns ``self`` so calls can be chained.
 
    .. method:: close() -> None
 
-      Closes the ImageIO object. For memory streams, frees the allocated buffer. For file
-      streams, closes the file and writes out all metadata.
+      Close the stream. Releases the memory buffer (memory streams) or
+      closes the file (file streams). After ``close()`` the
+      :class:`ImageIO` object cannot be reused; subsequent operations
+      raise ``OSError("Stream closed")``. Calling ``close()`` twice is
+      a no-op.
+
+      An :class:`ImageIO` is also closed automatically when it is
+      garbage-collected (it registers a finaliser at construction).
+
+   Constants
+   ---------
 
    .. data:: FILE_STREAM
       :type: int
 
-      The ImageIO object was opened on a file.
+      Value returned by :meth:`type` for file-backed streams.
 
    .. data:: MEMORY_STREAM
       :type: int
 
-      The ImageIO object was opened in memory.
+      Value returned by :meth:`type` for in-memory streams.

@@ -1,254 +1,185 @@
 .. currentmodule:: machine
 .. _machine.SDCard:
 
-class SDCard -- secure digital memory card
-==========================================
+class SDCard -- SD / MMC card driver
+====================================
 
-SD cards are one of the most common small form factor removable storage media.
-SD cards come in a variety of sizes and physical form factors. MMC cards are
-similar removable storage devices while eMMC devices are electrically similar
-storage devices designed to be embedded into other systems. All three form
-share a common protocol for communication with their host system and high-level
-support looks the same for them all. As such in MicroPython they are implemented
-in a single class called :class:`machine.SDCard` .
+The :class:`SDCard` class drives the SD / MMC card slot on OpenMV
+cams that have one. The driver implements the
+:class:`vfs.AbstractBlockDev` interface so it can be passed directly
+to :func:`vfs.mount`::
 
-Both SD and MMC interfaces support being accessed with a variety of bus widths.
-When being accessed with a 1-bit wide interface they can be accessed using the
-SPI protocol. Different MicroPython hardware platforms support different widths
-and pin configurations but for most platforms there is a standard configuration
-for any given hardware. In general constructing an ``SDCard`` object with without
-passing any parameters will initialise the interface to the default card slot
-for the current hardware. The arguments listed below represent the common
-arguments that might need to be set in order to use either a non-standard slot
-or a non-standard pin assignment. The exact subset of arguments supported will
-vary from platform to platform.
+    import machine
+    import vfs
 
-.. class:: SDCard(slot: int = 1, width: int = 1, cd: Pin | None = None, wp: Pin | None = None, sck: Pin | None = None, miso: Pin | None = None, mosi: Pin | None = None,
-                  cs: Pin | None = None, cmd: Pin | None = None, data: list | tuple | None = None, freq: int = 20000000)
+    sd = machine.SDCard()
+    vfs.mount(sd, "/sd")
 
-    This class provides access to SD or MMC storage cards using either
-    a dedicated SD/MMC interface hardware or through an SPI channel.
-    The class implements the block protocol defined by :class:`vfs.AbstractBlockDev`.
-    This allows the mounting of an SD card to be as simple as::
+.. note::
 
-      vfs.mount(machine.SDCard(), "/sd")
+   OpenMV firmware auto-mounts the SD card at boot, so most scripts
+   never construct an :class:`SDCard` directly -- they just read and
+   write through the auto-mounted path. Construct one manually only
+   when you need a non-default mount point or raw block-level access
+   through :meth:`readblocks` / :meth:`writeblocks` / :meth:`ioctl`.
 
-    The constructor takes the following parameters:
+On the OpenMV Cam M7 / H7 / H7 Plus / Pure Thermal / N6 the slot is
+driven by the STM32's on-chip SDMMC controller in 4-bit SD mode. On
+the OpenMV Cam RT1062 the slot is driven by the i.MX RT's USDHC
+controller, also in 4-bit SD mode. No pin-mux arguments are needed
+on any current OpenMV board -- the driver knows the board's wiring.
 
-     - *slot* selects which of the available interfaces to use. Leaving this
-       unset will select the default interface.
+Not exposed on the OpenMV Cam AE3 (alif port).
 
-     - *width* selects the bus width for the SD/MMC interface. This many data
-       pins must be connected to the SD card.
+Constructors
+------------
 
-     - *cd* can be used to specify a card-detect pin.
+.. class:: SDCard(id: int = 1) -> SDCard
 
-     - *wp* can be used to specify a write-protect pin.
+   Return the :class:`SDCard` singleton for the SD slot identified
+   by ``id``. ``id`` is accepted for cross-port compatibility but
+   the OpenMV-supported ports only expose one slot; pass ``1`` or
+   omit it.
 
-     - *sck* can be used to specify an SPI clock pin.
+   On STM32 the constructor takes no arguments at all; on mimxrt the
+   ``id`` argument is accepted but only ``1`` is valid.
 
-     - *miso* can be used to specify an SPI miso pin.
+   Methods
+   -------
 
-     - *mosi* can be used to specify an SPI mosi pin.
+   .. method:: present() -> bool
 
-     - *cs* can be used to specify an SPI chip select pin.
+      Return ``True`` if a card is currently detected in the slot,
+      ``False`` otherwise.
 
-    The following additional parameters are only present on ESP32 port:
+      On boards that wire a card-detect signal the method reflects
+      that signal in real time, so it can be polled after the
+      :class:`SDCard` object has been constructed to react to hot
+      insertion / removal. On boards without a card-detect signal
+      the value is latched at construction time -- it reports the
+      result of the initial CMD0 probe the driver did when the
+      object was created, and a card hot-inserted afterwards will
+      not be visible until the object is re-constructed (or
+      :meth:`init` is called on mimxrt).
 
-     - *cmd* can be used to specify the SD CMD pin (ESP32-S3 only).
+   .. method:: info() -> tuple[int, int, int]
 
-     - *data* can be used to specify a list or tuple of SD data bus pins
-       (ESP32-S3 only).
+      Return a 3-tuple describing the currently-inserted card:
 
-     - *freq* selects the SD/MMC interface frequency in Hz.
+         * ``[0]`` ``num_blocks`` -- total capacity in 512-byte
+           blocks. Multiply by 512 to get the raw byte capacity.
+         * ``[1]`` ``block_size`` -- always ``512`` for SD cards.
+           Included so callers can do
+           ``num_blocks * block_size`` portably.
+         * ``[2]`` ``card_type`` -- the card type reported by the
+           SD bus during the CMD8 / OCR initialisation handshake.
+           Typical values are ``0`` (SDSC -- standard capacity),
+           ``0x40`` (SDHC / SDXC -- high / extended capacity) and
+           ``0x80`` (MMC).
 
-Implementation-specific details
--------------------------------
+      Useful for sanity-checking that the card was recognised, or
+      to display free-space figures relative to total capacity.
 
-Different implementations of the ``SDCard`` class on different hardware support
-varying subsets of the options above.
+   .. method:: power(state: bool, /) -> None
 
-PyBoard
-```````
+      Turn the card slot's power rail on or off. STM32 firmware
+      exposes the method but no current OpenMV Cam gates the SD
+      power supply, so the call is effectively a no-op. Kept for
+      compatibility with code originally written for the upstream
+      MicroPython STM32 reference boards. STM32 port only.
 
-The standard PyBoard has just one slot. No arguments are necessary or supported.
+   .. method:: read(block_num: int, /) -> bytes
 
-ESP32
-`````
+      Read a single 512-byte block from the card and return it as a
+      newly-allocated ``bytes`` object.
 
-SD cards support access in both SD/MMC mode and the simpler (but slower) SPI
-mode.
+      This is the legacy single-block read shipped by the STM32
+      port. New code should use :meth:`readblocks` instead -- that
+      method works on every OpenMV port, can read any number of
+      contiguous blocks in one transfer, and avoids the per-call
+      allocation by writing into a caller-supplied buffer. STM32
+      port only.
 
-SPI mode makes use of a `SPI` host peripheral, which cannot concurrently be used
-for other SPI interactions.
+   .. method:: write(block_num: int, data: bytes, /) -> None
 
-The ``slot`` argument determines which mode is used. Different values are
-supported on different chips:
+      Write a single 512-byte block to the card. ``data`` must be
+      exactly 512 bytes long.
 
-========== ======== ======== ============ ============
-Chip       Slot 0   Slot 1   Slot 2       Slot 3
-========== ======== ======== ============ ============
-ESP32               SD/MMC   SPI (id=1)   SPI (id=0)
-ESP32-C3                     SPI (id=0)
-ESP32-C6                     SPI (id=0)
-ESP32-S2                     SPI (id=1)   SPI (id=0)
-ESP32-S3   SD/MMC   SD/MMC   SPI (id=1)   SPI (id=0)
-========== ======== ======== ============ ============
+      This is the legacy single-block write shipped by the STM32
+      port; new code should use :meth:`writeblocks` instead, which
+      works on every OpenMV port and can write any number of
+      contiguous blocks per call. STM32 port only.
 
-Different slots support different data bus widths (number of data pins):
+   .. method:: readblocks(block_num: int, buf: bytearray) -> None
+               readblocks(block_num: int, buf: bytearray, offset: int) -> None
 
-========== ========== =====================
-Slot       Type       Supported data widths
-========== ========== =====================
-0          SD/MMC     1, 4, 8
-1          SD/MMC     1, 4
-2          SPI        1
-3          SPI        1
-========== ========== =====================
+      Read raw block-aligned data from the card into ``buf``.
+      Standard :class:`vfs.AbstractBlockDev` block-device entry
+      point used by the filesystem layer.
 
-.. note:: Most ESP32 modules that provide an SD card slot using the
-          dedicated hardware only wire up 1 data pin, so the default
-          value for ``width`` is 1.
+      **Simple form** (``readblocks(block_num, buf)``): read whole
+      blocks starting at block index ``block_num``. ``len(buf)``
+      must be a multiple of the SD block size (512 bytes).
 
-Additional details depend on which ESP32 family chip is in use:
+      **Extended form** (``readblocks(block_num, buf, offset)``):
+      read ``len(buf)`` bytes -- not necessarily a whole number of
+      blocks -- starting at byte ``offset`` within block
+      ``block_num``. Used by littlefs and other byte-addressable
+      filesystems.
 
-Original ESP32
-~~~~~~~~~~~~~~
+   .. method:: writeblocks(block_num: int, buf: bytes | bytearray) -> None
+               writeblocks(block_num: int, buf: bytes | bytearray, offset: int) -> None
 
-In SD/MMC mode (slot 1), pin assignments in SD/MMC mode are fixed on the
-original ESP32. The SPI mode slots (2 & 3) allow pins to be set to different
-values in the constructor.
+      Write raw block-aligned data from ``buf`` to the card.
+      Standard :class:`vfs.AbstractBlockDev` block-device entry
+      point used by the filesystem layer.
 
-The default pin assignments are as follows:
+      **Simple form** (``writeblocks(block_num, buf)``): write
+      whole blocks starting at block index ``block_num``.
+      ``len(buf)`` must be a multiple of the SD block size (512
+      bytes). Each affected block is overwritten in full.
 
-    ====== ====== ====== ====== ============
-    Slot   1      2      3      Can be set
-    ------ ------ ------ ------ ------------
-    Signal   Pin    Pin    Pin
-    ====== ====== ====== ====== ============
-    CLK      14                 No
-    CMD      15                 No
-    D0        2                 No
-    D1        4                 No
-    D2       12                 No
-    D3       13                 No
-    sck             18     14   Yes
-    cs               5     15   Yes
-    miso            19     12   Yes
-    mosi            23     13   Yes
-    ====== ====== ====== ====== ============
+      **Extended form** (``writeblocks(block_num, buf, offset)``):
+      write ``len(buf)`` bytes -- not necessarily a whole number
+      of blocks -- starting at byte ``offset`` within block
+      ``block_num``. Used by littlefs and other byte-addressable
+      filesystems.
 
-The ``cd`` and ``wp`` pins are not fixed in either mode and default to disabled, unless set.
+   .. method:: ioctl(cmd: int, arg: int) -> int | None
 
-ESP32-S3
-~~~~~~~~
+      Standard :class:`vfs.AbstractBlockDev` control entry point.
+      Called by the filesystem layer at mount/unmount time and on
+      every sync. The recognised ``cmd`` values are:
 
-The ESP32-S3 chip allows pins to be set to different values for both SD/MMC and
-SPI mode access.
+         * ``1`` -- initialise. Return ``0`` on success.
+         * ``2`` -- deinitialise. Return ``0`` on success.
+         * ``3`` -- sync any pending writes. Returns ``0`` (the
+           SDMMC driver writes synchronously, nothing to flush).
+         * ``4`` -- return the number of blocks on the device.
+         * ``5`` -- return the size of a single block (always
+           512).
+         * ``6`` -- erase a block (no-op on SD, kept for the
+           :class:`vfs.AbstractBlockDev` contract).
+         * ``7`` -- return whether the device supports block
+           erase (0 on SD).
 
-If not set, default pin assignments are as follows:
+      Direct callers normally don't use this method -- the
+      filesystem driver dispatches all the standard codes
+      automatically once the :class:`SDCard` is mounted.
 
-    ======== ====== ====== ====== ======
-    Slot     0      1      2      3
-    -------- ------ ------ ------ ------
-    Signal     Pin    Pin    Pin    Pin
-    ======== ====== ====== ====== ======
-    CLK      14     14
-    CMD      15     15
-    D0        2      2
-    D1        4      4
-    D2       12     12
-    D3       13     13
-    D4       33*
-    D5       34*
-    D6       35*
-    D7       36*
-    sck                    37*     14
-    cs                     34*     13
-    miso                   37*      2
-    mosi                   35*     15
-    ======== ====== ====== ====== ======
+   .. method:: init(*args, **kwargs) -> None
 
-.. note:: Slots 0 and 1 cannot both be in use at the same time.
+      Re-initialise the SD interface from scratch. Accepts the same
+      arguments as the constructor. Useful for re-detecting a
+      hot-inserted card on boards without a card-detect signal,
+      since :meth:`present` is otherwise latched at construction
+      time. mimxrt port only.
 
-.. note:: Pins marked with an asterisk * in the table must be changed from the
-          default if the ESP32-S3 board is configured for Octal SPI Flash or
-          PSRAM.
+   .. method:: deinit() -> None
 
-To access a card in SD/MMC mode, set ``slot`` parameter value 0 or 1 and
-parameters ``sck`` (for CLK), ``cmd`` and ``data`` as needed to assign pins. If
-the ``data`` argument is passed then it should be a list or tuple of data pins
-or pin numbers with length equal to the ``width`` argument. For example::
-
-    sd = SDCard(slot=0, width=4, sck=8, cmd=9, data=(10, 11, 12, 13))
-
-To access a card in SPI mode, set ``slot`` parameter value 2 or 3 and pass
-parameters ``sck``, ``cs``, ``miso``, ``mosi`` as needed to assign pins.
-
-In either mode the ``cd`` and ``wp`` pins default to disabled, unless set in the
-constructor.
-
-Other ESP32 chips
-~~~~~~~~~~~~~~~~~
-
-Other ESP32 family chips do not have hardware SD/MMC host controllers and can
-only access SD cards in SPI mode.
-
-To access a card in SPI mode, set ``slot`` parameter value 2 or 3 and pass
-parameters ``sck``, ``cs``, ``miso``, ``mosi`` to assign pins.
-
-.. note:: ESP32-C3 and ESP32-C6 only have one available `SPI` bus, so the only
-          valid ``slot`` parameter value is 2. Using this bus for the SD card
-          will prevent also using it for :class:`machine.SPI`.
-
-cc3200
-``````
-
-You can set the pins used for SPI access by passing a tuple as the
-*pins* argument.
-
-*Note:* The current cc3200 SD card implementation names the this class
-:class:`machine.SD` rather than :class:`machine.SDCard` .
-
-mimxrt
-``````
-
-The SDCard module for the mimxrt port only supports access via dedicated SD/MMC
-peripheral (USDHC) in 4-bit mode with 50MHz clock frequency exclusively.
-Unfortunately the MIMXRT1011 controller does not support the USDHC peripheral.
-Hence this controller does not feature the ``machine.SDCard`` module.
-
-Due to the decision to only support 4-bit mode with 50MHz clock frequency the
-interface has been simplified, and the constructor signature is:
-
-.. class:: SDCard(slot: int = 1)
-  :noindex:
-
-The pins used for the USDHC peripheral have to be configured in ``mpconfigboard.h``.
-Most of the controllers supported by the mimxrt port provide up to two USDHC
-peripherals.  Therefore the pin configuration is performed using the macro
-``MICROPY_USDHCx`` with x being 1 or 2 respectively.
-
-The following shows an example configuration for USDHC1::
-
-  #define MICROPY_USDHC1 \
-    { \
-          .cmd   = { GPIO_SD_B0_02_USDHC1_CMD}, \
-          .clk   = { GPIO_SD_B0_03_USDHC1_CLK }, \
-          .cd_b  = { GPIO_SD_B0_06_USDHC1_CD_B },\
-          .data0 = { GPIO_SD_B0_04_USDHC1_DATA0 },\
-          .data1 = { GPIO_SD_B0_05_USDHC1_DATA1 },\
-          .data2 = { GPIO_SD_B0_00_USDHC1_DATA2 },\
-          .data3 = { GPIO_SD_B0_01_USDHC1_DATA3 },\
-    }
-
-If the card detect pin is not used (cb_b pin) then the respective entry has to be
-filled with the following dummy value::
-
-  #define USDHC_DUMMY_PIN NULL , 0
-
-Based on the definition of macro ``MICROPY_USDHC1`` and/or ``MICROPY_USDHC2``
-the ``machine.SDCard`` module either supports one or two slots.  If only one of
-the defines is provided, calling ``machine.SDCard()`` or ``machine.SDCard(1)``
-will return an instance using the respective USDHC peripheral.  When both macros
-are defined, calling ``machine.SDCard(2)`` returns an instance using USDHC2.
+      De-initialise the SD interface, releasing the SDMMC/USDHC
+      controller and the IO pins it claimed. The :class:`SDCard`
+      object becomes unusable until :meth:`init` is called again.
+      Use it before re-flashing the card from another interface,
+      or to drop power to the slot in a battery-powered
+      application. mimxrt port only.

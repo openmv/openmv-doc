@@ -3,171 +3,170 @@
 class Statistics -- Statistics Object
 =====================================
 
-The statistics object is an attrtuple returned by `histogram.get_statistics()`
-or `Image.get_statistics()`.
+The statistics object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `histogram.get_statistics()` (and its aliases
+`histogram.get_stats()` / `histogram.statistics()`) or directly by
+`Image.get_statistics()`. It summarises the bin distribution of the
+underlying :class:`Histogram <histogram>` with eight reductions per channel:
+mean, median, mode, standard deviation, min, max, lower quartile, and upper
+quartile.
 
-Grayscale statistics have one channel; use the non ``l_*``, ``a_*``, ``b_*``
-fields. RGB565 statistics use the ``l_*``, ``a_*``, and ``b_*`` fields.
+For grayscale data, only the un-prefixed fields (``mean``, ``median``,
+``mode``, ``stdev``, ``min``, ``max``, ``lq``, ``uq``) carry useful values
+and they are reused as the LAB ``L`` channel reductions for RGB565 data --
+the ``l_*`` fields therefore mirror the un-prefixed fields and are provided
+for symmetry. ``a_*`` and ``b_*`` only carry useful values for RGB565
+histograms.
 
-Fields are accessible by name (``statistics.mean``) or by index
-(``statistics[0]``). It has no public constructor.
+Fields are accessible by attribute name (``statistics.mean``) or by index
+(``statistics[0]``). The object has no public constructor.
 
 .. class:: statistics
 
    Please call `histogram.get_statistics()` or `Image.get_statistics()` to
    create this object.
 
-   .. method:: statistics.mean() -> int
+   Grayscale / LAB L (also exposed as ``l_*`` below)
+   --------------------------------------------------
 
-      Returns the grayscale mean (0 - 255). Also accessible as ``statistics[0]``.
+   .. attribute:: mean
 
-   .. method:: statistics.median() -> int
+      Grayscale mean of the histogram. Integer 0 -- 255. Index ``[0]``.
 
-      Returns the grayscale median (0 - 255). Also accessible as ``statistics[1]``.
+   .. attribute:: median
 
-   .. method:: statistics.mode() -> int
+      Grayscale median of the histogram. Integer 0 -- 255. Index ``[1]``.
 
-      Returns the grayscale mode (0 - 255). Also accessible as ``statistics[2]``.
+   .. attribute:: mode
 
-   .. method:: statistics.stdev() -> int
+      Grayscale mode of the histogram. Integer 0 -- 255. Index ``[2]``.
 
-      Returns the grayscale standard deviation (0 - 255). Also accessible as
-      ``statistics[3]``.
+   .. attribute:: stdev
 
-   .. method:: statistics.min() -> int
+      Grayscale standard deviation of the histogram. Integer 0 -- 255.
+      Index ``[3]``.
 
-      Returns the grayscale min (0 - 255). Also accessible as ``statistics[4]``.
+   .. attribute:: min
 
-   .. method:: statistics.max() -> int
+      Grayscale minimum of the histogram. Integer 0 -- 255. Index ``[4]``.
 
-      Returns the grayscale max (0 - 255). Also accessible as ``statistics[5]``.
+   .. attribute:: max
 
-   .. method:: statistics.lq() -> int
+      Grayscale maximum of the histogram. Integer 0 -- 255. Index ``[5]``.
 
-      Returns the grayscale lower quartile (0 - 255). Also accessible as
-      ``statistics[6]``.
+   .. attribute:: lq
 
-   .. method:: statistics.uq() -> int
+      Grayscale lower quartile (25th percentile) of the histogram.
+      Integer 0 -- 255. Index ``[6]``.
 
-      Returns the grayscale upper quartile (0 - 255). Also accessible as
-      ``statistics[7]``.
+   .. attribute:: uq
 
-   .. method:: statistics.l_mean() -> int
+      Grayscale upper quartile (75th percentile) of the histogram.
+      Integer 0 -- 255. Index ``[7]``.
 
-      Returns the RGB565 LAB L mean (0 - 100). Also accessible as
-      ``statistics[8]``.
+   LAB L channel (RGB565)
+   ----------------------
 
-   .. method:: statistics.l_median() -> int
+   .. attribute:: l_mean
 
-      Returns the RGB565 LAB L median (0 - 100). Also accessible as
-      ``statistics[9]``.
+      LAB ``L`` channel mean. Integer 0 -- 100. Index ``[8]``.
 
-   .. method:: statistics.l_mode() -> int
+   .. attribute:: l_median
 
-      Returns the RGB565 LAB L mode (0 - 100). Also accessible as
-      ``statistics[10]``.
+      LAB ``L`` channel median. Integer 0 -- 100. Index ``[9]``.
 
-   .. method:: statistics.l_stdev() -> int
+   .. attribute:: l_mode
 
-      Returns the RGB565 LAB L standard deviation (0 - 100). Also accessible as
-      ``statistics[11]``.
+      LAB ``L`` channel mode. Integer 0 -- 100. Index ``[10]``.
 
-   .. method:: statistics.l_min() -> int
+   .. attribute:: l_stdev
 
-      Returns the RGB565 LAB L min (0 - 100). Also accessible as
-      ``statistics[12]``.
+      LAB ``L`` channel standard deviation. Integer 0 -- 100. Index ``[11]``.
 
-   .. method:: statistics.l_max() -> int
+   .. attribute:: l_min
 
-      Returns the RGB565 LAB L max (0 - 100). Also accessible as
-      ``statistics[13]``.
+      LAB ``L`` channel minimum. Integer 0 -- 100. Index ``[12]``.
 
-   .. method:: statistics.l_lq() -> int
+   .. attribute:: l_max
 
-      Returns the RGB565 LAB L lower quartile (0 - 100). Also accessible as
-      ``statistics[14]``.
+      LAB ``L`` channel maximum. Integer 0 -- 100. Index ``[13]``.
 
-   .. method:: statistics.l_uq() -> int
+   .. attribute:: l_lq
 
-      Returns the RGB565 LAB L upper quartile (0 - 100). Also accessible as
-      ``statistics[15]``.
+      LAB ``L`` channel lower quartile. Integer 0 -- 100. Index ``[14]``.
 
-   .. method:: statistics.a_mean() -> int
+   .. attribute:: l_uq
 
-      Returns the RGB565 LAB A mean (-128 - 127). Also accessible as
-      ``statistics[16]``.
+      LAB ``L`` channel upper quartile. Integer 0 -- 100. Index ``[15]``.
 
-   .. method:: statistics.a_median() -> int
+   LAB A channel (RGB565)
+   ----------------------
 
-      Returns the RGB565 LAB A median (-128 - 127). Also accessible as
-      ``statistics[17]``.
+   .. attribute:: a_mean
 
-   .. method:: statistics.a_mode() -> int
+      LAB ``A`` channel mean. Integer -128 -- 127. Index ``[16]``.
 
-      Returns the RGB565 LAB A mode (-128 - 127). Also accessible as
-      ``statistics[18]``.
+   .. attribute:: a_median
 
-   .. method:: statistics.a_stdev() -> int
+      LAB ``A`` channel median. Integer -128 -- 127. Index ``[17]``.
 
-      Returns the RGB565 LAB A standard deviation (-128 - 127). Also accessible as
-      ``statistics[19]``.
+   .. attribute:: a_mode
 
-   .. method:: statistics.a_min() -> int
+      LAB ``A`` channel mode. Integer -128 -- 127. Index ``[18]``.
 
-      Returns the RGB565 LAB A min (-128 - 127). Also accessible as
-      ``statistics[20]``.
+   .. attribute:: a_stdev
 
-   .. method:: statistics.a_max() -> int
+      LAB ``A`` channel standard deviation. Integer -128 -- 127.
+      Index ``[19]``.
 
-      Returns the RGB565 LAB A max (-128 - 127). Also accessible as
-      ``statistics[21]``.
+   .. attribute:: a_min
 
-   .. method:: statistics.a_lq() -> int
+      LAB ``A`` channel minimum. Integer -128 -- 127. Index ``[20]``.
 
-      Returns the RGB565 LAB A lower quartile (-128 - 127). Also accessible as
-      ``statistics[22]``.
+   .. attribute:: a_max
 
-   .. method:: statistics.a_uq() -> int
+      LAB ``A`` channel maximum. Integer -128 -- 127. Index ``[21]``.
 
-      Returns the RGB565 LAB A upper quartile (-128 - 127). Also accessible as
-      ``statistics[23]``.
+   .. attribute:: a_lq
 
-   .. method:: statistics.b_mean() -> int
+      LAB ``A`` channel lower quartile. Integer -128 -- 127. Index ``[22]``.
 
-      Returns the RGB565 LAB B mean (-128 - 127). Also accessible as
-      ``statistics[24]``.
+   .. attribute:: a_uq
 
-   .. method:: statistics.b_median() -> int
+      LAB ``A`` channel upper quartile. Integer -128 -- 127. Index ``[23]``.
 
-      Returns the RGB565 LAB B median (-128 - 127). Also accessible as
-      ``statistics[25]``.
+   LAB B channel (RGB565)
+   ----------------------
 
-   .. method:: statistics.b_mode() -> int
+   .. attribute:: b_mean
 
-      Returns the RGB565 LAB B mode (-128 - 127). Also accessible as
-      ``statistics[26]``.
+      LAB ``B`` channel mean. Integer -128 -- 127. Index ``[24]``.
 
-   .. method:: statistics.b_stdev() -> int
+   .. attribute:: b_median
 
-      Returns the RGB565 LAB B standard deviation (-128 - 127). Also accessible as
-      ``statistics[27]``.
+      LAB ``B`` channel median. Integer -128 -- 127. Index ``[25]``.
 
-   .. method:: statistics.b_min() -> int
+   .. attribute:: b_mode
 
-      Returns the RGB565 LAB B min (-128 - 127). Also accessible as
-      ``statistics[28]``.
+      LAB ``B`` channel mode. Integer -128 -- 127. Index ``[26]``.
 
-   .. method:: statistics.b_max() -> int
+   .. attribute:: b_stdev
 
-      Returns the RGB565 LAB B max (-128 - 127). Also accessible as
-      ``statistics[29]``.
+      LAB ``B`` channel standard deviation. Integer -128 -- 127.
+      Index ``[27]``.
 
-   .. method:: statistics.b_lq() -> int
+   .. attribute:: b_min
 
-      Returns the RGB565 LAB B lower quartile (-128 - 127). Also accessible as
-      ``statistics[30]``.
+      LAB ``B`` channel minimum. Integer -128 -- 127. Index ``[28]``.
 
-   .. method:: statistics.b_uq() -> int
+   .. attribute:: b_max
 
-      Returns the RGB565 LAB B upper quartile (-128 - 127). Also accessible as
-      ``statistics[31]``.
+      LAB ``B`` channel maximum. Integer -128 -- 127. Index ``[29]``.
+
+   .. attribute:: b_lq
+
+      LAB ``B`` channel lower quartile. Integer -128 -- 127. Index ``[30]``.
+
+   .. attribute:: b_uq
+
+      LAB ``B`` channel upper quartile. Integer -128 -- 127. Index ``[31]``.

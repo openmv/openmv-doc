@@ -3,45 +3,52 @@
 class Line -- Line object
 =========================
 
-The line object is an attrtuple returned by `Image.find_lines()`,
-`Image.find_line_segments()`, or `Image.get_regression()`. It has 8 fields
-accessible as attributes or by index ``[0..7]``.
+The line object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `Image.find_lines()`, `Image.find_line_segments()`, and
+`Image.get_regression()`. It represents a single oriented line segment with
+both its endpoint form ``(x1, y1) -- (x2, y2)`` and its Hough-space form
+``(rho, theta)``.
+
+Fields are accessible by attribute name (``line.x1``) or by index
+(``line[0]``). The object has no public constructor.
 
 .. class:: line
 
    Please call `Image.find_lines()`, `Image.find_line_segments()`, or
    `Image.get_regression()` to create this object.
 
-   .. method:: x1() -> int
+   .. attribute:: x1
 
-      Returns the line's p1 x component. Index ``[0]``.
+      X coordinate of the first endpoint. Integer. Index ``[0]``.
 
-   .. method:: y1() -> int
+   .. attribute:: y1
 
-      Returns the line's p1 y component. Index ``[1]``.
+      Y coordinate of the first endpoint. Integer. Index ``[1]``.
 
-   .. method:: x2() -> int
+   .. attribute:: x2
 
-      Returns the line's p2 x component. Index ``[2]``.
+      X coordinate of the second endpoint. Integer. Index ``[2]``.
 
-   .. method:: y2() -> int
+   .. attribute:: y2
 
-      Returns the line's p2 y component. Index ``[3]``.
+      Y coordinate of the second endpoint. Integer. Index ``[3]``.
 
-   .. method:: length() -> int
+   .. attribute:: length
 
-      Returns the line's length: ``round(sqrt((x2-x1)^2 + (y2-y1)^2))``.
-      Index ``[4]``.
+      Pixel length of the segment: ``round(sqrt((x2-x1)**2 + (y2-y1)**2))``.
+      Integer. Index ``[4]``.
 
-   .. method:: magnitude() -> int
+   .. attribute:: magnitude
 
-      Returns the magnitude of the line from the Hough transform. Index ``[5]``.
+      Magnitude of the line in Hough-space. Higher values indicate that
+      more edge pixels voted for this line. Integer. Index ``[5]``.
 
-   .. method:: theta() -> int
+   .. attribute:: theta
 
-      Returns the angle of the line from the Hough transform (0-179 degrees).
+      Angle of the line in Hough-space, in degrees, 0 -- 179. Integer.
       Index ``[6]``.
 
-   .. method:: rho() -> int
+   .. attribute:: rho
 
-      Returns the rho value for the line from the Hough transform. Index ``[7]``.
+      Distance of the line from the image origin in Hough-space, in
+      pixels. Signed integer (can be negative). Index ``[7]``.

@@ -1,53 +1,72 @@
 .. currentmodule:: machine
 .. _machine.LED:
 
-class LED -- LED Control
-========================
+class LED -- portable on-board LED control
+==========================================
 
-The LED class provides an interface to control the on-board LED.
+The :class:`LED` class is a thin portable wrapper around
+:class:`machine.Pin` that drives a named board LED, hiding the
+active-low / active-high wiring difference between boards. It is
+shipped as a frozen Python module by the OpenMV firmware (see
+``scripts/libraries/machine.py``) and is therefore available on
+every OpenMV-supported board, regardless of port.
+
+The LED is driven as a simple on/off GPIO; there is no PWM intensity
+control. For LEDs wired to PWM-capable pins drive them via
+:class:`PWM` directly instead.
 
 Example usage::
 
-   from machine import LED
+    from machine import LED
 
-   r = LED("LED_RED")
-   g = LED("LED_GREEN")
-   b = LED("LED_BLUE")
-
-   r.on()
-   g.off()
-   b.toggle()
+    red = LED("LED_RED")
+    red.on()
+    red.toggle()
+    red.off()
 
 Constructors
 ------------
 
 .. class:: LED(pin_name: str | Pin) -> LED
 
-   Access the LED associated with a source identified by *pin_name*. This
-   ``pin_name`` may be a string (usually specifying a color), a
-   :ref:`Pin <machine.Pin>` object, or other value supported by the
-   underlying machine.
+   Construct an :class:`LED` object bound to the LED identified by
+   ``pin_name``. ``pin_name`` is either an OpenMV-board LED string
+   (``"LED_RED"``, ``"LED_GREEN"``, ``"LED_BLUE"``, ``"LED_IR"`` --
+   the exact set depends on the cam) or a :class:`Pin` object.
+
+   The constructor records whether the LED is wired active-low or
+   active-high (using :meth:`boardname` to look up the active-level
+   convention for the current board) so callers always pass logical
+   on/off levels without worrying about polarity.
 
    Methods
    -------
 
-   .. method:: boardname() -> str
-
-      Returns the name of the board.
-
    .. method:: on() -> None
 
-      Turns the LED on.
+      Drive the LED to its on state.
 
    .. method:: off() -> None
 
-      Turns the LED off.
+      Drive the LED to its off state.
 
    .. method:: toggle() -> None
 
-      Toggles the LED state.
+      Flip the LED's current state.
 
-   .. method:: value(v: int | None = None) -> int | None
+   .. method:: value(v: int | None = None, /) -> int | None
 
-      If ``v`` is given, sets the LED to the given value. If ``v`` is not given,
-      returns the current LED value.
+      Get or set the LED state.
+
+      With no argument, return the current logical state (``0`` =
+      off, ``1`` = on).
+
+      With a single ``v`` argument, set the LED to that state. The
+      driver XORs ``v`` with the board's active-level convention so
+      ``1`` is always "on" regardless of polarity.
+
+   .. method:: boardname() -> str
+
+      Return the board name string (the prefix of
+      ``os.uname().machine`` before ``" with "``). Used internally to
+      pick the right active-level convention for the LED.

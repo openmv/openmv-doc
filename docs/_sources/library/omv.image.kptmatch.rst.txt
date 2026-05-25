@@ -4,50 +4,74 @@ class kptmatch -- Keypoint match object
 =======================================
 
 The kptmatch object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
-returned by `image.match_descriptor()` for keypoint matches with the fields:
+returned by `image.match_descriptor()` when matching two ORB keypoint
+descriptors. It describes the cluster of matched keypoints between the two
+descriptors: its bounding box, centroid, the number of matched keypoints,
+an estimated in-image-plane rotation, and the per-keypoint ``(x, y)`` list
+of matches.
+
+Fields are accessible by attribute name (``match.count``) or by index
+(``match[0]``). The object has no public constructor.
 
 .. class:: kptmatch
 
-   Please call `image.match_descriptor()` to create this object. It has no
-   public constructor.
+   Please call `image.match_descriptor()` to create this object.
 
-   .. method:: x() -> int
+   Bounding box and centroid
+   -------------------------
 
-      Bounding box x coordinate of the matched keypoints. Index ``[0]``.
+   .. attribute:: x
 
-   .. method:: y() -> int
+      Bounding box top-left x coordinate of the matched keypoints, in
+      pixels. Integer. Index ``[0]``.
 
-      Bounding box y coordinate of the matched keypoints. Index ``[1]``.
+   .. attribute:: y
 
-   .. method:: w() -> int
+      Bounding box top-left y coordinate of the matched keypoints, in
+      pixels. Integer. Index ``[1]``.
 
-      Bounding box width of the matched keypoints. Index ``[2]``.
+   .. attribute:: w
 
-   .. method:: h() -> int
+      Bounding box width of the matched keypoints, in pixels. Integer.
+      Index ``[2]``.
 
-      Bounding box height of the matched keypoints. Index ``[3]``.
+   .. attribute:: h
 
-   .. method:: cx() -> int
+      Bounding box height of the matched keypoints, in pixels. Integer.
+      Index ``[3]``.
 
-      Centroid x position of the matched keypoints. Index ``[4]``.
+   .. attribute:: cx
 
-   .. method:: cy() -> int
+      Centroid x coordinate of the matched keypoints. Integer.
+      Index ``[4]``.
 
-      Centroid y position of the matched keypoints. Index ``[5]``.
+   .. attribute:: cy
 
-   .. method:: count() -> int
+      Centroid y coordinate of the matched keypoints. Integer.
+      Index ``[5]``.
 
-      Number of keypoints matched. Index ``[6]``.
+   .. attribute:: rect
 
-   .. method:: theta() -> int
+      ``(x, y, w, h)`` 4-tuple of the bounding box. Suitable for passing
+      directly to drawing/cropping methods such as `Image.draw_rectangle()`
+      or `Image.crop()`. Index ``[9]``.
 
-      Estimated angle of rotation of the match. Index ``[7]``.
+   Match details
+   -------------
 
-   .. method:: match() -> List[Tuple[int, int]]
+   .. attribute:: count
 
-      List of ``(x, y)`` tuples of the matching keypoints. Index ``[8]``.
+      Number of keypoints that matched between the two descriptors. Use
+      this as a confidence score -- typical thresholds for a "real"
+      match are 10+ keypoints. Integer. Index ``[6]``.
 
-   .. method:: rect() -> Tuple[int, int, int, int]
+   .. attribute:: theta
 
-      Bounding box ``(x, y, w, h)`` of the matched keypoints, suitable for
-      passing to methods like `Image.draw_rectangle()`. Index ``[9]``.
+      Estimated in-image-plane rotation between the two descriptors, in
+      degrees. Integer. Index ``[7]``.
+
+   .. attribute:: match
+
+      List of ``(x, y)`` integer tuples giving the pixel location of each
+      matched keypoint in the search image. ``len(match) == count``.
+      Index ``[8]``.

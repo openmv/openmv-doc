@@ -12,12 +12,13 @@ communication takes place. Management of a CS signal should happen in
 user code (via machine.Pin class).
 
 Both hardware and software SPI implementations exist via the
-:ref:`machine.SPI <machine.SPI>` and `machine.SoftSPI` classes.  Hardware SPI uses underlying
-hardware support of the system to perform the reads/writes and is usually
-efficient and fast but may have restrictions on which pins can be used.
-Software SPI is implemented by bit-banging and can be used on any pin but
-is not as efficient.  These classes have the same methods available and
-differ primarily in the way they are constructed.
+:class:`SPI` and :class:`SoftSPI` classes.  Hardware SPI uses
+underlying hardware support of the system to perform the
+reads/writes and is usually efficient and fast but may have
+restrictions on which pins can be used. Software SPI is implemented
+by bit-banging and can be used on any pin but is not as efficient.
+These classes have the same methods available and differ primarily
+in the way they are constructed.
 
 Example usage::
 
@@ -58,7 +59,7 @@ Example usage::
 Constructors
 ------------
 
-.. class:: SPI(id: int, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple | None = None)
+.. class:: SPI(id: int, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None)
 
    Construct an SPI object on the given bus, *id*. Values of *id* depend
    on a particular port and its hardware. Values 0, 1, etc. are commonly used
@@ -72,7 +73,7 @@ Constructors
    Methods
    -------
 
-   .. method:: init(baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None, pins: tuple = (SCK, MOSI, MISO)) -> None
+   .. method:: init(baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None
 
       Initialise the SPI bus with the given parameters:
 
@@ -87,8 +88,6 @@ Constructors
           and cannot be changed. In some cases, hardware blocks allow 2-3 alternative pin sets for
           a hardware SPI block. Arbitrary pin assignments are possible only for a bitbanging SPI driver
           (``id`` = -1).
-        - ``pins`` - WiPy port doesn't ``sck``, ``mosi``, ``miso`` arguments, and instead allows to
-          specify them as a tuple of ``pins`` parameter.
 
       In the case of hardware SPI the actual clock frequency may be lower than the
       requested baudrate. This is dependent on the platform hardware. The actual
@@ -125,26 +124,88 @@ Constructors
    Constants
    ---------
 
-   .. data:: CONTROLLER
-      :type: int
-
-      for initialising the SPI bus to controller; this is only used for the WiPy
-
    .. data:: MSB
-             SoftSPI.MSB
       :type: int
 
-      set the first bit to be the most significant bit
+      Pass to ``firstbit`` to transmit/receive the most-significant
+      bit first (the most common ordering).
 
    .. data:: LSB
-             SoftSPI.LSB
       :type: int
 
-      set the first bit to be the least significant bit
+      Pass to ``firstbit`` to transmit/receive the least-significant
+      bit first.
 
 .. _machine.SoftSPI:
+
+class SoftSPI -- software-emulated SPI bus
+==========================================
+
+The :class:`SoftSPI` class implements SPI by bit-banging arbitrary
+GPIO pins. It exposes the same method surface as :class:`SPI` so
+existing code that targets hardware SPI can switch to software with
+only a constructor change. Use it when the pins you need are not
+wired to a hardware SPI block, when you need more than the available
+hardware buses, or when a peripheral requires a non-standard clock
+phasing that the hardware can't produce.
+
+Constructors
+------------
+
 .. class:: SoftSPI(baudrate: int = 500000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None)
 
-   Construct a new software SPI object.  Additional parameters must be
-   given, usually at least *sck*, *mosi* and *miso*, and these are used
-   to initialise the bus.  See `SPI.init` for a description of the parameters.
+   Construct a software SPI object. ``sck``, ``mosi`` and ``miso``
+   must be supplied -- there is no implicit pin selection. See
+   :meth:`SPI.init` for the meaning of the other parameters. The
+   default ``baudrate`` is lower than for hardware :class:`SPI`
+   because the bit-bang loop has more overhead.
+
+   Methods
+   -------
+
+   .. method:: init(baudrate: int = 500000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SoftSPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None
+
+      Re-initialise the software SPI bus with the given parameters.
+      Only arguments supplied are updated; the others retain their
+      previous values. See :meth:`SPI.init` for the meaning of each
+      argument.
+
+   .. method:: deinit() -> None
+
+      Release the GPIO pins claimed by the bit-bang driver and stop
+      driving the bus.
+
+   .. method:: read(nbytes: int, write: int = 0x00) -> bytes
+
+      Read ``nbytes`` bytes while continuously writing the single
+      byte ``write``. Returns a ``bytes`` object containing the
+      received data.
+
+   .. method:: readinto(buf: bytearray, write: int = 0x00) -> None
+
+      Read into ``buf`` while continuously writing the single byte
+      ``write``. Returns ``None``.
+
+   .. method:: write(buf: bytes) -> None
+
+      Write ``buf`` to the bus. Received bytes are discarded.
+
+   .. method:: write_readinto(write_buf: bytes, read_buf: bytearray) -> None
+
+      Simultaneously write ``write_buf`` and read into ``read_buf``.
+      Both buffers must be the same length; they may alias.
+
+   Constants
+   ---------
+
+   .. data:: MSB
+      :type: int
+
+      Pass to ``firstbit`` to transmit/receive the most-significant
+      bit first.
+
+   .. data:: LSB
+      :type: int
+
+      Pass to ``firstbit`` to transmit/receive the least-significant
+      bit first.

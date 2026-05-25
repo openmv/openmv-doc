@@ -3,273 +3,402 @@ from typing import Any, Callable
 
 APPLY_COLOR_PALETTE_FIRST: int
 """
-When applying a color palette via Image.draw_image(), apply the palette before scaling
-instead of after.
+When applying a colour palette via Image.draw_image(), apply
+the palette before scaling. Without this hint, the palette is
+applied after scaling.
 """
 AREA: int
-"""Use area scaling when downscaling an image (Nearest Neighbor is used for upscaling)."""
+"""
+Area-averaging scaler. Used when downscaling; Nearest-Neighbor is
+used for upscaling.
+"""
 BAYER: int
-"""Raw Bayer pixel format. Most image processing methods are not available on Bayer images."""
+"""
+8-bit-per-pixel raw Bayer data straight off the sensor. Most image
+processing methods are not available on Bayer images; use this when
+you want to debayer on demand or store more pixels in less memory.
+"""
 BICUBIC: int
-"""Use bicubic scaling. Higher quality than bilinear but slower. Subsamples when downscaling."""
+"""
+Bicubic scaler. Higher quality than BILINEAR but slower.
+Subsamples when downscaling.
+"""
 BILINEAR: int
-"""Use bilinear scaling. Subsamples when downscaling."""
+"""Bilinear scaler. Subsamples when downscaling."""
 BINARY: int
-"""BINARY (bitmap) pixel format. Each pixel is 1-bit."""
+"""
+1-bit-per-pixel bitmap. Smallest format – used internally by
+thresholding and morphology, rarely captured directly from a sensor.
+"""
 BLACK_BACKGROUND: int
 """
-Skip reading the destination pixel when drawing on a known-black destination. Speeds up
-alpha effects.
+Tell the alpha-blending path that the destination is known-black so
+it can skip the read-back of the destination pixel. Speeds up alpha
+effects on freshly-cleared buffers.
 """
 CENTER: int
-"""Center the drawn image on the destination. Any x/y offsets become offsets from center."""
+"""
+Centre the source on the destination. Any explicit x/y offsets then
+become offsets from the centre instead of from the top-left.
+"""
 CODABAR: int
-"""Codabar barcode type."""
+"""Codabar barcode."""
 CODE128: int
-"""Code 128 barcode type."""
+"""Code 128 barcode."""
 CODE39: int
-"""Code 39 barcode type."""
+"""Code 39 barcode."""
 CODE93: int
-"""Code 93 barcode type."""
+"""Code 93 barcode."""
 CORNER_AGAST: int
-"""Slower, more accurate ORB corner detector."""
+"""
+AGAST corner detector. Slower than CORNER_FAST but produces
+more stable keypoints.
+"""
 CORNER_FAST: int
-"""Faster, less accurate ORB corner detector."""
+"""
+FAST corner detector. Faster than CORNER_AGAST but less
+accurate.
+"""
 DATABAR: int
-"""GS1 DataBar barcode type."""
+"""GS1 DataBar barcode."""
 DATABAR_EXP: int
-"""GS1 DataBar Expanded barcode type."""
+"""GS1 DataBar Expanded barcode."""
 EAN13: int
-"""EAN13 barcode type."""
+"""EAN-13 barcode."""
 EAN2: int
-"""EAN2 barcode type."""
+"""EAN-2 supplemental barcode."""
 EAN5: int
-"""EAN5 barcode type."""
+"""EAN-5 supplemental barcode."""
 EAN8: int
-"""EAN8 barcode type."""
+"""EAN-8 barcode."""
 EDGE_CANNY: int
-"""Canny edge detection algorithm. See Image.find_edges()."""
+"""
+Canny edge detector – gradient magnitude + non-max suppression +
+hysteresis. Higher quality, slower.
+"""
 EDGE_SIMPLE: int
-"""Thresholded high-pass-filter edge detection. See Image.find_edges()."""
+"""
+Thresholded high-pass-filter edge detector. Faster but produces
+thicker, noisier edges than EDGE_CANNY.
+"""
 EXTRACT_RGB_CHANNEL_FIRST: int
 """
-When extracting an RGB channel via Image.draw_image(), extract the channel before
-scaling instead of after.
+When extracting an RGB channel via Image.draw_image(), extract
+the channel before scaling. Without this hint, the channel is
+extracted after scaling.
 """
 GRAYSCALE: int
-"""GRAYSCALE pixel format. Each pixel is 8-bits, 1-byte."""
+"""
+8-bit-per-pixel grayscale (one byte per pixel). The fastest format
+for most computer-vision algorithms (AprilTag, edge detection,
+optical flow).
+"""
 HMIRROR: int
-"""Horizontally mirror the image being drawn."""
+"""Horizontally mirror the source while drawing."""
 I25: int
-"""Interleaved 2 of 5 barcode type."""
+"""Interleaved 2-of-5 barcode."""
 ISBN10: int
-"""ISBN10 barcode type."""
+"""ISBN-10 barcode."""
 ISBN13: int
-"""ISBN13 barcode type."""
+"""ISBN-13 barcode."""
 FILE_STREAM: int
-"""The ImageIO object was opened on a file."""
+"""Value returned by type() for file-backed streams."""
 MEMORY_STREAM: int
-"""The ImageIO object was opened in memory."""
+"""Value returned by type() for in-memory streams."""
 JPEG: int
-"""A JPEG image."""
+"""
+Compressed JPEG buffer. Pixel-level operations require
+Image.to_grayscale() or Image.to_rgb565() first.
+"""
 JPEG_SUBSAMPLING_420: int
-"""Force 4:2:0 JPEG chroma subsampling."""
+"""Force 4:2:0 chroma subsampling."""
 JPEG_SUBSAMPLING_422: int
 """
-Force 4:2:2 JPEG chroma subsampling. Recommended when streaming MJPEG to third-party
-video players.
+Force 4:2:2 chroma subsampling. Recommended when streaming MJPEG to
+third-party video players that misbehave with 4:2:0.
 """
 JPEG_SUBSAMPLING_444: int
-"""Force 4:4:4 JPEG chroma subsampling."""
+"""Force 4:4:4 chroma subsampling (no chroma compression)."""
 JPEG_SUBSAMPLING_AUTO: int
-"""Automatically select JPEG chroma subsampling based on image quality."""
+"""
+Pick chroma subsampling automatically based on the JPEG quality
+setting.
+"""
 PALETTE_DEPTH: int
-"""Depth color palette for depth images."""
+"""
+Depth-image palette. Only available on builds with depth-sensor
+support (the ToF pipeline – e.g. OpenMV Cam AE3 or any cam with a
+ToF Pmod attached).
+"""
 PALETTE_EVT_DARK: int
 """
-Color palette for visualizing GENX320 event images on a dark background — pass to
-csi.CSI.color_palette to have the GENX320 driver emit colorized RGB565 frames in
-histogram mode, or to Image.draw_image color_palette= when colorizing a
+Palette for visualising GENX320 event-camera frames on a dark
+background. Pass to csi.CSI.color_palette to have the GENX320
+driver emit colorized RGB565 frames in histogram mode, or to
+Image.draw_image() color_palette= when colorising a
 grayscale event image.
+Only available on builds with GENX320 support (OpenMV Cam AE3 and
+the GENX320 Pmod).
 """
 PALETTE_EVT_LIGHT: int
 """
-Color palette for visualizing GENX320 event images on a light background — pass to
-csi.CSI.color_palette to have the GENX320 driver emit colorized RGB565 frames in
-histogram mode, or to Image.draw_image color_palette= when colorizing a
-grayscale event image.
+Palette for visualising GENX320 event-camera frames on a light
+background. Same dispatch and availability as
+PALETTE_EVT_DARK.
 """
 PALETTE_IRONBOW: int
-"""Makes images look like the FLIR Lepton thermal images using a very non-linear color palette."""
+"""
+Non-linear “ironbow” palette that mimics the look of the FLIR Lepton
+thermal viewfinder.
+"""
 PALETTE_RAINBOW: int
-"""Default OpenMV Cam color palette for thermal images using a smooth color wheel."""
+"""
+Smooth rainbow colour wheel. The default OpenMV palette for thermal
+imagery.
+"""
 PDF417: int
-"""PDF417 barcode type."""
+"""PDF417 2D stacked barcode."""
 PNG: int
-"""A PNG image."""
+"""
+Compressed PNG buffer. Pixel-level operations require
+Image.to_grayscale() or Image.to_rgb565() first.
+"""
 RGB565: int
 """
-RGB565 pixel format. Each pixel is 16-bits, 2-bytes. 5-bits are used for red,
-6-bits are used for green, and 5-bits are used for blue.
+16-bit-per-pixel colour packed as 5 bits red / 6 bits green / 5 bits
+blue. The default colour format.
 """
 ROTATE_180: int
-"""Rotate the drawn image 180 degrees (equivalent to HMIRROR | VFLIP)."""
+"""Shortcut for HMIRROR | VFLIP (rotate 180 degrees)."""
 ROTATE_270: int
-"""Rotate the drawn image 270 degrees (equivalent to HMIRROR | TRANSPOSE)."""
+"""Shortcut for HMIRROR | TRANSPOSE (rotate 270 degrees clockwise)."""
 ROTATE_90: int
-"""Rotate the drawn image 90 degrees (equivalent to VFLIP | TRANSPOSE)."""
+"""Shortcut for VFLIP | TRANSPOSE (rotate 90 degrees clockwise)."""
 SCALE_ASPECT_EXPAND: int
-"""Scale the drawn image to fill the destination while maintaining aspect ratio (may crop)."""
+"""
+Scale the source to fill the destination while maintaining aspect
+ratio (crops when ratios differ).
+"""
 SCALE_ASPECT_IGNORE: int
-"""Scale the drawn image to fill the destination, ignoring aspect ratio."""
+"""Scale the source to fill the destination, ignoring aspect ratio."""
 SCALE_ASPECT_KEEP: int
-"""Scale the drawn image to fit inside the destination while maintaining aspect ratio."""
+"""
+Scale the source to fit inside the destination while maintaining
+aspect ratio (letterboxes when ratios differ).
+"""
 SEARCH_DS: int
-"""Diamond-search (faster) template matching."""
+"""
+Diamond search – coarse-to-fine search that is much faster than
+SEARCH_EX but may miss the global optimum on highly
+self-similar templates.
+"""
 SEARCH_EX: int
-"""Exhaustive template matching search."""
+"""
+Exhaustive search – evaluates every position in the ROI. Slowest
+but guaranteed to find the best match.
+"""
 TAG16H5: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""AprilTag 16h5 family (30 unique IDs, 0-bit error correction)."""
 TAG25H9: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""
+AprilTag 25h9 family (35 unique IDs, up to 3-bit error
+correction).
+"""
 TAG36H10: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""
+AprilTag 36h10 family (2320 unique IDs, up to 3-bit error
+correction).
+"""
 TAG36H11: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""
+AprilTag 36h11 family (587 unique IDs, up to 4-bit error
+correction). The most common family.
+"""
 TAGCIRCLE21H7: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""AprilTag Circle21h7 family."""
 TAGCIRCLE49H12: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""AprilTag Circle49h12 family."""
 TAGCUSTOM48H12: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""AprilTag Custom48h12 family."""
 TAGSTANDARD41H12: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""AprilTag Standard41h12 family."""
 TAGSTANDARD52H13: int
-"""AprilTag family. See Image.find_apriltags()."""
+"""AprilTag Standard52h13 family."""
 TRANSPOSE: int
-"""Transpose (swap x/y) the image being drawn."""
+"""Transpose (swap x/y) the source while drawing."""
 UPCA: int
-"""UPCA barcode type."""
+"""UPC-A barcode."""
 UPCE: int
-"""UPCE barcode type."""
+"""UPC-E barcode."""
 VFLIP: int
-"""Vertically flip the image being drawn."""
+"""Vertically flip the source while drawing."""
 YUV422: int
 """
-YUV422 pixel format. Each pixel pair is stored as Y1, U, Y2, V (4 bytes for
-2 pixels). Only some image processing methods work with YUV422.
+4:2:2 chroma-subsampled colour, two bytes per pixel, packed as
+Y1, U, Y2, V per pixel pair. Only some image processing methods
+work directly on YUV422.
 """
 
 def HaarCascade(path: str, stages: int = -1) -> Cascade:
     """
-    Load a Haar Cascade from a binary file at path and return a cascade object usable
-    with Image.find_features(). Pass "frontalface" or "eye" to load a built-in
-    cascade.
-    stages selects how many cascade stages to evaluate. -1 uses all stages in the
-    file. Lowering this value speeds up detection at the cost of more false positives.
+    Load a Haar Cascade and return a Cascade handle for
+    use with Image.find_features().
+    path may be either:
+    the literal string "frontalface" or "eye" to load one of
+    the two cascades baked into firmware ROM, or
+
+    a filesystem path to a custom .cascade binary file produced
+    by the OpenMV cascade-converter tools.
+    stages selects how many cascade stages to evaluate at detection
+    time. -1 uses every stage stored in the file. Reducing this value
+    speeds up detection at the cost of more false positives.
     """
     ...
 def binary_to_grayscale(value: int) -> int:
-    """Convert a binary value (0-1) to a grayscale value (0-255)."""
+    """Convert a binary value to a grayscale value."""
     ...
 def binary_to_lab(value: int) -> tuple[int, int, int]:
-    """Convert a binary value (0-1) to a 3-value LAB tuple. L is 0-100; A/B are -128 to 127."""
+    """Convert a binary value to a LAB tuple."""
     ...
 def binary_to_rgb(value: int) -> tuple[int, int, int]:
-    """Convert a binary value (0-1) to a 3-value RGB888 tuple."""
+    """Convert a binary value to an RGB tuple."""
     ...
 def binary_to_yuv(value: int) -> tuple[int, int, int]:
-    """Convert a binary value (0-1) to a 3-value YUV tuple. Y is 0-255; U/V are -128 to 127."""
+    """Convert a binary value to a YUV tuple."""
     ...
 def get_convexity(blob: blob) -> float:
-    """Return the convexity (convex-hull perimeter divided by blob perimeter) of blob."""
+    """
+    Return the convexity (convex_hull_perimeter / blob.perimeter) of
+    blob. Float, 0 – 1; 1.0 is a perfectly convex blob.
+    """
     ...
-def get_enclosed_ellipse(blob: blob) -> ellipse:
-    """Return an ellipse attribute tuple (x, y, rx, ry, rotation) enclosed by blob."""
+def get_enclosed_ellipse(blob: blob) -> tuple[int, int, int, int, int]:
+    """
+    Return a 5-tuple (cx, cy, a, b, rotation) describing the ellipse
+    inscribed in the minimum-area rotated rectangle around blob:
+    cx / cy – ellipse centre in pixels (integer).
+
+    a / b – semi-axis lengths in pixels (integer).
+
+    rotation – ellipse rotation in degrees (integer).
+    This is a plain tuple, not an attrtuple, so the fields are accessible
+    only by index.
+    """
     ...
 def get_enclosing_circle(blob: blob) -> circle:
-    """Return a circle object that encloses blob."""
+    """Return a Circle that encloses blob."""
     ...
 def get_major_axis_line(blob: blob) -> line:
-    """Return a line object along the major axis of blob."""
+    """
+    Return a Line along the major axis of blob (the
+    longer of the two principal axes of the minimum-area rotated
+    rectangle).
+    """
     ...
 def get_minor_axis_line(blob: blob) -> line:
-    """Return a line object along the minor axis of blob."""
+    """
+    Return a Line along the minor axis of blob (the
+    shorter of the two principal axes of the minimum-area rotated
+    rectangle).
+    """
     ...
 def get_solidity(blob: blob) -> float:
-    """Return the solidity (blob area divided by convex-hull area) of blob."""
+    """
+    Return the solidity (blob.pixels / convex_hull_area) of blob.
+    Float, 0 – 1; 1.0 means the blob fully fills its convex hull.
+    """
     ...
 def grayscale_to_binary(value: int) -> int:
-    """Convert a grayscale value (0-255) to a binary value (0-1)."""
+    """Convert a grayscale value to a binary value."""
     ...
 def grayscale_to_lab(value: int) -> tuple[int, int, int]:
-    """Convert a grayscale value (0-255) to a 3-value LAB tuple. L is 0-100; A/B are -128 to 127."""
+    """Convert a grayscale value to a LAB tuple."""
     ...
 def grayscale_to_rgb(value: int) -> tuple[int, int, int]:
-    """Convert a grayscale value (0-255) to a 3-value RGB888 tuple."""
+    """Convert a grayscale value to an RGB tuple."""
     ...
 def grayscale_to_yuv(value: int) -> tuple[int, int, int]:
-    """Convert a grayscale value (0-255) to a 3-value YUV tuple. Y is 0-255; U/V are -128 to 127."""
+    """Convert a grayscale value to a YUV tuple."""
     ...
 def lab_to_binary(value: tuple[int, int, int]) -> int:
-    """Convert a 3-value LAB tuple to a binary value (0-1)."""
+    """Convert a LAB tuple to a binary value."""
     ...
 def lab_to_grayscale(value: tuple[int, int, int]) -> int:
-    """Convert a 3-value LAB tuple to a grayscale value (0-255)."""
+    """Convert a LAB tuple to a grayscale value."""
     ...
 def lab_to_rgb(value: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Convert a 3-value LAB tuple to a 3-value RGB888 tuple."""
+    """Convert a LAB tuple to an RGB tuple."""
     ...
 def lab_to_yuv(value: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Convert a 3-value LAB tuple to a 3-value YUV tuple. Y is 0-255; U/V are -128 to 127."""
+    """Convert a LAB tuple to a YUV tuple."""
     ...
-def load_descriptor(path: str) -> Any:
+def load_descriptor(path: str) -> kp_desc | lbp_desc:
     """
-    Load a descriptor object (lbp_desc or kp_desc) from the file at path and
-    return it.
+    Load a descriptor from the file at path and return it. The file’s
+    internal type tag selects which descriptor class is reconstructed:
+    ORB keypoint descriptor – saved by Image.find_keypoints()
+    followed by image.save_descriptor().
+
+    LBP descriptor – saved by Image.find_lbp() followed by
+    image.save_descriptor().
     """
     ...
-def match_descriptor(descriptor0: Any, descriptor1: Any, threshold: int = 85, filter_outliers: bool = False) -> int | kptmatch:
+def match_descriptor(descriptor0, descriptor1, threshold: int = 85, filter_outliers: bool = False) -> int | kptmatch:
     """
     Match two descriptors of the same type.
-    For LBP descriptors returns an integer distance between the two descriptors (lower is
-    a closer match).
-    For ORB descriptors returns a kptmatch object.
-    threshold (0-100) is used by ORB matching to filter ambiguous matches. Lower values
-    tighten matching.
-    filter_outliers enables outlier filtering for ORB matches.
+    For two LBP descriptors – returns an integer Hamming distance
+    between them (lower is a closer match).
+
+    For two ORB keypoint descriptors – returns a
+    kptmatch describing the matched-keypoint
+    cluster, or None if no match passes threshold.
+    threshold (0 – 100) sets how strict ORB matching is when
+    accepting a keypoint pair. Lower values tighten matching by rejecting
+    weak nearest-neighbour matches.
+    filter_outliers enables RANSAC-style outlier rejection across the
+    set of matched keypoints. Use it when you expect a single rigid
+    transform between the two views; disable it when the matched
+    keypoints span multiple objects.
     """
     ...
 def rgb_to_binary(value: tuple[int, int, int]) -> int:
-    """Convert a 3-value RGB888 tuple to a binary value (0-1)."""
+    """Convert an RGB tuple to a binary value."""
     ...
 def rgb_to_grayscale(value: tuple[int, int, int]) -> int:
-    """Convert a 3-value RGB888 tuple to a grayscale value (0-255)."""
+    """Convert an RGB tuple to a grayscale value."""
     ...
 def rgb_to_lab(value: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Convert a 3-value RGB888 tuple to a 3-value LAB tuple. L is 0-100; A/B are -128 to 127."""
+    """Convert an RGB tuple to a LAB tuple."""
     ...
 def rgb_to_yuv(value: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Convert a 3-value RGB888 tuple to a 3-value YUV tuple. Y is 0-255; U/V are -128 to 127."""
+    """Convert an RGB tuple to a YUV tuple."""
     ...
-def save_descriptor(descriptor: Any, path: str) -> None:
-    """Save the descriptor object (lbp_desc or kp_desc) to the file at path."""
+def save_descriptor(descriptor: kp_desc | lbp_desc, path: str) -> None:
+    """
+    Serialise descriptor (an ORB keypoint or LBP descriptor) to the
+    file at path in the OpenMV descriptor file format. The same file
+    can later be reloaded via image.load_descriptor().
+    """
     ...
 def yuv_to_binary(value: tuple[int, int, int]) -> int:
-    """Convert a 3-value YUV tuple to a binary value (0-1)."""
+    """Convert a YUV tuple to a binary value."""
     ...
 def yuv_to_grayscale(value: tuple[int, int, int]) -> int:
-    """Convert a 3-value YUV tuple to a grayscale value (0-255)."""
+    """Convert a YUV tuple to a grayscale value."""
     ...
 def yuv_to_lab(value: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Convert a 3-value YUV tuple to a 3-value LAB tuple. L is 0-100; A/B are -128 to 127."""
+    """Convert a YUV tuple to a LAB tuple."""
     ...
 def yuv_to_rgb(value: tuple[int, int, int]) -> tuple[int, int, int]:
-    """Convert a 3-value YUV tuple to a 3-value RGB888 tuple."""
+    """Convert a YUV tuple to an RGB tuple."""
     ...
 
 class Cascade:
-    """Opaque cascade handle returned by image.HaarCascade()."""
+    """
+    Opaque cascade handle returned by image.HaarCascade(). The instance has
+    no public methods or attributes – it can only be passed to
+    Image.find_features().
+    """
     def __init__(self) -> None: ...
 
 class Image:
@@ -4506,595 +4635,1255 @@ class Image:
 
 class ImageIO:
     """
-    Creates an ImageIO object.
-    If path is a string, it is treated as a file path on disk. mode must be 'r' to
-    open for reading or 'w' to open for writing.
-    If path is a 3-value tuple (w, h, pixformat), it is treated as in-memory storage.
-    mode is then the integer number of image buffers (frames) to pre-allocate. The in-memory
-    storage buffer is not allowed to grow after allocation. pixformat is a pixformat constant
-    such as image.GRAYSCALE, image.RGB565, image.BAYER, or image.JPEG.
+    Create an ImageIO stream.
+    If path is a string, a file stream is opened at that path.
+    mode must be one of:
+    'r' – open an existing file for reading. The magic header
+    is validated and the version (V1.0 / V1.1 / V2.0)
+    is recorded for use by version().
+
+    'w' – truncate / create the file and write a fresh V2.0
+    magic header. Frames are appended on each write().
+    If path is a 3-tuple (w, h, pixformat), a memory stream
+    is allocated. mode is then the integer number of frame slots
+    to pre-allocate. The buffer is sized for count frames of
+    (w, h, pixformat) and is not allowed to grow after creation.
+    pixformat is one of image.BINARY, image.GRAYSCALE,
+    image.RGB565, image.BAYER, image.YUV422, image.JPEG, or
+    image.PNG. For the compressed formats (image.JPEG, image.PNG)
+    the per-slot size is estimated at 2 bpp; frames larger than the
+    estimate raise ValueError at write() time.
+    Inspection
+
+
+
+    type() -> int
+
+    Return the stream backing store: FILE_STREAM for a file
+    stream, MEMORY_STREAM for a memory stream.
+
+
+
+    is_closed() -> bool
+
+    Return True if close() has been called on this object.
+    Once closed the stream raises OSError("Stream closed") on
+    any further read/write/seek.
+
+
+
+    count() -> int
+
+    Return the number of frames currently stored in the stream. For
+    file streams this grows as write() appends frames; for
+    memory streams this is fixed at construction time.
+
+
+
+    offset() -> int
+
+    Return the current frame index. Incremented by read() and
+    write(), reset by seek().
+
+
+
+    version() -> int | None
+
+    Return the on-disk format version for file streams (10 for
+    V1.0, 11 for V1.1, 20 for V2.0). Returns
+    None for memory streams.
+
+
+
+    buffer_size() -> int | None
+
+    Return the per-slot pixel buffer size in bytes for memory
+    streams (the slot size minus the internal Image
+    bookkeeping header). Returns None for file streams. Use this
+    together with count() to check whether a particular frame
+    size will fit.
+
+
+
+    size() -> int
+
+    Return the total bytes consumed by the stream – the file size
+    on disk for file streams, or the full RAM-buffer size
+    (count * per_slot_size including the per-slot header) for
+    memory streams.
+    I/O
+
+
+
+    write(img: Image) -> ImageIO
+
+    Append (file stream) or store-at-offset (memory stream) img
+    and advance offset() by one.
+
+    For file streams the file grows as frames are appended. Writing
+    at a non-end offset truncates the rest of the file so the count
+    can shrink.
+
+    For memory streams the frame is written into the current slot;
+    writing past the last slot raises EOFError("End of stream")
+    and writing a frame larger than buffer_size() raises
+    ValueError("Invalid frame size").
+
+    Returns self so calls can be chained.
+
+
+
+    read(copy_to_fb: bool = True, *, loop: bool = True, pause: bool = True) -> Image | None
+
+    Read the frame at the current offset(), advance the
+    offset, and return the new Image. Mirrors the playback
+    half of write().
+
+    copy_to_fb – when True (default) the decoded frame is
+    placed in the camera frame buffer (the same place a
+    csi.CSI.snapshot() lands), so the returned Image is
+    drawable through the IDE preview. When False the frame is
+    allocated on the MicroPython heap instead.
+
+    loop (file streams only) – when True (default) reading
+    past the last frame seeks back to the first frame and continues.
+    When False the call returns None once the end of the
+    file is reached.
+
+    pause – when True (default) the call blocks until the
+    originally-recorded inter-frame interval has elapsed, so
+    playback runs at the recording’s native frame rate. Set to
+    False for as-fast-as-possible playback.
+
+
+
+    seek(offset: int) -> ImageIO
+
+    Move offset() to frame offset. offset must be
+    non-negative; memory-stream offsets must also be less than
+    count().
+
+    File-stream seeks walk the file frame-by-frame from the start
+    since frame chunks are variable-sized – expect O(offset) time
+    for large jumps.
+
+    Returns self so calls can be chained.
+
+
+
+    sync() -> ImageIO
+
+    Flush pending writes to disk for file streams (calls the
+    underlying file-system sync). No-op for memory streams.
+
+    Returns self so calls can be chained.
+
+
+
+    close() -> None
+
+    Close the stream. Releases the memory buffer (memory streams) or
+    closes the file (file streams). After close() the
+    ImageIO object cannot be reused; subsequent operations
+    raise OSError("Stream closed"). Calling close() twice is
+    a no-op.
+
+    An ImageIO is also closed automatically when it is
+    garbage-collected (it registers a finaliser at construction).
+    Constants
+
+
+
+    FILE_STREAM: int
+
+    Value returned by type() for file-backed streams.
+
+
+
+    MEMORY_STREAM: int
+
+    Value returned by type() for in-memory streams.
     """
     def __init__(self, path: str | tuple[int, int, int], mode: str | int) -> None: ...
     def buffer_size(self) -> int | None:
         """
-        Returns the per-frame buffer size in bytes for MEMORY_STREAM objects. Returns None
-        for FILE_STREAM objects.
-        For memory streams, buffer_size() * count() == size().
+        Return the per-slot pixel buffer size in bytes for memory
+        streams (the slot size minus the internal Image
+        bookkeeping header). Returns None for file streams. Use this
+        together with count() to check whether a particular frame
+        size will fit.
         """
         ...
     def close(self) -> None:
         """
-        Closes the ImageIO object. For memory streams, frees the allocated buffer. For file
-        streams, closes the file and writes out all metadata.
+        Close the stream. Releases the memory buffer (memory streams) or
+        closes the file (file streams). After close() the
+        ImageIO object cannot be reused; subsequent operations
+        raise OSError("Stream closed"). Calling close() twice is
+        a no-op.
+        An ImageIO is also closed automatically when it is
+        garbage-collected (it registers a finaliser at construction).
         """
         ...
     def count(self) -> int:
-        """Returns the number of frames stored."""
+        """
+        Return the number of frames currently stored in the stream. For
+        file streams this grows as write() appends frames; for
+        memory streams this is fixed at construction time.
+        """
         ...
     def is_closed(self) -> bool:
-        """Returns True if the ImageIO object is closed and can no longer be used."""
+        """
+        Return True if close() has been called on this object.
+        Once closed the stream raises OSError("Stream closed") on
+        any further read/write/seek.
+        """
         ...
     def offset(self) -> int:
-        """Returns the current image index offset."""
+        """
+        Return the current frame index. Incremented by read() and
+        write(), reset by seek().
+        """
         ...
     def read(self, copy_to_fb: bool = True, *, loop: bool = True, pause: bool = True) -> Image | None:
         """
-        Returns the next image from the stream and advances the offset.
-        copy_to_fb if True, the image is loaded into the frame buffer (like
-        sensor.snapshot()). If False, the image is allocated on the MicroPython heap.
-        loop if True, automatically seeks to the beginning of the stream when the end is
-        reached. If False, returns None at end-of-stream (file streams only).
-        pause if True, pauses for the originally recorded inter-frame interval to match
-        the source frame rate.
+        Read the frame at the current offset(), advance the
+        offset, and return the new Image. Mirrors the playback
+        half of write().
+        copy_to_fb – when True (default) the decoded frame is
+        placed in the camera frame buffer (the same place a
+        csi.CSI.snapshot() lands), so the returned Image is
+        drawable through the IDE preview. When False the frame is
+        allocated on the MicroPython heap instead.
+        loop (file streams only) – when True (default) reading
+        past the last frame seeks back to the first frame and continues.
+        When False the call returns None once the end of the
+        file is reached.
+        pause – when True (default) the call blocks until the
+        originally-recorded inter-frame interval has elapsed, so
+        playback runs at the recording’s native frame rate. Set to
+        False for as-fast-as-possible playback.
         """
         ...
     def seek(self, offset: int) -> ImageIO:
         """
-        Seeks to the image slot number offset. Works for both file and memory streams.
-        Returns the ImageIO object.
+        Move offset() to frame offset. offset must be
+        non-negative; memory-stream offsets must also be less than
+        count().
+        File-stream seeks walk the file frame-by-frame from the start
+        since frame chunks are variable-sized – expect O(offset) time
+        for large jumps.
+        Returns self so calls can be chained.
         """
         ...
     def size(self) -> int:
-        """Returns the total number of bytes used on disk or in memory."""
+        """
+        Return the total bytes consumed by the stream – the file size
+        on disk for file streams, or the full RAM-buffer size
+        (count * per_slot_size including the per-slot header) for
+        memory streams.
+        """
         ...
     def sync(self) -> ImageIO:
         """
-        Flushes pending data to disk for file streams. No-op for memory streams.
-        Returns the ImageIO object.
+        Flush pending writes to disk for file streams (calls the
+        underlying file-system sync). No-op for memory streams.
+        Returns self so calls can be chained.
         """
         ...
     def type(self) -> int:
-        """Returns whether the ImageIO object is a FILE_STREAM or MEMORY_STREAM."""
+        """
+        Return the stream backing store: FILE_STREAM for a file
+        stream, MEMORY_STREAM for a memory stream.
+        """
         ...
     def version(self) -> int | None:
         """
-        Returns the stream version if the object is a FILE_STREAM. Returns None for
-        MEMORY_STREAM objects.
+        Return the on-disk format version for file streams (10 for
+        V1.0, 11 for V1.1, 20 for V2.0). Returns
+        None for memory streams.
         """
         ...
     def write(self, img: Image) -> ImageIO:
         """
-        Writes img to the stream. For file streams, the file grows as new images are appended.
-        For memory streams, the image is written to the current pre-allocated slot before the
-        offset advances.
-        Returns the ImageIO object.
+        Append (file stream) or store-at-offset (memory stream) img
+        and advance offset() by one.
+        For file streams the file grows as frames are appended. Writing
+        at a non-end offset truncates the rest of the file so the count
+        can shrink.
+        For memory streams the frame is written into the current slot;
+        writing past the last slot raises EOFError("End of stream")
+        and writing a frame larger than buffer_size() raises
+        ValueError("Invalid frame size").
+        Returns self so calls can be chained.
         """
         ...
 
 class apriltag:
     """
-    Please call Image.find_apriltags() to create this object. It has no public
-    constructor.
+    Please call Image.find_apriltags() to create this object.
+    Bounding box and corners
+
+
+
+    x
+
+    Bounding box top-left x coordinate, in pixels. Integer. Index [0].
+
+
+
+    y
+
+    Bounding box top-left y coordinate, in pixels. Integer. Index [1].
+
+
+
+    w
+
+    Bounding box width, in pixels. Integer. Index [2].
+
+
+
+    h
+
+    Bounding box height, in pixels. Integer. Index [3].
+
+
+
+    cx
+
+    Centroid x coordinate, rounded to int. Integer. Index [4].
+
+
+
+    cy
+
+    Centroid y coordinate, rounded to int. Integer. Index [5].
+
+
+
+    cxf
+
+    Centroid x coordinate as a sub-pixel float. Index [9].
+
+
+
+    cyf
+
+    Centroid y coordinate as a sub-pixel float. Index [10].
+
+
+
+    corners
+
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the tag, sorted clockwise starting from the top-left corner.
+    Index [21].
+
+
+
+    area
+
+    Area of the bounding box (w * h). Integer. Index [22].
+
+
+
+    rect
+
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [23].
+    Identification
+
+
+
+    id
+
+    Numeric id of the tag within its family. The valid range depends on
+    the family (e.g. 0 – 586 for TAG36H11). Integer. Index [6].
+
+
+
+    family
+
+    Numeric family identifier, one of:
+
+    image.TAG16H5
+
+    image.TAG25H9
+
+    image.TAG36H10
+
+    image.TAG36H11
+
+    image.TAGCIRCLE21H7
+
+    image.TAGCIRCLE49H12
+
+    image.TAGCUSTOM48H12
+
+    image.TAGSTANDARD41H12
+
+    image.TAGSTANDARD52H13
+
+    Integer. Index [7].
+
+
+
+    name
+
+    Family name as a string, e.g. "TAG36H11". Index [8].
+    Match quality
+
+
+
+    decision_margin
+
+    Quality of the tag match in the range 0.0 – 1.0 where 1.0 is the
+    best. Use this to reject low-confidence detections. Float.
+    Index [12].
+
+
+
+    hamming
+
+    Number of bit errors the decoder accepted for this tag. Bounded by
+    the family’s correction capability:
+
+    TAG16H5 -> up to 0 bit errors
+
+    TAG25H9 -> up to 3 bit errors
+
+    TAG36H10 -> up to 3 bit errors
+
+    TAG36H11 -> up to 4 bit errors
+
+    Lower is better. Integer. Index [13].
+
+
+
+    goodness
+
+    Image quality of the tag in the range 0.0 – 1.0 where 1.0 is the
+    best. Currently always 0.0 in the released firmware (the underlying
+    decoder no longer computes this metric). Float. Index [14].
+    Pose estimate
+
+    The translation and rotation fields below are populated only when
+    Image.find_apriltags() is called with the fx, fy, cx, and
+    cy camera intrinsics. Without intrinsics they are 0.0. The tag is
+    assumed to be 1 unit wide, so translations are in “tag widths” – scale
+    by the real-world tag size to get metric distances.
+
+
+
+    x_translation
+
+    X translation from the camera (left-right) in tag widths. Float.
+    Index [15].
+
+
+
+    y_translation
+
+    Y translation from the camera (up-down) in tag widths. Float.
+    Index [16].
+
+
+
+    z_translation
+
+    Z translation from the camera (forward-back) in tag widths. Float.
+    Index [17].
+
+
+
+    x_rotation
+
+    Rotation about the X axis (pitch) in radians. Float. Index [18].
+
+
+
+    y_rotation
+
+    Rotation about the Y axis (yaw) in radians. Float. Index [19].
+
+
+
+    z_rotation
+
+    Rotation about the Z axis (roll) in radians. Same value as
+    rotation – duplicated for symmetry with x_rotation and
+    y_rotation. Float. Index [20].
+
+
+
+    rotation
+
+    In-image-plane rotation of the tag in radians. Equal to
+    z_rotation. Float. Index [11].
     """
     def __init__(self) -> None: ...
-    def area(self) -> int:
-        """
-        Returns the area (w * h) of the apriltag’s bounding box (int).
-        You may also get this value doing [22] on the object.
-        """
-        ...
-    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-        Corners are returned in sorted clock-wise order starting from the top
-        left.
-        You may also get this value doing [21] on the object.
-        """
-        ...
-    def cx(self) -> int:
-        """
-        Returns the centroid x position of the apriltag (int).
-        You may also get this value doing [4] on the object.
-        """
-        ...
-    def cxf(self) -> float:
-        """
-        Returns the centroid x position of the apriltag (float).
-        You may also get this value doing [9] on the object.
-        """
-        ...
-    def cy(self) -> int:
-        """
-        Returns the centroid y position of the apriltag (int).
-        You may also get this value doing [5] on the object.
-        """
-        ...
-    def cyf(self) -> float:
-        """
-        Returns the centroid y position of the apriltag (float).
-        You may also get this value doing [10] on the object.
-        """
-        ...
-    def decision_margin(self) -> float:
-        """
-        Returns the quality of the apriltag match (0.0 - 1.0) where 1.0 is the
-        best.
-        You may also get this value doing [12] on the object.
-        """
-        ...
-    def family(self) -> int:
-        """
-        Returns the numeric family of the apriltag — one of:
-        image.TAG16H5
+    area: Any
+    """Area of the bounding box (w * h). Integer. Index [22]."""
+    corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the tag, sorted clockwise starting from the top-left corner.
+    Index [21].
+    """
+    cx: Any
+    """Centroid x coordinate, rounded to int. Integer. Index [4]."""
+    cxf: Any
+    """Centroid x coordinate as a sub-pixel float. Index [9]."""
+    cy: Any
+    """Centroid y coordinate, rounded to int. Integer. Index [5]."""
+    cyf: Any
+    """Centroid y coordinate as a sub-pixel float. Index [10]."""
+    decision_margin: Any
+    """
+    Quality of the tag match in the range 0.0 – 1.0 where 1.0 is the
+    best. Use this to reject low-confidence detections. Float.
+    Index [12].
+    """
+    family: Any
+    """
+    Numeric family identifier, one of:
+    image.TAG16H5
 
-        image.TAG25H9
+    image.TAG25H9
 
-        image.TAG36H10
+    image.TAG36H10
 
-        image.TAG36H11
+    image.TAG36H11
 
-        image.TAGCIRCLE21H7
+    image.TAGCIRCLE21H7
 
-        image.TAGCIRCLE49H12
+    image.TAGCIRCLE49H12
 
-        image.TAGCUSTOM48H12
+    image.TAGCUSTOM48H12
 
-        image.TAGSTANDARD41H12
+    image.TAGSTANDARD41H12
 
-        image.TAGSTANDARD52H13
-        You may also get this value doing [7] on the object.
-        """
-        ...
-    def goodness(self) -> float:
-        """
-        Returns the quality of the apriltag image (0.0 - 1.0) where 1.0 is the
-        best. Currently always 0.0.
-        You may also get this value doing [14] on the object.
-        """
-        ...
-    def h(self) -> int:
-        """
-        Returns the apriltag’s bounding box h coordinate (int).
-        You may also get this value doing [3] on the object.
-        """
-        ...
-    def hamming(self) -> int:
-        """
-        Returns the number of accepted bit errors for this tag.
-        TAG16H5 -> 0 bit errors will be accepted
+    image.TAGSTANDARD52H13
+    Integer. Index [7].
+    """
+    goodness: Any
+    """
+    Image quality of the tag in the range 0.0 – 1.0 where 1.0 is the
+    best. Currently always 0.0 in the released firmware (the underlying
+    decoder no longer computes this metric). Float. Index [14].
+    """
+    h: Any
+    """Bounding box height, in pixels. Integer. Index [3]."""
+    hamming: Any
+    """
+    Number of bit errors the decoder accepted for this tag. Bounded by
+    the family’s correction capability:
+    TAG16H5 -> up to 0 bit errors
 
-        TAG25H9 -> up to 3 bit errors may be accepted
+    TAG25H9 -> up to 3 bit errors
 
-        TAG36H10 -> up to 3 bit errors may be accepted
+    TAG36H10 -> up to 3 bit errors
 
-        TAG36H11 -> up to 4 bit errors may be accepted
-        You may also get this value doing [13] on the object.
-        """
-        ...
-    def id(self) -> int:
-        """
-        Returns the numeric id of the apriltag. The id range depends on the family.
-        You may also get this value doing [6] on the object.
-        """
-        ...
-    def name(self) -> str:
-        """
-        Returns the family name of the apriltag as a qstr (str), e.g.
-        "TAG36H11".
-        You may also get this value doing [8] on the object.
-        """
-        ...
-    def rect(self) -> tuple[int, int, int, int]:
-        """
-        Returns a rectangle tuple (x, y, w, h) of the apriltag’s bounding box for
-        use with other image methods like Image.draw_rectangle().
-        You may also get this value doing [23] on the object.
-        """
-        ...
-    def rotation(self) -> float:
-        """
-        Returns the rotation of the apriltag in radians (float).
-        You may also get this value doing [11] on the object.
-        """
-        ...
-    def w(self) -> int:
-        """
-        Returns the apriltag’s bounding box w coordinate (int).
-        You may also get this value doing [2] on the object.
-        """
-        ...
-    def x(self) -> int:
-        """
-        Returns the apriltag’s bounding box x coordinate (int).
-        You may also get this value doing [0] on the object.
-        """
-        ...
-    def x_rotation(self) -> float:
-        """
-        Returns the rotation in radians of the apriltag in the X plane (float).
-        You may also get this value doing [18] on the object.
-        """
-        ...
-    def x_translation(self) -> float:
-        """
-        Returns the translation in unknown units from the camera in the X
-        direction (left-to-right).
-        You may also get this value doing [15] on the object.
-        """
-        ...
-    def y(self) -> int:
-        """
-        Returns the apriltag’s bounding box y coordinate (int).
-        You may also get this value doing [1] on the object.
-        """
-        ...
-    def y_rotation(self) -> float:
-        """
-        Returns the rotation in radians of the apriltag in the Y plane (float).
-        You may also get this value doing [19] on the object.
-        """
-        ...
-    def y_translation(self) -> float:
-        """
-        Returns the translation in unknown units from the camera in the Y
-        direction (up-to-down).
-        You may also get this value doing [16] on the object.
-        """
-        ...
-    def z_rotation(self) -> float:
-        """
-        Returns the rotation in radians of the apriltag in the Z plane (float).
-        This is a renamed version of apriltag.rotation().
-        You may also get this value doing [20] on the object.
-        """
-        ...
-    def z_translation(self) -> float:
-        """
-        Returns the translation in unknown units from the camera in the Z
-        direction (front-to-back).
-        You may also get this value doing [17] on the object.
-        """
-        ...
+    TAG36H11 -> up to 4 bit errors
+    Lower is better. Integer. Index [13].
+    """
+    id: Any
+    """
+    Numeric id of the tag within its family. The valid range depends on
+    the family (e.g. 0 – 586 for TAG36H11). Integer. Index [6].
+    """
+    name: Any
+    """Family name as a string, e.g. "TAG36H11". Index [8]."""
+    rect: Any
+    """
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [23].
+    """
+    rotation: Any
+    """
+    In-image-plane rotation of the tag in radians. Equal to
+    z_rotation. Float. Index [11].
+    """
+    w: Any
+    """Bounding box width, in pixels. Integer. Index [2]."""
+    x: Any
+    """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
+    x_rotation: Any
+    """Rotation about the X axis (pitch) in radians. Float. Index [18]."""
+    x_translation: Any
+    """
+    X translation from the camera (left-right) in tag widths. Float.
+    Index [15].
+    """
+    y: Any
+    """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
+    y_rotation: Any
+    """Rotation about the Y axis (yaw) in radians. Float. Index [19]."""
+    y_translation: Any
+    """
+    Y translation from the camera (up-down) in tag widths. Float.
+    Index [16].
+    """
+    z_rotation: Any
+    """
+    Rotation about the Z axis (roll) in radians. Same value as
+    rotation – duplicated for symmetry with x_rotation and
+    y_rotation. Float. Index [20].
+    """
+    z_translation: Any
+    """
+    Z translation from the camera (forward-back) in tag widths. Float.
+    Index [17].
+    """
 
 class barcode:
     """
-    Please call Image.find_barcodes() to create this object. It has no public
-    constructor.
+    Please call Image.find_barcodes() to create this object.
+    Bounding box and corners
+
+
+
+    x
+
+    Bounding box top-left x coordinate, in pixels. Integer. Index [0].
+
+
+
+    y
+
+    Bounding box top-left y coordinate, in pixels. Integer. Index [1].
+
+
+
+    w
+
+    Bounding box width, in pixels. Integer. Index [2].
+
+
+
+    h
+
+    Bounding box height, in pixels. Integer. Index [3].
+
+
+
+    corners
+
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the barcode, sorted clockwise starting from the top-left corner.
+    Index [8].
+
+
+
+    rect
+
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [9].
+    Decoded payload
+
+
+
+    payload
+
+    Decoded payload string. Index [4].
+
+
+
+    type
+
+    Symbology of the decoded barcode. One of:
+
+    image.EAN2
+
+    image.EAN5
+
+    image.EAN8
+
+    image.UPCE
+
+    image.ISBN10
+
+    image.UPCA
+
+    image.EAN13
+
+    image.ISBN13
+
+    image.I25
+
+    image.DATABAR
+
+    image.DATABAR_EXP
+
+    image.CODABAR
+
+    image.CODE39
+
+    image.PDF417
+
+    image.CODE93
+
+    image.CODE128
+
+    Integer. Index [5].
+
+
+
+    rotation
+
+    In-image-plane rotation of the barcode in radians. Float.
+    Index [6].
+
+
+
+    quality
+
+    Number of times the barcode was decoded across the image. The
+    decoder runs across every scanline that crosses the barcode and
+    increments this counter on each successful decode – higher values
+    indicate a more confident result. Integer. Index [7].
     """
     def __init__(self) -> None: ...
-    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-        Corners are returned in sorted clock-wise order starting from the top
-        left.
-        You may also get this value doing [8] on the object.
-        """
-        ...
-    def h(self) -> int:
-        """
-        Returns the barcode’s bounding box h coordinate (int).
-        You may also get this value doing [3] on the object.
-        """
-        ...
-    def payload(self) -> str:
-        """
-        Returns the payload string of the barcode (str).
-        You may also get this value doing [4] on the object.
-        """
-        ...
-    def quality(self) -> int:
-        """
-        Returns the number of times this barcode was detected in the image
-        (int). Each scanline that decodes the same barcode increments this
-        value.
-        You may also get this value doing [7] on the object.
-        """
-        ...
-    def rect(self) -> tuple[int, int, int, int]:
-        """
-        Returns a rectangle tuple (x, y, w, h) of the barcode’s bounding box for
-        use with other image methods like Image.draw_rectangle().
-        You may also get this value doing [9] on the object.
-        """
-        ...
-    def rotation(self) -> float:
-        """
-        Returns the rotation of the barcode in radians (float).
-        You may also get this value doing [6] on the object.
-        """
-        ...
-    def type(self) -> int:
-        """
-        Returns the type enumeration of the barcode (int).
-        image.EAN2
+    corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the barcode, sorted clockwise starting from the top-left corner.
+    Index [8].
+    """
+    h: Any
+    """Bounding box height, in pixels. Integer. Index [3]."""
+    payload: Any
+    """Decoded payload string. Index [4]."""
+    quality: Any
+    """
+    Number of times the barcode was decoded across the image. The
+    decoder runs across every scanline that crosses the barcode and
+    increments this counter on each successful decode – higher values
+    indicate a more confident result. Integer. Index [7].
+    """
+    rect: Any
+    """
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [9].
+    """
+    rotation: Any
+    """
+    In-image-plane rotation of the barcode in radians. Float.
+    Index [6].
+    """
+    type: Any
+    """
+    Symbology of the decoded barcode. One of:
+    image.EAN2
 
-        image.EAN5
+    image.EAN5
 
-        image.EAN8
+    image.EAN8
 
-        image.UPCE
+    image.UPCE
 
-        image.ISBN10
+    image.ISBN10
 
-        image.UPCA
+    image.UPCA
 
-        image.EAN13
+    image.EAN13
 
-        image.ISBN13
+    image.ISBN13
 
-        image.I25
+    image.I25
 
-        image.DATABAR
+    image.DATABAR
 
-        image.DATABAR_EXP
+    image.DATABAR_EXP
 
-        image.CODABAR
+    image.CODABAR
 
-        image.CODE39
+    image.CODE39
 
-        image.PDF417
+    image.PDF417
 
-        image.CODE93
+    image.CODE93
 
-        image.CODE128
-        You may also get this value doing [5] on the object.
-        """
-        ...
-    def w(self) -> int:
-        """
-        Returns the barcode’s bounding box w coordinate (int).
-        You may also get this value doing [2] on the object.
-        """
-        ...
-    def x(self) -> int:
-        """
-        Returns the barcode’s bounding box x coordinate (int).
-        You may also get this value doing [0] on the object.
-        """
-        ...
-    def y(self) -> int:
-        """
-        Returns the barcode’s bounding box y coordinate (int).
-        You may also get this value doing [1] on the object.
-        """
-        ...
+    image.CODE128
+    Integer. Index [5].
+    """
+    w: Any
+    """Bounding box width, in pixels. Integer. Index [2]."""
+    x: Any
+    """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
+    y: Any
+    """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
 class blob:
-    """Please call Image.find_blobs() to create this object."""
+    """
+    Please call Image.find_blobs() to create this object.
+    Bounding box and centroid
+
+
+
+    x
+
+    Bounding box top-left x coordinate, in pixels. Integer. Index [0].
+
+
+
+    y
+
+    Bounding box top-left y coordinate, in pixels. Integer. Index [1].
+
+
+
+    w
+
+    Bounding box width, in pixels. Integer. Index [2].
+
+
+
+    h
+
+    Bounding box height, in pixels. Integer. Index [3].
+
+
+
+    cx
+
+    Centroid x coordinate (pixel-mean of the blob), rounded to int.
+    Integer. Index [4].
+
+
+
+    cy
+
+    Centroid y coordinate (pixel-mean of the blob), rounded to int.
+    Integer. Index [5].
+
+
+
+    cxf
+
+    Centroid x coordinate as a sub-pixel float. Index [16].
+
+
+
+    cyf
+
+    Centroid y coordinate as a sub-pixel float. Index [17].
+
+
+
+    rect
+
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [22].
+    Shape descriptors
+
+
+
+    pixels
+
+    Number of pixels that make up this blob. Integer. Index [6].
+
+
+
+    area
+
+    Area of the axis-aligned bounding box (w * h). Integer.
+    Index [19].
+
+
+
+    density
+
+    pixels / area – the fraction of the bounding box filled by the
+    blob. Float in the range 0.0 – 1.0. A solid rectangle approaches
+    1.0; a thin diagonal line approaches 0.0. Index [20].
+
+
+
+    perimeter
+
+    Number of pixels on the blob’s outer perimeter. Integer.
+    Index [10].
+
+
+
+    roundness
+
+    Ratio of the minor axis to the major axis of the blob, computed from
+    its second-order moments. Float in the range 0.0 – 1.0; 1.0 is a
+    perfect circle, 0.0 is a line. Index [11].
+
+
+
+    elongation
+
+    1.0 - roundness – a value in the range 0.0 – 1.0 where 0.0
+    is a perfect circle and 1.0 is a line. Index [18].
+
+
+
+    compactness
+
+    (pixels * 4 * pi) / (perimeter * perimeter). A circle has the
+    smallest perimeter for a given area, so this metric is 1.0 for a
+    perfect circle and drops as the blob becomes more irregular or
+    elongated. Float. Index [21].
+
+
+
+    rotation
+
+    Orientation of the blob in radians, derived from its second-order
+    moments. Float in the range 0 to pi (the axis is symmetric so the
+    direction is ambiguous past pi). Most accurate for elongated blobs –
+    for nearly-round blobs the value becomes noisy. Index [7].
+    Threshold / merge metadata
+
+
+
+    code
+
+    32-bit bitmap with one bit set for each color threshold (as passed to
+    Image.find_blobs()) that this blob matched. With one threshold,
+    code == 1. With merged multi-color blobs (merge=True) more
+    than one bit may be set. Index [8].
+
+
+
+    count
+
+    Number of source blobs merged into this one. 1 when
+    merge=False; can be larger when merge=True. Index [9].
+    Corners
+
+
+
+    corners
+
+    4-tuple of (x, y) integer tuples for the four extreme corners of
+    the blob, sorted clockwise starting from the top-left corner. These
+    are the contour-derived corners (the points on the blob boundary
+    farthest from the centroid along four diagonals). Index [14].
+
+
+
+    min_corners
+
+    4-tuple of (x, y) integer tuples for the four corners of the
+    blob’s minimum-area rotated bounding rectangle. Combined with
+    rotation these give you the tightest fit around the blob.
+    Index [15].
+    Projection histograms
+
+
+
+    x_hist_bins
+
+    List of integer counts for the blob’s X-axis (column) projection
+    histogram. Only populated when find_blobs(...) is called with
+    x_hist_bins_max > 0; otherwise empty. Index [12].
+
+
+
+    y_hist_bins
+
+    List of integer counts for the blob’s Y-axis (row) projection
+    histogram. Only populated when find_blobs(...) is called with
+    y_hist_bins_max > 0; otherwise empty. Index [13].
+    """
     def __init__(self) -> None: ...
-    def area(self) -> int:
-        """
-        Returns the area of the bounding box around the blob (w * h).
-        Index [19].
-        """
-        ...
-    def code(self) -> int:
-        """
-        Returns a 32-bit binary number with a bit set for each color threshold
-        that’s part of this blob. Index [8].
-        """
-        ...
-    def compactness(self) -> float:
-        """Returns (pixels * 4 * pi) / (perimeter * perimeter). Index [21]."""
-        ...
-    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a 4-tuple of (x, y) tuples for the 4 corners of the blob in
-        sorted clock-wise order starting from the top left. Index [14].
-        """
-        ...
-    def count(self) -> int:
-        """Returns the number of blobs merged into this blob. Index [9]."""
-        ...
-    def cx(self) -> int:
-        """Returns the centroid x position of the blob (rounded to int). Index [4]."""
-        ...
-    def cxf(self) -> float:
-        """Returns the centroid x position of the blob as a float. Index [16]."""
-        ...
-    def cy(self) -> int:
-        """Returns the centroid y position of the blob (rounded to int). Index [5]."""
-        ...
-    def cyf(self) -> float:
-        """Returns the centroid y position of the blob as a float. Index [17]."""
-        ...
-    def density(self) -> float:
-        """
-        Returns pixels / area, the ratio of blob pixels to bounding box
-        area. Index [20].
-        """
-        ...
-    def elongation(self) -> float:
-        """
-        Returns 1.0 - roundness(); a value between 0 and 1 representing
-        how elongated the blob is. Index [18].
-        """
-        ...
-    def h(self) -> int:
-        """Returns the blob’s bounding box height. Index [3]."""
-        ...
-    def min_corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a 4-tuple of (x, y) tuples for the 4 corners of the minimum
-        area rectangle of the blob. Index [15].
-        """
-        ...
-    def perimeter(self) -> int:
-        """Returns the number of pixels on this blob’s perimeter. Index [10]."""
-        ...
-    def pixels(self) -> int:
-        """Returns the number of pixels that are part of this blob. Index [6]."""
-        ...
-    def rect(self) -> tuple[int, int, int, int]:
-        """
-        Returns a rectangle tuple (x, y, w, h) of the blob’s bounding box
-        for use with other image methods like Image.draw_rectangle().
-        Index [22].
-        """
-        ...
-    def rotation(self) -> float:
-        """Returns the rotation of the blob in radians. Index [7]."""
-        ...
-    def roundness(self) -> float:
-        """
-        Returns a value between 0 and 1 representing how round the blob is.
-        Index [11].
-        """
-        ...
-    def w(self) -> int:
-        """Returns the blob’s bounding box width. Index [2]."""
-        ...
-    def x(self) -> int:
-        """Returns the blob’s bounding box x coordinate. Index [0]."""
-        ...
-    def x_hist_bins(self) -> list[int]:
-        """
-        Returns a list of histogram bin values for the x axis of the blob.
-        Index [12].
-        """
-        ...
-    def y(self) -> int:
-        """Returns the blob’s bounding box y coordinate. Index [1]."""
-        ...
-    def y_hist_bins(self) -> list[int]:
-        """
-        Returns a list of histogram bin values for the y axis of the blob.
-        Index [13].
-        """
-        ...
+    area: Any
+    """
+    Area of the axis-aligned bounding box (w * h). Integer.
+    Index [19].
+    """
+    code: Any
+    """
+    32-bit bitmap with one bit set for each color threshold (as passed to
+    Image.find_blobs()) that this blob matched. With one threshold,
+    code == 1. With merged multi-color blobs (merge=True) more
+    than one bit may be set. Index [8].
+    """
+    compactness: Any
+    """
+    (pixels * 4 * pi) / (perimeter * perimeter). A circle has the
+    smallest perimeter for a given area, so this metric is 1.0 for a
+    perfect circle and drops as the blob becomes more irregular or
+    elongated. Float. Index [21].
+    """
+    corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four extreme corners of
+    the blob, sorted clockwise starting from the top-left corner. These
+    are the contour-derived corners (the points on the blob boundary
+    farthest from the centroid along four diagonals). Index [14].
+    """
+    count: Any
+    """
+    Number of source blobs merged into this one. 1 when
+    merge=False; can be larger when merge=True. Index [9].
+    """
+    cx: Any
+    """
+    Centroid x coordinate (pixel-mean of the blob), rounded to int.
+    Integer. Index [4].
+    """
+    cxf: Any
+    """Centroid x coordinate as a sub-pixel float. Index [16]."""
+    cy: Any
+    """
+    Centroid y coordinate (pixel-mean of the blob), rounded to int.
+    Integer. Index [5].
+    """
+    cyf: Any
+    """Centroid y coordinate as a sub-pixel float. Index [17]."""
+    density: Any
+    """
+    pixels / area – the fraction of the bounding box filled by the
+    blob. Float in the range 0.0 – 1.0. A solid rectangle approaches
+    1.0; a thin diagonal line approaches 0.0. Index [20].
+    """
+    elongation: Any
+    """
+    1.0 - roundness – a value in the range 0.0 – 1.0 where 0.0
+    is a perfect circle and 1.0 is a line. Index [18].
+    """
+    h: Any
+    """Bounding box height, in pixels. Integer. Index [3]."""
+    min_corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four corners of the
+    blob’s minimum-area rotated bounding rectangle. Combined with
+    rotation these give you the tightest fit around the blob.
+    Index [15].
+    """
+    perimeter: Any
+    """
+    Number of pixels on the blob’s outer perimeter. Integer.
+    Index [10].
+    """
+    pixels: Any
+    """Number of pixels that make up this blob. Integer. Index [6]."""
+    rect: Any
+    """
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [22].
+    """
+    rotation: Any
+    """
+    Orientation of the blob in radians, derived from its second-order
+    moments. Float in the range 0 to pi (the axis is symmetric so the
+    direction is ambiguous past pi). Most accurate for elongated blobs –
+    for nearly-round blobs the value becomes noisy. Index [7].
+    """
+    roundness: Any
+    """
+    Ratio of the minor axis to the major axis of the blob, computed from
+    its second-order moments. Float in the range 0.0 – 1.0; 1.0 is a
+    perfect circle, 0.0 is a line. Index [11].
+    """
+    w: Any
+    """Bounding box width, in pixels. Integer. Index [2]."""
+    x: Any
+    """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
+    x_hist_bins: Any
+    """
+    List of integer counts for the blob’s X-axis (column) projection
+    histogram. Only populated when find_blobs(...) is called with
+    x_hist_bins_max > 0; otherwise empty. Index [12].
+    """
+    y: Any
+    """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
+    y_hist_bins: Any
+    """
+    List of integer counts for the blob’s Y-axis (row) projection
+    histogram. Only populated when find_blobs(...) is called with
+    y_hist_bins_max > 0; otherwise empty. Index [13].
+    """
 
 class circle:
     """Please call Image.find_circles() to create this object."""
     def __init__(self) -> None: ...
-    def magnitude(self) -> int:
-        """Returns the circle’s magnitude from the Hough transform. Index [3]."""
-        ...
-    def r(self) -> int:
-        """Returns the circle’s radius. Index [2]."""
-        ...
-    def x(self) -> int:
-        """Returns the circle’s x position. Index [0]."""
-        ...
-    def y(self) -> int:
-        """Returns the circle’s y position. Index [1]."""
-        ...
+    magnitude: Any
+    """
+    Magnitude of the circle in Hough-space. Higher values mean more
+    edge pixels voted for this circle – treat this as a confidence
+    score. Integer. Index [3].
+    """
+    r: Any
+    """Radius, in pixels. Integer. Index [2]."""
+    x: Any
+    """Centre x coordinate, in pixels. Integer. Index [0]."""
+    y: Any
+    """Centre y coordinate, in pixels. Integer. Index [1]."""
 
 class datamatrix:
     """
-    Please call Image.find_datamatrices() to create this object. It has no
-    public constructor.
+    Please call Image.find_datamatrices() to create this object.
+    Bounding box and corners
+
+
+
+    x
+
+    Bounding box top-left x coordinate, in pixels. Integer. Index [0].
+
+
+
+    y
+
+    Bounding box top-left y coordinate, in pixels. Integer. Index [1].
+
+
+
+    w
+
+    Bounding box width, in pixels. Integer. Index [2].
+
+
+
+    h
+
+    Bounding box height, in pixels. Integer. Index [3].
+
+
+
+    corners
+
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the data matrix, sorted clockwise starting from the top-left
+    corner. Index [10].
+
+
+
+    rect
+
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [11].
+    Decoded payload
+
+
+
+    payload
+
+    Decoded payload string. Index [4].
+
+
+
+    rotation
+
+    In-image-plane rotation of the data matrix in radians. Float.
+    Index [5].
+    Layout
+
+
+
+    rows
+
+    Number of cell rows in the data matrix. Integer. Index [6].
+
+
+
+    columns
+
+    Number of cell columns in the data matrix. Integer. Index [7].
+
+
+
+    capacity
+
+    Maximum number of payload characters this data matrix could carry
+    at the current row/column size. Integer. Index [8].
+
+
+
+    padding
+
+    Number of unused payload character slots in this data matrix
+    (capacity - len(payload)). Integer. Index [9].
     """
     def __init__(self) -> None: ...
-    def capacity(self) -> int:
-        """
-        Returns how many characters could fit in this data matrix (int).
-        You may also get this value doing [8] on the object.
-        """
-        ...
-    def columns(self) -> int:
-        """
-        Returns the number of columns in the data matrix (int).
-        You may also get this value doing [7] on the object.
-        """
-        ...
-    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-        Corners are returned in sorted clock-wise order starting from the top
-        left.
-        You may also get this value doing [10] on the object.
-        """
-        ...
-    def h(self) -> int:
-        """
-        Returns the datamatrix’s bounding box h coordinate (int).
-        You may also get this value doing [3] on the object.
-        """
-        ...
-    def padding(self) -> int:
-        """
-        Returns how many unused characters are in this data matrix (int).
-        You may also get this value doing [9] on the object.
-        """
-        ...
-    def payload(self) -> str:
-        """
-        Returns the payload string of the datamatrix (str).
-        You may also get this value doing [4] on the object.
-        """
-        ...
-    def rect(self) -> tuple[int, int, int, int]:
-        """
-        Returns a rectangle tuple (x, y, w, h) of the datamatrix’s bounding box
-        for use with other image methods like Image.draw_rectangle().
-        You may also get this value doing [11] on the object.
-        """
-        ...
-    def rotation(self) -> float:
-        """
-        Returns the rotation of the datamatrix in radians (float).
-        You may also get this value doing [5] on the object.
-        """
-        ...
-    def rows(self) -> int:
-        """
-        Returns the number of rows in the data matrix (int).
-        You may also get this value doing [6] on the object.
-        """
-        ...
-    def w(self) -> int:
-        """
-        Returns the datamatrix’s bounding box w coordinate (int).
-        You may also get this value doing [2] on the object.
-        """
-        ...
-    def x(self) -> int:
-        """
-        Returns the datamatrix’s bounding box x coordinate (int).
-        You may also get this value doing [0] on the object.
-        """
-        ...
-    def y(self) -> int:
-        """
-        Returns the datamatrix’s bounding box y coordinate (int).
-        You may also get this value doing [1] on the object.
-        """
-        ...
+    capacity: Any
+    """
+    Maximum number of payload characters this data matrix could carry
+    at the current row/column size. Integer. Index [8].
+    """
+    columns: Any
+    """Number of cell columns in the data matrix. Integer. Index [7]."""
+    corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the data matrix, sorted clockwise starting from the top-left
+    corner. Index [10].
+    """
+    h: Any
+    """Bounding box height, in pixels. Integer. Index [3]."""
+    padding: Any
+    """
+    Number of unused payload character slots in this data matrix
+    (capacity - len(payload)). Integer. Index [9].
+    """
+    payload: Any
+    """Decoded payload string. Index [4]."""
+    rect: Any
+    """
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [11].
+    """
+    rotation: Any
+    """
+    In-image-plane rotation of the data matrix in radians. Float.
+    Index [5].
+    """
+    rows: Any
+    """Number of cell rows in the data matrix. Integer. Index [6]."""
+    w: Any
+    """Bounding box width, in pixels. Integer. Index [2]."""
+    x: Any
+    """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
+    y: Any
+    """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
 class displacement:
-    """
-    Please call Image.find_displacement() to create this object. It has no
-    public constructor.
-    """
+    """Please call Image.find_displacement() to create this object."""
     def __init__(self) -> None: ...
-    def response(self) -> float:
-        """
-        Quality of the displacement match between the two images, in the range 0-1.
-        Index [4].
-        """
-        ...
-    def rotation(self) -> float:
-        """Rotation in radians between the two images. Index [2]."""
-        ...
-    def scale(self) -> float:
-        """Scale change between the two images. Index [3]."""
-        ...
-    def x_translation(self) -> float:
-        """X translation in pixels between the two images. Index [0]."""
-        ...
-    def y_translation(self) -> float:
-        """Y translation in pixels between the two images. Index [1]."""
-        ...
+    response: Any
+    """
+    Quality of the phase-correlation match in the range 0.0 – 1.0,
+    where 1.0 is a perfect match. Use this to reject low-confidence
+    results. Float. Index [4].
+    """
+    rotation: Any
+    """
+    Rotation in radians between the two images. Only meaningful when
+    find_displacement(..., logpolar=True) is used; otherwise 0.0.
+    Float. Index [2].
+    """
+    scale: Any
+    """
+    Scale change between the two images. Only meaningful when
+    find_displacement(..., logpolar=True) is used; otherwise 1.0.
+    Float. Index [3].
+    """
+    x_translation: Any
+    """
+    X-axis translation in pixels between the two images. Float.
+    Index [0].
+    """
+    y_translation: Any
+    """
+    Y-axis translation in pixels between the two images. Float.
+    Index [1].
+    """
 
 class histogram:
     """
@@ -5104,96 +5893,199 @@ class histogram:
     def __init__(self) -> None: ...
     def a_bins(self) -> list[float]:
         """
-        Returns a list of floats for the RGB565 LAB A channel histogram.
-        Also accessible as histogram[1].
+        Return the bin list for the LAB A channel of an RGB565 histogram.
+        Each entry is in the range 0.0 to 1.0 and the entries sum to 1.0.
+        Equivalent to histogram[1].
         """
         ...
     def b_bins(self) -> list[float]:
         """
-        Returns a list of floats for the RGB565 LAB B channel histogram.
-        Also accessible as histogram[2].
+        Return the bin list for the LAB B channel of an RGB565 histogram.
+        Each entry is in the range 0.0 to 1.0 and the entries sum to 1.0.
+        Equivalent to histogram[2].
         """
         ...
     def bins(self) -> list[float]:
         """
-        Returns a list of floats for the grayscale histogram.
-        Also accessible as histogram[0].
+        Return the bin list for a grayscale histogram. Each entry is in the
+        range 0.0 to 1.0 and the entries sum to 1.0.
+        Equivalent to histogram[0].
         """
         ...
     def get_percentile(self, percentile: float) -> image.percentile:
         """
-        Computes the CDF of the histogram channels and returns an image.percentile
-        object holding the value at percentile (0.0 - 1.0) for each channel.
-        Useful for determining min/max of a color distribution while ignoring
-        outliers.
+        Compute the CDF of every histogram channel and return the bin value at
+        the requested percentile (a float in 0.0 – 1.0).
+        Useful for finding the min/max of a color distribution while ignoring
+        outliers (get_percentile(0.05) and get_percentile(0.95) give a
+        robust min/max).
+        Returns a Percentile attrtuple.
         """
         ...
     def get_statistics(self) -> image.statistics:
         """
-        Computes the mean, median, mode, standard deviation, min, max, lower
-        quartile, and upper quartile of each channel of the histogram. Returns an
-        image.statistics object.
+        Compute the mean, median, mode, standard deviation, min, max, lower
+        quartile, and upper quartile of every histogram channel.
+        Returns a Statistics attrtuple.
         """
         ...
     def get_stats(self) -> image.statistics:
-        """Alias for histogram.get_statistics()."""
+        """Alias for get_statistics()."""
         ...
     def get_threshold(self) -> image.threshold:
         """
-        Uses Otsu’s Method to compute the optimal threshold values that split the
-        histogram into two halves for each channel. Returns an image.threshold
-        object. Useful for determining optimal Image.binary() thresholds.
+        Use Otsu’s Method on every channel to find the threshold value that
+        best splits each channel’s distribution into a “background” and
+        “foreground” half. The returned thresholds are well-suited to feed
+        directly into Image.binary() or any other method that takes
+        LAB L/A/B color thresholds.
+        Returns a Threshold attrtuple.
         """
         ...
     def l_bins(self) -> list[float]:
         """
-        Returns a list of floats for the RGB565 LAB L channel histogram.
-        Also accessible as histogram[0].
+        Return the bin list for the LAB L channel of an RGB565 histogram.
+        Each entry is in the range 0.0 to 1.0 and the entries sum to 1.0.
+        Equivalent to histogram[0].
         """
         ...
     def statistics(self) -> image.statistics:
-        """Alias for histogram.get_statistics()."""
+        """Alias for get_statistics()."""
         ...
 
 class kptmatch:
     """
-    Please call image.match_descriptor() to create this object. It has no
-    public constructor.
+    Please call image.match_descriptor() to create this object.
+    Bounding box and centroid
+
+
+
+    x
+
+    Bounding box top-left x coordinate of the matched keypoints, in
+    pixels. Integer. Index [0].
+
+
+
+    y
+
+    Bounding box top-left y coordinate of the matched keypoints, in
+    pixels. Integer. Index [1].
+
+
+
+    w
+
+    Bounding box width of the matched keypoints, in pixels. Integer.
+    Index [2].
+
+
+
+    h
+
+    Bounding box height of the matched keypoints, in pixels. Integer.
+    Index [3].
+
+
+
+    cx
+
+    Centroid x coordinate of the matched keypoints. Integer.
+    Index [4].
+
+
+
+    cy
+
+    Centroid y coordinate of the matched keypoints. Integer.
+    Index [5].
+
+
+
+    rect
+
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [9].
+    Match details
+
+
+
+    count
+
+    Number of keypoints that matched between the two descriptors. Use
+    this as a confidence score – typical thresholds for a “real”
+    match are 10+ keypoints. Integer. Index [6].
+
+
+
+    theta
+
+    Estimated in-image-plane rotation between the two descriptors, in
+    degrees. Integer. Index [7].
+
+
+
+    match
+
+    List of (x, y) integer tuples giving the pixel location of each
+    matched keypoint in the search image. len(match) == count.
+    Index [8].
     """
     def __init__(self) -> None: ...
-    def count(self) -> int:
-        """Number of keypoints matched. Index [6]."""
-        ...
-    def cx(self) -> int:
-        """Centroid x position of the matched keypoints. Index [4]."""
-        ...
-    def cy(self) -> int:
-        """Centroid y position of the matched keypoints. Index [5]."""
-        ...
-    def h(self) -> int:
-        """Bounding box height of the matched keypoints. Index [3]."""
-        ...
-    def match(self) -> list[tuple[int, int]]:
-        """List of (x, y) tuples of the matching keypoints. Index [8]."""
-        ...
-    def rect(self) -> tuple[int, int, int, int]:
-        """
-        Bounding box (x, y, w, h) of the matched keypoints, suitable for
-        passing to methods like Image.draw_rectangle(). Index [9].
-        """
-        ...
-    def theta(self) -> int:
-        """Estimated angle of rotation of the match. Index [7]."""
-        ...
-    def w(self) -> int:
-        """Bounding box width of the matched keypoints. Index [2]."""
-        ...
-    def x(self) -> int:
-        """Bounding box x coordinate of the matched keypoints. Index [0]."""
-        ...
-    def y(self) -> int:
-        """Bounding box y coordinate of the matched keypoints. Index [1]."""
-        ...
+    count: Any
+    """
+    Number of keypoints that matched between the two descriptors. Use
+    this as a confidence score – typical thresholds for a “real”
+    match are 10+ keypoints. Integer. Index [6].
+    """
+    cx: Any
+    """
+    Centroid x coordinate of the matched keypoints. Integer.
+    Index [4].
+    """
+    cy: Any
+    """
+    Centroid y coordinate of the matched keypoints. Integer.
+    Index [5].
+    """
+    h: Any
+    """
+    Bounding box height of the matched keypoints, in pixels. Integer.
+    Index [3].
+    """
+    match: Any
+    """
+    List of (x, y) integer tuples giving the pixel location of each
+    matched keypoint in the search image. len(match) == count.
+    Index [8].
+    """
+    rect: Any
+    """
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [9].
+    """
+    theta: Any
+    """
+    Estimated in-image-plane rotation between the two descriptors, in
+    degrees. Integer. Index [7].
+    """
+    w: Any
+    """
+    Bounding box width of the matched keypoints, in pixels. Integer.
+    Index [2].
+    """
+    x: Any
+    """
+    Bounding box top-left x coordinate of the matched keypoints, in
+    pixels. Integer. Index [0].
+    """
+    y: Any
+    """
+    Bounding box top-left y coordinate of the matched keypoints, in
+    pixels. Integer. Index [1].
+    """
 
 class line:
     """
@@ -5201,440 +6093,610 @@ class line:
     Image.get_regression() to create this object.
     """
     def __init__(self) -> None: ...
-    def length(self) -> int:
-        """
-        Returns the line’s length: round(sqrt((x2-x1)^2 + (y2-y1)^2)).
-        Index [4].
-        """
-        ...
-    def magnitude(self) -> int:
-        """Returns the magnitude of the line from the Hough transform. Index [5]."""
-        ...
-    def rho(self) -> int:
-        """Returns the rho value for the line from the Hough transform. Index [7]."""
-        ...
-    def theta(self) -> int:
-        """
-        Returns the angle of the line from the Hough transform (0-179 degrees).
-        Index [6].
-        """
-        ...
-    def x1(self) -> int:
-        """Returns the line’s p1 x component. Index [0]."""
-        ...
-    def x2(self) -> int:
-        """Returns the line’s p2 x component. Index [2]."""
-        ...
-    def y1(self) -> int:
-        """Returns the line’s p1 y component. Index [1]."""
-        ...
-    def y2(self) -> int:
-        """Returns the line’s p2 y component. Index [3]."""
-        ...
+    length: Any
+    """
+    Pixel length of the segment: round(sqrt((x2-x1)**2 + (y2-y1)**2)).
+    Integer. Index [4].
+    """
+    magnitude: Any
+    """
+    Magnitude of the line in Hough-space. Higher values indicate that
+    more edge pixels voted for this line. Integer. Index [5].
+    """
+    rho: Any
+    """
+    Distance of the line from the image origin in Hough-space, in
+    pixels. Signed integer (can be negative). Index [7].
+    """
+    theta: Any
+    """
+    Angle of the line in Hough-space, in degrees, 0 – 179. Integer.
+    Index [6].
+    """
+    x1: Any
+    """X coordinate of the first endpoint. Integer. Index [0]."""
+    x2: Any
+    """X coordinate of the second endpoint. Integer. Index [2]."""
+    y1: Any
+    """Y coordinate of the first endpoint. Integer. Index [1]."""
+    y2: Any
+    """Y coordinate of the second endpoint. Integer. Index [3]."""
 
 class percentile:
     """Please call histogram.get_percentile() to create this object."""
     def __init__(self) -> None: ...
-    def a_value(self) -> int:
-        """
-        Returns the RGB565 LAB A channel percentile value (-128 - 127).
-        Also accessible as percentile[2].
-        """
-        ...
-    def b_value(self) -> int:
-        """
-        Returns the RGB565 LAB B channel percentile value (-128 - 127).
-        Also accessible as percentile[3].
-        """
-        ...
-    def l_value(self) -> int:
-        """
-        Returns the RGB565 LAB L channel percentile value (0 - 100).
-        Also accessible as percentile[1].
-        """
-        ...
-    def value(self) -> int:
-        """
-        Returns the grayscale percentile value (0 - 255).
-        Also accessible as percentile[0].
-        """
-        ...
+    a_value: Any
+    """
+    LAB A channel bin value at the requested percentile. Integer
+    -128 – 127. Index [2].
+    """
+    b_value: Any
+    """
+    LAB B channel bin value at the requested percentile. Integer
+    -128 – 127. Index [3].
+    """
+    l_value: Any
+    """
+    LAB L channel bin value at the requested percentile. Integer
+    0 – 100. Index [1].
+    """
+    value: Any
+    """
+    Grayscale bin value at the requested percentile. Integer 0 – 255.
+    Index [0].
+    """
 
 class qrcode:
     """
-    Please call Image.find_qrcodes() to create this object. It has no public
-    constructor.
+    Please call Image.find_qrcodes() to create this object.
+    Bounding box and corners
+
+
+
+    x
+
+    Bounding box top-left x coordinate, in pixels. Integer. Index [0].
+
+
+
+    y
+
+    Bounding box top-left y coordinate, in pixels. Integer. Index [1].
+
+
+
+    w
+
+    Bounding box width, in pixels. Integer. Index [2].
+
+
+
+    h
+
+    Bounding box height, in pixels. Integer. Index [3].
+
+
+
+    corners
+
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the QR code, sorted clockwise starting from the top-left corner.
+    Index [10].
+
+
+
+    rect
+
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [15].
+    Decoded payload
+
+
+
+    payload
+
+    Decoded payload string. Index [4].
+    Decoder metadata
+
+
+
+    version
+
+    QR-code version, 1 – 40. Higher versions encode more data and have
+    larger modules. Integer. Index [5].
+
+
+
+    ecc_level
+
+    Error-correction level, 0 – 3 (corresponding to L / M / Q / H).
+    Higher values reserve more codewords for error correction.
+    Integer. Index [6].
+
+
+
+    mask
+
+    Mask pattern, 0 – 7. Used by the QR-code encoder to choose the
+    module pattern that minimises decoder confusion. Integer.
+    Index [7].
+
+
+
+    data_type
+
+    Encoding of the payload as the decoder reported it. One of the
+    following bitmask values: 1 numeric, 2 alphanumeric,
+    4 binary, 8 Kanji. See the per-flag attributes below for a
+    friendlier form. Integer. Index [8].
+
+
+
+    eci
+
+    Extended Channel Interpretation value. Encodes the text encoding
+    used for the bytes in the payload (e.g. UTF-8 versus ISO-8859-1).
+    Integer. Index [9].
+    Encoding flags
+
+
+
+    is_numeric
+
+    True if data_type indicates a numeric payload. Index [11].
+
+
+
+    is_alphanumeric
+
+    True if data_type indicates an alphanumeric payload.
+    Index [12].
+
+
+
+    is_binary
+
+    True if data_type indicates a binary payload. Check eci
+    to determine the text encoding when this is True. Index [13].
+
+
+
+    is_kanji
+
+    True if data_type indicates a Kanji payload. Kanji symbols
+    are 10 bits per character and MicroPython does not parse this
+    encoding – the payload must be treated as a byte array.
+    Index [14].
     """
     def __init__(self) -> None: ...
-    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-        Corners are returned in sorted clock-wise order starting from the top
-        left.
-        You may also get this value doing [10] on the object.
-        """
-        ...
-    def data_type(self) -> int:
-        """
-        Returns the data type of the qrcode (int).
-        You may also get this value doing [8] on the object.
-        """
-        ...
-    def ecc_level(self) -> int:
-        """
-        Returns the ecc_level of the qrcode (int).
-        You may also get this value doing [6] on the object.
-        """
-        ...
-    def eci(self) -> int:
-        """
-        Returns the eci of the qrcode (int). The eci stores the encoding of data
-        bytes in the QR Code.
-        You may also get this value doing [9] on the object.
-        """
-        ...
-    def h(self) -> int:
-        """
-        Returns the qrcode’s bounding box h coordinate (int).
-        You may also get this value doing [3] on the object.
-        """
-        ...
-    def is_alphanumeric(self) -> bool:
-        """
-        Returns True if the data_type of the qrcode is alphanumeric.
-        You may also get this value doing [12] on the object.
-        """
-        ...
-    def is_binary(self) -> bool:
-        """
-        Returns True if the data_type of the qrcode is binary. Check eci() to
-        determine the text encoding when this is True.
-        You may also get this value doing [13] on the object.
-        """
-        ...
-    def is_kanji(self) -> bool:
-        """
-        Returns True if the data_type of the qrcode is Kanji. Kanji symbols are
-        10-bits per character and MicroPython does not parse this encoding; the
-        payload must be treated as a byte array.
-        You may also get this value doing [14] on the object.
-        """
-        ...
-    def is_numeric(self) -> bool:
-        """
-        Returns True if the data_type of the qrcode is numeric.
-        You may also get this value doing [11] on the object.
-        """
-        ...
-    def mask(self) -> int:
-        """
-        Returns the mask of the qrcode (int).
-        You may also get this value doing [7] on the object.
-        """
-        ...
-    def payload(self) -> str:
-        """
-        Returns the payload string of the qrcode (str).
-        You may also get this value doing [4] on the object.
-        """
-        ...
-    def rect(self) -> tuple[int, int, int, int]:
-        """
-        Returns a rectangle tuple (x, y, w, h) of the qrcode’s bounding box for
-        use with other image methods like Image.draw_rectangle().
-        You may also get this value doing [15] on the object.
-        """
-        ...
-    def version(self) -> int:
-        """
-        Returns the version number of the qrcode (int).
-        You may also get this value doing [5] on the object.
-        """
-        ...
-    def w(self) -> int:
-        """
-        Returns the qrcode’s bounding box w coordinate (int).
-        You may also get this value doing [2] on the object.
-        """
-        ...
-    def x(self) -> int:
-        """
-        Returns the qrcode’s bounding box x coordinate (int).
-        You may also get this value doing [0] on the object.
-        """
-        ...
-    def y(self) -> int:
-        """
-        Returns the qrcode’s bounding box y coordinate (int).
-        You may also get this value doing [1] on the object.
-        """
-        ...
+    corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four detected corners
+    of the QR code, sorted clockwise starting from the top-left corner.
+    Index [10].
+    """
+    data_type: Any
+    """
+    Encoding of the payload as the decoder reported it. One of the
+    following bitmask values: 1 numeric, 2 alphanumeric,
+    4 binary, 8 Kanji. See the per-flag attributes below for a
+    friendlier form. Integer. Index [8].
+    """
+    ecc_level: Any
+    """
+    Error-correction level, 0 – 3 (corresponding to L / M / Q / H).
+    Higher values reserve more codewords for error correction.
+    Integer. Index [6].
+    """
+    eci: Any
+    """
+    Extended Channel Interpretation value. Encodes the text encoding
+    used for the bytes in the payload (e.g. UTF-8 versus ISO-8859-1).
+    Integer. Index [9].
+    """
+    h: Any
+    """Bounding box height, in pixels. Integer. Index [3]."""
+    is_alphanumeric: Any
+    """
+    True if data_type indicates an alphanumeric payload.
+    Index [12].
+    """
+    is_binary: Any
+    """
+    True if data_type indicates a binary payload. Check eci
+    to determine the text encoding when this is True. Index [13].
+    """
+    is_kanji: Any
+    """
+    True if data_type indicates a Kanji payload. Kanji symbols
+    are 10 bits per character and MicroPython does not parse this
+    encoding – the payload must be treated as a byte array.
+    Index [14].
+    """
+    is_numeric: Any
+    """True if data_type indicates a numeric payload. Index [11]."""
+    mask: Any
+    """
+    Mask pattern, 0 – 7. Used by the QR-code encoder to choose the
+    module pattern that minimises decoder confusion. Integer.
+    Index [7].
+    """
+    payload: Any
+    """Decoded payload string. Index [4]."""
+    rect: Any
+    """
+    (x, y, w, h) 4-tuple of the bounding box. Suitable for passing
+    directly to drawing/cropping methods such as Image.draw_rectangle()
+    or Image.crop(). Index [15].
+    """
+    version: Any
+    """
+    QR-code version, 1 – 40. Higher versions encode more data and have
+    larger modules. Integer. Index [5].
+    """
+    w: Any
+    """Bounding box width, in pixels. Integer. Index [2]."""
+    x: Any
+    """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
+    y: Any
+    """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
 class rect:
     """Please call Image.find_rects() to create this object."""
     def __init__(self) -> None: ...
-    def corners(self) -> tuple[tuple[int, int], tuple[int, int], tuple[int, int], tuple[int, int]]:
-        """
-        Returns a 4-tuple of (x, y) tuples for the 4 corners of the rectangle
-        in sorted clock-wise order starting from the top left. Index [5].
-        """
-        ...
-    def h(self) -> int:
-        """Returns the rectangle’s height. Index [3]."""
-        ...
-    def magnitude(self) -> int:
-        """Returns the rectangle’s magnitude from the Hough transform. Index [4]."""
-        ...
-    def w(self) -> int:
-        """Returns the rectangle’s width. Index [2]."""
-        ...
-    def x(self) -> int:
-        """Returns the rectangle’s top left corner’s x position. Index [0]."""
-        ...
-    def y(self) -> int:
-        """Returns the rectangle’s top left corner’s y position. Index [1]."""
-        ...
+    corners: Any
+    """
+    4-tuple of (x, y) integer tuples for the four corners of the
+    detected quadrilateral, sorted clockwise starting from the top-left
+    corner. May not be axis-aligned – use these corners to draw the
+    true outline of the detection. Index [5].
+    """
+    h: Any
+    """Bounding box height, in pixels. Integer. Index [3]."""
+    magnitude: Any
+    """
+    Sum of the edge-gradient strength traced along the rectangle’s
+    perimeter. Higher values mean stronger edges around the rectangle –
+    treat this as a confidence score. Integer. Index [4].
+    """
+    w: Any
+    """Bounding box width, in pixels. Integer. Index [2]."""
+    x: Any
+    """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
+    y: Any
+    """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
 class similarity:
     """Please call Image.get_similarity() to create this object."""
     def __init__(self) -> None: ...
-    def max(self) -> float:
-        """
-        Returns the max of the similarity values computed across the image. For DSIM
-        threshold the max value to determine if two images are different.
-        Also accessible as similarity[3].
-        """
-        ...
-    def mean(self) -> float:
-        """
-        Returns the mean of the similarity values computed across the image.
-        Also accessible as similarity[0].
-        """
-        ...
-    def min(self) -> float:
-        """
-        Returns the min of the similarity values computed across the image. For SSIM
-        threshold the min value to determine if two images are different.
-        Also accessible as similarity[2].
-        """
-        ...
-    def stdev(self) -> float:
-        """
-        Returns the standard deviation of the similarity values computed across the
-        image.
-        Also accessible as similarity[1].
-        """
-        ...
+    max: Any
+    """
+    Maximum per-block SSIM value. Useful as a DSIM-style threshold to
+    detect that two images that should differ are actually still
+    similar in at least one block. Float. Index [3].
+    """
+    mean: Any
+    """
+    Mean of the SSIM values across all blocks. Best single number to
+    describe overall similarity. Float in the range -1.0 to 1.0. Index
+    [0].
+    """
+    min: Any
+    """
+    Minimum per-block SSIM value. Useful as an SSIM-style threshold to
+    detect a localised difference between the two images (a single block
+    that disagrees pulls min down even when mean stays high).
+    Float. Index [2].
+    """
+    stdev: Any
+    """Standard deviation of the per-block SSIM values. Float. Index [1]."""
 
 class statistics:
     """
     Please call histogram.get_statistics() or Image.get_statistics() to
     create this object.
+    Grayscale / LAB L (also exposed as l_* below)
+
+
+
+    mean
+
+    Grayscale mean of the histogram. Integer 0 – 255. Index [0].
+
+
+
+    median
+
+    Grayscale median of the histogram. Integer 0 – 255. Index [1].
+
+
+
+    mode
+
+    Grayscale mode of the histogram. Integer 0 – 255. Index [2].
+
+
+
+    stdev
+
+    Grayscale standard deviation of the histogram. Integer 0 – 255.
+    Index [3].
+
+
+
+    min
+
+    Grayscale minimum of the histogram. Integer 0 – 255. Index [4].
+
+
+
+    max
+
+    Grayscale maximum of the histogram. Integer 0 – 255. Index [5].
+
+
+
+    lq
+
+    Grayscale lower quartile (25th percentile) of the histogram.
+    Integer 0 – 255. Index [6].
+
+
+
+    uq
+
+    Grayscale upper quartile (75th percentile) of the histogram.
+    Integer 0 – 255. Index [7].
+    LAB L channel (RGB565)
+
+
+
+    l_mean
+
+    LAB L channel mean. Integer 0 – 100. Index [8].
+
+
+
+    l_median
+
+    LAB L channel median. Integer 0 – 100. Index [9].
+
+
+
+    l_mode
+
+    LAB L channel mode. Integer 0 – 100. Index [10].
+
+
+
+    l_stdev
+
+    LAB L channel standard deviation. Integer 0 – 100. Index [11].
+
+
+
+    l_min
+
+    LAB L channel minimum. Integer 0 – 100. Index [12].
+
+
+
+    l_max
+
+    LAB L channel maximum. Integer 0 – 100. Index [13].
+
+
+
+    l_lq
+
+    LAB L channel lower quartile. Integer 0 – 100. Index [14].
+
+
+
+    l_uq
+
+    LAB L channel upper quartile. Integer 0 – 100. Index [15].
+    LAB A channel (RGB565)
+
+
+
+    a_mean
+
+    LAB A channel mean. Integer -128 – 127. Index [16].
+
+
+
+    a_median
+
+    LAB A channel median. Integer -128 – 127. Index [17].
+
+
+
+    a_mode
+
+    LAB A channel mode. Integer -128 – 127. Index [18].
+
+
+
+    a_stdev
+
+    LAB A channel standard deviation. Integer -128 – 127.
+    Index [19].
+
+
+
+    a_min
+
+    LAB A channel minimum. Integer -128 – 127. Index [20].
+
+
+
+    a_max
+
+    LAB A channel maximum. Integer -128 – 127. Index [21].
+
+
+
+    a_lq
+
+    LAB A channel lower quartile. Integer -128 – 127. Index [22].
+
+
+
+    a_uq
+
+    LAB A channel upper quartile. Integer -128 – 127. Index [23].
+    LAB B channel (RGB565)
+
+
+
+    b_mean
+
+    LAB B channel mean. Integer -128 – 127. Index [24].
+
+
+
+    b_median
+
+    LAB B channel median. Integer -128 – 127. Index [25].
+
+
+
+    b_mode
+
+    LAB B channel mode. Integer -128 – 127. Index [26].
+
+
+
+    b_stdev
+
+    LAB B channel standard deviation. Integer -128 – 127.
+    Index [27].
+
+
+
+    b_min
+
+    LAB B channel minimum. Integer -128 – 127. Index [28].
+
+
+
+    b_max
+
+    LAB B channel maximum. Integer -128 – 127. Index [29].
+
+
+
+    b_lq
+
+    LAB B channel lower quartile. Integer -128 – 127. Index [30].
+
+
+
+    b_uq
+
+    LAB B channel upper quartile. Integer -128 – 127. Index [31].
     """
     def __init__(self) -> None: ...
-    def a_lq(self) -> int:
-        """
-        Returns the RGB565 LAB A lower quartile (-128 - 127). Also accessible as
-        statistics[22].
-        """
-        ...
-    def a_max(self) -> int:
-        """
-        Returns the RGB565 LAB A max (-128 - 127). Also accessible as
-        statistics[21].
-        """
-        ...
-    def a_mean(self) -> int:
-        """
-        Returns the RGB565 LAB A mean (-128 - 127). Also accessible as
-        statistics[16].
-        """
-        ...
-    def a_median(self) -> int:
-        """
-        Returns the RGB565 LAB A median (-128 - 127). Also accessible as
-        statistics[17].
-        """
-        ...
-    def a_min(self) -> int:
-        """
-        Returns the RGB565 LAB A min (-128 - 127). Also accessible as
-        statistics[20].
-        """
-        ...
-    def a_mode(self) -> int:
-        """
-        Returns the RGB565 LAB A mode (-128 - 127). Also accessible as
-        statistics[18].
-        """
-        ...
-    def a_stdev(self) -> int:
-        """
-        Returns the RGB565 LAB A standard deviation (-128 - 127). Also accessible as
-        statistics[19].
-        """
-        ...
-    def a_uq(self) -> int:
-        """
-        Returns the RGB565 LAB A upper quartile (-128 - 127). Also accessible as
-        statistics[23].
-        """
-        ...
-    def b_lq(self) -> int:
-        """
-        Returns the RGB565 LAB B lower quartile (-128 - 127). Also accessible as
-        statistics[30].
-        """
-        ...
-    def b_max(self) -> int:
-        """
-        Returns the RGB565 LAB B max (-128 - 127). Also accessible as
-        statistics[29].
-        """
-        ...
-    def b_mean(self) -> int:
-        """
-        Returns the RGB565 LAB B mean (-128 - 127). Also accessible as
-        statistics[24].
-        """
-        ...
-    def b_median(self) -> int:
-        """
-        Returns the RGB565 LAB B median (-128 - 127). Also accessible as
-        statistics[25].
-        """
-        ...
-    def b_min(self) -> int:
-        """
-        Returns the RGB565 LAB B min (-128 - 127). Also accessible as
-        statistics[28].
-        """
-        ...
-    def b_mode(self) -> int:
-        """
-        Returns the RGB565 LAB B mode (-128 - 127). Also accessible as
-        statistics[26].
-        """
-        ...
-    def b_stdev(self) -> int:
-        """
-        Returns the RGB565 LAB B standard deviation (-128 - 127). Also accessible as
-        statistics[27].
-        """
-        ...
-    def b_uq(self) -> int:
-        """
-        Returns the RGB565 LAB B upper quartile (-128 - 127). Also accessible as
-        statistics[31].
-        """
-        ...
-    def l_lq(self) -> int:
-        """
-        Returns the RGB565 LAB L lower quartile (0 - 100). Also accessible as
-        statistics[14].
-        """
-        ...
-    def l_max(self) -> int:
-        """
-        Returns the RGB565 LAB L max (0 - 100). Also accessible as
-        statistics[13].
-        """
-        ...
-    def l_mean(self) -> int:
-        """
-        Returns the RGB565 LAB L mean (0 - 100). Also accessible as
-        statistics[8].
-        """
-        ...
-    def l_median(self) -> int:
-        """
-        Returns the RGB565 LAB L median (0 - 100). Also accessible as
-        statistics[9].
-        """
-        ...
-    def l_min(self) -> int:
-        """
-        Returns the RGB565 LAB L min (0 - 100). Also accessible as
-        statistics[12].
-        """
-        ...
-    def l_mode(self) -> int:
-        """
-        Returns the RGB565 LAB L mode (0 - 100). Also accessible as
-        statistics[10].
-        """
-        ...
-    def l_stdev(self) -> int:
-        """
-        Returns the RGB565 LAB L standard deviation (0 - 100). Also accessible as
-        statistics[11].
-        """
-        ...
-    def l_uq(self) -> int:
-        """
-        Returns the RGB565 LAB L upper quartile (0 - 100). Also accessible as
-        statistics[15].
-        """
-        ...
-    def lq(self) -> int:
-        """
-        Returns the grayscale lower quartile (0 - 255). Also accessible as
-        statistics[6].
-        """
-        ...
-    def max(self) -> int:
-        """Returns the grayscale max (0 - 255). Also accessible as statistics[5]."""
-        ...
-    def mean(self) -> int:
-        """Returns the grayscale mean (0 - 255). Also accessible as statistics[0]."""
-        ...
-    def median(self) -> int:
-        """Returns the grayscale median (0 - 255). Also accessible as statistics[1]."""
-        ...
-    def min(self) -> int:
-        """Returns the grayscale min (0 - 255). Also accessible as statistics[4]."""
-        ...
-    def mode(self) -> int:
-        """Returns the grayscale mode (0 - 255). Also accessible as statistics[2]."""
-        ...
-    def stdev(self) -> int:
-        """
-        Returns the grayscale standard deviation (0 - 255). Also accessible as
-        statistics[3].
-        """
-        ...
-    def uq(self) -> int:
-        """
-        Returns the grayscale upper quartile (0 - 255). Also accessible as
-        statistics[7].
-        """
-        ...
+    a_lq: Any
+    """LAB A channel lower quartile. Integer -128 – 127. Index [22]."""
+    a_max: Any
+    """LAB A channel maximum. Integer -128 – 127. Index [21]."""
+    a_mean: Any
+    """LAB A channel mean. Integer -128 – 127. Index [16]."""
+    a_median: Any
+    """LAB A channel median. Integer -128 – 127. Index [17]."""
+    a_min: Any
+    """LAB A channel minimum. Integer -128 – 127. Index [20]."""
+    a_mode: Any
+    """LAB A channel mode. Integer -128 – 127. Index [18]."""
+    a_stdev: Any
+    """
+    LAB A channel standard deviation. Integer -128 – 127.
+    Index [19].
+    """
+    a_uq: Any
+    """LAB A channel upper quartile. Integer -128 – 127. Index [23]."""
+    b_lq: Any
+    """LAB B channel lower quartile. Integer -128 – 127. Index [30]."""
+    b_max: Any
+    """LAB B channel maximum. Integer -128 – 127. Index [29]."""
+    b_mean: Any
+    """LAB B channel mean. Integer -128 – 127. Index [24]."""
+    b_median: Any
+    """LAB B channel median. Integer -128 – 127. Index [25]."""
+    b_min: Any
+    """LAB B channel minimum. Integer -128 – 127. Index [28]."""
+    b_mode: Any
+    """LAB B channel mode. Integer -128 – 127. Index [26]."""
+    b_stdev: Any
+    """
+    LAB B channel standard deviation. Integer -128 – 127.
+    Index [27].
+    """
+    b_uq: Any
+    """LAB B channel upper quartile. Integer -128 – 127. Index [31]."""
+    l_lq: Any
+    """LAB L channel lower quartile. Integer 0 – 100. Index [14]."""
+    l_max: Any
+    """LAB L channel maximum. Integer 0 – 100. Index [13]."""
+    l_mean: Any
+    """LAB L channel mean. Integer 0 – 100. Index [8]."""
+    l_median: Any
+    """LAB L channel median. Integer 0 – 100. Index [9]."""
+    l_min: Any
+    """LAB L channel minimum. Integer 0 – 100. Index [12]."""
+    l_mode: Any
+    """LAB L channel mode. Integer 0 – 100. Index [10]."""
+    l_stdev: Any
+    """LAB L channel standard deviation. Integer 0 – 100. Index [11]."""
+    l_uq: Any
+    """LAB L channel upper quartile. Integer 0 – 100. Index [15]."""
+    lq: Any
+    """
+    Grayscale lower quartile (25th percentile) of the histogram.
+    Integer 0 – 255. Index [6].
+    """
+    max: Any
+    """Grayscale maximum of the histogram. Integer 0 – 255. Index [5]."""
+    mean: Any
+    """Grayscale mean of the histogram. Integer 0 – 255. Index [0]."""
+    median: Any
+    """Grayscale median of the histogram. Integer 0 – 255. Index [1]."""
+    min: Any
+    """Grayscale minimum of the histogram. Integer 0 – 255. Index [4]."""
+    mode: Any
+    """Grayscale mode of the histogram. Integer 0 – 255. Index [2]."""
+    stdev: Any
+    """
+    Grayscale standard deviation of the histogram. Integer 0 – 255.
+    Index [3].
+    """
+    uq: Any
+    """
+    Grayscale upper quartile (75th percentile) of the histogram.
+    Integer 0 – 255. Index [7].
+    """
 
 class threshold:
     """Please call histogram.get_threshold() to create this object."""
     def __init__(self) -> None: ...
-    def a_value(self) -> int:
-        """
-        Returns the RGB565 LAB A channel threshold value (-128 - 127).
-        Also accessible as threshold[2].
-        """
-        ...
-    def b_value(self) -> int:
-        """
-        Returns the RGB565 LAB B channel threshold value (-128 - 127).
-        Also accessible as threshold[3].
-        """
-        ...
-    def l_value(self) -> int:
-        """
-        Returns the RGB565 LAB L channel threshold value (0 - 100).
-        Also accessible as threshold[1].
-        """
-        ...
-    def value(self) -> int:
-        """
-        Returns the grayscale threshold value (0 - 255).
-        Also accessible as threshold[0].
-        """
-        ...
+    a_value: Any
+    """
+    LAB A channel Otsu threshold value. Integer -128 – 127.
+    Index [2].
+    """
+    b_value: Any
+    """
+    LAB B channel Otsu threshold value. Integer -128 – 127.
+    Index [3].
+    """
+    l_value: Any
+    """
+    LAB L channel Otsu threshold value. Integer 0 – 100.
+    Index [1].
+    """
+    value: Any
+    """Grayscale Otsu threshold value. Integer 0 – 255. Index [0]."""
 

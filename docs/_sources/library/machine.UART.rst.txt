@@ -137,118 +137,94 @@ Constructors
 
    .. method:: sendbreak() -> None
 
-      Send a break condition on the bus. This drives the bus low for a duration
-      longer than required for a normal transmission of a character.
+      Send a break condition on the bus -- drive TX low for longer
+      than one character time. Available on STM32 and mimxrt;
+      not exposed on alif.
+
+   .. method:: readchar() -> int
+
+      Read a single character from the UART and return it as an
+      integer (or ``-1`` on timeout). Lower overhead than
+      :meth:`read(1) <read>` since no ``bytes`` object is allocated.
+      STM32 only.
+
+   .. method:: writechar(char: int) -> None
+
+      Write the single character ``char`` (an integer in the range
+      ``0`` -- ``255``) to the UART. Lower overhead than
+      :meth:`write` for single-byte sends. STM32 only.
 
    .. method:: flush() -> None
 
-      Waits until all data has been sent. In case of a timeout, an exception is raised. The timeout
-      duration depends on the tx buffer size and the baud rate. Unless flow control is enabled, a timeout
-      should not occur.
-
-      .. note::
-
-          For the esp8266 and nrf ports the call returns while the last byte is sent.
-          If required, a one character wait time has to be added in the calling script.
-
-      Availability: rp2, esp32, esp8266, mimxrt, cc3200, stm32, nrf ports, renesas-ra
+      Block until every byte currently in the transmit buffer has
+      been clocked out on TX. Raises ``OSError`` on timeout; the
+      timeout is derived from the TX buffer size and the configured
+      baudrate, so unless flow control is enabled and the receiver
+      stalls, the call returns well before the timeout.
 
    .. method:: txdone() -> bool
 
-      Tells whether all data has been sent or no data transfer is happening. In this case,
-      it returns ``True``. If a data transmission is ongoing it returns ``False``.
-
-      .. note::
-
-          For the esp8266 and nrf ports the call may return ``True`` even if the last byte
-          of a transfer is still being sent. If required, a one character wait time has to be
-          added in the calling script.
-
-      Availability: rp2, esp32, esp8266, mimxrt, cc3200, stm32, nrf ports, renesas-ra, alif
+      Return ``True`` when no transmission is in flight (the TX
+      buffer is empty and the shift register has drained), ``False``
+      otherwise. Useful as a non-blocking alternative to
+      :meth:`flush`.
 
    .. method:: irq(handler: Callable[[UART], None] | None = None, trigger: int = 0, hard: bool = False) -> None
 
-      Configure an interrupt handler to be called when a UART event occurs.
+      Install a callback to fire on UART events.
 
-      The arguments are:
+      ``handler`` is the function to invoke. It receives the
+      :class:`UART` instance as its only argument. Pass ``None`` to
+      remove a previously-installed handler.
 
-        - *handler* is an optional function to be called when the interrupt event
-          triggers.  The handler must take exactly one argument which is the
-          ``UART`` instance.
+      ``trigger`` is a bitmask of one or more :data:`IRQ_*` constants
+      (see Constants below) selecting which events fire the callback.
 
-        - *trigger* configures the event(s) which can generate an interrupt.
-          Possible values are a mask of one or more of the following:
-
-          - ``UART.IRQ_RXIDLE`` interrupt after receiving at least one character
-            and then the RX line goes idle.
-          - ``UART.IRQ_RX`` interrupt after each received character.
-          - ``UART.IRQ_TXIDLE`` interrupt after or while the last character(s) of
-            a message are or have been sent.
-          - ``UART.IRQ_BREAK`` interrupt when a break state is detected at RX
-
-        - *hard* if true a hardware interrupt is used.  This reduces the delay
-          between the pin change and the handler being called. Hard interrupt
-          handlers may not allocate memory; see :ref:`isr_rules`.
+      ``hard=True`` registers a hard-interrupt handler (lower
+      latency, but the handler must not allocate). The default is a
+      scheduled callback.
 
       Returns an irq object.
 
-      Due to limitations of the hardware not all trigger events are available on all ports.
-
-      .. table:: Availability of triggers
-         :align: center
-
-         ============== ========== ====== ========== =========
-         Port / Trigger IRQ_RXIDLE IRQ_RX IRQ_TXIDLE IRQ_BREAK
-         ============== ========== ====== ========== =========
-         CC3200                      yes
-         ESP32            yes        yes                yes
-         MIMXRT           yes                yes
-         NRF                         yes     yes
-         RENESAS-RA       yes        yes
-         RP2              yes                yes        yes
-         SAMD             yes        yes     yes
-         STM32            yes        yes
-         alif             yes        yes     yes
-         ============== ========== ====== ========== =========
-
-
-      .. note::
-        - The ESP32 port does not support the option hard=True. It uses Timer(0)
-          for UART.IRQ_RXIDLE, so this timer cannot be used for other means.
-
-        - The rp2 port's UART.IRQ_TXIDLE is only triggered when the message
-          is longer than 5 characters and the trigger happens when still 5 characters
-          are to be sent.
-
-        - The rp2 port's UART.IRQ_BREAK needs receiving valid characters for triggering
-          again.
-
-        - The SAMD port's UART.IRQ_TXIDLE is triggered while the last character is sent.
-
-        - On STM32F4xx MCU's, using the trigger UART.IRQ_RXIDLE the handler will be called once
-          after the first character and then after the end of the message, when the line is
-          idle.
-
-
-      Availability: cc3200, esp32, mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif.
+      Not every IRQ source is available on every port -- see the
+      individual :data:`IRQ_*` constants for per-port availability.
 
    Constants
    ---------
 
    .. data:: RTS
-             CTS
       :type: int
 
-       Flow control options.
+      Pass to ``flow`` to enable RTS hardware flow control on the
+      receive side. Combine with :data:`CTS` via OR to enable both.
 
-       Availability: esp32, mimxrt, renesas-ra, rp2, stm32, alif.
+   .. data:: CTS
+      :type: int
+
+      Pass to ``flow`` to enable CTS hardware flow control on the
+      transmit side.
 
    .. data:: IRQ_RXIDLE
-             IRQ_RX
-             IRQ_TXIDLE
-             IRQ_BREAK
       :type: int
 
-       IRQ trigger sources.
+      :meth:`irq` trigger flag: fires once after one or more
+      characters have been received and the RX line then goes idle.
+      Available on all OpenMV ports.
 
-       Availability: renesas-ra, stm32, esp32, rp2040, mimxrt, samd, cc3200, alif.
+   .. data:: IRQ_RX
+      :type: int
+
+      :meth:`irq` trigger flag: fires after every received
+      character. Available on STM32 and alif.
+
+   .. data:: IRQ_TXIDLE
+      :type: int
+
+      :meth:`irq` trigger flag: fires when the last character of a
+      transmit has been clocked out. Available on mimxrt and alif.
+
+   .. data:: IRQ_BREAK
+      :type: int
+
+      :meth:`irq` trigger flag: fires when a break condition is
+      detected on RX. Not available on any OpenMV port.

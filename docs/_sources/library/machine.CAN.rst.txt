@@ -9,12 +9,18 @@ between one or more nodes connected to a common bus. CAN 2.0 was standardised in
 ISO-11898, and is now also known as CAN Classic.
 
 There is also a newer, backwards compatible, protocol named CAN FD (CAN with
-Flexible Data-Rate). *The machine.CAN driver does not currently support CAN FD
-features, use `pyb.CAN` on stm32 if you need CAN FD*.
+Flexible Data-Rate). The :class:`machine.CAN` driver does not currently
+support CAN FD features; use :class:`pyb.CAN` on STM32 if you need
+CAN FD.
 
 CAN support requires a controller (often an internal microcontroller
 peripheral), and an external transceiver to level-shift the signals onto the CAN
 bus.
+
+Available on STM32 OpenMV cams (M4 / M7 / H7 / H7 Plus / Pure Thermal /
+N6, plus the Arduino-branded variants that wire a transceiver). Not
+yet supported on the OpenMV Cam RT1062 (mimxrt port) or the OpenMV
+Cam AE3 (alif port).
 
 The ``machine.CAN`` interface is a *low level basic* CAN messaging interface
 that abstracts a CAN controller as an outgoing priority queue for sending
@@ -573,18 +579,54 @@ Constructor
    ^^^^^^^^^^
 
    .. data:: IRQ_RX
-             IRQ_TX
-             IRQ_STATE
       :type: int
 
-       IRQ event triggers. Used with :func:`CAN.irq()` and `machine_can_irq_flags`.
+      Pass to the ``trigger`` argument of :meth:`irq` to fire the
+      handler each time the CAN controller has received a complete
+      message into the RX FIFO. Inside the handler, read the
+      message with :meth:`recv`.
+
+   .. data:: IRQ_TX
+      :type: int
+
+      Pass to the ``trigger`` argument of :meth:`irq` to fire the
+      handler each time the CAN controller finishes a transmit
+      attempt (success or failure). Inside the handler, use the
+      additional bits below to recover which mailbox completed and
+      whether it failed -- see :ref:`machine_can_irq_flags`.
+
+   .. data:: IRQ_STATE
+      :type: int
+
+      Pass to the ``trigger`` argument of :meth:`irq` to fire the
+      handler each time the controller transitions between the
+      ``STATE_*`` values (active / warning / passive / bus-off).
+      Use :meth:`state` inside the handler to read the new state.
 
    .. data:: IRQ_TX_FAILED
-             IRQ_TX_IDX_SHIFT
-             IRQ_TX_IDX_MASK
       :type: int
 
-       Additional IRQ event flags for `CAN.IRQ_TX`. See `machine_can_irq_flags`.
+      Status flag that may be set in ``irq().flags()`` when an
+      :data:`IRQ_TX` event fires. Indicates the transmit attempt
+      failed (typically because :meth:`cancel_send` was called, or
+      the controller entered an error state).
+
+   .. data:: IRQ_TX_IDX_SHIFT
+      :type: int
+
+      Bit position of the transmit-mailbox-index field within the
+      ``irq().flags()`` value during an :data:`IRQ_TX` event. The
+      mailbox index is extracted as
+      ``(flags >> IRQ_TX_IDX_SHIFT) & IRQ_TX_IDX_MASK``.
+
+   .. data:: IRQ_TX_IDX_MASK
+      :type: int
+
+      Bit mask of the transmit-mailbox-index field within the
+      ``irq().flags()`` value during an :data:`IRQ_TX` event. The
+      extracted index matches the integer returned by the
+      corresponding :meth:`send` call (an int in the range ``0`` to
+      :data:`TX_QUEUE_LEN`).
 
 .. _machine_can_irq_flags:
 
@@ -606,8 +648,8 @@ information about the TX event:
 * ``CAN.IRQ_TX_FAILED`` bit is set if the transmit failed. Usually this will
   only happen if :func:`CAN.cancel_send()` was called, although it may also
   happen if the controller enters an error state.
-* ``CAN.IRQ_TX_MASK << CAN.IRQ_TX_SHIFT`` is a bitmasked region of the flags
-  value that holds the index of the transmit buffer which generated the event.
+* ``CAN.IRQ_TX_IDX_MASK << CAN.IRQ_TX_IDX_SHIFT`` is a bitmasked region of the
+  flags value that holds the index of the transmit buffer which generated the event.
   This will be an integer in the range ``0`` to `CAN.TX_QUEUE_LEN` (exclusive),
   and will match the result of a previous call to `CAN.send()`.
 

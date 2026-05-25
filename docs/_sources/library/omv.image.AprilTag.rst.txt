@@ -3,179 +3,164 @@
 class AprilTag -- AprilTag object
 =================================
 
-The apriltag object is returned by `Image.find_apriltags()`. It is an
-attrtuple with 24 fields.
+The apriltag object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `Image.find_apriltags()`. Each instance describes a decoded
+AprilTag: its bounding box, sub-pixel centroid, family/id, decoder quality
+metrics, the four detected corners, and -- when intrinsics are supplied to
+`Image.find_apriltags()` -- a 6-DoF pose estimate in the camera frame.
+
+Fields are accessible by attribute name (``tag.id``) or by index
+(``tag[0]``). The object has no public constructor.
 
 .. class:: apriltag
 
-   Please call `Image.find_apriltags()` to create this object. It has no public
-   constructor.
+   Please call `Image.find_apriltags()` to create this object.
 
-   .. method:: x() -> int
+   Bounding box and corners
+   ------------------------
 
-      Returns the apriltag's bounding box x coordinate (int).
+   .. attribute:: x
 
-      You may also get this value doing ``[0]`` on the object.
+      Bounding box top-left x coordinate, in pixels. Integer. Index ``[0]``.
 
-   .. method:: y() -> int
+   .. attribute:: y
 
-      Returns the apriltag's bounding box y coordinate (int).
+      Bounding box top-left y coordinate, in pixels. Integer. Index ``[1]``.
 
-      You may also get this value doing ``[1]`` on the object.
+   .. attribute:: w
 
-   .. method:: w() -> int
+      Bounding box width, in pixels. Integer. Index ``[2]``.
 
-      Returns the apriltag's bounding box w coordinate (int).
+   .. attribute:: h
 
-      You may also get this value doing ``[2]`` on the object.
+      Bounding box height, in pixels. Integer. Index ``[3]``.
 
-   .. method:: h() -> int
+   .. attribute:: cx
 
-      Returns the apriltag's bounding box h coordinate (int).
+      Centroid x coordinate, rounded to int. Integer. Index ``[4]``.
 
-      You may also get this value doing ``[3]`` on the object.
+   .. attribute:: cy
 
-   .. method:: cx() -> int
+      Centroid y coordinate, rounded to int. Integer. Index ``[5]``.
 
-      Returns the centroid x position of the apriltag (int).
+   .. attribute:: cxf
 
-      You may also get this value doing ``[4]`` on the object.
+      Centroid x coordinate as a sub-pixel float. Index ``[9]``.
 
-   .. method:: cy() -> int
+   .. attribute:: cyf
 
-      Returns the centroid y position of the apriltag (int).
+      Centroid y coordinate as a sub-pixel float. Index ``[10]``.
 
-      You may also get this value doing ``[5]`` on the object.
+   .. attribute:: corners
 
-   .. method:: id() -> int
+      4-tuple of ``(x, y)`` integer tuples for the four detected corners
+      of the tag, sorted clockwise starting from the top-left corner.
+      Index ``[21]``.
 
-      Returns the numeric id of the apriltag. The id range depends on the family.
+   .. attribute:: area
 
-      You may also get this value doing ``[6]`` on the object.
+      Area of the bounding box (``w * h``). Integer. Index ``[22]``.
 
-   .. method:: family() -> int
+   .. attribute:: rect
 
-      Returns the numeric family of the apriltag --- one of:
+      ``(x, y, w, h)`` 4-tuple of the bounding box. Suitable for passing
+      directly to drawing/cropping methods such as `Image.draw_rectangle()`
+      or `Image.crop()`. Index ``[23]``.
 
-        * `image.TAG16H5`
-        * `image.TAG25H9`
-        * `image.TAG36H10`
-        * `image.TAG36H11`
-        * `image.TAGCIRCLE21H7`
-        * `image.TAGCIRCLE49H12`
-        * `image.TAGCUSTOM48H12`
-        * `image.TAGSTANDARD41H12`
-        * `image.TAGSTANDARD52H13`
+   Identification
+   --------------
 
-      You may also get this value doing ``[7]`` on the object.
+   .. attribute:: id
 
-   .. method:: name() -> str
+      Numeric id of the tag within its family. The valid range depends on
+      the family (e.g. 0 -- 586 for ``TAG36H11``). Integer. Index ``[6]``.
 
-      Returns the family name of the apriltag as a qstr (str), e.g.
-      ``"TAG36H11"``.
+   .. attribute:: family
 
-      You may also get this value doing ``[8]`` on the object.
+      Numeric family identifier, one of:
 
-   .. method:: cxf() -> float
+         * `image.TAG16H5`
+         * `image.TAG25H9`
+         * `image.TAG36H10`
+         * `image.TAG36H11`
+         * `image.TAGCIRCLE21H7`
+         * `image.TAGCIRCLE49H12`
+         * `image.TAGCUSTOM48H12`
+         * `image.TAGSTANDARD41H12`
+         * `image.TAGSTANDARD52H13`
 
-      Returns the centroid x position of the apriltag (float).
+      Integer. Index ``[7]``.
 
-      You may also get this value doing ``[9]`` on the object.
+   .. attribute:: name
 
-   .. method:: cyf() -> float
+      Family name as a string, e.g. ``"TAG36H11"``. Index ``[8]``.
 
-      Returns the centroid y position of the apriltag (float).
+   Match quality
+   -------------
 
-      You may also get this value doing ``[10]`` on the object.
+   .. attribute:: decision_margin
 
-   .. method:: rotation() -> float
+      Quality of the tag match in the range 0.0 -- 1.0 where 1.0 is the
+      best. Use this to reject low-confidence detections. Float.
+      Index ``[12]``.
 
-      Returns the rotation of the apriltag in radians (float).
+   .. attribute:: hamming
 
-      You may also get this value doing ``[11]`` on the object.
+      Number of bit errors the decoder accepted for this tag. Bounded by
+      the family's correction capability:
 
-   .. method:: decision_margin() -> float
+         * ``TAG16H5`` -> up to 0 bit errors
+         * ``TAG25H9`` -> up to 3 bit errors
+         * ``TAG36H10`` -> up to 3 bit errors
+         * ``TAG36H11`` -> up to 4 bit errors
 
-      Returns the quality of the apriltag match (0.0 - 1.0) where 1.0 is the
-      best.
+      Lower is better. Integer. Index ``[13]``.
 
-      You may also get this value doing ``[12]`` on the object.
+   .. attribute:: goodness
 
-   .. method:: hamming() -> int
+      Image quality of the tag in the range 0.0 -- 1.0 where 1.0 is the
+      best. Currently always 0.0 in the released firmware (the underlying
+      decoder no longer computes this metric). Float. Index ``[14]``.
 
-      Returns the number of accepted bit errors for this tag.
+   Pose estimate
+   -------------
 
-        * TAG16H5 -> 0 bit errors will be accepted
-        * TAG25H9 -> up to 3 bit errors may be accepted
-        * TAG36H10 -> up to 3 bit errors may be accepted
-        * TAG36H11 -> up to 4 bit errors may be accepted
+   The translation and rotation fields below are populated only when
+   `Image.find_apriltags()` is called with the ``fx``, ``fy``, ``cx``, and
+   ``cy`` camera intrinsics. Without intrinsics they are 0.0. The tag is
+   assumed to be 1 unit wide, so translations are in "tag widths" -- scale
+   by the real-world tag size to get metric distances.
 
-      You may also get this value doing ``[13]`` on the object.
+   .. attribute:: x_translation
 
-   .. method:: goodness() -> float
+      X translation from the camera (left-right) in tag widths. Float.
+      Index ``[15]``.
 
-      Returns the quality of the apriltag image (0.0 - 1.0) where 1.0 is the
-      best. Currently always 0.0.
+   .. attribute:: y_translation
 
-      You may also get this value doing ``[14]`` on the object.
+      Y translation from the camera (up-down) in tag widths. Float.
+      Index ``[16]``.
 
-   .. method:: x_translation() -> float
+   .. attribute:: z_translation
 
-      Returns the translation in unknown units from the camera in the X
-      direction (left-to-right).
+      Z translation from the camera (forward-back) in tag widths. Float.
+      Index ``[17]``.
 
-      You may also get this value doing ``[15]`` on the object.
+   .. attribute:: x_rotation
 
-   .. method:: y_translation() -> float
+      Rotation about the X axis (pitch) in radians. Float. Index ``[18]``.
 
-      Returns the translation in unknown units from the camera in the Y
-      direction (up-to-down).
+   .. attribute:: y_rotation
 
-      You may also get this value doing ``[16]`` on the object.
+      Rotation about the Y axis (yaw) in radians. Float. Index ``[19]``.
 
-   .. method:: z_translation() -> float
+   .. attribute:: z_rotation
 
-      Returns the translation in unknown units from the camera in the Z
-      direction (front-to-back).
+      Rotation about the Z axis (roll) in radians. Same value as
+      ``rotation`` -- duplicated for symmetry with ``x_rotation`` and
+      ``y_rotation``. Float. Index ``[20]``.
 
-      You may also get this value doing ``[17]`` on the object.
+   .. attribute:: rotation
 
-   .. method:: x_rotation() -> float
-
-      Returns the rotation in radians of the apriltag in the X plane (float).
-
-      You may also get this value doing ``[18]`` on the object.
-
-   .. method:: y_rotation() -> float
-
-      Returns the rotation in radians of the apriltag in the Y plane (float).
-
-      You may also get this value doing ``[19]`` on the object.
-
-   .. method:: z_rotation() -> float
-
-      Returns the rotation in radians of the apriltag in the Z plane (float).
-      This is a renamed version of `apriltag.rotation()`.
-
-      You may also get this value doing ``[20]`` on the object.
-
-   .. method:: corners() -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]
-
-      Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-      Corners are returned in sorted clock-wise order starting from the top
-      left.
-
-      You may also get this value doing ``[21]`` on the object.
-
-   .. method:: area() -> int
-
-      Returns the area (w * h) of the apriltag's bounding box (int).
-
-      You may also get this value doing ``[22]`` on the object.
-
-   .. method:: rect() -> Tuple[int, int, int, int]
-
-      Returns a rectangle tuple (x, y, w, h) of the apriltag's bounding box for
-      use with other `image` methods like `Image.draw_rectangle()`.
-
-      You may also get this value doing ``[23]`` on the object.
+      In-image-plane rotation of the tag in radians. Equal to
+      ``z_rotation``. Float. Index ``[11]``.

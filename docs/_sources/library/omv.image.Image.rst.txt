@@ -3,7 +3,91 @@
 class Image -- Image object
 ===========================
 
-The image object is the basic object for machine vision operations.
+:class:`Image` is the central data type of the :mod:`image` module --
+an in-memory pixel buffer that every drawing routine, every filter,
+every geometric transform, and every feature-extraction routine
+operates on. Every frame coming out of `csi.CSI.snapshot()` is an
+:class:`Image`; so is every frame loaded from disk, decoded from JPEG
+or PNG, allocated from a numpy-style ``ndarray``, or constructed as
+an empty drawing canvas.
+
+An :class:`Image` is described by three numbers -- ``width``,
+``height``, and ``pixformat`` -- plus a contiguous pixel buffer. The
+pixel format determines both the in-memory layout and which
+operations are available:
+
+* **BINARY (1 bpp)** -- 1 bit per pixel; used by morphology and
+  thresholding.
+* **GRAYSCALE (8 bpp)** -- 1 byte per pixel; the canonical format for
+  most CV (AprilTag, edges, ORB, optical flow).
+* **RGB565 (16 bpp)** -- 2 bytes per pixel (5R/6G/5B); the default
+  colour format.
+* **BAYER (8 bpp)** -- raw Bayer-mosaic data straight off the sensor.
+  Most CV methods are not available on Bayer images; debayer to
+  GRAYSCALE / RGB565 first.
+* **YUV422 (16 bpp)** -- 4:2:2 chroma-subsampled colour, two bytes per
+  pixel. Only some methods work directly on YUV422.
+* **JPEG / PNG** -- compressed buffers. Pixel-level operations
+  require :meth:`to_grayscale` or :meth:`to_rgb565` first.
+
+Where Image objects come from
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are four ways to obtain an :class:`Image`:
+
+* **From the camera frame buffer** -- ``csi.CSI().snapshot()`` returns
+  the next captured frame. The returned object is a thin wrapper
+  around the camera's frame-buffer memory, so any draw / filter
+  operation on it changes what gets sent to the IDE preview and the
+  display.
+* **From a file** -- pass a path string to the :class:`Image`
+  constructor. BMP, PGM, PPM, JPEG and PNG are decoded directly into
+  RAM (or into the camera frame buffer if ``copy_to_fb=True``).
+* **From an ndarray** -- pass a ``(h, w)`` or ``(h, w, 3)`` float32
+  array. The pixels are scaled from ``0.0 -- 255.0`` into GRAYSCALE
+  or RGB565 respectively.
+* **Empty** -- pass ``(width, height, pixformat)`` to allocate a
+  zero-filled drawing surface. For compressed pixel formats
+  (``JPEG`` / ``PNG``) a ``buffer=`` argument is required and holds
+  the compressed byte stream.
+
+Typical capture-process-display loop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    import csi
+    import image
+
+    sensor = csi.CSI()
+    sensor.reset()
+    sensor.pixformat(csi.RGB565)
+    sensor.framesize(csi.QVGA)
+
+    while True:
+        img = sensor.snapshot()                    # capture
+        for blob in img.find_blobs([(30, 100, 15, 127, 15, 127)]):  # process
+            img.draw_rectangle(blob.rect)          # annotate
+        # img is shown automatically in the IDE preview and on any
+        # attached display.
+
+Indexing, length, iteration, and bytes-like access
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Indexing** -- ``img[i]`` reads pixel ``i`` (linearly, row-major).
+  ``img[i] = value`` writes it. Grayscale / Bayer pixels are 8-bit
+  integers, RGB565 / YUV422 pixels are 16-bit packed integers,
+  binary pixels are 0 / 1. For JPEG / PNG images the index space is
+  the compressed byte stream, not pixels.
+* **Length** -- ``len(img)`` returns the number of pixels for
+  uncompressed formats or the byte count for compressed formats.
+* **Iteration** -- ``for px in img: ...`` walks the pixel array in
+  the same order as ``[]`` indexing.
+* **Bytes-like** -- :class:`Image` exposes the read buffer protocol,
+  so you can pass it directly to anything that takes a ``bytes`` /
+  ``bytearray`` (e.g. ``uart.write(img)``, ``socket.send(img)``,
+  ``hashlib.sha256(img)``). Use :meth:`bytearray` instead to obtain
+  a read/write view.
 
 .. _image.Image.hint:
 

@@ -793,108 +793,248 @@ class CSI:
 
     ioctl(request: int, *args) -> Any
 
-    Executes a sensor-specific request. The first argument is one of the IOCTL_* constants;
-    additional arguments and return value depend on the request.
+    Execute a sensor-specific request. request is one of the
+    IOCTL_* constants; the remaining positional arguments
+    and the return value depend on the request. The supported
+    requests are grouped by sensor family below.
 
-    csi.IOCTL_SET_READOUT_WINDOW — Pass an (x, y, w, h) or (w, h) tuple/list to set
-    the readout window of the sensor. Increases frame rate at the cost of field-of-view.
+    Generic (any sensor):
 
-    csi.IOCTL_GET_READOUT_WINDOW — Returns the current readout window as (x, y, w, h).
+    ioctl(IOCTL_SET_READOUT_WINDOW, (x, y, w, h))
 
-    csi.IOCTL_SET_TRIGGERED_MODE — Pass True/False to set triggered mode (MT9V034).
+    ioctl(IOCTL_SET_READOUT_WINDOW, (w, h))
 
-    csi.IOCTL_GET_TRIGGERED_MODE — Returns the current triggered mode state.
+    Set the sensor readout window. A smaller window raises the
+    frame rate at the cost of field-of-view.
 
-    csi.IOCTL_SET_FOV_WIDE — Pass True/False to enable CSI.framesize to optimize
-    for field-of-view over FPS.
+    ioctl(IOCTL_GET_READOUT_WINDOW)
 
-    csi.IOCTL_GET_FOV_WIDE — Returns the current FOV-wide state.
+    Returns the current readout window as an (x, y, w, h)
+    tuple.
 
-    csi.IOCTL_SET_NIGHT_MODE — Pass True/False to enable night mode (OV7725, OV5640).
+    ioctl(IOCTL_SET_TRIGGERED_MODE, enable)
 
-    csi.IOCTL_GET_NIGHT_MODE — Returns the current night mode state.
+    Enable (True) or disable (False) triggered mode on
+    the MT9V034.
 
-    csi.IOCTL_TRIGGER_AUTO_FOCUS — Trigger auto focus on the OV5640 FPC module.
+    ioctl(IOCTL_GET_TRIGGERED_MODE)
 
-    csi.IOCTL_PAUSE_AUTO_FOCUS — Pause auto focus on the OV5640 FPC module.
+    Returns the current triggered-mode state as a bool.
 
-    csi.IOCTL_RESET_AUTO_FOCUS — Reset auto focus on the OV5640 FPC module.
+    ioctl(IOCTL_SET_FOV_WIDE, enable)
 
-    csi.IOCTL_WAIT_ON_AUTO_FOCUS — Wait for auto focus to finish (OV5640 FPC). Optional
-    second argument is the timeout in ms (default 5000).
+    When True, instruct framesize() to optimize for
+    field-of-view rather than frame rate.
 
-    csi.IOCTL_LEPTON_GET_WIDTH — Returns the FLIR Lepton image width in pixels.
+    ioctl(IOCTL_GET_FOV_WIDE)
 
-    csi.IOCTL_LEPTON_GET_HEIGHT — Returns the FLIR Lepton image height in pixels.
+    Returns the current FOV-wide state as a bool.
 
-    csi.IOCTL_LEPTON_GET_RADIOMETRY — Returns the FLIR Lepton type (radiometric or not).
+    ioctl(IOCTL_SET_NIGHT_MODE, enable)
 
-    csi.IOCTL_LEPTON_GET_REFRESH — Returns the FLIR Lepton refresh rate in Hz.
+    Enable (True) or disable (False) the sensor’s
+    low-light “night mode”. OV7725 and OV5640 only.
 
-    csi.IOCTL_LEPTON_GET_RESOLUTION — Returns the FLIR Lepton ADC resolution in bits.
+    ioctl(IOCTL_GET_NIGHT_MODE)
 
-    csi.IOCTL_LEPTON_RUN_COMMAND — Pass a 16-bit value as the FLIR Lepton SDK command.
+    Returns the current night-mode state as a bool.
 
-    csi.IOCTL_LEPTON_SET_ATTRIBUTE — Pass the 16-bit attribute id and a bytes/bytearray
-    payload (multiple of 16 bits) as defined by the FLIR Lepton SDK.
+    ioctl(IOCTL_GET_RGB_STATS)
 
-    csi.IOCTL_LEPTON_GET_ATTRIBUTE — Pass the 16-bit attribute id and a 16-bit-word count.
-    Returns a bytearray.
+    Returns a 4-tuple of raw RGB-channel statistics
+    (r, gb, gr, b) read from the sensor (typically used
+    for white-balance tuning).
 
-    csi.IOCTL_LEPTON_GET_FPA_TEMP — Returns the FLIR Lepton FPA temp in Celsius.
+    OV5640 FPC – auto-focus:
 
-    csi.IOCTL_LEPTON_GET_AUX_TEMP — Returns the FLIR Lepton AUX temp in Celsius.
+    ioctl(IOCTL_TRIGGER_AUTO_FOCUS)
 
-    csi.IOCTL_LEPTON_SET_MODE — Pass measurement_enabled and optionally
-    high_temp_enabled to switch the Lepton between AGC and direct-temperature output.
+    Start an auto-focus sweep on the OV5640 FPC module.
 
-    csi.IOCTL_LEPTON_GET_MODE — Returns (measurement_enabled, high_temp_enabled).
+    ioctl(IOCTL_PAUSE_AUTO_FOCUS)
 
-    csi.IOCTL_LEPTON_SET_RANGE — Pass (min_celsius, max_celsius) to set the temperature
-    range mapped to 0..255 when measurement mode is enabled.
+    Pause an in-progress auto-focus sweep.
 
-    csi.IOCTL_LEPTON_GET_RANGE — Returns the (min, max) temperature range in Celsius.
+    ioctl(IOCTL_RESET_AUTO_FOCUS)
 
-    csi.IOCTL_HIMAX_MD_ENABLE — Pass True/False to enable HM01B0 motion detection.
+    Reset the auto-focus position to the default.
 
-    csi.IOCTL_HIMAX_MD_WINDOW — Pass (x, y, w, h) or (w, h) to set the HM01B0 motion
-    detection window.
+    ioctl(IOCTL_WAIT_ON_AUTO_FOCUS)
 
-    csi.IOCTL_HIMAX_MD_THRESHOLD — Pass a 0-255 threshold for HM01B0 motion detection.
+    ioctl(IOCTL_WAIT_ON_AUTO_FOCUS, timeout_ms)
 
-    csi.IOCTL_HIMAX_MD_CLEAR — Clears the HM01B0 motion detection interrupt.
+    Block until the current auto-focus sweep finishes.
+    timeout_ms defaults to 5000 if omitted.
 
-    csi.IOCTL_HIMAX_OSC_ENABLE — Pass True/False to enable the HM01B0 oscillator.
+    FLIR Lepton:
 
-    csi.IOCTL_GET_RGB_STATS — Returns (r, gb, gr, b) RGB statistics from the sensor.
+    ioctl(IOCTL_LEPTON_GET_WIDTH)
 
-    csi.IOCTL_GENX320_SET_BIASES — Pass a GENX320_BIASES_* constant to apply a bias
-    preset.
+    Returns the Lepton image width in pixels.
 
-    csi.IOCTL_GENX320_SET_BIAS — Pass a GENX320_BIAS_* constant and an integer value to
-    set a single bias.
+    ioctl(IOCTL_LEPTON_GET_HEIGHT)
 
-    csi.IOCTL_GENX320_SET_AFK — Pass enable (and optionally freq_low_hz,
-    freq_high_hz) to control the anti-flicker filter.
+    Returns the Lepton image height in pixels.
 
-    csi.IOCTL_GENX320_SET_STC — Pass a GENX320_STC_* constant (and optionally up to two
-    further arguments) to control spatio-temporal contrast filtering.
+    ioctl(IOCTL_LEPTON_GET_RADIOMETRY)
 
-    csi.IOCTL_GENX320_SET_MODE — Pass a GENX320_MODE_* constant. For event mode, pass
-    the row-axis length of the event ndarray as the second argument.
+    Returns the Lepton’s type (radiometric or not) as an int.
 
-    csi.IOCTL_GENX320_READ_EVENTS — Pass a uint16 ndarray of shape (EVT_res, 6) (with
-    EVT_res a power of two between 1024 and 65536). The columns are
-    [0] event type (csi.PIX_OFF_EVENT/csi.PIX_ON_EVENT/trigger), [1] seconds,
-    [2] milliseconds, [3] microseconds, [4] x coordinate, [5] y coordinate.
+    ioctl(IOCTL_LEPTON_GET_REFRESH)
+
+    Returns the Lepton’s refresh rate in Hz.
+
+    ioctl(IOCTL_LEPTON_GET_RESOLUTION)
+
+    Returns the Lepton’s ADC resolution in bits.
+
+    ioctl(IOCTL_LEPTON_RUN_COMMAND, cmd)
+
+    Run a FLIR Lepton SDK command. cmd is the 16-bit
+    command id defined by the SDK.
+
+    ioctl(IOCTL_LEPTON_SET_ATTRIBUTE, attr_id, payload)
+
+    Write a Lepton SDK attribute. attr_id is the 16-bit
+    attribute id; payload is a bytes/bytearray
+    whose length must be a multiple of 16 bits.
+
+    ioctl(IOCTL_LEPTON_GET_ATTRIBUTE, attr_id, words)
+
+    Read a Lepton SDK attribute. attr_id is the 16-bit
+    attribute id; words is the number of 16-bit words to
+    read. Returns a bytearray.
+
+    ioctl(IOCTL_LEPTON_GET_FPA_TEMP)
+
+    Returns the Lepton focal-plane-array temperature in
+    degrees Celsius.
+
+    ioctl(IOCTL_LEPTON_GET_AUX_TEMP)
+
+    Returns the Lepton auxiliary temperature in degrees
+    Celsius.
+
+    ioctl(IOCTL_LEPTON_SET_MODE, measurement_enabled)
+
+    ioctl(IOCTL_LEPTON_SET_MODE, measurement_enabled, high_temp_enabled)
+
+    Switch the Lepton between AGC and direct-temperature
+    output. measurement_enabled=True enables direct
+    temperature output. The optional high_temp_enabled
+    flag selects the high-temperature range.
+
+    ioctl(IOCTL_LEPTON_GET_MODE)
+
+    Returns a 2-tuple (measurement_enabled,
+    high_temp_enabled).
+
+    ioctl(IOCTL_LEPTON_SET_RANGE, (min_celsius, max_celsius))
+
+    Set the temperature range mapped to 0..255 when
+    measurement mode is enabled.
+
+    ioctl(IOCTL_LEPTON_GET_RANGE)
+
+    Returns the current (min_celsius, max_celsius) range.
+
+    Himax HM01B0 – motion detection:
+
+    ioctl(IOCTL_HIMAX_MD_ENABLE, enable)
+
+    Enable (True) or disable (False) the HM01B0’s
+    on-sensor motion-detection block.
+
+    ioctl(IOCTL_HIMAX_MD_WINDOW, (x, y, w, h))
+
+    ioctl(IOCTL_HIMAX_MD_WINDOW, (w, h))
+
+    Set the motion-detection window on the HM01B0.
+
+    ioctl(IOCTL_HIMAX_MD_THRESHOLD, threshold)
+
+    Set the motion-detection threshold (0 – 255).
+
+    ioctl(IOCTL_HIMAX_MD_CLEAR)
+
+    Clear the motion-detection interrupt latch.
+
+    ioctl(IOCTL_HIMAX_OSC_ENABLE, enable)
+
+    Enable (True) or disable (False) the HM01B0’s
+    internal oscillator.
+
+    Prophesee GENX320 – event sensor:
+
+    ioctl(IOCTL_GENX320_SET_BIASES, preset)
+
+    Apply a bias preset. preset is one of the
+    GENX320_BIASES_* constants.
+
+    ioctl(IOCTL_GENX320_SET_BIAS, bias, value)
+
+    Set a single bias. bias is one of the
+    GENX320_BIAS_* constants; value is the
+    integer setting.
+
+    ioctl(IOCTL_GENX320_SET_AFK, enable)
+
+    ioctl(IOCTL_GENX320_SET_AFK, enable, freq_low_hz, freq_high_hz)
+
+    Configure the anti-flicker filter. enable is a bool;
+    the optional frequency arguments set the filter
+    passband.
+
+    ioctl(IOCTL_GENX320_SET_STC, mode)
+
+    ioctl(IOCTL_GENX320_SET_STC, mode, arg1[, arg2])
+
+    Configure the spatio-temporal contrast filter. mode
+    is one of the GENX320_STC_* constants; up to two
+    further arguments are mode-specific.
+
+    ioctl(IOCTL_GENX320_SET_MODE, mode)
+
+    ioctl(IOCTL_GENX320_SET_MODE, mode, evt_res)
+
+    Switch the sensor between frame and event modes. mode
+    is one of the GENX320_MODE_* constants. For event
+    mode, evt_res is the row-axis length of the event
+    buffer passed to IOCTL_GENX320_READ_EVENTS.
+
+    ioctl(IOCTL_GENX320_READ_EVENTS, buf)
+
+    Read events into buf, a uint16 ndarray of
+    shape (EVT_res, 6) where EVT_res is a power of
+    two between 1024 and 65536. The columns are:
+
+    [0] – event type
+    (PIX_OFF_EVENT / PIX_ON_EVENT /
+    trigger).
+
+    [1] – seconds.
+
+    [2] – milliseconds.
+
+    [3] – microseconds.
+
+    [4] – x coordinate.
+
+    [5] – y coordinate.
+
     Returns the number of events written.
 
-    csi.IOCTL_GENX320_CALIBRATE — Pass an integer iteration count and a sigma float to turn
-    off pixels outside sigma standard deviations of the normal distribution. Returns the
-    number of pixels disabled.
+    ioctl(IOCTL_GENX320_READ_EVENTS_RAW)
 
-    csi.IOCTL_GENX320_READ_EVENTS_RAW — Returns an image.Image containing the raw event
+    Returns an image.Image containing the raw event
     frame from the GENX320.
+
+    ioctl(IOCTL_GENX320_CALIBRATE, iterations, sigma)
+
+    Turn off pixels whose noise is more than sigma
+    standard deviations from the normal distribution.
+    iterations is the integer number of calibration
+    passes. Returns the number of pixels disabled.
 
 
 
@@ -1096,107 +1236,238 @@ class CSI:
         ...
     def ioctl(self, request: int, *args) -> Any:
         """
-        Executes a sensor-specific request. The first argument is one of the IOCTL_* constants;
-        additional arguments and return value depend on the request.
-        csi.IOCTL_SET_READOUT_WINDOW — Pass an (x, y, w, h) or (w, h) tuple/list to set
-        the readout window of the sensor. Increases frame rate at the cost of field-of-view.
+        Execute a sensor-specific request. request is one of the
+        IOCTL_* constants; the remaining positional arguments
+        and the return value depend on the request. The supported
+        requests are grouped by sensor family below.
+        Generic (any sensor):
+        ioctl(IOCTL_SET_READOUT_WINDOW, (x, y, w, h))
 
-        csi.IOCTL_GET_READOUT_WINDOW — Returns the current readout window as (x, y, w, h).
+        ioctl(IOCTL_SET_READOUT_WINDOW, (w, h))
 
-        csi.IOCTL_SET_TRIGGERED_MODE — Pass True/False to set triggered mode (MT9V034).
+        Set the sensor readout window. A smaller window raises the
+        frame rate at the cost of field-of-view.
 
-        csi.IOCTL_GET_TRIGGERED_MODE — Returns the current triggered mode state.
+        ioctl(IOCTL_GET_READOUT_WINDOW)
 
-        csi.IOCTL_SET_FOV_WIDE — Pass True/False to enable CSI.framesize to optimize
-        for field-of-view over FPS.
+        Returns the current readout window as an (x, y, w, h)
+        tuple.
 
-        csi.IOCTL_GET_FOV_WIDE — Returns the current FOV-wide state.
+        ioctl(IOCTL_SET_TRIGGERED_MODE, enable)
 
-        csi.IOCTL_SET_NIGHT_MODE — Pass True/False to enable night mode (OV7725, OV5640).
+        Enable (True) or disable (False) triggered mode on
+        the MT9V034.
 
-        csi.IOCTL_GET_NIGHT_MODE — Returns the current night mode state.
+        ioctl(IOCTL_GET_TRIGGERED_MODE)
 
-        csi.IOCTL_TRIGGER_AUTO_FOCUS — Trigger auto focus on the OV5640 FPC module.
+        Returns the current triggered-mode state as a bool.
 
-        csi.IOCTL_PAUSE_AUTO_FOCUS — Pause auto focus on the OV5640 FPC module.
+        ioctl(IOCTL_SET_FOV_WIDE, enable)
 
-        csi.IOCTL_RESET_AUTO_FOCUS — Reset auto focus on the OV5640 FPC module.
+        When True, instruct framesize() to optimize for
+        field-of-view rather than frame rate.
 
-        csi.IOCTL_WAIT_ON_AUTO_FOCUS — Wait for auto focus to finish (OV5640 FPC). Optional
-        second argument is the timeout in ms (default 5000).
+        ioctl(IOCTL_GET_FOV_WIDE)
 
-        csi.IOCTL_LEPTON_GET_WIDTH — Returns the FLIR Lepton image width in pixels.
+        Returns the current FOV-wide state as a bool.
 
-        csi.IOCTL_LEPTON_GET_HEIGHT — Returns the FLIR Lepton image height in pixels.
+        ioctl(IOCTL_SET_NIGHT_MODE, enable)
 
-        csi.IOCTL_LEPTON_GET_RADIOMETRY — Returns the FLIR Lepton type (radiometric or not).
+        Enable (True) or disable (False) the sensor’s
+        low-light “night mode”. OV7725 and OV5640 only.
 
-        csi.IOCTL_LEPTON_GET_REFRESH — Returns the FLIR Lepton refresh rate in Hz.
+        ioctl(IOCTL_GET_NIGHT_MODE)
 
-        csi.IOCTL_LEPTON_GET_RESOLUTION — Returns the FLIR Lepton ADC resolution in bits.
+        Returns the current night-mode state as a bool.
 
-        csi.IOCTL_LEPTON_RUN_COMMAND — Pass a 16-bit value as the FLIR Lepton SDK command.
+        ioctl(IOCTL_GET_RGB_STATS)
 
-        csi.IOCTL_LEPTON_SET_ATTRIBUTE — Pass the 16-bit attribute id and a bytes/bytearray
-        payload (multiple of 16 bits) as defined by the FLIR Lepton SDK.
+        Returns a 4-tuple of raw RGB-channel statistics
+        (r, gb, gr, b) read from the sensor (typically used
+        for white-balance tuning).
+        OV5640 FPC – auto-focus:
+        ioctl(IOCTL_TRIGGER_AUTO_FOCUS)
 
-        csi.IOCTL_LEPTON_GET_ATTRIBUTE — Pass the 16-bit attribute id and a 16-bit-word count.
-        Returns a bytearray.
+        Start an auto-focus sweep on the OV5640 FPC module.
 
-        csi.IOCTL_LEPTON_GET_FPA_TEMP — Returns the FLIR Lepton FPA temp in Celsius.
+        ioctl(IOCTL_PAUSE_AUTO_FOCUS)
 
-        csi.IOCTL_LEPTON_GET_AUX_TEMP — Returns the FLIR Lepton AUX temp in Celsius.
+        Pause an in-progress auto-focus sweep.
 
-        csi.IOCTL_LEPTON_SET_MODE — Pass measurement_enabled and optionally
-        high_temp_enabled to switch the Lepton between AGC and direct-temperature output.
+        ioctl(IOCTL_RESET_AUTO_FOCUS)
 
-        csi.IOCTL_LEPTON_GET_MODE — Returns (measurement_enabled, high_temp_enabled).
+        Reset the auto-focus position to the default.
 
-        csi.IOCTL_LEPTON_SET_RANGE — Pass (min_celsius, max_celsius) to set the temperature
-        range mapped to 0..255 when measurement mode is enabled.
+        ioctl(IOCTL_WAIT_ON_AUTO_FOCUS)
 
-        csi.IOCTL_LEPTON_GET_RANGE — Returns the (min, max) temperature range in Celsius.
+        ioctl(IOCTL_WAIT_ON_AUTO_FOCUS, timeout_ms)
 
-        csi.IOCTL_HIMAX_MD_ENABLE — Pass True/False to enable HM01B0 motion detection.
+        Block until the current auto-focus sweep finishes.
+        timeout_ms defaults to 5000 if omitted.
+        FLIR Lepton:
+        ioctl(IOCTL_LEPTON_GET_WIDTH)
 
-        csi.IOCTL_HIMAX_MD_WINDOW — Pass (x, y, w, h) or (w, h) to set the HM01B0 motion
-        detection window.
+        Returns the Lepton image width in pixels.
 
-        csi.IOCTL_HIMAX_MD_THRESHOLD — Pass a 0-255 threshold for HM01B0 motion detection.
+        ioctl(IOCTL_LEPTON_GET_HEIGHT)
 
-        csi.IOCTL_HIMAX_MD_CLEAR — Clears the HM01B0 motion detection interrupt.
+        Returns the Lepton image height in pixels.
 
-        csi.IOCTL_HIMAX_OSC_ENABLE — Pass True/False to enable the HM01B0 oscillator.
+        ioctl(IOCTL_LEPTON_GET_RADIOMETRY)
 
-        csi.IOCTL_GET_RGB_STATS — Returns (r, gb, gr, b) RGB statistics from the sensor.
+        Returns the Lepton’s type (radiometric or not) as an int.
 
-        csi.IOCTL_GENX320_SET_BIASES — Pass a GENX320_BIASES_* constant to apply a bias
-        preset.
+        ioctl(IOCTL_LEPTON_GET_REFRESH)
 
-        csi.IOCTL_GENX320_SET_BIAS — Pass a GENX320_BIAS_* constant and an integer value to
-        set a single bias.
+        Returns the Lepton’s refresh rate in Hz.
 
-        csi.IOCTL_GENX320_SET_AFK — Pass enable (and optionally freq_low_hz,
-        freq_high_hz) to control the anti-flicker filter.
+        ioctl(IOCTL_LEPTON_GET_RESOLUTION)
 
-        csi.IOCTL_GENX320_SET_STC — Pass a GENX320_STC_* constant (and optionally up to two
-        further arguments) to control spatio-temporal contrast filtering.
+        Returns the Lepton’s ADC resolution in bits.
 
-        csi.IOCTL_GENX320_SET_MODE — Pass a GENX320_MODE_* constant. For event mode, pass
-        the row-axis length of the event ndarray as the second argument.
+        ioctl(IOCTL_LEPTON_RUN_COMMAND, cmd)
 
-        csi.IOCTL_GENX320_READ_EVENTS — Pass a uint16 ndarray of shape (EVT_res, 6) (with
-        EVT_res a power of two between 1024 and 65536). The columns are
-        [0] event type (csi.PIX_OFF_EVENT/csi.PIX_ON_EVENT/trigger), [1] seconds,
-        [2] milliseconds, [3] microseconds, [4] x coordinate, [5] y coordinate.
+        Run a FLIR Lepton SDK command. cmd is the 16-bit
+        command id defined by the SDK.
+
+        ioctl(IOCTL_LEPTON_SET_ATTRIBUTE, attr_id, payload)
+
+        Write a Lepton SDK attribute. attr_id is the 16-bit
+        attribute id; payload is a bytes/bytearray
+        whose length must be a multiple of 16 bits.
+
+        ioctl(IOCTL_LEPTON_GET_ATTRIBUTE, attr_id, words)
+
+        Read a Lepton SDK attribute. attr_id is the 16-bit
+        attribute id; words is the number of 16-bit words to
+        read. Returns a bytearray.
+
+        ioctl(IOCTL_LEPTON_GET_FPA_TEMP)
+
+        Returns the Lepton focal-plane-array temperature in
+        degrees Celsius.
+
+        ioctl(IOCTL_LEPTON_GET_AUX_TEMP)
+
+        Returns the Lepton auxiliary temperature in degrees
+        Celsius.
+
+        ioctl(IOCTL_LEPTON_SET_MODE, measurement_enabled)
+
+        ioctl(IOCTL_LEPTON_SET_MODE, measurement_enabled, high_temp_enabled)
+
+        Switch the Lepton between AGC and direct-temperature
+        output. measurement_enabled=True enables direct
+        temperature output. The optional high_temp_enabled
+        flag selects the high-temperature range.
+
+        ioctl(IOCTL_LEPTON_GET_MODE)
+
+        Returns a 2-tuple (measurement_enabled,
+        high_temp_enabled).
+
+        ioctl(IOCTL_LEPTON_SET_RANGE, (min_celsius, max_celsius))
+
+        Set the temperature range mapped to 0..255 when
+        measurement mode is enabled.
+
+        ioctl(IOCTL_LEPTON_GET_RANGE)
+
+        Returns the current (min_celsius, max_celsius) range.
+        Himax HM01B0 – motion detection:
+        ioctl(IOCTL_HIMAX_MD_ENABLE, enable)
+
+        Enable (True) or disable (False) the HM01B0’s
+        on-sensor motion-detection block.
+
+        ioctl(IOCTL_HIMAX_MD_WINDOW, (x, y, w, h))
+
+        ioctl(IOCTL_HIMAX_MD_WINDOW, (w, h))
+
+        Set the motion-detection window on the HM01B0.
+
+        ioctl(IOCTL_HIMAX_MD_THRESHOLD, threshold)
+
+        Set the motion-detection threshold (0 – 255).
+
+        ioctl(IOCTL_HIMAX_MD_CLEAR)
+
+        Clear the motion-detection interrupt latch.
+
+        ioctl(IOCTL_HIMAX_OSC_ENABLE, enable)
+
+        Enable (True) or disable (False) the HM01B0’s
+        internal oscillator.
+        Prophesee GENX320 – event sensor:
+        ioctl(IOCTL_GENX320_SET_BIASES, preset)
+
+        Apply a bias preset. preset is one of the
+        GENX320_BIASES_* constants.
+
+        ioctl(IOCTL_GENX320_SET_BIAS, bias, value)
+
+        Set a single bias. bias is one of the
+        GENX320_BIAS_* constants; value is the
+        integer setting.
+
+        ioctl(IOCTL_GENX320_SET_AFK, enable)
+
+        ioctl(IOCTL_GENX320_SET_AFK, enable, freq_low_hz, freq_high_hz)
+
+        Configure the anti-flicker filter. enable is a bool;
+        the optional frequency arguments set the filter
+        passband.
+
+        ioctl(IOCTL_GENX320_SET_STC, mode)
+
+        ioctl(IOCTL_GENX320_SET_STC, mode, arg1[, arg2])
+
+        Configure the spatio-temporal contrast filter. mode
+        is one of the GENX320_STC_* constants; up to two
+        further arguments are mode-specific.
+
+        ioctl(IOCTL_GENX320_SET_MODE, mode)
+
+        ioctl(IOCTL_GENX320_SET_MODE, mode, evt_res)
+
+        Switch the sensor between frame and event modes. mode
+        is one of the GENX320_MODE_* constants. For event
+        mode, evt_res is the row-axis length of the event
+        buffer passed to IOCTL_GENX320_READ_EVENTS.
+
+        ioctl(IOCTL_GENX320_READ_EVENTS, buf)
+
+        Read events into buf, a uint16 ndarray of
+        shape (EVT_res, 6) where EVT_res is a power of
+        two between 1024 and 65536. The columns are:
+
+        [0] – event type
+        (PIX_OFF_EVENT / PIX_ON_EVENT /
+        trigger).
+
+        [1] – seconds.
+
+        [2] – milliseconds.
+
+        [3] – microseconds.
+
+        [4] – x coordinate.
+
+        [5] – y coordinate.
+
         Returns the number of events written.
 
-        csi.IOCTL_GENX320_CALIBRATE — Pass an integer iteration count and a sigma float to turn
-        off pixels outside sigma standard deviations of the normal distribution. Returns the
-        number of pixels disabled.
+        ioctl(IOCTL_GENX320_READ_EVENTS_RAW)
 
-        csi.IOCTL_GENX320_READ_EVENTS_RAW — Returns an image.Image containing the raw event
+        Returns an image.Image containing the raw event
         frame from the GENX320.
+
+        ioctl(IOCTL_GENX320_CALIBRATE, iterations, sigma)
+
+        Turn off pixels whose noise is more than sigma
+        standard deviations from the normal distribution.
+        iterations is the integer number of calibration
+        passes. Returns the number of pixels disabled.
         """
         ...
     def lens_correction(self, enable: bool, radi: int, coef: int) -> bool:

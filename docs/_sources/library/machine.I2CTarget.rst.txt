@@ -9,6 +9,9 @@ I2C controller.  I2C targets can take many forms.  The :class:`machine.I2CTarget
 class implements an I2C target that can be configured as a memory/register device,
 or as an arbitrary I2C device by using callbacks (if supported by the port).
 
+Available on the OpenMV Cam M4 / M7 / H7 / H7 Plus / Pure Thermal /
+RT1062 / AE3.
+
 Example usage for the case of a memory device::
 
     from machine import I2CTarget
@@ -118,43 +121,33 @@ Constructors
       after it sends a read request.  Returns the number of bytes written.  Most ports
       only accept one byte at a time to this method.
 
-   .. method:: irq(handler: Callable[[I2CTarget], None] | None = None, trigger: int = IRQ_END_READ|IRQ_END_WRITE, hard: bool = False) -> None
+   .. method:: irq(handler: Callable[[I2CTarget], None] | None = None, trigger: int = IRQ_END_READ | IRQ_END_WRITE, hard: bool = False) -> None
 
-      Configure an IRQ *handler* to be called when an event occurs.  The possible events are
-      given by the following constants, which can be or'd together and passed to the *trigger*
-      argument:
+      Install an IRQ ``handler`` that is invoked when one of the
+      events selected by ``trigger`` fires. ``trigger`` is a bitmask
+      of :data:`IRQ_*` constants OR'd together; the default fires on
+      the end of every controller-side read or write.
 
-         - ``IRQ_ADDR_MATCH_READ`` indicates that the target was addressed by a
-           controller for a read transaction.
-         - ``IRQ_ADDR_MATCH_WRITE`` indicates that the target was addressed by a
-           controller for a write transaction.
-         - ``IRQ_READ_REQ`` indicates that the controller is requesting data, and this
-           request must be satisfied by calling `I2CTarget.write` with the data to be
-           passed back to the controller.
-         - ``IRQ_WRITE_REQ`` indicates that the controller has written data, and the
-           data must be read by calling `I2CTarget.readinto`.
-         - ``IRQ_END_READ`` indicates that the controller has finished a read transaction.
-         - ``IRQ_END_WRITE`` indicates that the controller has finished a write transaction.
+      ``hard=True`` registers a hard-interrupt handler (no heap
+      allocation in the callback). The default is a scheduled
+      callback. Pass ``handler=None`` to disable the interrupt.
 
-      Not all triggers are available on all ports.  If a port has the constant then that
-      event is available.
+      .. note::
 
-      Note the following restrictions:
+         :data:`IRQ_ADDR_MATCH_READ`, :data:`IRQ_ADDR_MATCH_WRITE`,
+         :data:`IRQ_READ_REQ` and :data:`IRQ_WRITE_REQ` must be
+         handled by a hard IRQ callback (``hard=True``) because the
+         events have to be acknowledged synchronously with the
+         hardware. :data:`IRQ_END_READ` and :data:`IRQ_END_WRITE`
+         may be handled by either soft or hard callbacks; all
+         events share a single handler, so if any event needs a
+         hard callback they all do.
 
-         - ``IRQ_ADDR_MATCH_READ``, ``IRQ_ADDR_MATCH_WRITE``, ``IRQ_READ_REQ`` and
-           ``IRQ_WRITE_REQ`` must be handled by a hard IRQ callback (with the *hard* argument
-           set to ``True``).  This is because these events have very strict timing requirements
-           and must usually be satisfied synchronously with the hardware event.
-
-         - ``IRQ_END_READ`` and ``IRQ_END_WRITE`` may be handled by either a soft or hard
-           IRQ callback (although note that all events must be registered with the same handler,
-           so if any events need a hard callback then all events must be hard).
-
-         - If a memory buffer has been supplied in the constructor then ``IRQ_END_WRITE``
-           is not emitted for the transaction that writes the memory address.  This is to
-           allow ``IRQ_END_READ`` and ``IRQ_END_WRITE`` to function correctly as soft IRQ
-           callbacks, where the IRQ handler may be called quite some time after the actual
-           hardware event.
+         When a memory buffer is supplied to the constructor the
+         driver suppresses :data:`IRQ_END_WRITE` for the transaction
+         that just writes the memory address. This keeps the
+         end-of-transaction events meaningful even when the soft-IRQ
+         scheduler defers the callback.
 
    .. attribute:: memaddr
 
@@ -164,12 +157,53 @@ Constructors
    Constants
    ---------
 
+   Each :data:`IRQ_*` constant is a flag bit. OR them together to
+   build a ``trigger`` mask for :meth:`irq`. Inside the handler the
+   set of fired events can be recovered via ``self.irq().flags()``
+   AND'd with each constant.
+
    .. data:: IRQ_ADDR_MATCH_READ
-             IRQ_ADDR_MATCH_WRITE
-             IRQ_READ_REQ
-             IRQ_WRITE_REQ
-             IRQ_END_READ
-             IRQ_END_WRITE
       :type: int
 
-       IRQ trigger sources.
+      Fires when a controller addresses this target for a read
+      transaction (the address byte has been received with the
+      read/write bit set to ``1``). Hard-IRQ only.
+
+   .. data:: IRQ_ADDR_MATCH_WRITE
+      :type: int
+
+      Fires when a controller addresses this target for a write
+      transaction (the address byte has been received with the
+      read/write bit set to ``0``). Hard-IRQ only.
+
+   .. data:: IRQ_READ_REQ
+      :type: int
+
+      Fires when the controller is requesting a byte from the
+      target. The handler must call :meth:`write` to supply the
+      byte before the controller's clock cycle completes.
+      Hard-IRQ only.
+
+   .. data:: IRQ_WRITE_REQ
+      :type: int
+
+      Fires when the controller has clocked in a byte to the
+      target. The handler must call :meth:`readinto` to retrieve
+      the byte before the controller sends the next one.
+      Hard-IRQ only.
+
+   .. data:: IRQ_END_READ
+      :type: int
+
+      Fires when the controller has finished a read transaction
+      (received STOP / repeated START). May be handled by either a
+      hard or soft IRQ callback.
+
+   .. data:: IRQ_END_WRITE
+      :type: int
+
+      Fires when the controller has finished a write transaction
+      (received STOP / repeated START). May be handled by either a
+      hard or soft IRQ callback. Suppressed for the transaction
+      that writes the memory address when a ``mem`` buffer was
+      supplied to the constructor.

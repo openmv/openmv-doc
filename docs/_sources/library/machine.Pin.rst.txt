@@ -20,24 +20,24 @@ Usage Model::
 
     from machine import Pin
 
-    # create an output pin on pin #0
-    p0 = Pin(0, Pin.OUT)
+    # create an output pin on header pin P0
+    p0 = Pin("P0", Pin.OUT)
 
     # set the value low then high
     p0.value(0)
     p0.value(1)
 
-    # create an input pin on pin #2, with a pull up resistor
-    p2 = Pin(2, Pin.IN, Pin.PULL_UP)
+    # create an input pin on header pin P2, with a pull-up resistor
+    p2 = Pin("P2", Pin.IN, Pin.PULL_UP)
 
     # read and print the pin value
     print(p2.value())
 
-    # reconfigure pin #0 in input mode with a pull down resistor
+    # reconfigure P0 in input mode with a pull-down resistor
     p0.init(p0.IN, p0.PULL_DOWN)
 
-    # configure an irq callback
-    p0.irq(lambda p:print(p))
+    # install an IRQ callback
+    p0.irq(lambda p: print(p))
 
 Constructors
 ------------
@@ -182,8 +182,6 @@ Constructors
 
           - ``Pin.IRQ_FALLING`` interrupt on falling edge.
           - ``Pin.IRQ_RISING`` interrupt on rising edge.
-          - ``Pin.IRQ_LOW_LEVEL`` interrupt on low level.
-          - ``Pin.IRQ_HIGH_LEVEL`` interrupt on high level.
 
           These values can be OR'ed together to trigger on multiple events.
 
@@ -192,9 +190,7 @@ Constructors
           priorities.
 
         - ``wake`` selects the power mode in which this interrupt can wake up the
-          system.  It can be ``machine.IDLE``, ``machine.SLEEP`` or ``machine.DEEPSLEEP``.
-          These values can also be OR'ed together to make a pin generate interrupts in
-          more than one power mode.
+          system. Not supported on any OpenMV port; leave at the default.
 
         - ``hard`` if true a hardware interrupt is used. This reduces the delay
           between the pin change and the handler being called. Hard interrupt
@@ -203,84 +199,197 @@ Constructors
 
       This method returns a callback object.
 
-   The following methods are not part of the core Pin API and only implemented on certain ports.
+   The following methods are extensions to the core Pin API. They
+   are grouped by port availability.
+
+   Methods available on all OpenMV ports
+   `````````````````````````````````````
 
    .. method:: low() -> None
 
-      Set pin to "0" output level.
-
-      Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
+      Set pin to "0" output level. Alias of :meth:`off`.
 
    .. method:: high() -> None
 
-      Set pin to "1" output level.
+      Set pin to "1" output level. Alias of :meth:`on`.
 
-      Availability: mimxrt, nrf, renesas-ra, rp2, samd, stm32, alif ports.
-
-   .. method:: mode(mode: int | None = None, /) -> int | None
-
-      Get or set the pin mode.
-      See the constructor documentation for details of the ``mode`` argument.
-
-      Availability: cc3200, stm32 ports.
-
-   .. method:: pull(pull: int | None = None, /) -> int | None
-
-      Get or set the pin pull state.
-      See the constructor documentation for details of the ``pull`` argument.
-
-      Availability: cc3200, stm32 ports.
-
-   .. method:: drive(drive: int | None = None, /) -> int | None
-
-      Get or set the pin drive strength.
-      See the constructor documentation for details of the ``drive`` argument.
-
-      Availability: cc3200 port.
+   mimxrt + alif only
+   ``````````````````
 
    .. method:: toggle() -> None
 
-      Toggle output pin from "0" to "1" or vice-versa.
+      Toggle the output pin -- flip "0" to "1" or vice-versa. Not
+      exposed on STM32 (use ``value(not value())`` if you need this
+      on STM32).
 
-      Availability: cc3200, esp32, esp8266, mimxrt, rp2, samd, alif ports.
+   STM32 only
+   ``````````
+
+   .. method:: mode(mode: int | None = None, /) -> int
+               mode(mode: int, /) -> None
+
+      Get or set the pin mode. See the constructor documentation
+      for details of the ``mode`` argument.
+
+   .. method:: pull(pull: int | None = None, /) -> int
+               pull(pull: int, /) -> None
+
+      Get or set the pin pull state. See the constructor
+      documentation for details of the ``pull`` argument.
 
    Constants
    ---------
 
-   The following constants are used to configure the pin objects.  Note that
-   not all constants are available on all ports.
+   The constants below are used to configure :class:`Pin` objects via the
+   constructor, :meth:`init` and :meth:`irq`. They are grouped by port
+   availability.
+
+   Constants available on all OpenMV ports
+   ```````````````````````````````````````
 
    .. data:: IN
-             OUT
-             OPEN_DRAIN
-             ALT
-             ALT_OPEN_DRAIN
-             ANALOG
       :type: int
 
-      Selects the pin mode.
+      Pin mode: high-impedance digital input.
+
+   .. data:: OUT
+      :type: int
+
+      Pin mode: push-pull digital output. Alias of :data:`OUT_PP` on
+      STM32.
+
+   .. data:: OPEN_DRAIN
+      :type: int
+
+      Pin mode: open-drain output. Driving ``0`` pulls the line low;
+      driving ``1`` releases it to high-impedance.
 
    .. data:: PULL_UP
-             PULL_DOWN
-             PULL_HOLD
       :type: int
 
-      Selects whether there is a pull up/down resistor.  Use the value
-      ``None`` for no pull.
+      Enable the internal pull-up resistor on the pin.
 
-   .. data:: DRIVE_0
-             DRIVE_1
-             DRIVE_2
+   .. data:: PULL_DOWN
       :type: int
 
-      Selects the pin drive strength.  A port may define additional drive
-      constants with increasing number corresponding to increasing drive
-      strength.
+      Enable the internal pull-down resistor on the pin.
 
    .. data:: IRQ_FALLING
-             IRQ_RISING
-             IRQ_LOW_LEVEL
-             IRQ_HIGH_LEVEL
       :type: int
 
-      Selects the IRQ trigger type.
+      Pass to :meth:`irq` to trigger on a falling edge.
+
+   .. data:: IRQ_RISING
+      :type: int
+
+      Pass to :meth:`irq` to trigger on a rising edge.
+
+   STM32 only
+   ``````````
+
+   .. data:: ALT
+      :type: int
+
+      Pin mode: alternate function (push-pull). Use with ``alt=`` to
+      select which peripheral function the pin is routed to. Alias
+      of :data:`AF_PP`.
+
+   .. data:: ALT_OPEN_DRAIN
+      :type: int
+
+      Pin mode: alternate function (open-drain). Alias of
+      :data:`AF_OD`.
+
+   .. data:: ANALOG
+      :type: int
+
+      Pin mode: analog input -- the digital input/output buffer is
+      disconnected so the pin can be driven by an :class:`ADC`
+      channel.
+
+   .. data:: AF_PP
+      :type: int
+
+      Alternate-function push-pull mode (same value as :data:`ALT`).
+
+   .. data:: AF_OD
+      :type: int
+
+      Alternate-function open-drain mode (same value as
+      :data:`ALT_OPEN_DRAIN`).
+
+   .. data:: OUT_PP
+      :type: int
+
+      Push-pull output mode (same value as :data:`OUT`).
+
+   .. data:: OUT_OD
+      :type: int
+
+      Open-drain output mode (same value as :data:`OPEN_DRAIN`).
+
+   .. data:: PULL_NONE
+      :type: int
+
+      Disable the internal pull-up / pull-down resistor on the pin.
+
+   mimxrt only
+   ```````````
+
+   .. data:: PULL_UP_47K
+      :type: int
+
+      Enable a ~47 kΩ internal pull-up resistor.
+
+   .. data:: PULL_UP_22K
+      :type: int
+
+      Enable a ~22 kΩ internal pull-up resistor.
+
+   .. data:: PULL_HOLD
+      :type: int
+
+      Enable the pad's bus-keeper / hold function -- the pin latches
+      its current logic level rather than floating.
+
+   .. data:: DRIVE_OFF
+      :type: int
+
+      Disable the pin output driver.
+
+   .. data:: DRIVE_0
+      :type: int
+
+      Lowest drive-strength setting (highest series impedance) --
+      the ``R0`` reference (~150 Ω at 3.3 V / 260 Ω at 1.8 V).
+
+   .. data:: DRIVE_1
+      :type: int
+
+      Drive strength one step above :data:`DRIVE_0`.
+
+   .. data:: DRIVE_2
+      :type: int
+
+      Drive strength two steps above :data:`DRIVE_0`.
+
+   .. data:: DRIVE_3
+      :type: int
+
+      Drive strength three steps above :data:`DRIVE_0` (default for
+      output pins).
+
+   .. data:: DRIVE_4
+      :type: int
+
+      Drive strength four steps above :data:`DRIVE_0`.
+
+   .. data:: DRIVE_5
+      :type: int
+
+      Drive strength five steps above :data:`DRIVE_0`.
+
+   .. data:: DRIVE_6
+      :type: int
+
+      Strongest drive-strength setting.

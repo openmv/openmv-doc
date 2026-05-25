@@ -4,63 +4,81 @@
 class ADC -- analog to digital conversion
 =========================================
 
-The ADC class provides an interface to analog-to-digital converters, and
-represents a single endpoint that can sample a continuous voltage and
-convert it to a discretised value.
-
-For extra control over ADC sampling see :ref:`machine.ADCBlock <machine.ADCBlock>`.
+The :class:`ADC` class wraps a single analog-to-digital converter
+channel that samples a voltage on a pin (or one of the on-chip
+analog channels) and returns its discretised value.
 
 Example usage::
 
-   from machine import ADC
+   from machine import ADC, Pin
 
-   adc = ADC(pin)        # create an ADC object acting on a pin
-   val = adc.read_u16()  # read a raw analog value in the range 0-65535
-   val = adc.read_uv()   # read an analog value in microvolts
+   adc = ADC(Pin("P6"))      # ADC channel on header pin P6 (PA5)
+   val = adc.read_u16()      # raw reading scaled to 0..65535
 
 Constructors
 ------------
 
-.. class:: ADC(id: int | Pin, *, sample_ns: int | None = None, atten: int | None = None)
+.. class:: ADC(id: int | str | Pin) -> ADC
 
-   Access the ADC associated with a source identified by *id*.  This
-   *id* may be an integer (usually specifying a channel number), a
-   :ref:`Pin <machine.Pin>` object, or other value supported by the
-   underlying machine.
+   Construct an :class:`ADC` object for the analog source identified
+   by ``id``. The accepted forms are:
 
-   If additional keyword-arguments are given then they will configure
-   various aspects of the ADC.  If not given, these settings will take
-   previous or default values.  The settings are:
-
-     - *sample_ns* is the sampling time in nanoseconds.
-
-     - *atten* specifies the input attenuation.
+      * an integer channel number (``0`` -- ``18`` on STM32, port-
+        specific elsewhere);
+      * a :class:`Pin` object, or a board pin string such as
+        ``"P6"`` -- the pin must be analog-capable;
+      * one of the internal-channel constants (:data:`CORE_TEMP`,
+        :data:`CORE_VREF`, :data:`CORE_VBAT`, :data:`VREF` or
+        :data:`CORE_VDD`) to read the MCU's internal sensors.
+        STM32 only.
 
    Methods
    -------
 
-   .. method:: init(*, sample_ns: int | None = None, atten: int | None = None) -> None
-
-      Apply the given settings to the ADC.  Only those arguments that are
-      specified will be changed.  See the ADC constructor above for what the
-      arguments are.
-
-   .. method:: block() -> ADCBlock
-
-      Return the :ref:`ADCBlock <machine.ADCBlock>` instance associated with
-      this ADC object.
-
-      This method only exists if the port supports the
-      :ref:`ADCBlock <machine.ADCBlock>` class.
-
    .. method:: read_u16() -> int
 
-      Take an analog reading and return an integer in the range 0-65535.
-      The return value represents the raw reading taken by the ADC, scaled
-      such that the minimum value is 0 and the maximum value is 65535.
+      Sample the analog channel once and return the result as an
+      unsigned 16-bit integer (``0`` -- ``65535``). Lower-resolution
+      ADCs are left-aligned into the 16-bit range so the
+      port-specific raw resolution is hidden.
 
    .. method:: read_uv() -> int
 
-      Take an analog reading and return an integer value with units of
-      microvolts.  It is up to the particular port whether or not this value
-      is calibrated, and how calibration is done.
+      Sample the analog channel and return the result in microvolts.
+      The reading is calibrated against the internal reference where
+      hardware supports it. mimxrt port only.
+
+   Constants
+   ---------
+
+   The constants below are only available on the STM32 port; pass
+   them as the ``id`` argument to construct an :class:`ADC` that
+   reads one of the on-chip analog sensors. The result of
+   :meth:`read_u16` is the channel's raw 16-bit reading; for
+   calibrated values use the helpers on :class:`pyb.ADCAll`.
+
+   .. data:: VREF
+      :type: int
+
+      External voltage-reference channel.
+
+   .. data:: CORE_VREF
+      :type: int
+
+      Internal 1.21 V (nominal) voltage-reference channel
+      (``VREFINT``).
+
+   .. data:: CORE_TEMP
+      :type: int
+
+      Internal die-temperature sensor channel.
+
+   .. data:: CORE_VBAT
+      :type: int
+
+      Backup-battery voltage channel (``VBAT``).
+
+   .. data:: CORE_VDD
+      :type: int
+
+      MCU supply-rail channel (``VDDA``).

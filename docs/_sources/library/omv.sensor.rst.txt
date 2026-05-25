@@ -336,45 +336,160 @@ Functions
 
 .. function:: ioctl(request: int, *args: Any) -> Any
 
-   Executes a sensor specific method. ``request`` is one of the
-   ``IOCTL_*`` constants documented below. The remaining arguments and the
-   return value depend on ``request``:
+   Execute a sensor-specific request. ``request`` is one of the
+   :data:`IOCTL_*` constants; the remaining positional arguments and
+   the return value depend on the request. The supported requests
+   are grouped by sensor family below.
 
-   * `sensor.IOCTL_SET_READOUT_WINDOW` - Pass a rect tuple ``(x, y, w, h)`` or a size tuple ``(w, h)``.
-   * `sensor.IOCTL_GET_READOUT_WINDOW` - Returns the current readout window rect tuple ``(x, y, w, h)``.
-   * `sensor.IOCTL_SET_TRIGGERED_MODE` - Pass ``True`` or ``False``.
-   * `sensor.IOCTL_GET_TRIGGERED_MODE` - Returns the current triggered-mode state as a ``bool``.
-   * `sensor.IOCTL_SET_FOV_WIDE` - Pass ``True`` or ``False`` to optimize `sensor.set_framesize()` for field-of-view over FPS.
-   * `sensor.IOCTL_GET_FOV_WIDE` - Returns the current field-of-view-over-FPS optimization state as a ``bool``.
-   * `sensor.IOCTL_SET_NIGHT_MODE` - Pass ``True`` or ``False`` to enable/disable night mode.
-   * `sensor.IOCTL_GET_NIGHT_MODE` - Returns the current night-mode state as a ``bool``.
-   * `sensor.IOCTL_TRIGGER_AUTO_FOCUS` - Triggers auto focus on the OV5640 FPC camera module.
-   * `sensor.IOCTL_PAUSE_AUTO_FOCUS` - Pauses auto focus on the OV5640 FPC camera module.
-   * `sensor.IOCTL_RESET_AUTO_FOCUS` - Resets auto focus on the OV5640 FPC camera module.
-   * `sensor.IOCTL_WAIT_ON_AUTO_FOCUS` - Waits for auto focus to finish on the OV5640 FPC camera module. Optional second argument is the timeout in milliseconds (default ``5000``).
-   * `sensor.IOCTL_LEPTON_GET_WIDTH` - Returns the FLIR Lepton image width in pixels.
-   * `sensor.IOCTL_LEPTON_GET_HEIGHT` - Returns the FLIR Lepton image height in pixels.
-   * `sensor.IOCTL_LEPTON_GET_RADIOMETRY` - Returns the FLIR Lepton type (radiometric or not).
-   * `sensor.IOCTL_LEPTON_GET_REFRESH` - Returns the FLIR Lepton refresh rate in Hz.
-   * `sensor.IOCTL_LEPTON_GET_RESOLUTION` - Returns the FLIR Lepton ADC resolution in bits.
-   * `sensor.IOCTL_LEPTON_RUN_COMMAND` - Pass a 16-bit command id (FLIR Lepton SDK).
-   * `sensor.IOCTL_LEPTON_SET_ATTRIBUTE` - Pass the 16-bit attribute id and a ``bytes``/``bytearray`` payload (multiple of 16-bits).
-   * `sensor.IOCTL_LEPTON_GET_ATTRIBUTE` - Pass the 16-bit attribute id and the number of 16-bit words to read. Returns a ``bytearray``.
-   * `sensor.IOCTL_LEPTON_GET_FPA_TEMP` - Returns the FLIR Lepton FPA temperature in celsius.
-   * `sensor.IOCTL_LEPTON_GET_AUX_TEMP` - Returns the FLIR Lepton AUX temperature in celsius.
-   * `sensor.IOCTL_LEPTON_SET_MODE` - Pass ``enable`` followed by an optional ``high_temp`` flag.
-   * `sensor.IOCTL_LEPTON_GET_MODE` - Returns the tuple ``(measurement-mode-enabled, high-temp-enabled)``.
-   * `sensor.IOCTL_LEPTON_SET_RANGE` - Pass ``min_temp_c`` and ``max_temp_c`` floats.
-   * `sensor.IOCTL_LEPTON_GET_RANGE` - Returns the sorted ``(min, max)`` 2-tuple temperature range in celsius.
-   * `sensor.IOCTL_HIMAX_MD_ENABLE` - Pass ``True``/``False`` to enable/disable motion detection on the HM01B0.
-   * `sensor.IOCTL_HIMAX_MD_WINDOW` - Pass a rect tuple ``(x, y, w, h)`` or a size tuple ``(w, h)``.
-   * `sensor.IOCTL_HIMAX_MD_THRESHOLD` - Pass a threshold value (``0``-``255``).
-   * `sensor.IOCTL_HIMAX_MD_CLEAR` - Clears the motion detection interrupt on the HM01B0.
-   * `sensor.IOCTL_HIMAX_OSC_ENABLE` - Pass ``True``/``False`` to enable/disable the HM01B0 oscillator.
-   * `sensor.IOCTL_GET_RGB_STATS` - Returns the tuple ``(r, gb, gr, b)`` of RGB statistics from the camera sensor.
-   * `sensor.IOCTL_GENX320_SET_BIASES` - Pass one of the ``GENX320_BIASES_*`` constants to set the GENX320 sensor biases.
-   * `sensor.IOCTL_GENX320_SET_BIAS` - Pass one of the ``GENX320_BIAS_*`` constants and an integer bias value.
-   * `sensor.IOCTL_GENX320_SET_AFK` - Pass either ``enable`` (``True``/``False``) alone or ``enable``, ``freq_low_in_hz``, ``freq_high_in_hz``.
+   **Generic (any sensor):**
+
+   ``ioctl(IOCTL_SET_READOUT_WINDOW, (x, y, w, h))``
+      ``ioctl(IOCTL_SET_READOUT_WINDOW, (w, h))``
+
+      Set the sensor readout window. A smaller window raises the
+      frame rate at the cost of field-of-view.
+
+   ``ioctl(IOCTL_GET_READOUT_WINDOW)``
+      Returns the current readout window as an ``(x, y, w, h)``
+      tuple.
+
+   ``ioctl(IOCTL_SET_TRIGGERED_MODE, enable)``
+      Enable (``True``) or disable (``False``) triggered mode on
+      the MT9V034.
+
+   ``ioctl(IOCTL_GET_TRIGGERED_MODE)``
+      Returns the current triggered-mode state as a ``bool``.
+
+   ``ioctl(IOCTL_SET_FOV_WIDE, enable)``
+      When ``True``, instruct :func:`set_framesize` to optimize for
+      field-of-view rather than frame rate.
+
+   ``ioctl(IOCTL_GET_FOV_WIDE)``
+      Returns the current FOV-wide state as a ``bool``.
+
+   ``ioctl(IOCTL_SET_NIGHT_MODE, enable)``
+      Enable (``True``) or disable (``False``) the sensor's
+      low-light "night mode". OV7725 and OV5640 only.
+
+   ``ioctl(IOCTL_GET_NIGHT_MODE)``
+      Returns the current night-mode state as a ``bool``.
+
+   ``ioctl(IOCTL_GET_RGB_STATS)``
+      Returns a 4-tuple of raw RGB-channel statistics
+      ``(r, gb, gr, b)`` read from the sensor (typically used for
+      white-balance tuning).
+
+   **OV5640 FPC -- auto-focus:**
+
+   ``ioctl(IOCTL_TRIGGER_AUTO_FOCUS)``
+      Start an auto-focus sweep on the OV5640 FPC module.
+
+   ``ioctl(IOCTL_PAUSE_AUTO_FOCUS)``
+      Pause an in-progress auto-focus sweep.
+
+   ``ioctl(IOCTL_RESET_AUTO_FOCUS)``
+      Reset the auto-focus position to the default.
+
+   ``ioctl(IOCTL_WAIT_ON_AUTO_FOCUS)``
+      ``ioctl(IOCTL_WAIT_ON_AUTO_FOCUS, timeout_ms)``
+
+      Block until the current auto-focus sweep finishes.
+      ``timeout_ms`` defaults to 5000 if omitted.
+
+   **FLIR Lepton:**
+
+   ``ioctl(IOCTL_LEPTON_GET_WIDTH)``
+      Returns the Lepton image width in pixels.
+
+   ``ioctl(IOCTL_LEPTON_GET_HEIGHT)``
+      Returns the Lepton image height in pixels.
+
+   ``ioctl(IOCTL_LEPTON_GET_RADIOMETRY)``
+      Returns the Lepton's type (radiometric or not) as an int.
+
+   ``ioctl(IOCTL_LEPTON_GET_REFRESH)``
+      Returns the Lepton's refresh rate in Hz.
+
+   ``ioctl(IOCTL_LEPTON_GET_RESOLUTION)``
+      Returns the Lepton's ADC resolution in bits.
+
+   ``ioctl(IOCTL_LEPTON_RUN_COMMAND, cmd)``
+      Run a FLIR Lepton SDK command. ``cmd`` is the 16-bit command
+      id defined by the SDK.
+
+   ``ioctl(IOCTL_LEPTON_SET_ATTRIBUTE, attr_id, payload)``
+      Write a Lepton SDK attribute. ``attr_id`` is the 16-bit
+      attribute id; ``payload`` is a ``bytes``/``bytearray`` whose
+      length must be a multiple of 16 bits.
+
+   ``ioctl(IOCTL_LEPTON_GET_ATTRIBUTE, attr_id, words)``
+      Read a Lepton SDK attribute. ``attr_id`` is the 16-bit
+      attribute id; ``words`` is the number of 16-bit words to
+      read. Returns a ``bytearray``.
+
+   ``ioctl(IOCTL_LEPTON_GET_FPA_TEMP)``
+      Returns the Lepton focal-plane-array temperature in degrees
+      Celsius.
+
+   ``ioctl(IOCTL_LEPTON_GET_AUX_TEMP)``
+      Returns the Lepton auxiliary temperature in degrees Celsius.
+
+   ``ioctl(IOCTL_LEPTON_SET_MODE, measurement_enabled)``
+      ``ioctl(IOCTL_LEPTON_SET_MODE, measurement_enabled, high_temp_enabled)``
+
+      Switch the Lepton between AGC and direct-temperature output.
+      ``measurement_enabled=True`` enables direct temperature
+      output. The optional ``high_temp_enabled`` flag selects the
+      high-temperature range.
+
+   ``ioctl(IOCTL_LEPTON_GET_MODE)``
+      Returns a 2-tuple
+      ``(measurement_enabled, high_temp_enabled)``.
+
+   ``ioctl(IOCTL_LEPTON_SET_RANGE, min_temp_c, max_temp_c)``
+      Set the temperature range mapped to ``0..255`` when
+      measurement mode is enabled.
+
+   ``ioctl(IOCTL_LEPTON_GET_RANGE)``
+      Returns the current ``(min_celsius, max_celsius)`` range.
+
+   **Himax HM01B0 -- motion detection:**
+
+   ``ioctl(IOCTL_HIMAX_MD_ENABLE, enable)``
+      Enable (``True``) or disable (``False``) the HM01B0's
+      on-sensor motion-detection block.
+
+   ``ioctl(IOCTL_HIMAX_MD_WINDOW, (x, y, w, h))``
+      ``ioctl(IOCTL_HIMAX_MD_WINDOW, (w, h))``
+
+      Set the motion-detection window on the HM01B0.
+
+   ``ioctl(IOCTL_HIMAX_MD_THRESHOLD, threshold)``
+      Set the motion-detection threshold (``0`` -- ``255``).
+
+   ``ioctl(IOCTL_HIMAX_MD_CLEAR)``
+      Clear the motion-detection interrupt latch.
+
+   ``ioctl(IOCTL_HIMAX_OSC_ENABLE, enable)``
+      Enable (``True``) or disable (``False``) the HM01B0's
+      internal oscillator.
+
+   **Prophesee GENX320 -- event sensor:**
+
+   ``ioctl(IOCTL_GENX320_SET_BIASES, preset)``
+      Apply a bias preset. ``preset`` is one of the
+      :data:`GENX320_BIASES_*` constants.
+
+   ``ioctl(IOCTL_GENX320_SET_BIAS, bias, value)``
+      Set a single bias. ``bias`` is one of the
+      :data:`GENX320_BIAS_*` constants; ``value`` is the integer
+      setting.
+
+   ``ioctl(IOCTL_GENX320_SET_AFK, enable)``
+      ``ioctl(IOCTL_GENX320_SET_AFK, enable, freq_low_hz, freq_high_hz)``
+
+      Configure the anti-flicker filter. ``enable`` is a bool; the
+      optional frequency arguments set the filter passband.
 
 .. function:: set_color_palette(palette: int) -> None
 

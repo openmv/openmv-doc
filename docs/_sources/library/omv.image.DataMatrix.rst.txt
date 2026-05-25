@@ -3,85 +3,79 @@
 class DataMatrix -- DataMatrix object
 =====================================
 
-The datamatrix object is returned by `Image.find_datamatrices()`. It is an
-attrtuple with 12 fields.
+The datamatrix object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `Image.find_datamatrices()`. Each instance describes a
+decoded Data Matrix 2D-barcode: its bounding box, decoded payload,
+in-image-plane rotation, layout metadata (rows, columns, capacity,
+padding), and the four detected corners.
+
+Fields are accessible by attribute name (``dm.payload``) or by index
+(``dm[0]``). The object has no public constructor.
 
 .. class:: datamatrix
 
-   Please call `Image.find_datamatrices()` to create this object. It has no
-   public constructor.
+   Please call `Image.find_datamatrices()` to create this object.
 
-   .. method:: x() -> int
+   Bounding box and corners
+   ------------------------
 
-      Returns the datamatrix's bounding box x coordinate (int).
+   .. attribute:: x
 
-      You may also get this value doing ``[0]`` on the object.
+      Bounding box top-left x coordinate, in pixels. Integer. Index ``[0]``.
 
-   .. method:: y() -> int
+   .. attribute:: y
 
-      Returns the datamatrix's bounding box y coordinate (int).
+      Bounding box top-left y coordinate, in pixels. Integer. Index ``[1]``.
 
-      You may also get this value doing ``[1]`` on the object.
+   .. attribute:: w
 
-   .. method:: w() -> int
+      Bounding box width, in pixels. Integer. Index ``[2]``.
 
-      Returns the datamatrix's bounding box w coordinate (int).
+   .. attribute:: h
 
-      You may also get this value doing ``[2]`` on the object.
+      Bounding box height, in pixels. Integer. Index ``[3]``.
 
-   .. method:: h() -> int
+   .. attribute:: corners
 
-      Returns the datamatrix's bounding box h coordinate (int).
+      4-tuple of ``(x, y)`` integer tuples for the four detected corners
+      of the data matrix, sorted clockwise starting from the top-left
+      corner. Index ``[10]``.
 
-      You may also get this value doing ``[3]`` on the object.
+   .. attribute:: rect
 
-   .. method:: payload() -> str
+      ``(x, y, w, h)`` 4-tuple of the bounding box. Suitable for passing
+      directly to drawing/cropping methods such as `Image.draw_rectangle()`
+      or `Image.crop()`. Index ``[11]``.
 
-      Returns the payload string of the datamatrix (str).
+   Decoded payload
+   ---------------
 
-      You may also get this value doing ``[4]`` on the object.
+   .. attribute:: payload
 
-   .. method:: rotation() -> float
+      Decoded payload string. Index ``[4]``.
 
-      Returns the rotation of the datamatrix in radians (float).
+   .. attribute:: rotation
 
-      You may also get this value doing ``[5]`` on the object.
+      In-image-plane rotation of the data matrix in radians. Float.
+      Index ``[5]``.
 
-   .. method:: rows() -> int
+   Layout
+   ------
 
-      Returns the number of rows in the data matrix (int).
+   .. attribute:: rows
 
-      You may also get this value doing ``[6]`` on the object.
+      Number of cell rows in the data matrix. Integer. Index ``[6]``.
 
-   .. method:: columns() -> int
+   .. attribute:: columns
 
-      Returns the number of columns in the data matrix (int).
+      Number of cell columns in the data matrix. Integer. Index ``[7]``.
 
-      You may also get this value doing ``[7]`` on the object.
+   .. attribute:: capacity
 
-   .. method:: capacity() -> int
+      Maximum number of payload characters this data matrix could carry
+      at the current row/column size. Integer. Index ``[8]``.
 
-      Returns how many characters could fit in this data matrix (int).
+   .. attribute:: padding
 
-      You may also get this value doing ``[8]`` on the object.
-
-   .. method:: padding() -> int
-
-      Returns how many unused characters are in this data matrix (int).
-
-      You may also get this value doing ``[9]`` on the object.
-
-   .. method:: corners() -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]
-
-      Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-      Corners are returned in sorted clock-wise order starting from the top
-      left.
-
-      You may also get this value doing ``[10]`` on the object.
-
-   .. method:: rect() -> Tuple[int, int, int, int]
-
-      Returns a rectangle tuple (x, y, w, h) of the datamatrix's bounding box
-      for use with other `image` methods like `Image.draw_rectangle()`.
-
-      You may also get this value doing ``[11]`` on the object.
+      Number of unused payload character slots in this data matrix
+      (``capacity - len(payload)``). Integer. Index ``[9]``.

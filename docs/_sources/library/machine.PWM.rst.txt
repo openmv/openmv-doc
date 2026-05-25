@@ -1,23 +1,24 @@
 .. currentmodule:: machine
 .. _machine.PWM:
 
-class PWM -- pulse width modulation
+class PWM -- pulse-width modulation
 ===================================
 
-This class provides pulse width modulation output.
+The :class:`PWM` class outputs a pulse-width-modulated signal on a
+:class:`Pin`. It is the modern, cross-port API for PWM; on STM32
+OpenMV cams it wraps the underlying :class:`pyb.Timer` channel
+machinery, so each :class:`PWM` instance ties up one timer channel.
 
 Example usage::
 
-    from machine import PWM
+    from machine import PWM, Pin
 
-    pwm = PWM(pin, freq=50, duty_u16=8192)  # create a PWM object on a pin
-                                            # and set freq 50 Hz and duty 12.5%
-    pwm.duty_u16(32768)                     # set duty to 50%
+    # 50 Hz PWM on a header pin with a 12.5 % duty.
+    pwm = PWM(Pin("P7"), freq=50, duty_u16=8192)
 
-    # reinitialise with a period of 200us, duty of 5us
-    pwm.init(freq=5000, duty_ns=5000)
-
-    pwm.duty_ns(3000)                       # set pulse width to 3us
+    pwm.duty_u16(32768)            # change duty to 50 %
+    pwm.init(freq=5000, duty_ns=5000)  # re-init at 5 kHz, 5 us pulse
+    pwm.duty_ns(3000)              # 3 us pulse
 
     pwm.deinit()
 
@@ -26,116 +27,82 @@ Constructors
 
 .. class:: PWM(dest: Pin | int, *, freq: int | None = None, duty_u16: int | None = None, duty_ns: int | None = None, invert: bool = False)
 
-   Construct and return a new PWM object using the following parameters:
+   Construct a :class:`PWM` object driving ``dest`` (a :class:`Pin`
+   on OpenMV cams). The keyword arguments are equivalent to calling
+   :meth:`init` immediately after construction:
 
-      - *dest* is the entity on which the PWM is output, which is usually a
-        :ref:`machine.Pin <machine.Pin>` object, but a port may allow other values,
-        like integers.
-      - *freq* should be an integer which sets the frequency in Hz for the
-        PWM cycle.
-      - *duty_u16* sets the duty cycle as a ratio ``duty_u16 / 65535``.
-      - *duty_ns* sets the pulse width in nanoseconds.
-      - *invert*  inverts the respective output if the value is True
+      - ``freq`` -- PWM frequency in Hz.
+      - ``duty_u16`` -- duty cycle as a ratio ``duty_u16 / 65535``.
+      - ``duty_ns`` -- pulse width in nanoseconds.
+      - ``invert`` -- if ``True``, invert the output polarity.
 
-   Setting *freq* may affect other PWM objects if the objects share the same
-   underlying PWM generator (this is hardware specific).
-   Only one of *duty_u16* and *duty_ns* should be specified at a time.
-   *invert* is available only on the alif, esp32, mimxrt, nrf, rp2, samd, stm32 and zephyr ports.
+   At most one of ``duty_u16`` / ``duty_ns`` may be passed at a
+   time. Setting ``freq`` may affect other :class:`PWM` instances
+   that share the same underlying timer (true on STM32 -- every
+   channel of a given TIM runs at the same frequency).
 
    Methods
    -------
 
    .. method:: init(*, freq: int | None = None, duty_u16: int | None = None, duty_ns: int | None = None) -> None
 
-      Modify settings for the PWM object.  See the above constructor for details
-      about the parameters.
+      Reconfigure the PWM output. Only arguments supplied are
+      updated; the others retain their previous values. See the
+      constructor for the meaning of each argument.
 
    .. method:: deinit() -> None
 
-      Disable the PWM output.
+      Disable the PWM output and release the timer channel it
+      occupied.
 
-   .. method:: freq(value: int | None = None, /) -> int | None
+   .. method:: freq() -> int
+               freq(value: int, /) -> None
 
-      Get or set the current frequency of the PWM output.
+      Get or set the PWM frequency.
 
-      With no arguments the frequency in Hz is returned.
+      With no argument, return the current frequency in Hz.
 
-      With a single *value* argument the frequency is set to that value in Hz.  The
-      method may raise a ``ValueError`` if the frequency is outside the valid range.
+      With a single ``value`` argument, set the frequency to that
+      value in Hz. May raise ``ValueError`` if the frequency is
+      outside the range achievable by the underlying timer.
 
-   .. method:: duty_u16(value: int | None = None, /) -> int | None
+   .. method:: duty_u16() -> int
+               duty_u16(value: int, /) -> None
 
-      Get or set the current duty cycle of the PWM output, as an unsigned 16-bit
-      value in the range 0 to 65535 inclusive.
+      Get or set the duty cycle as an unsigned 16-bit value in the
+      range ``0`` -- ``65535``.
 
-      With no arguments the duty cycle is returned.
+      With no argument, return the current duty.
 
-      With a single *value* argument the duty cycle is set to that value, measured
-      as the ratio ``value / 65535``.
+      With a single ``value`` argument, set the duty cycle to
+      ``value / 65535`` of the period. ``0`` is always low,
+      ``65535`` is always high.
 
-   .. method:: duty_ns(value: int | None = None, /) -> int | None
+   .. method:: duty_ns() -> int
+               duty_ns(value: int, /) -> None
 
-      Get or set the current pulse width of the PWM output, as a value in nanoseconds.
+      Get or set the pulse width directly in nanoseconds.
 
-      With no arguments the pulse width in nanoseconds is returned.
+      With no argument, return the current pulse width.
 
-      With a single *value* argument the pulse width is set to that value.
+      With a single ``value`` argument, set the high-time of each
+      cycle to ``value`` nanoseconds. Useful for servo-style outputs
+      where the pulse width is the meaningful quantity rather than
+      the duty ratio.
 
-Specific PWM class implementations
-----------------------------------
+Limitations
+-----------
 
-On the alif port there are 11 independent PWM blocks with independent
-frequencies, and they have 2 outputs each.  The underlying counter is
-32-bits wide for all 11 PWM blocks.
+* PWM frequency and duty resolution are interdependent on every
+  hardware timer: at high frequencies, fewer counter steps fit in a
+  period and so fewer low bits of ``duty_u16`` are meaningful.
 
-On the rp2 port there are 8 independent PWM blocks on RP2040 and 12 on
-RP2350, each with independent frequencies, and each with 2 outputs.
-The underlying counter is 16-bits wide for all PWM blocks.
+* The achievable PWM frequency depends on the timer's clock source
+  and prescaler. STM32 TIM2 / TIM5 are 32-bit on most parts (and
+  TIM3 / TIM4 as well on the STM32N6), giving wider frequency and
+  duty ranges; the remaining timers are 16-bit. See the relevant
+  MCU reference manual for the exact ranges.
 
-On the stm32 port the number of independent PWM blocks depends on the MCU
-and can range between 4 and 19.  TIM2 and TIM5 blocks (also TIM3 and TIM4
-blocks on STM32U5 and STM32N6) are 32-bits wide, and the others are
-16-bits wide.  All MCUs supported by MicroPython have at least one 32-bit
-block available, and most have two.   MCUs will have pins PA0 through PA3
-assigned to a 32-bit PWM block (except STM32N6 which has a 16-bit PWM
-block on PA3).  PWM blocks have up to 4 outputs each.
-
-The following concrete class(es) implement enhancements to the PWM class.
-
-   | :ref:`pyb.Timer for PyBoard <pyb.Timer>`
-
-Limitations of PWM
-------------------
-
-* Not all frequencies can be generated with absolute accuracy due to
-  the discrete nature of the computing hardware.  Typically the PWM frequency
-  is obtained by dividing some integer base frequency by an integer divider.
-  For example, if the base frequency is 80MHz and the required PWM frequency is
-  300kHz the divider must be a non-integer number 80000000 / 300000 = 266.67.
-  After rounding the divider is set to 267 and the PWM frequency will be
-  80000000 / 267 = 299625.5 Hz, not 300kHz.  If the divider is set to 266 then
-  the PWM frequency will be 80000000 / 266 = 300751.9 Hz, but again not 300kHz.
-
-  Some ports like the RP2040 one use a fractional divider, which allow a finer
-  granularity of the frequency at higher frequencies by switching the PWM
-  pulse duration between two adjacent values, such that the resulting average
-  frequency is more close to the intended one, at the cost of spectral purity.
-
-* The duty cycle has the same discrete nature and its absolute accuracy is not
-  achievable.  On most hardware platforms the duty will be applied at the next
-  frequency period.  Therefore, you should wait more than "1/frequency" before
-  measuring the duty.
-
-* The frequency and the duty cycle resolution are usually interdependent.
-  The higher the PWM frequency the lower the duty resolution which is available,
-  and vice versa. For example, a 300kHz PWM frequency can have a duty cycle
-  resolution of 8 bit, not 16-bit as may be expected.  In this case, the lowest
-  8 bits of *duty_u16* are insignificant. So::
-
-    pwm=PWM(Pin(13), freq=300_000, duty_u16=65536//2)
-
-  and::
-
-    pwm=PWM(Pin(13), freq=300_000, duty_u16=65536//2 + 255)
-
-  will generate PWM with the same 50% duty cycle.
+* On STM32 multiple :class:`PWM` channels on the same TIM share a
+  frequency. Setting :meth:`freq` on one instance changes the
+  output of every other channel attached to that TIM.

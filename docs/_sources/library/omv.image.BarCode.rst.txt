@@ -3,92 +3,88 @@
 class BarCode -- BarCode object
 ===============================
 
-The barcode object is returned by `Image.find_barcodes()`. It is an attrtuple
-with 10 fields.
+The barcode object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `Image.find_barcodes()`. Each instance describes a decoded
+1D barcode: its bounding box, decoded payload, symbology, in-image-plane
+rotation, a decode-quality score, and the four detected corners of the
+barcode.
+
+Fields are accessible by attribute name (``barcode.payload``) or by index
+(``barcode[0]``). The object has no public constructor.
 
 .. class:: barcode
 
-   Please call `Image.find_barcodes()` to create this object. It has no public
-   constructor.
+   Please call `Image.find_barcodes()` to create this object.
 
-   .. method:: x() -> int
+   Bounding box and corners
+   ------------------------
 
-      Returns the barcode's bounding box x coordinate (int).
+   .. attribute:: x
 
-      You may also get this value doing ``[0]`` on the object.
+      Bounding box top-left x coordinate, in pixels. Integer. Index ``[0]``.
 
-   .. method:: y() -> int
+   .. attribute:: y
 
-      Returns the barcode's bounding box y coordinate (int).
+      Bounding box top-left y coordinate, in pixels. Integer. Index ``[1]``.
 
-      You may also get this value doing ``[1]`` on the object.
+   .. attribute:: w
 
-   .. method:: w() -> int
+      Bounding box width, in pixels. Integer. Index ``[2]``.
 
-      Returns the barcode's bounding box w coordinate (int).
+   .. attribute:: h
 
-      You may also get this value doing ``[2]`` on the object.
+      Bounding box height, in pixels. Integer. Index ``[3]``.
 
-   .. method:: h() -> int
+   .. attribute:: corners
 
-      Returns the barcode's bounding box h coordinate (int).
+      4-tuple of ``(x, y)`` integer tuples for the four detected corners
+      of the barcode, sorted clockwise starting from the top-left corner.
+      Index ``[8]``.
 
-      You may also get this value doing ``[3]`` on the object.
+   .. attribute:: rect
 
-   .. method:: payload() -> str
+      ``(x, y, w, h)`` 4-tuple of the bounding box. Suitable for passing
+      directly to drawing/cropping methods such as `Image.draw_rectangle()`
+      or `Image.crop()`. Index ``[9]``.
 
-      Returns the payload string of the barcode (str).
+   Decoded payload
+   ---------------
 
-      You may also get this value doing ``[4]`` on the object.
+   .. attribute:: payload
 
-   .. method:: type() -> int
+      Decoded payload string. Index ``[4]``.
 
-      Returns the type enumeration of the barcode (int).
+   .. attribute:: type
 
-        * image.EAN2
-        * image.EAN5
-        * image.EAN8
-        * image.UPCE
-        * image.ISBN10
-        * image.UPCA
-        * image.EAN13
-        * image.ISBN13
-        * image.I25
-        * image.DATABAR
-        * image.DATABAR_EXP
-        * image.CODABAR
-        * image.CODE39
-        * image.PDF417
-        * image.CODE93
-        * image.CODE128
+      Symbology of the decoded barcode. One of:
 
-      You may also get this value doing ``[5]`` on the object.
+         * `image.EAN2`
+         * `image.EAN5`
+         * `image.EAN8`
+         * `image.UPCE`
+         * `image.ISBN10`
+         * `image.UPCA`
+         * `image.EAN13`
+         * `image.ISBN13`
+         * `image.I25`
+         * `image.DATABAR`
+         * `image.DATABAR_EXP`
+         * `image.CODABAR`
+         * `image.CODE39`
+         * `image.PDF417`
+         * `image.CODE93`
+         * `image.CODE128`
 
-   .. method:: rotation() -> float
+      Integer. Index ``[5]``.
 
-      Returns the rotation of the barcode in radians (float).
+   .. attribute:: rotation
 
-      You may also get this value doing ``[6]`` on the object.
+      In-image-plane rotation of the barcode in radians. Float.
+      Index ``[6]``.
 
-   .. method:: quality() -> int
+   .. attribute:: quality
 
-      Returns the number of times this barcode was detected in the image
-      (int). Each scanline that decodes the same barcode increments this
-      value.
-
-      You may also get this value doing ``[7]`` on the object.
-
-   .. method:: corners() -> Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int], Tuple[int, int]]
-
-      Returns a tuple of 4 (x, y) tuples of the 4 corners of the object.
-      Corners are returned in sorted clock-wise order starting from the top
-      left.
-
-      You may also get this value doing ``[8]`` on the object.
-
-   .. method:: rect() -> Tuple[int, int, int, int]
-
-      Returns a rectangle tuple (x, y, w, h) of the barcode's bounding box for
-      use with other `image` methods like `Image.draw_rectangle()`.
-
-      You may also get this value doing ``[9]`` on the object.
+      Number of times the barcode was decoded across the image. The
+      decoder runs across every scanline that crosses the barcode and
+      increments this counter on each successful decode -- higher values
+      indicate a more confident result. Integer. Index ``[7]``.

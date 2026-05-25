@@ -9,6 +9,10 @@ up into a non recoverable state. Once started it cannot be stopped or
 reconfigured in any way. After enabling, the application must "feed" the
 watchdog periodically to prevent it from expiring and resetting the system.
 
+Available on STM32 OpenMV cams (M4 / M7 / H7 / H7 Plus / Pure Thermal /
+N6) and the OpenMV Cam RT1062. Not exposed on the OpenMV Cam AE3 (alif
+port).
+
 Example usage::
 
     from machine import WDT
@@ -20,11 +24,9 @@ Constructors
 
 .. class:: WDT(id: int = 0, timeout: int = 5000)
 
-   Create a WDT object and start it. The timeout must be given in milliseconds.
-   Once it is running the timeout cannot be changed and the WDT cannot be stopped either.
-
-   Notes: On the esp8266 a timeout cannot be specified, it is determined by the underlying system.
-   On rp2040 devices, the maximum timeout is 8388 ms.
+   Create a WDT object and start it. ``timeout`` is given in
+   milliseconds. Once started the watchdog cannot be stopped; use
+   :meth:`timeout_ms` to change the window at runtime.
 
    Methods
    -------
@@ -34,3 +36,10 @@ Constructors
       Feed the WDT to prevent it from resetting the system. The application
       should place this call in a sensible place ensuring that the WDT is
       only fed after verifying that everything is functioning correctly.
+
+   .. method:: timeout_ms(timeout: int) -> None
+
+      Change the watchdog timeout to ``timeout`` milliseconds and
+      reload the counter. Useful when one of several states needs a
+      longer-than-default window before the next :meth:`feed`. The
+      new timeout takes effect immediately. STM32 only.

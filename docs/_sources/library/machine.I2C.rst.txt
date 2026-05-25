@@ -13,11 +13,12 @@ when created, or initialised later on.
 Printing the I2C object gives you information about its configuration.
 
 Both hardware and software I2C implementations exist via the
-:ref:`machine.I2C <machine.I2C>` and `machine.SoftI2C` classes.  Hardware I2C uses
-underlying hardware support of the system to perform the reads/writes and is
-usually efficient and fast but may have restrictions on which pins can be used.
-Software I2C is implemented by bit-banging and can be used on any pin but is not
-as efficient.  These classes have the same methods available and differ primarily
+:class:`I2C` and :class:`SoftI2C` classes. Hardware I2C uses
+underlying hardware support of the system to perform the
+reads/writes and is usually efficient and fast but may have
+restrictions on which pins can be used. Software I2C is implemented
+by bit-banging and can be used on any pin but is not as efficient.
+These classes have the same methods available and differ primarily
 in the way they are constructed.
 
 .. Note::
@@ -97,7 +98,7 @@ Constructors
    be combined to make any I2C transaction.  They are provided if you need more
    control over the bus, otherwise the standard methods (see below) can be used.
 
-   These methods are only available on the `machine.SoftI2C` class.
+   These methods are only available on the :class:`SoftI2C` class.
 
    .. method:: start() -> None
 
@@ -196,14 +197,132 @@ Constructors
       The method returns ``None``.
 
 .. _machine.SoftI2C:
+
+class SoftI2C -- software-emulated I2C bus
+==========================================
+
+The :class:`SoftI2C` class implements I2C by bit-banging arbitrary
+GPIO pins. It exposes the same method surface as :class:`I2C` plus
+the low-level primitive bus operations (:meth:`start`, :meth:`stop`,
+:meth:`readinto`, :meth:`write`) for callers that need to assemble
+non-standard transactions. Use it when the pins you need are not
+wired to a hardware I2C block, when you need more buses than the
+hardware provides, or to talk to devices that require unusual
+sequences (extra clocks, repeated starts after writes, etc.).
+
+Constructors
+------------
+
 .. class:: SoftI2C(scl: Pin, sda: Pin, *, freq: int = 400000, timeout: int = 50000)
 
-   Construct a new software I2C object.  The parameters are:
+   Construct a software I2C bus driven by ``scl`` / ``sda``.
 
-      - *scl* should be a pin object specifying the pin to use for SCL.
-      - *sda* should be a pin object specifying the pin to use for SDA.
-      - *freq* should be an integer which sets the maximum frequency
-        for SCL.
-      - *timeout* is the maximum time in microseconds to wait for clock
-        stretching (SCL held low by another device on the bus), after
-        which an ``OSError(ETIMEDOUT)`` exception is raised.
+   ``freq`` is the target SCL clock rate in Hz (the actual rate is
+   typically lower because of the bit-bang loop overhead).
+
+   ``timeout`` is the maximum time in microseconds to wait for clock
+   stretching (SCL held low by another device on the bus); on
+   expiry an ``OSError(ETIMEDOUT)`` is raised.
+
+   General Methods
+   ---------------
+
+   .. method:: init(scl: Pin, sda: Pin, *, freq: int = 400000) -> None
+
+      Re-initialise the software I2C bus with the given pins and
+      frequency. Equivalent to constructing a new :class:`SoftI2C`
+      on the same object.
+
+   .. method:: scan() -> List[int]
+
+      Scan all I2C addresses between 0x08 and 0x77 inclusive and
+      return a list of those that responded.
+
+   Primitive I2C operations
+   ------------------------
+
+   The following methods implement the primitive I2C controller bus
+   operations and can be combined to make any I2C transaction. They
+   are SoftI2C-only -- the hardware :class:`I2C` class does not
+   expose them.
+
+   .. method:: start() -> None
+
+      Generate a START condition on the bus (SDA transitions to low
+      while SCL is high).
+
+   .. method:: stop() -> None
+
+      Generate a STOP condition on the bus (SDA transitions to high
+      while SCL is high).
+
+   .. method:: readinto(buf: bytearray, nack: bool = True, /) -> None
+
+      Read bytes from the bus into ``buf``. ``len(buf)`` bytes are
+      read; an ACK is sent after every byte except the last. After
+      the last byte, ``nack=True`` (the default) sends a NACK to
+      end the transfer; ``nack=False`` sends an ACK so the device
+      stays selected for a subsequent :meth:`readinto`.
+
+   .. method:: write(buf: bytes) -> int
+
+      Write ``buf`` to the bus, checking for ACK after every byte.
+      Transmission stops on the first NACK. Returns the number of
+      ACKs received.
+
+   Standard bus operations
+   -----------------------
+
+   The following methods implement the standard I2C controller read
+   and write operations that target a given peripheral device.
+
+   .. method:: readfrom(addr: int, nbytes: int, stop: bool = True, /) -> bytes
+
+      Read ``nbytes`` from the device at 7-bit address ``addr``. If
+      ``stop`` is true a STOP condition is generated at the end of
+      the transfer.
+
+   .. method:: readfrom_into(addr: int, buf: bytearray, stop: bool = True, /) -> None
+
+      Read ``len(buf)`` bytes from the device at ``addr`` into
+      ``buf``. If ``stop`` is true a STOP condition is generated at
+      the end of the transfer.
+
+   .. method:: writeto(addr: int, buf: bytes, stop: bool = True, /) -> int
+
+      Write ``buf`` to the device at ``addr``. Transmission stops on
+      the first NACK. If ``stop`` is true a STOP condition is always
+      generated at the end of the transfer (even on early NACK).
+      Returns the number of ACKs received.
+
+   .. method:: writevto(addr: int, vector: tuple | list, stop: bool = True, /) -> int
+
+      Write the concatenation of the buffers in ``vector`` to the
+      device at ``addr`` as a single transaction. Empty buffers are
+      ignored. Behaves like :meth:`writeto` for ``stop`` semantics
+      and return value.
+
+   Memory operations
+   -----------------
+
+   Some I2C devices act as a memory device (or set of registers)
+   that can be read from and written to. In this case there are two
+   addresses associated with an I2C transaction: the peripheral
+   address and the memory address. The following methods are
+   convenience helpers for talking to such devices.
+
+   .. method:: readfrom_mem(addr: int, memaddr: int, nbytes: int, *, addrsize: int = 8) -> bytes
+
+      Read ``nbytes`` from the device at ``addr`` starting at
+      register ``memaddr``. ``addrsize`` is the register-address
+      width in bits (typically ``8`` or ``16``).
+
+   .. method:: readfrom_mem_into(addr: int, memaddr: int, buf: bytearray, *, addrsize: int = 8) -> None
+
+      Read into ``buf`` from the device at ``addr`` starting at
+      register ``memaddr``.
+
+   .. method:: writeto_mem(addr: int, memaddr: int, buf: bytes, *, addrsize: int = 8) -> None
+
+      Write ``buf`` to the device at ``addr`` starting at register
+      ``memaddr``.

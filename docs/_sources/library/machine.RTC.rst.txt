@@ -1,106 +1,142 @@
 .. currentmodule:: machine
 .. _machine.RTC:
 
-class RTC -- real time clock
+class RTC -- real-time clock
 ============================
 
-The RTC is an independent clock that keeps track of the date
-and time.
+The :class:`RTC` class controls the MCU's on-chip real-time clock
+peripheral, which keeps wall-clock time across resets.
+
+On STM32 OpenMV Cams :class:`machine.RTC` and :class:`pyb.RTC` refer
+to the same underlying object.
 
 Example usage::
 
-    rtc = machine.RTC()
-    rtc.datetime((2020, 1, 21, 2, 10, 32, 36, 0))
-    print(rtc.datetime())
+    import machine
 
+    rtc = machine.RTC()
+    rtc.datetime((2026, 1, 21, 2, 10, 32, 36, 0))
+    print(rtc.datetime())
 
 Constructors
 ------------
 
-.. class:: RTC(id: int = 0, datetime: tuple | None = None)
+.. class:: RTC(id: int = 0)
 
-   Create an RTC object. See init for parameters of initialization.
+   Return the :class:`RTC` singleton. ``id`` is accepted for cross-
+   port compatibility but only ``0`` is valid on the OpenMV-supported
+   ports (each cam has one RTC).
 
-   Methods
-   -------
+   The methods below are grouped by which OpenMV ports expose them.
+
+   Methods available on all OpenMV ports
+   `````````````````````````````````````
 
    .. method:: datetime(datetimetuple: tuple | None = None, /) -> tuple | None
 
-      Get or set the date and time of the RTC.
+      Get or set the current date and time.
 
-      With no arguments, this method returns an 8-tuple with the current
-      date and time.  With 1 argument (being an 8-tuple) it sets the date
-      and time.
+      With no argument, return the current value as an 8-tuple
+      ``(year, month, day, weekday, hour, minute, second, subseconds)``.
 
-      The 8-tuple has the following format:
+      With a single 8-tuple argument, set the RTC to that value.
 
-          (year, month, day, weekday, hours, minutes, seconds, subseconds)
+      ``weekday`` is 1 = Monday through 7 = Sunday on STM32, and 0 =
+      Monday through 6 = Sunday on mimxrt. ``subseconds`` is the
+      fractional part of the second in units of 1/256 of a second on
+      STM32; on mimxrt and alif it is always ``0``.
 
-      The meaning of the ``subseconds`` field is hardware dependent.
+   STM32 + mimxrt only
+   ```````````````````
 
    .. method:: init(datetime: tuple) -> None
 
-      Initialise the RTC. Datetime is a tuple of the form:
+      Initialise the RTC.
 
-         ``(year, month, day, hour, minute, second, microsecond, tzinfo)``
+      On the mimxrt port (OpenMV Cam RT1062) ``datetime`` is required
+      and uses the 8-tuple ``(year, month, day, weekday, hour, minute,
+      second, subseconds)``.
 
-      All eight arguments must be present. The ``microsecond`` and ``tzinfo``
-      values are currently ignored but might be used in the future.
+      On STM32 OpenMV cams :meth:`init` takes no argument: it
+      (re-)starts the RTC peripheral, leaving the current date / time
+      untouched.
 
-      Availability: CC3200, ESP32, MIMXRT, SAMD. The rtc.init() method on
-      the stm32 and renesas-ra ports just (re-)starts the RTC and does not
-      accept arguments.
+   .. method:: calibration(value: int | None = None, /) -> int | None
 
-   .. method:: now() -> tuple
+      Get or set the RTC's calibration offset (used to compensate
+      for crystal frequency error).
 
-      Get get the current datetime tuple.
+      The accepted range and the units of ``value`` are
+      hardware-specific -- the value is written directly into the
+      MCU's RTC trim register. See the relevant STM32 / i.MX RT
+      reference manual for the exact encoding.
 
-      Availability: WiPy.
+   STM32 only
+   ``````````
 
-   .. method:: deinit() -> None
+   .. method:: info() -> int
 
-      Resets the RTC to the time of January 1, 2015 and starts running it again.
+      Return packed RTC startup status as a 32-bit integer.
+
+      The low 16 bits give the number of milliseconds the RTC took
+      to start up at the most recent boot. Bit 0x10000 is set when
+      the LSE (low-speed external) oscillator failed and the RTC
+      fell back to the LSI (internal RC). Bit 0x20000 is set when
+      the RTC was newly initialised at boot (rather than continuing
+      from the previous power-on).
+
+   .. method:: wakeup(timeout_ms: int | None, callback: Callable[[RTC], None] | None = None, /) -> None
+
+      Schedule a periodic wakeup interrupt.
+
+      ``timeout_ms`` is the period in milliseconds. The RTC fires
+      every ``timeout_ms`` and can wake the MCU from
+      :func:`machine.lightsleep` / :func:`machine.deepsleep`. Pass
+      ``None`` to disable the wakeup timer.
+
+      ``callback`` is invoked from the wakeup IRQ; pass ``None`` to
+      install no callback (the wakeup will still fire and wake the
+      MCU).
+
+   mimxrt + alif only
+   ``````````````````
 
    .. method:: alarm(id: int, time: int | tuple, *, repeat: bool = False) -> None
 
-      Set the RTC alarm. Time might be either a millisecond value to program the alarm to
-      current time + time_in_ms in the future, or a datetimetuple. If the time passed is in
-      milliseconds, repeat can be set to ``True`` to make the alarm periodic.
+      Arm the RTC alarm. ``id`` selects the alarm channel (use
+      :data:`ALARM0`). ``time`` is either an integer number of
+      milliseconds in the future, or a datetime tuple. Pass
+      ``repeat=True`` to re-arm automatically after each fire (only
+      valid when ``time`` is a millisecond count).
 
-   .. method:: alarm_left(alarm_id: int = 0) -> int
+      On alif only the millisecond-count form is supported.
 
-      Get the number of milliseconds left before the alarm expires.
+   mimxrt only
+   ```````````
 
-   .. method:: alarm_cancel(alarm_id: int = 0) -> None
+   .. method:: alarm_left(alarm_id: int = 0, /) -> int
 
-      Cancel a running alarm.
+      Return the number of milliseconds remaining before the alarm
+      identified by ``alarm_id`` fires.
 
-      The mimxrt port also exposes this function as ``RTC.cancel(alarm_id=0)``, but this is
-      scheduled to be removed in MicroPython 2.0.
+   .. method:: alarm_cancel(alarm_id: int = 0, /) -> None
 
-   .. method:: irq(*, trigger: int, handler: Callable[[RTC], None] | None = None, wake: int = machine.IDLE) -> None
+      Cancel a previously-armed alarm.
 
-      Create an irq object triggered by a real time clock alarm.
+   .. method:: cancel(alarm_id: int = 0, /) -> None
 
-         - ``trigger`` must be ``RTC.ALARM0``
-         - ``handler`` is the function to be called when the callback is triggered.
-         - ``wake`` specifies the sleep mode from where this interrupt can wake
-           up the system.
+      Deprecated alias for :meth:`alarm_cancel`, kept for backwards
+      compatibility. Scheduled for removal in MicroPython 2.0.
 
-   .. method:: memory(data: bytes | None = None, /) -> bytes | None
+   .. method:: irq(*, trigger: int = ALARM0, handler: Callable[[RTC], None] | None = None, wake: int = 0, hard: bool = False) -> None
 
-      ``RTC.memory(data)`` will write *data* to the RTC memory, where *data* is any
-      object which supports the buffer protocol (including `bytes`, `bytearray`,
-      `memoryview` and `array.array`). ``RTC.memory()`` reads RTC memory and returns
-      a `bytes` object.
+      Register a callback for the RTC alarm.
 
-      Data written to RTC user memory is persistent across restarts, including
-      :ref:`soft_reset` and `machine.deepsleep()`.
-
-      The maximum length of RTC user memory is 2048 bytes by default on esp32,
-      and 492 bytes on esp8266.
-
-      Availability: esp32, esp8266 ports.
+      ``trigger`` must be :data:`ALARM0` -- the only supported IRQ
+      source. ``handler`` is invoked with the :class:`RTC` instance
+      when the alarm fires. ``hard=True`` registers a hard-interrupt
+      handler (no heap allocation in the callback). ``wake`` is
+      accepted for cross-port compatibility but has no effect.
 
    Constants
    ---------
@@ -108,4 +144,6 @@ Constructors
    .. data:: ALARM0
       :type: int
 
-       irq trigger source
+      Identifier for the RTC's single alarm channel. Pass to
+      :meth:`alarm`, :meth:`alarm_left`, :meth:`alarm_cancel` and
+      the :meth:`irq` ``trigger`` argument. mimxrt port only.

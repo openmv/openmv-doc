@@ -14,26 +14,31 @@ module.
 
 For example::
 
-    # connect/ show IP config a specific network interface
-    # see below for examples of specific drivers
     import network
+    import socket
     import time
-    nic = network.Driver(...)
-    if not nic.isconnected():
-        nic.connect()
-        print("Waiting for connection...")
-        while not nic.isconnected():
-            time.sleep(1)
+
+    nic = network.WLAN(network.WLAN.IF_STA)
+    nic.active(True)
+    nic.connect("your-ssid", "your-key")
+
+    print("Waiting for connection...")
+    while not nic.isconnected():
+        time.sleep(1)
     print(nic.ipconfig("addr4"))
 
-    # now use socket as usual
-    import socket
-    addr = socket.getaddrinfo('micropython.org', 80)[0][-1]
+    # Open a TCP socket as usual.
+    addr = socket.getaddrinfo("micropython.org", 80)[0][-1]
     s = socket.socket()
     s.connect(addr)
-    s.send(b'GET / HTTP/1.1\r\nHost: micropython.org\r\n\r\n')
+    s.send(b"GET / HTTP/1.1\r\nHost: micropython.org\r\n\r\n")
     data = s.recv(1000)
     s.close()
+
+Replace :class:`WLAN` with :class:`WINC` (legacy WiFi shield) or
+:class:`LAN` (built-in Ethernet) as appropriate for the cam. The
+high-level pattern of construct -> activate -> connect -> use sockets
+is the same in all three cases.
 
 Common network adapter interface
 ================================
@@ -52,11 +57,23 @@ in the following sections, implements methods as described here.
 
    .. method:: active(is_active: Optional[bool] = None, /) -> bool
 
-           Activate ("up") or deactivate ("down") the network interface, if
-           a boolean argument is passed. Otherwise, query current state if
-           no argument is provided. Most other methods require an active
-           interface (behaviour of calling them on inactive interface is
-           undefined).
+           Bring the network interface up or down.
+
+           With no argument, return the current state -- ``True`` while
+           the interface is active, ``False`` otherwise.
+
+           Pass ``True`` to activate the interface: power on / reset the
+           underlying network controller, load firmware where applicable,
+           and bring up the IP stack on this interface. Subsequent calls
+           that talk to the network (:meth:`connect`, :meth:`scan`,
+           :meth:`ipconfig`, ...) require the interface to be active.
+
+           Pass ``False`` to deactivate the interface: tear the IP stack
+           down and release driver resources. On wireless interfaces this
+           also disassociates from any currently-joined network.
+
+           Behaviour of calling other methods on an inactive interface is
+           undefined.
 
    .. method:: connect(service_id: Optional[str] = None, key: Optional[str] = None, *, bssid: Optional[bytes] = None, **kwargs: Any) -> None
 
@@ -191,7 +208,6 @@ provide a way to control networking interfaces of various kinds.
    network.WINC.rst
    network.WLAN.rst
    network.LAN.rst
-   network.PPP.rst
 
 Network functions
 =================
@@ -249,17 +265,3 @@ The following are functions available in the network module.
          local DNS cache, so that any previously obtained addresses might not
          change.
 
-.. function:: phy_mode(mode: Optional[int] = None) -> Optional[int]
-
-    Get or set the PHY mode.
-
-    If the *mode* parameter is provided, the PHY mode will be set to this value.
-    If the function is called without parameters, it returns the current PHY
-    mode.
-
-    The possible modes are defined as constants:
-        * ``MODE_11B`` -- IEEE 802.11b,
-        * ``MODE_11G`` -- IEEE 802.11g,
-        * ``MODE_11N`` -- IEEE 802.11n.
-
-    Availability: ESP8266.

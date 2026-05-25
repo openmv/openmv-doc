@@ -4,178 +4,165 @@
 class Counter -- pulse counter
 ==============================
 
-Counter implements pulse counting by monitoring an input signal and counting
-rising or falling edges.
+The :class:`Counter` class wraps the i.MX RT QENC (quadrature
+encoder / counter) hardware block configured as a single-input
+pulse counter. Each rising edge on the source pin increments (or
+decrements) a hardware position counter; software callbacks can be
+attached to ROLL_OVER / ROLL_UNDER / RESET / INDEX / MATCH events.
 
-Minimal ESP32 example usage::
+Available on the OpenMV Cam RT1062 (mimxrt port) only. On the
+STM32-based OpenMV cams, use :class:`pyb.Timer` configured for
+input-capture instead. Not exposed on the OpenMV Cam AE3 (alif
+port).
+
+Example usage::
 
     from machine import Pin, Counter
 
-    counter = Counter(0, Pin(0, Pin.IN))  # create Counter for pin 0 and begin counting
-    value = counter.value()               # retrieve current pulse count
-
-Availability: **ESP32, MIMXRT**
+    counter = Counter(0, Pin("P0", Pin.IN))
+    counter.value(0)
+    # ... wait some time ...
+    print("pulses:", counter.value())
 
 Constructors
 ------------
 
-.. class:: Counter(id: int, src: Pin | None = None, *, edge: int = RISING, direction: int = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None)
+.. class:: Counter(id: int, src: Pin | None = None, *, direction: int | Pin = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None)
 
-   Returns the singleton Counter object for the the given *id*. Values of *id*
-   depend on a particular port and its hardware. Values 0, 1, etc. are commonly
-   used to select hardware block #0, #1, etc.
+   Construct (or fetch the singleton for) the QENC counter block
+   identified by ``id``. RT1062 has multiple QENC blocks (``id``
+   selects one); the same arguments are also accepted by
+   :meth:`init` to re-configure an existing instance.
 
-   Additional arguments are passed to the :meth:`init` method described below,
-   and will cause the Counter instance to be re-initialised and reset.
+   ``src`` -- the input pin whose rising edges are counted.
 
-   On ESP32, the *id* corresponds to a PCNT unit.
+   ``direction`` (keyword-only) -- either :data:`UP` / :data:`DOWN`
+   to set a fixed direction, or a :class:`Pin` whose logic level
+   selects the direction at runtime (low = count up, high = count
+   down).
+
+   ``filter_ns`` (keyword-only) -- minimum input-stable time in
+   nanoseconds for a pulse to be counted. The driver uses the
+   longest hardware filter that is less than or equal to this value.
+   ``0`` (the default) disables filtering.
+
+   ``max`` / ``min`` (keyword-only) -- modulo range of the position
+   counter. When the counter rolls past ``max`` it wraps to ``min``
+   and the cycles counter increments (decrements when counting
+   down). Passing both ``max`` and ``min`` as ``0`` disables the
+   range.
+
+   ``reset`` (keyword-only) -- a :class:`Pin` whose rising edge
+   reloads the position counter to the start value (without changing
+   the cycles counter).
+
+   ``match`` (keyword-only) -- counter value at which an
+   :data:`IRQ_MATCH` interrupt fires. Pass ``None`` to disable.
+
+   ``match_pin`` (keyword-only) -- a :class:`Pin` driven high while
+   the position counter equals ``match`` and low otherwise.
 
    Methods
    -------
 
-   .. method:: init(src: Pin | None = None, *, edge: int = RISING, direction: int = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None
+   .. method:: init(src: Pin | None = None, *, direction: int | Pin = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None
 
-      Initialise and reset the Counter with the given parameters:
-
-      - *src* specifies the input pin as a :ref:`machine.Pin <machine.Pin>` object.
-        May be omitted on ports that have a predefined pin for a given hardware
-        block.
-
-      Additional keyword-only parameters that may be supported by a port are:
-
-      - *edge* specifies the edge to count. Either ``Counter.RISING`` (the default)
-        or ``Counter.FALLING``. *(Supported on ESP32)*
-
-      - *direction* specifies the direction to count. Either ``Counter.UP`` (the
-        default) or ``Counter.DOWN``. *(Supported on ESP32 and MIMXRT)*
-        A :ref:`machine.Pin <machine.Pin>` object as parameter argument specifies a
-        pin which controls the counting direction. Low: Count up, High: Count down.
-        *(Supported on MIMXRT)*
-
-      - *filter_ns* specifies a minimum period of time in nanoseconds that the
-        source signal needs to be stable for a pulse to be counted. Implementations
-        should use the longest filter supported by the hardware that is less than
-        or equal to this value. The default is 0 (no filter). *(Supported on ESP32 and MIMXRT)*
-
-      - *max* Specify the upper counting range. The position counter will count up
-        from a *min* start value up to *max*, then roll over to the init value and
-        increase the cycles counter by one. When counting down, the cycles counter
-        decreases at the transition from *min* to *max*. The range is reset by defining
-        both *max* and *min* to 0. The default value is the hardware's counter range.
-        *(Supported by MIMXRT and the ESP32 PCNT module)*
-
-      - *min* Specify the lower counting range. The default value is 0.
-        *(Supported by MIMXRT and the ESP32 PCNT module)*
-
-      - *index* A Pin specifier telling to which pin the index pulse is connected.
-        At a rising slope of the index pulse the pulse counter is reset to the min value and
-        the cycles counter is increased or decreased by one, depending on the counting direction.
-        A *value* of *None* disables the index
-        input. *(Supported on MIMXRT)*
-
-      - *reset* A Pin specifier telling to which pin the reset pulse is connected.
-        At a rising slope of the reset pulse the counter is set to the init
-        value, but the cycles counter is not changed. A *value* of *None* disables the reset input.
-        *(Supported on MIMXRT)*
-
-      - *match* Set the counter value at which the interrupt IRQ_MATCH shall trigger.
-        The value is not checked for being in the bounds of the counter range. This option
-        if equivalent to the *threshold* options of the ESP32 PCNT module.
-        A *value* of *None* resets the match value and disables the IRQ_MATCH interrupt.
-        *(Supported on MIMXRT)*
-
-      - *match_pin* A Pin specifier telling to which pin the match output is connected.
-        This output will have a high level as long as the counter matches the
-        match value. The signal is generated by the encoder logic and requires no
-        further software support. The pulse width is defined by the input signal frequency
-        and can be very short, like 20ns, or stay, if the counter stops at the match value.
-        A *value* of *None* disables the match output. *(Supported on MIMXRT)*
+      Re-initialise the counter with the given parameters and reset
+      its position and cycles counters. Accepts the same keyword
+      arguments as the constructor.
 
    .. method:: deinit() -> None
 
-      Stops the Counter, disabling any interrupts and releasing hardware resources.
-      A Soft Reset should deinitialize all Counter objects.
+      Stop the counter, disable any pending interrupts and release
+      the QENC hardware resources. A soft reset deinitialises all
+      :class:`Counter` instances automatically.
 
-   .. method:: value(value: int | None = None, /) -> int
+   .. method:: value() -> int
+               value(value: int, /) -> int
 
-      Get, and optionally set, the counter value as a signed integer.
-      Implementations must aim to do the get and set atomically (i.e. without
-      leading to skipped counts).
+      Get or set the signed position counter.
 
-      This counter value could exceed the range of a :term:`small integer`, which
-      means that calling :meth:`Counter.value` could cause a heap allocation, but
-      implementations should aim to ensure that internal state only uses small
-      integers and therefore will not allocate until the user calls
-      :meth:`Counter.value`.
+      With no argument, return the current count.
 
-      For example, on ESP32, the internal state counts overflows of the hardware
-      counter (every 32000 counts), which means that it will not exceed the small
-      integer range until ``2**30 * 32000`` counts (slightly over 1 year at 1MHz).
+      With a single ``value`` argument, atomically set the position
+      counter to ``value`` and return the previous count. The common
+      idiom ``counter.value(0)`` resets the counter at the start of
+      a measurement window.
 
-      In general, it is recommended that you should use ``Counter.value(0)`` to reset
-      the counter (i.e. to measure the counts since the last call), and this will
-      avoid this problem.
+   .. method:: cycles() -> int
+               cycles(value: int, /) -> int
 
-   .. method:: cycles(value: int | None = None, /) -> int
+      Get or set the cycles counter, a signed 16-bit integer that
+      tracks how many times the position counter has rolled past
+      ``max`` / ``min``.
 
-      Get or set the current cycles counter of the counter as signed 16 bit integer.
-      The value represents the overflow or underflow events of the count range.
-      With no arguments the actual cycles counter value is returned.
-      With a single *value* argument the cycles counter is set to that value. The
-      base counter is not changed. The method returns the previous value.
-      *(Supported on MIMXRT)*
+      With no argument, return the current cycles count.
+
+      With a single ``value`` argument, set the cycles counter to
+      ``value`` (without touching the position counter) and return
+      the previous count.
 
    .. method:: irq(handler: Callable[[Counter], None] | None = None, trigger: int = 0, hard: bool = False) -> None
 
-      Specifies, that the *handler* is called when the respective *event* happens.
+      Register a callback to be invoked when one of the supported
+      QENC events fires. The handler receives the :class:`Counter`
+      object as its only argument; the specific event can be
+      identified inside the handler via ``irq.flags()``.
 
-      *event* may be:
-       - Counter.IRQ_RESET Triggered with a transition at the *reset* input.
-       - Counter.IRQ_INDEX Triggered with a transition at the *index* input.
-       - Counter.IRQ_MATCH Triggered when the positions counter matches the match value. For fast signals,
-         the actual position counter value when retrieved in the callback may be different from the trigger value.
-       - Counter.IRQ_ROLL_OVER Triggered when the position counter rolls over from the highest
-         to the lowest value.
-       - Counter.IRQ_ROLL_UNDER Triggered when the position counter rolls under from the lowest
-         to the highest value.
+      ``trigger`` is a bitmask of one or more :data:`IRQ_*`
+      constants:
 
-      The callback function *handler* receives a single argument, which is the Counter object. All
-      events share the same callback. The event which triggers the callback can be identified
-      with the irq.flags() method. The argument *hard* specifies, whether the callback is called
-      as a hard interrupt or as regular scheduled function. Hard interrupts have always a short latency,
-      but are limited in that they must not allocate memory. Regular scheduled functions are not limited
-      in what can be used, but depending on the load of the device execution may be delayed.
-      Under low load, the difference in latency is minor.
+         * :data:`IRQ_RESET` -- the ``reset`` pin asserted.
+         * :data:`IRQ_INDEX` -- a transition on the ``index`` line.
+         * :data:`IRQ_MATCH` -- the position counter reached
+           ``match``. Match is auto-disabled after firing and must
+           be re-armed by re-installing the IRQ.
+         * :data:`IRQ_ROLL_OVER` -- the position counter wrapped
+           from ``max`` to ``min``.
+         * :data:`IRQ_ROLL_UNDER` -- the position counter wrapped
+           from ``min`` to ``max``.
 
-      The default arguments values are handler=None, trigger=0, hard=False. The callback will be
-      disabled, when called with handler=None.
-
-      The position match event is triggered as long as the position and match value are identical.
-      Therefore the position match callback is run in a one-shot fashion, and has to be enabled
-      again when the position has changed. It will be enabled by re-defining the trigger with either
-      :meth:`Counter.irq()` or :meth:`irq().trigger()`. For ESP32, Counter interrupts are handled
-      by the PCNT. *(Supported on MIMXRT)*
+      ``hard=True`` registers a hard interrupt handler (lower
+      latency, but the handler must not allocate). The default is a
+      scheduled callback. Pass ``handler=None`` to disable the
+      interrupt.
 
    Constants
    ---------
 
-   .. data:: RISING
-             FALLING
-      :type: int
-
-      Select the pulse edge. *(Supported on ESP32)*
-
    .. data:: UP
-             DOWN
       :type: int
 
-      Select the counting direction.
+      Pass to ``direction`` to count rising edges as positive.
+
+   .. data:: DOWN
+      :type: int
+
+      Pass to ``direction`` to count rising edges as negative.
 
    .. data:: IRQ_RESET
-             IRQ_INDEX
-             IRQ_MATCH
-             IRQ_ROLL_OVER
-             IRQ_ROLL_UNDER
       :type: int
 
-      Select the IRQ trigger event.  *(Supported on MIMXRT)*
+      :meth:`irq` trigger flag for the ``reset`` pin event.
+
+   .. data:: IRQ_INDEX
+      :type: int
+
+      :meth:`irq` trigger flag for the index-input event.
+
+   .. data:: IRQ_MATCH
+      :type: int
+
+      :meth:`irq` trigger flag for the position-match event.
+
+   .. data:: IRQ_ROLL_OVER
+      :type: int
+
+      :meth:`irq` trigger flag for a counter roll-over (``max`` ->
+      ``min``).
+
+   .. data:: IRQ_ROLL_UNDER
+      :type: int
+
+      :meth:`irq` trigger flag for a counter roll-under (``min`` ->
+      ``max``).

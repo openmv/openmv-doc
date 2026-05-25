@@ -4,66 +4,74 @@
 class I2S -- Inter-IC Sound bus protocol
 ========================================
 
-I2S is a synchronous serial protocol used to connect digital audio devices.
-At the physical level, a bus consists of 3 lines: SCK, WS, SD.
-The I2S class supports controller operation.  Peripheral operation is not supported.
+The :class:`I2S` class drives an Inter-IC Sound (I2S) bus in
+controller mode -- the MCU generates the bit clock (``SCK``) and the
+word-select clock (``WS``) and exchanges sample data on the ``SD``
+line. The driver supports continuous DMA in the background so the
+Python side only needs to keep the internal sample buffer fed.
+Peripheral / receiver-only modes are not supported.
 
-The I2S class is currently available as a Technical Preview.  During the preview period, feedback from
-users is encouraged.  Based on this feedback, the I2S class API and implementation may be changed.
+Available on STM32 OpenMV cams that wire an I2S peripheral and the
+OpenMV Cam RT1062. Not exposed on the OpenMV Cam AE3 (alif port).
 
-I2S objects can be created and initialized using::
+``I2S(2)`` on STM32 OpenMV cams shares its pins with ``SPI(2)`` --
+bit-clock on ``P2`` (SCK), word-select on ``P3`` (NSS), and the
+serial-data line follows the SPI data-direction convention: TX
+uses ``P0`` (MOSI), RX uses ``P1`` (MISO).
 
-    from machine import I2S
-    from machine import Pin
+Example -- output (TX). Construct a TX bus to drive an external
+audio DAC at 44.1 kHz, 16-bit mono samples, with a 16384-byte
+(16 KiB) DMA backing buffer::
 
-    # ESP32
-    sck_pin = Pin(14)   # Serial clock output
-    ws_pin = Pin(13)    # Word clock output
-    sd_pin = Pin(12)    # Serial data output
+    from machine import I2S, Pin
 
-    or
+    audio_out = I2S(
+        2,
+        sck=Pin("P2"), ws=Pin("P3"), sd=Pin("P0"),
+        mode=I2S.TX,
+        bits=16,
+        format=I2S.MONO,
+        rate=44100,
+        ibuf=16384,
+    )
 
-    # PyBoards
-    sck_pin = Pin("Y6")   # Serial clock output
-    ws_pin = Pin("Y5")    # Word clock output
-    sd_pin = Pin("Y8")    # Serial data output
+Example -- input (RX). Construct an RX bus that captures from a
+microphone at 22.05 kHz, 32-bit stereo (left + right interleaved),
+with a 16384-byte (16 KiB) DMA backing buffer::
 
-    audio_out = I2S(2,
-                    sck=sck_pin, ws=ws_pin, sd=sd_pin,
-                    mode=I2S.TX,
-                    bits=16,
-                    format=I2S.MONO,
-                    rate=44100,
-                    ibuf=20000)
+    from machine import I2S, Pin
 
-    audio_in = I2S(2,
-                   sck=sck_pin, ws=ws_pin, sd=sd_pin,
-                   mode=I2S.RX,
-                   bits=32,
-                   format=I2S.STEREO,
-                   rate=22050,
-                   ibuf=20000)
+    audio_in = I2S(
+        2,
+        sck=Pin("P2"), ws=Pin("P3"), sd=Pin("P1"),
+        mode=I2S.RX,
+        bits=32,
+        format=I2S.STEREO,
+        rate=22050,
+        ibuf=16384,
+    )
 
-3 modes of operation are supported:
- - blocking
- - non-blocking
- - asyncio
+The transfer methods can be used in three styles:
 
-blocking::
+**Blocking** -- :meth:`write` and :meth:`readinto` return only once
+the operation completes::
 
-   num_written = audio_out.write(buf) # blocks until buf emptied
+   num_written = audio_out.write(buf)   # blocks until buf is drained
+   num_read = audio_in.readinto(buf)    # blocks until buf is filled
 
-   num_read = audio_in.readinto(buf) # blocks until buf filled
+**Non-blocking** -- install a callback with :meth:`irq` and the
+transfer methods return immediately. The callback runs from the
+MicroPython scheduler when the DMA empties the TX buffer or fills
+the RX buffer::
 
-non-blocking::
+   audio_out.irq(i2s_callback)
+   num_written = audio_out.write(buf)   # returns immediately
 
-   audio_out.irq(i2s_callback)         # i2s_callback is called when buf is emptied
-   num_written = audio_out.write(buf)  # returns immediately
+   audio_in.irq(i2s_callback)
+   num_read = audio_in.readinto(buf)    # returns immediately
 
-   audio_in.irq(i2s_callback)          # i2s_callback is called when buf is filled
-   num_read = audio_in.readinto(buf)   # returns immediately
-
-asyncio::
+**asyncio** -- :class:`I2S` is a stream and can be wrapped by
+``asyncio.StreamReader`` / ``asyncio.StreamWriter``::
 
    swriter = asyncio.StreamWriter(audio_out)
    swriter.write(buf)

@@ -1,88 +1,182 @@
 .. currentmodule:: network
 .. _network.LAN:
 
-class LAN -- control an Ethernet module
-=======================================
+class LAN -- control an Ethernet interface
+==========================================
 
-This class allows you to control the Ethernet interface. The PHY hardware type is board-specific.
+The :class:`LAN` class drives the MCU's on-chip Ethernet MAC against
+an external RMII PHY. The PHY type, MDIO address and pinout are all
+board-specific; sensible defaults are baked into each OpenMV board so
+the constructor normally takes no arguments.
 
-Example usage, for a board with built-in LAN support::
+Available on:
+
+- OpenMV Cam N6 (STM32 port) -- default PHY :data:`PHY_LAN8742`.
+- Arduino Portenta H7 (STM32 port) -- default PHY
+  :data:`PHY_LAN8742`.
+- OpenMV Cam RT1062 (mimxrt port) -- default PHY :data:`PHY_KSZ8081`.
+
+Example usage::
 
     import network
-    nic = network.LAN(0)
+
+    nic = network.LAN()
+    nic.active(True)
+
+    while not nic.isconnected():
+        pass
+
     print(nic.ipconfig("addr4"))
-
-    # now use socket as usual
-    ...
-
 
 Constructors
 ------------
 
-.. class:: LAN(id: int, *, phy_type: int | None = None, phy_addr: int | None = None, ref_clk_mode: int | None = None) -> None
+.. class:: LAN(id: int = 0, *, phy_type: int | None = None, phy_addr: int | None = None, ref_clk_mode: int | None = None) -> None
 
-   Create a LAN driver object, initialise the LAN module using the given
-   PHY driver name, and return the LAN object.
+   Construct a :class:`LAN` interface object. All arguments after
+   ``id`` are keyword-only.
 
-   Arguments are:
+   ``id`` selects the Ethernet port on boards that expose more than
+   one (mimxrt port: ``0`` = ENET, ``1`` = ENET_1). Ignored on STM32
+   boards, which only have a single MAC.
 
-     - *id* is the number of the Ethernet port, either 0 or 1.
-     - *phy_type* is the name of the PHY driver. For most board the on-board PHY has to be used and
-       is the default. Suitable values are port specific.
-     - *phy_addr* specifies the address of the PHY interface. As with *phy_type*, the hardwired value has
-       to be used for most boards and that value is the default.
-     - *ref_clk_mode* specifies, whether the data clock is provided by the Ethernet controller or
-       the PHY interface.
-       The default value is the one that matches the board. If set to ``LAN.OUT`` or ``Pin.OUT``
-       or ``True``, the clock is driven by the Ethernet controller, if set to ``LAN.IN``
-       or ``Pin.IN`` or ``False``, the clock is driven by the PHY interface.
+   ``phy_type`` selects the PHY driver (one of the ``PHY_*``
+   constants below). Pass ``None`` (the default) to use the PHY
+   wired to the OpenMV board.
 
-   .. method:: active(state: Optional[bool] = None) -> bool
+   ``phy_addr`` is the MDIO address of the PHY on the management
+   bus. Pass ``None`` (the default) to use the board's wired value.
 
-      With a parameter, it sets the interface active if *state* is true, otherwise it
-      sets it inactive.
-      Without a parameter, it returns the state.
+   ``ref_clk_mode`` (mimxrt only) selects whether the RMII reference
+   clock is driven by the MAC (:data:`OUT`) or by the PHY
+   (:data:`IN`). Ignored on STM32 boards.
+
+   Methods
+   -------
+
+   .. method:: active(is_active: Optional[bool] = None) -> bool
+
+      Bring the Ethernet MAC up or down.
+
+      With no argument, return the current PHY link status as a
+      truthy/falsy integer -- see :meth:`status` for the full set of
+      encoded values.
+
+      ``active(True)`` starts the MAC and PHY, kicks off
+      auto-negotiation, and brings the lwIP netif up. Link-up itself
+      may take a moment to complete -- poll :meth:`isconnected` if
+      you need to block until the link is fully ready. All other
+      methods (:meth:`ipconfig`, :meth:`config`, ...) require the
+      interface to be active.
+
+      ``active(False)`` stops the MAC and tears down the netif.
 
    .. method:: isconnected() -> bool
 
-      Returns ``True`` if the physical Ethernet link is connected and up.
-      Returns ``False`` otherwise.
+      Return ``True`` when the PHY has negotiated link-up *and* the
+      interface is in the fully-up state (link status value ``3``).
 
    .. method:: status() -> int
 
-      Returns the LAN status.
+      Return the raw PHY link status as an integer:
+
+         * ``0`` -- link down.
+         * ``1`` -- link up (PHY only, IP stack not yet ready).
+         * ``2`` -- transitioning.
+         * ``3`` -- link up and the IP stack has finished bringing
+           the interface up.
 
    .. method:: ifconfig(config: Optional[Tuple[str, str, str, str]] = None) -> Optional[Tuple[str, str, str, str]]
 
-      Get/set IP address, subnet mask, gateway and DNS.
+      Get or set IPv4 interface parameters as a 4-tuple of
+      ``(ip, subnet, gateway, dns)`` dotted-quad strings.
 
-      When called with no arguments, this method returns a 4-tuple with the above information.
+      .. note::
 
-      To set the above values, pass a 4-tuple with the required information.  For example::
+         Prefer :meth:`ipconfig` for new code::
 
-       nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
+            nic.ipconfig(addr4="192.168.0.4/24", gw4="192.168.0.1")
+            network.ipconfig(dns="8.8.8.8")
 
-   .. method:: config(config_parameters: Union[str, Any]) -> Any
+   .. method:: ipconfig(param: str) -> Any
+               ipconfig(**kwargs: Any) -> None
 
-      Sets or gets parameters of the LAN interface. The only parameter that can be
-      retrieved is the MAC address, using::
+      Get or set IPv4 / IPv6 interface parameters. Behaves the same
+      as :meth:`AbstractNIC.ipconfig` -- see that method for the full
+      list of supported parameter names (``dhcp4``, ``addr4``,
+      ``gw4``, ``autoconf6``, ``addr6``, ...).
 
-         mac = LAN.config("mac")
+   .. method:: config(param: str) -> Any
+               config(**kwargs: Any) -> None
 
-      The parameters that can be set are:
+      Get or set Ethernet-specific interface parameters.
 
-       - ``trace=n`` sets trace levels; suitable values are:
+      With a single positional string argument, return the value of
+      that parameter:
 
-           - 2: trace TX
-           - 4: trace RX
-           - 8: full trace
+         * ``"mac"`` -- the interface MAC address as a 6-byte
+           ``bytes`` object.
 
-       - ``low_power=bool`` sets or clears low power mode, valid values being ``False``
-         or ``True``.
+      With keyword arguments, set one or more parameters:
 
+         * ``trace=<int>`` -- enable lwIP tracing. Bit-field:
+           ``2`` traces TX, ``4`` traces RX, ``8`` enables full
+           tracing.
+         * ``low_power=<bool>`` -- enable or disable the PHY's
+           IEEE 802.3az (Energy Efficient Ethernet) low-power mode.
 
-Specific LAN class implementations
-----------------------------------
+   Constants
+   ---------
 
-On the mimxrt port, suitable values for the *phy_type* constructor argument are:
-``PHY_KSZ8081``, ``PHY_DP83825``, ``PHY_DP83848``, ``PHY_LAN8720``, ``PHY_RTL8211F``.
+   .. data:: PHY_LAN8742
+      :type: int
+
+      Microchip LAN8742A 10/100 Ethernet PHY. STM32 port only;
+      default on the OpenMV Cam N6 and Arduino Portenta H7.
+
+   .. data:: PHY_LAN8720
+      :type: int
+
+      Microchip LAN8720 10/100 Ethernet PHY. Available on both
+      STM32 and mimxrt ports.
+
+   .. data:: PHY_DP83848
+      :type: int
+
+      Texas Instruments DP83848 10/100 Ethernet PHY. Available on
+      both STM32 and mimxrt ports.
+
+   .. data:: PHY_DP83825
+      :type: int
+
+      Texas Instruments DP83825 10/100 Ethernet PHY. Available on
+      both STM32 and mimxrt ports.
+
+   .. data:: PHY_KSZ8081
+      :type: int
+
+      Microchip KSZ8081 10/100 Ethernet PHY. mimxrt port only;
+      default on the OpenMV Cam RT1062.
+
+   .. data:: PHY_DP83867
+      :type: int
+
+      Texas Instruments DP83867 gigabit Ethernet PHY. mimxrt port
+      only.
+
+   .. data:: PHY_RTL8211F
+      :type: int
+
+      Realtek RTL8211F gigabit Ethernet PHY. mimxrt port only.
+
+   .. data:: IN
+      :type: int
+
+      Pass to ``ref_clk_mode`` so the RMII reference clock is driven
+      by the PHY. mimxrt port only.
+
+   .. data:: OUT
+      :type: int
+
+      Pass to ``ref_clk_mode`` so the RMII reference clock is driven
+      by the MAC. mimxrt port only.

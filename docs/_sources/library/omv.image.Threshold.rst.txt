@@ -3,38 +3,40 @@
 class Threshold -- Threshold Object
 ===================================
 
-The threshold object is an attrtuple returned by `histogram.get_threshold()`.
+The threshold object is an `attrtuple <https://docs.micropython.org/en/latest/library/collections.html#collections.namedtuple>`_
+returned by `histogram.get_threshold()`. It reports the Otsu-optimal split
+value for each channel of the underlying :class:`Histogram <histogram>` --
+i.e. the bin value that best separates the channel into a "background" and
+"foreground" half.
 
-Grayscale thresholds have one channel; use ``value``. RGB565 thresholds have
-three channels; use ``l_value``, ``a_value``, and ``b_value``.
+For grayscale histograms, use ``value`` (the other three fields are 0). For
+RGB565 histograms, ``l_value`` / ``a_value`` / ``b_value`` give the
+Otsu threshold for the LAB ``L``, ``A``, and ``B`` channels respectively.
+The returned values are well-suited to feed directly into `Image.binary()`
+or any other method that takes LAB color thresholds.
 
-Fields are accessible by name (``threshold.value``) or by index
-(``threshold[0]``). It has no public constructor.
+Fields are accessible by attribute name (``threshold.value``) or by index
+(``threshold[0]``). The object has no public constructor.
 
 .. class:: threshold
 
    Please call `histogram.get_threshold()` to create this object.
 
-   .. method:: threshold.value() -> int
+   .. attribute:: value
 
-      Returns the grayscale threshold value (0 - 255).
+      Grayscale Otsu threshold value. Integer 0 -- 255. Index ``[0]``.
 
-      Also accessible as ``threshold[0]``.
+   .. attribute:: l_value
 
-   .. method:: threshold.l_value() -> int
+      LAB ``L`` channel Otsu threshold value. Integer 0 -- 100.
+      Index ``[1]``.
 
-      Returns the RGB565 LAB L channel threshold value (0 - 100).
+   .. attribute:: a_value
 
-      Also accessible as ``threshold[1]``.
+      LAB ``A`` channel Otsu threshold value. Integer -128 -- 127.
+      Index ``[2]``.
 
-   .. method:: threshold.a_value() -> int
+   .. attribute:: b_value
 
-      Returns the RGB565 LAB A channel threshold value (-128 - 127).
-
-      Also accessible as ``threshold[2]``.
-
-   .. method:: threshold.b_value() -> int
-
-      Returns the RGB565 LAB B channel threshold value (-128 - 127).
-
-      Also accessible as ``threshold[3]``.
+      LAB ``B`` channel Otsu threshold value. Integer -128 -- 127.
+      Index ``[3]``.

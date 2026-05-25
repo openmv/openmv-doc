@@ -1,181 +1,225 @@
 .. currentmodule:: network
 .. _network.WINC:
 
-class WINC -- wifi shield driver
+class WINC -- WiFi shield driver
 ================================
 
-The ``WINC`` class is used for controlling the wifi shield.
+The :class:`WINC` class drives the Atmel WINC1500 802.11 b/g/n WiFi
+module on the OpenMV WiFi Shield. Available on the OpenMV Cam M4, M7,
+H7, H7 Plus and Pure Thermal (the STM32 boards that the WiFi shield
+was designed for). For boards with built-in WiFi (OpenMV Cam N6,
+OpenMV Cam RT1062, Arduino Giga) use :class:`WLAN` instead.
 
-Example usage::
+Example -- connect to an access point and print the address::
 
     import network
 
     wlan = network.WINC()
-    wlan.connect("SSID", "KEY")
+    wlan.connect("SSID", "KEY", security=network.WINC.WPA_PSK)
 
-    wlan.ifconfig()
+    print("status:    ", "connected" if wlan.isconnected() else "off")
+    print("rssi:      ", wlan.rssi(), "dBm")
+    print("interface: ", wlan.ifconfig())
+    print("netinfo:   ", wlan.netinfo())
+
+Example -- bring up an open access point and wait for a client::
+
+    import network
+
+    wlan = network.WINC(mode=network.WINC.MODE_AP)
+    wlan.start_ap("OpenMV-Cam", security=network.WINC.OPEN, channel=6)
+
+    print("waiting for a station to associate...")
+    print(wlan.wait_for_sta(timeout=None))
 
 Constructors
 ------------
 
-.. class:: WINC(mode: int = MODE_STATION) -> None
+.. class:: WINC(mode: int = WINC.MODE_STA) -> None
 
-   Creates a winc driver object and connects to the wifi shield which uses
-   I/O pins P0, P1, P2, P3, P6, P7, and P8.
+   Create a :class:`WINC` driver object and bring up the WiFi shield.
 
-   ``mode`` controls the mode the WINC module works in:
+   ``mode`` selects the operating mode the module starts in:
 
-     * network.WINC.MODE_STATION
-
-       The module connects to an access point as a client. This is the default mode.
-
-     * network.WINC.MODE_AP
-
-       The module will create an AP (Access Point) and accept connections from a client.
-
-       .. note::
-
-          The start_ap() method must be called after setting AP mode to configure the AP.
-
-          Also, the WINC1500 has some limitations in its AP implementation:
-
-             * Only one client can connect at a time.
-             * Only OPEN or WEP security are supported.
-             * There's a bug in the WiFi Module FW, when the client disconnects any bound sockets are lost (they just stop working). As a workaround, set a timeout for the server socket to force it to raise an exception and then reopen it (See the example script).
-
-     * network.WINC.MODE_FIRMWARE:
-
-       This mode enables WiFi module firmware update.
+      * :data:`WINC.MODE_STA` -- station / client. Connect to an
+        access point with :meth:`connect`. This is the default.
+      * :data:`WINC.MODE_AP` -- access point. Configure the AP with
+        :meth:`start_ap`, then accept client connections.
+      * :data:`WINC.MODE_P2P` -- WiFi Direct.
+      * :data:`WINC.MODE_BSP` -- bring up the BSP only (no radio).
+      * :data:`WINC.MODE_FIRMWARE` -- firmware-update mode; required
+        by :meth:`fw_dump` and :meth:`fw_update`.
 
    .. note::
 
-      ``mode`` can also be ``network.STA_IF`` (station aka client, connects to upstream WiFi access
-      points) and and ``network.AP_IF`` (access point, allows other WiFi clients to
-      connect). Availability of the methods below depends on interface type.
-      For example, only STA interface may `WLAN.connect()` to an access point.
+      In AP mode the WINC1500 has hardware limits:
+
+      * Only one client can connect at a time.
+      * Only :data:`OPEN` or WEP security are supported.
+      * A WiFi-module firmware bug causes any bound sockets to stop
+        working when the client disconnects. Set a timeout on the
+        server socket so it raises an exception that you can use to
+        re-open it.
 
    Methods
    -------
 
    .. method:: active(is_active: Optional[bool] = None) -> bool
 
-      Activate ("up") or deactivate ("down") network interface, if boolean
-      argument is passed. Otherwise, query current state if no argument is
-      provided. Most other methods require active interface.
+      Bring the WiFi shield up or down.
 
-   .. method:: connect(ssid: str, key: Optional[str] = None, security: int = WPA_PSK, channel: int = 1) -> None
+      With no argument, return the current state -- ``True`` while
+      the shield is initialised and the radio is up, ``False``
+      otherwise.
 
-      Connect to a wifi network with ssid ``ssid`` using key ``key`` with
-      security ``security`` and channel ``channel``.
+      ``active(True)`` performs the WINC1500 firmware handshake over
+      SPI and brings the radio up in the configured ``mode``. It is
+      a no-op if the interface is already active. :meth:`connect`
+      auto-calls this if it has not been called yet; for any other
+      method (:meth:`scan`, :meth:`rssi`, :meth:`netinfo`, ...) you
+      must call ``active(True)`` first.
 
-      After connecting to the network use the :mod:`usocket` module to open TCP/UDP
-      ports to send and receive data.
+      ``active(False)`` shuts the radio back down (the WINC drops to
+      BSP-only mode) and releases the SPI pins.
 
-      .. note::
+   .. method:: connect(ssid: str, key: Optional[str] = None, *, security: int = WINC.WPA_PSK, channel: int = 1) -> None
 
-         This method takes a little while to return.
+      Associate with the WiFi network ``ssid`` using password ``key``,
+      security mode ``security`` (one of :data:`OPEN`, :data:`WPA_PSK`
+      or the 802.1X constant) on radio ``channel``. ``security`` and
+      ``channel`` are keyword-only.
 
-   .. method:: start_ap(ssid: str, key: Optional[str] = None, security: int = OPEN, channel: int = 1) -> None
+      After connecting use the :mod:`socket` module to open TCP/UDP
+      ports.
 
-      When running in AP mode this method must be called after creating
-      a WINC object to configure and start the AP .
+      This method blocks until the association completes or fails.
 
-      * ssid: The AP SSID (must be set).
-      * key: The AP encryption key. A Key is required only if security is WEP.
-      * security: AP security mode (only OPEN or WEP are supported).
-      * channel: WiFi channel, change this if you have another AP running at the same channel.
+   .. method:: config(ssid: str, key: Optional[str] = None, *, security: int = WINC.WPA_PSK, channel: int = 1) -> None
+
+      Alias of :meth:`connect`. Provided for compatibility with code
+      that calls ``config`` on other :mod:`network` interfaces.
+
+   .. method:: start_ap(ssid: str, key: Optional[str] = None, *, security: int = WINC.OPEN, channel: int = 1) -> None
+
+      Alias of :meth:`connect` used after constructing the object
+      with ``mode=MODE_AP`` to configure and start the access point.
+      The AP only supports :data:`OPEN` or WEP security; if WEP is
+      used ``key`` is required.
 
    .. method:: disconnect() -> None
 
-      Disconnect from the wifi network.
+      In STA mode, disassociate from the currently associated access
+      point. The shield stays active; call :meth:`connect` to
+      re-associate. No-op when not currently associated.
 
    .. method:: isconnected() -> bool
 
-      Returns True if connected to an access point and an IP address has been
-      obtained.
+      In STA mode return ``True`` when associated with an access
+      point **and** an IPv4 address has been obtained (via DHCP or
+      :meth:`ifconfig`). Returns ``False`` while still in the
+      authenticating / associating / DHCP phase.
 
    .. method:: connected_sta() -> List[str]
 
-      This method returns a list containing the connected client's IP adress.
+      In AP mode, return a list containing the IP address of the
+      currently connected client (or an empty list if no client is
+      connected).
 
-   .. method:: wait_for_sta(timeout: int) -> List[str]
+   .. method:: wait_for_sta(timeout: Optional[int]) -> List[str]
 
-      This method blocks and waits for a client to connect. If timeout is 0
-      this will block forever. This method returns a list containing the
-      connected client's IP adress.
+      In AP mode, block until a client connects and return a list
+      containing the client's IP address. ``timeout`` is the maximum
+      wait in milliseconds; pass ``None`` to wait indefinitely.
 
    .. method:: ifconfig(config: Optional[Tuple[str, str, str, str]] = None) -> Tuple[str, str, str, str]
 
-      Returns a tuple containing:
+      Get or set IPv4 interface parameters. The 4-tuple contains
+      ``(ip, subnet, gateway, dns)`` as dotted-quad strings.
 
-         * [0]: IP Address String (XXX.XXX.XXX.XXX)
-         * [1]: Subnet Address String (XXX.XXX.XXX.XXX)
-         * [2]: Gateway String (XXX.XXX.XXX.XXX)
-         * [3]: DNS Address String (XXX.XXX.XXX.XXX)
+      Called with no argument: returns the current configuration.
 
-      While connected to the network.
+      Called with a 4-tuple: sets a static IP configuration in place
+      of the DHCP-acquired one.
 
-      You may optionally pass a tuple/list of the ip_addr, subnet_addr,
-      gateway_addr, and dns_addr strings in ipv4 (XXX.XXX.XXX.XXX) format
-      to set a static IP address versus an address obtained through DHCP (which happens by default).
-
-      Example usage::
+      Example -- pin a static IP before connecting::
 
          wlan = network.WINC()
-         wlan.ifconfig(('192.168.1.100', '255.255.255.0', '192.168.1.1', '192.168.1.1'))
-         wlan.connect(SSID, key=KEY, security=wlan.WPA_PSK)
+         wlan.ifconfig(("192.168.1.100", "255.255.255.0",
+                        "192.168.1.1", "192.168.1.1"))
+         wlan.connect(SSID, key=KEY, security=network.WINC.WPA_PSK)
+
+      .. note::
+
+         :class:`WINC` does **not** implement the modern
+         :meth:`AbstractNIC.ipconfig` API; use :meth:`ifconfig` here.
 
    .. method:: netinfo() -> Tuple[int, int, str, str, str]
 
-      Returns a tuple containing:
+      Return a 5-tuple describing the current association:
 
-         * [0]: RSSI - received signal strength indicator (int)
-         * [1]: Authorization Type (see constants)
-         * [2]: Set Service Identifier String (SSID)
-         * [3]: MAC Address String (XX:XX:XX:XX:XX:XX) (BSSID)
-         * [4]: IP Address String (XXX.XXX.XXX.XXX)
-
-      While connected to the network.
+         * ``[0]`` RSSI as an int (dBm).
+         * ``[1]`` Security mode -- one of the security constants.
+         * ``[2]`` SSID string.
+         * ``[3]`` BSSID as an ``"XX:XX:XX:XX:XX:XX"`` MAC string.
+         * ``[4]`` IPv4 address as a dotted-quad string.
 
    .. method:: scan() -> List[Tuple[str, str, int, int, int, int]]
 
-      Returns a list containing:
+      Scan for nearby access points. Returns a list of 6-tuples:
 
-         * [0]: Set Service Identifier String (SSID)
-         * [1]: MAC Address String (XX:XX:XX:XX:XX:XX) (BSSID)
-         * [2]: Channel Number (int)
-         * [3]: RSSI - received signal strength indicator (int)
-         * [4]: Authorization Type (see constants)
-         * [5]: 1 (int)
+         * ``[0]`` SSID string.
+         * ``[1]`` BSSID as an ``"XX:XX:XX:XX:XX:XX"`` MAC string.
+         * ``[2]`` Channel number.
+         * ``[3]`` RSSI in dBm.
+         * ``[4]`` Security mode -- one of the security constants.
+         * ``[5]`` Reserved (always ``1``).
 
-      You don't need to be connected to call this.
+      Can be called without first associating with a network.
 
    .. method:: rssi() -> int
 
-      Returns the received signal strength indicator (int) of the currently
-      connected network.
+      Return the RSSI in dBm of the currently associated access
+      point. Roughly: ``-30`` is excellent, ``-67`` is OK for
+      streaming, ``-80`` is marginal, ``-90`` and below is unusable.
+      Only meaningful in STA mode while :meth:`isconnected` is
+      ``True``.
 
    .. method:: fw_version() -> Tuple[int, int, int, int, int, int, int]
 
-      Returns a tuple containing the wifi shield firmware version number.
+      Return a 7-tuple describing the WINC1500 firmware and driver
+      versions:
 
-         * [0]: Firmware Major Version Number (int)
-         * [1]: Firmware Minor Version Number (int)
-         * [2]: Firmware Patch Version Number (int)
-         * [3]: Driver Major Version Number (int)
-         * [4]: Driver Minor Version Number (int)
-         * [5]: Driver Patch Version Number (int)
-         * [6]: Hardware Revision Number - Chip ID (int)
+         * ``[0]`` Firmware major.
+         * ``[1]`` Firmware minor.
+         * ``[2]`` Firmware patch.
+         * ``[3]`` Driver major.
+         * ``[4]`` Driver minor.
+         * ``[5]`` Driver patch.
+         * ``[6]`` Chip hardware revision.
 
    .. method:: fw_dump(path: str) -> None
 
-      Dumps the wifi shield firmware to a binary file at ``path``. You must
-      have put the module into firmware mode to use this.
+      Read the WINC1500's internal flash and write the resulting
+      firmware image to the file at ``path`` on the OpenMV's
+      filesystem. Use this to back up the currently-installed image
+      before calling :meth:`fw_update`.
+
+      Requires the module to have been constructed with
+      ``mode=MODE_FIRMWARE``.
 
    .. method:: fw_update(path: str) -> None
 
-      Programs the wifi shield with binary image found at ``path``. You must
-      have put the module into firmware mode to use this.
+      Erase the WINC1500's internal flash and program it with the
+      binary image at ``path``. The image must match the layout
+      expected by the OpenMV firmware (typically supplied by Atmel /
+      Microchip with the WINC SDK).
+
+      The call blocks for several seconds while the flash is
+      programmed and verified. Power-cycle the OpenMV Cam after the
+      call returns so the WINC1500 starts from the new image.
+
+      Requires the module to have been constructed with
+      ``mode=MODE_FIRMWARE``.
 
    Constants
    ---------
@@ -183,40 +227,47 @@ Constructors
    .. data:: OPEN
       :type: int
 
-      For connecting to an open wifi network.
+      Security value for an unencrypted network. Pass to the
+      ``security`` argument of :meth:`connect` / :meth:`start_ap`.
 
    .. data:: WPA_PSK
       :type: int
 
-      For connecting to a WPA/PSK based password protected network.
+      Security value for WPA/WPA2 with a pre-shared key. The default
+      for :meth:`connect`.
 
    .. note::
 
-      A WPA/WPA2 **Enterprise** (802.1X) security value also exists. The
-      firmware exposes it under the name ``802_1X``, which is not a valid
-      Python identifier — access it with ``getattr(network.WINC, "802_1X")``.
+      A WPA/WPA2 **Enterprise** (802.1X) security value also exists.
+      The firmware exposes it under the name ``802_1X``, which is not
+      a valid Python identifier -- access it via
+      ``getattr(network.WINC, "802_1X")``.
 
    .. data:: MODE_STA
       :type: int
 
-      Start in station mode (i.e. connect to a network).
+      Station mode -- connect to an access point as a client. The
+      default constructor mode.
 
    .. data:: MODE_AP
       :type: int
 
-      Start in access point mode (i.e. become the network).
+      Access-point mode -- the WINC becomes the AP that clients
+      associate with.
 
    .. data:: MODE_P2P
       :type: int
 
-      Start in wifi-direct mode.
+      WiFi-Direct (peer-to-peer) mode.
 
    .. data:: MODE_BSP
       :type: int
 
-      Init BSP.
+      Initialise the WINC board-support package only -- the radio is
+      not brought up. Used by the firmware-update flow.
 
    .. data:: MODE_FIRMWARE
       :type: int
 
-      Setup in firmware update mode.
+      Firmware-update mode. Required by :meth:`fw_dump` and
+      :meth:`fw_update`.

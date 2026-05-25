@@ -173,6 +173,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="stm.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">stm</span></code> &#8212; functionality specific to STM32 MCUs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="mimxrt.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mimxrt</span></code> &#8212; functionality specific to NXP i.MXRT</a></li>
 <li class="toctree-l2"><a class="reference internal" href="omv.alif.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alif</span></code> &#8212; Alif Ensemble SoC functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rp2.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rp2</span></code> &#8212; functionality specific to the RP2040</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ubluepy.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ubluepy</span></code> &#8212; Bluetooth LE peripheral and central</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dht.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dht</span></code> &#8212; DHT11 and DHT22 temperature/humidity sensors</a></li>
 <li class="toctree-l2"><a class="reference internal" href="onewire.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">onewire</span></code> &#8212; 1-Wire bus protocol</a></li>
@@ -217,6 +218,9 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#where-image-objects-come-from">Where Image objects come from</a></li>
+<li><a class="reference internal" href="#typical-capture-process-display-loop">Typical capture-process-display loop</a></li>
+<li><a class="reference internal" href="#indexing-length-iteration-and-bytes-like-access">Indexing, length, iteration, and bytes-like access</a></li>
 <li><a class="reference internal" href="#hint-flags">Hint flags</a><ul>
 <li><a class="reference internal" href="#image.Image"><code class="docutils literal notranslate"><span class="pre">Image</span></code></a><ul>
 <li><a class="reference internal" href="#image.Image.width"><code class="docutils literal notranslate">width()</span></code></a></li>
@@ -352,7 +356,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/e596bf0ac5fe30d539c3f6f4808c0e49129f6efa/docs/library/omv.image.Image.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/e5285ced6beb77f19fb411f976733cb02f25c81f/docs/library/omv.image.Image.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -430,7 +434,91 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="class-image-image-object">
 <h1>class Image – Image object<a class="headerlink" href="#class-image-image-object" title="Link to this heading">¶</a></h1>
-<p>The image object is the basic object for machine vision operations.</p>
+<p><a class="reference internal" href="#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> is the central data type of the <a class="reference internal" href="omv.image.html#module-image" title="image: machine vision"><code class="xref py py-mod docutils literal notranslate"><span class="pre">image</span></code></a> module –
+an in-memory pixel buffer that every drawing routine, every filter,
+every geometric transform, and every feature-extraction routine
+operates on. Every frame coming out of <a class="reference internal" href="omv.csi.html#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">csi.CSI.snapshot()</span></code></a> is an
+<a class="reference internal" href="#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>; so is every frame loaded from disk, decoded from JPEG
+or PNG, allocated from a numpy-style <code class="docutils literal notranslate"><span class="pre">ndarray</span></code>, or constructed as
+an empty drawing canvas.</p>
+<p>An <a class="reference internal" href="#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> is described by three numbers – <code class="docutils literal notranslate"><span class="pre">width</span></code>,
+<code class="docutils literal notranslate"><span class="pre">height</span></code>, and <code class="docutils literal notranslate"><span class="pre">pixformat</span></code> – plus a contiguous pixel buffer. The
+pixel format determines both the in-memory layout and which
+operations are available:</p>
+<ul class="simple">
+<li><p><strong>BINARY (1 bpp)</strong> – 1 bit per pixel; used by morphology and
+thresholding.</p></li>
+<li><p><strong>GRAYSCALE (8 bpp)</strong> – 1 byte per pixel; the canonical format for
+most CV (AprilTag, edges, ORB, optical flow).</p></li>
+<li><p><strong>RGB565 (16 bpp)</strong> – 2 bytes per pixel (5R/6G/5B); the default
+colour format.</p></li>
+<li><p><strong>BAYER (8 bpp)</strong> – raw Bayer-mosaic data straight off the sensor.
+Most CV methods are not available on Bayer images; debayer to
+GRAYSCALE / RGB565 first.</p></li>
+<li><p><strong>YUV422 (16 bpp)</strong> – 4:2:2 chroma-subsampled colour, two bytes per
+pixel. Only some methods work directly on YUV422.</p></li>
+<li><p><strong>JPEG / PNG</strong> – compressed buffers. Pixel-level operations
+require <code class="xref py py-meth docutils literal notranslate"><span class="pre">to_grayscale()</span></code> or <code class="xref py py-meth docutils literal notranslate"><span class="pre">to_rgb565()</span></code> first.</p></li>
+</ul>
+<section id="where-image-objects-come-from">
+<h2>Where Image objects come from<a class="headerlink" href="#where-image-objects-come-from" title="Link to this heading">¶</a></h2>
+<p>There are four ways to obtain an <a class="reference internal" href="#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>:</p>
+<ul class="simple">
+<li><p><strong>From the camera frame buffer</strong> – <code class="docutils literal notranslate"><span class="pre">csi.CSI().snapshot()</span></code> returns
+the next captured frame. The returned object is a thin wrapper
+around the camera’s frame-buffer memory, so any draw / filter
+operation on it changes what gets sent to the IDE preview and the
+display.</p></li>
+<li><p><strong>From a file</strong> – pass a path string to the <a class="reference internal" href="#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a>
+constructor. BMP, PGM, PPM, JPEG and PNG are decoded directly into
+RAM (or into the camera frame buffer if <code class="docutils literal notranslate"><span class="pre">copy_to_fb=True</span></code>).</p></li>
+<li><p><strong>From an ndarray</strong> – pass a <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">w)</span></code> or <code class="docutils literal notranslate"><span class="pre">(h,</span> <span class="pre">w,</span> <span class="pre">3)</span></code> float32
+array. The pixels are scaled from <code class="docutils literal notranslate"><span class="pre">0.0</span> <span class="pre">--</span> <span class="pre">255.0</span></code> into GRAYSCALE
+or RGB565 respectively.</p></li>
+<li><p><strong>Empty</strong> – pass <code class="docutils literal notranslate"><span class="pre">(width,</span> <span class="pre">height,</span> <span class="pre">pixformat)</span></code> to allocate a
+zero-filled drawing surface. For compressed pixel formats
+(<code class="docutils literal notranslate"><span class="pre">JPEG</span></code> / <code class="docutils literal notranslate"><span class="pre">PNG</span></code>) a <code class="docutils literal notranslate"><span class="pre">buffer=</span></code> argument is required and holds
+the compressed byte stream.</p></li>
+</ul>
+</section>
+<section id="typical-capture-process-display-loop">
+<h2>Typical capture-process-display loop<a class="headerlink" href="#typical-capture-process-display-loop" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">image</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">sensor</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">sensor</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="6"><span class="n">sensor</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="7"><span class="n">sensor</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="10">    <span class="n">img</span> <span class="o">=</span> <span class="n">sensor</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>                    <span class="c1"># capture</span>
+</span><span data-line="11">    <span class="k">for</span> <span class="n">blob</span> <span class="ow">in</span> <span class="n">img</span><span class="o">.</span><span class="n">find_blobs</span><span class="p">([(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">127</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">127</span><span class="p">)]):</span>  <span class="c1"># process</span>
+</span><span data-line="12">        <span class="n">img</span><span class="o">.</span><span class="n">draw_rectangle</span><span class="p">(</span><span class="n">blob</span><span class="o">.</span><span class="n">rect</span><span class="p">)</span>          <span class="c1"># annotate</span>
+</span><span data-line="13">    <span class="c1"># img is shown automatically in the IDE preview and on any</span>
+</span><span data-line="14">    <span class="c1"># attached display.</span>
+</span></pre></div>
+</div>
+</section>
+<section id="indexing-length-iteration-and-bytes-like-access">
+<h2>Indexing, length, iteration, and bytes-like access<a class="headerlink" href="#indexing-length-iteration-and-bytes-like-access" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Indexing</strong> – <code class="docutils literal notranslate"><span class="pre">img[i]</span></code> reads pixel <code class="docutils literal notranslate"><span class="pre">i</span></code> (linearly, row-major).
+<code class="docutils literal notranslate"><span class="pre">img[i]</span> <span class="pre">=</span> <span class="pre">value</span></code> writes it. Grayscale / Bayer pixels are 8-bit
+integers, RGB565 / YUV422 pixels are 16-bit packed integers,
+binary pixels are 0 / 1. For JPEG / PNG images the index space is
+the compressed byte stream, not pixels.</p></li>
+<li><p><strong>Length</strong> – <code class="docutils literal notranslate"><span class="pre">len(img)</span></code> returns the number of pixels for
+uncompressed formats or the byte count for compressed formats.</p></li>
+<li><p><strong>Iteration</strong> – <code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">px</span> <span class="pre">in</span> <span class="pre">img:</span> <span class="pre">...</span></code> walks the pixel array in
+the same order as <code class="docutils literal notranslate"><span class="pre">[]</span></code> indexing.</p></li>
+<li><p><strong>Bytes-like</strong> – <a class="reference internal" href="#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> exposes the read buffer protocol,
+so you can pass it directly to anything that takes a <code class="docutils literal notranslate"><span class="pre">bytes</span></code> /
+<code class="docutils literal notranslate"><span class="pre">bytearray</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">uart.write(img)</span></code>, <code class="docutils literal notranslate"><span class="pre">socket.send(img)</span></code>,
+<code class="docutils literal notranslate"><span class="pre">hashlib.sha256(img)</span></code>). Use <a class="reference internal" href="builtins.html#bytearray" title="bytearray"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bytearray()</span></code></a> instead to obtain
+a read/write view.</p></li>
+</ul>
+</section>
 <section id="hint-flags">
 <span id="image-image-hint"></span><h2>Hint flags<a class="headerlink" href="#hint-flags" title="Link to this heading">¶</a></h2>
 <p>Many <a class="reference internal" href="#image.Image" title="image.Image"><code class="xref any py py-class docutils literal notranslate"><span class="pre">Image</span></code></a> methods accept a <code class="docutils literal notranslate"><span class="pre">hint</span></code> argument which is a logical OR of the following flags:</p>
@@ -1329,7 +1417,7 @@ and <code class="docutils literal notranslate"><span class="pre">fill</span></co
 <dl class="py method">
 <dt class="sig sig-object py" id="image.Image.draw_edges">
 <span class="sig-name descname"><span class="pre">draw_edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#image.Image" title="image.Image"><span class="pre">Image</span></a></span></span><a class="headerlink" href="#image.Image.draw_edges" title="Link to this definition">¶</a></dt>
-<dd><p>Draws line edges between a corner list returned by methods like <a class="reference internal" href="omv.image.Blob.html#image.blob.corners" title="image.blob.corners"><code class="xref any py py-meth docutils literal notranslate"><span class="pre">blob.corners</span></code></a>. Coners is
+<dd><p>Draws line edges between a corner list returned by methods like <a class="reference internal" href="omv.image.Blob.html#image.blob.corners" title="image.blob.corners"><code class="xref any py py-attr docutils literal notranslate"><span class="pre">blob.corners</span></code></a>. Coners is
 a four valued tuple of two valued x/y tuples. E.g. [(x1,y1),(x2,y2),(x3,y3),(x4,y4)].</p>
 <p><code class="docutils literal notranslate"><span class="pre">color</span></code> is an RGB888 tuple for Grayscale or RGB565 images. Defaults to
 white. However, you may also pass the underlying pixel value (0-255) for
@@ -2449,7 +2537,7 @@ merging regions.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 22 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 25 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

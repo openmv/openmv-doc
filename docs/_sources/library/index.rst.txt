@@ -168,6 +168,7 @@ for which boards include each one.
    stm.rst
    mimxrt.rst
    omv.alif.rst
+   rp2.rst
    ubluepy.rst
 
 Hardware drivers
@@ -369,6 +370,7 @@ RP2040-based Nano-form-factor board with the U-blox NINA-W102
 Wi-Fi/Bluetooth module. *No longer actively supported; the last OpenMV
 firmware release for this board is retained for archival use.*
 
+* :mod:`rp2` --- RP2040-specific PIO / DMA / flash helpers
 * :mod:`espflash` --- ESP32 ROM bootloader firmware flasher
 * :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
 * :mod:`dht` --- DHT11 and DHT22 temperature/humidity sensors

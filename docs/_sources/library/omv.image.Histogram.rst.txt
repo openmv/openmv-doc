@@ -6,64 +6,82 @@ class Histogram -- Histogram Object
 The histogram object is returned by `Image.get_histogram()`. The underlying
 class name is ``histogram``.
 
-Grayscale histograms have one channel with some number of bins. All bins are
-normalized so that they sum to 1.
+For grayscale images the histogram has a single channel of bins. For RGB565
+images the histogram has three channels covering the CIE-LAB ``L``, ``A``,
+and ``B`` axes. In both cases each channel is normalized so that its bins
+sum to 1.0.
 
-RGB565 histograms have three channels (LAB L, A, B) with some number of bins
-each. All bins in a channel are normalized so that they sum to 1.
+Per-channel bin lists are exposed as both bound methods (``hist.bins()``)
+and through subscript notation (``hist[0]``). The high-level reductions
+:meth:`get_percentile`, :meth:`get_threshold`, and :meth:`get_statistics`
+return the corresponding :class:`Percentile <percentile>`,
+:class:`Threshold <threshold>`, and :class:`Statistics <statistics>` attrtuples.
 
 .. class:: histogram
 
    Please call `Image.get_histogram()` to create this object. It has no public
    constructor.
 
-   .. method:: histogram.bins() -> list[float]
+   .. method:: bins() -> list[float]
 
-      Returns a list of floats for the grayscale histogram.
+      Return the bin list for a grayscale histogram. Each entry is in the
+      range 0.0 to 1.0 and the entries sum to 1.0.
 
-      Also accessible as ``histogram[0]``.
+      Equivalent to ``histogram[0]``.
 
-   .. method:: histogram.l_bins() -> list[float]
+   .. method:: l_bins() -> list[float]
 
-      Returns a list of floats for the RGB565 LAB L channel histogram.
+      Return the bin list for the LAB ``L`` channel of an RGB565 histogram.
+      Each entry is in the range 0.0 to 1.0 and the entries sum to 1.0.
 
-      Also accessible as ``histogram[0]``.
+      Equivalent to ``histogram[0]``.
 
-   .. method:: histogram.a_bins() -> list[float]
+   .. method:: a_bins() -> list[float]
 
-      Returns a list of floats for the RGB565 LAB A channel histogram.
+      Return the bin list for the LAB ``A`` channel of an RGB565 histogram.
+      Each entry is in the range 0.0 to 1.0 and the entries sum to 1.0.
 
-      Also accessible as ``histogram[1]``.
+      Equivalent to ``histogram[1]``.
 
-   .. method:: histogram.b_bins() -> list[float]
+   .. method:: b_bins() -> list[float]
 
-      Returns a list of floats for the RGB565 LAB B channel histogram.
+      Return the bin list for the LAB ``B`` channel of an RGB565 histogram.
+      Each entry is in the range 0.0 to 1.0 and the entries sum to 1.0.
 
-      Also accessible as ``histogram[2]``.
+      Equivalent to ``histogram[2]``.
 
-   .. method:: histogram.get_percentile(percentile: float) -> image.percentile
+   .. method:: get_percentile(percentile: float) -> image.percentile
 
-      Computes the CDF of the histogram channels and returns an `image.percentile`
-      object holding the value at ``percentile`` (0.0 - 1.0) for each channel.
-      Useful for determining min/max of a color distribution while ignoring
-      outliers.
+      Compute the CDF of every histogram channel and return the bin value at
+      the requested ``percentile`` (a float in ``0.0`` -- ``1.0``).
 
-   .. method:: histogram.get_threshold() -> image.threshold
+      Useful for finding the min/max of a color distribution while ignoring
+      outliers (``get_percentile(0.05)`` and ``get_percentile(0.95)`` give a
+      robust min/max).
 
-      Uses Otsu's Method to compute the optimal threshold values that split the
-      histogram into two halves for each channel. Returns an `image.threshold`
-      object. Useful for determining optimal `Image.binary()` thresholds.
+      Returns a :class:`Percentile <percentile>` attrtuple.
 
-   .. method:: histogram.get_statistics() -> image.statistics
+   .. method:: get_threshold() -> image.threshold
 
-      Computes the mean, median, mode, standard deviation, min, max, lower
-      quartile, and upper quartile of each channel of the histogram. Returns an
-      `image.statistics` object.
+      Use Otsu's Method on every channel to find the threshold value that
+      best splits each channel's distribution into a "background" and
+      "foreground" half. The returned thresholds are well-suited to feed
+      directly into `Image.binary()` or any other method that takes
+      LAB ``L/A/B`` color thresholds.
 
-   .. method:: histogram.get_stats() -> image.statistics
+      Returns a :class:`Threshold <threshold>` attrtuple.
 
-      Alias for `histogram.get_statistics()`.
+   .. method:: get_statistics() -> image.statistics
 
-   .. method:: histogram.statistics() -> image.statistics
+      Compute the mean, median, mode, standard deviation, min, max, lower
+      quartile, and upper quartile of every histogram channel.
 
-      Alias for `histogram.get_statistics()`.
+      Returns a :class:`Statistics <statistics>` attrtuple.
+
+   .. method:: get_stats() -> image.statistics
+
+      Alias for :meth:`get_statistics`.
+
+   .. method:: statistics() -> image.statistics
+
+      Alias for :meth:`get_statistics`.
