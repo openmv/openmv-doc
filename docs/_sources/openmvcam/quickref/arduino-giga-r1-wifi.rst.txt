@@ -200,6 +200,12 @@ The Giga R1 can be powered through any of these paths:
 * **USB‑C** — supplies 5 V to the on‑board buck regulator.
 * **VIN pin** — drive a regulated 6–32 V supply directly.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the Giga R1 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 

@@ -87,9 +87,14 @@ Classes
 
 .. class:: IOBase
 
-    Base class for implementing stream ("file-like") objects in pure Python.
-    Derive from this class and implement the methods below; the runtime calls
-    them when the corresponding stream operation is performed on an instance.
+    Base class for stream ("file-like") objects. Concrete subclasses
+    implement the low-level I/O methods below (``readinto``, ``write``,
+    ``ioctl``); the runtime builds the higher-level stream protocol
+    (``read``, ``readline``, ``readlines``, ``close``, iteration) on top of
+    them, so every stream instance supports those methods even when the
+    subclass does not define them.
+
+    Implementation methods (override these in a subclass):
 
     .. method:: readinto(buf: bytearray) -> Optional[int]
 
@@ -108,6 +113,66 @@ Classes
         Control the underlying stream/device. *request* is one of the
         ``MP_STREAM_*`` request codes. Return a non-negative value on success,
         or a negative ``errno`` value on error.
+
+    Stream protocol methods (available on every stream instance):
+
+    .. method:: read(size: int = -1)
+
+        Read and return up to *size* bytes (or characters, in text mode). If
+        *size* is omitted or negative, read until end of stream. Returns
+        :class:`bytes` for binary streams and :class:`str` for text streams;
+        an empty result indicates end of stream.
+
+    .. method:: readline(size: int = -1)
+
+        Read and return one line, including the trailing newline character
+        if one is present. If *size* is given, at most *size* bytes (or
+        characters) are read. Returns an empty :class:`bytes` / :class:`str`
+        at end of stream.
+
+    .. method:: readlines() -> list
+
+        Read until end of stream and return a :class:`list` of lines, each
+        with its trailing newline.
+
+    .. method:: close() -> None
+
+        Close the stream and release any underlying resources. Operations on
+        a closed stream raise :exc:`OSError` (or :exc:`ValueError` for
+        in-memory streams).
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+
+        Change the current stream position to *offset* bytes relative to
+        *whence* (``0`` = start of stream, ``1`` = current position, ``2`` =
+        end of stream). Return the new absolute position. Raises
+        :exc:`OSError` on a stream that is not seekable.
+
+    .. method:: tell() -> int
+
+        Return the current absolute position in the stream. Equivalent to
+        ``seek(0, 1)``.
+
+    .. method:: flush() -> None
+
+        Flush any write buffers, pushing pending data to the underlying
+        device or file. A no-op on streams that do not buffer.
+
+    Iterating a stream directly yields one line per iteration -- equivalent
+    to calling :meth:`readline` in a loop until the empty-line end-of-stream
+    sentinel is returned. A stream also supports the context-manager
+    protocol, so ``with open(...) as f:`` closes the stream automatically.
+
+    .. note::
+
+       MicroPython's stream module also exposes "1"-suffixed C helpers
+       ``mp_stream_read1_obj``, ``mp_stream_readinto1_obj``, and
+       ``mp_stream_write1_obj`` that perform a single underlying I/O call
+       instead of looping until the request is fully satisfied. They are
+       used internally by classes like :class:`machine.UART` to implement
+       their own ``read`` / ``write`` -- but no standard stream class binds
+       them as Python-callable ``read1`` / ``readinto1`` / ``write1``
+       methods.
 
 .. class:: StringIO(string: str = "")
 

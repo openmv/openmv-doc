@@ -31,6 +31,8 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
    hardware_setup.rst
    openmvide_overview.rst
 
+   python/index.rst
+
    script_structure.rst
    io_tutorial.rst
    system_architecture.rst
@@ -38,6 +40,7 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
    numpy/index.rst
 
    tls_certificates.rst
+   battery_life.rst
 
    firmware_development.rst
 
@@ -817,6 +820,5498 @@ option dialog.
 You can configure the editor font, size, zoom, tab behavior, automatic cleaning
 of white space, column margins for folks who like keeping lines to 80
 characters, and more.
+
+
+Python Overview
+===============
+
+The OpenMV Cam runs MicroPython, the same language as desktop Python
+with a smaller standard library and a few extra modules for talking
+to hardware. Everything written for the camera -- from a two-line
+script that blinks the LED to a full machine-vision application --
+is Python code.
+
+.. toctree::
+   :caption: Getting started
+   :maxdepth: 1
+
+   getting-started/first-script.rst
+   getting-started/variables.rst
+   getting-started/math.rst
+
+.. toctree::
+   :caption: Working with text
+   :maxdepth: 1
+
+   text/strings.rst
+   text/formatting.rst
+   text/text-vs-bytes.rst
+
+.. toctree::
+   :caption: Collections
+   :maxdepth: 1
+
+   collections/lists.rst
+   collections/tuples.rst
+   collections/dictionaries.rst
+   collections/sets.rst
+
+.. toctree::
+   :caption: Control flow
+   :maxdepth: 1
+
+   control-flow/conditionals.rst
+   control-flow/loops.rst
+   control-flow/loop-control.rst
+
+.. toctree::
+   :caption: Functions
+   :maxdepth: 1
+
+   functions/defining-functions.rst
+   functions/arguments.rst
+   functions/scope.rst
+   functions/type-hints.rst
+
+.. toctree::
+   :caption: Modules
+   :maxdepth: 1
+
+   modules/using-modules.rst
+   modules/writing-modules.rst
+
+.. toctree::
+   :caption: Classes and objects
+   :maxdepth: 1
+
+   classes/first-class.rst
+   classes/methods-and-attributes.rst
+   classes/inheritance.rst
+   classes/decorators.rst
+   classes/context-managers.rst
+
+.. toctree::
+   :caption: Errors and exceptions
+   :maxdepth: 1
+
+   errors/handling-errors.rst
+   errors/raising-errors.rst
+
+.. toctree::
+   :caption: Files and data
+   :maxdepth: 1
+
+   files-and-data/reading-and-writing.rst
+   files-and-data/json.rst
+   files-and-data/struct-and-binary.rst
+
+.. toctree::
+   :caption: Iteration patterns
+   :maxdepth: 1
+
+   iteration/comprehensions.rst
+   iteration/iterators-and-generators.rst
+   iteration/async-and-await.rst
+
+.. toctree::
+   :caption: Metaprogramming
+   :maxdepth: 1
+
+   metaprogramming/introspection.rst
+   metaprogramming/dynamic-code.rst
+
+.. toctree::
+   :caption: Practical MicroPython
+   :maxdepth: 1
+
+   micropython/floats.rst
+   micropython/memory-and-gc.rst
+   micropython/debugging.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst
+
+
+Your first script
+=================
+
+A Python *script* is a sequence of instructions saved in a text
+file with a ``.py`` extension. The OpenMV Cam runs whatever script
+is currently open in the IDE when you press the green **Run**
+button, and prints any output in the IDE's serial terminal along
+the bottom of the window.
+
+The simplest possible script is one line:
+
+::
+
+    print("Hello, OpenMV!")
+
+Pressing **Run** sends this script to the camera, which executes
+it and prints the message back in the IDE.
+
+What ``print`` does
+-------------------
+
+:func:`print` is a built-in function -- a piece of code that lives
+inside the firmware and is always available without any setup.
+Hand it one or more values inside parentheses and it prints a text
+representation of those values in the IDE.
+
+You can hand :func:`print` anything, not just text:
+
+::
+
+    print(42)
+    print(3.14)
+    print("temperature", 25)
+
+Multiple arguments are separated by spaces in the output:
+
+::
+
+    >>> temperature 25
+
+Comments
+--------
+
+A ``#`` starts a *comment* -- the rest of the line is ignored by
+Python. Use comments to explain *why* the code does what it does;
+the code itself already shows *what* it does.
+
+::
+
+    # Send a startup banner over the serial terminal.
+    print("camera ready")
+
+    print("running")  # Marker for the operator monitoring the IDE.
+
+There is no separate syntax for multi-line comments in Python.
+Comment several lines individually, or select the lines in the IDE
+and press ``Ctrl+/`` to toggle them on and off.
+
+Indentation matters
+-------------------
+
+Python uses indentation -- the whitespace at the start of a line --
+to group related lines together. Inside a function, an
+``if`` statement, or a loop, every line that belongs to the block
+is indented by the **same amount** (four spaces is the convention).
+Mixing tabs and spaces or changing the indent width inside a block
+is a syntax error.
+
+Top-level statements like the ``print`` calls above sit at indent
+zero. Indented blocks appear once you start writing branches and
+loops.
+
+.. tip::
+
+   The IDE auto-indents for you as soon as you finish a
+   line ending in ``:``. If you ever get a mysterious
+   ``IndentationError``, select the offending block and press
+   ``Tab`` / ``Shift+Tab`` to re-align it.
+
+Running the script again
+------------------------
+
+Every time you press **Run**, the camera stops whatever it was
+doing, loads the current script, and starts from the top. There is
+no separate compile step. Change a line, press **Run** again, and
+the new output appears in the terminal.
+
+To make a script run automatically every time the camera powers
+on, save it as ``main.py`` on the camera's filesystem.
+
+
+Variables and basic types
+=========================
+
+A *variable* is a name you bind to a value with the ``=`` operator.
+After assignment, the name can be used anywhere the value can:
+
+::
+
+    width = 320
+    height = 240
+    pixels = width * height
+    print(pixels)               # prints 76800
+
+The right-hand side of ``=`` is evaluated first, then the result is
+bound to the name on the left. Reading a name that was never
+assigned raises :exc:`NameError`.
+
+A variable is just a label. It points at a value -- the value lives
+somewhere else, and the same value can have any number of labels.
+
+.. figure:: https://docs.openmv.io/_images/var-binding.svg
+   :alt: Three labels pointing at three boxed values; reassigning a label
+         moves the arrow, not the value.
+
+   Variables are labels pointing at values. Reassigning a variable
+   moves the label; it does not change the value the label used to
+   point at.
+
+Naming rules
+------------
+
+* Names start with a letter or underscore and may contain letters,
+  digits, and underscores. ``frame_count`` and ``_internal`` are
+  fine; ``1st_frame`` is a syntax error.
+* Names are case-sensitive: ``Width`` and ``width`` are two
+  different variables.
+* Avoid reusing built-in names like :class:`list`, :class:`str`,
+  :func:`id`, or :func:`print` -- shadowing them does not raise an
+  error, but the original built-in becomes unreachable for the
+  rest of the script.
+* Convention: ``snake_case`` for variables and functions,
+  ``ALL_CAPS`` for constants you do not intend to change,
+  ``CamelCase`` for class names.
+
+Basic types
+-----------
+
+Every value in Python has a *type* that determines what operations
+it supports. The four types you will write the most are:
+
+* **int** -- whole numbers, positive or negative. MicroPython
+  integers grow as large as memory allows. Literals are written
+  as plain digits: ``0``, ``42``, ``-7``. Hex (``0x1A``), octal
+  (``0o17``), and binary (``0b1010``) literals are also valid and
+  useful for registers and bitmasks.
+* **float** -- numbers with a decimal point or an exponent:
+  ``3.14``, ``1.0``, ``-0.5``, ``2e6`` (= 2,000,000.0). All floats
+  on the camera are IEEE 754 32-bit -- precise to about seven
+  significant digits.
+* **bool** -- one of the two literals ``True`` or ``False`` (note
+  the capitalisation).
+* **str** -- text, written as characters between single or double
+  quotes: ``"hello"``, ``'OpenMV'``. Both quote styles are
+  equivalent; pick whichever lets you avoid escaping the quote
+  characters that appear inside the string.
+
+There is also a fifth value worth knowing immediately:
+
+* **None** -- the single value of type ``NoneType``. Used to mean
+  "no value" or "not yet set". Functions that do not explicitly
+  return anything implicitly return ``None``.
+
+Checking and converting types
+-----------------------------
+
+The built-in :func:`type` function returns the type of any value:
+
+::
+
+    >>> type(42)
+    <class 'int'>
+    >>> type(3.14)
+    <class 'float'>
+    >>> type("hello")
+    <class 'str'>
+
+Each type also doubles as a conversion function. Pass it a value
+of a different type and you get the equivalent value of the new
+type back -- when the conversion is well-defined:
+
+::
+
+    >>> int("42")
+    42
+    >>> int(3.9)
+    3                           # truncates toward zero, not rounds
+    >>> float("1.5")
+    1.5
+    >>> str(255)
+    '255'
+    >>> bool(0), bool(1), bool("")
+    (False, True, False)
+
+Conversions that are not well-defined raise :exc:`ValueError`:
+
+::
+
+    >>> int("hello")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    ValueError: invalid syntax for integer with base 10
+
+Reassignment and dynamic typing
+-------------------------------
+
+A name can be reassigned to a value of any type at any time. The
+following is legal:
+
+::
+
+    x = 42
+    x = "now I'm a string"
+    x = 3.14
+
+Python does not bind a variable to a type. Code that depends on
+``x`` being an integer simply expects an integer at the point
+where it uses it; if it gets something else, you get a runtime
+:exc:`TypeError`.
+
+.. note::
+
+   Reassigning ``x`` does **not** change the value the old binding
+   pointed to. If two names share the same value, reassigning one
+   does not affect the other:
+
+   ::
+
+       a = [1, 2, 3]
+       b = a                       # both point at the same list
+       a = "different now"
+       print(b)                    # still [1, 2, 3]
+
+   Mutating a shared value is different: a method like
+   ``list.append`` changes the value the binding points at, so
+   every other name pointing at that same value sees the change.
+
+
+Math operations
+===============
+
+Python works as a calculator out of the box. This page covers the
+operators you will use most often: arithmetic on numbers,
+comparisons that produce booleans, logical operators that combine
+conditions, and bitwise operators for hardware-level work.
+
+Arithmetic
+----------
+
+The standard arithmetic operators on :class:`int` and
+:class:`float` values:
+
+* ``+`` -- addition
+* ``-`` -- subtraction (or negation, as a prefix: ``-x``)
+* ``*`` -- multiplication
+* ``/`` -- division. **Always** returns a :class:`float`, even when
+  both operands are integers.
+* ``//`` -- floor division. Returns the integer quotient rounded
+  toward minus-infinity.
+* ``%`` -- modulo (remainder).
+* ``**`` -- exponentiation (``2 ** 10`` is 1024).
+
+::
+
+    >>> 7 / 2
+    3.5
+    >>> 7 // 2
+    3
+    >>> -7 // 2
+    -4
+    >>> 7 % 2
+    1
+    >>> 2 ** 16
+    65536
+
+Mixed-type arithmetic promotes integers to floats automatically:
+
+::
+
+    >>> 3 + 0.5
+    3.5
+
+Augmented assignment combines the operator with ``=`` for a
+compact in-place update:
+
+::
+
+    counter = 0
+    counter += 1                # equivalent to counter = counter + 1
+    counter *= 2                # works for *= /= //= %= **= too
+
+Operator precedence follows the conventional order: ``**`` first,
+then unary ``-``, then ``*``, ``/``, ``//``, and ``%``, then
+``+`` and ``-``. Use parentheses when you are unsure -- they cost
+nothing at runtime.
+
+Comparison
+----------
+
+Comparison operators return a :class:`bool` (``True`` or ``False``):
+
+* ``==`` and ``!=`` -- equal / not equal.
+* ``<``, ``<=``, ``>``, ``>=`` -- ordering.
+
+::
+
+    >>> 3 == 3
+    True
+    >>> 3 == 3.0
+    True
+    >>> 3 < 5 <= 5
+    True
+
+The last example is a *chained* comparison and is exactly
+equivalent to ``3 < 5 and 5 <= 5``.
+
+.. warning::
+
+   ``=`` assigns; ``==`` compares. The expression
+   ``if x = 5:`` is a syntax error precisely because Python
+   refuses to silently confuse the two.
+
+Boolean logic
+-------------
+
+Three operators combine booleans:
+
+* ``and`` -- ``True`` only when both sides are true.
+* ``or`` -- ``True`` when either side is true.
+* ``not`` -- inverts a single boolean.
+
+``and`` and ``or`` *short-circuit*: they stop evaluating as soon
+as the result is known. ``False and slow_check()`` never calls
+``slow_check``.
+
+``and`` and ``or`` also return one of their operands rather than a
+literal ``True`` or ``False``, which lets you write defaults
+compactly:
+
+::
+
+    name = user_name or "anonymous"   # "" / 0 / None are falsy
+
+Bitwise operators
+-----------------
+
+For hardware work -- packing register fields, masking bits,
+parsing protocol headers -- you will reach for the bitwise
+operators. They act on the binary representation of an
+:class:`int`:
+
+* ``&`` -- bitwise AND
+* ``|`` -- bitwise OR
+* ``^`` -- bitwise XOR
+* ``~`` -- bitwise NOT (one's complement)
+* ``<<`` -- left shift
+* ``>>`` -- right shift
+
+The hex and binary literal forms are convenient when reading and
+writing these:
+
+::
+
+    >>> 0b1100 & 0b1010
+    8                              # 0b1000
+    >>> 0b1100 | 0b1010
+    14                             # 0b1110
+    >>> 0xFF ^ 0x0F
+    240                            # 0xF0
+    >>> 1 << 8
+    256
+    >>> (0xABCD >> 8) & 0xFF
+    171                            # extract the high byte
+
+Augmented forms exist for each: ``|=``, ``&=``, ``^=``, ``<<=``,
+``>>=``.
+
+.. note::
+
+   ``and`` / ``or`` operate on booleans (or on truthiness); ``&``
+   / ``|`` operate on bits. Do not mix them up. ``0b1100 and 0b1010``
+   evaluates to ``0b1010`` because both operands are truthy --
+   not what you usually want when manipulating bits.
+
+Useful number built-ins
+-----------------------
+
+A handful of built-in functions cover common numeric operations
+that the operators alone do not:
+
+* :func:`round` -- nearest integer, or nearest ``ndigits``
+  decimal places when a second argument is given. Returns an
+  :class:`int` for ``round(x)``, a :class:`float` for
+  ``round(x, n)``. Ties (``0.5``, ``1.5``, ...) round to the
+  nearest even number, not always up.
+* :func:`divmod` -- returns ``(quotient, remainder)`` in one
+  call. Handy for splitting one quantity into units (seconds
+  into minutes-and-seconds, bytes into pages-and-offsets).
+* :func:`pow` -- the same as ``**`` in the two-argument form.
+  The three-argument form ``pow(base, exp, mod)`` computes
+  ``(base ** exp) % mod`` without ever materialising the giant
+  intermediate value, which is the only practical way to do
+  modular exponentiation for large exponents.
+
+::
+
+    >>> round(3.7)
+    4
+    >>> round(3.14159, 2)
+    3.14
+    >>> round(0.5)               # ties go to even, not always up
+    0
+    >>> round(1.5)
+    2
+
+    >>> divmod(125, 60)          # 125 seconds = 2 min, 5 sec
+    (2, 5)
+    >>> minutes, seconds = divmod(125, 60)
+
+    >>> pow(3, 4)                # same as 3 ** 4
+    81
+    >>> pow(3, 100, 7)           # (3 ** 100) mod 7, efficient
+    4
+
+Integer-to-string base conversions (``bin``, ``oct``, ``hex``)
+are covered in :doc:`String methods and formatting
+<../text/formatting>`.
+
+The math module
+---------------
+
+Common mathematical functions live in the :mod:`math` module. Import
+it once and call its functions through a dotted name:
+
+::
+
+    import math
+
+    print(math.sqrt(2))              # 1.4142135
+    print(math.sin(math.pi / 2))     # 1.0
+    print(math.floor(3.7))           # 3
+    print(math.log(100, 10))         # 2.0
+
+The MicroPython :mod:`math` module covers the usual suspects
+(``sqrt``, ``exp``, ``log``, ``sin``, ``cos``, ``tan``, ``atan2``,
+``floor``, ``ceil``, ``pi``, ``e``, ...). For random numbers, see
+the :mod:`random` module; for fixed-point bit twiddling, the
+operators above are usually enough.
+
+Complex numbers
+---------------
+
+For numerical work that needs imaginary components, Python has
+a :class:`complex` type with ``j``-suffix literals (``1 + 2j``).
+The :mod:`cmath` module mirrors :mod:`math` for complex inputs.
+Both are present on most MicroPython builds but rarely needed
+for camera work; mention them mainly so they aren't a surprise
+if you port code that uses them.
+
+
+Strings
+=======
+
+A *string* is a sequence of Unicode characters written between
+quotes. Single quotes and double quotes are equivalent -- pick the
+style that lets you avoid escaping the quotes that appear inside
+the text:
+
+::
+
+    name    = "OpenMV Cam"
+    company = 'OpenMV, LLC'
+    message = "She said \"hi\""        # both styles can be used
+    same    = 'She said "hi"'
+
+Triple-quoted strings (``"""..."""`` or ``'''...'''``) span
+multiple lines and preserve the newlines literally:
+
+::
+
+    banner = """boot ok
+    firmware v1.28
+    """
+    print(banner)
+
+Output::
+
+    boot ok
+    firmware v1.28
+
+Escape sequences
+----------------
+
+Inside a regular string, ``\`` introduces a special character:
+
+* ``\n`` -- newline
+* ``\t`` -- tab
+* ``\\`` -- a literal backslash
+* ``\'`` / ``\"`` -- a literal quote (when it would otherwise end
+  the string)
+* ``\xHH`` -- the character with hex code ``HH``
+* ``\uHHHH`` -- the Unicode codepoint ``HHHH``
+
+When a string contains many backslashes, prefix the literal with
+``r`` to make it a *raw* string. Backslashes are then taken
+literally -- ``\n`` stays two characters long instead of being
+replaced with a newline:
+
+::
+
+    win_path = r"C:\Users\OpenMV\camera.py"
+    literal  = r"\n is two characters, not a newline"
+
+Concatenation and repetition
+----------------------------
+
+Two strings are joined with ``+``; a string is repeated with
+``*``:
+
+::
+
+    greeting = "Hello, " + name + "!"
+    line     = "-" * 40              # 40-character separator
+
+Repeated ``+`` in a loop allocates a fresh string on every
+iteration. For building larger strings from many pieces, use
+:meth:`str.join`.
+
+Length, indexing, and slicing
+-----------------------------
+
+:func:`len` returns the number of characters in a string. Indexing
+with ``[]`` returns a one-character string at the given position;
+negative indices count from the end:
+
+::
+
+    >>> s = "OpenMV"
+    >>> len(s)
+    6
+    >>> s[0]
+    'O'
+    >>> s[-1]
+    'V'
+
+A *slice* ``s[start:stop]`` returns the substring from position
+``start`` up to but not including ``stop``. Either end can be
+omitted to mean "the beginning" or "the end", and an optional
+third value ``s[start:stop:step]`` lets you skip characters.
+
+.. figure:: https://docs.openmv.io/_images/string-slicing.svg
+   :alt: The string "OpenMV" with position markers between each
+         character, illustrating how a slice selects the
+         characters between two positions.
+
+   Slice positions sit *between* characters. ``s[2:5]`` selects
+   the characters in positions 2, 3, and 4.
+
+::
+
+    >>> s = "OpenMV"
+    >>> s[2:5]
+    'enM'
+    >>> s[:3]
+    'Ope'
+    >>> s[3:]
+    'nMV'
+    >>> s[::-1]
+    'VMnepO'                     # whole string, reversed
+
+An out-of-range slice silently returns whatever portion exists --
+``s[100:200]`` is the empty string ``""``, not an error. Indexing
+out of range, on the other hand, raises :exc:`IndexError`.
+
+Immutability
+------------
+
+Strings cannot be modified in place. Operations that look like
+they mutate a string actually return a new string and leave the
+original alone:
+
+::
+
+    >>> name = "OpenMV"
+    >>> name.upper()
+    'OPENMV'
+    >>> name
+    'OpenMV'                     # unchanged
+
+To "change" a string, rebind the name to the new value:
+``name = name.upper()``.
+
+
+String methods and formatting
+=============================
+
+Strings come with a built-in toolbox of methods for inspection
+and reshaping. Because strings are immutable, every method returns
+a *new* string -- the original is unchanged.
+
+Inspecting strings
+------------------
+
+* :meth:`str.startswith` / :meth:`str.endswith` -- prefix or suffix
+  test; returns :class:`bool`.
+* :meth:`str.find` -- position of the first occurrence of a
+  substring, or ``-1`` if absent. :meth:`str.index` does the same
+  thing but raises :exc:`ValueError` on absence.
+* :meth:`str.count` -- number of non-overlapping occurrences.
+* ``in`` keyword -- ``"MV" in name`` returns ``True`` if the
+  substring is anywhere in the string.
+
+::
+
+    >>> name = "OpenMV Cam"
+    >>> name.startswith("Open")
+    True
+    >>> name.find("MV")
+    4
+    >>> name.count("m")
+    1
+    >>> "Cam" in name
+    True
+
+Cleaning and case
+-----------------
+
+* :meth:`str.strip` -- remove leading and trailing whitespace.
+  Pass a string of characters to strip a custom set
+  (``s.strip("/")``).
+* :meth:`str.lower` / :meth:`str.upper` -- case conversion.
+* :meth:`str.replace` -- substring substitution.
+
+::
+
+    >>> "  hello  ".strip()
+    'hello'
+    >>> "abc-123".replace("-", "_")
+    'abc_123'
+    >>> "OpenMV".lower()
+    'openmv'
+
+Splitting and joining
+---------------------
+
+* :meth:`str.split` -- break a string into a list at every
+  occurrence of a separator (default: any whitespace run).
+* :meth:`str.join` -- the inverse: glue a sequence of strings
+  together with the receiver as the separator. This is the
+  efficient way to build a long string from pieces.
+
+::
+
+    >>> "1,2,3".split(",")
+    ['1', '2', '3']
+    >>> "hello world".split()
+    ['hello', 'world']
+    >>> ", ".join(["a", "b", "c"])
+    'a, b, c'
+
+f-strings
+---------
+
+The simplest way to interpolate values into a string is the
+*f-string* -- a string literal prefixed with ``f``. Any expression
+inside ``{}`` is evaluated and inserted:
+
+::
+
+    >>> name = "OpenMV"
+    >>> count = 42
+    >>> f"{name} saw {count} blobs"
+    'OpenMV saw 42 blobs'
+
+A colon inside the braces introduces a *format spec* that
+controls how the value is rendered:
+
+* ``{x:.2f}`` -- float with 2 digits after the decimal point.
+* ``{x:>10}`` -- right-align in a 10-character field.
+* ``{x:<10}`` -- left-align.
+* ``{x:0>4}`` -- pad with leading zeros to width 4.
+* ``{x:#x}`` -- hexadecimal with a ``0x`` prefix.
+* ``{x:b}`` -- binary representation.
+
+::
+
+    >>> f"pi is roughly {3.14159:.3f}"
+    'pi is roughly 3.142'
+    >>> f"reg = {0xAB:#x}"
+    'reg = 0xab'
+    >>> for i in range(3):
+    ...     print(f"line {i:0>3}")
+    line 000
+    line 001
+    line 002
+
+A single ``=`` after the expression name prints both the name and
+the value -- handy for quick debug prints:
+
+::
+
+    >>> v = 3.14
+    >>> print(f"{v=}")
+    v=3.14
+
+Integer base conversions
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three built-ins do the same job as the ``:b`` / ``:o`` / ``:x``
+format specs but return the converted string directly:
+
+* :func:`bin` -- base 2, with a ``"0b"`` prefix.
+* :func:`oct` -- base 8, with a ``"0o"`` prefix.
+* :func:`hex` -- base 16, with a ``"0x"`` prefix.
+
+::
+
+    >>> hex(255)
+    '0xff'
+    >>> bin(10)
+    '0b1010'
+    >>> oct(8)
+    '0o10'
+
+The inverse direction -- turning a base-N string back into an
+integer -- uses the :class:`int` constructor with an explicit
+base:
+
+::
+
+    >>> int("ff", 16)
+    255
+    >>> int("0b1010", 2)         # the "0b" prefix is allowed
+    10
+
+Reach for these when you want the raw string for an int (for a
+log line, a config file, a register dump). Reach for the format
+spec when you want padding, width, or to mix the value with
+other text in the same f-string.
+
+Older formatting styles
+-----------------------
+
+f-strings are the recommended style, but two older approaches
+still work and turn up in existing code:
+
+:meth:`str.format` -- braces with positional or keyword arguments
+passed to the ``.format()`` method on a template string:
+
+::
+
+    >>> "Hello, {}".format(name)
+    'Hello, OpenMV'
+    >>> "{0} + {0} = {1}".format(2, 4)
+    '2 + 2 = 4'
+    >>> "{name}: {value}".format(name="frames", value=42)
+    'frames: 42'
+
+Format specs (``{:.2f}``, ``{:>10}``, ...) work the same as in
+f-strings; the only difference is *where* the value is supplied.
+
+``%`` formatting (printf-style) -- a single ``%`` operator
+substitutes values into format codes, one value per code. Pass
+multiple values as a tuple:
+
+::
+
+    >>> "Hello, %s" % name
+    'Hello, OpenMV'
+    >>> "%d + %d = %d" % (2, 2, 4)
+    '2 + 2 = 4'
+    >>> "%.2f" % 3.14159
+    '3.14'
+
+The most common type codes are ``%s`` (string), ``%d`` (integer),
+``%f`` (float), and ``%x`` (hex).
+
+Each ``%`` code can carry modifiers between the ``%`` and the
+type letter. The full shape is ``%[flags][width][.precision]type``:
+
+* **width** -- minimum number of characters the field must take.
+  Shorter values are padded with spaces; longer values overflow.
+  ``%10d`` reserves 10 characters and right-aligns the number.
+* **precision** -- meaning depends on the type. For floats, the
+  number of digits after the decimal point. ``%.2f`` gives two
+  decimal places. For strings, the maximum number of characters
+  to take (``%.5s`` truncates to five).
+* **flag ``-``** -- left-align inside the field. ``%-10d`` puts
+  the digits on the left side with trailing spaces.
+* **flag ``0``** -- pad with leading zeros instead of spaces (for
+  numeric types). ``%05d`` zero-pads to five digits.
+* **flag ``+``** -- always show the sign on numbers, including a
+  ``+`` for positives.
+* **flag ``#``** -- alternate form. For ``%x`` this prefixes the
+  output with ``0x``; for ``%o`` it prefixes ``0o``.
+
+Flags, width, and precision can be combined:
+
+::
+
+    >>> "%10d" % 42
+    '        42'                 # width 10, space-padded, right-aligned
+    >>> "%-10d|" % 42
+    '42        |'                # width 10, left-aligned
+    >>> "%05d" % 42
+    '00042'                      # width 5, zero-padded
+    >>> "%8.2f" % 3.14159
+    '    3.14'                   # width 8, 2 decimal places
+    >>> "%08.2f" % 3.14159
+    '00003.14'                   # width 8, zero-padded
+    >>> "%+d" % 42
+    '+42'                        # explicit sign
+    >>> "%#06x" % 0xAB
+    '0x00ab'                     # 0x prefix, zero-pad to 6 chars total
+
+Both older styles are slower to read and more error-prone than
+f-strings -- reach for f-strings in new code, and recognise the
+older forms when reading existing code.
+
+
+Text vs bytes
+=============
+
+Python has two sequence types for raw character data:
+
+* :class:`str` -- a sequence of Unicode codepoints. Used for all
+  human-readable text: file paths, log messages, JSON payloads.
+* :class:`bytes` -- a sequence of integers in the range 0 -- 255.
+  Used for raw binary data: UART frames, image buffers, network
+  packets, register values.
+
+They cannot be mixed without an explicit conversion. Passing a
+:class:`str` to a hardware ``write`` method raises
+:exc:`TypeError`, and the inverse is also rejected.
+
+.. figure:: https://docs.openmv.io/_images/str-vs-bytes.svg
+   :alt: A str of Unicode codepoints on the left and a bytes
+         sequence of raw octets on the right, with encode and
+         decode arrows between them.
+
+   A :class:`str` stores Unicode characters; a :class:`bytes`
+   stores raw octets. Going between them is *encoding*
+   (str → bytes) and *decoding* (bytes → str).
+
+bytes literals
+--------------
+
+A bytes literal is a string-like literal prefixed with ``b``:
+
+::
+
+    header  = b"OMV"
+    crlf    = b"\r\n"
+    payload = b"\x01\x02\x03"
+
+Only ASCII characters are allowed directly inside a bytes
+literal; non-ASCII values must be written as ``\xHH`` hex escapes.
+
+Encoding and decoding
+---------------------
+
+* :meth:`str.encode` converts a string to bytes using a named
+  encoding (default ``"utf-8"``).
+* :meth:`bytes.decode` does the reverse.
+
+::
+
+    >>> "hello".encode()
+    b'hello'
+    >>> "héllo".encode()
+    b'h\xc3\xa9llo'              # é is two bytes in UTF-8
+    >>> b"hello".decode()
+    'hello'
+
+UTF-8 is the default and the right choice for anything that might
+contain non-ASCII characters. Use ``"ascii"`` only when the data
+is guaranteed to be plain ASCII; that way a stray non-ASCII byte
+raises :exc:`UnicodeError` instead of silently passing through.
+
+Indexing and slicing
+--------------------
+
+A bytes value behaves like a sequence of integers when indexed,
+not a sequence of one-byte strings:
+
+::
+
+    >>> data = b"abc"
+    >>> data[0]
+    97                           # the int 97, not 'a'
+    >>> data[0:1]
+    b'a'                         # slicing returns bytes
+
+A common mistake is comparing ``data[0] == "a"`` and being
+surprised it is :data:`False` -- ``data[0]`` is an integer, not
+a one-character string, so the two values can never match.
+
+ord and chr -- bridging characters and integers
+-----------------------------------------------
+
+Because indexing a :class:`bytes` returns an integer but the rest
+of the program likely thinks in characters, Python provides two
+built-ins for moving between them:
+
+* :func:`ord` -- takes a one-character string and returns its
+  integer codepoint.
+* :func:`chr` -- the inverse: given an integer, returns the
+  one-character string for that codepoint.
+
+::
+
+    >>> ord("a")
+    97
+    >>> chr(97)
+    'a'
+    >>> ord("A"), chr(0x41)
+    (65, 'A')
+
+For ASCII characters the codepoint equals the byte value, so
+``ord("a")`` and ``b"a"[0]`` both give 97. That makes byte
+comparisons read in terms of the character you actually care
+about:
+
+::
+
+    >>> data = b"abc"
+    >>> data[0] == ord("a")          # instead of the magic number 97
+    True
+
+And :func:`chr` is handy for logging or debugging when you want to
+see the printable form of a byte:
+
+::
+
+    >>> chr(data[0])
+    'a'
+
+For non-ASCII characters :func:`ord` returns the Unicode
+codepoint, which is not the same as any single byte in the
+encoded form; the byte representation depends on the encoding.
+
+bytearray for mutable buffers
+-----------------------------
+
+:class:`bytes` is immutable -- every "modification" returns a new
+object and leaves the original alone. For data you intend to
+modify, append to, or fill in piece by piece, use
+:class:`bytearray`. It holds the same content as :class:`bytes`
+but supports in-place mutation:
+
+::
+
+    >>> s = b"hello"
+    >>> s[0] = ord("H")
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: 'bytes' object does not support item assignment
+
+    >>> s = bytearray(b"hello")
+    >>> s[0] = ord("H")
+    >>> s
+    bytearray(b'Hello')
+
+Creating a bytearray
+~~~~~~~~~~~~~~~~~~~~
+
+The :class:`bytearray` constructor accepts several inputs:
+
+* ``bytearray(8)`` -- a buffer of 8 zero bytes.
+* ``bytearray(b"hello")`` -- a mutable copy of a bytes value.
+* ``bytearray("hello", "utf-8")`` -- a bytearray from a string,
+  using the given encoding.
+* ``bytearray([72, 73, 74])`` -- a bytearray from a sequence of
+  integers in 0 -- 255 (here, ``b"HIJ"``).
+
+::
+
+    >>> bytearray(4)
+    bytearray(b'\x00\x00\x00\x00')
+    >>> bytearray(b"abc")
+    bytearray(b'abc')
+    >>> bytearray("café", "utf-8")
+    bytearray(b'caf\xc3\xa9')
+
+Modifying a bytearray
+~~~~~~~~~~~~~~~~~~~~~
+
+Indexed and sliced assignment work just like a :class:`list`:
+
+::
+
+    >>> buf = bytearray(8)        # 8 zero bytes
+    >>> buf[0] = 0xFF             # one byte at a time
+    >>> buf[1:4] = b"ABC"         # replace a slice
+    >>> buf
+    bytearray(b'\xffABC\x00\x00\x00\x00')
+
+Individual bytes must be integers in 0 -- 255; assigning any other
+type raises :exc:`TypeError` or :exc:`ValueError`.
+
+Slice assignment can change the length of the buffer. Replacing a
+slice with a longer value grows the bytearray; replacing with a
+shorter value shrinks it. Replacing with ``b""`` deletes the slice
+entirely:
+
+::
+
+    >>> buf = bytearray(b"abcdef")
+    >>> buf[1:3] = b"XYZ"         # 2 bytes replaced with 3
+    >>> buf
+    bytearray(b'aXYZdef')
+    >>> buf[1:4] = b""            # delete the inserted run
+    >>> buf
+    bytearray(b'adef')
+
+The :meth:`bytearray.append` and :meth:`bytearray.extend` methods
+add bytes at the end without reallocating the whole buffer each
+time:
+
+::
+
+    >>> buf = bytearray()
+    >>> buf.append(0x01)
+    >>> buf.extend(b"abc")
+    >>> buf
+    bytearray(b'\x01abc')
+
+Reading from a bytearray
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Indexing, slicing, iteration, and the :class:`bytes` inspection
+methods (:meth:`bytes.startswith`, :meth:`bytes.find`,
+:meth:`bytes.strip`, etc.) all work the same as on a :class:`bytes`
+value. Indexing returns an integer; slicing returns another
+bytearray:
+
+::
+
+    >>> buf = bytearray(b"OpenMV")
+    >>> buf[0]
+    79
+    >>> buf[0:4]
+    bytearray(b'Open')
+    >>> buf.startswith(b"Open")
+    True
+
+Converting between bytes and bytearray
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:class:`bytes` and :class:`bytearray` convert to each other with
+their constructors. Use this when an API requires one form
+specifically:
+
+::
+
+    >>> ba = bytearray(b"hello")
+    >>> snapshot = bytes(ba)      # immutable copy
+    >>> ba[0] = ord("H")
+    >>> ba, snapshot
+    (bytearray(b'Hello'), b'hello')
+
+memoryview for zero-copy slicing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Slicing a :class:`bytes` or :class:`bytearray` normally copies
+the bytes into a new buffer. :class:`memoryview` exposes the
+same bytes *without* copying:
+
+::
+
+    >>> buf = bytearray(b"OpenMV Cam")
+    >>> view = memoryview(buf)
+    >>> view[0:6]                 # shares storage with buf
+    <memoryview ...>
+    >>> bytes(view[0:6])          # materialise as bytes when needed
+    b'OpenMV'
+
+A view over a :class:`bytearray` is also writable -- mutating
+the view mutates the underlying buffer:
+
+::
+
+    >>> view[0] = ord("o")
+    >>> buf
+    bytearray(b'openMV Cam')
+
+Reach for :class:`memoryview` when copying a slice would be
+wasteful -- typically when the same large buffer is passed
+around or processed in pieces. For everyday string-style work
+on small bytes, plain slicing is fine.
+
+
+
+Lists
+=====
+
+A *list* is a mutable, ordered sequence of values. Unlike strings
+and bytes, lists can hold values of any types, and you can change,
+add, or remove items in place.
+
+Creating lists
+--------------
+
+Square brackets create a list literal:
+
+::
+
+    empty   = []
+    nums    = [1, 2, 3]
+    mixed   = [1, "two", 3.0, True, None]    # any types
+    nested  = [[1, 2], [3, 4], [5, 6]]       # lists of lists
+
+The :class:`list` constructor builds a list from any iterable:
+
+::
+
+    >>> list("abc")
+    ['a', 'b', 'c']
+    >>> list(range(5))
+    [0, 1, 2, 3, 4]
+
+Length, indexing, and slicing
+-----------------------------
+
+:func:`len` returns the number of items. Indexing and slicing
+work the same way as strings -- positions start at 0, negative
+indices count from the end, and a slice outside the valid range
+silently clips rather than raising:
+
+::
+
+    >>> nums = [10, 20, 30, 40, 50]
+    >>> len(nums)
+    5
+    >>> nums[0]
+    10
+    >>> nums[-1]
+    50
+    >>> nums[1:4]
+    [20, 30, 40]
+
+.. figure:: https://docs.openmv.io/_images/list-indices.svg
+   :alt: A list of six cells, with positive indices 0..5 above and
+         negative indices -6..-1 below each cell.
+
+   Positive indices count from the front; negative indices count
+   from the end.
+
+The slice syntax is shorthand for a :class:`slice` object that
+Python builds behind the scenes. ``nums[1:4]`` is the same as
+``nums[slice(1, 4)]``. You rarely construct one by hand, but
+:func:`slice` is occasionally useful for storing a slice as a
+value to reuse:
+
+::
+
+    head = slice(0, 3)
+    print(nums[head])             # [10, 20, 30]
+    print(letters[head])          # first three letters, same slice
+
+Mutating a list
+---------------
+
+Lists support indexed and sliced assignment in place:
+
+::
+
+    >>> nums = [10, 20, 30]
+    >>> nums[0] = 99
+    >>> nums
+    [99, 20, 30]
+    >>> nums[1:3] = [200, 300, 400]    # slice can change the length
+    >>> nums
+    [99, 200, 300, 400]
+
+The most common list methods:
+
+* :meth:`list.append` -- add a single item to the end.
+* :meth:`list.extend` -- append every item from an iterable.
+* :meth:`list.insert` -- insert at a given position.
+* :meth:`list.remove` -- delete the first occurrence of a value.
+* :meth:`list.pop` -- remove and return an item (last by default).
+* :meth:`list.clear` -- remove every item.
+* :meth:`list.sort` -- sort in place. Pass ``reverse=True`` for
+  descending order.
+* :meth:`list.reverse` -- reverse in place.
+
+::
+
+    >>> nums = []
+    >>> nums.append(1)
+    >>> nums.extend([2, 3])
+    >>> nums.insert(0, 99)
+    >>> nums
+    [99, 1, 2, 3]
+    >>> nums.pop()
+    3
+    >>> nums.sort()
+    >>> nums
+    [1, 2, 99]
+
+These methods modify the list in place and return :data:`None`.
+Writing
+
+::
+
+    nums = nums.sort()    # nums is now None -- common bug
+
+is almost never what you want; the original ``nums`` has been
+sorted, but the assignment then overwrites the name with the
+return value. Either call ``nums.sort()`` on its own line, or use
+the built-in :func:`sorted` to get a new sorted list back without
+mutating the original.
+
+Operators
+---------
+
+* ``+`` concatenates two lists into a new list.
+* ``*`` repeats a list.
+* ``in`` tests membership.
+
+::
+
+    >>> [1, 2] + [3, 4]
+    [1, 2, 3, 4]
+    >>> [0] * 5
+    [0, 0, 0, 0, 0]
+    >>> 3 in [1, 2, 3]
+    True
+
+Iterating over a list
+---------------------
+
+A ``for`` loop walks the items in order:
+
+::
+
+    for n in [10, 20, 30]:
+        print(n)
+
+Aliasing and mutation
+---------------------
+
+A list is a single value in memory; several names can point at
+the same list. Mutating through one name is visible through every
+other name that points at the same list.
+
+.. figure:: https://docs.openmv.io/_images/mutable-aliasing.svg
+   :alt: Two variables a and b both pointing at the same list
+         object; appending to a is visible through b.
+
+   ``a`` and ``b`` both point at the same list. Mutating through
+   either name changes what every other name sees.
+
+::
+
+    >>> a = [1, 2, 3]
+    >>> b = a
+    >>> a.append(4)
+    >>> b
+    [1, 2, 3, 4]                # same object, change is visible
+
+To make an independent copy, slice the whole list or call the
+:class:`list` constructor:
+
+::
+
+    >>> c = a[:]                # or list(a)
+    >>> a.append(5)
+    >>> c
+    [1, 2, 3, 4]                # c is unaffected
+
+This only copies the *top-level* list; nested lists are still
+shared between the original and the copy.
+
+
+Tuples
+======
+
+A *tuple* is an immutable, ordered sequence of values. Once
+created, the items inside cannot be added, removed, or changed.
+
+Creating tuples
+---------------
+
+Use parentheses (or just commas) to create a tuple:
+
+::
+
+    empty   = ()
+    point   = (3, 4)
+    triple  = 1, 2, 3                # parentheses are optional
+    mixed   = (1, "two", 3.14)
+    nested  = ((1, 2), (3, 4))
+
+The single-element gotcha
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Parentheses around a value are just parentheses; what actually
+makes a tuple is the *comma*. A one-element tuple needs a
+trailing comma:
+
+::
+
+    >>> (1)
+    1                                # just an int in parens
+    >>> (1,)
+    (1,)                             # a one-element tuple
+    >>> type((1)), type((1,))
+    (<class 'int'>, <class 'tuple'>)
+
+Length, indexing, and slicing
+-----------------------------
+
+Same as lists and strings -- :func:`len`, indexing, slicing,
+``in``, and ``+`` / ``*`` all work the same way:
+
+::
+
+    >>> point = (3, 4, 5)
+    >>> len(point)
+    3
+    >>> point[0]
+    3
+    >>> point[1:]
+    (4, 5)
+    >>> 4 in point
+    True
+    >>> (1, 2) + (3, 4)
+    (1, 2, 3, 4)
+
+Immutability
+------------
+
+Tuples don't have ``append``, ``pop``, ``sort``, or any other
+in-place method. Indexed assignment raises :exc:`TypeError`:
+
+::
+
+    >>> point = (3, 4)
+    >>> point[0] = 99
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: 'tuple' object doesn't support item assignment
+
+To "modify" a tuple, build a new one with the changed values.
+
+Unpacking
+---------
+
+A tuple's main superpower is *unpacking*: assigning each item to
+a separate variable in one statement.
+
+.. figure:: https://docs.openmv.io/_images/tuple-unpacking.svg
+   :alt: A three-element tuple (1, 2, 3) unpacking into three
+         named variables x, y, z.
+
+   Unpacking binds each element of a tuple to a named variable in
+   one assignment.
+
+::
+
+    >>> point = (3, 4)
+    >>> x, y = point
+    >>> x
+    3
+    >>> y
+    4
+
+The right-hand side can be any iterable -- a list, a string, the
+return value of a function:
+
+::
+
+    >>> a, b, c = "abc"
+    >>> a, b, c
+    ('a', 'b', 'c')
+
+A leading ``*`` collects "the rest" of an unpacking into a list:
+
+::
+
+    >>> first, *rest = [10, 20, 30, 40]
+    >>> first
+    10
+    >>> rest
+    [20, 30, 40]
+
+Multiple return values
+----------------------
+
+A function can return a tuple to deliver several values at once;
+the caller unpacks them on the way in:
+
+::
+
+    def size_of(rect):
+        return (rect[2] - rect[0], rect[3] - rect[1])
+
+    width, height = size_of((10, 20, 110, 140))
+    # width = 100, height = 120
+
+The parentheses on the ``return`` are optional -- a bare
+``return a, b`` is a tuple too.
+
+Tuple vs list
+-------------
+
+A practical guide for which to reach for:
+
+* **Tuple** for fixed-shape, often-heterogeneous data: ``(x, y)``
+  points, ``(r, g, b)`` colours, multiple return values, function
+  arguments packed for later use.
+* **List** for variable-length, often-homogeneous data: a list
+  of measurements, a queue of items to process, anything you
+  expect to append to.
+
+Tuples are also *hashable* (as long as every element inside is
+hashable), so they can be used as keys in a :class:`dict`.
+
+
+Dictionaries
+============
+
+A *dictionary* is a mapping from *keys* to *values*. Each key is
+looked up directly; the dictionary remembers what value was last
+associated with that key.
+
+Creating dictionaries
+---------------------
+
+Use braces with ``key: value`` pairs, or the :class:`dict`
+constructor:
+
+::
+
+    empty   = {}
+    person  = {"name": "OpenMV", "id": 42}
+    counts  = dict(a=1, b=2, c=3)            # keyword form
+    pairs   = dict([("x", 1), ("y", 2)])     # from a list of pairs
+
+Values can be any types -- strings, numbers, lists, even other
+dicts:
+
+::
+
+    config = {
+        "name":  "OpenMV",
+        "id":    42,
+        "width": 320,
+        "tags":  ["red", "round"],
+    }
+
+.. figure:: https://docs.openmv.io/_images/dict-keys-values.svg
+   :alt: A dictionary shown as two columns: keys on the left,
+         values on the right, with arrows linking each pair.
+
+   Each key in a dictionary maps to exactly one value.
+
+Access and membership
+---------------------
+
+Indexing with ``[]`` retrieves the value for a key. A missing key
+raises :exc:`KeyError`:
+
+::
+
+    >>> person = {"name": "OpenMV", "id": 42}
+    >>> person["name"]
+    'OpenMV'
+    >>> person["missing"]
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    KeyError: 'missing'
+
+For a forgiving lookup, use :meth:`dict.get`. It returns
+:data:`None` for a missing key, or a value you pass as the second
+argument:
+
+::
+
+    >>> person.get("name")
+    'OpenMV'
+    >>> person.get("missing")            # returns None
+    >>> person.get("missing", "n/a")
+    'n/a'
+
+The ``in`` keyword tests for *key* membership -- not value:
+
+::
+
+    >>> "name" in person
+    True
+    >>> "OpenMV" in person
+    False
+
+Adding, updating, and removing
+------------------------------
+
+Assigning to ``d[key]`` adds the entry if the key is new and
+overwrites it if it already exists:
+
+::
+
+    >>> person["seen"] = 1
+    >>> person["seen"] = 2               # overwrites
+    >>> person
+    {'name': 'OpenMV', 'id': 42, 'seen': 2}
+
+Removal has a few forms:
+
+* ``del d[key]`` -- remove an entry; raises :exc:`KeyError` if
+  the key is missing.
+* :meth:`dict.pop` -- remove and return the value; an optional
+  default lets you avoid the exception.
+* :meth:`dict.clear` -- remove every entry.
+
+:meth:`dict.update` merges another dictionary (or a list of
+``(key, value)`` pairs) into the receiver, overwriting any
+matching keys:
+
+::
+
+    >>> person.update({"id": 100, "owner": "alice"})
+    >>> person
+    {'name': 'OpenMV', 'id': 100, 'seen': 2, 'owner': 'alice'}
+
+Iterating
+---------
+
+Iterating a dictionary directly yields its keys, in insertion
+order:
+
+::
+
+    for k in person:
+        print(k)
+
+Three views give explicit access:
+
+* :meth:`dict.keys` -- the keys (same as iterating the dict).
+* :meth:`dict.values` -- the values.
+* :meth:`dict.items` -- ``(key, value)`` tuples, perfect for
+  unpacking in a loop.
+
+::
+
+    for key, value in person.items():
+        print(key, "=", value)
+
+What can be a key
+-----------------
+
+Dictionary keys must be *hashable* -- their value cannot change
+over their lifetime. Common hashable types are:
+
+* :class:`int`, :class:`float`, :class:`bool`
+* :class:`str`, :class:`bytes`
+* :class:`tuple` (when every element inside is itself hashable)
+* :data:`None`
+
+Mutable types like :class:`list`, :class:`dict`, and
+:class:`bytearray` cannot be keys; using one raises
+:exc:`TypeError`. Tuples of immutable values are the standard way
+to key a dictionary by a composite identifier such as a 2-D grid
+coordinate:
+
+::
+
+    >>> grid = {}
+    >>> grid[(0, 0)] = "start"
+    >>> grid[(5, 7)] = "end"
+
+Length
+------
+
+:func:`len` returns the number of entries:
+
+::
+
+    >>> len(person)
+    4
+
+
+Sets
+====
+
+A *set* is an unordered collection of unique items. Adding a
+value that is already present has no effect; iteration yields
+each value exactly once. Sets are the right tool when membership
+and de-duplication matter, and ordering does not.
+
+Creating a set
+--------------
+
+Use curly braces for a non-empty set, or :func:`set` for an
+empty one:
+
+::
+
+    colours = {"red", "green", "blue"}
+    empty = set()
+
+The braces look like a :class:`dict` literal; ``{}`` on its own
+is an empty *dict*, not an empty set -- one of Python's
+historical accidents. Use ``set()`` for the empty case.
+
+:func:`set` also builds a set from any iterable, which is the
+standard way to drop duplicates from a sequence:
+
+::
+
+    nums = [1, 2, 2, 3, 1, 4]
+    unique = set(nums)
+    print(unique)
+
+Output::
+
+    {1, 2, 3, 4}
+
+The print order may vary -- sets do not promise to iterate in
+any particular order.
+
+Set vs dict
+-----------
+
+Sets and dicts both store unique items in a hash table. What
+each item carries with it is the difference:
+
+* A :class:`dict` stores **key-value pairs**. Looking up a key
+  returns its value.
+* A :class:`set` stores **just the items**. Looking up an item
+  tells you whether it is there.
+
+The choice between the two is about whether the *value
+alongside each item* means anything:
+
+* Reach for a **set** when no value belongs next to each item
+  -- you only care whether the item is present, or you are
+  combining groups of unique items with union / intersection.
+* Reach for a **dict** when each item is paired with data the
+  lookup is meant to retrieve -- a config map, a cache, a
+  counter keyed by name.
+
+The two types share a lot of surface syntax, which is where
+most of the confusion comes from. The differences in one block:
+
++----------------------+-----------------------------+-----------------------------+
+|                      | set                         | dict                        |
++======================+=============================+=============================+
+| holds                | unique items                | unique keys, each with a    |
+|                      |                             | value                       |
++----------------------+-----------------------------+-----------------------------+
+| populated literal    | ``{1, 2, 3}``               | ``{"a": 1, "b": 2}``        |
++----------------------+-----------------------------+-----------------------------+
+| empty literal        | ``set()``                   | ``{}``                      |
++----------------------+-----------------------------+-----------------------------+
+| membership test      | ``x in s``                  | ``k in d`` (keys only)      |
++----------------------+-----------------------------+-----------------------------+
+| fetch a value        | n/a                         | ``d[k]``                    |
++----------------------+-----------------------------+-----------------------------+
+| add an item          | ``s.add(x)``                | ``d[k] = v``                |
++----------------------+-----------------------------+-----------------------------+
+| iterate              | yields items                | yields keys (use            |
+|                      |                             | ``d.items()`` for pairs)    |
++----------------------+-----------------------------+-----------------------------+
+
+The asymmetry between the populated and empty literals is the
+gotcha worth calling out:
+
+* Braces with **items in them** -- ``{1, 2, 3}`` -- are a
+  set literal; braces with **key-value pairs** -- ``{"a": 1}``
+  -- are a dict literal. The parser tells them apart by what
+  is inside.
+* Braces with **nothing inside** -- ``{}`` -- are an empty
+  dict, not an empty set. Dicts came first; the empty literal
+  belongs to them. An empty set has no braces literal at all
+  and must be written ``set()``.
+
+A common pattern when only the keys of a dict are ever read is
+to switch to a set -- it makes the intent obvious and trims the
+unused values out of memory.
+
+Adding and removing
+-------------------
+
+* :meth:`set.add` -- insert one item.
+* :meth:`set.discard` -- remove an item if it is present, do
+  nothing if it is not.
+* :meth:`set.remove` -- remove an item; raise :exc:`KeyError`
+  if it is missing.
+* :meth:`set.clear` -- empty the set.
+
+::
+
+    s = {1, 2, 3}
+    s.add(4)
+    s.discard(99)            # silent: 99 not in s
+    s.remove(2)
+    print(s)
+
+Output::
+
+    {1, 3, 4}
+
+Membership
+----------
+
+The ``in`` operator tests for membership. On a set it is
+roughly constant time regardless of size -- which is the main
+reason to choose a set over a :class:`list` when you only need
+to ask "is this value in there":
+
+::
+
+    if "red" in colours:
+        print("colour is allowed")
+
+A :class:`list` with the same contents would scan from the
+start each time, which is fine for ten items but slow for ten
+thousand.
+
+Set operations
+--------------
+
+Two sets can be combined with the usual mathematical operations.
+Each has both an operator form and a method form:
+
+* ``a | b`` or ``a.union(b)`` -- everything in either set.
+* ``a & b`` or ``a.intersection(b)`` -- only what appears in
+  both.
+* ``a - b`` or ``a.difference(b)`` -- in ``a`` but not in ``b``.
+* ``a ^ b`` or ``a.symmetric_difference(b)`` -- in one but not
+  both.
+
+::
+
+    a = {1, 2, 3, 4}
+    b = {3, 4, 5, 6}
+    print(a | b)
+    print(a & b)
+    print(a - b)
+    print(a ^ b)
+
+Output::
+
+    {1, 2, 3, 4, 5, 6}
+    {3, 4}
+    {1, 2}
+    {1, 2, 5, 6}
+
+The operator forms are read-only; the method forms accept any
+iterable on the right, not just another set
+(``a.union([5, 6])``). Pick whichever reads better in context.
+
+What can go in a set
+--------------------
+
+Set elements must be *hashable* -- the same constraint as
+:class:`dict` keys. :class:`int`, :class:`float`, :class:`str`,
+:class:`bool`, :class:`bytes`, and :class:`tuple` (when its
+contents are themselves hashable) all work. :class:`list` and
+:class:`dict` do not; trying to add one raises
+:exc:`TypeError`.
+
+frozenset
+---------
+
+A regular :class:`set` is mutable: every call to ``add`` /
+``remove`` / ``discard`` changes the object in place. That
+mutability disqualifies it from being hashable, so a set
+*cannot* be used as a :class:`dict` key or as a member of
+another set.
+
+:class:`frozenset` is the immutable counterpart. It has the
+same lookups and operators (``in``, ``|``, ``&``, ``-``, ``^``)
+as :class:`set`, but no ``add`` / ``remove`` and no methods
+that mutate. Because nothing can ever change its contents, the
+hash of a :class:`frozenset` is well-defined -- so it *is*
+hashable:
+
+::
+
+    primary = frozenset({"red", "green", "blue"})
+    secondary = frozenset({"yellow", "purple", "orange"})
+
+    palettes = {
+        primary: "RGB",
+        secondary: "mixed",
+    }
+
+    print(palettes[primary])
+
+Output::
+
+    RGB
+
+Construct a frozenset from any iterable -- ``frozenset()`` for
+the empty case, ``frozenset(some_set)`` to take an immutable
+snapshot of an existing set:
+
+::
+
+    snapshot = frozenset(s)         # immutable copy of s
+    s.add("new")                    # snapshot does not change
+
+Two common reasons to reach for it:
+
+* **Use as a dict key or set member.** Anywhere a single value
+  cannot capture what you need, a :class:`frozenset` of values
+  can -- "the set of features supported by this driver", "the
+  set of pins this profile uses".
+* **Lock down a constant.** A module-level :class:`frozenset`
+  of allowed names cannot be accidentally mutated by a caller;
+  a regular :class:`set` can. Prefer :class:`frozenset` for
+  anything that is meant to be read-only after construction.
+
+
+Conditionals
+============
+
+A *conditional* runs a block of code only when some test
+evaluates to true. The keyword is ``if``, optionally followed by
+one or more ``elif`` ("else if") branches and a final ``else``.
+
+::
+
+    n = 42
+
+    if n > 0:
+        print("positive")
+    elif n < 0:
+        print("negative")
+    else:
+        print("zero")
+
+The body of each branch is everything indented under it (four
+spaces by convention). Python walks the branches in order, runs
+the first one whose test is true, and skips the rest. The
+``else`` block runs only if every preceding test was false; it
+is always optional.
+
+.. figure:: https://docs.openmv.io/_images/if-elif-else.svg
+   :alt: A flowchart showing if/elif/else: two diamond decision
+         tests with their bodies, falling through to a final else
+         body when both tests are false.
+
+   Only one branch ever runs. Tests are evaluated top to bottom
+   until one succeeds; the rest are skipped.
+
+Truthiness
+----------
+
+A test in an ``if`` does not have to return :data:`True` or
+:data:`False` -- any value counts as either *truthy* or *falsy*.
+The falsy values are:
+
+* :data:`False` and :data:`None`
+* The number zero: ``0``, ``0.0``
+* Empty sequences and collections: ``""``, ``[]``, ``()``,
+  ``{}``, ``b""``
+
+Everything else is truthy. This lets you write compact tests:
+
+::
+
+    if name:                     # false on empty string
+        print("hello", name)
+
+    if items:                    # false on empty list, dict, etc.
+        process(items)
+
+Be aware that truthiness changes the meaning. ``if value:`` is
+*not* the same as ``if value is not None:`` -- the first one is
+also false when ``value`` is ``0`` or ``""``. When you really
+mean "is this exactly :data:`None`", use ``is None`` /
+``is not None`` explicitly.
+
+Ternary expressions
+-------------------
+
+A conditional can appear inside an expression:
+
+::
+
+    label = "even" if n % 2 == 0 else "odd"
+
+Read as "``label`` is ``"even"`` *if* ``n % 2 == 0`` *else*
+``"odd"``." Handy for one-liners; for anything more than one
+line, a full ``if`` statement is easier to read.
+
+Nesting and early returns
+-------------------------
+
+Conditionals can nest arbitrarily deep, but every extra layer of
+indentation makes a function harder to read. The example below
+checks four conditions before doing the real work and leaves the
+useful line buried four indents in:
+
+::
+
+    def process(item):
+        if item is not None:
+            if item.is_valid():
+                if item.size() > 0:
+                    if item.owner == "me":
+                        return do_the_work(item)
+        return None
+
+Two patterns flatten this kind of code.
+
+Early returns for guards
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Handle every "bail out" case first, each with its own ``return``,
+so the main logic stays at the outer indent. Each guard reads as
+"this is not a case we handle; leave":
+
+::
+
+    def process(item):
+        if item is None:
+            return None
+        if not item.is_valid():
+            return None
+        if item.size() == 0:
+            return None
+        if item.owner != "me":
+            return None
+        return do_the_work(item)
+
+The "main path" is now one line at the bottom of the function,
+not buried inside four layers. This style is sometimes called the
+*guard clause* pattern.
+
+Combining tests with and / or
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When several conditions all have to hold for the same branch,
+combine them with ``and`` rather than nesting. Conditions that
+each independently trigger the branch combine with ``or``:
+
+::
+
+    # all must hold -- use `and`
+    if user.is_admin() and user.has_permission("write") and not locked:
+        save()
+
+    # any one of them is enough -- use `or`
+    if c == " " or c == "\t" or c == "\n":
+        whitespace_count += 1
+
+Both forms short-circuit, so an expensive check on the right side
+only runs when the cheaper checks on the left have not already
+settled the question.
+
+
+Loops
+=====
+
+A *loop* runs the same block of code repeatedly. Python has two
+forms: ``while``, which keeps going as long as a condition stays
+true, and ``for``, which walks through the items of a sequence.
+
+.. figure:: https://docs.openmv.io/_images/for-while-flow.svg
+   :alt: Side-by-side flowcharts. while: test the condition, run
+         the body if true, repeat. for: take the next item from
+         the iterable, run the body, repeat until exhausted.
+
+   ``while`` keeps testing a condition; ``for`` walks a sequence
+   until it is exhausted.
+
+while loops
+-----------
+
+A ``while`` loop tests its condition before each iteration and
+runs the body until the test becomes false:
+
+::
+
+    count = 0
+    while count < 5:
+        print(count)
+        count += 1
+
+Output::
+
+    0
+    1
+    2
+    3
+    4
+
+If the condition is true at the start and never becomes false,
+the loop runs forever. ``while True:`` is the standard idiom for
+a main loop, exited explicitly with ``break``:
+
+::
+
+    while True:
+        step()
+        if done():
+            break
+
+for loops
+---------
+
+A ``for`` loop walks the items of an iterable -- a list, tuple,
+string, bytes, dict, or anything else that supports iteration:
+
+::
+
+    for fruit in ["apple", "banana", "cherry"]:
+        print(fruit)
+
+Output::
+
+    apple
+    banana
+    cherry
+
+The same shape works on a string, where each item is a
+one-character string:
+
+::
+
+    for letter in "OpenMV":
+        print(letter)
+
+Output::
+
+    O
+    p
+    e
+    n
+    M
+    V
+
+Iterating a dict directly yields its keys, in insertion order:
+
+::
+
+    for key in {"a": 1, "b": 2}:
+        print(key)
+
+Output::
+
+    a
+    b
+
+Each pass binds the loop variable (``fruit``, ``letter``,
+``key``) to the next item. After the loop ends, the variable
+keeps the value from the final iteration.
+
+range
+-----
+
+For loops over a numeric range, use :func:`range`:
+
+* ``range(stop)`` -- 0, 1, ..., stop - 1.
+* ``range(start, stop)`` -- start, start + 1, ..., stop - 1.
+* ``range(start, stop, step)`` -- with a custom step (negative
+  values count down).
+
+::
+
+    for i in range(5):           # 0, 1, 2, 3, 4
+        print(i)
+
+    for i in range(2, 8, 2):     # 2, 4, 6
+        print(i)
+
+    for i in range(10, 0, -1):   # 10, 9, ..., 1
+        print(i)
+
+:func:`range` produces values lazily -- it does not build a list
+in memory. To get an actual :class:`list`, wrap it:
+``list(range(10))``.
+
+enumerate
+---------
+
+When the loop needs both the index and the item,
+:func:`enumerate` yields ``(index, item)`` pairs:
+
+::
+
+    for i, name in enumerate(["a", "b", "c"]):
+        print(i, name)
+    # 0 a
+    # 1 b
+    # 2 c
+
+Start the index at something other than zero by passing a second
+argument: ``enumerate(items, start=1)``.
+
+zip
+---
+
+To walk two (or more) iterables in lock-step, use :func:`zip`.
+It yields one tuple per position and stops at the shortest input:
+
+::
+
+    names  = ["alice", "bob", "carol"]
+    scores = [88, 92, 70]
+
+    for name, score in zip(names, scores):
+        print(name, score)
+
+Output::
+
+    alice 88
+    bob 92
+    carol 70
+
+Inline assignment with :=
+-------------------------
+
+The *walrus* operator ``:=`` is an assignment that is also an
+expression. It binds a name and evaluates to the same value at
+the same time. In a ``while`` loop, this collapses the common
+"read, check, body" pattern into one line:
+
+::
+
+    # without walrus
+    value = next_value()
+    while value is not None:
+        process(value)
+        value = next_value()
+
+    # with walrus
+    while (value := next_value()) is not None:
+        process(value)
+
+The two forms do the same thing. Reach for ``:=`` when the
+duplication of the assignment genuinely hurts readability; do
+not reach for it just to be clever. The parentheses are
+required in most positions to keep the expression unambiguous.
+
+
+Loop control
+============
+
+Two keywords change how a loop runs:
+
+* ``break`` -- exit the loop immediately.
+* ``continue`` -- skip the rest of the current iteration and
+  start the next.
+
+Both apply to the *innermost* loop they appear inside.
+
+break
+-----
+
+Use ``break`` to stop a loop as soon as a condition is met. The
+classic "search and stop" pattern:
+
+::
+
+    found = None
+    for item in items:
+        if matches(item):
+            found = item
+            break
+
+    if found is not None:
+        print("found:", found)
+
+In a ``while True:`` loop, ``break`` is how the loop ends:
+
+::
+
+    while True:
+        line = next_line()
+        if line == "quit":
+            break
+        process(line)
+
+continue
+--------
+
+Use ``continue`` to skip the rest of the body and jump to the
+next iteration. Handy for filtering items inside a loop:
+
+::
+
+    for n in numbers:
+        if n < 0:
+            continue            # skip negatives
+        print(n)
+
+The same effect can be written as an ``if`` block around the
+rest of the body. ``continue`` is sometimes clearer when the
+skip condition is easier to state up front than the keep
+condition is.
+
+Inside a loop, ``continue`` plays the same role as an early
+``return`` in a function: skip past the cases you do not handle
+and keep the main work flat at the outer indent. The
+filter-and-process loop is the canonical shape:
+
+::
+
+    for item in items:
+        if item is None:
+            continue
+        if not item.is_valid():
+            continue
+        process(item)
+
+The indented ``process(item)`` line is the actual work; each
+guard above spells out exactly which items get skipped.
+
+else on a loop
+--------------
+
+Both ``for`` and ``while`` accept an optional ``else`` block. It
+runs when the loop completes *without* hitting a ``break``. The
+most common use is a search loop that wants a fallback if
+nothing was found:
+
+::
+
+    for item in items:
+        if matches(item):
+            print("found:", item)
+            break
+    else:
+        print("no match")
+
+If a ``break`` fires, the ``else`` block is skipped. Read the
+construct as "for X in Y: ...; or-else, if we never broke out, do
+Z."
+
+Common loop patterns
+--------------------
+
+A few patterns turn up often in real scripts:
+
+* **Polling** -- wait for some condition to become true before
+  moving on. The body uses ``pass``, Python's no-op statement;
+  every indented block must contain at least one statement, and
+  ``pass`` is how to say "do nothing here":
+
+  ::
+
+      while not ready():
+          pass
+      proceed()
+
+* **State machine** -- a single ``while True:`` loop that picks
+  what to do based on a state variable. Useful when the work
+  splits cleanly into a few named phases:
+
+  ::
+
+      state = "header"
+      for line in lines:
+          if state == "header":
+              if line.startswith("---"):
+                  state = "body"
+          elif state == "body":
+              print(line)
+
+* **Accumulating** -- build up a result while walking a sequence:
+
+  ::
+
+      total = 0
+      for x in samples:
+          total += x
+      mean = total / len(samples)
+
+  Many accumulation loops have a one-line equivalent using a
+  built-in. Reach for the built-in when one applies:
+
+  - :func:`sum` -- adds every item in an iterable.
+  - :func:`max` / :func:`min` -- the largest or smallest item.
+  - :func:`any` -- ``True`` if at least one item is truthy.
+  - :func:`all` -- ``True`` only when every item is truthy.
+  - :func:`sorted` -- a new list with the items in order.
+  - :func:`len` -- the number of items (where the iterable knows
+    its length).
+
+  ::
+
+      >>> samples = [3, 1, 4, 1, 5, 9, 2, 6]
+      >>> sum(samples)
+      31
+      >>> sum(samples) / len(samples)        # mean
+      3.875
+      >>> max(samples)
+      9
+      >>> min(samples)
+      1
+      >>> sorted(samples)
+      [1, 1, 2, 3, 4, 5, 6, 9]
+      >>> any([False, False, True])
+      True
+      >>> all([True, True, False])
+      False
+
+  The built-in version is shorter, clearer, and usually faster
+  than rolling the same loop by hand.
+
+
+Defining functions
+==================
+
+A *function* packages a block of code under a name so it can be
+called from many places. Anywhere a calculation, action, or shaped
+piece of work shows up more than once, a function turns it into a
+single named thing.
+
+The keyword is ``def``:
+
+::
+
+    def greet(name):
+        print("hello,", name)
+
+    greet("Alice")
+    greet("Bob")
+
+Output::
+
+    hello, Alice
+    hello, Bob
+
+The line starting with ``def`` is the *definition* -- it creates
+the function but does not run the body. Calling ``greet("Alice")``
+is what runs the indented block.
+
+Parameters and arguments
+------------------------
+
+The names in the parentheses on the ``def`` line are *parameters*
+-- placeholders for values the caller will supply. The actual
+values passed in are *arguments*. A function can take zero or more
+parameters:
+
+::
+
+    def square(x):
+        return x * x
+
+    def add(a, b):
+        return a + b
+
+    def is_even(n):
+        return n % 2 == 0
+
+A call with the wrong number of arguments raises :exc:`TypeError`
+right away.
+
+return
+------
+
+A ``return`` statement ends the function immediately and hands a
+value back to the caller:
+
+::
+
+    def absolute(x):
+        if x < 0:
+            return -x
+        return x
+
+A function that never reaches a ``return`` (or has a bare
+``return`` with no value) returns :data:`None`:
+
+::
+
+    >>> def shout(text):
+    ...     print(text.upper())
+    ...
+    >>> result = shout("hi")
+    HI
+    >>> print(result)
+    None
+
+A function can have several ``return`` statements; the first one
+reached wins, and the rest of the body is skipped.
+
+Returning multiple values
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Python returns one object per call, but that object can be a
+:class:`tuple` -- and the caller can unpack it on the spot:
+
+::
+
+    def minmax(values):
+        return (min(values), max(values))
+
+    lo, hi = minmax([3, 1, 4, 1, 5, 9])
+
+The parentheses around the return value are optional;
+``return a, b`` and ``return (a, b)`` are the same.
+
+Docstrings
+----------
+
+A string literal placed as the first statement of a function body
+is a *docstring*. It is stored on the function object and is what
+:func:`help` displays:
+
+::
+
+    def scale(value, factor):
+        """Multiply ``value`` by ``factor`` and return the result."""
+        return value * factor
+
+The IDE shows docstrings in tooltips when the cursor hovers over
+the function name, so even a one-line summary pays for itself.
+Triple-quoted strings allow the docstring to span multiple lines
+when more detail is useful.
+
+Naming conventions
+------------------
+
+Function names use ``snake_case`` -- lowercase words separated by
+underscores. The name should describe what the function does:
+
+* **Good**: ``read_temperature``, ``parse_header``, ``is_valid``.
+* **Avoid**: ``do_stuff``, ``handle1``, ``temp_func``.
+
+A leading underscore (``_helper``) marks a function as internal to
+its module. The convention is widely respected but not enforced
+by Python.
+
+
+Arguments
+=========
+
+A function can be called in several ways, and its parameters can
+be declared in several shapes. The combinations look intimidating
+at first; three or four patterns cover almost everything in
+practice.
+
+Positional and keyword arguments
+--------------------------------
+
+The simplest call passes arguments by *position* -- the first
+value goes to the first parameter, the second to the second, and
+so on:
+
+::
+
+    def rect(x, y, w, h):
+        return (x, y, w, h)
+
+    rect(10, 20, 100, 50)
+
+The same call can pass arguments by *keyword*, naming each
+parameter explicitly:
+
+::
+
+    rect(x=10, y=20, w=100, h=50)
+
+Keyword arguments are order-independent and make calls
+self-documenting at the cost of typing more. Positional and
+keyword arguments can mix in a single call, but every positional
+must appear before any keyword:
+
+::
+
+    rect(10, 20, w=100, h=50)         # OK
+    rect(x=10, 20, 100, 50)           # SyntaxError
+
+Default values
+--------------
+
+A parameter can declare a default value to use when the caller
+does not supply one:
+
+::
+
+    def greet(name, greeting="hello"):
+        print(greeting, name)
+
+    greet("Alice")                    # hello Alice
+    greet("Alice", "hi")              # hi Alice
+    greet("Alice", greeting="hey")    # hey Alice
+
+Parameters with defaults must come *after* parameters without
+defaults in the ``def`` line.
+
+.. warning::
+
+   Default values are evaluated once, when the ``def`` runs --
+   not on every call. Using a mutable default (``[]``, ``{}``)
+   causes the *same* object to be shared across every call that
+   takes the default. Use :data:`None` as a sentinel instead:
+
+   ::
+
+       def append_to(item, target=None):
+           if target is None:
+               target = []
+           target.append(item)
+           return target
+
+Variable-length: ``*args`` and ``**kwargs``
+-------------------------------------------
+
+A parameter prefixed with ``*`` collects any leftover positional
+arguments into a :class:`tuple`. A parameter prefixed with ``**``
+collects any leftover keyword arguments into a :class:`dict`. The
+conventional names are ``args`` and ``kwargs``, but any identifier
+works:
+
+::
+
+    def report(label, *values, **options):
+        print(label, values, options)
+
+    report("temps", 21, 22, 23, unit="C", precision=1)
+
+Output::
+
+    temps (21, 22, 23) {'unit': 'C', 'precision': 1}
+
+A function rarely needs both. The most common use is forwarding
+arguments from a wrapper to an inner call:
+
+::
+
+    def log_and_call(func, *args, **kwargs):
+        print("calling", func.__name__)
+        return func(*args, **kwargs)
+
+The mirror-image syntax at the *call* site unpacks an iterable
+into positional arguments (``*``) or a :class:`dict` into keyword
+arguments (``**``):
+
+::
+
+    point = (10, 20, 100, 50)
+    rect(*point)                      # same as rect(10, 20, 100, 50)
+
+    kwargs = {"x": 10, "y": 20, "w": 100, "h": 50}
+    rect(**kwargs)                    # same as rect(x=10, y=20, ...)
+
+Keyword-only parameters
+-----------------------
+
+A ``*`` on its own in the parameter list (not attached to a name)
+marks every parameter that follows as *keyword-only* -- the caller
+must use the name:
+
+::
+
+    def crop(buffer, *, x, y, w, h):
+        ...
+
+    crop(buffer, x=0, y=0, w=100, h=100)   # OK
+    crop(buffer, 0, 0, 100, 100)           # TypeError
+
+Use this for boolean flags and other arguments where a bare value
+at the call site would not be self-explanatory.
+
+
+Scope
+=====
+
+When Python looks up a name inside a function, it searches a
+specific sequence of *scopes*. Understanding that sequence
+explains why some assignments shadow outer names, why others
+modify them, and why nested functions can remember values from
+where they were defined.
+
+.. figure:: https://docs.openmv.io/_images/scope-frames.svg
+   :alt: Nested boxes showing a local scope inside a module scope
+         inside the built-in scope, with an arrow indicating that
+         name lookup walks outward from the innermost frame.
+
+   Name lookup starts in the local function scope and walks
+   outward to module and built-in scopes until a match is found.
+
+Local and module scope
+----------------------
+
+Names defined inside a function are *local* to that function and
+disappear when the call ends:
+
+::
+
+    def f():
+        x = 10
+        print(x)
+
+    f()
+    print(x)              # NameError: x is not defined
+
+Names defined at the top level of a ``.py`` file are *module-level*
+(sometimes called *global*) and are visible everywhere in that
+file, including inside functions:
+
+::
+
+    CAMERA = "OpenMV"
+
+    def banner():
+        print("running on", CAMERA)
+
+Reading a module-level name from inside a function is automatic.
+*Assigning* to that name from inside a function is not -- the
+assignment creates a new local variable that shadows the
+module-level one for the rest of the call:
+
+::
+
+    counter = 0
+
+    def bump():
+        counter = counter + 1     # UnboundLocalError
+
+The left-hand ``counter`` makes ``counter`` a local name in
+``bump``, so the read on the right has no value to find.
+
+The global keyword
+~~~~~~~~~~~~~~~~~~
+
+To actually reassign a module-level name from inside a function,
+declare it ``global`` first:
+
+::
+
+    counter = 0
+
+    def bump():
+        global counter
+        counter += 1
+
+Reach for ``global`` sparingly. Functions that mutate hidden
+state are harder to reason about than functions that take values
+in as arguments and return new values out. The usual fix for "I
+need to share state" is to pass an object (a list, a dict, a class
+instance) as an argument and mutate *it* instead.
+
+Lambdas
+-------
+
+A ``lambda`` builds a small anonymous function in a single
+expression:
+
+::
+
+    square = lambda x: x * x
+    square(7)             # 49
+
+It is exactly equivalent to ::
+
+    def square(x):
+        return x * x
+
+The body of a ``lambda`` must be a single expression -- no
+statements, no multiple lines. The main use is passing a tiny
+function as an argument to something that takes a function:
+
+::
+
+    pairs = [("b", 2), ("a", 3), ("c", 1)]
+    pairs.sort(key=lambda item: item[1])
+    # [('c', 1), ('b', 2), ('a', 3)]
+
+When the body grows past one expression, switch to a real ``def``.
+Naming a function with ``def`` also gives it a name in tracebacks,
+which a ``lambda`` does not have.
+
+Closures
+--------
+
+A function defined inside another function can read names from
+the enclosing function's scope. The inner function *captures*
+those names and keeps working even after the outer call has
+returned:
+
+::
+
+    def make_adder(n):
+        def add(x):
+            return x + n
+        return add
+
+    add5 = make_adder(5)
+    add10 = make_adder(10)
+    print(add5(100), add10(100))
+
+Output::
+
+    105 110
+
+``add5`` and ``add10`` are two separate functions, each
+remembering its own ``n``. A function that builds and returns
+a customised inner function this way is called a *closure*. It is
+the main reason a language needs nested functions in the first
+place -- a way to bake some state into a function value and then
+hand that value off as a single callable.
+
+Reading captured names happens automatically. *Rebinding* one
+needs an extra keyword. The example below does what looks right
+and fails:
+
+::
+
+    def make_counter():
+        count = 0
+        def tick():
+            count = count + 1     # UnboundLocalError
+            return count
+        return tick
+
+The assignment to ``count`` inside ``tick`` makes ``count`` local
+to ``tick``, the same way it would have made it local in a
+top-level function. The ``nonlocal`` keyword tells Python "this
+name lives in the enclosing function, rebind it there":
+
+::
+
+    def make_counter():
+        count = 0
+        def tick():
+            nonlocal count
+            count += 1
+            return count
+        return tick
+
+    c = make_counter()
+    print(c(), c(), c())
+
+Output::
+
+    1 2 3
+
+``nonlocal`` is to enclosing-function scope what ``global`` is to
+module scope. Note that *mutating* a captured object (calling
+``some_list.append(...)``, ``some_dict[k] = v``) does not need
+``nonlocal`` -- the name is not being rebound, only the object it
+points at is being changed.
+
+
+Type hints
+==========
+
+Python lets you *annotate* function parameters and return values
+with type information. The annotations are ignored at run time --
+nothing checks them, nothing converts based on them -- but they
+serve as documentation for readers and for the IDE.
+
+Annotation syntax
+-----------------
+
+A parameter annotation goes after a colon. The return type goes
+after ``->`` and before the body's colon:
+
+::
+
+    def greet(name: str) -> None:
+        print("hello,", name)
+
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    def average(values: list) -> float:
+        return sum(values) / len(values)
+
+The hints describe what *should* be passed in and what *will* be
+returned. Calling ``add("hi", "there")`` does not raise -- Python
+runs the body anyway. The hints are a contract, not a check.
+
+A parameter can have both a default and an annotation:
+
+::
+
+    def greet(name: str, greeting: str = "hello") -> None:
+        print(greeting, name)
+
+CPython has richer notation (``Optional``, ``Union``, generics)
+through the ``typing`` module, but those are heavyweight on
+MicroPython and rarely needed for everyday camera code.
+
+MicroPython at run time
+-----------------------
+
+MicroPython parses annotations and then ignores them. There is no
+:mod:`typing` module to import from on the camera; trying to use
+``Optional[int]`` or ``list[int]`` will either fail to import or
+silently behave as plain attribute access, depending on the
+firmware build.
+
+Stick to plain type names (:class:`int`, :class:`float`,
+:class:`str`, :class:`bool`, :class:`bytes`, :class:`list`,
+:class:`tuple`, :class:`dict`) in annotations. They cost nothing
+at run time and convey the intent clearly.
+
+How the IDE uses them
+---------------------
+
+The IDE reads annotations to drive tooltips, autocomplete, and
+inline hints. A function annotated with ``-> int`` shows ``int``
+as its return type when the cursor hovers on the call. A parameter
+annotated with ``: str`` autocompletes string methods on the
+argument inside the function body.
+
+This is the practical payoff of writing annotations on a runtime
+that ignores them: better support from the editor with no cost at
+all when the script runs on the camera.
+
+Variable annotations
+--------------------
+
+Annotations on plain assignments work the same way:
+
+::
+
+    threshold: float = 0.5
+    name: str = "OpenMV"
+
+These are also ignored at run time. Their main use is making the
+intended type obvious when the right-hand side does not make it
+obvious -- typically when the initial value is a placeholder that
+will be replaced later.
+
+
+Using modules
+=============
+
+A *module* is a collection of Python code -- functions, classes,
+constants -- packaged so it can be reused across many scripts.
+Python ships with a standard library full of them, and the OpenMV
+firmware adds more for talking to the camera. Reaching into a
+module is done with ``import``.
+
+import
+------
+
+The most direct form pulls in the whole module under its own name:
+
+::
+
+    import math
+
+    print(math.sqrt(2))
+
+Output::
+
+    1.4142135623730951
+
+After the ``import``, every name defined by ``math`` is reachable
+as ``math.<name>``. The module name comes from its filename
+(without ``.py``); the namespace prefix keeps two modules with
+the same function name from colliding.
+
+from ... import
+---------------
+
+To pull specific names directly into the current scope, use
+``from``:
+
+::
+
+    from math import sqrt, pi
+
+    print(sqrt(2), pi)
+
+Output::
+
+    1.4142135623730951 3.141592653589793
+
+There is no namespace prefix anymore. This is convenient for
+names used a lot, but a ``from`` import that brings in many names
+makes it harder to tell where each name came from. Plain
+``import math`` is usually clearer in larger scripts.
+
+The star form ``from math import *`` brings in *everything* the
+module exports. Skip it -- it pollutes the namespace and trips up
+the IDE's autocomplete.
+
+Aliasing with as
+----------------
+
+Long module names can be shortened with ``as``:
+
+::
+
+    import json as j
+
+    j.dumps({"ok": True})
+
+The same trick works on individual names imported with ``from``:
+
+::
+
+    from math import sqrt as root
+
+    root(9)              # 3.0
+
+For general Python code, alias only when the original name is
+genuinely long or clashes with something else already in scope.
+
+Available modules
+-----------------
+
+The :doc:`library reference </library/index>` lists every module
+shipped on the camera -- the MicroPython standard library and the
+OpenMV-specific modules that drive the image sensor, run machine
+vision, and control the on-board hardware. All of them use the
+same ``import`` mechanism shown above.
+
+
+Writing modules
+===============
+
+Any ``.py`` file is a module. Splitting a growing script across a
+few files keeps each file short and lets common helpers be shared
+between scripts.
+
+Splitting a script
+------------------
+
+Pull a related group of functions out into their own file:
+
+``camera_utils.py``::
+
+    def banner():
+        print("OpenMV")
+
+    def label(text):
+        return "[" + text + "]"
+
+``main.py``::
+
+    import camera_utils
+
+    camera_utils.banner()
+    print(camera_utils.label("ready"))
+
+Output::
+
+    OpenMV
+    [ready]
+
+The two files sit side by side in the same directory. When
+``main.py`` runs, ``import camera_utils`` reads
+``camera_utils.py`` once, executes its top-level statements, and
+binds the resulting module object to the name ``camera_utils`` in
+``main``. A second ``import camera_utils`` from anywhere else
+returns the same object -- modules are cached after their first
+load.
+
+A module's name comes from its filename, so ``camera_utils.py``
+gets imported as ``import camera_utils``.
+
+Multi-file modules (packages)
+-----------------------------
+
+A module can also be a *directory* of files rather than a single
+``.py``. The directory's name becomes the module name, and the
+files inside are its *submodules*:
+
+::
+
+    camera_utils/
+        __init__.py
+        text.py
+        timing.py
+
+``__init__.py`` is the file that runs when the package itself is
+imported; it can be empty, or it can re-export selected names
+from the submodules. The submodules are reached with a dotted
+name:
+
+::
+
+    import camera_utils.text
+    from camera_utils.timing import elapsed
+
+    camera_utils.text.label("ready")
+
+Inside the package, submodules can reach each other either by
+the full dotted name or by a *relative import* that uses a
+leading dot to mean "this package":
+
+``camera_utils/timing.py``::
+
+    from . import text             # the sibling submodule
+
+    def stamp(value):
+        return text.label(str(value))
+
+To pull in a specific name instead, name it after the dotted
+sibling:
+
+::
+
+    from .text import label
+
+    def stamp(value):
+        return label(str(value))
+
+Relative imports keep a package self-contained: renaming the
+package directory does not require editing every submodule.
+
+Use a package when a single file grows past a comfortable size,
+or when a set of related modules belongs together under one
+namespace. For everyday scripts a single ``.py`` file is enough.
+
+The __name__ guard
+------------------
+
+Every module has a built-in name ``__name__``. Its value depends
+on how the file is being used:
+
+* When the file is *run directly*, ``__name__`` is set to the
+  string ``"__main__"``.
+* When the file is *imported* by another script, ``__name__`` is
+  set to the module name -- the filename without ``.py``.
+
+The idiom that uses this is:
+
+``label_util.py``::
+
+    def label(text):
+        return "[" + text + "]"
+
+    if __name__ == "__main__":
+        print(label("self-test"))
+
+Output (when run directly)::
+
+    [self-test]
+
+When the same file is *imported* instead, ``__name__`` is set to
+the module name, so the ``if`` block is skipped and nothing extra
+runs:
+
+::
+
+    >>> import label_util
+    >>> label_util.__name__
+    'label_util'
+
+Use the pattern to attach a quick smoke test or demo to a library
+file without disturbing scripts that import it.
+
+
+First class
+===========
+
+A *class* groups data and the functions that act on that data
+under a single name. Reaching for one is worthwhile when several
+pieces of state belong together and most of the functions in a
+script take that same set of values as arguments.
+
+The class keyword
+-----------------
+
+The keyword is ``class``. The body holds an ``__init__`` method
+that runs every time a new instance is created:
+
+::
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+    p = Point(3, 4)
+    print(p.x, p.y)
+
+Output::
+
+    3 4
+
+``Point`` is the class; ``p`` is an *instance* of it. The
+parentheses on the call ``Point(3, 4)`` invoke ``__init__``,
+which assigns the arguments to attributes on the new instance.
+``self`` is the conventional name for the instance; ``self.x``
+sets an attribute that the rest of the instance's methods will
+read.
+
+When to use a class
+-------------------
+
+Reach for a class when these are true at the same time:
+
+* A handful of related values travel together everywhere (a
+  point's ``x`` and ``y``; a sensor reading's value, unit, and
+  timestamp).
+* Several functions take that same set of values and operate on
+  them.
+* It is useful to keep more than one of these bundles alive at
+  a time, distinct from each other.
+
+If the data is one-off, a plain :class:`dict` or :class:`tuple`
+is usually enough. If you only need a single bundle of constants,
+module-level variables are fine. Classes are not the default
+container -- they earn their place when state and behaviour want
+to stick together.
+
+What __init__ does
+------------------
+
+``__init__`` is just a regular method. Anything assigned to
+``self`` inside it becomes an attribute on the new instance:
+
+::
+
+    class Sensor:
+        def __init__(self, name, unit):
+            self.name = name
+            self.unit = unit
+            self.readings = []
+
+    temp = Sensor("temperature", "C")
+    print(temp.name, temp.unit, temp.readings)
+
+Output::
+
+    temperature C []
+
+``readings`` is initialised to an empty list -- each new instance
+gets its own list, not a shared one. Anything not assigned to
+``self`` is local to ``__init__`` and disappears when it returns.
+
+
+Methods and attributes
+======================
+
+A *method* is a function defined inside a class. The first
+parameter is the instance the method is called on; the convention
+is to name it ``self``.
+
+Instance methods
+----------------
+
+::
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        def magnitude(self):
+            return (self.x ** 2 + self.y ** 2) ** 0.5
+
+    p = Point(3, 4)
+    print(p.magnitude())
+
+Output::
+
+    5.0
+
+The call ``p.magnitude()`` passes ``p`` as ``self`` automatically.
+Method bodies read and update attributes through ``self`` the
+same way functions read and update names through parameters.
+
+Instance vs class attributes
+----------------------------
+
+Attributes assigned to ``self`` -- typically inside ``__init__``
+-- belong to that one instance:
+
+::
+
+    a = Point(1, 2)
+    b = Point(10, 20)
+    a.x = 99
+    print(a.x, b.x)           # 99 10
+
+``a.x`` and ``b.x`` are different storage; mutating one does not
+affect the other.
+
+Names assigned in the class body, *outside* any method, are
+shared by every instance of the class:
+
+::
+
+    class Counter:
+        kind = "tally"        # class attribute -- shared
+
+        def __init__(self):
+            self.value = 0    # instance attribute -- per instance
+
+    a = Counter()
+    b = Counter()
+    print(a.kind, b.kind)     # tally tally
+
+.. figure:: https://docs.openmv.io/_images/instance-vs-class.svg
+   :alt: A class block at the top holding shared methods and the
+         class attribute "kind"; below it, two instance boxes
+         each holding their own "value" attribute, with arrows
+         from each instance up to the class.
+
+   Class attributes live on the class itself and are shared.
+   Instance attributes live on each instance.
+
+A class attribute is reached the same way as an instance one
+(``a.kind``); Python looks first on the instance, then on the
+class. Assigning to ``a.kind`` would create a new *instance*
+attribute that shadows the class one, leaving ``b.kind``
+untouched.
+
+Use class attributes for constants and defaults every instance
+should see the same way. Use instance attributes for state each
+object should own its own copy of.
+
+__str__ and __repr__
+--------------------
+
+Two special methods control how an instance prints. ``__str__``
+returns the "friendly" string used by :func:`print`; ``__repr__``
+returns the "developer" string used at the REPL and inside
+container displays:
+
+::
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        def __str__(self):
+            return "(" + str(self.x) + ", " + str(self.y) + ")"
+
+        def __repr__(self):
+            return "Point(" + str(self.x) + ", " + str(self.y) + ")"
+
+    p = Point(3, 4)
+    print(p)            # uses __str__
+    print([p, p])       # uses __repr__ inside the list
+
+Output::
+
+    (3, 4)
+    [Point(3, 4), Point(3, 4)]
+
+If only ``__repr__`` is defined, :func:`print` falls back to it
+-- so a single well-written ``__repr__`` is usually enough.
+Define ``__str__`` as well only when the friendly form should
+look different from the developer form. Aim for a ``__repr__``
+that looks like the call that would recreate the object;
+debugging gets dramatically easier when printed values are
+unambiguous.
+
+
+Inheritance
+===========
+
+Inheritance lets a class *extend* another class -- start with all
+of its methods and attributes, then add or override what is
+different. The original is called the *base* (or *parent*); the
+extension is called the *subclass*.
+
+.. figure:: https://docs.openmv.io/_images/inheritance-tree.svg
+   :alt: A base class Shape pointing down to a subclass Square;
+         Square overrides one method (area) and inherits the
+         rest.
+
+   ``Square`` reuses every method on ``Shape`` and overrides
+   the ones it needs to specialise.
+
+Defining a subclass
+-------------------
+
+The base class goes in the parentheses on the ``class`` line:
+
+::
+
+    class Shape:
+        def __init__(self, name):
+            self.name = name
+
+        def describe(self):
+            return self.name + " with area " + str(self.area())
+
+        def area(self):
+            return 0
+
+    class Square(Shape):
+        def __init__(self, side):
+            super().__init__("square")
+            self.side = side
+
+        def area(self):
+            return self.side * self.side
+
+    s = Square(4)
+    print(s.describe())
+
+Output::
+
+    square with area 16
+
+``Square`` inherits ``describe`` from ``Shape`` unchanged and
+overrides ``area`` to return a real value. The base's
+``describe`` still works because it calls ``self.area()`` --
+which resolves to the override at run time.
+
+super()
+-------
+
+:func:`super` returns a proxy that lets a method call the
+base-class version of a method. The most common use is calling
+the base ``__init__`` from a subclass ``__init__`` so the base
+gets to initialise its own attributes:
+
+::
+
+    class Square(Shape):
+        def __init__(self, side):
+            super().__init__("square")    # run Shape.__init__
+            self.side = side
+
+Forgetting ``super().__init__`` is a common source of bugs:
+attributes the base would have set never get set, and the
+inherited methods that rely on them crash later.
+
+The implicit base class
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Every class implicitly inherits from :class:`object`, the root
+of Python's type hierarchy. Methods like :meth:`__repr__
+<object.__repr__>`, :meth:`__eq__ <object.__eq__>`, and the
+machinery behind attribute access all come from there even when
+a class declares no base. Writing ``class Foo(object):``
+explicitly and writing ``class Foo:`` are equivalent in modern
+Python; the latter is the conventional form.
+
+When inheritance helps -- and when it does not
+----------------------------------------------
+
+Use inheritance when one class is genuinely a *more specific
+kind* of another, sharing most of the behaviour. The classic
+test is the "is-a" check: a ``Square`` is a ``Shape``.
+
+When two classes just happen to share a few helpers, inheritance
+is overkill. Reach for *composition* instead: have one class
+hold an instance of the other as an attribute and use it through
+that attribute. The shape is "has-a", not "is-a":
+
+::
+
+    class Logger:
+        def log(self, msg):
+            print("[log]", msg)
+
+    # inheritance: Worker IS-A Logger
+    class WorkerInherits(Logger):
+        def run(self):
+            self.log("starting")
+
+    # composition: Worker HAS-A Logger
+    class WorkerComposes:
+        def __init__(self):
+            self.logger = Logger()
+
+        def run(self):
+            self.logger.log("starting")
+
+Both work. The composing version is usually better because it:
+
+* **Keeps interfaces small.** ``WorkerComposes`` exposes only
+  ``run`` and ``logger``. ``WorkerInherits`` also exposes
+  ``log`` -- callers can write ``worker.log(...)`` directly,
+  whether or not that was intended.
+* **Decouples lifetimes.** The logger can be swapped, shared
+  between workers, or constructed differently per worker, all
+  without touching the ``Worker`` class. A subclass is bolted
+  to its base.
+* **Avoids method-name collisions.** Two bases that both define
+  ``run`` clash when a class tries to inherit from both;
+  two attributes never clash.
+
+A practical rule of thumb:
+
+* Use inheritance when the subclass really *is* a kind of the
+  base and every method on the base makes sense on it too --
+  ``Square`` is a ``Shape``; ``MemoryError`` is an
+  ``Exception``.
+* Use composition for everything else -- when you just want
+  the *behaviour* of another class, not its identity. Most real
+  code uses composition far more than it uses inheritance.
+
+
+Decorators
+==========
+
+A *decorator* is a piece of syntax that wraps a function (or a
+method) in another function. The wrapper can add behaviour before
+and after the original call, replace the return value, or attach
+metadata. The shape is:
+
+::
+
+    @wrapper
+    def f():
+        ...
+
+The ``@wrapper`` line is equivalent to ``f = wrapper(f)`` -- the
+function ``f`` is built normally, then handed to ``wrapper``, and
+the result is rebound to the name ``f``.
+
+.. figure:: https://docs.openmv.io/_images/decorator-wrap.svg
+   :alt: A function entering a "wrapper" box on the left and
+         emerging on the right as a decorated function.
+
+   A decorator takes a function in and returns a new function.
+
+Built-in method decorators
+--------------------------
+
+A few decorators ship with Python and are used inside class
+bodies.
+
+@property
+~~~~~~~~~
+
+Turns a method into a *computed attribute*. The caller accesses
+it as if it were a plain attribute (no parentheses), but a
+method runs on each read:
+
+::
+
+    class Circle:
+        def __init__(self, radius):
+            self.radius = radius
+
+        @property
+        def area(self):
+            return 3.14159 * self.radius * self.radius
+
+    c = Circle(5)
+    print(c.area)             # 78.53975  -- no parentheses
+
+Use it when an attribute that *looks* simple needs a tiny
+computation behind it. If the work is expensive, prefer a
+regular method -- callers do not expect attribute reads to be
+slow.
+
+@classmethod
+~~~~~~~~~~~~
+
+Defines a method that receives the *class* as its first argument
+instead of an instance. The first parameter is conventionally
+named ``cls``:
+
+::
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        @classmethod
+        def origin(cls):
+            return cls(0, 0)
+
+    p = Point.origin()
+
+Class methods are the standard way to provide *alternative
+constructors* -- factory functions that return an instance built
+in a non-default way.
+
+@staticmethod
+~~~~~~~~~~~~~
+
+Defines a method that receives neither the instance nor the
+class -- it is just a plain function that lives in the class
+namespace for organisational reasons:
+
+::
+
+    class Temperature:
+        @staticmethod
+        def c_to_f(c):
+            return c * 9 / 5 + 32
+
+    Temperature.c_to_f(100)   # 212.0
+
+Use it sparingly; if a function really has nothing to do with
+the class's state, a plain module-level function is usually
+cleaner.
+
+Writing a custom decorator
+--------------------------
+
+A decorator is a function that takes a function and returns a
+function. The minimum shape:
+
+::
+
+    def log_calls(func):
+        def wrapper(*args, **kwargs):
+            print("calling", func.__name__)
+            return func(*args, **kwargs)
+        return wrapper
+
+    @log_calls
+    def add(a, b):
+        return a + b
+
+    add(2, 3)
+
+Output::
+
+    calling add
+
+The ``wrapper`` closes over ``func`` and forwards everything to
+it. ``*args`` / ``**kwargs`` lets it work on any function, not
+just two-argument ones. This pattern is the foundation of more
+elaborate decorators (timing, caching, retry-on-failure) but the
+core is always the same: take a function in, return a function
+out.
+
+
+Context managers
+================
+
+The ``with`` statement runs setup code, then a body, then
+teardown code -- with a guarantee that the teardown runs even
+when the body fails partway through. The pair of methods that
+supplies the setup and teardown is called a *context manager*.
+
+The shape is:
+
+::
+
+    with <expression> as <name>:
+        <body>
+
+The expression returns a context manager. Python calls its
+``__enter__`` method, optionally binds the result to ``<name>``,
+runs the body, and then calls ``__exit__`` -- whether the body
+completed normally or raised an exception.
+
+.. figure:: https://docs.openmv.io/_images/with-flow.svg
+   :alt: Flow diagram: __enter__ runs first, then the body; the
+         body either completes normally or raises; either way,
+         __exit__ runs at the end.
+
+   ``__exit__`` runs at the end of the block whatever happens
+   inside it.
+
+Using a context manager
+-----------------------
+
+The canonical example is opening a file:
+
+::
+
+    with open("data.txt") as f:
+        text = f.read()
+
+    # f is now closed, even if read() failed
+
+:func:`open` returns a file object that is itself a context
+manager; ``__enter__`` returns the file, and ``__exit__`` closes
+it. The ``with`` block makes "always close the file when done"
+the default rather than something the caller has to remember.
+
+Multiple context managers
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A single ``with`` statement can enter several context managers
+at once, separated by commas:
+
+::
+
+    with open("input.txt") as src, open("output.txt", "w") as dst:
+        dst.write(src.read())
+
+Equivalent to two nested ``with`` blocks, but flatter. The
+managers are entered left to right and exited in reverse order;
+if ``__enter__`` on the right-hand manager raises, the left-hand
+manager's ``__exit__`` still runs.
+
+Writing a context manager
+-------------------------
+
+Any class with ``__enter__`` and ``__exit__`` methods works as a
+context manager:
+
+::
+
+    class Section:
+        def __init__(self, label):
+            self.label = label
+
+        def __enter__(self):
+            print("---", self.label, "---")
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            print("--- end", self.label, "---")
+            return False
+
+    with Section("setup"):
+        print("doing the work")
+
+Output::
+
+    --- setup ---
+    doing the work
+    --- end setup ---
+
+``__exit__`` receives three arguments describing the exception
+that ended the block, or three :data:`None` values if the block
+completed normally. Returning :data:`False` (or :data:`None`)
+lets any exception propagate after teardown; returning
+:data:`True` would swallow it.
+
+Use context managers for any resource that has an "open / close"
+or "acquire / release" lifecycle -- not just files. The pattern
+keeps cleanup paired with setup at the point where both are
+introduced, so a forgotten close in the middle of a long
+function cannot leak the resource.
+
+
+Handling errors
+===============
+
+Most runtime problems in Python surface as *exceptions* -- a
+named, structured way to report that something went wrong.
+:exc:`ValueError`, :exc:`TypeError`, :exc:`KeyError`,
+:exc:`OSError`, :exc:`MemoryError` are all examples; each is a
+class, and *raising* one stops the current call and looks for a
+handler in the surrounding code.
+
+try / except
+------------
+
+Wrap a block of code in ``try`` to catch any exception it
+raises:
+
+::
+
+    try:
+        n = int(input_text)
+    except ValueError:
+        n = 0
+
+If the ``int(...)`` conversion fails, control jumps to the
+``except`` block instead of propagating the error further. If
+``input_text`` was a valid integer string, the ``except`` block
+is skipped.
+
+A single ``try`` can have several ``except`` blocks, each
+catching a different kind of error:
+
+::
+
+    try:
+        value = data[key]
+    except KeyError:
+        value = None
+    except TypeError:
+        value = -1
+
+Python matches in order; the first one whose exception class
+fits handles the problem. Catching :exc:`Exception` (the base
+class for almost everything) handles *any* error; reserve that
+for the outermost layer of a program where the alternative is a
+crash.
+
+.. warning::
+
+   A bare ``except:`` (no class after the keyword) also catches
+   :exc:`KeyboardInterrupt` -- the exception the IDE sends when
+   you press its **stop** button to interrupt a running script.
+   A loop wrapped in a bare ``except: pass`` will swallow the
+   interrupt and keep running, leaving no way to stop the script
+   except a power cycle.
+
+   Prefer ``except Exception:`` over bare ``except:`` when you
+   genuinely need to catch broadly. :exc:`KeyboardInterrupt`
+   inherits from :exc:`BaseException`, not :exc:`Exception`, so
+   ``except Exception:`` leaves the stop button working.
+
+Inspecting the exception
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To read the message attached to an exception, name it with
+``as``:
+
+::
+
+    try:
+        f = open("data.txt")
+    except OSError as e:
+        print("could not open file:", e)
+
+The variable bound by ``as`` is only valid inside the
+``except`` block.
+
+else and finally
+----------------
+
+A ``try`` block has two optional extras.
+
+``else`` runs only when the ``try`` finished without raising:
+
+::
+
+    try:
+        value = compute()
+    except ValueError:
+        print("bad input")
+    else:
+        print("got", value)
+
+Putting "what to do when it worked" in ``else`` keeps the
+``try`` block narrow -- only the line that might fail belongs in
+``try``.
+
+``finally`` runs at the end *no matter what* -- whether the
+``try`` succeeded, raised and was handled, or raised and is about
+to propagate:
+
+::
+
+    try:
+        do_work()
+    finally:
+        cleanup()
+
+.. figure:: https://docs.openmv.io/_images/try-flow.svg
+   :alt: Flow diagram showing the four possible paths through
+         try / except / else / finally: success goes to else
+         then finally; a caught exception goes to except then
+         finally; an uncaught exception goes to finally then
+         propagates.
+
+   ``finally`` always runs. ``else`` runs only on the
+   non-exception path.
+
+For most acquire/release patterns, prefer a :doc:`context manager
+<../classes/context-managers>` over a ``try / finally`` pair --
+the resource itself manages its own cleanup.
+
+Common built-in exceptions
+--------------------------
+
+A short list of the exceptions you will run into often:
+
+* :exc:`ValueError` -- right type, wrong value
+  (``bytes([300])`` -- 300 is the right type, but is outside the
+  valid byte range of 0..255).
+* :exc:`TypeError` -- wrong type altogether
+  (``len(42)``).
+* :exc:`KeyError` -- missing key in a :class:`dict`.
+* :exc:`IndexError` -- index past the end of a sequence.
+* :exc:`AttributeError` -- accessing an attribute that does not
+  exist (``"abc".foo``).
+* :exc:`OSError` -- a filesystem or I/O failure.
+* :exc:`MemoryError` -- ran out of heap. On a memory-constrained
+  runtime, this can happen during normal operation -- not just
+  in pathological cases.
+
+
+Raising errors
+==============
+
+A function can signal a problem to its caller by *raising* an
+exception. The keyword is ``raise``:
+
+::
+
+    def square_root(x):
+        if x < 0:
+            raise ValueError("square_root expects a non-negative number")
+        return x ** 0.5
+
+Calling ``square_root(-1)`` stops at the ``raise`` line, jumps
+out of the function, and looks for a matching ``except`` in the
+caller. If no caller catches it, the script ends with a
+traceback.
+
+Why raise instead of returning a sentinel
+-----------------------------------------
+
+Two ways to report "bad input":
+
+::
+
+    # signal with a sentinel
+    def square_root_or_none(x):
+        if x < 0:
+            return None
+        return x ** 0.5
+
+    # raise an exception
+    def square_root(x):
+        if x < 0:
+            raise ValueError("...")
+        return x ** 0.5
+
+The exception form is usually better:
+
+* The caller has to *deliberately* handle the error case --
+  either with a ``try``, or by letting the exception propagate.
+  Sentinels are easy to forget and easy to mistake for a normal
+  result.
+* The error message travels with the exception; the sentinel
+  approach has to attach the diagnostic somewhere else.
+* The default behaviour on an unhandled exception is a loud
+  crash with a traceback that points at the offending call.
+  Silent ``None`` returns become subtle bugs later.
+
+Reach for sentinels only when "not found" is a routine,
+non-exceptional outcome -- :meth:`dict.get` returns :data:`None`
+on a missing key precisely because lookups are expected to
+sometimes miss.
+
+Custom exception classes
+------------------------
+
+To raise a problem the caller might want to distinguish from
+built-in errors, define a subclass of :exc:`Exception`:
+
+::
+
+    class ConfigError(Exception):
+        pass
+
+    def load_config(path):
+        try:
+            f = open(path)
+        except OSError as e:
+            raise ConfigError("missing config file: " + path)
+
+    try:
+        load_config("settings.json")
+    except ConfigError as e:
+        print("startup failed:", e)
+
+The empty ``class`` body is fine -- the name itself is what
+matters, because callers catch by class. Group related errors
+under a common base if a caller might want to catch the whole
+family in one block.
+
+Re-raising
+~~~~~~~~~~
+
+A bare ``raise`` inside an ``except`` block re-raises the
+current exception so it propagates to the next handler:
+
+::
+
+    try:
+        do_work()
+    except Exception as e:
+        log(e)
+        raise        # let it keep going
+
+This is the right shape when a function wants to *observe* an
+error (log it, count it, undo a partial change) without
+actually handling it.
+
+When to catch and when to propagate
+-----------------------------------
+
+A useful rule of thumb:
+
+* Catch an exception at the level that can *meaningfully recover*
+  -- substitute a default, retry, skip the bad input.
+* Let it propagate when there is nothing useful to do except
+  crash, or when the layer above is the one that knows how to
+  recover.
+
+A function in the middle of a call stack that swallows every
+error and returns silently makes failures untraceable. Prefer to
+let exceptions travel until they reach code that genuinely has a
+plan.
+
+
+Reading and writing
+===================
+
+Files live on disk; Python reaches them through :func:`open`,
+which returns a *file object* whose methods read and write the
+underlying bytes.
+
+open and modes
+--------------
+
+The first argument is the path; the second is the *mode* -- a
+short string telling Python how the file will be used:
+
+* ``"r"`` -- read (default). Opens an existing file for reading.
+* ``"w"`` -- write. Creates a new file or *truncates* an
+  existing one to empty.
+* ``"a"`` -- append. Opens a file for writing at its end without
+  truncating.
+* ``"b"`` appended to any of the above (``"rb"``, ``"wb"``,
+  ``"ab"``) -- binary mode. The file's contents are :class:`bytes`
+  rather than :class:`str`.
+
+::
+
+    f = open("notes.txt", "r")
+    text = f.read()
+    f.close()
+
+Use a context manager
+---------------------
+
+The pattern above leaks the file handle if anything between
+:func:`open` and ``close`` raises. The fix is the ``with``
+statement (see :doc:`context managers <../classes/context-managers>`):
+
+::
+
+    with open("notes.txt") as f:
+        text = f.read()
+
+    # f is closed here, even if read() failed
+
+This is the standard form -- write it this way every time.
+
+Reading
+-------
+
+File objects support several read styles:
+
+* :meth:`io.IOBase.read` -- read the whole file (or N bytes) and
+  return it as a single string (or bytes object).
+* :meth:`io.IOBase.readline` -- read one line, including the trailing
+  ``"\n"``.
+* Iterating the file directly yields lines one at a time, with
+  much smaller memory use than reading the whole file at once.
+
+::
+
+    with open("log.txt") as f:
+        for line in f:
+            print(line.rstrip())
+
+:meth:`str.rstrip` removes the trailing newline before printing
+so the output is not double-spaced.
+
+Writing
+-------
+
+Open the file in ``"w"`` mode and use :meth:`io.IOBase.write`:
+
+::
+
+    with open("out.txt", "w") as f:
+        f.write("hello\n")
+        f.write("world\n")
+
+:meth:`io.IOBase.write` does *not* add a newline -- it writes exactly
+the bytes (or characters, in text mode) you give it.
+
+Text vs binary
+--------------
+
+Text mode (default, ``"r"`` / ``"w"`` without ``"b"``) decodes
+incoming bytes into :class:`str` using a default encoding, and
+encodes outgoing :class:`str` back to bytes. Use it for
+configuration, logs, JSON -- anything that *is* text.
+
+Binary mode (``"rb"`` / ``"wb"``) skips the decode step and
+returns :class:`bytes`. Use it for images, struct-packed records,
+network captures -- anything where every byte matters and the
+file is not human-readable.
+
+Listing and removing files
+--------------------------
+
+The :mod:`os` module exposes the filesystem operations that are
+not on the file object itself:
+
+* :func:`os.listdir` -- returns a list of names in a directory.
+* :func:`os.remove` -- delete a file.
+* :func:`os.rename` -- rename a file.
+* :func:`os.stat` -- file metadata (size, modification time,
+  ...).
+* :func:`os.mkdir` -- create a new directory.
+
+::
+
+    import os
+
+    for name in os.listdir("/"):
+        print(name)
+
+Catch :exc:`OSError` around these when the file or directory may
+not be there -- the operation is one of the common places
+exceptions show up in real scripts.
+
+
+JSON
+====
+
+JSON (JavaScript Object Notation) is a compact, human-readable
+text format for structured data. It defines six types --
+*string*, *number*, *boolean*, *null*, *array*, and *object* --
+each of which maps directly onto a Python value, so converting
+between Python and JSON is a single function call in either
+direction.
+
+JSON is the lingua franca of config files and web APIs. Reach
+for it whenever you need to save a small bundle of settings to
+disk in a form you can also read by eye, or to exchange
+structured data with another program.
+
+Two functions cover most needs:
+
+* :func:`json.dumps` -- *dump string*: turn a Python value into
+  a JSON string.
+* :func:`json.loads` -- *load string*: parse a JSON string back
+  into Python.
+
+The pair ``json.dump`` / ``json.load`` (no ``s``) does the same
+job but takes a file object directly.
+
+Encoding (dumps)
+----------------
+
+::
+
+    import json
+
+    config = {
+        "name":  "OpenMV",
+        "width": 320,
+        "tags":  ["red", "round"],
+    }
+
+    text = json.dumps(config)
+    print(text)
+
+Output::
+
+    {"name": "OpenMV", "width": 320, "tags": ["red", "round"]}
+
+The mapping is:
+
+* :class:`dict` (string keys) → JSON object.
+* :class:`list` and :class:`tuple` → JSON array.
+* :class:`str` → JSON string.
+* :class:`int`, :class:`float` → JSON number.
+* :data:`True`, :data:`False`, :data:`None` → ``true``,
+  ``false``, ``null``.
+
+Anything outside that set (a custom class, a :class:`bytes`
+buffer, a :class:`set`) raises :exc:`TypeError`. Convert the
+value first.
+
+.. note::
+
+   CPython's :func:`json.dumps` accepts an ``indent`` argument
+   for pretty-printed output; MicroPython's does not. The only
+   formatting knob is ``separators``, which controls the
+   in-line spacing -- pass ``(',', ':')`` for the most compact
+   form. Multi-line, indented output has to be produced by hand
+   if needed.
+
+Decoding (loads)
+----------------
+
+::
+
+    text = '{"name": "OpenMV", "width": 320}'
+    config = json.loads(text)
+    print(config["name"], config["width"])
+
+Output::
+
+    OpenMV 320
+
+JSON objects become :class:`dict`, arrays become :class:`list`,
+and the rest map back to their Python equivalents. Bad JSON
+raises :exc:`ValueError`.
+
+Reading and writing files
+-------------------------
+
+The file-based pair plays nicely with ``with``:
+
+::
+
+    import json
+
+    with open("config.json") as f:
+        config = json.load(f)
+
+    config["width"] = 640
+
+    with open("config.json", "w") as f:
+        json.dump(config, f)
+
+Treat the JSON file as a complete record -- read it in, modify
+the Python value, write it back. Trying to edit JSON in place
+inside a file usually creates more bugs than it saves.
+
+
+Struct and binary data
+======================
+
+The :mod:`struct` module packs Python values into a fixed binary
+layout and unpacks bytes back into Python values. Reach for it
+when working with a binary file format, a network protocol, or a
+device that exchanges fixed-size records.
+
+Two functions cover most cases:
+
+* :func:`struct.pack` -- take Python values and a *format
+  string*, return a :class:`bytes` object of the exact layout.
+* :func:`struct.unpack` -- take a format string and a
+  :class:`bytes` object, return a tuple of Python values.
+
+Format strings
+--------------
+
+A format string lists one *code* per field in the record. The
+codes describe both the size and the interpretation of each
+field.
+
+Python's :class:`int` has no fixed size -- it grows to fit
+whatever value you assign. Binary formats *do* have fixed
+sizes: every integer field uses an agreed number of bytes.
+:mod:`struct` converts between unbounded Python ints and these
+fixed-size representations.
+
+An integer's *width* is the number of bits it uses. One byte is
+eight bits. The lowercase code is the signed variant; the
+uppercase code is the unsigned one (only non-negative values):
+
+* ``b`` / ``B`` -- **8-bit** (one byte). ``-128..127`` signed,
+  ``0..255`` unsigned.
+* ``h`` / ``H`` -- **16-bit** (two bytes). ``-32768..32767``
+  signed, ``0..65535`` unsigned.
+* ``i`` / ``I`` -- **32-bit** (four bytes). About ±two billion
+  signed, four billion unsigned.
+* ``q`` / ``Q`` -- **64-bit** (eight bytes). Effectively
+  unbounded for everyday use.
+
+Pick a width that comfortably covers the range you expect.
+Packing a value outside the declared range either silently
+wraps around or raises :exc:`struct.error`, depending on the
+build.
+
+The remaining common codes are for floats and byte strings:
+
+* ``f`` -- 32-bit float (single precision; about seven decimal
+  digits). Python's regular :class:`float` on MicroPython is
+  already this size, so packing one into ``f`` is lossless.
+* ``d`` -- 64-bit float (double precision; about fifteen
+  decimal digits). Packing a 32-bit MicroPython :class:`float`
+  into ``d`` widens it to eight bytes but adds no precision.
+* ``s`` -- fixed-length byte string, preceded by a count
+  (``8s`` for an eight-byte field).
+
+Byte order
+----------
+
+A multi-byte integer can be stored in memory two ways. The
+number ``0x12345678`` in a 32-bit field is laid out like this:
+
+* **Little-endian** -- least significant byte first:
+  ``78 56 34 12``.
+* **Big-endian** -- most significant byte first:
+  ``12 34 56 78``.
+
+Both encode the same value; they only disagree on which end of
+the field is the low byte. A file written by one system is
+garbled when read by the other if the byte order does not match.
+
+The leading character of the format string picks the order:
+
+* ``<`` -- little-endian. Common on x86 and ARM.
+* ``>`` -- big-endian. Common in network protocols.
+* ``!`` -- network order, equivalent to ``>``.
+
+Without a leading character, native byte order and native
+alignment are used; setting ``<`` or ``>`` explicitly removes
+that ambiguity and is usually what you want when reading a file
+or talking to another machine.
+
+.. note::
+
+   The OpenMV Cam is **little-endian** -- the same as its host
+   PC. Use ``<`` in format strings for camera-local files and
+   for binary data that travels to or from a desktop. Use ``>``
+   (or ``!``) for network protocols and for any format whose
+   specification calls for big-endian.
+
+.. figure:: https://docs.openmv.io/_images/struct-layout.svg
+   :alt: Six bytes laid out in a row, with the first two bytes
+         grouped as an "H" field (16-bit unsigned) and the next
+         four as an "I" field (32-bit unsigned), each labelled
+         with their little-endian byte order.
+
+   ``"<HI"`` packs a 16-bit value followed by a 32-bit value
+   into six little-endian bytes.
+
+Packing
+-------
+
+::
+
+    import struct
+
+    blob = struct.pack("<HI", 320, 1000000)
+    print(blob, len(blob))
+
+Output::
+
+    b'@\x01@B\x0f\x00' 6
+
+The ``<HI`` format produces six bytes: two for the ``H`` field
+and four for the ``I`` field, all little-endian. Pass exactly
+the number of values the format expects -- a mismatch raises
+:exc:`struct.error`.
+
+Unpacking
+---------
+
+::
+
+    width, count = struct.unpack("<HI", blob)
+    print(width, count)
+
+Output::
+
+    320 1000000
+
+:func:`struct.unpack` always returns a tuple, even when the
+format describes a single field. Unpack it on the same line for
+readability.
+
+Fixed-length byte strings
+-------------------------
+
+The ``s`` code reads or writes a chunk of bytes verbatim. The
+count goes *before* the ``s`` -- ``4s`` means "four bytes
+treated as a single byte string". This is the usual way to
+embed a magic value, a fixed-size tag, or a padded name field
+in a record:
+
+::
+
+    header = struct.pack("<4sHI", b"OMV0", 320, 1000000)
+    print(header)
+
+Output::
+
+    b'OMV0@\x01@B\x0f\x00'
+
+The first four bytes are the literal magic ``b"OMV0"``; the
+next two are the ``H`` field (320); the last four are the ``I``
+field (1000000). Unpacking returns the bytes back as a
+:class:`bytes` object:
+
+::
+
+    magic, width, count = struct.unpack("<4sHI", header)
+    print(magic, width, count)
+
+Output::
+
+    b'OMV0' 320 1000000
+
+If the source value is shorter than the declared count, the
+result is padded on the right with ``\x00``; if longer, the
+excess bytes are silently dropped:
+
+::
+
+    struct.pack("4s", b"hi")        # b'hi\x00\x00'
+    struct.pack("4s", b"toolong")   # b'tool'
+
+The count is a byte length, not a character count -- ``s``
+deals in raw bytes, so a UTF-8 string with multi-byte characters
+needs to be ``.encode()``'d and counted in bytes first.
+
+Sizing and partial reads
+------------------------
+
+:func:`struct.calcsize` returns the number of bytes a format
+string consumes:
+
+::
+
+    struct.calcsize("<HI")     # 6
+
+When reading a stream of records from a file, read exactly that
+many bytes per record:
+
+::
+
+    record_size = struct.calcsize("<HI")
+    with open("data.bin", "rb") as f:
+        while True:
+            chunk = f.read(record_size)
+            if len(chunk) < record_size:
+                break
+            width, count = struct.unpack("<HI", chunk)
+            print(width, count)
+
+A short read at the end of the file produces a chunk smaller
+than ``record_size`` -- treat that as the end-of-stream
+condition rather than trying to unpack a partial record.
+
+
+Comprehensions
+==============
+
+A *comprehension* builds a new list, set, dict, or generator
+from an existing iterable, in a single expression. It is a
+replacement for the common pattern of starting with an empty
+container and appending in a loop.
+
+List comprehensions
+-------------------
+
+::
+
+    squares = [x * x for x in range(5)]
+    print(squares)
+
+Output::
+
+    [0, 1, 4, 9, 16]
+
+The same loop spelled out:
+
+::
+
+    squares = []
+    for x in range(5):
+        squares.append(x * x)
+
+The comprehension form is one expression that builds the list
+in place. There is no ``squares = []`` and no ``.append`` --
+the result is the value of the comprehension.
+
+.. figure:: https://docs.openmv.io/_images/comprehension-anatomy.svg
+   :alt: The expression "[f(x) for x in xs if cond]" annotated:
+         the leading expression is the result, the for clause
+         names the loop variable, the if clause filters which
+         items are kept.
+
+   The leading expression produces each item; the ``for`` clause
+   names the loop variable; an optional ``if`` filters items
+   out.
+
+Filtering with if
+-----------------
+
+An optional ``if`` clause keeps only the items that match:
+
+::
+
+    evens = [x for x in range(10) if x % 2 == 0]
+    print(evens)
+
+Output::
+
+    [0, 2, 4, 6, 8]
+
+The filter runs before the leading expression -- ``x % 2 == 0``
+is checked first; only matching values reach ``x`` for the
+output.
+
+Dict and set comprehensions
+---------------------------
+
+The same shape works with dict and set literals.
+
+A *dict comprehension* has a ``key: value`` pair before the
+``for``:
+
+::
+
+    squares = {x: x * x for x in range(5)}
+    print(squares)
+
+Output::
+
+    {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+
+A *set comprehension* uses braces and a single expression:
+
+::
+
+    unique_lengths = {len(w) for w in ["a", "bb", "c", "bb"]}
+    print(unique_lengths)
+
+Output::
+
+    {1, 2}
+
+Generator expressions
+---------------------
+
+Round brackets produce a *generator expression* instead of a
+list. The values are computed one at a time, on demand:
+
+::
+
+    total = sum(x * x for x in range(1000))
+
+No million-item list is ever built. The values flow one by one
+into :func:`sum`, which adds them and discards each as it goes.
+
+Generator expressions are the right choice when feeding values
+into a reducing function (:func:`sum`, :func:`max`, :func:`any`,
+:func:`all`) or any other iterator-consuming code -- they save
+the memory the equivalent list would have used.
+
+When *not* to use a comprehension
+---------------------------------
+
+Comprehensions are concise but not always clearer. Reach for a
+plain ``for`` loop when:
+
+* The body needs more than one statement (a comprehension fits
+  exactly one expression).
+* The body has side effects (printing, writing to a file) --
+  comprehensions are for *building* a collection, not for
+  running actions.
+* The filter or transformation has so many parts that the
+  comprehension no longer reads left-to-right.
+
+
+Iterators and generators
+========================
+
+The ``for`` loop has been doing more work than it looks like.
+This page covers the *iterator protocol* it runs on, and the
+``yield`` keyword that lets you build your own iterators.
+
+The iterator protocol
+---------------------
+
+Every object that can be looped over implements two methods:
+
+* ``__iter__()`` -- return an *iterator* over the object's
+  items.
+* ``__next__()`` -- on the iterator, return the next item or
+  raise :exc:`StopIteration` when there are no more.
+
+The :func:`iter` built-in calls ``__iter__``; :func:`next` calls
+``__next__``. Step through a list by hand:
+
+::
+
+    it = iter([10, 20, 30])
+    print(next(it))    # 10
+    print(next(it))    # 20
+    print(next(it))    # 30
+    print(next(it))    # raises StopIteration
+
+.. figure:: https://docs.openmv.io/_images/iterator-protocol.svg
+   :alt: A for loop calls __iter__ once to get an iterator, then
+         calls __next__ repeatedly until StopIteration ends the
+         loop.
+
+   ``for`` is sugar for "call ``__iter__`` once, then loop on
+   ``__next__`` until ``StopIteration``."
+
+What ``for x in items:`` actually does:
+
+::
+
+    _it = iter(items)
+    while True:
+        try:
+            x = next(_it)
+        except StopIteration:
+            break
+        # ... loop body ...
+
+Every list, tuple, string, dict, set, file object, and generator
+already implements ``__iter__`` and ``__next__`` -- which is why
+they all work with ``for``.
+
+yield and generator functions
+-----------------------------
+
+A function that contains a ``yield`` statement is a *generator
+function*. Calling it does not run the body; it returns a
+*generator object* (an iterator) that runs the body one
+``yield`` at a time:
+
+::
+
+    def count_up_to(n):
+        i = 0
+        while i < n:
+            yield i
+            i += 1
+
+    for value in count_up_to(3):
+        print(value)
+
+Output::
+
+    0
+    1
+    2
+
+Each call to :func:`next` resumes the function until the next
+``yield``, hands that value to the caller, and pauses there. The
+local state (``i`` in this case) is preserved between resumes.
+
+.. figure:: https://docs.openmv.io/_images/generator-yield.svg
+   :alt: Sequence diagram with two lifelines (caller and
+         generator body). The caller calls count_up_to(3),
+         which creates a generator without running the body.
+         Each subsequent next() runs the body until the next
+         yield, returns the yielded value, and pauses. The
+         fourth next() falls off the end and raises
+         StopIteration. The variable i is preserved across
+         pauses.
+
+   ``next()`` runs the body up to the next ``yield``, hands the
+   value back, and pauses. Local state survives the pause.
+
+Generators are the easiest way to produce a sequence lazily --
+no list is built, items are computed only when the consumer asks
+for them, and the function can yield items forever if it wants.
+
+Lazy pipelines
+--------------
+
+Generators compose well. One generator's output can feed
+another:
+
+::
+
+    def numbers():
+        i = 0
+        while True:
+            yield i
+            i += 1
+
+    def squares(source):
+        for x in source:
+            yield x * x
+
+    pipeline = squares(numbers())
+
+    for v in pipeline:
+        if v > 100:
+            break
+        print(v)
+
+The values flow through the pipeline one at a time -- no
+intermediate list, no upper bound built in to ``numbers``, and
+the consumer (``for v in pipeline``) decides when to stop.
+
+.. figure:: https://docs.openmv.io/_images/lazy-pipeline.svg
+   :alt: Three boxes left-to-right: numbers(), squares(source),
+         and the for-v-in-pipeline consumer. Three cycles are
+         drawn beneath. In each cycle, the consumer sends a
+         pull request leftward to squares, which sends a pull
+         leftward to numbers; numbers yields a value rightward
+         to squares, which yields its squared value rightward
+         to the consumer.
+
+   Each ``next()`` on the consumer triggers one pull through
+   the chain; values exist only when something asks for them.
+
+When ``yield`` runs out
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Falling off the end of a generator function (or hitting an
+explicit ``return``) raises :exc:`StopIteration` automatically.
+There is no need to raise it by hand; the surrounding ``for``
+loop sees it and ends.
+
+Use generators when the producing code is naturally written as
+a loop with a few yield points; use a plain list comprehension
+when you genuinely need the whole sequence in memory.
+
+
+async and await
+===============
+
+Python has two keywords for writing functions that can pause
+and resume: ``async`` and ``await``. They mirror the generator
+pattern from the previous page -- a function whose body can be
+suspended and resumed, with local state preserved across the
+pause -- with one change in who drives the resumes.
+
+async def
+---------
+
+A function defined with ``async def`` is a *coroutine function*.
+Calling it does not run the body; it returns a *coroutine
+object* that has not started yet:
+
+::
+
+    async def greet(name):
+        print("hello,", name)
+
+    coro = greet("Alice")        # body NOT run yet
+
+The coroutine object is paused at the very beginning of the
+function. Something has to *drive* it to make the body run --
+that something is an event loop, a runtime component covered by
+its own future super-section. For now, treat the body as "ready
+to run, waiting for a driver".
+
+await
+-----
+
+Inside an ``async def`` body, the ``await`` keyword suspends
+the coroutine until the awaited value is ready:
+
+::
+
+    async def fetch_and_log():
+        data = await read_sensor()
+        print("got:", data)
+
+When the body reaches ``await read_sensor()``, the coroutine
+hands control back to whatever is running it. When
+``read_sensor()`` finishes, the driver resumes the coroutine on
+the next line, with the result bound to ``data``.
+
+``await`` is only valid inside an ``async def`` body. Using it
+in a regular function is a syntax error.
+
+Relationship to generators
+--------------------------
+
+Coroutines and generators share the same underlying mechanic.
+The split is who pulls each resume:
+
+* A generator yields *values*; the consumer pulls the next one
+  with :func:`next` or by iterating.
+* A coroutine yields *control*; an event loop schedules the
+  resume when the awaited operation is ready.
+
+If the generator-yield handshake from the previous page makes
+sense, the ``await`` handshake is the same idea -- just driven
+by an event loop instead of a ``for`` loop.
+
+By themselves
+-------------
+
+``async`` and ``await`` are inert without a runtime to drive
+them. Defining a coroutine is fine; running one needs an event
+loop. MicroPython's :mod:`asyncio` module provides that event
+loop, and a future super-section covers it in detail. Until
+then, treat these two keywords as syntax you can read in other
+people's code and understand the shape of -- without yet
+needing to write your own concurrent scripts.
+
+
+Introspection
+=============
+
+A handful of built-ins let a running program inspect itself --
+the values it is working with, the namespaces those values live
+in, and the relationships between classes. Reach for them when
+you need to make decisions based on what an object *actually
+is*, rather than what its caller claims it is.
+
+Identity and hashing
+--------------------
+
+* :func:`id` -- a unique integer that identifies an object for
+  as long as it is alive. Two names that bind the same object
+  return the same id; two equal-but-distinct objects do not.
+
+::
+
+    >>> a = [1, 2, 3]
+    >>> b = a
+    >>> c = [1, 2, 3]
+    >>> id(a) == id(b)        # same list
+    True
+    >>> id(a) == id(c)        # equal but distinct
+    False
+
+The id is not portable across runs and not meaningful beyond
+"same object or different object."
+
+* :func:`hash` -- the hash value of an object, the same number
+  :class:`dict` and :class:`set` use to look it up. Two equal
+  objects hash to the same value; only hashable types
+  (immutable values, mostly) work at all.
+
+::
+
+    >>> hash("abc")           # some integer, build-dependent
+    -1600925533
+    >>> hash([1, 2])
+    TypeError: unhashable type: 'list'
+
+Querying types and callability
+------------------------------
+
+* :func:`type` -- the exact class of a value. ``type(x) is int``
+  asks "is x exactly an int" (no subclasses); :func:`isinstance`
+  is usually what you want instead.
+* :func:`isinstance` -- "is x an instance of this class, or a
+  subclass of it?" The standard tool for type-based dispatch
+  inside functions.
+* :func:`issubclass` -- the class-level counterpart. Takes two
+  classes rather than an instance.
+* :func:`callable` -- :data:`True` if the argument can be
+  called with ``()``. Useful when you receive an argument that
+  may be a function or may be a plain value.
+
+::
+
+    >>> isinstance(3, int)
+    True
+    >>> isinstance(True, int)        # bool is a subclass of int
+    True
+    >>> issubclass(bool, int)
+    True
+    >>> callable(len)
+    True
+    >>> callable(10)
+    False
+
+A pattern that uses callable:
+
+::
+
+    def call_or_return(x):
+        return x() if callable(x) else x
+
+Looking at scopes
+-----------------
+
+* :func:`globals` -- the module's global namespace as a
+  :class:`dict`. Reading from it works; writing to it is real,
+  but doing so outside of REPL exploration makes a program
+  difficult to follow.
+* :func:`locals` -- the local namespace at the call site.
+  Inside a function it reflects the local variables;
+  *modifying* the returned dict is not guaranteed to write back
+  into the actual locals (implementation-defined behaviour).
+
+::
+
+    name = "OpenMV"
+
+    def f():
+        x = 10
+        print(globals()["name"])    # OpenMV
+        print(locals())             # {'x': 10}
+
+These two are useful for debugging and for tools that need to
+discover what is defined. Reach for them sparingly in regular
+code -- a function that mutates ``globals()`` is one of the
+hardest things to reason about in Python.
+
+See also
+--------
+
+:func:`dir` and :func:`help`, covered in :doc:`debugging
+<../micropython/debugging>`, are the everyday introspection
+tools for exploring an unknown object's surface.
+
+
+Dynamic code
+============
+
+Three built-ins take a string of Python source and run it:
+:func:`eval`, :func:`exec`, and :func:`compile`. Together they
+let code construct and execute *more* code at runtime -- which
+is occasionally exactly the right tool, and far more often a
+source of bugs and security holes.
+
+.. warning::
+
+   These functions execute arbitrary Python. Passing user input
+   to ``eval`` or ``exec`` -- a string from a file the user can
+   edit, a payload received over the network, a value typed at
+   a REPL prompt -- lets that input do anything the calling
+   script could do, up to and including deleting every file on
+   the device. Use them deliberately, never inside code that
+   runs automatically, and never on data you do not control.
+
+eval
+----
+
+:func:`eval` runs a single *expression* and returns its value:
+
+::
+
+    >>> eval("3 * 7")
+    21
+    >>> name = "OpenMV"
+    >>> eval("name.lower()")
+    'openmv'
+
+The expression sees the caller's globals and locals by default,
+which is why ``name`` resolves in the second example. Passing
+explicit dictionaries lets you sandbox the evaluation:
+
+::
+
+    eval("a + b", {"__builtins__": None}, {"a": 1, "b": 2})
+
+Even sandboxed, ``eval`` is dangerous. There are well-known
+techniques to escape such sandboxes; do not rely on the empty
+``__builtins__`` trick alone for untrusted input.
+
+exec
+----
+
+:func:`exec` runs a *block* of code rather than a single
+expression -- statements, function definitions, loops -- and
+returns :data:`None`:
+
+::
+
+    exec("for i in range(3): print(i)")
+
+Output::
+
+    0
+    1
+    2
+
+The block can define names that become available afterwards,
+with some caveats about local vs global scope. ``exec`` inside
+a function rarely behaves the way the writer expects; if you
+need it, run it at module level.
+
+compile
+-------
+
+:func:`compile` turns a source string into a *code object* that
+can be passed to :func:`eval` or :func:`exec` later. Use it when
+the same source will run many times -- the parsing happens
+once, the execution is faster:
+
+::
+
+    expr = compile("x * x", "<expr>", "eval")
+    for x in range(5):
+        print(eval(expr))
+
+Output::
+
+    0
+    1
+    4
+    9
+    16
+
+The middle argument is a label that appears in tracebacks if
+the code raises. The third argument is ``"eval"`` for a single
+expression, ``"exec"`` for a block, or ``"single"`` for an
+interactive-style statement that prints its result.
+
+When to reach for these
+-----------------------
+
+Almost never. Most use cases beginners imagine have safer
+alternatives:
+
+* **Reading a config file.** Use :mod:`json` -- structured
+  data, no execution.
+* **Evaluating a numeric value typed by the user.** Use
+  :func:`int` / :func:`float` to parse, then arithmetic. If the
+  user really needs to enter a formula, use a small expression
+  parser, not ``eval``.
+
+When you do need ``eval`` / ``exec`` / ``compile``, isolate the
+call site, log the exact string that is about to be executed,
+and treat the source as the most suspicious thing in your code.
+
+
+Working with floats
+===================
+
+Floating-point numbers look like ordinary decimals, but a few
+of their behaviours surprise readers who haven't run into them
+before -- and one of those behaviours is more pronounced on
+MicroPython than on desktop Python. This page covers what to
+expect and how to write float code that does not silently
+misbehave.
+
+Precision
+---------
+
+Python's :class:`float` is an IEEE 754 binary floating-point
+number. On most MicroPython builds it is *single precision*
+(32-bit), where desktop CPython uses *double precision*
+(64-bit). Single precision carries about seven decimal digits
+of accuracy; double carries about fifteen.
+
+::
+
+    >>> 0.1 + 0.2
+    0.3000000
+
+    >>> 1.0 / 3.0
+    0.3333333
+
+    >>> 1e30 * 1e30
+    inf
+
+The representable range is also narrower at both ends: numbers
+larger than about ``3.4e38`` in magnitude overflow to ``inf``,
+and numbers smaller than about ``1.2e-38`` round to zero.
+
+Comparing floats
+----------------
+
+The most common gotcha is testing for equality with ``==``:
+
+::
+
+    >>> 0.1 + 0.2 == 0.3
+    False
+
+Both expressions look like they should be equal, but the result
+of ``0.1 + 0.2`` is the closest representable value, which is
+not exactly ``0.3``. Use a *tolerance check* instead -- ask
+whether two floats are close enough rather than identical:
+
+::
+
+    if abs(a - b) < 1e-6:
+        # close enough
+        ...
+
+The choice of tolerance depends on the scale of the values. A
+fixed ``1e-6`` works well when the numbers are around order
+of 1; a *relative* tolerance is better when the values vary by
+orders of magnitude.
+
+:func:`math.isclose` handles both at once:
+
+::
+
+    from math import isclose
+
+    isclose(0.1 + 0.2, 0.3)         # True
+    isclose(1.0e6 + 1, 1.0e6)       # True (within default tolerance)
+
+The two keyword arguments control which kind of "close" counts:
+
+* ``rel_tol`` -- *relative* tolerance, default ``1e-9``. Two
+  values match if their difference is within this fraction of
+  the larger one. Good for general comparisons across any
+  scale.
+* ``abs_tol`` -- *absolute* tolerance, default ``0``. Two
+  values match if their difference is within this fixed amount.
+
+:func:`math.isclose` returns :data:`True` if either tolerance
+is met. The defaults are fine for most pairs of nonzero
+numbers; the trap is when one of the values can be exactly
+zero. The relative-tolerance check works out to "difference ≤
+``rel_tol`` × biggest value", and the biggest value is zero, so
+the check always fails:
+
+::
+
+    >>> isclose(0.0, 1e-12)
+    False
+
+The absolute-tolerance check has no such problem -- pass an
+``abs_tol`` whenever zero is a value you might be comparing
+against:
+
+::
+
+    >>> isclose(0.0, 1e-12, abs_tol=1e-9)
+    True
+
+Accumulation drift
+------------------
+
+Long sums of floats lose precision faster on MicroPython than
+on CPython, because every intermediate result is rounded back
+to 32-bit precision:
+
+::
+
+    total = 0.0
+    for _ in range(1000000):
+        total += 0.1
+
+    print(total)        # noticeably off from 100000.0
+
+For repeated additions where accuracy matters, two patterns
+help:
+
+* **Accumulate into an integer** whenever the values can be
+  scaled to integers -- work in milliseconds instead of
+  seconds, or millivolts instead of volts, then convert once at
+  the end.
+* **Compute in smaller batches** and sum the batch results, so
+  each addition is between values of similar magnitude.
+
+The integer side has no such limit -- MicroPython integers are
+arbitrary precision, just like CPython's. Where you have the
+choice, prefer integer arithmetic for anything where the
+precision loss would compound.
+
+
+Memory and garbage collection
+=============================
+
+MicroPython manages memory the same way CPython does: every
+object lives on the *heap*, and a *garbage collector* (GC) frees
+objects that nothing references anymore. On a device with a few
+hundred kilobytes of RAM, paying attention to how the heap is
+being used is occasionally necessary; on desktop Python, it
+rarely is.
+
+The heap
+--------
+
+The heap is the region of RAM -- on most OpenMV cameras
+actually split across more than one physical memory pool --
+that the runtime hands out to Python objects. Each time a
+Python expression creates a new object (a list, a string, a
+dict, a tuple, anything that is not a small integer or a
+singleton), a block of bytes comes out of the heap to hold it.
+When the GC notices that an object is unreachable, it returns
+the block to the free pool it came from.
+
+Two functions in the :mod:`gc` module are worth knowing:
+
+* :func:`gc.mem_free` -- approximate number of free bytes on the
+  heap right now.
+* :func:`gc.collect` -- run a collection cycle immediately
+  instead of waiting for the runtime to trigger one.
+
+::
+
+    import gc
+
+    print("before:", gc.mem_free())
+    big = [0] * 10000
+    print("after :", gc.mem_free())
+    del big
+    gc.collect()
+    print("freed :", gc.mem_free())
+
+The exact numbers depend on the build; the *direction* of the
+change is what matters: allocating big things decreases
+``mem_free``, and dropping the references plus a ``gc.collect``
+gives the heap back.
+
+Fragmentation
+-------------
+
+The free pool is not magically contiguous. As objects come and
+go at different lifetimes, the free space breaks into smaller
+and smaller chunks even when its total size is still large.
+Allocating an object bigger than the largest single free chunk
+fails with :exc:`MemoryError` -- even though there is technically
+enough total free RAM.
+
+.. figure:: https://docs.openmv.io/_images/heap-fragmentation.svg
+   :alt: Two views of the heap. Before: one large contiguous
+         free area. After: many small free areas interleaved
+         with allocated blocks, none individually large enough
+         for a big allocation.
+
+   The same total free RAM can hold a big buffer (left) or
+   refuse to (right) depending on how fragmented it is.
+
+Fragmentation is mostly a worry on long-running scripts that
+keep allocating and freeing differently-sized buffers. The
+single most effective mitigation is to *pre-allocate*
+long-lived buffers near the start of the program, before lots
+of short-lived allocations have had a chance to scatter them.
+
+Pre-allocation
+--------------
+
+Two patterns make the heap behave:
+
+* Allocate fixed-size buffers once and reuse them, instead of
+  building a new list or :class:`bytearray` per iteration.
+* Pull constants and lookup tables out of inner loops so they
+  are created once.
+
+::
+
+    buf = bytearray(64)        # one allocation, reused below
+
+    def fill(value):
+        for i in range(len(buf)):
+            buf[i] = value
+
+    fill(0)
+    fill(255)
+
+Compare to a version that creates a new bytearray inside the
+loop: each iteration produces garbage that the GC has to clean
+up later. The pre-allocated version makes no garbage at all.
+
+When to call gc.collect
+-----------------------
+
+:func:`gc.collect` is normally automatic -- the runtime triggers
+it when allocations cannot find enough free memory. Calling it
+by hand is useful in two situations:
+
+* Right after a large batch of objects has gone out of scope,
+  to free them immediately instead of waiting for the next
+  allocation to pay the cost.
+* Right before a section that needs a known maximum amount of
+  free memory, to avoid the GC firing partway through a
+  time-sensitive operation.
+
+Sprinkling ``gc.collect`` calls everywhere does not make a
+program faster -- collection itself takes time. Use it
+deliberately, at points where the cost of an unscheduled
+collection would be worse than the cost of one you ran on
+purpose.
+
+
+Debugging
+=========
+
+Most scripts that fail on the camera fail in one of three ways:
+they raise an exception, they produce the wrong value, or they
+hang. Each has a different set of tools.
+
+Reading a traceback
+-------------------
+
+When a script raises and nothing handles the exception, the REPL
+or the IDE prints a *traceback* -- a record of the call chain
+from the outermost script down to the line that raised.
+
+A traceback reads bottom-to-top:
+
+* The bottom line names the exception class and its message
+  (``ValueError: invalid literal for int()...``).
+* Each ``File "...", line N, in <name>`` block above it is a
+  *frame* -- one call deeper as you go up.
+* The very top frame is where the script started; the very
+  bottom frame is where the error fired.
+
+Read the bottom first to learn *what* went wrong, then walk
+upward to see *how* the script got there. The line numbers
+point at exact source locations in the script.
+
+Print debugging
+---------------
+
+The fastest way to find out what a script is doing is to print
+the suspect values. Three built-ins make prints more useful:
+
+* :func:`repr` -- returns the developer-style string for a
+  value. ``print(repr(value))`` distinguishes ``"5"`` from ``5``
+  and ``None`` from ``"None"``, which a plain :func:`print`
+  cannot.
+* :func:`type` -- returns the class of a value. ``print(type(value))``
+  is how to find out whether the variable that "should be an
+  int" is secretly a string.
+* :func:`len` -- the length of a sequence or collection. A
+  surprisingly large fraction of bugs are off-by-one or
+  size-mismatch problems.
+
+::
+
+    print("got:", repr(value), "type:", type(value), "len:", len(value))
+
+Drop a print inside each branch you care about -- both arms of
+an ``if``, each ``except`` block, the body of a loop you suspect
+of running zero times. The cost is a line of output; the value
+is finding out whether the code path you *think* is running is
+the one actually running.
+
+Exploring an object
+-------------------
+
+Two built-ins answer "what can I do with this thing":
+
+* :func:`dir` -- returns a list of every name defined on an
+  object: methods, attributes, dunders, the lot.
+* :func:`help` -- prints the docstring (and on CPython, the
+  signature) of a function, method, or class.
+
+Use them together: ``dir`` finds the name, ``help`` explains
+what it does.
+
+Finding a name with dir
+~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    >>> dir([1, 2, 3])
+    ['__add__', '__class__', '__contains__', '__delitem__',
+     '__eq__', '__ge__', ..., 'append', 'clear', 'copy',
+     'count', 'extend', 'index', 'insert', 'pop', 'remove',
+     'reverse', 'sort']
+
+The first chunk of the list is dunder methods, inherited from
+every object; the names worth scanning for are usually after
+them. ``dir`` works on anything -- a class, an instance, a
+module, a built-in type:
+
+::
+
+    >>> import json
+    >>> dir(json)
+    ['__name__', 'dump', 'dumps', 'load', 'loads']
+
+That second form is how to find out which top-level names a
+module actually exposes without leaving the REPL.
+
+Looking it up with help
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Once ``dir`` has surfaced a candidate, ``help`` describes it:
+
+::
+
+    >>> help(str.split)
+    split(sep=None, maxsplit=-1)
+        Return a list of the words in the string, ...
+
+On MicroPython, ``help`` is leaner than on CPython -- sometimes
+just the signature, sometimes a one-line docstring, sometimes
+nothing for built-in C functions. It is still a fast reminder
+when the IDE tooltip is not nearby.
+
+When something hangs
+--------------------
+
+A script that does not return is harder to diagnose than one
+that raises. Common culprits:
+
+* A ``while`` loop whose condition never becomes false. Add a
+  print of the loop variable each iteration; if the value is
+  not changing, the loop body has a bug.
+* A blocking call waiting for input that never arrives -- a
+  read from an empty queue, a sleep with no end. Bracket the
+  call with prints to see which line the script is stuck on.
+* An infinite recursion. The traceback when it eventually fires
+  (with :exc:`RecursionError`) usually points right at it.
+
+The most effective recovery for a hung script is the IDE's
+**stop** button, which sends a :exc:`KeyboardInterrupt` to the
+script over USB. The interrupt surfaces as a traceback at the
+line currently running -- often the exact line that is not
+returning.
+
+.. note::
+
+   If a hang resists every diagnostic -- the script appears
+   correct, the interrupt traceback points into a built-in or
+   into firmware code rather than your script, or the same code
+   worked on a previous firmware build -- the cause may be a
+   firmware bug rather than a script bug. Reduce the script to
+   the smallest reproducer that still hangs and open a report on
+   the `OpenMV forum <https://forums.openmv.io/>`_. Include the
+   firmware version, the board it ran on, and the reduced
+   script.
+
+Take the diagnostics out before shipping
+----------------------------------------
+
+Strategic prints during development are great; a hundred print
+calls left in a production script clutter the output and use
+heap that the real work could be using instead. When a bug is
+fixed, take the prints out (or guard them behind a debug flag
+you can flip off).
+
+For diagnostics that should stay in the code path long-term,
+switch from :func:`print` to the :mod:`logging` module. It
+attaches a *level* to each message (``debug``, ``info``,
+``warning``, ``error``) and lets a single setting silence the
+quiet ones in production:
+
+::
+
+    import logging
+
+    log = logging.getLogger("main")
+    log.info("starting up")
+    log.debug("loaded config: %s", config)
+    log.warning("falling back to defaults")
+
+Setting the logger's level to ``logging.WARNING`` makes the
+``info`` and ``debug`` calls cost essentially nothing (the
+message string is never built), without having to comment lines
+out. That makes ``logging`` the right tool for *permanent*
+diagnostics; raw ``print`` is fine for *throwaway* ones.
+
+
+Wrap up
+=======
+
+You have walked through the parts of Python that come up
+constantly when writing scripts for the OpenMV Cam:
+
+* **The language fundamentals** -- values and variables,
+  arithmetic and comparison, strings and bytes, the four core
+  collections (:class:`list`, :class:`tuple`, :class:`dict`,
+  :class:`set`), conditionals and loops, defining functions
+  and managing their arguments and scope, defining classes
+  and using inheritance, raising and handling exceptions.
+  These are the bricks every other piece of Python is built
+  from.
+
+* **The structural pieces** -- splitting code across modules
+  and packages, importing what you need, reading and writing
+  files with ``with``, exchanging structured data through
+  :mod:`json`, and packing binary records through :mod:`struct`
+  with endianness and fixed-width integer fields. These show
+  up the moment a script grows past a single file or needs to
+  talk to something outside itself.
+
+* **The parts that change shape on a constrained runtime** --
+  why MicroPython floats are 32-bit and how to compare them
+  reliably, how the garbage collector hands out and reclaims
+  blocks, why fragmentation matters on a small heap, and how
+  pre-allocation keeps long-running scripts well behaved.
+  Desktop habits sometimes mislead here; this material gives
+  you the right mental model for code that lives on the
+  device.
+
+* **The introspection and dynamic-code tools** -- :func:`id`,
+  :func:`hash`, :func:`isinstance`, :func:`issubclass`,
+  :func:`callable`, :func:`globals`, :func:`locals` for
+  looking *at* values and the environment;
+  :func:`eval` / :func:`exec` / :func:`compile` for the rare
+  cases where producing code at run time is the right answer.
+  Most scripts never touch these, but knowing they exist (and
+  when not to reach for them) is part of reading other
+  people's Python.
+
+* **The everyday workflow tools** -- comprehensions for
+  building collections from existing ones, generators and
+  the iterator protocol for processing data lazily, decorators
+  and context managers for wrapping common acquire/release
+  and before/after patterns, and the debugging habits
+  (reading tracebacks, :func:`repr`, :func:`dir`, :func:`help`,
+  the :mod:`logging` module) that turn a broken script into a
+  fixed one.
+
+Using this primer later
+-----------------------
+
+Treat the primer as reference material, not a one-pass read.
+The chapters are short on purpose; coming back to refresh on
+slicing or context managers or comprehensions is the intended
+use. Bookmark the section you reach for most.
+
+If something in the camera's documentation later references a
+Python concept you do not recognise -- say, "this returns a
+context manager" or "iterate the result" -- the corresponding
+primer page is the place to start.
+
+Where to go from here
+---------------------
+
+The next super-section -- **Basic hardware control** -- builds
+directly on the Python you now know. It introduces the camera's
+hardware surface (pins, peripherals, timing) and the patterns
+for talking to the chips on the board. Everything from this
+primer carries forward; you will not relearn ``def`` or
+``with`` or how :class:`bytearray` differs from :class:`bytes`.
+
+When you hit a Python feature that feels unfamiliar in the
+hardware material, this primer is where to come back to.
 
 
 Script Structure
@@ -4159,6 +9654,39 @@ Troubleshooting
 * **Errors are** :exc:`OSError`. MicroPython does not implement
   ``ssl.SSLError``; TLS failures (bad certificate, expired, unknown CA, format
   error, handshake failure) are raised as :exc:`OSError`.
+
+
+Battery Life Estimator
+======================
+
+Every OpenMV camera can run on a battery. Cameras that support deep-sleep
+drop the system into the low-µA range when the firmware is idle, so by
+cycling between brief bursts of activity and long stretches of deep sleep
+they can run for weeks, months, or even years between charges.
+
+The calculator below takes your board / shield / power interface, a duty
+cycle (active vs. deep-sleep time per cycle), and a battery, and gives back
+an estimated runtime. Plug in your numbers and iterate to size a battery
+for your application -- or to decide what duty cycle you need to hit a
+required deployment time.
+
+.. raw:: html
+
+   <iframe id="openmv-battery-life-iframe"
+           src="../../_static/battery_life/index.html"
+           title="OpenMV Battery Life Estimator"
+           loading="lazy"
+           scrolling="no"
+           style="width: 100%; height: 0; border: 0; display: block;
+                  background: transparent; overflow: hidden;"></iframe>
+   <script>
+     window.addEventListener("message", function (e) {
+       if (e.data && e.data.type === "openmv-battery-life-height") {
+         var f = document.getElementById("openmv-battery-life-iframe");
+         if (f) f.style.height = e.data.height + "px";
+       }
+     });
+   </script>
 
 
 .. _firmware_development:
@@ -8595,9 +14123,14 @@ Classes
 
 .. class:: IOBase
 
-    Base class for implementing stream ("file-like") objects in pure Python.
-    Derive from this class and implement the methods below; the runtime calls
-    them when the corresponding stream operation is performed on an instance.
+    Base class for stream ("file-like") objects. Concrete subclasses
+    implement the low-level I/O methods below (``readinto``, ``write``,
+    ``ioctl``); the runtime builds the higher-level stream protocol
+    (``read``, ``readline``, ``readlines``, ``close``, iteration) on top of
+    them, so every stream instance supports those methods even when the
+    subclass does not define them.
+
+    Implementation methods (override these in a subclass):
 
     .. method:: readinto(buf: bytearray) -> Optional[int]
 
@@ -8616,6 +14149,66 @@ Classes
         Control the underlying stream/device. *request* is one of the
         ``MP_STREAM_*`` request codes. Return a non-negative value on success,
         or a negative ``errno`` value on error.
+
+    Stream protocol methods (available on every stream instance):
+
+    .. method:: read(size: int = -1)
+
+        Read and return up to *size* bytes (or characters, in text mode). If
+        *size* is omitted or negative, read until end of stream. Returns
+        :class:`bytes` for binary streams and :class:`str` for text streams;
+        an empty result indicates end of stream.
+
+    .. method:: readline(size: int = -1)
+
+        Read and return one line, including the trailing newline character
+        if one is present. If *size* is given, at most *size* bytes (or
+        characters) are read. Returns an empty :class:`bytes` / :class:`str`
+        at end of stream.
+
+    .. method:: readlines() -> list
+
+        Read until end of stream and return a :class:`list` of lines, each
+        with its trailing newline.
+
+    .. method:: close() -> None
+
+        Close the stream and release any underlying resources. Operations on
+        a closed stream raise :exc:`OSError` (or :exc:`ValueError` for
+        in-memory streams).
+
+    .. method:: seek(offset: int, whence: int = 0) -> int
+
+        Change the current stream position to *offset* bytes relative to
+        *whence* (``0`` = start of stream, ``1`` = current position, ``2`` =
+        end of stream). Return the new absolute position. Raises
+        :exc:`OSError` on a stream that is not seekable.
+
+    .. method:: tell() -> int
+
+        Return the current absolute position in the stream. Equivalent to
+        ``seek(0, 1)``.
+
+    .. method:: flush() -> None
+
+        Flush any write buffers, pushing pending data to the underlying
+        device or file. A no-op on streams that do not buffer.
+
+    Iterating a stream directly yields one line per iteration -- equivalent
+    to calling :meth:`readline` in a loop until the empty-line end-of-stream
+    sentinel is returned. A stream also supports the context-manager
+    protocol, so ``with open(...) as f:`` closes the stream automatically.
+
+    .. note::
+
+       MicroPython's stream module also exposes "1"-suffixed C helpers
+       ``mp_stream_read1_obj``, ``mp_stream_readinto1_obj``, and
+       ``mp_stream_write1_obj`` that perform a single underlying I/O call
+       instead of looping until the request is fully satisfied. They are
+       used internally by classes like :class:`machine.UART` to implement
+       their own ``read`` / ``write`` -- but no standard stream class binds
+       them as Python-callable ``read1`` / ``readinto1`` / ``write1``
+       methods.
 
 .. class:: StringIO(string: str = "")
 
@@ -42683,6 +48276,12 @@ Power pins
    backup battery**. Wiring a coin cell to these pads keeps the RTC and
    8 KB of backup RAM running while the rest of the board is unpowered.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the N6 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Ethernet pins
 -------------
 
@@ -43496,6 +49095,12 @@ The USB regulator feeds the rail through an **ideal diode**, so
 external 3.3 V supplies on the Qwiic / GPIO / B2B side can power the
 board even while USB is still attached without back‑driving the USB
 regulator.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the AE3 will run on a battery for a given
+   active / deep-sleep duty cycle.
 
 Recovery and debug pins
 -----------------------
@@ -44461,6 +50066,12 @@ Power pins
    The back of the board has solder pads for an external **3.3 V RTC
    backup battery**. Wiring a coin cell to these pads keeps the RTC
    running while the rest of the board is unpowered.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the RT1062 will run on a battery for a given
+   active / deep-sleep duty cycle.
 
 Ethernet pins
 -------------
@@ -46191,6 +51802,12 @@ USB instead.
    time** — back‑driving the regulator while another supply is active
    can permanently damage and destroy the camera.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the H7 Plus will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 
@@ -46838,6 +52455,12 @@ instead.
    time** — back‑driving the regulator while another supply is active
    can permanently damage and destroy the camera.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the H7 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 
@@ -47407,6 +53030,12 @@ Power pins
    time** — back‑driving the regulator while another supply is active
    can permanently damage and destroy the camera.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the M7 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 
@@ -47974,6 +53603,12 @@ Power pins
    In that case, **do not also apply VIN or USB power at the same
    time** — back‑driving the regulator while another supply is active
    can permanently damage and destroy the camera.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the M4 will run on a battery for a given
+   active / deep-sleep duty cycle.
 
 Recovery and debug pins
 -----------------------
@@ -48632,6 +54267,12 @@ ESLOV connector
 
 ESLOV's ``SCL_EXT``/``SDA_EXT`` and J2's ``SCL``/``SDA`` are the
 same pins — one I²C 1 bus exposed on two connectors.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the Nicla Vision will run on a battery for a given
+   active / deep-sleep duty cycle.
 
 Recovery and debug pins
 -----------------------
@@ -49507,6 +55148,12 @@ connector:
 
 ESLOV's ``SCL_EXT``/``SDA_EXT`` and the MKR header's ``D12``/``D11``
 are the same pins — one I²C 3 bus exposed on two connectors.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the Portenta H7 will run on a battery for a given
+   active / deep-sleep duty cycle.
 
 Recovery and debug pins
 -----------------------
@@ -50538,6 +56185,12 @@ The Giga R1 can be powered through any of these paths:
 
 * **USB‑C** — supplies 5 V to the on‑board buck regulator.
 * **VIN pin** — drive a regulated 6–32 V supply directly.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the Giga R1 will run on a battery for a given
+   active / deep-sleep duty cycle.
 
 Recovery and debug pins
 -----------------------
@@ -53242,6 +58895,12 @@ Highlights
 * 6-36 V wide input with reverse-voltage and surge protection
 * 0-6 V ADC input on P6 for monitoring the DC barrel jack voltage
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long an OpenMV Cam powered through this shield will run
+   on a given battery for a given active / deep-sleep duty cycle.
+
 Pinout
 ------
 
@@ -54670,6 +60329,12 @@ Highlights
    The shield ships with a case that holds the AE3 firmly against
    the connector. Four corner **M1.6** mounting holes let you bolt
    the shield down to an enclosure or fixture.
+
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the AE3 powered through this shield will run on a
+   given battery for a given active / deep-sleep duty cycle.
 
 Pin reference
 -------------
@@ -64047,7 +69712,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Mon 25 May 2026 03:09:54 UTC
+Generated Wed 27 May 2026 07:00:11 UTC
 
 Literals
 --------
@@ -64230,7 +69895,7 @@ Sample code::
 Core language
 =============
 
-Generated Mon 25 May 2026 03:09:54 UTC
+Generated Wed 27 May 2026 07:00:11 UTC
 
 Classes
 -------
@@ -64832,7 +70497,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7fba86a05260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7f0983a05260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -65014,7 +70679,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Mon 25 May 2026 03:09:54 UTC
+Generated Wed 27 May 2026 07:00:11 UTC
 
 Exception
 ---------
@@ -65881,7 +71546,7 @@ Sample code::
 Modules
 =======
 
-Generated Mon 25 May 2026 03:09:54 UTC
+Generated Wed 27 May 2026 07:00:11 UTC
 
 .. Preamble section inserted into generated output
 
@@ -66181,7 +71846,7 @@ Sample code::
 +--------------------------+--------------------------------------------+
 | ::                       | ::                                         |
 |                          |                                            |
-|     17411434858059596401 |     Traceback (most recent call last):     |
+|     15142148126938410221 |     Traceback (most recent call last):     |
 |                          |       File "<stdin>", line 11, in <module> |
 |                          |     ValueError: bits must be 32 or less    |
 +--------------------------+--------------------------------------------+
@@ -79757,4 +85422,103 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+
+
+:orphan:
+
+Time and timing
+===============
+
+The :mod:`time` module groups together functions for sleeping
+(pausing the script for a known duration) and for measuring how
+long something takes. MicroPython adds millisecond and microsecond
+variants of both kinds of function for cases where the
+desktop-Python defaults are too coarse.
+
+Sleeping
+--------
+
+Three sleep functions block the script for the requested
+duration:
+
+* :func:`time.sleep(s) <time.sleep>` -- pause for ``s`` seconds.
+  Accepts a float, so ``time.sleep(0.5)`` waits half a second.
+* :func:`time.sleep_ms(ms) <time.sleep_ms>` -- pause for ``ms``
+  milliseconds. Argument must be an integer.
+* :func:`time.sleep_us(us) <time.sleep_us>` -- pause for ``us``
+  microseconds.
+
+::
+
+    import time
+
+    print("now")
+    time.sleep_ms(500)
+    print("half a second later")
+
+Use :func:`time.sleep_ms` for typical "wait a bit" needs and
+:func:`time.sleep_us` only when the timing must be tight. Plain
+:func:`time.sleep` is also fine, but the integer-argument variants
+avoid floating-point conversion and read more naturally for short
+intervals.
+
+Reading the clock
+-----------------
+
+To measure how long a piece of code takes, read the clock before
+and after:
+
+* :func:`time.ticks_ms` -- the current tick value in milliseconds.
+* :func:`time.ticks_us` -- the same in microseconds.
+
+::
+
+    import time
+
+    start = time.ticks_ms()
+    do_work()
+    elapsed = time.ticks_ms() - start
+    print("took", elapsed, "ms")
+
+This works *most* of the time. The tick counter rolls over (wraps
+back to zero) after a large but finite number of ticks, and naive
+subtraction across that wrap produces a wildly wrong negative or
+positive number.
+
+.. figure:: https://docs.openmv.io/_images/ticks-wraparound.svg
+   :alt: Number line from 0 to MAX with a start tick near MAX and
+         an end tick near 0; a dashed wrap-around arrow shows that
+         after MAX the counter returns to 0.
+
+   The tick counter wraps back to zero when it reaches the
+   integer limit. A plain subtraction across that wrap is wrong.
+
+ticks_diff
+----------
+
+To get the elapsed ticks correctly, even across a wrap, use
+:func:`time.ticks_diff`:
+
+::
+
+    import time
+
+    start = time.ticks_ms()
+    do_work()
+    elapsed = time.ticks_diff(time.ticks_ms(), start)
+    print("took", elapsed, "ms")
+
+The argument order is ``ticks_diff(later, earlier)`` -- the
+expression reads "how far is *later* after *earlier*". The result
+is a signed integer; positive means ``later`` is in fact later,
+negative means it is in the past. The function handles the wrap
+internally.
+
+.. tip::
+
+   Always pair :func:`time.ticks_ms` / :func:`time.ticks_us` with
+   :func:`time.ticks_diff`. The raw subtraction is correct *most*
+   of the time, and the time it is wrong is when a script has
+   been running for a long time -- usually the worst time to
+   debug a timing glitch.
 

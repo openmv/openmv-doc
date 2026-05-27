@@ -167,6 +167,12 @@ ESLOV connector
 ESLOV's ``SCL_EXT``/``SDA_EXT`` and J2's ``SCL``/``SDA`` are the
 same pins — one I²C 1 bus exposed on two connectors.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the Nicla Vision will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 

@@ -104,6 +104,12 @@ Power pins
    time** — back‑driving the regulator while another supply is active
    can permanently damage and destroy the camera.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the M7 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 

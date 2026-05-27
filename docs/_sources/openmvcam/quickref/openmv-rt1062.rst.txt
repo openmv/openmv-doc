@@ -144,6 +144,12 @@ Power pins
    backup battery**. Wiring a coin cell to these pads keeps the RTC
    running while the rest of the board is unpowered.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the RT1062 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Ethernet pins
 -------------
 

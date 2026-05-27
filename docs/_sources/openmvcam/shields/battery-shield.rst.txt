@@ -18,6 +18,12 @@ Highlights
 * 6-36 V wide input with reverse-voltage and surge protection
 * 0-6 V ADC input on P6 for monitoring the DC barrel jack voltage
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long an OpenMV Cam powered through this shield will run
+   on a given battery for a given active / deep-sleep duty cycle.
+
 Pinout
 ------
 

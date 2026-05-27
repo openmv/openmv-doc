@@ -122,6 +122,12 @@ external 3.3 V supplies on the Qwiic / GPIO / B2B side can power the
 board even while USB is still attached without back‑driving the USB
 regulator.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the AE3 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 

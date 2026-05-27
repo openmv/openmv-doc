@@ -39,6 +39,12 @@ Highlights
    the connector. Four corner **M1.6** mounting holes let you bolt
    the shield down to an enclosure or fixture.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the AE3 powered through this shield will run on a
+   given battery for a given active / deep-sleep duty cycle.
+
 Pin reference
 -------------
 

@@ -70,11 +70,28 @@ class BytesIO:
 
 class IOBase:
     """
-    Base class for implementing stream (“file-like”) objects in pure Python.
-    Derive from this class and implement the methods below; the runtime calls
-    them when the corresponding stream operation is performed on an instance.
+    Base class for stream (“file-like”) objects. Concrete subclasses
+    implement the low-level I/O methods below (readinto, write,
+    ioctl); the runtime builds the higher-level stream protocol
+    (read, readline, readlines, close, iteration) on top of
+    them, so every stream instance supports those methods even when the
+    subclass does not define them.
+    Implementation methods (override these in a subclass):
     """
     def __init__(self) -> None: ...
+    def close(self) -> None:
+        """
+        Close the stream and release any underlying resources. Operations on
+        a closed stream raise OSError (or ValueError for
+        in-memory streams).
+        """
+        ...
+    def flush(self) -> None:
+        """
+        Flush any write buffers, pushing pending data to the underlying
+        device or file. A no-op on streams that do not buffer.
+        """
+        ...
     def ioctl(self, request: int, arg: int) -> int:
         """
         Control the underlying stream/device. request is one of the
@@ -82,11 +99,47 @@ class IOBase:
         or a negative errno value on error.
         """
         ...
+    def read(self, size: int = -1) -> Any:
+        """
+        Read and return up to size bytes (or characters, in text mode). If
+        size is omitted or negative, read until end of stream. Returns
+        bytes for binary streams and str for text streams;
+        an empty result indicates end of stream.
+        """
+        ...
     def readinto(self, buf: bytearray) -> int | None:
         """
         Read bytes into the writable buffer buf. Return the number of bytes
         read, 0 at end of stream, or None if no data is available
         right now (for a non-blocking stream).
+        """
+        ...
+    def readline(self, size: int = -1) -> Any:
+        """
+        Read and return one line, including the trailing newline character
+        if one is present. If size is given, at most size bytes (or
+        characters) are read. Returns an empty bytes / str
+        at end of stream.
+        """
+        ...
+    def readlines(self) -> list:
+        """
+        Read until end of stream and return a list of lines, each
+        with its trailing newline.
+        """
+        ...
+    def seek(self, offset: int, whence: int = 0) -> int:
+        """
+        Change the current stream position to offset bytes relative to
+        whence (0 = start of stream, 1 = current position, 2 =
+        end of stream). Return the new absolute position. Raises
+        OSError on a stream that is not seekable.
+        """
+        ...
+    def tell(self) -> int:
+        """
+        Return the current absolute position in the stream. Equivalent to
+        seek(0, 1).
         """
         ...
     def write(self, buf: bytes) -> int | None:

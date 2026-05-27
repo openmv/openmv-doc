@@ -153,6 +153,12 @@ connector:
 ESLOV's ``SCL_EXT``/``SDA_EXT`` and the MKR header's ``D12``/``D11``
 are the same pins — one I²C 3 bus exposed on two connectors.
 
+.. tip::
+
+   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   model how long the Portenta H7 will run on a battery for a given
+   active / deep-sleep duty cycle.
+
 Recovery and debug pins
 -----------------------
 
