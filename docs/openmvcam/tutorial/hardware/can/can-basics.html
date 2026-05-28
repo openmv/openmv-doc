@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>6.25. CAN bus basics - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="6.26. CAN bus in code" href="can-code.html" /><link rel="prev" title="6.24. I2C in code" href="../i2c/i2c-code.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/hardware/can/can-basics.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c724137f" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/hardware/can/can-basics.html"/>
+  <meta property="og:title" content="6.25. CAN bus basics"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../overview.html">1. Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../software_setup.html">2. Software Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware_setup.html">3. Hardware Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../openmvide_overview.html">4. OpenMV IDE Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">5. Python Overview</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">6. Hardware Control</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">6.1. Microcontrollers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">6.2. Timing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">6.3. Virtual timers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">6.4. Pins and peripherals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">6.5. The LED class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">6.6. Electronics basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">6.7. GPIO output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">6.8. Level shifting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">6.9. Switches and pull resistors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">6.10. GPIO input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">6.11. Debouncing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">6.12. Reading analog with the ADC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">6.13. Generating analog with PWM and an RC filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/led-dimming.html">6.14. LED dimming with PWM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/dc-motors.html">6.15. DC motor control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/servos.html">6.16. Servo control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pulse-io/pulse-io.html">6.17. Bit streams and pulse measurement</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-basics.html">6.18. UART basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-code.html">6.19. UART in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/serial-protocols.html">6.20. Serial protocols, framing, and CRCs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">6.21. SPI basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">6.22. SPI in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-basics.html">6.23. I2C basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-code.html">6.24. I2C in code</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">6.25. CAN bus basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="can-code.html">6.26. CAN bus in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">6.27. Watchdog timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">6.28. Real-time clock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">6.29. Low-power and sleep modes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">6.30. Wrap up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../script_structure.html">7. Script Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../system_architecture.html">8. System Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">9. numpy / scipy on the OpenMV Cam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tls_certificates.html">10. Working with TLS certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../battery_life.html">11. Battery Life Estimator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../firmware_development.html">12. Building, flashing, and debugging the firmware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production.html">13. Releasing your OpenMV Cam Scripts for Production</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../more_information.html">14. More Information</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Libraries</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensors</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Language</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Internals</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">License</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#broadcast-with-priority-arbitration">6.25.1. Broadcast with priority arbitration</a></li>
+<li><a class="reference internal" href="#the-physical-bus">6.25.2. The physical bus</a></li>
+<li><a class="reference internal" href="#the-data-frame">6.25.3. The data frame</a></li>
+<li><a class="reference internal" href="#where-can-sits">6.25.4. Where CAN sits</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/8e5f94d940ca09de8778d7f017e9d652a9888b3b/docs/openmvcam/tutorial/hardware/can/can-basics.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Tutorial</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">6. </span>Hardware Control</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">6.25. </span>CAN bus basics</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/can/can-basics.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/can/can-basics.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/can/can-basics.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/can/can-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/can/can-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/can/can-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="can-bus-basics">
+<h1><span class="section-number">6.25. </span>CAN bus basics<a class="headerlink" href="#can-bus-basics" title="Link to this heading">¶</a></h1>
+<p>CAN (<em>Controller Area Network</em>) was originally designed by
+Bosch in the 1980s to wire all the electronic control units in
+a car onto one short shared bus. It still owns the car
+wire-harness, but the same robustness, real-time behaviour and
+multi-master design make it the default field bus in
+automation, robotics, agricultural and industrial equipment of
+every kind.</p>
+<p>CAN does not have a single “controller” and a set of
+“peripherals” the way SPI and I2C do. Every node on the bus is
+a peer, and any node can transmit whenever the bus is idle.
+What lets that scale is the bus’s broadcast-with-arbitration
+design.</p>
+<section id="broadcast-with-priority-arbitration">
+<h2><span class="section-number">6.25.1. </span>Broadcast with priority arbitration<a class="headerlink" href="#broadcast-with-priority-arbitration" title="Link to this heading">¶</a></h2>
+<p>Every message on a CAN bus carries an <em>identifier</em> – 11 bits
+for the classic standard frame, 29 bits for the extended
+variant. The identifier is not an address; it labels what the
+message is <em>about</em> (engine RPM, brake pedal position, battery
+voltage, etc.). When a node wants to send a value it broadcasts
+it tagged with the appropriate identifier, and every node on
+the bus sees the broadcast. Each receiver filters the bus
+in hardware to pick out only the IDs it cares about.</p>
+<p>If two nodes try to transmit at the same time, the bus’s
+electrical design lets the message with the <em>lower</em> numeric
+identifier win without losing any bits.</p>
+<p>The trick is the bus’s two electrical states: <em>dominant</em>
+(logically 0) and <em>recessive</em> (logically 1). The CAN wires are
+held high (recessive) by termination resistors when no node is
+talking; any node can pull the wires down (dominant) by
+sourcing current through its transceiver. The result is a
+wired-AND: if any single node drives the bus dominant, the
+line reads dominant, and it reads recessive only when every
+node has released it. Dominant always wins. (Some references
+call the same arrangement a <em>wired-OR</em>, treating “dominant” as
+the asserted signal rather than the AND of recessive bits –
+the physical behaviour is identical either way.)</p>
+<figure class="align-default" id="id1">
+<img alt="A single bus line held high by a termination resistor to Vcc. Three nodes (A, B, C) hang off the bus. Each node's output stage is a diode in series with a switch to ground -- the diode points from the bus down to the switch, so closing the switch pulls the bus low through the diode but no node can drive the bus high." src="../../../../_images/can-wired-and.svg" />
+<figcaption>
+<p><span class="caption-text">The wired-AND in concept form. Real CAN runs the same
+logic over a differential pair (CAN_H / CAN_L) with the
+transceivers and termination resistors split across both
+wires, but the rule on the bus is the same: any node can
+pull dominant, only when every node has released does it
+read recessive.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Arbitration uses this asymmetry directly. Every transmitting
+node sends its ID one bit at a time, MSB first, and watches
+the bus <em>while</em> it transmits. A node that puts a recessive bit
+on the wire but reads back dominant knows another node with a
+lower ID is transmitting at the same moment and has won that
+bit position. It stops driving the bus immediately and
+listens. The winning node, meanwhile, sees its own bits go out
+unchanged – from its point of view nothing unusual happened.
+The lower-numbered ID wins because its dominant bits override
+the recessive bits the higher-numbered IDs would otherwise
+have sent at the same positions.</p>
+<p>The loser then waits for the bus to go idle and retries
+automatically. There are no collisions, no lost messages –
+only deterministic priority ordering.</p>
+<p>This is the <em>publish/subscribe</em> style that makes CAN work at
+scale: anyone can talk, anyone can listen, and the IDs make
+the dispatch implicit.</p>
+</section>
+<section id="the-physical-bus">
+<h2><span class="section-number">6.25.2. </span>The physical bus<a class="headerlink" href="#the-physical-bus" title="Link to this heading">¶</a></h2>
+<p>The MCU’s CAN controller does not drive the bus directly. It
+exposes only two 3.3 V CMOS pins – TX (the bit it wants to
+send) and RX (the bit it sees on the bus) – and those pins go
+to a separate chip called the CAN <em>transceiver</em> or <em>PHY</em>. The
+transceiver sits between the controller and the actual CAN
+wires; it is what knows how to speak to the bus.</p>
+<p>The bus itself is a 5 V differential pair:</p>
+<ul class="simple">
+<li><p><strong>CAN_H</strong> – the “high” wire of the pair.</p></li>
+<li><p><strong>CAN_L</strong> – the “low” wire.</p></li>
+</ul>
+<p>In the recessive state both wires sit at roughly 2.5 V (the
+midpoint of the bus’s 5 V supply). In the dominant state the
+transceiver pulls CAN_H up to about 3.5 V and CAN_L down to
+about 1.5 V, producing a differential of around 2 V across
+the pair. Receivers sample the <em>difference</em> between the two
+wires, which makes the signal immune to common-mode noise
+picked up over long cable runs.</p>
+<p>The transceiver’s two-way job:</p>
+<ul class="simple">
+<li><p>On the TX side, it reads the controller’s 3.3 V
+single-ended TX pin and either drives CAN_H and CAN_L
+apart for dominant or releases both for recessive.</p></li>
+<li><p>On the RX side, it reads the differential CAN_H / CAN_L
+pair and reports a single-ended 3.3 V level on its RX pin
+back to the controller.</p></li>
+</ul>
+<p>Two 120-ohm termination resistors, one at each physical end
+of the cable, hold the bus at the recessive midpoint when no
+node is driving and damp reflections that would otherwise
+corrupt the differential signal on long runs.</p>
+</section>
+<section id="the-data-frame">
+<h2><span class="section-number">6.25.3. </span>The data frame<a class="headerlink" href="#the-data-frame" title="Link to this heading">¶</a></h2>
+<p>A standard CAN data frame looks like this on the wire:</p>
+<figure class="align-default" id="id2">
+<img alt="Eight fields drawn in sequence: SOF (1 bit), ID (11 bits), RTR (1 bit), control (6 bits), data (0 -- 8 bytes), CRC (16 bits), ACK (2 bits), and EOF (7 bits)." src="../../../../_images/can-frame.svg" />
+<figcaption>
+<p><span class="caption-text">A standard CAN data frame: SOF, ID, RTR, control, data,
+CRC, ACK, and EOF fields.</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Each field has a specific job:</p>
+<ul class="simple">
+<li><p><strong>SOF</strong> (start of frame). One dominant bit that says a new
+frame is starting and synchronises every node’s bit clock.</p></li>
+<li><p><strong>ID</strong> (identifier). The 11-bit identifier the bus arbitrates
+on. Lower number = higher priority.</p></li>
+<li><p><strong>RTR</strong> (remote transmission request). Set on a <em>request</em>
+for data rather than a <em>delivery</em> of data; receivers with
+a matching ID respond by sending the data themselves.</p></li>
+<li><p><strong>Control.</strong> A 6-bit field encoding the data length
+(<code class="docutils literal notranslate"><span class="pre">DLC</span></code>) and a few housekeeping bits.</p></li>
+<li><p><strong>Data.</strong> 0 to 8 bytes of payload (CAN Classic; CAN FD
+extends this to 64 bytes).</p></li>
+<li><p><strong>CRC.</strong> 16 bits total: a 15-bit CRC over the preceding
+fields plus a 1-bit CRC delimiter.</p></li>
+<li><p><strong>ACK.</strong> 2 bits total. In the first bit – the ACK slot –
+the transmitter releases the line and any node that
+received the frame correctly pulls it low; the second bit
+is a recessive delimiter. Lack of an ACK tells the
+transmitter no node heard the frame and it should try
+again.</p></li>
+<li><p><strong>EOF</strong> (end of frame). Seven recessive bits closing the
+frame.</p></li>
+</ul>
+<p>All of that is generated and decoded by the CAN controller in
+hardware; software sees only the ID, the data, and a few
+flags.</p>
+</section>
+<section id="where-can-sits">
+<h2><span class="section-number">6.25.4. </span>Where CAN sits<a class="headerlink" href="#where-can-sits" title="Link to this heading">¶</a></h2>
+<p>CAN’s design choices set its niche:</p>
+<ul class="simple">
+<li><p><strong>Robust.</strong> Differential signalling on a twisted pair,
+built-in error detection, deterministic priority arbitration,
+and automatic retries make CAN survive electrically noisy
+environments where UART and SPI would corrupt data.</p></li>
+<li><p><strong>Multi-master.</strong> Any node can talk at any time. No central
+controller is required and no node is a single point of
+failure.</p></li>
+<li><p><strong>Bandwidth limited.</strong> Classic CAN tops out around
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">Mbit/s</span></code>; CAN FD extends this. CAN is the right answer
+when the link is <em>between</em> boards or modules, often over
+metres of cable, with reliability as the priority.</p></li>
+<li><p><strong>Higher-layer protocols.</strong> The bare CAN bus does not say
+what an ID means or how to split a long message into
+fragments. Application-layer protocols – CANopen, J1939,
+ISO-TP/UDS, NMEA 2000 – layer those rules on top. A
+separate item worth knowing is the <em>DBC</em> file: a
+vendor-specific text format that records which IDs carry
+which bit-level signals on a particular vehicle or system.
+DBC files are a metadata format describing one bus’s
+message layout, not a protocol of their own.</p></li>
+</ul>
+<p>The driver in <a class="reference internal" href="can-code.html"><span class="doc">CAN bus in code</span></a> handles the wire-level CAN
+frame; mapping IDs to meanings is the application’s job.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../i2c/i2c-code.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">6.24. </span>I2C in code</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="can-code.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">6.26. </span>CAN bus in code</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 28 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=3011ec97"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script></body>
+</html>

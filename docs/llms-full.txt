@@ -23,7 +23,7 @@ OpenMV Cam Tutorial
 The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :numbered:
 
    overview.rst
@@ -33,8 +33,9 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
    python/index.rst
 
+   hardware/index.rst
+
    script_structure.rst
-   io_tutorial.rst
    system_architecture.rst
 
    numpy/index.rst
@@ -911,7 +912,7 @@ is Python code.
 
    iteration/comprehensions.rst
    iteration/iterators-and-generators.rst
-   iteration/async-and-await.rst
+   iteration/coroutines.rst
 
 .. toctree::
    :caption: Metaprogramming
@@ -5508,6 +5509,40 @@ the consumer (``for v in pipeline``) decides when to stop.
    Each ``next()`` on the consumer triggers one pull through
    the chain; values exist only when something asks for them.
 
+``yield from``
+~~~~~~~~~~~~~~
+
+A loop that pulls items from another iterable and yields each
+one is common enough that Python provides a shortcut. The
+expression ``yield from iter`` yields each value the iterable
+produces, in order -- as if the generator had a
+``for x in iter: yield x`` loop inline:
+
+::
+
+    def chain(*sources):
+        for source in sources:
+            yield from source
+
+    for v in chain([1, 2, 3], (4, 5), "abc"):
+        print(v)
+
+Output::
+
+    1
+    2
+    3
+    4
+    5
+    a
+    b
+    c
+
+``yield from`` is exactly equivalent to the explicit ``for``
+loop, just shorter, and it propagates :exc:`StopIteration`
+from the inner iterable up to the outer generator cleanly --
+useful when chaining several generators end-to-end.
+
 When ``yield`` runs out
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -5521,17 +5556,22 @@ a loop with a few yield points; use a plain list comprehension
 when you genuinely need the whole sequence in memory.
 
 
-async and await
-===============
+Coroutines
+==========
 
-Python has two keywords for writing functions that can pause
-and resume: ``async`` and ``await``. They mirror the generator
-pattern from the previous page -- a function whose body can be
-suspended and resumed, with local state preserved across the
-pause -- with one change in who drives the resumes.
+A *coroutine* is a function that can pause partway through and
+later resume from where it left off, with all its local
+variables intact. It mirrors the generator pattern -- a function
+body that can be suspended and resumed -- with one change in who
+drives each resume.
 
-async def
----------
+Python's syntax for writing a coroutine is the ``async`` /
+``await`` keyword pair. ``async`` marks the function as a
+coroutine; ``await`` marks the points inside it where pausing
+is allowed.
+
+Defining a coroutine
+--------------------
 
 A function defined with ``async def`` is a *coroutine function*.
 Calling it does not run the body; it returns a *coroutine
@@ -5546,15 +5586,15 @@ object* that has not started yet:
 
 The coroutine object is paused at the very beginning of the
 function. Something has to *drive* it to make the body run --
-that something is an event loop, a runtime component covered by
-its own future super-section. For now, treat the body as "ready
-to run, waiting for a driver".
+that something is an event loop, a runtime component.
+MicroPython ships one in the :mod:`asyncio` module. For now,
+treat the coroutine as "ready to run, waiting for a driver".
 
-await
------
+Pausing inside a coroutine
+--------------------------
 
-Inside an ``async def`` body, the ``await`` keyword suspends
-the coroutine until the awaited value is ready:
+Inside a coroutine, an ``await`` expression suspends execution
+until the awaited value is ready:
 
 ::
 
@@ -5567,8 +5607,8 @@ hands control back to whatever is running it. When
 ``read_sensor()`` finishes, the driver resumes the coroutine on
 the next line, with the result bound to ``data``.
 
-``await`` is only valid inside an ``async def`` body. Using it
-in a regular function is a syntax error.
+``await`` is only valid inside a coroutine. Using it in a
+regular function is a syntax error.
 
 Relationship to generators
 --------------------------
@@ -5581,20 +5621,42 @@ The split is who pulls each resume:
 * A coroutine yields *control*; an event loop schedules the
   resume when the awaited operation is ready.
 
-If the generator-yield handshake from the previous page makes
-sense, the ``await`` handshake is the same idea -- just driven
-by an event loop instead of a ``for`` loop.
+If the generator-yield handshake makes sense, the coroutine
+handshake is the same idea -- just driven by an event loop
+instead of a ``for`` loop.
 
-By themselves
--------------
+An *event loop* is a small dispatcher that keeps a list of
+coroutines waiting on something (a timer, a network event,
+another coroutine finishing). Each iteration it picks a
+coroutine whose wait has been satisfied, resumes it until the
+next ``await``, then records what that coroutine is now
+waiting for and moves on to another ready one. The result is
+many tasks making progress concurrently on a single thread --
+each coroutine voluntarily yields control at its ``await``
+points, and the loop fills those moments with whatever other
+coroutines are ready to make progress.
 
-``async`` and ``await`` are inert without a runtime to drive
-them. Defining a coroutine is fine; running one needs an event
-loop. MicroPython's :mod:`asyncio` module provides that event
-loop, and a future super-section covers it in detail. Until
-then, treat these two keywords as syntax you can read in other
-people's code and understand the shape of -- without yet
-needing to write your own concurrent scripts.
+Under the hood, ``await`` and ``yield`` use the same Python
+runtime feature for suspending and resuming a function. The
+keywords differ because the convention around them does:
+``yield`` hands a value back to a consumer pulling with
+:func:`next`; ``await`` hands control to an event loop that
+schedules the resume when the awaited operation is ready.
+``async`` / ``await`` is essentially newer syntax for the
+coroutine pattern -- older libraries built coroutines on top
+of the generator machinery directly, using ``yield from``
+(introduced on :doc:`iterators-and-generators`) to delegate
+suspension between coroutines.
+
+Coroutines need a driver
+------------------------
+
+A coroutine is inert without a runtime to drive it. Defining
+one is fine; running one needs an event loop. MicroPython's
+:mod:`asyncio` module provides that event loop. Until you reach
+for asyncio, treat coroutines as syntax you can read in other
+people's code and understand the shape of -- without yet needing
+to write your own concurrent scripts.
 
 
 Introspection
@@ -6303,15 +6365,4291 @@ primer page is the place to start.
 Where to go from here
 ---------------------
 
-The next super-section -- **Basic hardware control** -- builds
-directly on the Python you now know. It introduces the camera's
-hardware surface (pins, peripherals, timing) and the patterns
-for talking to the chips on the board. Everything from this
-primer carries forward; you will not relearn ``def`` or
-``with`` or how :class:`bytearray` differs from :class:`bytes`.
+**Basic hardware control** builds directly on the Python you
+now know. Where the primer lived in memory, hardware control
+lives in the physical world -- voltages on pins, pulses on
+wires, bytes clocked over buses to other chips. The toolkit
+shifts to the :mod:`machine` module and a thin layer of
+electronics. Everything from the primer carries forward; you
+will not relearn ``def`` or ``with`` or how :class:`bytearray`
+differs from :class:`bytes`.
 
 When you hit a Python feature that feels unfamiliar in the
 hardware material, this primer is where to come back to.
+
+
+Hardware Control
+================
+
+Every Python value in the primer lived in memory: a number
+named ``x``, a string returned by a function, a list
+manipulated by a loop. Hardware control replaces in-memory work
+with physical effects -- a voltage on a pin, a pulse train on
+a wire, a byte clocked into another chip over a bus.
+
+The :mod:`machine` module is the bridge. Its classes
+(:class:`~machine.Pin`, :class:`~machine.ADC`,
+:class:`~machine.PWM`, :class:`~machine.UART`,
+:class:`~machine.SPI`, :class:`~machine.I2C`,
+:class:`~machine.CAN`, :class:`~machine.WDT`) each map a piece
+of the camera's silicon to Python: configure an instance, call
+its methods, see real effects on the board's pins.
+
+.. toctree::
+   :caption: Foundations
+   :maxdepth: 1
+
+   foundations/microcontrollers.rst
+   foundations/timing.rst
+   foundations/virtual-timers.rst
+   foundations/pins-and-peripherals.rst
+
+.. toctree::
+   :caption: GPIO output
+   :maxdepth: 1
+
+   gpio-output/led-class.rst
+   gpio-output/electronics-basics.rst
+   gpio-output/gpio-output.rst
+   gpio-output/level-shifting.rst
+
+.. toctree::
+   :caption: GPIO input
+   :maxdepth: 1
+
+   gpio-input/electronics-input.rst
+   gpio-input/gpio-input.rst
+   gpio-input/debouncing.rst
+
+.. toctree::
+   :caption: Analog signals
+   :maxdepth: 1
+
+   analog/adc.rst
+   analog/analog-output.rst
+
+.. toctree::
+   :caption: PWM applications
+   :maxdepth: 1
+
+   pwm/led-dimming.rst
+   pwm/dc-motors.rst
+   pwm/servos.rst
+
+.. toctree::
+   :caption: Pulse-timed I/O
+   :maxdepth: 1
+
+   pulse-io/pulse-io.rst
+
+.. toctree::
+   :caption: UART
+   :maxdepth: 1
+
+   uart/uart-basics.rst
+   uart/uart-code.rst
+   uart/serial-protocols.rst
+
+.. toctree::
+   :caption: SPI
+   :maxdepth: 1
+
+   spi/spi-basics.rst
+   spi/spi-code.rst
+
+.. toctree::
+   :caption: I2C
+   :maxdepth: 1
+
+   i2c/i2c-basics.rst
+   i2c/i2c-code.rst
+
+.. toctree::
+   :caption: CAN bus
+   :maxdepth: 1
+
+   can/can-basics.rst
+   can/can-code.rst
+
+.. toctree::
+   :caption: Production patterns
+   :maxdepth: 1
+
+   production/watchdog.rst
+   production/rtc.rst
+   production/low-power.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst
+
+
+Microcontrollers
+================
+
+The OpenMV Cam runs on a *microcontroller* (MCU): a single chip
+that combines a CPU, working memory (RAM), program storage
+(flash), and a set of *peripherals* -- hardware blocks for
+interacting with the outside world.
+
+The peripherals are the interesting part. Each one is a piece
+of silicon dedicated to one job: driving a pin high or low,
+measuring an analog voltage, clocking bytes out over a serial
+bus. The CPU configures and reads each peripheral through
+*registers* -- fixed memory addresses the hardware watches and
+updates.
+
+MicroPython wraps those registers in classes inside the
+:mod:`machine` module. ``machine.Pin(...)`` returns an object
+controlling a *general-purpose input/output* (GPIO) pin -- a
+wire the chip can hold *high* (around 3.3 V) or *low* (around
+0 V), or read as one of those two states when something
+external drives it. ``machine.ADC(...)`` exposes the
+analog-to-digital converter, which measures the voltage on a
+pin and reports it as a number. ``machine.UART(...)`` runs a
+*universal asynchronous receiver/transmitter* (UART) -- a
+peripheral that sends and receives bytes one bit at a time over
+a pair of wires, TX (transmit) and RX (receive). Other classes
+cover the rest of the peripherals. The script reads and writes Python objects; MicroPython
+translates each access into the corresponding register reads
+and writes, and those move bits on physical wires.
+
+.. figure:: https://docs.openmv.io/_images/mcu-block-diagram.svg
+   :alt: A single chip outline containing labelled blocks --
+         CPU, RAM, flash, and a row of peripheral blocks (GPIO,
+         ADC, Timer/PWM, UART/SPI/I2C, CAN) connected by an
+         internal bus, with arrows from each peripheral exiting
+         the chip toward physical pin labels.
+
+   An MCU packages CPU, memory, and peripherals into a single
+   chip. Each peripheral is exposed to Python by a class in
+   the :mod:`machine` module.
+
+The main loop
+-------------
+
+Almost every microcontroller program shares the same shape:
+one-time setup at the top of the script (import modules,
+configure pins, open buses), then an infinite ``while True:``
+loop at the bottom. Inside the loop, the program reads
+inputs, makes decisions, and updates outputs over and over.
+The loop *is* the program; when the script exits, the device
+stops doing anything.
+
+::
+
+    # setup, runs once
+    from machine import Pin
+    led = Pin("P0", Pin.OUT)
+
+    # main loop, runs forever
+    while True:
+        led.value(1)
+        # ... do work ...
+        led.value(0)
+        # ... do other work ...
+
+This shape -- setup once, then loop forever -- is the *main
+loop* pattern. Everything that follows is about what goes
+inside it.
+
+Real-time control
+-----------------
+
+A desktop program runs alongside many others. The operating
+system schedules its work across one or more **threads** --
+independent streams of execution it switches between
+millisecond by millisecond. When one thread waits for I/O
+(disk, network, the user moving the mouse), the OS hands the
+CPU to another. The program is mostly event-driven: the
+window manager calls into your code when input arrives, the
+HTTP library resumes your code when bytes arrive on the
+socket. Some larger thing is calling you.
+
+A microcontroller program is the opposite. By default there
+is no operating system, no scheduler, and no other thread.
+The main loop just shown is the *only* loop. Peripherals fire
+interrupts or expose status flags; the loop polls them or
+handles the interrupts directly. If the loop stalls in a
+``time.sleep_ms(1000)``, the device does nothing for that
+second; there is no other thread to fill the gap.
+
+Two consequences fall out and apply everywhere:
+
+* **Time is real.** Reading a pin twice in a tight loop takes
+  microseconds; sleeping for ten milliseconds means ten
+  milliseconds in which nothing else happens. The
+  :doc:`non-blocking timing <timing>` pattern is the response.
+* **Hardware is real.** Setting :attr:`machine.Pin.value` to
+  ``1`` puts roughly 3.3 V on a physical wire; setting it to
+  ``0`` puts roughly 0 V there. Other parts of the circuit
+  see that voltage immediately -- including any components
+  the pin can damage if it is driven wrong.
+
+
+Timing
+======
+
+The :mod:`time` module groups together functions for sleeping
+(pausing the script for a known duration) and for measuring how
+long something takes. On a microcontroller these are not nice-
+to-haves; they are how the script paces interactions with the
+outside world -- how long to hold a pin high, how long to wait
+between samples, how long since a button was last pressed.
+
+Sleeping
+--------
+
+Three sleep functions block the script for the requested
+duration:
+
+* :func:`time.sleep(s) <time.sleep>` -- pause for ``s`` seconds.
+  Accepts a float, so ``time.sleep(0.5)`` waits half a second.
+* :func:`time.sleep_ms(ms) <time.sleep_ms>` -- pause for ``ms``
+  milliseconds. Argument must be an integer.
+* :func:`time.sleep_us(us) <time.sleep_us>` -- pause for ``us``
+  microseconds.
+
+::
+
+    import time
+
+    print("now")
+    time.sleep_ms(500)
+    print("half a second later")
+
+Use :func:`time.sleep_ms` for typical "wait a bit" needs and
+:func:`time.sleep_us` only when the timing must be tight. Plain
+:func:`time.sleep` is also fine, but the integer-argument
+variants avoid floating-point conversion and read more
+naturally for short intervals.
+
+Sleep is a *blocking* call. While the script is sleeping, it is
+doing nothing else -- not reading a pin, not servicing a UART,
+not updating an LED. Reach for ``sleep`` when blocking is what
+you want; use the non-blocking pattern below when it is not.
+
+Reading the clock
+-----------------
+
+To measure how long a piece of code takes, read the clock
+before and after:
+
+* :func:`time.ticks_ms` -- the current tick value in
+  milliseconds.
+* :func:`time.ticks_us` -- the same in microseconds.
+
+::
+
+    import time
+
+    start = time.ticks_ms()
+    do_work()
+    elapsed = time.ticks_ms() - start
+    print("took", elapsed, "ms")
+
+This works *most* of the time. The tick counter rolls over
+(wraps back to zero) after a large but finite number of ticks,
+and naive subtraction across that wrap produces a wildly wrong
+negative or positive number.
+
+.. figure:: https://docs.openmv.io/_images/ticks-wraparound.svg
+   :alt: Number line from 0 to MAX with a start tick near MAX
+         and an end tick near 0; a dashed wrap-around arrow
+         shows that after MAX the counter returns to 0.
+
+   The tick counter wraps back to zero when it reaches the
+   integer limit. A plain subtraction across that wrap is
+   wrong.
+
+ticks_diff
+----------
+
+To get the elapsed ticks correctly, even across a wrap, use
+:func:`time.ticks_diff`:
+
+::
+
+    import time
+
+    start = time.ticks_ms()
+    do_work()
+    elapsed = time.ticks_diff(time.ticks_ms(), start)
+    print("took", elapsed, "ms")
+
+The argument order is ``ticks_diff(later, earlier)`` -- the
+expression reads "how far is *later* after *earlier*". The
+result is a signed integer; positive means ``later`` is in
+fact later, negative means it is in the past. The function
+handles the wrap internally.
+
+.. tip::
+
+   Always pair :func:`time.ticks_ms` / :func:`time.ticks_us`
+   with :func:`time.ticks_diff`. The raw subtraction is correct
+   *most* of the time; the time it is wrong is when a script
+   has been running for a long time -- usually the worst time
+   to debug a timing glitch.
+
+Non-blocking timing
+-------------------
+
+A microcontroller script usually has more than one thing to do
+"at the same time": read a button, blink an LED, poll a
+sensor, service a UART. ``sleep`` is no good for that -- while
+one ``sleep`` is running, the other tasks are stalled.
+
+The standard pattern is to keep a *deadline* per task, and to
+check each loop whether the deadline has passed. The decision
+to act is built on :func:`time.ticks_diff`, never on
+``sleep``:
+
+::
+
+    import time
+
+    next_blink = time.ticks_ms()
+    next_poll  = time.ticks_ms()
+    state = False
+
+    while True:
+        now = time.ticks_ms()
+
+        if time.ticks_diff(now, next_blink) >= 0:
+            state = not state
+            # update LED here
+            next_blink = time.ticks_add(next_blink, 500)
+
+        if time.ticks_diff(now, next_poll) >= 0:
+            # read sensor here
+            next_poll = time.ticks_add(next_poll, 100)
+
+The LED toggles every 500 ms, the sensor is polled every 100
+ms, and neither task blocks the other. :func:`time.ticks_add`
+advances a deadline by a known increment without falling foul
+of the wrap.
+
+This shape -- a single loop, several timed tasks, no ``sleep``
+in the body -- shows up everywhere hardware code goes: software
+debouncing of switches, motor sequencing, UART read timeouts.
+The same three functions (:func:`time.ticks_ms`,
+:func:`time.ticks_diff`, :func:`time.ticks_add`) cover every
+case.
+
+
+Virtual timers
+==============
+
+The :doc:`timing` page covered timestamps and non-blocking
+loops driven by :func:`time.ticks_diff`. A *virtual timer* is
+the flip side: software asks the runtime to call a function on
+a schedule, and the runtime invokes the callback without the
+script having to check the clock itself.
+
+The machine.Timer class
+-----------------------
+
+:class:`machine.Timer` constructs a virtual timer. Cross-port
+behaviour requires the special id ``-1``; everything else --
+period, mode, callback -- is set through keyword arguments:
+
+::
+
+    from machine import Timer
+
+    def tick(t):
+        print("tick")
+
+    tim = Timer(-1)
+    tim.init(period=100, callback=tick)   # 10 Hz
+
+The callback is invoked like any ordinary function call -- it
+can allocate objects, :func:`print`, and call other library
+code without any special restrictions.
+
+Periodic and one-shot
+---------------------
+
+Two modes are available:
+
+* :data:`Timer.PERIODIC <machine.Timer.PERIODIC>` (the
+  default). The callback fires every ``period`` milliseconds,
+  forever, until :meth:`~machine.Timer.deinit` is called or
+  the timer is re-initialised.
+* :data:`Timer.ONE_SHOT <machine.Timer.ONE_SHOT>`. The
+  callback fires once, ``period`` milliseconds after
+  :meth:`~machine.Timer.init`, and the timer then stops.
+
+::
+
+    Timer(-1).init(mode=Timer.ONE_SHOT, period=2000, callback=fire)
+
+:meth:`~machine.Timer.deinit` stops a periodic timer and
+cancels any pending callback:
+
+::
+
+    tim.deinit()
+
+When to reach for a timer
+-------------------------
+
+Virtual timers and the :func:`~time.ticks_diff` polling pattern
+from :doc:`timing` solve the same problem from opposite
+directions. A polled loop checks the clock every iteration and
+acts when enough time has passed; a timer asks the runtime to
+wake the script when enough time has passed.
+
+* **Polled** ``ticks_diff``. Everything stays in one place --
+  the loop owns the timing, no extra callbacks to keep track
+  of. Best for short, well-defined work that ties together
+  several time-driven tasks.
+* **Virtual timer.** Moves the schedule out of the loop body.
+  Best when the periodic task is independent of the main flow
+  (a heartbeat LED, a periodic sensor sample) and lets the
+  main loop spend its time on other work.
+
+Both approaches use the same underlying clock and give the
+same accuracy at periods of a millisecond or more. Neither is
+appropriate for precise pin toggling or sub-millisecond
+waveform generation -- the callback latency is on the order
+of the scheduler tick, not nanoseconds.
+
+
+Pins and peripherals
+====================
+
+A pin is the simplest peripheral on the MCU: a single wire that
+connects the chip to the outside world. Every interaction with
+real hardware -- driving an LED, reading a switch, measuring a
+voltage, sending bytes over a serial line -- ultimately routes
+through one or more pins.
+
+Pin modes
+---------
+
+A pin is configured into one of a few *modes* before it does
+anything useful:
+
+* :data:`Pin.IN <machine.Pin.IN>` -- input. The pin observes
+  the voltage applied to it from outside and reports it as
+  ``0`` (low) or ``1`` (high).
+* :data:`Pin.OUT <machine.Pin.OUT>` -- output. The pin drives
+  itself either to the supply voltage (``1``) or to ground
+  (``0``), so external components see that voltage.
+* :data:`Pin.OPEN_DRAIN <machine.Pin.OPEN_DRAIN>` -- output
+  that can only pull the line low. To go high, the pin
+  releases (floats) and an external pull-up resistor lifts the
+  line. Used for shared buses where multiple devices may drive
+  the same line.
+
+Inputs can optionally enable an internal *pull resistor* that
+guarantees a defined level when nothing external is driving
+the pin:
+
+* :data:`Pin.PULL_UP <machine.Pin.PULL_UP>` -- weak pull to
+  the supply rail.
+* :data:`Pin.PULL_DOWN <machine.Pin.PULL_DOWN>` -- weak pull
+  to ground.
+
+The constructor takes id, mode, and pull as positional
+arguments:
+
+::
+
+    from machine import Pin
+
+    led    = Pin("P0", Pin.OUT)
+    button = Pin("P1", Pin.IN, Pin.PULL_UP)
+
+Alternate functions
+-------------------
+
+Most pins have an *alternate function* in addition to their
+GPIO role. A single physical pad on the chip can be:
+
+* A digital input or output (:class:`machine.Pin`).
+* An ADC input that measures voltage
+  (:class:`machine.ADC`).
+* A PWM output that emits a square wave
+  (:class:`machine.PWM`).
+* The TX or RX line of a UART
+  (:class:`machine.UART`).
+
+Other peripherals (further serial buses, timers, and so on)
+also claim specific pins; the chip designer wires each hardware
+block to a fixed set of pads. The ADC samples only pins routed
+to its multiplexer; a UART transmits on the one pin its TX
+signal is wired to.
+
+.. note::
+
+   OpenMV cams label the external connector pins ``P0`` to
+   ``P9`` (varies slightly by board). Which pin carries which
+   alternate function is board-specific; see the :doc:`OpenMV
+   Cam quick reference </openmvcam/quickref>` for the table.
+
+Board variations
+----------------
+
+A few details vary by board and should always be checked
+against the quickref rather than assumed from another board:
+
+* **Voltage tolerance.** Some cams have 5 V-tolerant I/O pins
+  (a 5 V signal can be applied directly without damage);
+  others run their I/O at 3.3 V or 1.8 V and require a level
+  shifter for any signal above that. Connecting a 5 V source
+  to a non-tolerant pin can damage the chip.
+* **ADC reference.** The voltage the ADC treats as full-scale
+  depends on the board's I/O supply.
+  :meth:`~machine.ADC.read_u16` always returns ``0..65535``,
+  but the voltage that ``65535`` represents is whatever the
+  board's reference is.
+* **Drive strength.** A GPIO pin can source or sink a limited
+  current -- typically tens of milliamps. Enough for a small
+  LED through a resistor; not enough for a motor, a buzzer,
+  or any inductive load. Reach for an external driver
+  (transistor, MOSFET, H-bridge) for anything heavier.
+
+The :doc:`OpenMV Cam quick reference </openmvcam/quickref>`
+gives the exact numbers per board.
+
+
+The LED class
+=============
+
+The simplest piece of hardware on the camera is its on-board
+LEDs. Most boards have an RGB LED (red, green, blue).
+:class:`machine.LED` is the dedicated class for controlling
+them; no pin number, no resistor, no circuit -- the lookup,
+current limiting, and wiring are handled by the camera itself.
+
+::
+
+    import time
+    from machine import LED
+
+    red = LED("LED_RED")
+    red.on()
+    time.sleep(5)
+    red.off()
+
+A complete hardware "hello world": import the class, construct
+an instance with the colour's name, turn it on, wait, turn it
+off. The LED is visibly lit during the five-second sleep.
+
+The closing ``red.off()`` is symmetric to the opening
+``red.on()`` and makes the cleanup explicit. The on-board LEDs
+also reset automatically when the script exits. As scripts
+grow, relying on script-exit cleanup gets fragile; making each
+``.on()`` pair with an explicit ``.off()`` is the habit that
+keeps long scripts predictable.
+
+Constructor and methods
+-----------------------
+
+The constructor takes one of ``"LED_RED"``, ``"LED_GREEN"``,
+or ``"LED_BLUE"``. Each instance exposes four methods:
+
+* :meth:`~machine.LED.on` -- turn it on.
+* :meth:`~machine.LED.off` -- turn it off.
+* :meth:`~machine.LED.toggle` -- flip the current state.
+* :meth:`~machine.LED.value` -- with no arguments, return the
+  current state (``0`` or ``1``); with one argument, set it.
+
+A blinker, using the main-loop pattern:
+
+::
+
+    import time
+    from machine import LED
+
+    led = LED("LED_RED")
+
+    while True:
+        led.toggle()
+        time.sleep_ms(500)
+
+Use the on-board LEDs for indicator and status purposes: a
+heartbeat that blinks every second, a red flash on error, a
+green pulse when a sensor reading is in range.
+
+
+Electronics basics
+==================
+
+Driving anything external from a GPIO pin needs a circuit on
+the other side of the pin. Three ideas from basic electronics
+-- voltage, current, and the relationship between them through
+a resistor -- show up in every such circuit.
+
+Voltage, current, resistance
+----------------------------
+
+* **Voltage** (volts, V) is the potential difference between
+  two points in a circuit. The chip's supply rail might be at
+  3.3 V relative to ground; a GPIO pin driven high sits at the
+  same 3.3 V.
+* **Current** (amps, A, or milliamps, mA) is the flow of
+  charge through a wire. Current always returns to where it
+  came from, so for any current to flow, the circuit must form
+  a complete loop from supply back to ground.
+* **Resistance** (ohms, Ω) is how much the path resists that
+  flow. A resistor's purpose is to set the current to a known
+  value at a known voltage.
+
+Ohm's law ties them together:
+
+.. figure:: https://docs.openmv.io/_images/ohms-law-triangle.svg
+   :alt: A triangle divided into three regions labelled V at
+         top, I and R at the bottom; the rearranged forms
+         V = IR, I = V/R, R = V/I appear around it.
+
+   Ohm's law in its three forms.
+
+In words: the voltage across a resistor equals the current
+through it times the resistance. Knowing any two of the three
+gives the third by algebra.
+
+Diodes
+------
+
+A diode is a two-terminal component that conducts current in
+one direction (from *anode* to *cathode*) and blocks it in the
+other.
+
+.. figure:: https://docs.openmv.io/_images/diode-symbol.svg
+   :alt: A diode schematic symbol -- a triangle pointing right
+         into a vertical bar -- with anode marked on the left
+         and cathode on the right. An LED variant adds two
+         outward arrows next to the symbol indicating emitted
+         light.
+
+   A diode conducts only from anode to cathode. An LED is a
+   diode that emits light while conducting.
+
+A diode also has a *forward voltage* (``Vf``) -- the voltage
+drop across it when current flows in the conducting direction.
+Once the applied voltage reaches ``Vf`` the diode behaves
+roughly like a wire; below it, almost no current flows.
+
+LEDs
+----
+
+A *light-emitting diode* (LED) is a diode that converts its
+conduction current into visible or infrared light. Brightness
+scales with the current; colour is set by the LED's chemistry,
+not by the drive.
+
+Typical LED forward voltages:
+
+* Red: 1.8 -- 2.2 V
+* Green or yellow: 2.0 -- 2.4 V
+* Blue or white: 2.8 -- 3.4 V
+
+A useful operating current for an indicator LED is 5 -- 20 mA.
+Higher currents are brighter but shorten the LED's life and
+may exceed the GPIO pin's drive limit.
+
+The current-limiting resistor
+-----------------------------
+
+Connecting an LED directly between a GPIO pin and ground would
+let almost unlimited current flow: once the forward voltage is
+reached, the LED looks like a near-short circuit. A *series
+resistor* between the pin and the LED sets the current to a
+safe value.
+
+.. figure:: https://docs.openmv.io/_images/led-resistor-circuit.svg
+   :alt: A circuit: GPIO pin connects through a resistor R to
+         the anode of an LED; the LED's cathode goes to
+         ground. Labels mark Vsupply at the pin, V_R across
+         the resistor, Vf across the LED, and the current If
+         flowing around the loop.
+
+   A series resistor sets the LED current.
+
+The supply voltage divides between the resistor and the LED:
+the LED drops its forward voltage, the resistor drops the
+rest. By Ohm's law:
+
+::
+
+    R = (Vsupply - Vf) / If
+
+For a red LED (``Vf ≈ 2.0 V``) driven from a 3.3 V GPIO pin at
+10 mA:
+
+::
+
+    R = (3.3 - 2.0) / 0.010 = 130 Ω
+
+In practice, pick the nearest larger standard value (150 Ω or
+220 Ω). The result is a slightly dimmer LED with a healthier
+safety margin. Reach for 200 -- 470 Ω as a sensible default
+when exact brightness does not matter.
+
+Why each piece matters
+----------------------
+
+The shape of every GPIO output circuit comes out of the four
+ideas above:
+
+* **Voltage** sets the energy available at the pin. A 3.3 V
+  GPIO has 3.3 V to spend across whatever is wired between it
+  and ground.
+* **A diode** (an LED, in this case) consumes part of that
+  voltage as its forward drop and refuses to conduct in the
+  wrong direction -- it sets the *which way* and the *fixed
+  share*.
+* **A current-limiting resistor** consumes the remaining
+  voltage and turns the leftover budget into a controlled
+  *current*. Without it, the LED would draw whatever current
+  the pin can supply -- usually enough to destroy one or both.
+* **Ohm's law** is what makes the resistor's value calculable:
+  given the leftover voltage and the desired current, ``R``
+  drops out by algebra.
+
+Voltage, current, resistance, diodes, and one rearranged
+equation are enough to design every basic GPIO output stage.
+
+The same parts have been hiding behind the on-board LED all
+along. ``machine.LED("LED_RED").on()`` lights the LED because
+the camera's board already provides everything around it --
+the current-limiting resistor, the wire to ground, the LED
+itself -- and the class just toggles the silicon's GPIO behind
+them. The "one line lights an LED" view is true; it is just a
+short way of saying "drive that circuit". Strip the abstraction
+away and exactly the circuit above is what remains.
+
+:class:`machine.Pin` is the same silicon exposed without the
+surrounding parts. The script controls the pin's voltage
+directly; you supply the resistor (sized by Ohm's law), the
+LED, and the return path to ground. The same four ideas come
+back, in slightly different combinations, behind switch
+debouncing, PWM filtering, and motor drive.
+
+
+
+GPIO output
+===========
+
+:class:`machine.LED` abstracts away the wiring of the camera's
+built-in indicators. Driving any *external* piece of hardware
+starts with :class:`machine.Pin` in output mode -- the raw
+peripheral underneath every other GPIO interaction.
+
+Driving a pin
+-------------
+
+Construct a pin with :data:`Pin.OUT <machine.Pin.OUT>` to make
+it an output, then set its value:
+
+::
+
+    from machine import Pin
+
+    led = Pin("P0", Pin.OUT)
+    led.on()           # drive high (about 3.3 V)
+    led.off()          # drive low (about 0 V)
+
+Three equivalent ways to set the state, all on
+:class:`machine.Pin`:
+
+* :meth:`~machine.Pin.on` / :meth:`~machine.Pin.off` -- the
+  common shortcuts.
+* :meth:`pin.value(1) <machine.Pin.value>` /
+  :meth:`pin.value(0) <machine.Pin.value>` -- the explicit
+  form.
+
+Calling :meth:`~machine.Pin.value` with no arguments reads back
+the current state of the pin -- which works for both inputs
+and outputs.
+
+Driving an external LED
+-----------------------
+
+A red LED at 10 mA from 3.3 V needs about 130 Ω in series (the
+electronics page works out the math). Wire pin ``P0`` through
+that resistor to the LED's anode, the LED's cathode to ground.
+A blinker:
+
+::
+
+    import time
+    from machine import Pin
+
+    led = Pin("P0", Pin.OUT)
+
+    while True:
+        led.on()
+        time.sleep_ms(500)
+        led.off()
+        time.sleep_ms(500)
+
+The LED toggles on and off once per second. The current through
+the LED (and so its brightness) is set by the resistor; the
+on / off duty controls only how often it lights up, not how
+bright it appears while it is on.
+
+.. tip::
+
+   The constructor accepts an initial value as a keyword
+   argument: ``Pin("P0", Pin.OUT, value=0)`` configures the
+   pin as an output that starts low. Without it, the pin
+   briefly takes whatever its default state was before the
+   first :meth:`~machine.Pin.value` call.
+
+Open-drain mode
+---------------
+
+The default :data:`Pin.OUT <machine.Pin.OUT>` mode is
+push-pull: the pin actively drives both high (to the supply)
+and low (to ground). Sometimes that is wrong. Reach for
+:data:`Pin.OPEN_DRAIN <machine.Pin.OPEN_DRAIN>` when the pin
+should either pull the line low or release it (float):
+
+::
+
+    pin = Pin("P0", Pin.OPEN_DRAIN)
+    pin.off()       # actively drive low
+    pin.on()        # release; an external pull-up brings the line high
+
+The main use is sharing a wire. Multiple open-drain outputs
+can share a single line because none of them actively drive
+it high. Any one of them can pull the line low; if all of them
+release, an external pull-up brings the line high. This is the
+wiring convention behind shared communication buses.
+
+.. warning::
+
+   Open-drain is *not* a general solution for driving a
+   higher-voltage device. Connecting an open-drain pin to a
+   pull-up at 5 V is safe on a 5 V-tolerant pin but damages
+   a non-tolerant one through its on-chip protection diodes
+   as soon as the pin releases and the line floats up to 5 V.
+   Cross-voltage signalling needs a proper level shifter; see
+   :doc:`level-shifting` for the circuit.
+
+
+Level shifting
+==============
+
+A GPIO pin on the camera drives about 3.3 V when high. A
+device on the other side may run at 5 V (older
+microcontrollers, many sensor boards) or 1.8 V (newer sensors,
+some chip-to-chip buses). Connecting the two directly is
+sometimes safe and sometimes destructive; *level shifting* is
+the circuit that bridges the gap reliably.
+
+Why direct cross-voltage drive can hurt a pin
+---------------------------------------------
+
+Every chip's I/O pad has a pair of built-in *protection
+diodes*: one from the pin to ground, one from the pin to the
+chip's supply rail. They are there to absorb *electrostatic
+discharge* (ESD) -- a brief, high-voltage spike from static
+electricity that can hit a pin when the board is handled. A
+person who has walked across a carpet can carry several
+kilovolts of static; touching the wrong pin transfers that
+charge to the chip in nanoseconds. The upper protection diode
+forward-biases and shunts the pulse safely into the supply
+rail before it reaches the transistors inside the chip.
+
+When a 5 V signal is applied *continuously* to a 3.3 V pin
+that is not 5 V-tolerant, the upper protection diode conducts
+*forever*. The diodes are sized for short ESD pulses, not
+steady-state current; the supply rail starts rising above
+3.3 V, the diode heats up, and either the pin or the on-chip
+voltage regulator fails.
+
+5 V-tolerant pins use a different input stage -- the upper
+diode goes to a higher rail or is absent -- so applying 5 V is
+harmless. Whether a board's pins are 5 V-tolerant varies by
+board; check the :doc:`OpenMV Cam quick reference
+</openmvcam/quickref>`.
+
+The other direction has its own problem. A 3.3 V GPIO driving
+high produces ~3.3 V on the wire. A 5 V receiver that needs
+``0.7 × Vcc`` to recognise *high* sees its threshold at
+3.5 V; 3.3 V may read as low or as ambiguous. Even with no
+damage, the signal does not work reliably.
+
+A level shifter solves both directions.
+
+The N-MOSFET as a switch
+------------------------
+
+The circuits below use a single N-channel MOSFET. It has three
+pins -- *gate*, *drain*, and *source* -- and behaves as an
+electrically-controlled switch.
+
+The control input is the voltage *between* the gate and the
+source, written ``Vgs`` (gate-to-source voltage):
+
+::
+
+    Vgs = (gate voltage) - (source voltage)
+
+The MOSFET cares about this *difference*, not the absolute
+voltage on either pin alone. Its behaviour follows from
+``Vgs``:
+
+* When ``Vgs`` is above the MOSFET's *threshold voltage*
+  (typically around 1 V for a small-signal logic-level part),
+  the transistor turns *on* and current flows freely from
+  drain to source.
+* When ``Vgs`` is at or below 0, the transistor turns *off*
+  and almost no current flows from drain to source.
+
+The drain-source path is the switched current path; ``Vgs``
+opens or closes that switch.
+
+An N-MOSFET also has a *body diode* between drain and source
+that conducts when the drain is pulled below the source by
+more than ~0.6 V. The diode is a side-effect of the
+manufacturing; the bidirectional shifter below uses it on
+purpose.
+
+Wiring rules
+~~~~~~~~~~~~
+
+An N-MOSFET is *not* a symmetric three-terminal device. The
+body diode points from source (anode) to drain (cathode), and
+``Vgs`` is what controls the channel. Two rules follow and
+must hold for every N-MOSFET switch circuit:
+
+* **Source goes to the lower voltage; drain goes to the
+  higher.** With drain at the higher rail the body diode is
+  reverse-biased and does nothing. Swap them and the body
+  diode is forward-biased all the time: current flows from
+  the now-higher source through the body diode to the
+  now-lower drain regardless of what the gate is doing. The
+  MOSFET stops being a switch -- it leaks continuously, the
+  signal cannot be turned off, and the device often overheats
+  and fails.
+
+* **The gate ties to the source's voltage rail.** Holding the
+  gate at the rail the source sits on at rest makes
+  ``Vgs = 0`` at idle, well below threshold; the MOSFET stays
+  firmly off until something either drives the gate above the
+  source (the one-way circuit below) or pulls the source
+  below the gate (the bidirectional circuit). Float the gate
+  somewhere else and the off state stops being defined --
+  noise, leakage, or stray capacitance can drift ``Vgs``
+  above threshold and switch the MOSFET on at random.
+
+Reversing either rule turns the level shifter into a leaky,
+unreliable path. Both shifter circuits below follow these
+rules: source on the lower side, drain on the higher, gate
+tied or driven from the source's rail.
+
+One-way 3.3 V → 5 V
+-------------------
+
+The simplest level shifter pushes a one-direction signal from
+the camera's GPIO into a 5 V input. A single N-MOSFET plus two
+resistors does the job.
+
+.. figure:: https://docs.openmv.io/_images/nmos-level-shifter.svg
+   :alt: An N-channel MOSFET wired as an inverter. The 3.3 V
+         GPIO drives the gate; the source goes to ground; the
+         drain pulls up to 5 V through 10 kΩ; the drain is
+         also tapped as the 5 V output.
+
+   An N-MOSFET level-shifts (and inverts) a 3.3 V signal to a
+   5 V output.
+
+When the GPIO drives high (3.3 V at the gate), ``Vgs`` is
+above the threshold and the MOSFET turns on; the drain is
+pulled down to ~0 V. When the GPIO drives low (0 V at the
+gate), the MOSFET is off and the 10 kΩ pull-up brings the
+drain to 5 V.
+
+The output is the *inverse* of the input. Software can flip
+the signal back (write ``0`` for "5 V output high"), or
+cascade two stages to get a non-inverted signal at twice the
+component count.
+
+Bidirectional with one N-MOSFET
+-------------------------------
+
+For a line that must be driven from *either* side -- a shared
+bus where either end can pull the line low -- the standard
+circuit is a single N-MOSFET per line, with one pull-up to
+each side's supply.
+
+.. figure:: https://docs.openmv.io/_images/mosfet-level-shifter.svg
+   :alt: A bidirectional N-MOSFET level shifter. The MOSFET
+         bridges a 3.3 V signal line on the left and a 5 V
+         signal line on the right; the gate connects to the
+         3.3 V supply, the source connects to the 3.3 V
+         signal, the drain to the 5 V signal; each signal
+         line has its own pull-up resistor to its supply.
+
+   A single N-MOSFET bridges a 3.3 V and a 5 V line; each
+   side has its own pull-up.
+
+The gate is tied to the 3.3 V supply, so the MOSFET's
+behaviour depends on which side is driving:
+
+* **Both sides idle.** Source sits at 3.3 V via the left
+  pull-up; gate is at 3.3 V; ``Vgs = 0``; the MOSFET is off.
+  The 5 V side floats to 5 V via the right pull-up. Both
+  sides read high.
+* **3.3 V side pulls low.** Source drops to 0 V; ``Vgs``
+  rises above threshold; the MOSFET turns on and conducts
+  source-to-drain. The 5 V side is pulled low through the
+  transistor.
+* **5 V side pulls low.** Drain drops to 0 V; the MOSFET's
+  body diode (drain to source) becomes forward-biased and
+  conducts; the source (3.3 V side) is pulled down to about
+  0.6 V. ``Vgs`` then exceeds threshold and the MOSFET fully
+  turns on, bringing both sides low.
+
+The BSS138 is the standard N-MOSFET for this pattern;
+small-signal logic-level N-MOSFETs with similar gate-threshold
+voltages all behave the same way here.
+
+
+Switches and pull resistors
+===========================
+
+GPIO output drives external hardware. GPIO input is the
+opposite: the camera reads the voltage on a pin and reports it
+as ``0`` or ``1``. The simplest input device is a switch -- and
+making one readable reliably needs one piece of electronics in
+addition to the switch itself.
+
+Switches and floating inputs
+----------------------------
+
+A switch is a mechanical contact: two pieces of metal that
+touch when the switch is closed and separate when it is open.
+Electrically, that is the entire device. There is no voltage
+source inside; a switch alone provides only "connected" or
+"disconnected".
+
+Wiring a switch directly between a GPIO pin and ground means
+the pin is:
+
+* **At 0 V** when the switch is closed (now wired to ground).
+* **Floating** when the switch is open (wired to nothing).
+
+A floating pin has no defined voltage. The input reads
+whatever happens to be near it -- crosstalk from nearby
+signals, noise from the supply, even static on a finger close
+to the wire. :meth:`~machine.Pin.value` returns unpredictable
+mixes of ``0`` and ``1`` many times per second.
+
+Pull-up and pull-down resistors
+-------------------------------
+
+The fix is a pull resistor: a high-value resistor (10 kΩ to
+100 kΩ is typical) that ties the input to a known rail when
+the switch is open.
+
+.. figure:: https://docs.openmv.io/_images/pull-up-pull-down.svg
+   :alt: Two circuit diagrams side by side. Left: a pull-up
+         circuit with a resistor from the input pin up to the
+         supply and a switch from the input pin down to GND.
+         Right: a pull-down circuit with a resistor from the
+         input pin down to GND and a switch from the input pin
+         up to the supply.
+
+   Pull-up (left) and pull-down (right) configurations for a
+   switch input.
+
+* **Pull-up.** The resistor ties the input to the supply
+  rail. When the switch is open, only a small current trickles
+  through the resistor and the pin reads high. When the switch
+  is closed, it short-circuits the pin to ground; the pin
+  reads low. The resistor limits the current that would
+  otherwise flow from supply to ground through the closed
+  switch.
+* **Pull-down.** The mirror image: the resistor ties the
+  input to ground, and the switch connects to the supply.
+  Open reads low, closed reads high.
+
+Pull-up is the more common convention -- "active low"
+buttons. The MCU itself provides built-in pull-ups and
+pull-downs that can be enabled with
+:data:`Pin.PULL_UP <machine.Pin.PULL_UP>` or
+:data:`Pin.PULL_DOWN <machine.Pin.PULL_DOWN>`, removing the
+external resistor entirely.
+
+
+GPIO input
+==========
+
+Reading a switch (or any digital signal) from a GPIO pin goes
+through :class:`machine.Pin` again, this time configured as an
+input. The interface is symmetric with output: configure the
+mode, then either poll the pin's value in the main loop or
+register an interrupt handler that fires when the value
+changes.
+
+Configuring an input
+--------------------
+
+Pass :data:`Pin.IN <machine.Pin.IN>` to the constructor, and
+optionally a pull resistor:
+
+::
+
+    from machine import Pin
+
+    button = Pin("P0", Pin.IN, Pin.PULL_UP)
+
+That configures ``P0`` as an input with the MCU's internal
+pull-up resistor enabled. With nothing connected to the pin,
+the pull-up holds it high; closing a switch from the pin to
+ground pulls it low.
+
+Reading the value
+-----------------
+
+:meth:`~machine.Pin.value` with no arguments returns the
+current state -- ``0`` for low, ``1`` for high:
+
+::
+
+    if button.value() == 0:
+        print("button pressed")
+    else:
+        print("button released")
+
+In the main-loop pattern, polling looks like this:
+
+::
+
+    while True:
+        if button.value() == 0:
+            do_action()
+        time.sleep_ms(50)
+
+The 50 ms sleep keeps the loop from running at full CPU.
+
+Interrupt-driven input
+----------------------
+
+Polling works, but every iteration of the main loop costs CPU
+time. For inputs that change rarely -- a button press once a
+minute, an alarm signal -- :meth:`~machine.Pin.irq` registers
+a handler that runs *only* when the pin changes.
+
+The handler runs in *interrupt context*, which constrains
+what it can do:
+
+* **No memory allocation.** Creating new objects -- lists,
+  strings, exceptions, formatted strings -- can fail inside
+  an ISR because the heap is locked. Pre-allocate any buffers
+  the handler needs at module scope.
+* **No long-running work.** The handler should hand off and
+  return. Spending real time inside an ISR delays everything
+  else (other interrupts, the main loop, USB traffic).
+* **No printing in a tight ISR.** :func:`print` allocates,
+  blocks on the UART, and is one of the most expensive things
+  a handler can do.
+
+The standard pattern is for the ISR to *schedule* the real
+work via :func:`micropython.schedule`, which queues a function
+to run back in main context at the next safe point:
+
+::
+
+    import micropython
+
+    def handle_press(pin):
+        print("button pressed")
+
+    def on_press(pin):
+        micropython.schedule(handle_press, pin)
+
+    button.irq(handler=on_press, trigger=Pin.IRQ_FALLING)
+
+The ISR is one line: queue the callback and return.
+``handle_press`` then runs in normal context, where
+allocation, :func:`print`, and slow I/O are all safe again.
+
+The ``trigger`` argument selects which edge fires:
+
+* :data:`Pin.IRQ_FALLING <machine.Pin.IRQ_FALLING>` -- 1 to 0.
+* :data:`Pin.IRQ_RISING <machine.Pin.IRQ_RISING>` -- 0 to 1.
+* :data:`Pin.IRQ_FALLING <machine.Pin.IRQ_FALLING>` |
+  :data:`Pin.IRQ_RISING <machine.Pin.IRQ_RISING>` -- both
+  edges.
+
+
+Debouncing
+==========
+
+A switch is drawn as a perfect open-or-closed contact, but a
+real switch's contacts do not snap cleanly between the two
+states. They *chatter* -- make and break electrical contact
+many times within a few milliseconds before settling. A GPIO
+input reading the pin sees that as a burst of edges; a careless
+polling loop counts several "presses" for one real press, and
+an interrupt handler runs several times per actual press.
+
+.. figure:: https://docs.openmv.io/_images/switch-bounce.svg
+   :alt: An idealised scope trace showing a switch input
+         signal. The signal starts high (open switch), drops
+         low, bounces back and forth several times within a
+         few milliseconds, then settles low (closed switch).
+
+   A bouncing switch produces a burst of fast transitions
+   before settling.
+
+*Debouncing* is the practice of filtering the chatter so that
+each physical press registers as a single event. Two approaches
+solve this -- software (a timing rule in firmware) or hardware
+(a small filter on the wire). They are not mutually exclusive.
+
+Software debouncing
+-------------------
+
+The idea is to remember when the input last changed and reject
+further changes within a short window of that timestamp.
+Contact bounce typically lasts under 10 ms; a real press takes
+50 -- 100 ms; a 30 -- 50 ms window catches all bounces without
+blocking real presses.
+
+In a polling loop, read the pin, compare to the last stable
+value, and only accept a change after the debounce window has
+elapsed:
+
+::
+
+    import time
+    from machine import Pin
+
+    button = Pin("P0", Pin.IN, Pin.PULL_UP)
+    last_state  = 1
+    last_change = 0
+    DEBOUNCE_MS = 50
+
+    while True:
+        now = time.ticks_ms()
+        state = button.value()
+        if state != last_state and time.ticks_diff(now, last_change) > DEBOUNCE_MS:
+            last_change = now
+            last_state = state
+            if state == 0:
+                do_action()
+        time.sleep_ms(10)
+
+For interrupt-driven reads, apply the same timing rule inside
+the handler, then hand the real press off to main context via
+:func:`micropython.schedule` (see :doc:`gpio-input`):
+
+::
+
+    import time
+    import micropython
+    from machine import Pin
+
+    button = Pin("P0", Pin.IN, Pin.PULL_UP)
+    last_irq = 0
+    DEBOUNCE_MS = 50
+
+    def handle_press(pin):
+        do_action()
+
+    def on_press(pin):
+        global last_irq
+        now = time.ticks_ms()
+        if time.ticks_diff(now, last_irq) < DEBOUNCE_MS:
+            return
+        last_irq = now
+        micropython.schedule(handle_press, pin)
+
+    button.irq(handler=on_press, trigger=Pin.IRQ_FALLING)
+
+The ISR filters bounces by timestamp and queues the callback;
+``handle_press`` runs back in main context, where allocation
+and slow I/O are safe.
+
+Hardware debouncing
+-------------------
+
+Hardware debouncing filters the chatter electrically, before
+it ever reaches the pin. The standard tool is a capacitor.
+
+A capacitor is a two-terminal component that stores electric
+charge. Physically, it is two conductive plates held a short
+distance apart, separated by an insulator (the *dielectric*).
+
+.. figure:: https://docs.openmv.io/_images/capacitor.svg
+   :alt: A capacitor drawn as two parallel horizontal plates
+         with a dielectric (insulator) between them. A lead
+         connects each plate to an external terminal -- A on
+         top, B on bottom. Equal and opposite charges +Q and
+         -Q accumulate on the two plates when a voltage V is
+         applied across the terminals.
+
+   A parallel-plate capacitor: two conductors separated by an
+   insulating layer.
+
+Applying a voltage across its terminals drives equal and
+opposite charges onto the two plates; the relationship is
+
+::
+
+    Q = C × V
+
+where ``Q`` is the stored charge (coulombs), ``V`` is the
+voltage across the capacitor, and ``C`` is its *capacitance*
+(farads). Capacitance is fixed by the device's construction;
+more capacitance means more charge stored at the same voltage.
+
+The consequence: a capacitor cannot change its voltage
+instantly. Charge flowing in or out has to pass through
+whatever resistance is in the path, and that resistance sets
+how fast the voltage can change.
+
+RC time constant
+~~~~~~~~~~~~~~~~
+
+Charging a capacitor through a resistor produces a smooth
+exponential rise toward the supply voltage, not a step. The
+characteristic time of that rise is the RC time constant:
+
+::
+
+    τ = R × C
+
+After one ``τ``, the capacitor has reached about 63 % of the
+supply voltage. After 5 ``τ``, it is over 99 % -- "fully
+charged" for practical purposes.
+
+.. figure:: https://docs.openmv.io/_images/rc-charging.svg
+   :alt: A graph showing a capacitor's voltage rising along
+         an exponential curve from 0 V toward the supply rail.
+         The time τ = RC is marked on the x-axis where the
+         curve reaches 63 % of the supply voltage.
+
+   A capacitor charges along an exponential curve. ``τ = RC``
+   is the time to reach 63 % of the final voltage.
+
+Discharging through a resistor follows the mirror image: the
+voltage falls exponentially from its initial value toward
+zero, dropping to 37 % of the starting voltage after one
+``τ``, and to under 1 % after 5 ``τ``.
+
+.. figure:: https://docs.openmv.io/_images/rc-discharging.svg
+   :alt: A graph showing a capacitor's voltage falling along
+         an exponential curve from Vmax toward 0 V. The time
+         τ = RC is marked on the x-axis where the curve drops
+         to 37 % of the starting voltage.
+
+   A capacitor discharges along an exponential decay.
+   ``τ = RC`` is the time to fall to 37 % of the starting
+   voltage.
+
+The debounce circuit
+~~~~~~~~~~~~~~~~~~~~
+
+A capacitor between an input pin and ground, fed through a
+series resistor, forms a *low-pass filter*. Fast spikes do not
+have time to charge or discharge the capacitor through that
+resistor; the pin stays close to whatever voltage it was at
+before the spike. Slow changes -- a deliberate press -- charge
+or discharge the capacitor and the reading follows.
+
+``R1`` pulls the switch's high side up to Vcc, producing a
+raw switch signal that bounces. ``R2`` and ``C`` then
+low-pass-filter that signal into the pin:
+
+.. figure:: https://docs.openmv.io/_images/debounce-circuit.svg
+   :alt: A switch input with hardware debouncing. Vcc connects
+         through a 10 kΩ pull-up resistor down to a junction.
+         That junction connects to ground through the switch
+         on one branch, and through a 10 kΩ series resistor to
+         the Pin on the other branch. A 100 nF capacitor
+         between Pin and ground completes the low-pass filter.
+
+   Hardware debouncing: ``R2`` and ``C`` low-pass-filter the
+   raw switch signal before it reaches the pin.
+
+Typical values: ``R1 = 10 kΩ`` (pull-up), ``R2 = 10 kΩ``
+(series), ``C = 100 nF``.
+
+When the switch is open, current flows Vcc → ``R1`` → ``R2``
+→ cap (in series), charging the cap to Vcc with
+``τ_charge = (R1 + R2) × C = 2 ms``.
+
+When the switch closes, the switch node clamps to ground and
+the cap drains through ``R2`` alone to that ground with
+``τ_discharge = R2 × C = 1 ms``.
+
+Both edges are RC-filtered. Because the cap sits on its own
+node, downstream of ``R2`` from the switch, it swings cleanly
+between Vcc (open) and 0 V (closed) -- no current has to flow
+through ``R1`` at steady state in either case.
+
+Choosing between them
+---------------------
+
+* **Software** is the default. It costs nothing in
+  components, the threshold is easy to tune, and it works on
+  any pin that the CPU reads.
+* **Hardware** is worth the parts when the bounce reaches
+  something other than the CPU's polling code -- an interrupt
+  that must not double-fire, a hardware counter, a peripheral
+  with no filter of its own.
+
+Software and hardware debouncing also coexist peacefully:
+a small RC filter suppresses the worst spikes, and a software
+debounce window covers what is left.
+
+
+Reading analog with the ADC
+===========================
+
+So far the camera has been reading digital signals -- a pin is
+either ``0`` or ``1``, a switch is open or closed. Most signals
+that come off real-world sensors are analog: a continuous
+voltage that varies smoothly over some range. A photoresistor
+sweeps through every voltage between the rails as ambient
+brightness changes. A temperature sensor's output drifts a few
+millivolts as a room heats up. A microphone's output rises and
+falls with the sound around it.
+
+An *analog-to-digital converter* (ADC) is the bridge. It
+samples the voltage on a pin and returns an integer that Python
+can read like any other value.
+
+Quantization
+------------
+
+A digital value cannot represent a continuous voltage exactly.
+The ADC's job is to *quantize* -- snap each sample to the
+nearest of a fixed set of levels. An ``N``-bit ADC has
+``2^N`` levels; a 12-bit converter has 4096 of them spread
+across its input range.
+
+.. figure:: https://docs.openmv.io/_images/analog-quantization.svg
+   :alt: A smooth analog curve plotted against time, overlaid
+         with a stepped digital approximation. Dashed
+         horizontal lines mark the quantization levels; the
+         stepped curve snaps to whichever level is nearest the
+         analog signal at each sample point.
+
+   Quantization: each sample of the analog signal (solid) is
+   rounded to one of a finite set of digital levels (stepped
+   dashed line).
+
+The voltage between two adjacent levels is the *step size* of
+the ADC; anything smaller than that vanishes into rounding. A
+12-bit ADC over a 3.3 V range has a step size of about
+``3.3 / 4096 ≈ 0.8 mV`` -- fine enough that most signals look
+effectively continuous in software.
+
+The machine.ADC class
+---------------------
+
+:class:`machine.ADC` wraps one analog input channel. Construct
+it with the pin you want to read, then call
+:meth:`~machine.ADC.read_u16`:
+
+::
+
+    from machine import ADC
+
+    adc = ADC("P6")
+    value = adc.read_u16()
+    print(value)
+
+:meth:`~machine.ADC.read_u16` always returns an unsigned
+16-bit integer between ``0`` and ``65535``. The native ADC
+resolution varies by board (12-bit on STM32, port-specific
+elsewhere); the result is left-aligned into 16 bits so the
+hardware detail does not leak into Python -- a value of
+``65535`` is full-scale regardless of the chip.
+
+The reference voltage -- the input that corresponds to
+full-scale -- depends on the board. Check the
+:doc:`/openmvcam/quickref` for the value on your cam.
+Anything above the reference reads as full-scale (and may
+damage the pin if it exceeds the absolute-maximum input
+voltage).
+
+Converting counts to voltage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The mapping from counts to voltage is linear, with full-scale
+counts mapping exactly to ``Vref``:
+
+::
+
+    voltage = counts × Vref / 65535
+
+In code:
+
+::
+
+    VREF = 3.3  # cam-dependent; see the quickref
+    counts = adc.read_u16()
+    voltage = counts * VREF / 65535
+    print(voltage, "V")
+
+Voltage dividers
+----------------
+
+Two resistors in series between a voltage rail and ground form
+a *voltage divider*. The node between them sits at a voltage
+set by the ratio of the two resistors:
+
+.. figure:: https://docs.openmv.io/_images/voltage-divider.svg
+   :alt: A voltage divider. Vin at the top connects through
+         R1 to a node tapped off as V_out, which then connects
+         through R2 to ground.
+
+   A voltage divider: ``R1`` and ``R2`` in series scale ``Vin``
+   down to ``V_out``.
+
+::
+
+    V_out = Vin × R2 / (R1 + R2)
+
+Equal resistors give half the rail voltage; ``R2`` much
+smaller than ``R1`` puts the tap close to ground; ``R2`` much
+larger puts it close to the rail.
+
+The formula assumes nothing else draws appreciable current
+from ``V_out``. An ADC pin is high-impedance (megohms,
+nanoamps) and easily satisfies that, so a divider feeding an
+ADC behaves as the formula predicts.
+
+Potentiometers
+--------------
+
+A *potentiometer* is a single physical component that is
+exactly a voltage divider, with a sliding wiper that moves the
+tap between the two ends. Turning the knob changes
+``R1`` and ``R2`` together while keeping their sum (the total
+resistance of the pot) constant.
+
+.. figure:: https://docs.openmv.io/_images/potentiometer-circuit.svg
+   :alt: A potentiometer wired between 3.3 V and ground. The
+         wiper is tapped off to an ADC pin.
+
+   A potentiometer wired as a manual voltage source for the
+   ADC: 3.3 V on one end, ground on the other, wiper to the
+   pin.
+
+A pot is the canonical input device for trying out the ADC.
+Wire one end to ``3.3 V``, the other to ground, and the wiper
+to an ADC-capable pin; turning the knob sweeps the wiper
+through every voltage between the rails.
+
+::
+
+    import time
+    from machine import ADC
+
+    pot = ADC("P6")
+    VREF = 3.3
+
+    while True:
+        counts = pot.read_u16()
+        voltage = counts * VREF / 65535
+        print(voltage, "V")
+        time.sleep_ms(100)
+
+Reading higher voltages with a divider
+--------------------------------------
+
+A voltage above ``Vref`` will pin the ADC at full-scale and may
+damage the input if it exceeds the absolute-maximum rating. To
+read a higher source -- a battery, a sensor output that ranges
+beyond ``Vref`` -- scale it down with a fixed voltage divider
+before it reaches the pin:
+
+.. figure:: https://docs.openmv.io/_images/adc-divider.svg
+   :alt: A voltage divider scaling a high V_in down to an ADC
+         pin. R1 runs from V_in down to a junction, which is
+         tapped off horizontally to the ADC pin; R2 continues
+         from the junction down to ground.
+
+   Scaling a high-voltage source to fit the ADC: ``R1`` and
+   ``R2`` form a fixed voltage divider whose tap feeds the
+   ADC pin.
+
+Pick ``R1`` and ``R2`` so the divided voltage stays inside the
+ADC's range at the highest input voltage you expect:
+
+::
+
+    V_adc = V_in × R2 / (R1 + R2)
+
+For a maximum ``V_in = 12 V`` and a 3.3 V reference, the ratio
+``R2 / (R1 + R2)`` must be at most ``3.3 / 12 ≈ 0.275``. A
+common pick with a little headroom is ``R1 = 33 kΩ``,
+``R2 = 10 kΩ``. The ratio is ``10 / 43 ≈ 0.233``, so
+``V_adc`` tops out at about ``12 × 0.233 ≈ 2.79 V`` -- safely
+below ``Vref``.
+
+To recover the original ``V_in`` from an ADC reading, invert
+the divider formula:
+
+::
+
+    V_in = V_adc × (R1 + R2) / R2
+
+In code:
+
+::
+
+    from machine import ADC
+
+    R1 = 33_000
+    R2 = 10_000
+    VREF = 3.3
+
+    adc = ADC("P6")
+
+    counts = adc.read_u16()
+    v_adc = counts * VREF / 65535
+    v_in = v_adc * (R1 + R2) / R2
+    print(v_in, "V")
+
+A few practical notes:
+
+* The divider draws ``V_in / (R1 + R2)`` continuously. With
+  ``R1 + R2 = 43 kΩ`` and ``V_in = 12 V``, that is about
+  280 µA -- usually negligible, but if the source is
+  battery-powered consider larger resistors (100 kΩ to 1 MΩ)
+  to cut idle drain.
+* Resistor tolerance (typically ±1 % or ±5 %) feeds directly
+  into measurement accuracy. Two ±5 % resistors can give the
+  recovered ``V_in`` a worst-case error of roughly ±10 %.
+* The divider's source impedance combines with any stray
+  capacitance to low-pass-filter the input. For fast-changing
+  signals that matters; for a battery-voltage check it does
+  not.
+
+
+Generating analog with PWM and an RC filter
+===========================================
+
+The ADC reads voltages on a pin. The opposite -- producing an
+intermediate voltage between 0 V and Vcc on a pin -- is harder,
+because a GPIO output only knows how to drive its two rails.
+The standard substitute is to switch the pin between the rails
+fast enough that the *average* voltage is what you care about.
+
+Pulse-width modulation
+----------------------
+
+A pulse-width-modulated (PWM) signal is a square wave at a
+fixed frequency whose high-time -- the fraction of each cycle
+spent at Vcc instead of ground -- is set in software. That
+fraction is the *duty cycle*. The average voltage of the
+waveform is the duty cycle times Vcc:
+
+::
+
+    V_avg = duty × Vcc
+
+A 25 % duty cycle averages to ``Vcc / 4``; a 50 % duty cycle to
+``Vcc / 2``; a 75 % duty cycle to ``3 × Vcc / 4``.
+
+.. figure:: https://docs.openmv.io/_images/pwm-duty-cycle.svg
+   :alt: Three square-wave traces stacked vertically, each at
+         the same frequency. The top wave is high for 25 % of
+         each period and low for 75 %. The middle wave is high
+         and low for half the period each. The bottom wave is
+         high for 75 % and low for 25 %.
+
+   PWM at 25 %, 50 %, and 75 % duty cycle. The average voltage
+   tracks the duty cycle.
+
+The frequency is set when the PWM is configured; the duty cycle
+is what software changes on the fly. The :class:`machine.PWM`
+class wraps a hardware timer channel that generates the
+waveform without CPU help -- once configured, the signal
+continues at the chosen frequency and duty cycle until changed.
+
+The machine.PWM class
+---------------------
+
+Construct a :class:`~machine.PWM` instance with the pin and an
+initial frequency and duty:
+
+::
+
+    from machine import PWM, Pin
+
+    pwm = PWM(Pin("P7"), freq=20_000, duty_u16=32768)
+
+That starts a 20 kHz square wave at 50 % duty on ``P7``. Two
+methods change the output on the fly:
+
+::
+
+    pwm.duty_u16(16384)   # change to 25 % (16384 / 65535)
+    pwm.freq(5_000)       # change to 5 kHz
+
+:meth:`~machine.PWM.duty_u16` takes an unsigned 16-bit integer
+mapping ``0`` to "always low" and ``65535`` to "always high".
+:meth:`~machine.PWM.freq` sets the carrier frequency in hertz.
+
+.. note::
+
+   Every PWM channel on the same hardware timer shares its
+   frequency. Calling :meth:`~machine.PWM.freq` on one channel
+   changes every other channel attached to that timer. Use
+   channels of different timers when outputs must run at
+   different frequencies.
+
+Call :meth:`~machine.PWM.deinit` to release the timer channel
+when the output is no longer needed.
+
+Averaging with an RC low-pass filter
+------------------------------------
+
+Raw PWM is not a smooth voltage; it is a square wave whose
+average is what we want. To extract that average, pass the
+PWM through a low-pass filter -- the same resistor-and-capacitor
+combination used for switch debouncing in
+:doc:`../gpio-input/debouncing`.
+
+.. figure:: https://docs.openmv.io/_images/rc-lowpass-pwm.svg
+   :alt: A PWM pin connects through a series resistor R to an
+         output node. A capacitor C from that node to ground
+         completes the low-pass filter; the smoothed voltage
+         appears at V_out.
+
+   PWM through an RC low-pass filter: the capacitor averages
+   the square wave into a DC voltage proportional to the duty
+   cycle.
+
+The filter's *cutoff frequency* -- the boundary between
+frequencies it passes and those it blocks -- is set by the same
+``RC`` product that gave the time constant for the debounce
+circuit:
+
+::
+
+    f_c = 1 / (2π × R × C)
+
+For the filter to extract a clean DC voltage from a PWM input,
+the cutoff frequency must be much lower than the PWM frequency
+itself. The DC component (frequency 0) passes through
+unchanged; the PWM's fundamental harmonic (at the PWM
+frequency) is attenuated by roughly ``f_c / f_PWM``. A ratio of
+``1 / 200`` cuts the residual ripple at the output to about
+``0.5 %`` of the input swing.
+
+A reasonable starting point for a slow-changing setpoint:
+
+* PWM frequency ``f_PWM = 20 kHz`` -- well above audio, and
+  easy for the timer to generate cleanly.
+* Filter values ``R = 1.6 kΩ``, ``C = 1 µF`` -- giving
+  ``f_c = 1 / (2π × 1.6 kΩ × 1 µF) ≈ 100 Hz``.
+
+The 200× suppression at the carrier reduces the PWM's full
+swing down to roughly ``Vcc / 200`` of residual ripple at
+``V_out`` -- about 16 mV at 3.3 V.
+
+Two practical notes:
+
+* The filter's output impedance is roughly ``R``. Any
+  downstream load that draws current turns ``R`` and the load
+  into a divider that pulls ``V_out`` below the ideal average,
+  exactly like the divider on the
+  :doc:`adc` page. Feed an ADC pin or a high-impedance buffer,
+  not a load that sinks milliamps.
+* The cap takes about ``5 × R × C ≈ 8 ms`` to settle when the
+  duty cycle changes; ``V_out`` lags the duty setting by that
+  much. For a setpoint that needs to update faster, raise the
+  cutoff (smaller ``R`` or ``C``) and accept more ripple.
+
+
+LED dimming with PWM
+====================
+
+The :doc:`../analog/analog-output` page used an RC low-pass
+filter to extract a DC voltage from a PWM signal. For an LED,
+the filter is not needed -- the human eye itself does the
+averaging.
+
+When an LED is switched on and off faster than about 60 Hz,
+the visual system stops resolving individual pulses and
+perceives a steady brightness equal to the average light
+output. A 50 % duty cycle reads as roughly half brightness;
+25 % as a quarter; 10 % as dim.
+
+The wiring is the same as for a static external LED on
+:doc:`../gpio-output/gpio-output` -- a current-limiting
+resistor in series with the LED, sized using the rules from
+:doc:`../gpio-output/electronics-basics`. The change is only in
+software: the pin runs as a :class:`~machine.PWM` output
+instead of a plain :data:`Pin.OUT <machine.Pin.OUT>`.
+
+Picking the frequency
+---------------------
+
+For LED dimming the PWM frequency only has to clear the eye's
+flicker threshold:
+
+* Below ~60 Hz the eye sees the pulses outright.
+* Below ~200 Hz peripheral vision and rapid eye motion can
+  still reveal flicker.
+* 1 kHz is comfortably above all of that and is a typical
+  default.
+
+There is no upper bound that matters for a small LED on a GPIO;
+anything from 1 kHz to 10 kHz behaves the same to the eye.
+
+Fading
+------
+
+A fade-in / fade-out loop sweeps the duty cycle from off to
+fully on and back, dwelling briefly at each step:
+
+::
+
+    import time
+    from machine import PWM, Pin
+
+    led = PWM(Pin("P7"), freq=1000, duty_u16=0)
+
+    while True:
+        for d in range(0, 65535, 256):
+            led.duty_u16(d)
+            time.sleep_ms(5)
+        for d in range(65535, 0, -256):
+            led.duty_u16(d)
+            time.sleep_ms(5)
+
+At 1 kHz PWM and 5 ms steps the eye sees a smooth fade in both
+directions, with the apparent brightness tracking the duty
+value.
+
+Perceived brightness is not strictly linear in duty cycle --
+the eye's response follows roughly a square or cube law -- so
+a linear sweep of ``duty_u16`` does not look like a linear
+sweep of brightness. For a perceptually smoother fade, step
+the duty on a curve.
+
+A convenient integer-only trick is to step an 8-bit counter
+and use its square as the duty cycle. ``255 × 255 = 65025`` is
+within rounding of full scale, so the sweep covers the whole
+range:
+
+::
+
+    import time
+    from machine import PWM, Pin
+
+    led = PWM(Pin("P7"), freq=1000, duty_u16=0)
+
+    while True:
+        for step in range(256):
+            led.duty_u16(step * step)   # 0..65025, roughly quadratic
+            time.sleep_ms(5)
+        for step in range(255, -1, -1):
+            led.duty_u16(step * step)
+            time.sleep_ms(5)
+
+The fade now feels roughly even in apparent brightness from off
+to full.
+
+
+DC motor control
+================
+
+A DC brushed motor is a coil of wire on a shaft inside a
+magnetic field. Pass current through the coil and the field
+exerts a force on it; the force becomes torque on the shaft.
+Brushes inside the motor switch the current direction in the
+coil as the shaft turns, so the torque always pushes the shaft
+in the same direction. Apply a DC voltage across the two motor
+leads and the shaft spins; swap the polarity and it spins the
+other way.
+
+Motors typically want hundreds of milliamps to several amps,
+at supply voltages above the camera's 3.3 V logic rail. A GPIO
+pin can source on the order of 25 mA and cannot reverse
+polarity -- it can only drive its two rails. The drive stage
+between the camera and the motor has to carry the motor's
+current, route a separate higher-voltage motor supply, and let
+the camera reverse the polarity on command. The
+four-transistor *H-bridge* is the standard answer.
+
+The H-bridge
+------------
+
+An H-bridge is four switches arranged in an H around the motor:
+
+.. figure:: https://docs.openmv.io/_images/h-bridge.svg
+   :alt: An H-bridge schematic. Vmotor at top connects through
+         switch S1 down to a node A on the left, and through
+         switch S2 down to a node B on the right. The motor M
+         sits horizontally between A and B. From A another
+         switch S3 goes down to ground; from B another switch
+         S4 goes down to ground.
+
+   The H-bridge: four switches (``S1`` -- ``S4``) connect the
+   motor ``M`` between Vmotor and ground.
+
+Closing different pairs of switches selects what the motor
+sees at its leads:
+
+* **S1 + S4 closed, S2 + S3 open.** Current flows from Vmotor
+  through ``S1``, into ``A``, across the motor to ``B``, and
+  through ``S4`` to ground. The motor turns one way.
+* **S2 + S3 closed, S1 + S4 open.** Current flows the other
+  way through the motor. The motor turns the other way.
+* **All four open.** Both motor leads float; the motor coasts.
+* **S3 + S4 closed (or S1 + S2 closed).** Both motor leads are
+  tied to the same rail; the motor's own kinetic energy drives
+  a current that the closed pair shorts out as heat. The motor
+  brakes.
+
+The illegal combination is closing both switches in the same
+column -- ``S1 + S3`` or ``S2 + S4`` -- which forms a short
+circuit from Vmotor straight to ground. This is *shoot-through*,
+and the camera's code must not allow it.
+
+In practice the four switches are MOSFETs (introduced on the
+:doc:`../gpio-output/level-shifting` page) inside an
+integrated driver IC. The chip exposes two or three
+logic-level input pins that map internally to the four
+switches and includes interlock logic that prevents
+shoot-through, so the camera's code does not have to manage
+it directly.
+
+PWM and the motor's inductance
+------------------------------
+
+Setting the motor's *speed* needs more than full-on and
+full-off. The trick is the same one used for LEDs in
+:doc:`led-dimming`: pulse the drive at a high frequency and
+let the load average the result. For an LED the averager was
+the eye; for a motor it is the coil itself.
+
+A motor coil has substantial inductance. The current through
+an inductor cannot change instantaneously; it changes at a
+rate proportional to the voltage across it. Pulsing the
+bridge on and off at 20 kHz ramps the coil current up during
+each on-phase, and during the off-phase the current has to
+keep flowing -- the coil reverses the voltage across itself to
+maintain it.
+
+Without somewhere to go, that current would spike the voltage
+across the just-opened switch upward and could damage the
+transistor. *Freewheeling diodes* across each switch -- often
+just the MOSFETs' own body diodes inside the driver chip --
+give the current the path it needs. It flows through a diode
+and back around through one of the still-closed switches,
+completing a *freewheel loop* in which the current decays
+gradually through the small resistances of the bridge and the
+motor itself. The diode also pins the voltage across the
+opened switch within a diode drop of whichever rail the loop
+returns to, well inside the MOSFET's safe operating area.
+
+The current's *average* over each PWM period is what produces
+torque, and that average tracks the duty cycle linearly --
+doubling the duty roughly doubles the torque, and at constant
+load roughly doubles the speed. Unlike LED dimming, where the
+eye's non-linear response calls for a curve, a linear sweep of
+``duty_u16`` already corresponds to a linear sweep of motor
+effort.
+
+The PWM frequency only has to clear two thresholds:
+
+* Above ~20 kHz the carrier is outside the human audible band.
+  Below that, the magnetic force on the coil ramps up and down
+  with each PWM pulse and the windings and laminations
+  physically vibrate at the carrier frequency -- the motor
+  effectively becomes a small speaker emitting a tone at the
+  PWM pitch.
+* Far above ~50 kHz the MOSFETs and their gate drivers start
+  losing efficiency to switching losses. During each on-off
+  transition the MOSFET briefly carries both significant
+  voltage and significant current, dissipating a small burst
+  of power as heat; the MOSFETs' gate capacitance also has to
+  be charged and discharged each cycle, which the driver chip
+  pays for. Both costs scale with PWM frequency, so at high
+  rates the heat from switching can rival the heat from
+  conducting the motor current.
+
+20 kHz is the comfortable default for hobby-size motors.
+
+Driving an H-bridge
+-------------------
+
+A two-input H-bridge driver chip maps ``IN1`` and ``IN2`` to
+the four switches roughly like this:
+
+* ``IN1 = 0, IN2 = 0`` -- coast (all four switches open).
+* ``IN1 = 1, IN2 = 0`` -- drive one direction.
+* ``IN1 = 0, IN2 = 1`` -- drive the other direction.
+* ``IN1 = 1, IN2 = 1`` -- brake.
+
+Driving the two inputs as PWM outputs lets the camera set the
+direction by choosing *which* of the two pins carries the duty,
+and the speed by the duty value itself:
+
+::
+
+    import time
+    from machine import PWM, Pin
+
+    in1 = PWM(Pin("P7"), freq=20_000, duty_u16=0)
+    in2 = PWM(Pin("P8"), freq=20_000, duty_u16=0)
+
+    def drive_a(speed):       # speed: 0..65535
+        in1.duty_u16(speed)
+        in2.duty_u16(0)
+
+    def drive_b(speed):
+        in1.duty_u16(0)
+        in2.duty_u16(speed)
+
+    def coast():
+        in1.duty_u16(0)
+        in2.duty_u16(0)
+
+    def brake():
+        in1.duty_u16(65535)
+        in2.duty_u16(65535)
+
+    drive_a(32768)    # half speed in direction A
+    time.sleep(2)
+    drive_b(16384)    # quarter speed in direction B
+    time.sleep(2)
+    coast()
+
+A ramp from off to full and back gives a smooth start and
+stop:
+
+::
+
+    for d in range(0, 65535, 256):
+        in1.duty_u16(d)
+        time.sleep_ms(10)
+    for d in range(65535, 0, -256):
+        in1.duty_u16(d)
+        time.sleep_ms(10)
+
+Direction-and-speed drivers
+---------------------------
+
+A second family of H-bridge chips exposes a more convenient
+interface: one digital *direction* input (often labelled
+``DIR`` or ``PH`` for "phase") plus one *speed* input (often
+``PWM`` or ``EN`` for "enable"). The direction pin picks which
+way the bridge drives; the duty cycle on the speed pin sets
+the average current.
+
+This is easier to drive from software than the
+two-PWM-input scheme. The two signals match how the problem is
+usually phrased -- "turn this way, at this speed" -- so the
+code can say ``set_direction(forward); set_speed(50)`` instead
+of branching between ``in1`` and ``in2``. Only one PWM channel
+is needed, which frees the other channel on the same timer for
+an unrelated job. And the direction pin can stay parked between
+changes without retriggering the bridge, so changing speed at a
+fixed direction touches only one register.
+
+::
+
+    import time
+    from machine import PWM, Pin
+
+    dir_pin = Pin("P8", Pin.OUT)
+    speed = PWM(Pin("P7"), freq=20_000, duty_u16=0)
+
+    def drive(direction, speed_u16):
+        dir_pin.value(direction)         # 0 or 1
+        speed.duty_u16(speed_u16)        # 0..65535
+
+    drive(0, 32768)     # direction A at half speed
+    time.sleep(2)
+    drive(1, 16384)     # direction B at quarter speed
+    time.sleep(2)
+    speed.duty_u16(0)   # stop
+
+What "stop" actually does on this kind of driver -- coast or
+brake -- depends on the chip. With a two-input driver the
+camera's code chooses (both inputs low for coast, both high
+for brake); with a direction-and-speed driver the chip decides,
+so the data sheet is worth a glance before relying on either
+behaviour.
+
+
+Servo control
+=============
+
+A hobby (RC) servo is a small geared motor in a sealed case
+with closed-loop position control built in. Inside the case
+sits a DC motor, a reduction gearbox, a potentiometer
+connected to the output shaft, and a small driver board that
+compares the pot's reading against a setpoint coming in from
+outside. The driver runs the motor in whichever direction
+reduces the error, and stops when the position matches. From
+the camera's side none of that is visible -- you just tell
+the servo where to go.
+
+The PWM signal
+--------------
+
+A servo takes its setpoint as a PWM signal at a fixed 50 Hz
+frame rate, where the *pulse width* selects the position:
+
+* A 1.0 ms pulse drives the shaft to one end of its travel.
+* A 1.5 ms pulse parks the shaft at the centre.
+* A 2.0 ms pulse drives the shaft to the other end.
+
+Anything in between maps to an intermediate position.
+
+.. figure:: https://docs.openmv.io/_images/servo-pulse-timing.svg
+   :alt: Three rows of square-wave traces stacked vertically.
+         Each row shows one 20 ms period of a 50 Hz PWM with a
+         narrow high pulse at the start: 1.0 ms in the top row,
+         1.5 ms in the middle, 2.0 ms in the bottom.
+
+   The servo's PWM frame is 20 ms long; the pulse width
+   (1.0 -- 2.0 ms) selects the position.
+
+Unlike LEDs and motors, the servo does not *average* the PWM.
+The pulse width itself is the command: the servo's internal
+logic measures each pulse, sets its target accordingly, and
+runs the motor until the output matches. The duty cycle as a
+fraction (between 5 % and 10 % across the full range) is
+incidental -- it is the absolute pulse width that matters,
+which is what software needs to control.
+
+Wiring
+------
+
+Hobby servos use a three-wire connector:
+
+* **Power** (commonly red): the servo's own supply,
+  typically 4.8 V to 6 V. Do not power the servo from the
+  camera's 3.3 V rail -- it cannot supply the stall current,
+  and the rail will brown out.
+* **Ground** (commonly black or brown): the return path for
+  the servo's power, tied to the camera's ground so the signal
+  also has a shared reference.
+* **Signal** (commonly white, yellow, or orange): the PWM line
+  from the camera's GPIO.
+
+Code
+----
+
+:meth:`~machine.PWM.duty_u16` would work, but it sets the duty
+as a fraction of the period -- awkward for a signal where the
+absolute pulse width is what matters and the period is fixed.
+:meth:`~machine.PWM.duty_ns` sets the pulse width directly in
+nanoseconds:
+
+::
+
+    from machine import PWM, Pin
+
+    servo = PWM(Pin("P7"), freq=50, duty_ns=1_500_000)  # centre
+
+The carrier is 50 Hz (20 ms period); the high time on each
+cycle is exactly 1500 µs. A small helper makes the
+position-to-pulse mapping explicit:
+
+::
+
+    def set_position(angle):
+        # angle: 0..180 degrees mapped to 1.0..2.0 ms
+        pulse_us = 1000 + (angle * 1000) // 180
+        servo.duty_ns(pulse_us * 1000)
+
+    set_position(0)      # full one way
+    set_position(90)     # centre
+    set_position(180)    # full the other way
+
+A slow sweep across the range:
+
+::
+
+    import time
+
+    for angle in range(0, 181, 5):
+        set_position(angle)
+        time.sleep_ms(20)
+    for angle in range(180, -1, -5):
+        set_position(angle)
+        time.sleep_ms(20)
+
+The 1.0 -- 2.0 ms range is the standard, but many servos
+accept a wider range (often 500 µs to 2500 µs) for full
+travel. The servo's data sheet lists the exact pulse-width
+limits; numbers outside that range can slam the motor into its
+mechanical stops.
+
+For a servo with a non-standard range, lift the limits into
+constants and parameterize the mapping:
+
+::
+
+    PULSE_MIN_US = 500     # full one way (from the data sheet)
+    PULSE_MAX_US = 2500    # full the other way
+
+    def set_position(angle):
+        span_us = PULSE_MAX_US - PULSE_MIN_US
+        pulse_us = PULSE_MIN_US + (angle * span_us) // 180
+        servo.duty_ns(pulse_us * 1000)
+
+
+Bit streams and pulse measurement
+=================================
+
+Some devices need precisely-timed pulse patterns rather than
+a constant-frequency PWM signal. A WS2812 RGB LED encodes each
+bit as a pulse of a specific width; an HC-SR04 ultrasonic
+ranger answers with an echo pulse whose width is the
+round-trip flight time; an IR remote sends a header followed
+by data bits as on-off sequences.
+
+The :mod:`machine` module has two functions for this kind of
+timing-precise GPIO:
+
+* :func:`~machine.bitstream` sends a pulse train with a
+  separate timing for ``0`` and ``1`` bits.
+* :func:`~machine.time_pulse_us` measures the width of an
+  incoming pulse in microseconds.
+
+Sending a bit stream
+--------------------
+
+:func:`machine.bitstream` takes a pin, an encoding, a timing
+specification, and the bytes to send. The most common
+encoding (``0``) is *high-low* pulse-duration modulation:
+each bit is a high pulse of one width followed by a low pulse
+of another, with ``0`` and ``1`` bits having distinct timings.
+
+.. figure:: https://docs.openmv.io/_images/bitstream-encoding.svg
+   :alt: Two stacked waveforms. The top one shows a 0 bit: a
+         brief high pulse (high_0) followed by a longer low
+         period (low_0). The bottom one shows a 1 bit: a longer
+         high pulse (high_1) followed by a shorter low period
+         (low_1).
+
+   The high-low pulse-duration encoding: a ``0`` and a ``1``
+   each consist of a high phase followed by a low phase, with
+   distinct widths.
+
+The canonical example is the WS2812 (NeoPixel) RGB LED, which
+expects bits at 800 kHz with these timings:
+
+* ``0``: 400 ns high, then 850 ns low.
+* ``1``: 800 ns high, then 450 ns low.
+
+::
+
+    from machine import Pin, bitstream
+
+    pin = Pin("P7", Pin.OUT)
+
+    # (high_0, low_0, high_1, low_1) in nanoseconds
+    timing = (400, 850, 800, 450)
+
+    # one LED: GRB order, three bytes per LED (red shown here)
+    bitstream(pin, 0, timing, b"\x00\xff\x00")
+
+The MCU bit-bangs the pulses at the requested widths; on cams
+fast enough for it the timing is accurate to within tens of
+nanoseconds.
+
+.. warning::
+
+   :func:`~machine.bitstream` disables all interrupts for the
+   entire transmission so it can keep precise control over the
+   pulse timing. The call duration scales linearly with the
+   number of bytes -- at WS2812 timing (about 10 µs per byte),
+   sending 100 bytes pauses the CPU for around 1 ms, 1000
+   bytes for 10 ms, and 10000 bytes for a full 100 ms.
+   Anything beyond a few hundred bytes per call risks
+   noticeable lock-ups -- break long updates into smaller
+   chunks, with the call returning between each chunk so the
+   rest of the script can run.
+
+.. note::
+
+   For driving WS2812 / NeoPixel strips in particular, the
+   :mod:`neopixel` module wraps :func:`~machine.bitstream` in
+   a higher-level interface that handles colour-order
+   shuffling and bulk strip updates. Reach for
+   :func:`~machine.bitstream` directly when the protocol is
+   *not* WS2812 but still fits a high-low PDM shape.
+
+Measuring an incoming pulse
+---------------------------
+
+:func:`machine.time_pulse_us` measures the width of a single
+pulse on a pin. It waits for the line to reach the specified
+level (the start of the pulse), then measures how long the
+line stays at that level (the end of the pulse), and returns
+the duration in microseconds.
+
+The classic use is an HC-SR04 ultrasonic distance sensor. The
+camera sends a 10 µs trigger pulse, then waits for the echo
+pin to return a pulse whose width is the round-trip time of
+the sound:
+
+::
+
+    import time
+    from machine import Pin, time_pulse_us
+
+    trigger = Pin("P7", Pin.OUT, value=0)
+    echo    = Pin("P8", Pin.IN)
+
+    while True:
+        trigger.value(1)
+        time.sleep_us(10)
+        trigger.value(0)
+
+        width = time_pulse_us(echo, 1, timeout_us=30_000)
+        if width > 0:
+            # sound at ~343 m/s; round trip / 2 / 343 = distance (m)
+            distance_cm = (width * 343) / 2 / 10_000
+            print(distance_cm, "cm")
+
+        time.sleep_ms(100)
+
+The third argument is the timeout in microseconds, applied
+separately to "wait for the pulse to start" and "wait for the
+pulse to end". On timeout the function returns a negative
+value identifying which phase failed: ``-2`` if the pulse
+never started, ``-1`` if it started but never ended within
+the window.
+
+Both halves of the timeout matter for real sensors. An HC-SR04
+can take one to two milliseconds to start its echo, and the
+echo itself can be tens of milliseconds long for far objects.
+Sizing ``timeout_us`` to the maximum range needed keeps the
+measurement bounded.
+
+
+UART basics
+===========
+
+A UART (Universal Asynchronous Receiver-Transmitter) is the
+oldest and simplest way to move bytes between two
+microcontrollers, or between a microcontroller and a host PC.
+Two wires carry the data -- one for each direction -- and a
+shared ground returns the signal. Neither side runs a shared
+clock; they agree on a *baud rate* up front and recover bit
+timing from the data line itself.
+
+The frame
+---------
+
+Each character on the wire is wrapped in a frame: a start
+bit, the data bits, an optional parity bit, and one or two
+stop bits.
+
+.. figure:: https://docs.openmv.io/_images/uart-frame.svg
+   :alt: A UART frame waveform. The signal sits idle high
+         on the left, falls low for one bit time (the start
+         bit), then carries eight data bits in sequence, then
+         returns high for one bit time (the stop bit) before
+         returning to idle.
+
+   One UART frame: a start bit, eight data bits, and a stop
+   bit, each one bit period (``1 / baudrate`` seconds) wide.
+
+The line idles high. The receiver watches for a falling edge,
+which marks the start of a new frame. It then samples the data
+line once per bit period -- typically in the middle of each
+bit -- and reassembles the bits into a character. The stop bit
+returns the line to idle so the next start bit can be detected.
+
+The baud rate
+-------------
+
+The bit period -- and the speed of the link -- is set by the
+*baud rate*, the number of bits per second. ``9600``, ``19200``,
+``38400``, ``57600``, ``115200``, ``230400``, ``460800`` and
+``921600``
+are the standard values; ``115200`` is the most common default.
+Both ends must agree on the baud rate to within a few percent
+or the receiver samples the bits at the wrong points and the
+data comes back garbled.
+
+Higher baud rates move more data per second but are more
+sensitive to cable length, capacitance, and the precision of
+the clocks at each end. For short links between two boards on
+the same bench, ``115200`` to ``921600`` works comfortably.
+
+Wiring
+------
+
+A UART link uses three wires:
+
+.. figure:: https://docs.openmv.io/_images/uart-wiring.svg
+   :alt: Two boards labelled A and B, connected by three
+         wires. Board A's TX pin connects to board B's RX pin;
+         board B's TX pin connects to board A's RX pin; and
+         both boards' ground pins are tied together.
+
+   UART wiring: TX on one board goes to RX on the other, and
+   both grounds are tied.
+
+* **TX → RX, both ways.** Each board's transmit pin is the
+  other board's receive pin. A common newcomer mistake is to
+  wire TX → TX -- two outputs fighting each other, with no
+  data on either receiver.
+* **Shared ground.** The signal levels are referenced to
+  ground, so the two boards must have a common ground or the
+  receiver sees the wrong voltage on the line.
+
+Voltage levels and physical layers
+----------------------------------
+
+The signal levels on the camera's UART pins are 3.3 V CMOS:
+ground for a logical zero, 3.3 V for a logical one. Anything
+that speaks 3.3 V CMOS UART -- another microcontroller, a
+USB-to-serial adapter set to 3.3 V, a 3.3 V GPS module -- can
+be wired directly.
+
+.. note::
+
+   5 V CMOS UART devices (older microcontrollers, certain GPS
+   modules, some older sensor breakouts) speak the same UART
+   framing at 5 V logic levels. Wiring them directly to the
+   camera is unsafe: a 5 V TX driving the camera's RX exceeds
+   the absolute-maximum input voltage on cams that are not
+   5 V-tolerant, and the camera's 3.3 V TX may not reach the
+   5 V device's high threshold for a clean logical one.
+
+   Translating between the two voltages needs an *active line
+   driver* -- a dedicated bidirectional level-shifter IC with
+   its own drive transistors on both sides of each line. The
+   passive MOSFET-and-pull-up shifters from
+   :doc:`../gpio-output/level-shifting` are not enough here:
+   their rising edges rely on charging the line through a
+   resistor, which is fine at switch speeds but far too slow
+   for UART. At 115200 baud each bit lasts about 8 µs, and
+   the passive shifter's RC slew smears one bit into the
+   next.
+
+   An active line driver produces clean edges in both
+   directions at full UART rates. Pick a part rated for the
+   baud rate the link will run at, wire the camera's TX and
+   RX to the shifter's 3.3 V side, and wire the 5 V device's
+   TX and RX to the shifter's 5 V side.
+
+Three older physical layers use the same framing but different
+voltages, and need a level converter between them and a 3.3 V
+microcontroller:
+
+* **RS-232.** Used by serial ports on desktop PCs and some
+  industrial equipment. The line swings between roughly
+  ``±5 V`` and ``±15 V``, with idle at the negative rail.
+  Inverted polarity and high voltage compared to CMOS; a chip
+  from the MAX232 / MAX3232 family (or similar) handles the
+  conversion.
+* **RS-422.** A differential signalling standard for
+  point-to-point links (one driver, up to ten receivers). The
+  driver sends on a balanced pair of wires; the receiver sees
+  the *difference* between them and ignores common-mode noise
+  along the way. Full-duplex links use two pairs -- one for
+  each direction. RS-422 reaches tens of metres to a kilometre
+  depending on the baud rate, and an RS-422 transceiver chip
+  sits between the camera's TX / RX and the balanced pair.
+* **RS-485.** The multi-drop cousin of RS-422 -- the same
+  differential signalling, but designed to put up to 32 drivers
+  and receivers on one bus. Most links are half-duplex on a
+  single pair, with the driver and receiver of each node sharing
+  the same wires and software arbitrating who talks. Used in
+  industrial automation buses (Modbus, DMX512, Profibus) where
+  the wires run far and noise is bad; an RS-485 transceiver chip
+  sits between the camera's TX / RX and the differential pair.
+
+Both still send UART frames at the underlying bit level. The
+camera's :class:`machine.UART` configuration (baud rate, bits,
+parity, stop bits) is the same regardless of which physical
+layer carries the signal on the other side of the transceiver.
+
+
+UART in code
+============
+
+:class:`machine.UART` wraps one hardware UART channel. Construct
+one with the bus id and a baud rate; everything else has
+reasonable defaults:
+
+::
+
+    from machine import UART
+
+    uart = UART(3, baudrate=115200)
+
+The ``id`` selects which hardware UART to use; the value
+depends on the board (see the :doc:`/openmvcam/quickref` for
+the available bus numbers and pin assignments on a given cam).
+The default frame format is 8 data bits, no parity, one stop
+bit -- the "8N1" everyone expects.
+
+Writing and reading
+-------------------
+
+UART output goes through :meth:`~machine.UART.write`:
+
+::
+
+    uart.write("hello\n")
+    uart.write(b"\x01\x02\x03")
+
+``write`` accepts either a ``str`` (encoded as UTF-8) or a
+``bytes`` / ``bytearray``. It returns immediately once the
+bytes are queued in the TX buffer; the hardware finishes
+clocking them out in the background.
+
+Reads happen through three methods, depending on what is
+needed:
+
+::
+
+    n = uart.any()              # bytes available to read right now
+    data = uart.read(8)         # up to 8 bytes, or None on timeout
+    line = uart.readline()      # bytes ending in '\n', or None on timeout
+
+:meth:`~machine.UART.any` checks the RX buffer without
+blocking. :meth:`~machine.UART.read` reads a fixed number of
+bytes, returning ``None`` if the timeout (configurable via the
+``timeout`` argument in the constructor) expires first.
+:meth:`~machine.UART.readline` reads up to and including the
+next newline, useful for line-based protocols.
+
+A simple loop that echoes whatever it receives:
+
+::
+
+    uart = UART(3, baudrate=115200, timeout=100)
+
+    while True:
+        if uart.any():
+            data = uart.read()
+            uart.write(data)
+
+``read()`` with no length argument keeps reading bytes until
+the receive line stays quiet for the configured ``timeout``,
+then returns whatever was accumulated. With ``timeout=100``,
+each call here returns one *burst* of bytes -- everything the
+sender clocked out without a 100 ms gap between bytes. Without
+a timeout the call would have no signal that the sender is
+done and could hang indefinitely.
+
+Binary data with struct
+-----------------------
+
+Sending integers and floats over the wire is what the
+:mod:`struct` module is for. It packs fixed-width values into
+a ``bytes`` object using a format string that names the byte
+order and the type of each field:
+
+::
+
+    import struct
+
+    uart.write(struct.pack("<lhb", count, temperature_x100, status))
+
+The leading ``"<"`` chooses little-endian byte order; ``"l"``
+is a 32-bit signed integer, ``"h"`` is a 16-bit signed integer,
+``"b"`` is an 8-bit signed integer. The other side unpacks with
+the *same* format string:
+
+::
+
+    payload = uart.read(7)        # 4 + 2 + 1 = 7 bytes
+    count, temperature_x100, status = struct.unpack("<lhb", payload)
+
+The format string is the contract between the two ends. Any
+mismatch -- wrong byte order, wrong type sizes, wrong field
+order -- produces nonsense values.
+
+Buffering and high-rate reads
+-----------------------------
+
+A polling loop that calls :meth:`~machine.UART.any` and
+:meth:`~machine.UART.read` keeps up with most traffic on its
+own, as long as the main loop iterates fast enough to drain
+the receive buffer before it fills. Two constructor options
+matter when the rate climbs or the loop is busy.
+
+``rxbuf`` sets the size of the software RX buffer. The default
+is a few hundred bytes; for sensors that emit hundreds of
+bytes per burst, or when the main loop does long work between
+polls, enlarging the buffer keeps incoming bytes from being
+dropped while the loop is busy elsewhere:
+
+::
+
+    uart = UART(3, baudrate=115200, timeout=100, rxbuf=4096)
+
+Anything that arrives while the buffer is full is lost; size
+``rxbuf`` to cover the longest gap between drains.
+
+For sustained high rates, :meth:`~machine.UART.readinto` reads
+into a pre-allocated buffer instead of returning a fresh
+``bytes`` object each call:
+
+::
+
+    buf = bytearray(256)
+
+    while True:
+        n = uart.readinto(buf)
+        if n:
+            process(buf, n)
+
+No allocation happens on the read path, which matters when the
+heap is fragmented or when allocation latency would otherwise
+push past the inter-byte timing budget.
+
+
+
+Serial protocols, framing, and CRCs
+===================================
+
+:doc:`uart-code` moved bytes between two ends. By itself,
+that is not enough to build a reliable link. Three problems
+show up the moment a real device is at the other end of the
+wire:
+
+* **Where does a message start and end?** Bytes arrive in
+  a stream with no built-in delimiter. If the receiver misses
+  the first byte (powered up after the sender; brief
+  electrical glitch on the line), every byte after it is
+  off-by-one until the receiver finds a fresh resync point.
+* **How long is each message?** A 32-byte sensor reading
+  and a 4-byte status reply look identical at the byte level.
+  The receiver needs a way to know how many bytes belong to
+  the current message.
+* **Did the bytes arrive intact?** Noise can flip individual
+  bits. Without a check, the receiver happily acts on
+  corrupted data.
+
+The standard answer to all three is to wrap the data in a
+packet frame: a known byte sequence at the start, a length
+field, the payload itself, and a checksum at the end.
+
+Packet framing
+--------------
+
+A typical framing format:
+
+.. figure:: https://docs.openmv.io/_images/packet-frame.svg
+   :alt: Six fields drawn in sequence: a two-byte HEADER
+         labelled 0xAA 0x55, a one-byte CMD field selecting
+         which command this packet carries, a two-byte LEN
+         field giving the payload size, a one-byte HCRC field
+         covering HEADER plus CMD plus LEN, a variable-length
+         PAYLOAD of LEN bytes whose format depends on the CMD,
+         and a four-byte DCRC field covering the payload.
+
+   A framed packet with separate header and data CRCs: header
+   (magic bytes), command, length, header CRC, payload, data
+   CRC.
+
+Each field does one job:
+
+* **Header (magic bytes).** A fixed, unusual byte sequence
+  -- often two bytes like ``0xAA 0x55`` -- that the receiver
+  scans for in the incoming stream. When it finds the
+  sequence, it knows a new packet is starting and can throw
+  away any garbage that came before.
+* **Command.** A single byte that says *what* the packet is.
+  Different command values use different payload formats --
+  one command might mean "set servo angle" with two payload
+  bytes, another might mean "read sensor" with no payload,
+  another might be "log message" with a string. The receiver
+  dispatches on the command byte to know how to interpret
+  the rest of the packet.
+* **Length.** Two bytes giving the size of the payload in
+  bytes (little-endian here), allowing payloads up to about
+  64 KiB. The receiver reads exactly this many bytes once the
+  header CRC has been verified.
+* **Header CRC.** A one-byte checksum over the HEADER, CMD,
+  and LEN fields. The receiver checks it before reading any
+  payload, so a corrupted LEN is caught after just a handful
+  of bytes (see the CRC section below for why this matters).
+* **Payload.** Command-specific application data, exactly LEN
+  bytes long. The format is determined by the command byte: a
+  :mod:`struct`-packed record of fixed-width fields, a string,
+  raw memory -- whatever both sides agree on for that command.
+* **Data CRC.** A four-byte CRC over the payload bytes. The
+  receiver re-computes it from the bytes it just read and
+  drops the packet if it does not match.
+
+CRCs
+----
+
+The simplest "checksum" is the sum of all the bytes, modulo
+256 or 65536. It catches most single-bit flips but misses a
+lot of multi-bit errors and ignores byte ordering.
+
+A *cyclic redundancy check* (CRC) is the standard upgrade. It
+treats the input as one long binary number and divides it (in
+a special way) by a fixed *polynomial*; the remainder of the
+division is the CRC. Different polynomials catch different
+classes of errors; the common 8-, 16- and 32-bit polynomials
+each catch every burst of errors shorter than their width
+plus a large fraction of longer bursts.
+
+Why two CRCs
+~~~~~~~~~~~~
+
+The packet diagram above carries *two* separate CRCs -- one
+over the header (HEADER, CMD, LEN) and one over the payload.
+This is what a robust framing actually needs, because of how
+a single trailing CRC fails when the LEN field itself gets
+corrupted in transit:
+
+* The receiver acts on the corrupt LEN and reads that many
+  bytes from the wire -- possibly far more than the sender
+  intended.
+* Only the trailing CRC eventually tells the receiver
+  something went wrong, and only after all those bytes have
+  been consumed.
+* While the parser is stuck waiting for the wrong number of
+  bytes, real packets arriving behind the corrupt one get
+  swallowed as payload, and the receiver loses several packets
+  rather than just the one.
+
+Splitting the CRC fixes this:
+
+* The **header CRC** covers HEADER, CMD, and LEN. The
+  receiver checks it before reading any payload, so a
+  corrupt LEN is caught after a handful of bytes and the
+  parser resyncs immediately, taking down only the one
+  bad packet.
+* The **data CRC** covers the payload. Once the header CRC
+  has passed, the receiver knows it can trust LEN, reads
+  exactly that many payload bytes, and verifies them against
+  the data CRC.
+
+A common sizing -- and what this page uses -- is one byte
+for the header CRC (a CRC-8 is plenty for a five-byte header)
+and four bytes for the data CRC (a CRC-32 covers many
+kilobytes of payload with a vanishingly low collision rate).
+
+Helpers
+~~~~~~~
+
+MicroPython ships :func:`binascii.crc32` for the four-byte CRC
+directly. For the one-byte header CRC, a small helper using
+the polynomial Maxim's 1-wire devices use (``0x8C`` in
+reflected form) is short enough to write inline:
+
+::
+
+    def crc8(data: bytes) -> int:
+        crc = 0
+        for byte in data:
+            crc ^= byte
+            for _ in range(8):
+                crc = (crc >> 1) ^ 0x8C if crc & 1 else crc >> 1
+        return crc & 0xFF
+
+A complete encoder combines the two CRCs in one function:
+
+::
+
+    import binascii
+    import struct
+
+    def encode_packet(cmd: int, payload: bytes) -> bytes:
+        header = b"\xAA\x55" + bytes([cmd]) + struct.pack("<H", len(payload))
+        hcrc   = crc8(header)
+        dcrc   = binascii.crc32(payload)
+        return header + bytes([hcrc]) + payload + struct.pack("<I", dcrc)
+
+The inverse function recovers the command and payload from a
+complete packet, or returns ``None`` if either CRC check
+fails:
+
+::
+
+    def decode_packet(packet: bytes):
+        # Layout: HEADER(2) + CMD(1) + LEN(2) + HCRC(1) + PAYLOAD(LEN) + DCRC(4)
+        if len(packet) < 10 or packet[0:2] != b"\xAA\x55":
+            return None
+
+        header = packet[0:5]
+        if crc8(header) != packet[5]:
+            return None                       # header CRC mismatch
+
+        cmd    = packet[2]
+        length = struct.unpack("<H", packet[3:5])[0]
+        if len(packet) != 6 + length + 4:
+            return None                       # truncated or oversized
+
+        payload       = packet[6:6 + length]
+        received_dcrc = struct.unpack("<I", packet[6 + length:])[0]
+        if binascii.crc32(payload) != received_dcrc:
+            return None                       # data CRC mismatch
+
+        return cmd, bytes(payload)
+
+In practice the receiver does not get a whole packet handed to
+it -- bytes arrive one at a time over the UART, and a sender
+that pauses mid-packet (or a noisy line that loses a byte)
+cannot just be ``read()``-ed into a buffer of the right size.
+The next section runs the same decode logic byte by byte as a
+state machine.
+
+A state-machine receiver
+------------------------
+
+The receiver cannot just call ``uart.read(N)`` for some fixed
+``N`` -- it does not know how many bytes the next packet will
+be, and any junk on the line throws the alignment off. The
+solution is a small state machine that consumes the bytes one
+at a time and reacts based on where it is in the packet. The
+main loop polls :meth:`~machine.UART.any` to see how many
+bytes are buffered, drains them in one :meth:`~machine.UART.read`
+call, and feeds each byte through the state machine:
+
+::
+
+    import time
+    import binascii
+    import struct
+    from machine import UART
+
+    HEADER = b"\xAA\x55"
+    HEADER_LEN = len(HEADER)
+
+    # States, in the order the receiver walks through them per packet.
+    HUNT_FOR_HEADER = 0
+    READ_COMMAND    = 1
+    READ_LENGTH     = 2
+    READ_HEADER_CRC = 3
+    READ_PAYLOAD    = 4
+    READ_DATA_CRC   = 5
+
+    uart = UART(3, baudrate=115200)
+
+    # Receiver state plus partial-field buffers.
+    state        = HUNT_FOR_HEADER
+    matched      = 0              # bytes of HEADER matched so far
+    cmd          = 0              # CMD captured in READ_COMMAND
+    length_bytes = bytearray()    # raw LEN bytes (kept for the header CRC)
+    length       = 0              # unpacked LEN
+    payload      = bytearray()    # payload bytes accumulated in READ_PAYLOAD
+    crc_bytes    = bytearray()    # DCRC bytes accumulated in READ_DATA_CRC
+
+    def handle_packet(cmd: int, payload: bytes) -> None:
+        print("cmd", cmd, "payload", payload)
+
+    while True:
+        # Drain whatever bytes have arrived since the last poll. Idle
+        # briefly when the line is quiet so the loop is not a busy spin.
+        n = uart.any()
+        if not n:
+            time.sleep_ms(1)
+            continue
+
+        for b in uart.read(n):
+            if state == HUNT_FOR_HEADER:
+                # Walk the magic bytes. On a mismatch, back off by one
+                # so a stray HEADER[0] in the noise still counts as a
+                # possible start.
+                if b == HEADER[matched]:
+                    matched += 1
+                    if matched == HEADER_LEN:
+                        state = READ_COMMAND
+                        matched = 0
+                else:
+                    matched = 1 if b == HEADER[0] else 0
+
+            elif state == READ_COMMAND:
+                cmd = b
+                length_bytes = bytearray()
+                state = READ_LENGTH
+
+            elif state == READ_LENGTH:
+                # LEN is two bytes little-endian.
+                length_bytes.append(b)
+                if len(length_bytes) == 2:
+                    length = struct.unpack("<H", length_bytes)[0]
+                    state = READ_HEADER_CRC
+
+            elif state == READ_HEADER_CRC:
+                # Verify the CRC over HEADER + CMD + LEN before
+                # committing to read LEN payload bytes. A mismatch
+                # aborts here, after just five header bytes -- the
+                # next valid header re-syncs quickly.
+                expected = crc8(HEADER + bytes([cmd]) + length_bytes)
+                if b == expected:
+                    payload = bytearray()
+                    state = READ_PAYLOAD
+                else:
+                    state = HUNT_FOR_HEADER
+
+            elif state == READ_PAYLOAD:
+                payload.append(b)
+                if len(payload) == length:
+                    crc_bytes = bytearray()
+                    state = READ_DATA_CRC
+
+            elif state == READ_DATA_CRC:
+                # Verify the CRC over the payload and either deliver
+                # the packet or drop it. Either way, go back to
+                # looking for the next header.
+                crc_bytes.append(b)
+                if len(crc_bytes) == 4:
+                    expected = binascii.crc32(payload)
+                    received = struct.unpack("<I", crc_bytes)[0]
+                    if expected == received:
+                        handle_packet(cmd, bytes(payload))
+                    state = HUNT_FOR_HEADER
+
+Each byte advances the state machine by one step, or falls
+back to ``HUNT_FOR_HEADER`` after a complete packet, a bad
+header CRC, or a bad data CRC. Junk on the line that does not
+match the header is silently discarded; the next valid header
+re-syncs the receiver. The key safety property comes from the
+header CRC: if the LEN field is corrupted, the parser catches
+it after the header-CRC check (a handful of bytes), not after
+committing to read a wildly wrong number of payload bytes.
+
+Beyond the baseline
+-------------------
+
+The framing above is the *minimum* a serial link needs to
+recover from line noise: header magic, length, command, and
+two CRCs. It detects corruption and resyncs after garbled
+bytes, but it gives up on damaged packets rather than getting
+them through, and it leaves the sender with no idea what the
+receiver actually heard.
+
+Real-world serial protocols layer features on top of that
+baseline. Not every embedded link needs all of them -- pick
+what the application actually requires:
+
+* **Sequence numbers.** A small counter that increments on
+  every send. The receiver detects gaps (a packet was lost),
+  duplicates (the sender retransmitted but the receiver had
+  already accepted the first copy), and -- where the channel
+  can reorder -- out-of-order arrivals.
+
+* **Acknowledgements.** A dedicated ACK packet (or piggyback
+  bit in a reply) the receiver sends back to confirm each
+  packet. Without ACKs the sender has no way of knowing its
+  data arrived.
+
+* **Negative acknowledgements.** A NACK sent when the receiver
+  sees a CRC failure or a sequence gap. The sender
+  retransmits immediately, instead of waiting for an ACK
+  timeout to fire.
+
+* **Retransmission.** The sender keeps each unacked packet in
+  a small queue and re-sends it after a timeout (or on a
+  NACK). A retry limit and some backoff between retries stops
+  a permanently broken link from looping forever.
+
+* **Sliding windows.** Allowing several packets in flight
+  before requiring an ACK keeps throughput up on links where
+  the round-trip is long compared to the per-packet send time.
+  The cost is more sender-side state -- one slot per in-flight
+  packet.
+
+* **Flow control.** A signal from the receiver telling the
+  sender to slow down or pause when its buffer is filling up.
+  Implementations vary -- explicit XON / XOFF bytes,
+  credit-based grants where the receiver licences N more
+  packets at a time, or the RTS / CTS hardware lines on the
+  wire itself. Without flow control a fast sender eventually
+  overruns a slow receiver and packets get dropped.
+
+* **Protocol version.** A version field early in the packet
+  lets the format evolve. Each side can negotiate the highest
+  version both support at startup, or reject packets from
+  incompatible peers.
+
+* **Fragmentation and reassembly.** A two-byte LEN caps the
+  packet at 64 KiB; messages larger than that get split into
+  multiple packets and reassembled on the other side. The
+  fragmentation metadata (fragment index, total count, or a
+  "more fragments" flag) lives inside the payload.
+
+* **Heartbeats.** A small periodic packet that says "I'm
+  still here". The other side notices when the heartbeats
+  stop and reconnects (or fails loudly) instead of hanging
+  silently.
+
+* **Channels.** A channel or stream ID in the header so one
+  physical link carries several logical streams -- a control
+  channel, a telemetry channel, a log channel --
+  distinguished only by that field.
+
+* **Authentication.** A short tag computed from the payload
+  and a secret value that only the legitimate sender and
+  receiver know. The receiver computes the tag again from
+  the bytes it received and rejects the packet if the two do
+  not match. This catches both tampering (an attacker
+  modified the bytes) and -- if a sequence number or
+  timestamp is part of what the tag covers -- replay, where
+  an attacker records a real packet off the wire and
+  re-sends it later to make the receiver act on it twice.
+
+* **Encryption.** Scrambling the payload bytes with a shared
+  secret key so anyone reading the line without that key
+  sees only noise. Usually combined with the authentication
+  tag above -- without it, an attacker can feed garbage that
+  happens to pass the CRC and the receiver wastes cycles
+  trying to decrypt nonsense.
+
+A typical "good" protocol for industrial gear ends up with
+framing, dual CRC, sequence numbers, ACK / NACK with
+retransmit, and heartbeats. Real-world examples worth a look:
+*MAVLink* (drone telemetry, with sequence numbers, system /
+component IDs, and optional packet signatures), *Modbus*
+(industrial PLCs, with function codes and CRC), and
+*NMEA 0183* (the ASCII protocol every consumer GPS receiver
+speaks -- line-based messages with a checksum after a star
+delimiter).
+
+
+
+SPI basics
+==========
+
+SPI (*Serial Peripheral Interface*) is a synchronous serial
+bus designed for short-range, high-speed links between one
+controller and one or more peripheral devices on the same
+board. It is the standard interface for SD cards, displays,
+flash memory, ADCs and DACs, and a wide range of sensors.
+
+Where UART had no shared clock and recovered timing from the
+data line itself, SPI runs a clock wire alongside the data
+wires. The controller drives the clock at whatever rate it
+likes, and every other device on the bus samples the data
+in sync with that clock. There is no baud-rate guessing and no
+framing overhead -- just clock edges and bits.
+
+The four wires
+--------------
+
+A full-duplex SPI bus has four wires:
+
+* **SCK** (serial clock). Driven by the controller. Every bit
+  is clocked in or out on an edge of this signal.
+* **MOSI** (controller out, peripheral in). The controller's
+  output line; the peripheral samples bits off it.
+* **MISO** (controller in, peripheral out). The peripheral's
+  output line; the controller samples bits off it.
+* **CS** (chip select), sometimes called SS (peripheral
+  select). A separate line per peripheral. The controller pulls
+  CS low to start a transaction and high again to end it;
+  any peripheral with its CS deasserted ignores the bus
+  entirely and stops driving its MISO output.
+
+.. figure:: https://docs.openmv.io/_images/spi-transaction.svg
+   :alt: Four signal traces stacked: CS at top, SCK below it,
+         then MOSI and MISO. CS starts high (idle), drops low
+         to begin the transaction, then SCK clocks out eight
+         pulses while MOSI and MISO carry one byte of data
+         each, then CS returns high.
+
+   One SPI byte: CS goes low to select the peripheral, SCK
+   clocks eight bits, and MOSI and MISO transfer one byte
+   each in opposite directions.
+
+Every clock edge moves one bit in each direction at the same
+time. A single SCK pulse simultaneously sends one bit on MOSI
+and receives one bit on MISO -- SPI is *full-duplex* at the
+wire level. Software does not have to use both directions:
+write-only and read-only transactions are common, with the
+unused line either ignored or kept high.
+
+Clock polarity and phase
+------------------------
+
+Two configuration bits decide exactly which clock edge moves
+data:
+
+* **Clock polarity** (``polarity``, sometimes ``CPOL``) -- the
+  idle state of SCK. ``0`` means the clock idles low and
+  pulses high; ``1`` means the clock idles high and pulses
+  low.
+* **Clock phase** (``phase``, sometimes ``CPHA``) -- which
+  edge samples the data. ``0`` samples on the first edge of
+  each clock pulse (leading edge); ``1`` samples on the
+  second edge (trailing edge).
+
+Together these give four *modes*, conventionally called Mode
+0 through Mode 3. Mode 0 (``polarity=0, phase=0``) is the most
+common and a safe default for unknown devices.
+
+The crucial rule is that both ends must agree on the mode.
+Mismatched modes give garbage data even though the clock and
+data lines are wired correctly; if a device returns nonsense
+on the first transaction, the mode is the first thing to
+check.
+
+Multiple peripherals
+--------------------
+
+Several peripherals can share the same SCK, MOSI and MISO
+lines as long as each one has its own CS line driven by the
+controller:
+
+* All peripherals see the same clock and data, but each one
+  watches its own CS. With CS deasserted (high), a peripheral
+  ignores SCK and MOSI entirely and leaves MISO in a
+  high-impedance state so it does not fight other devices for
+  the line.
+* The controller asserts exactly one CS at a time, runs the
+  transaction, and deasserts CS to release the bus.
+
+A microcontroller with a single hardware SPI block can talk
+to as many peripherals as it has free GPIO pins to spare for
+CS lines -- there is no addressing on the bus itself.
+
+Strengths and weaknesses
+------------------------
+
+SPI's strengths and weaknesses both flow from its design:
+
+* **Fast.** Tens of megahertz is achievable on short traces
+  with simple level translation. SD-card readers and SPI
+  displays use this.
+* **Simple at the wire level.** No addressing, no
+  acknowledgements, no special start/stop conditions -- just
+  bits on the wires synchronised to a clock.
+* **Pin-hungry.** Three shared lines plus one CS per
+  peripheral. A board with five SPI devices uses eight pins
+  (three + five).
+* **Short-range.** SPI assumes clean, fast edges, which means
+  short traces on the same board. For longer links, I2C or
+  one of the framed buses is a better fit.
+
+
+SPI in code
+===========
+
+:class:`machine.SPI` wraps a hardware SPI controller; CS lines
+are ordinary :class:`~machine.Pin` outputs managed by the
+script. Construct an SPI instance with the bus id, the desired
+clock rate, and (if needed) the mode:
+
+::
+
+    from machine import SPI, Pin
+
+    spi = SPI(0, baudrate=1_000_000, polarity=0, phase=0)
+    cs = Pin("P3", Pin.OUT, value=1)         # CS idle high
+
+The ``id`` selects which hardware SPI block to use; the
+available numbers and the SCK/MOSI/MISO pins they map to
+depend on the board (see the :doc:`/openmvcam/quickref`).
+``baudrate`` is the SCK frequency in hertz -- the actual rate
+the hardware achieves may be slightly lower due to clock
+division, which the printed value of the SPI object will show.
+
+The CS pin is constructed with ``value=1`` so it idles
+deasserted. Every transaction asserts CS (drives it low),
+moves the bytes, and deasserts CS (drives it high) again.
+
+Reading, writing, exchanging
+----------------------------
+
+Three methods cover the common cases:
+
+::
+
+    cs.value(0)
+    spi.write(b"\x10\x20\x30")              # send 3 bytes, ignore what comes back
+    cs.value(1)
+
+    cs.value(0)
+    data = spi.read(4)                      # read 4 bytes; sends 0x00 while reading
+    cs.value(1)
+
+    rx = bytearray(2)
+    cs.value(0)
+    spi.write_readinto(b"\x9F\x00", rx)     # send 0x9F, 0x00; receive 2 bytes
+    cs.value(1)
+
+:meth:`~machine.SPI.write` is the write-only fast path; the
+controller pushes the bytes and discards whatever the
+peripheral sent back on MISO.
+:meth:`~machine.SPI.read` is the mirror image -- it clocks ``N``
+SCK pulses while sending a fixed dummy byte (``0`` by default)
+on MOSI and stores the MISO bytes.
+:meth:`~machine.SPI.write_readinto` is the full-duplex form:
+it sends the bytes from one buffer and stores the simultaneous
+MISO bytes into another. Many peripherals use this pattern --
+"send a command byte, then read the response in the next
+transfer" -- so the two operations naturally fit into one
+``write_readinto`` call.
+
+Most peripherals expect the CS line to stay asserted for the
+entire transaction (command bytes through response bytes), so
+keep the ``cs.value(0)`` / ``cs.value(1)`` brackets around the
+*whole* sequence, not around each method call.
+
+A typical sensor read
+---------------------
+
+Many SPI sensors organise their state as a set of internal
+registers and follow the same exchange shape: send the
+register address (with a read/write flag in the top bit),
+then read or write the register's bytes. A read of register
+``0x0F`` on such a device:
+
+::
+
+    rx = bytearray(2)
+    cs.value(0)
+    spi.write_readinto(b"\x8F\x00", rx)     # 0x80 = "read" flag, then reg 0x0F
+    cs.value(1)
+    register_value = rx[1]
+
+The first MISO byte is junk (the device was still receiving
+the command at that point); the second MISO byte holds the
+register contents. The exact command byte format -- which bit
+is the read/write flag, whether the address auto-increments
+on multi-byte reads -- is in the device's data sheet.
+
+Bit-banging
+-----------
+
+The :class:`SPI` instance above uses a hardware SPI block:
+a dedicated peripheral inside the MCU with its own shift
+register and clock generator that produces the SCK / MOSI /
+MISO waveforms in silicon. Software just hands it a byte; the
+bits move on the wire without further CPU help, leaving the
+CPU free to do other work in parallel.
+
+The alternative is bit-banging: software loops over each
+bit and toggles GPIO pins directly to produce the same
+waveform. There is no hardware peripheral involved -- the CPU
+drives SCK low, sets MOSI, drives SCK high, samples MISO, and
+so on for every bit of every byte. That ties the CPU up for
+the whole transaction and runs slower than the hardware
+block can, but it works on any pin and does not need a
+hardware block to be free.
+
+:class:`machine.SoftSPI` is the bit-bang implementation of
+the same SPI API:
+
+::
+
+    from machine import SoftSPI, Pin
+
+    spi = SoftSPI(baudrate=500_000, polarity=0, phase=0,
+                  sck=Pin("P2"), mosi=Pin("P0"), miso=Pin("P1"))
+
+Use it when the device needs to be on pins that are not
+wired to a hardware SPI block, or when the hardware blocks
+are all in use. ``500 kHz`` is a comfortable ceiling on most
+cams; the CPU stays busy for the whole transaction.
+
+
+I2C basics
+==========
+
+I2C (*Inter-Integrated Circuit*, pronounced "I-squared-C" or
+"I-two-C") is a two-wire serial bus designed for short-range
+links between chips on the same board. It sits between SPI and
+UART in priorities: slower than SPI but more pin-thrifty, and
+addressed (multiple devices on the same two wires) where SPI
+needs a dedicated CS line per device.
+
+I2C is the bus of choice for low-rate sensors -- accelerometers,
+temperature sensors, humidity sensors, magnetometers, real-time
+clocks, EEPROMs -- where shaving pins and bus complexity
+matters more than raw throughput.
+
+Two wires, both open-drain
+--------------------------
+
+An I2C bus has just two signals:
+
+* **SCL** (serial clock). Driven by the controller (most of
+  the time).
+* **SDA** (serial data). Driven by whichever device is
+  speaking right now -- controller during the address and
+  outgoing data, peripheral during reads and ACK bits.
+
+Both lines are open-drain: every device on the bus can pull
+the line down to ground but never drives it high. Two pull-up
+resistors on the bus (typically ``2.2 kΩ`` to ``10 kΩ`` to the
+supply rail) pull the lines high when nobody is pulling them
+low. The wired-OR behaviour falls out of this -- any device
+that pulls the line low wins, and the high state is just "no
+one is talking".
+
+The MCU's internal pull-ups on its SCL and SDA pins are usually
+*not* strong enough to act as the bus pull-ups on their own;
+external resistors on the bus are normally needed. Many sensor
+breakout boards include them already; check the data sheet
+before adding more.
+
+The transaction
+---------------
+
+Every I2C transaction follows the same shape:
+
+.. figure:: https://docs.openmv.io/_images/i2c-transaction.svg
+   :alt: SCL and SDA traces. SDA falls while SCL is high
+         (START), then SCL clocks bytes on SDA -- a 7-bit
+         address byte with a read/write bit and an ACK,
+         then a register byte and an ACK, then a data byte
+         and a NACK, then SDA rises while SCL is high (STOP).
+
+   An I2C transaction: START, 7-bit address + R/W, ACK,
+   register, ACK, data, NACK, STOP.
+
+The exchange unfolds bit by bit:
+
+* **START.** The controller pulls SDA low while SCL is still
+  high. This unusual edge tells every device on the bus that
+  a transaction is about to begin.
+* **Address + R/W.** The controller clocks out a 7-bit
+  peripheral address followed by one read/write bit (``0`` for
+  write, ``1`` for read).
+* **ACK / NACK.** After every byte, the *receiver* drives SDA
+  for one clock to ACK (low) or NACK (high). On the address
+  byte the peripheral acks if it recognises its own address;
+  if no device acks, the controller sees a NACK and knows the
+  address is not on the bus.
+* **Data bytes.** Each one followed by an ACK from the
+  receiver. On a write, the peripheral acks each byte; on a
+  read, the controller acks each byte it wants more of and
+  NACKs the last byte to tell the peripheral to stop.
+* **STOP.** The controller releases SDA high while SCL is
+  high, ending the transaction.
+
+A *repeated start* is a second START issued without a STOP in
+between -- the controller switches direction (write address,
+then read address) on the same peripheral without giving up
+the bus.
+
+Addressing
+----------
+
+The 7-bit address space covers ``0x08`` -- ``0x77``; the values
+at the ends are reserved for special purposes. Each device's
+address is set by the chip designer; many parts allow a few
+of the low bits to be changed at the board level (by tying a
+pin high or low) so two of the same sensor can sit on the same
+bus.
+
+If two devices share an address there is no way to talk to one
+of them without the other interfering, so check the data sheet
+before pairing parts. ``i2c.scan()`` (covered on
+:doc:`i2c-code`) walks the address space and reports which
+addresses respond, which is the standard way to find out what
+is on the bus.
+
+Strengths and weaknesses
+------------------------
+
+The bus's strengths and weaknesses set its niche:
+
+* **Two pins for many devices.** A single SCL/SDA pair can
+  carry a dozen sensors. SPI would need an extra CS pin per
+  device.
+* **Standard speeds.** ``100 kHz`` ("standard mode") and
+  ``400 kHz`` ("fast mode") cover almost every sensor.
+  ``1 MHz`` is reachable but starts asking more of the bus
+  capacitance and pull-up sizing.
+* **Slow relative to SPI.** Anything moving more than a few
+  hundred kilobits per second wants SPI instead.
+* **Address conflicts.** Two devices with the same address on
+  one bus is a hardware mistake the protocol cannot work
+  around.
+
+
+I2C in code
+===========
+
+:class:`machine.I2C` wraps a hardware I2C controller. Construct
+one with the bus id and an optional clock frequency:
+
+::
+
+    from machine import I2C
+
+    i2c = I2C(2, freq=400_000)
+
+``id`` selects which hardware I2C block to use; the available
+numbers and the SDA / SCL pins they map to depend on the board
+(see the :doc:`/openmvcam/quickref`). ``freq`` is the SCL
+clock rate -- ``100_000`` is standard mode, ``400_000`` is the
+common "fast" speed that most sensors support.
+
+Scanning the bus
+----------------
+
+:meth:`~machine.I2C.scan` walks the 7-bit address space and
+returns a list of every device that acknowledged its address:
+
+::
+
+    >>> i2c.scan()
+    [0x40, 0x68]
+
+This is the first thing to try after wiring up a new bus. If a
+device is on the list, the wiring and pull-ups are fine. If
+the list is empty (or shorter than expected), suspect the
+pull-ups, the wiring, or the device's address pins before
+suspecting code.
+
+The memory-mapped pattern
+-------------------------
+
+Most I2C sensors expose their state as a set of internal
+registers: status flags at one address, measurement bytes at
+another, configuration at a third. The library has two
+convenience methods that map directly to the "address the
+device, point at a register, then read or write data" pattern.
+
+Reading a register:
+
+::
+
+    addr = 0x68
+    reg  = 0x3B
+    data = i2c.readfrom_mem(addr, reg, 6)
+    # `data` is 6 bytes starting at register 0x3B
+
+That single call issues a START, sends the device address with
+the write bit, sends the register address (a repeated start),
+re-sends the address with the read bit, reads 6 bytes,
+NACKs the last one, and STOPs. The device sees the standard
+"read from register" sequence; the script sees one Python call.
+
+Writing to a register:
+
+::
+
+    i2c.writeto_mem(addr, 0x6B, b"\x00")
+
+That sequence is the same in mirror image: START, address +
+write, register, payload byte, STOP.
+
+For devices whose register address is two bytes wide (some
+EEPROMs and 16-bit-addressed memories) pass ``addrsize=16``:
+
+::
+
+    data = i2c.readfrom_mem(addr, 0x0100, 32, addrsize=16)
+
+Reading a sensor
+----------------
+
+A short loop reading the WHO_AM_I identifier and the
+accelerometer X axis on a typical MEMS sensor:
+
+::
+
+    import time
+    import struct
+    from machine import I2C
+
+    i2c         = I2C(2, freq=400_000)
+    ADDR        = 0x68
+    WHO_AM_I    = 0x75
+    ACCEL_X_HI  = 0x3B
+
+    print("WHO_AM_I:", i2c.readfrom_mem(ADDR, WHO_AM_I, 1)[0])
+
+    while True:
+        raw = i2c.readfrom_mem(ADDR, ACCEL_X_HI, 2)
+        x   = struct.unpack(">h", raw)[0]
+        print("accel X:", x)
+        time.sleep_ms(100)
+
+:meth:`~machine.I2C.readfrom_mem` returns a ``bytes`` object,
+so the WHO_AM_I read indexes the first (and only) byte with
+``[0]``. The accelerometer read is two raw bytes that have to
+be assembled into one signed 16-bit value; the :mod:`struct`
+format ``">h"`` does that as big-endian signed -- the byte
+order most I2C sensors use, opposite of the little-endian
+convention common on UART links.
+:func:`struct.unpack` always returns a tuple (one element per
+format character), so ``[0]`` pulls out the single value.
+
+Lower-level access
+------------------
+
+For devices that do not follow the register-map pattern, two
+lower-level methods give direct control over the address phase
+and data direction:
+
+::
+
+    i2c.writeto(addr, b"\x01\x02\x03")    # write 3 bytes to addr
+    data = i2c.readfrom(addr, 4)          # read 4 bytes from addr
+
+These are useful for devices with command-stream interfaces
+(displays, some real-time clocks) where the register-map
+convenience helpers do not quite fit.
+
+Bit-banging when no hardware block is available
+-----------------------------------------------
+
+:class:`machine.SoftI2C` provides the same API on arbitrary
+GPIO pins, bit-banging the protocol in software:
+
+::
+
+    from machine import SoftI2C, Pin
+
+    i2c = SoftI2C(scl=Pin("P5"), sda=Pin("P4"), freq=100_000)
+
+Use it when the device needs to be on pins that are not wired
+to a hardware I2C block, or when every hardware block is in
+use. The bit-bang loop is slower than hardware I2C and the CPU
+stays busy for the whole transaction, but the API is identical
+to :class:`~machine.I2C` so existing code switches over by
+changing only the constructor.
+
+
+CAN bus basics
+==============
+
+CAN (*Controller Area Network*) was originally designed by
+Bosch in the 1980s to wire all the electronic control units in
+a car onto one short shared bus. It still owns the car
+wire-harness, but the same robustness, real-time behaviour and
+multi-master design make it the default field bus in
+automation, robotics, agricultural and industrial equipment of
+every kind.
+
+CAN does not have a single "controller" and a set of
+"peripherals" the way SPI and I2C do. Every node on the bus is
+a peer, and any node can transmit whenever the bus is idle.
+What lets that scale is the bus's broadcast-with-arbitration
+design.
+
+Broadcast with priority arbitration
+-----------------------------------
+
+Every message on a CAN bus carries an *identifier* -- 11 bits
+for the classic standard frame, 29 bits for the extended
+variant. The identifier is not an address; it labels what the
+message is *about* (engine RPM, brake pedal position, battery
+voltage, etc.). When a node wants to send a value it broadcasts
+it tagged with the appropriate identifier, and every node on
+the bus sees the broadcast. Each receiver filters the bus
+in hardware to pick out only the IDs it cares about.
+
+If two nodes try to transmit at the same time, the bus's
+electrical design lets the message with the *lower* numeric
+identifier win without losing any bits.
+
+The trick is the bus's two electrical states: *dominant*
+(logically 0) and *recessive* (logically 1). The CAN wires are
+held high (recessive) by termination resistors when no node is
+talking; any node can pull the wires down (dominant) by
+sourcing current through its transceiver. The result is a
+wired-AND: if any single node drives the bus dominant, the
+line reads dominant, and it reads recessive only when every
+node has released it. Dominant always wins. (Some references
+call the same arrangement a *wired-OR*, treating "dominant" as
+the asserted signal rather than the AND of recessive bits --
+the physical behaviour is identical either way.)
+
+.. figure:: https://docs.openmv.io/_images/can-wired-and.svg
+   :alt: A single bus line held high by a termination
+         resistor to Vcc. Three nodes (A, B, C) hang off the
+         bus. Each node's output stage is a diode in series
+         with a switch to ground -- the diode points from the
+         bus down to the switch, so closing the switch pulls
+         the bus low through the diode but no node can drive
+         the bus high.
+
+   The wired-AND in concept form. Real CAN runs the same
+   logic over a differential pair (CAN_H / CAN_L) with the
+   transceivers and termination resistors split across both
+   wires, but the rule on the bus is the same: any node can
+   pull dominant, only when every node has released does it
+   read recessive.
+
+Arbitration uses this asymmetry directly. Every transmitting
+node sends its ID one bit at a time, MSB first, and watches
+the bus *while* it transmits. A node that puts a recessive bit
+on the wire but reads back dominant knows another node with a
+lower ID is transmitting at the same moment and has won that
+bit position. It stops driving the bus immediately and
+listens. The winning node, meanwhile, sees its own bits go out
+unchanged -- from its point of view nothing unusual happened.
+The lower-numbered ID wins because its dominant bits override
+the recessive bits the higher-numbered IDs would otherwise
+have sent at the same positions.
+
+The loser then waits for the bus to go idle and retries
+automatically. There are no collisions, no lost messages --
+only deterministic priority ordering.
+
+This is the *publish/subscribe* style that makes CAN work at
+scale: anyone can talk, anyone can listen, and the IDs make
+the dispatch implicit.
+
+The physical bus
+----------------
+
+The MCU's CAN controller does not drive the bus directly. It
+exposes only two 3.3 V CMOS pins -- TX (the bit it wants to
+send) and RX (the bit it sees on the bus) -- and those pins go
+to a separate chip called the CAN *transceiver* or *PHY*. The
+transceiver sits between the controller and the actual CAN
+wires; it is what knows how to speak to the bus.
+
+The bus itself is a 5 V differential pair:
+
+* **CAN_H** -- the "high" wire of the pair.
+* **CAN_L** -- the "low" wire.
+
+In the recessive state both wires sit at roughly 2.5 V (the
+midpoint of the bus's 5 V supply). In the dominant state the
+transceiver pulls CAN_H up to about 3.5 V and CAN_L down to
+about 1.5 V, producing a differential of around 2 V across
+the pair. Receivers sample the *difference* between the two
+wires, which makes the signal immune to common-mode noise
+picked up over long cable runs.
+
+The transceiver's two-way job:
+
+* On the TX side, it reads the controller's 3.3 V
+  single-ended TX pin and either drives CAN_H and CAN_L
+  apart for dominant or releases both for recessive.
+* On the RX side, it reads the differential CAN_H / CAN_L
+  pair and reports a single-ended 3.3 V level on its RX pin
+  back to the controller.
+
+Two 120-ohm termination resistors, one at each physical end
+of the cable, hold the bus at the recessive midpoint when no
+node is driving and damp reflections that would otherwise
+corrupt the differential signal on long runs.
+
+The data frame
+--------------
+
+A standard CAN data frame looks like this on the wire:
+
+.. figure:: https://docs.openmv.io/_images/can-frame.svg
+   :alt: Eight fields drawn in sequence: SOF (1 bit), ID
+         (11 bits), RTR (1 bit), control (6 bits), data
+         (0 -- 8 bytes), CRC (16 bits), ACK (2 bits), and
+         EOF (7 bits).
+
+   A standard CAN data frame: SOF, ID, RTR, control, data,
+   CRC, ACK, and EOF fields.
+
+Each field has a specific job:
+
+* **SOF** (start of frame). One dominant bit that says a new
+  frame is starting and synchronises every node's bit clock.
+* **ID** (identifier). The 11-bit identifier the bus arbitrates
+  on. Lower number = higher priority.
+* **RTR** (remote transmission request). Set on a *request*
+  for data rather than a *delivery* of data; receivers with
+  a matching ID respond by sending the data themselves.
+* **Control.** A 6-bit field encoding the data length
+  (``DLC``) and a few housekeeping bits.
+* **Data.** 0 to 8 bytes of payload (CAN Classic; CAN FD
+  extends this to 64 bytes).
+* **CRC.** 16 bits total: a 15-bit CRC over the preceding
+  fields plus a 1-bit CRC delimiter.
+* **ACK.** 2 bits total. In the first bit -- the ACK slot --
+  the transmitter releases the line and any node that
+  received the frame correctly pulls it low; the second bit
+  is a recessive delimiter. Lack of an ACK tells the
+  transmitter no node heard the frame and it should try
+  again.
+* **EOF** (end of frame). Seven recessive bits closing the
+  frame.
+
+All of that is generated and decoded by the CAN controller in
+hardware; software sees only the ID, the data, and a few
+flags.
+
+Where CAN sits
+--------------
+
+CAN's design choices set its niche:
+
+* **Robust.** Differential signalling on a twisted pair,
+  built-in error detection, deterministic priority arbitration,
+  and automatic retries make CAN survive electrically noisy
+  environments where UART and SPI would corrupt data.
+* **Multi-master.** Any node can talk at any time. No central
+  controller is required and no node is a single point of
+  failure.
+* **Bandwidth limited.** Classic CAN tops out around
+  ``1 Mbit/s``; CAN FD extends this. CAN is the right answer
+  when the link is *between* boards or modules, often over
+  metres of cable, with reliability as the priority.
+* **Higher-layer protocols.** The bare CAN bus does not say
+  what an ID means or how to split a long message into
+  fragments. Application-layer protocols -- CANopen, J1939,
+  ISO-TP/UDS, NMEA 2000 -- layer those rules on top. A
+  separate item worth knowing is the *DBC* file: a
+  vendor-specific text format that records which IDs carry
+  which bit-level signals on a particular vehicle or system.
+  DBC files are a metadata format describing one bus's
+  message layout, not a protocol of their own.
+
+The driver in :doc:`can-code` handles the wire-level CAN
+frame; mapping IDs to meanings is the application's job.
+
+
+CAN bus in code
+===============
+
+:class:`machine.CAN` wraps a hardware CAN controller. Bring
+it up with the bus id and a bit rate:
+
+::
+
+    from machine import CAN
+
+    can = CAN(1, 500_000)
+    can.set_filters(None)        # accept all incoming IDs
+
+The bit rate must match every other node on the bus exactly --
+``125_000``, ``250_000``, ``500_000`` and ``1_000_000`` are the
+common values. :meth:`~machine.CAN.set_filters` configures
+which IDs the controller will pass through; ``None`` means
+accept everything (useful while bringing up a link, less useful
+once the bus is busy).
+
+Inside the controller
+---------------------
+
+Three pieces of hardware sit between the camera's Python code
+and the bus -- the *TX mailboxes*, an *acceptance filter*, and
+the *RX FIFO*. Each one maps to a piece of the
+:class:`~machine.CAN` API used below.
+
+.. figure:: https://docs.openmv.io/_images/can-controller.svg
+   :alt: Block diagram of the CAN controller. On the TX side
+         (top), can.send() drops frames into one of three TX
+         mailboxes, and an arbitrate block picks which mailbox
+         goes to the bus next. On the RX side (bottom),
+         incoming frames pass through an acceptance filter;
+         accepted frames land in the RX FIFO and can.recv()
+         reads the FIFO from its oldest end.
+
+   The controller's TX mailboxes, acceptance filter, and RX
+   FIFO between the software and the bus.
+
+* **TX mailboxes.** A small set of hardware slots (typically
+  three) that hold outgoing frames the camera has handed off
+  via :meth:`~machine.CAN.send` but that have not yet reached
+  the bus. When the bus is idle, the controller picks the
+  mailbox with the lowest-numbered ID (highest priority) and
+  arbitrates for the bus on its behalf. The camera does not
+  pick the mailbox; the controller assigns one and returns
+  its index from :meth:`~machine.CAN.send`.
+
+* **Acceptance filter.** Configurable hardware that compares
+  each incoming frame's ID against a list of patterns and
+  discards anything that does not match. Frames that pass
+  continue into the RX FIFO; rejected frames are thrown away
+  by the controller without ever reaching Python.
+  :meth:`~machine.CAN.set_filters` configures these patterns.
+
+* **RX FIFO.** A *first-in, first-out* queue -- the first
+  frame in is also the first frame out, like a line at a
+  ticket counter. The controller appends received frames to
+  the back of the queue as they arrive, and
+  :meth:`~machine.CAN.recv` pulls them off the front in the
+  same order. The queue matters because the bus catches
+  frames in the background while Python is busy elsewhere;
+  the camera then drains them one at a time without losing
+  any, as long as the FIFO has not overflowed.
+
+Sending a frame
+---------------
+
+:meth:`~machine.CAN.send` queues a frame for transmission:
+
+::
+
+    can.send(0x123, b"\x01\x02\x03\x04")
+
+The first argument is the ID (an 11-bit integer for a standard
+frame); the second is the payload (0 to 8 bytes for CAN
+Classic). The call returns a small integer index identifying
+the hardware mailbox the frame went into. The controller
+arbitrates with any other transmitters on the bus and
+re-transmits as needed without further help from software.
+
+For extended (29-bit) IDs, OR the :data:`CAN.FLAG_EXT_ID` flag
+into the third argument:
+
+::
+
+    can.send(0x18FF1234, b"hello", CAN.FLAG_EXT_ID)
+
+Receiving frames
+----------------
+
+:meth:`~machine.CAN.recv` returns the next frame in the receive
+FIFO, or ``None`` if nothing is waiting:
+
+::
+
+    msg = can.recv()
+    if msg is not None:
+        can_id, data, flags, errs = msg
+        print("got", hex(can_id), bytes(data))
+
+The bus fills the RX FIFO in the background, so the main loop
+just drains it as fast as it iterates. As long as the FIFO is
+deeper than the longest gap between drains, no frames are
+lost.
+
+Filters
+-------
+
+A real bus is usually busy with frames the camera does not
+care about. Hardware filters let the controller drop unwanted
+IDs before they reach the FIFO. :meth:`~machine.CAN.set_filters`
+takes a list of ``(id, mask, flags)`` tuples; a frame passes
+the filter if its ID, masked by ``mask``, matches the
+configured ``id``:
+
+::
+
+    # Accept only IDs 0x100 - 0x10F (mask off the bottom 4 bits)
+    can.set_filters(((0x100, 0x7F0, 0),))
+
+    # Accept IDs 0x300 and 0x700 exactly
+    can.set_filters(((0x300, 0x7FF, 0),
+                     (0x700, 0x7FF, 0)))
+
+Unmatched frames are discarded by the controller and never
+appear at :meth:`~machine.CAN.recv`, which saves both buffer
+space and CPU time.
+
+Error states and recovery
+-------------------------
+
+A real CAN bus picks up transmission errors -- shorts to
+ground, missing nodes, electrical noise corrupting bits. The
+controller keeps two counters that track this behaviour: a
+Transmit Error Counter (TEC) and a Receive Error Counter
+(REC), each incremented when the controller detects an error
+and decremented after a successful transfer. The counter
+values put the controller into one of four states:
+
+* **Error Active** (TEC and REC both below 96). Normal
+  operation. When the node detects a bus error it transmits
+  a dominant *active error frame*, which forces every other
+  node to discard the in-progress frame so the sender can
+  retry.
+
+* **Error Warning** (either counter reaches 96). Still fully
+  active on the bus -- the warning state is a software
+  signal that errors are accumulating, not a behaviour
+  change.
+
+* **Error Passive** (either counter reaches 128). The node is
+  still on the bus but stops sending dominant error frames;
+  errors are now signalled with *passive* (recessive) error
+  frames so a faulty node cannot keep tearing up the bus for
+  everyone else.
+
+* **Bus Off** (TEC reaches 256). The controller has decided
+  this node is too unreliable to participate. It disconnects
+  from the bus, stops transmitting and acknowledging, and
+  stays out until software explicitly restarts it.
+
+The first three transitions are entirely automatic -- as the
+counters decrement after successful frames, the controller
+moves itself back toward Error Active without intervention.
+
+Bus Off is the one state that requires software action.
+:meth:`~machine.CAN.restart` resets the controller and
+returns it to Error Active. A typical pattern is to check
+the state from the main loop and restart after a short delay
+to give the bus time to settle:
+
+::
+
+    import time
+    from machine import CAN
+
+    can = CAN(1, 500_000)
+    can.set_filters(None)
+
+    while True:
+        if can.state() == CAN.STATE_BUS_OFF:
+            time.sleep_ms(100)
+            can.restart()
+        # ... rest of the loop
+
+The current counter values are available from
+:meth:`~machine.CAN.get_counters` for diagnostics -- a TEC
+that climbs steadily on an otherwise-quiet bus usually points
+at wiring, termination, or a misconfigured bit rate.
+
+
+
+Watchdog timer
+==============
+
+A *watchdog timer* is a piece of hardware that resets the
+microcontroller if the running script ever stops periodically
+poking it. The script "feeds" the watchdog from somewhere it
+knows is running healthy code; if a bug, a hang, or an
+unexpected exception ever keeps the camera from feeding the
+watchdog within a configured timeout, the chip resets itself
+and the script starts fresh.
+
+On a deployed device with no human nearby to power-cycle it,
+this is the difference between a transient bug that recovers
+in seconds and a brick that needs a service call.
+
+.. figure:: https://docs.openmv.io/_images/watchdog-countdown.svg
+   :alt: A graph of a watchdog counter over time. The counter
+         starts at the timeout value, drops linearly toward
+         zero, and is reloaded to the timeout each time the
+         script calls feed(). After three successful feed()
+         calls, a fourth interval has no feed() and the counter
+         reaches zero, triggering an MCU reset.
+
+   The watchdog counter ticks down from its timeout. Each
+   ``feed()`` reloads it; if it reaches zero, the chip resets.
+
+The machine.WDT class
+---------------------
+
+:class:`machine.WDT` enables the watchdog and exposes a single
+method, :meth:`~machine.WDT.feed`. Once started, the watchdog
+cannot be stopped -- the only ways out are feeding it on
+schedule or letting it reset the chip:
+
+::
+
+    from machine import WDT
+
+    wdt = WDT(timeout=2000)    # reset if not fed within 2 seconds
+
+    while True:
+        do_work()
+        wdt.feed()
+
+The ``timeout`` is in milliseconds. The right value depends on
+how long the longest legitimate iteration of the main loop
+takes, with comfortable headroom -- a 100-ms loop with a 2-s
+timeout has plenty of margin for a slow iteration without
+nuisance resets.
+
+Where to call feed()
+--------------------
+
+Where ``feed()`` lives is the critical design decision; the
+watchdog only catches bugs in the parts of the code that do
+*not* run between feeds.
+
+* **Call from the main loop, at the top or bottom.** The most
+  common pattern. The watchdog catches anything that hangs the
+  main loop -- a deadlock, an infinite ``while``, a peripheral
+  that never returns -- and resets the chip back into the loop.
+* **Do not call from an interrupt handler.** The point of the
+  watchdog is to catch hangs in the *normal* code path. An ISR
+  that fires regardless of whether the main loop is stuck
+  would keep feeding a watchdog that *should* be triggering.
+* **Do not call from inside a long blocking operation.** A
+  network request or sensor read that takes ten seconds is
+  exactly the kind of hang the watchdog should catch.
+  Putting ``feed()`` inside it defeats the protection.
+
+A guideline that works for most programs: feed once per main
+loop iteration, with the timeout set to several times the
+expected loop duration. If a single iteration legitimately
+needs longer than the timeout -- a deliberate calibration
+phase, say -- structure that phase as a series of smaller
+chunks with ``feed()`` between them, or change the timeout
+with :meth:`~machine.WDT.timeout_ms` (where supported) before
+entering it.
+
+Availability
+------------
+
+The watchdog is exposed on most OpenMV cams but not all -- the
+hardware is present on every part, but the Python API is not
+yet wired up everywhere. Check the :doc:`/openmvcam/quickref`
+or attempt to construct a :class:`~machine.WDT` and catch the
+``AttributeError`` if it is not supported.
+
+Even on cams where :class:`~machine.WDT` is not exposed, a
+field-deployed device can use a soft equivalent -- a separate
+task or main-loop step that monitors progress and triggers
+:func:`machine.reset` if anything looks wedged. It is less
+robust than a hardware watchdog (a wedged interrupt handler
+can take down the soft monitor too) but it covers the same
+cases at the application level.
+
+
+Real-time clock
+===============
+
+The microcontroller's millisecond clock -- the one behind
+:func:`time.ticks_ms` and the timer subsystem -- counts elapsed
+time since boot. The *real-time clock* (RTC) is separate
+hardware that tracks *wall-clock* time -- year, month, day,
+hour, minute, second -- and keeps running across resets and
+firmware updates. On cams with a backup battery wired to the
+RTC supply, it survives full power loss as well.
+
+The RTC is what a deployed camera uses to:
+
+* Time-stamp log entries and saved images with a real date.
+* Pace long-running tasks that should not drift over weeks or
+  months.
+
+The machine.RTC class
+---------------------
+
+:class:`machine.RTC` is a singleton -- one RTC per camera, no
+id needed:
+
+::
+
+    from machine import RTC
+
+    rtc = RTC()
+
+The current date and time live in
+:meth:`~machine.RTC.datetime`. Calling it with no arguments
+returns an 8-tuple:
+
+::
+
+    >>> rtc.datetime()
+    (2026, 5, 27, 4, 14, 30, 15, 0)
+
+The fields are
+``(year, month, day, weekday, hour, minute, second, subseconds)``.
+To set the clock, pass an 8-tuple of the same shape back:
+
+::
+
+    rtc.datetime((2026, 1, 21, 2, 10, 32, 36, 0))
+
+The camera keeps counting from that point. On a soft reset the
+time continues uninterrupted; on a full power cycle the RTC
+falls back to its default time unless a backup battery keeps
+it powered.
+
+When to set the RTC
+-------------------
+
+The RTC has no built-in way to know what time it is at boot.
+Three common patterns set it:
+
+* **From a network time source.** Cams that come up on
+  WiFi can fetch the time with :mod:`ntptime` and write it to
+  the RTC at startup.
+* **From a host over USB.** A companion script on a laptop
+  pushes the current time when the cam is plugged in.
+* **From a battery-backed external RTC chip.** A dedicated
+  RTC IC (often on a shield, with its own coin cell) keeps
+  better long-term time than the on-chip RTC and can be read
+  at boot to seed :meth:`~machine.RTC.datetime`.
+
+Some applications never need to set the RTC at all. A
+duty-cycled "wake every 60 seconds and take a reading" loop
+only cares about elapsed intervals, which :func:`time.ticks_ms`
+and the timed-sleep patterns in :doc:`low-power` handle without
+ever consulting the RTC's wall-clock value.
+
+
+Low-power and sleep modes
+=========================
+
+Battery-powered cameras and intermittently-active sensors do
+not need the CPU running at full speed all the time. The
+:mod:`machine` module exposes four progressively-deeper
+power-saving states -- ``active``, :func:`~machine.idle`,
+:func:`~machine.lightsleep`, and :func:`~machine.deepsleep`.
+Each step deeper turns more of the chip off and saves more
+power, at the cost of a longer wake-up. Picking the right one
+is a trade between how much power the camera saves and how
+fast it can react when something happens.
+
+Active
+------
+
+The default state. The CPU is running Python, every peripheral
+is clocked, and current draw is at its highest -- tens of
+milliamps on the camera's logic rail, plus whatever any
+attached accessories pull through it.
+
+idle()
+------
+
+:func:`machine.idle` gates the CPU clock until *any* interrupt
+fires (a peripheral, a timer, a pin IRQ). RAM is live,
+peripherals stay on, the clocks keep running -- only the CPU
+itself is paused, and it wakes in microseconds when there is
+work to do.
+
+Use it inside any tight polling loop that is waiting for
+something external to happen:
+
+::
+
+    import machine
+
+    while not button_pressed():
+        machine.idle()
+
+The CPU stops burning cycles on the ``while`` check itself and
+wakes naturally when the next event arrives -- a small saving
+that adds up over a loop that runs millions of times.
+
+lightsleep()
+------------
+
+:func:`machine.lightsleep` is the next step down. The CPU is
+stopped completely and most of the chip's internal clocks are
+switched off, but RAM and peripheral state are preserved. When the wake source
+fires, the script resumes from exactly where it called
+``lightsleep`` -- variables, open handles, and pending data
+all intact -- on the order of milliseconds later.
+
+::
+
+    import machine
+    from machine import Pin
+
+    wake_pin = Pin("P0", Pin.IN, Pin.PULL_UP)
+    wake_pin.irq(lambda _: None, trigger=Pin.IRQ_FALLING, wake=machine.SLEEP)
+
+    while True:
+        do_work()
+        machine.lightsleep()   # wakes on a falling edge on P0
+
+The wake source -- a pin IRQ here -- must be configured
+*before* the sleep call. Power draw drops significantly
+relative to active mode; the exact number depends on the
+board and what peripherals are still configured.
+
+deepsleep()
+-----------
+
+:func:`machine.deepsleep` is the deepest state. The CPU stops,
+peripherals are powered down, and RAM contents may be lost.
+The only things still drawing power are the wake circuit and a
+small bit of always-on logic.
+
+When the wake source fires, the chip *boots from the start of
+the main script* -- ``deepsleep`` does not return. The script
+distinguishes a deepsleep wake from a fresh power-on or hard
+reset using :func:`machine.reset_cause`:
+
+::
+
+    import machine
+
+    if machine.reset_cause() == machine.DEEPSLEEP_RESET:
+        # Woke from deepsleep -- restore state from non-volatile storage,
+        # take a measurement, etc.
+        pass
+    else:
+        # Fresh boot
+        pass
+
+    do_work()
+    machine.deepsleep(60_000)    # arm RTC wake for 60 s, sleep, then restart
+
+The millisecond argument to :func:`~machine.deepsleep` arms
+the on-chip RTC alarm internally -- the RTC is what carries
+the wake-up timing through the sleep, since most other timers
+are powered down. Calling :func:`~machine.deepsleep` with no
+argument leaves the wake-up to whatever source you configured
+separately (a pin IRQ, an externally-armed RTC alarm).
+
+Because the script restarts, anything the next iteration needs
+has to either be reconstructed at the top of ``main.py`` or
+persisted to flash (or to the RTC's backup registers, on parts
+that have them). Deepsleep gives the largest power saving but
+imposes the most program restructuring -- the application has
+to behave as a series of short "measurement bursts" separated
+by sleeps, rather than a long-running loop with state in RAM.
+
+Choosing a state
+----------------
+
+The right state depends on what the camera is waiting for:
+
+* **Tight polling loop, waiting milliseconds.** Use
+  :func:`~machine.idle`. The savings are small per cycle but
+  large in aggregate, and the wake is invisible.
+* **Idle for seconds or minutes between events.** Use
+  :func:`~machine.lightsleep`. State is preserved, wake is
+  fast, and power draw is a fraction of active mode.
+* **Idle for minutes or longer between brief bursts of work.**
+  Use :func:`~machine.deepsleep`. The chip is effectively off
+  between events, and the script structure shifts to a wake,
+  measure, sleep loop.
+
+Whatever the state, the *wake source* matters as much as the
+state itself -- a deepsleep that wakes only on a timer is a
+duty-cycled measurement loop; a lightsleep that wakes on a pin
+IRQ is an event-driven sensor. The :mod:`machine` module's
+sleep functions, :class:`~machine.RTC` alarms, and
+:meth:`~machine.Pin.irq` together give the building blocks.
+
+
+Wrap up
+=======
+
+The :mod:`machine` module is now a familiar surface. The
+camera can talk to the physical world along several paths:
+
+* **GPIO output and input.** Drive an LED, switch a transistor,
+  read a button -- the building blocks of every hardware
+  project. Pull resistors and debouncing make those reads
+  reliable.
+* **Analog signals.** Read a sensor or a potentiometer with
+  the ADC; produce a controlled voltage with PWM and an RC
+  filter when no DAC is available.
+* **PWM applications.** Dim an LED, vary the speed of a DC
+  motor through an H-bridge, position a servo. Same waveform,
+  different averagers (the eye, the motor's inductance) and
+  different framing (duty cycle vs absolute pulse width).
+* **Serial buses.** UART for asynchronous point-to-point
+  links; SPI for fast on-board peripherals with one CS per
+  device; I2C for slow multi-device sensor buses on just two
+  wires; CAN for robust multi-master field buses between
+  modules.
+* **Production patterns.** A watchdog timer to recover from
+  hangs; sleep modes to stretch a battery; both essential the
+  first time a camera leaves the bench.
+
+That coverage is enough to build the "sense, plan, act" loop
+of an embedded device: read sensors over I2C / SPI / ADC,
+make decisions in Python, drive actuators through PWM / GPIO,
+report status over UART / CAN, sleep between events.
+
+What is *not* in this section is the camera's other half --
+its imaging pipeline. That is the subject of the next
+super-section, which picks up where the :mod:`machine` module
+leaves off and shows how the same Python loop drives an
+image sensor, runs computer-vision algorithms over the frames,
+and feeds the results back into the same actuators and buses
+covered here.
 
 
 Script Structure
@@ -6376,255 +10714,6 @@ Here's an example of this::
 
 Note that if you do not have an infinite while loop in your code then once your
 OpenMV Cam finishes running the script it will sit there and do nothing.
-
-
-I/O Tutorial
-============
-
-Before getting into machine vision topics we're going to talk about I/O pin
-control on your OpenMV Cam. It's important you know how to toggle I/O pins,
-transmit and receive serial data, and put your OpenMV Cam to sleep so that you
-can create a system that's able to "sense", "plan", and "act" in one package.
-
-First, let's take a look at your OpenMV Cam's pinout below:
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-n6-pag7936.png
-    :alt: OpenMV N6 PAG7936 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-ae3-pag7936.png
-    :alt: OpenMV AE3 PAG7936 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-cam-rt1062-ov5640.png
-    :alt: OpenMV Cam RT1062 OV5640 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-cam-h7-plus-ov5640.png
-    :alt: OpenMV Cam H7 Plus OV5640 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-cam-h7-ov7725.png
-    :alt: OpenMV Cam H7 OV7725 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-cam-m7-ov7725.png
-    :alt: OpenMV Cam M7 OV7725 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-cam-m4-ov7725.png
-    :alt: OpenMV Cam M4 OV7725 Pinout
-    :width: 700px
-
-.. image:: https://docs.openmv.io/_images/pinout-openmv-cam-m4-ov2640.png
-    :alt: OpenMV Cam M4 OV2640 Pinout
-    :width: 700px
-
-Depending on the model of your OpenMV Cam you have 9-10 general purpose I/O pins
-available which can be used for low-speed digital input and output. Note that we
-use STM32 processors which have 5V tolerant I/O pins so you can hookup your
-OpenMV Cam directly to an Arduino or other 5V device without worry. The I/O pins
-are quite beefy too and can source or sink up to 25 mA each.
-
-Anyway, different I/O pins have different special functions. P0-P3, for example,
-are your OpenMV Cam's SPI bus pins which you can use to control SPI devices.
-P4-P5 are your OpenMV Cam's Asynchronous Serial or I2C bus bins to talk serial
-or I2C. P6 is your OpenMV Cam's ADC/DAC pin for 0V to 3.3V input and output. And
-P7-P8 (or P7-P9) are your OpenMV Cam's Auxiliary I/O pins.
-
-The PYB Module
---------------
-
-All microcontroller I/O functionality is available from the `pyb` (Python
-Board) module. You just need to ``import pyb`` in your script to get access to
-it. Once imported you'll have access to the ADC, CAN, DAC, I2C, Pin, Servo, SPI,
-and UART classes along with being able to control the board's power consumption.
-
-.. toctree::
-
-   led_control.rst
-   gpio_control.rst
-   analog_io.rst
-   uart_control.rst
-
-.. note::
-
-    The tutorial is not complete at right now. Please see the quick reference
-    and library for more documentation.
-
-
-LED Control
-===========
-
-Your OpenMV Cam has an RGB LED and two IR LEDs on board. You can control the
-red, green, and blue segments of the RGB LED individually and the two IR LEDs
-as one unit. To control the LEDs first import the `pyb` module. Then create
-an LED class object for the particular LED you want to control::
-
-    import pyb
-
-    red_led = pyb.LED(1)
-    green_led = pyb.LED(2)
-    blue_led = pyb.LED(3)
-    ir_leds = pyb.LED(4)
-
-The `pyb.LED()` call creates an LED object which you can use to control a
-particular LED. Pass `pyb.LED()` "1" to control the red RGB LED segment, "2" to
-control the green RGB LED segment, "3" to control the blue RGB LED segment, and
-"4" to control the two IR LEDs.
-
-After creating the LED control objects like above I heavily recommend that you
-call the `pyb.LED.off()` method for a new LED to put it into a known state.
-
-Anyway, there are three methods you can call for each LED, `pyb.LED.off()`,
-`pyb.LED.on()`, and `pyb.LED.toggle()` which do exactly that.
-
-Unlike other MicroPython Boards the OpenMV Cam doesn't support the
-``intensity()`` method to allow for PWM dimming of the LEDs. We re-purposed the
-timer that was used for LED dimming for generating a clock source to power the
-camera chip.
-
-Finally, use the RGB LED for indicator purposes in your script. As the IR LEDs,
-those are for night vision. When you switch out your OpenMV Cam's regular lens
-for our IR lens (which is a lens without an IR filter) you can then turn on the
-IR LEDs so that your OpenMV Cam can see in the dark. The IR LEDs are strong
-enough to illuminate about 3 meters in front of your OpenMV Cam in pitch black.
-
-
-GPIO Control
-============
-
-Your OpenMV Cam has between 9 (OpenMV Cam M4) to 10 (OpenMV Cam M7) general
-purpose I/O pins onboard for talking to the real-world. We're probably going to
-keep the pin count this low moving into the future to keep the OpenMV Cam tiny.
-
-Anyway, there are a few ways to use GPIO pins.
-
-As an Input
------------
-
-To use a GPIO pin as an input just do::
-
-    import pyb
-
-    p = pyb.Pin("P0", pyb.Pin.IN)
-    p.value() # Returns 0 or 1.
-
-The `pyb.Pin()` constructor creates a pin object which you will use to control
-the I/O pin on your OpenMV Cam. The string you pass to the OpenMV Cam should be
-``P`` and then ``0-8`` for the OpenMV Cam M4 and ``0-9`` for the OpenMV Cam M7.
-
-Once you've created the GPIO pin use the `pyb.Pin.value()` method to get the
-state of the IO pin.
-
-Finally, if you need to pull-up or pull-down the IO pin pass `pyb.Pin.PULL_UP`
-or `pyb.Pin.PULL_DOWN` as additional arguments to `pyb.Pin()` constructor::
-
-    p = pyb.Pin("P0", pyb.Pin.IN, pyb.Pin.PULL_UP)
-
-As an Output
-------------
-
-Now, to use a GPIO pin as an output just do::
-
-    import pyb
-
-    p = pyb.Pin("P0", pyb.Pin.OUT_PP)
-    p.high() # or p.value(1) to make the pin high (3.3V)
-    p.low() # or p.value(0) to make the pin low (0V)
-
-It's that easy! However, what if you want to open-drain an output? Just do::
-
-    p = pyb.Pin("P0", pyb.Pin.OUT_OD)
-
-And now ``pyb.Pin.high()`` will cause the pin to float while ``pyb.Pin.low()`` will
-pull the pin low. If you need a pull-up resistor on the Pin just add::
-
-    p = pyb.Pin("P0", pyb.Pin.OUT_OD, pyb.Pin.PULL_UP)
-
-... to the constructor.
-
-
-Analog IO
-=========
-
-The OpenMV Cam has one analog I/O pin (P6) which can be used as an ADC input or
-DAC output. Here's how to use it to read a voltage value between 0V and 3.3V::
-
-    import pyb
-
-    adc = pyb.ADC(pyb.Pin('P6'))
-
-    while(True):
-        pyb.delay(10) # wait 10 ms
-        print("%f volts" % (((adc.read() * 3.3) + 2047.5) / 4095)) # read value, 0-4095
-
-The ADC has 12-bits of resolution so it will output a value between 0 and 4095
-for 0 to 3.3 volts. Finally, note that while the pin is in ADC mode it is not
-5V tolerant anymore.
-
-Next, to generate an analog output voltage you can put the I/O pin in DAC
-mode::
-
-    import pyb, math
-
-    dac = pyb.DAC(pyb.Pin('P6'))
-
-    counter = 0
-
-    while(True):
-        pyb.delay(10) # wait 10 ms
-        dac.write(int(math.sin(math.radians(counter % 360)) * 255))
-        counter += 1
-
-The above code generates a sin wave on the I/O pin which will go from 0 to 255
-for 0 to 3.3 volts. Again, note that while the pin is in DAC mode it is not
-5V tolerant anymore.
-
-
-UART Control
-============
-
-The OpenMV Cam has a main UART on pins P4 (TX) and P5 (RX) which you can use
-for serial communication. To create a UART object do the following::
-
-    import pyb
-
-    uart = pyb.UART(3, 115200, timeout_char = 1000)
-
-First, let's breakdown what we did. The first argument is the UART bus. This
-is the index of the UART bus on the OpenMV Cam. You have to call the UART
-constructor with this value because we're leveraging the `pyb` module from
-MicroPython's pyboard. The second value is the baudrate which can be any
-standard baudrate value you like. Finally, the third argument tells the driver
-to wait up to 1 second between sending chars if the UART is busy. The default
-value for ``timeout_char`` of 0 causes the driver to abadon sending characters
-if your code ever has to block waiting for space in the UART buffer which is
-something you don't want (generally).
-
-Anyway, once you've got a UART object then sending data is easy. Just do::
-
-    uart.write("Hello World\n")
-
-And that's it.
-
-But, if you'd like to send binary data instead, use the ``struct`` module. The
-``struct`` module will let you serialize data easily. Here's an example::
-
-    import ustruct
-
-    uart.write(ustruct.pack("<lhb", a_32_bit_value, a_16_bit_value, a_8_bit_value))
-
-The first string above tells ustruct how to pack data into a byte stream. "<"
-means the data will be packed in little-endian format. "l" means pack a long,
-"h" means pack a short, and "b" means pack a byte. See the
-`Python Struct Module <https://docs.python.org/3/library/struct.html>`_ for
-more information.
-
-Now, if you'd like to receive data just use the `pyb.UART.any()` method along with
-the `pyb.UART.read()` method. Note that you'll need to code up some sort of state
-machine to receive data reliability. For example, see the
-``Examples->Pixy Emulation->pixy_uart_emulation.py`` example.
 
 
 System Architecture
@@ -69712,7 +73801,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Wed 27 May 2026 07:00:11 UTC
+Generated Thu 28 May 2026 07:15:21 UTC
 
 Literals
 --------
@@ -69895,7 +73984,7 @@ Sample code::
 Core language
 =============
 
-Generated Wed 27 May 2026 07:00:11 UTC
+Generated Thu 28 May 2026 07:15:21 UTC
 
 Classes
 -------
@@ -70497,7 +74586,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f0983a05260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7fc023005260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -70679,7 +74768,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Wed 27 May 2026 07:00:11 UTC
+Generated Thu 28 May 2026 07:15:21 UTC
 
 Exception
 ---------
@@ -71546,7 +75635,7 @@ Sample code::
 Modules
 =======
 
-Generated Wed 27 May 2026 07:00:11 UTC
+Generated Thu 28 May 2026 07:15:21 UTC
 
 .. Preamble section inserted into generated output
 
@@ -71846,7 +75935,7 @@ Sample code::
 +--------------------------+--------------------------------------------+
 | ::                       | ::                                         |
 |                          |                                            |
-|     15142148126938410221 |     Traceback (most recent call last):     |
+|     14189273888346537789 |     Traceback (most recent call last):     |
 |                          |       File "<stdin>", line 11, in <module> |
 |                          |     ValueError: bits must be 32 or less    |
 +--------------------------+--------------------------------------------+
@@ -85422,103 +89511,4 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
-
-
-:orphan:
-
-Time and timing
-===============
-
-The :mod:`time` module groups together functions for sleeping
-(pausing the script for a known duration) and for measuring how
-long something takes. MicroPython adds millisecond and microsecond
-variants of both kinds of function for cases where the
-desktop-Python defaults are too coarse.
-
-Sleeping
---------
-
-Three sleep functions block the script for the requested
-duration:
-
-* :func:`time.sleep(s) <time.sleep>` -- pause for ``s`` seconds.
-  Accepts a float, so ``time.sleep(0.5)`` waits half a second.
-* :func:`time.sleep_ms(ms) <time.sleep_ms>` -- pause for ``ms``
-  milliseconds. Argument must be an integer.
-* :func:`time.sleep_us(us) <time.sleep_us>` -- pause for ``us``
-  microseconds.
-
-::
-
-    import time
-
-    print("now")
-    time.sleep_ms(500)
-    print("half a second later")
-
-Use :func:`time.sleep_ms` for typical "wait a bit" needs and
-:func:`time.sleep_us` only when the timing must be tight. Plain
-:func:`time.sleep` is also fine, but the integer-argument variants
-avoid floating-point conversion and read more naturally for short
-intervals.
-
-Reading the clock
------------------
-
-To measure how long a piece of code takes, read the clock before
-and after:
-
-* :func:`time.ticks_ms` -- the current tick value in milliseconds.
-* :func:`time.ticks_us` -- the same in microseconds.
-
-::
-
-    import time
-
-    start = time.ticks_ms()
-    do_work()
-    elapsed = time.ticks_ms() - start
-    print("took", elapsed, "ms")
-
-This works *most* of the time. The tick counter rolls over (wraps
-back to zero) after a large but finite number of ticks, and naive
-subtraction across that wrap produces a wildly wrong negative or
-positive number.
-
-.. figure:: https://docs.openmv.io/_images/ticks-wraparound.svg
-   :alt: Number line from 0 to MAX with a start tick near MAX and
-         an end tick near 0; a dashed wrap-around arrow shows that
-         after MAX the counter returns to 0.
-
-   The tick counter wraps back to zero when it reaches the
-   integer limit. A plain subtraction across that wrap is wrong.
-
-ticks_diff
-----------
-
-To get the elapsed ticks correctly, even across a wrap, use
-:func:`time.ticks_diff`:
-
-::
-
-    import time
-
-    start = time.ticks_ms()
-    do_work()
-    elapsed = time.ticks_diff(time.ticks_ms(), start)
-    print("took", elapsed, "ms")
-
-The argument order is ``ticks_diff(later, earlier)`` -- the
-expression reads "how far is *later* after *earlier*". The result
-is a signed integer; positive means ``later`` is in fact later,
-negative means it is in the past. The function handles the wrap
-internally.
-
-.. tip::
-
-   Always pair :func:`time.ticks_ms` / :func:`time.ticks_us` with
-   :func:`time.ticks_diff`. The raw subtraction is correct *most*
-   of the time, and the time it is wrong is when a script has
-   been running for a long time -- usually the worst time to
-   debug a timing glitch.
 

@@ -65,12 +65,14 @@ primer page is the place to start.
 Where to go from here
 ---------------------
 
-The next super-section -- **Basic hardware control** -- builds
-directly on the Python you now know. It introduces the camera's
-hardware surface (pins, peripherals, timing) and the patterns
-for talking to the chips on the board. Everything from this
-primer carries forward; you will not relearn ``def`` or
-``with`` or how :class:`bytearray` differs from :class:`bytes`.
+**Basic hardware control** builds directly on the Python you
+now know. Where the primer lived in memory, hardware control
+lives in the physical world -- voltages on pins, pulses on
+wires, bytes clocked over buses to other chips. The toolkit
+shifts to the :mod:`machine` module and a thin layer of
+electronics. Everything from the primer carries forward; you
+will not relearn ``def`` or ``with`` or how :class:`bytearray`
+differs from :class:`bytes`.
 
 When you hit a Python feature that feels unfamiliar in the
 hardware material, this primer is where to come back to.

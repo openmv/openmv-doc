@@ -6,7 +6,7 @@ OpenMV Cam Tutorial
 The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :numbered:
 
    overview.rst
@@ -16,8 +16,9 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
    python/index.rst
 
+   hardware/index.rst
+
    script_structure.rst
-   io_tutorial.rst
    system_architecture.rst
 
    numpy/index.rst

@@ -2,7 +2,7 @@
 <html lang="en" data-accent-color="blue" data-content_root="../../../../">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.31. Iterators and generators - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="5.32. async and await" href="async-and-await.html" /><link rel="prev" title="5.30. Comprehensions" href="comprehensions.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.31. Iterators and generators - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="5.32. Coroutines" href="coroutines.html" /><link rel="prev" title="5.30. Comprehensions" href="comprehensions.html" />
       <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/python/iteration/iterators-and-generators.html" /><script>
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
@@ -117,7 +117,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../files-and-data/struct-and-binary.html">5.29. Struct and binary data</a></li>
 <li class="toctree-l3"><a class="reference internal" href="comprehensions.html">5.30. Comprehensions</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">5.31. Iterators and generators</a></li>
-<li class="toctree-l3"><a class="reference internal" href="async-and-await.html">5.32. async and await</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coroutines.html">5.32. Coroutines</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../metaprogramming/introspection.html">5.33. Introspection</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../metaprogramming/dynamic-code.html">5.34. Dynamic code</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../micropython/floats.html">5.35. Working with floats</a></li>
@@ -126,8 +126,8 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.38. Wrap up</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../../script_structure.html">6. Script Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../io_tutorial.html">7. I/O Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">6. Hardware Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../script_structure.html">7. Script Structure</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../system_architecture.html">8. System Architecture</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">9. numpy / scipy on the OpenMV Cam</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../tls_certificates.html">10. Working with TLS certificates</a></li>
@@ -160,7 +160,8 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#the-iterator-protocol">5.31.1. The iterator protocol</a></li>
 <li><a class="reference internal" href="#yield-and-generator-functions">5.31.2. yield and generator functions</a></li>
 <li><a class="reference internal" href="#lazy-pipelines">5.31.3. Lazy pipelines</a><ul>
-<li><a class="reference internal" href="#when-yield-runs-out">5.31.3.1. When <code class="docutils literal notranslate"><span class="pre">yield</span></code> runs out</a></li>
+<li><a class="reference internal" href="#yield-from">5.31.3.1. <code class="docutils literal notranslate"><span class="pre">yield</span> <span class="pre">from</span></code></a></li>
+<li><a class="reference internal" href="#when-yield-runs-out">5.31.3.2. When <code class="docutils literal notranslate"><span class="pre">yield</span></code> runs out</a></li>
 </ul>
 </li>
 </ul>
@@ -186,7 +187,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/8cd98e4102368c49366049b54a516cd578aff82b/docs/openmvcam/tutorial/python/iteration/iterators-and-generators.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/8e5f94d940ca09de8778d7f017e9d652a9888b3b/docs/openmvcam/tutorial/python/iteration/iterators-and-generators.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -374,8 +375,39 @@ the consumer (<code class="docutils literal notranslate"><span class="pre">for</
 the chain; values exist only when something asks for them.</span><a class="headerlink" href="#id3" title="Link to this image">¶</a></p>
 </figcaption>
 </figure>
+<section id="yield-from">
+<h3><span class="section-number">5.31.3.1. </span><code class="docutils literal notranslate"><span class="pre">yield</span> <span class="pre">from</span></code><a class="headerlink" href="#yield-from" title="Link to this heading">¶</a></h3>
+<p>A loop that pulls items from another iterable and yields each
+one is common enough that Python provides a shortcut. The
+expression <code class="docutils literal notranslate"><span class="pre">yield</span> <span class="pre">from</span> <span class="pre">iter</span></code> yields each value the iterable
+produces, in order – as if the generator had a
+<code class="docutils literal notranslate"><span class="pre">for</span> <span class="pre">x</span> <span class="pre">in</span> <span class="pre">iter:</span> <span class="pre">yield</span> <span class="pre">x</span></code> loop inline:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">chain</span><span class="p">(</span><span class="o">*</span><span class="n">sources</span><span class="p">):</span>
+</span><span data-line="2">    <span class="k">for</span> <span class="n">source</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+</span><span data-line="3">        <span class="k">yield from</span> <span class="n">source</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="s2">&quot;abc&quot;</span><span class="p">):</span>
+</span><span data-line="6">    <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="mi">1</span>
+</span><span data-line="2"><span class="mi">2</span>
+</span><span data-line="3"><span class="mi">3</span>
+</span><span data-line="4"><span class="mi">4</span>
+</span><span data-line="5"><span class="mi">5</span>
+</span><span data-line="6"><span class="n">a</span>
+</span><span data-line="7"><span class="n">b</span>
+</span><span data-line="8"><span class="n">c</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">yield</span> <span class="pre">from</span></code> is exactly equivalent to the explicit <code class="docutils literal notranslate"><span class="pre">for</span></code>
+loop, just shorter, and it propagates <a class="reference internal" href="../../../../library/builtins.html#StopIteration" title="StopIteration"><code class="xref py py-exc docutils literal notranslate"><span class="pre">StopIteration</span></code></a>
+from the inner iterable up to the outer generator cleanly –
+useful when chaining several generators end-to-end.</p>
+</section>
 <section id="when-yield-runs-out">
-<h3><span class="section-number">5.31.3.1. </span>When <code class="docutils literal notranslate"><span class="pre">yield</span></code> runs out<a class="headerlink" href="#when-yield-runs-out" title="Link to this heading">¶</a></h3>
+<h3><span class="section-number">5.31.3.2. </span>When <code class="docutils literal notranslate"><span class="pre">yield</span></code> runs out<a class="headerlink" href="#when-yield-runs-out" title="Link to this heading">¶</a></h3>
 <p>Falling off the end of a generator function (or hitting an
 explicit <code class="docutils literal notranslate"><span class="pre">return</span></code>) raises <a class="reference internal" href="../../../../library/builtins.html#StopIteration" title="StopIteration"><code class="xref py py-exc docutils literal notranslate"><span class="pre">StopIteration</span></code></a> automatically.
 There is no need to raise it by hand; the surrounding <code class="docutils literal notranslate"><span class="pre">for</span></code>
@@ -399,10 +431,10 @@ when you genuinely need the whole sequence in memory.</p>
         <span>Previous</span><div class="title"><span class="section-number">5.30. </span>Comprehensions</div></div>
     </a>
   </div><div class="navigation-next">
-    <a href="async-and-await.html">
+    <a href="coroutines.html">
       <div class="page-info">
         <span>Next</span>
-        <div class="title"><span class="section-number">5.32. </span>async and await</div>
+        <div class="title"><span class="section-number">5.32. </span>Coroutines</div>
       </div>
       <i class="i-lucide chevron-right"></i>
     </a>
@@ -415,7 +447,7 @@ when you genuinely need the whole sequence in memory.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 27 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 28 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

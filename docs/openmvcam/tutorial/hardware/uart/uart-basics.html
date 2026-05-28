@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>6.18. UART basics - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="6.19. UART in code" href="uart-code.html" /><link rel="prev" title="6.17. Bit streams and pulse measurement" href="../pulse-io/pulse-io.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/hardware/uart/uart-basics.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c724137f" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/hardware/uart/uart-basics.html"/>
+  <meta property="og:title" content="6.18. UART basics"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../overview.html">1. Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../software_setup.html">2. Software Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware_setup.html">3. Hardware Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../openmvide_overview.html">4. OpenMV IDE Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">5. Python Overview</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">6. Hardware Control</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">6.1. Microcontrollers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">6.2. Timing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">6.3. Virtual timers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">6.4. Pins and peripherals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">6.5. The LED class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">6.6. Electronics basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">6.7. GPIO output</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">6.8. Level shifting</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">6.9. Switches and pull resistors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">6.10. GPIO input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">6.11. Debouncing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">6.12. Reading analog with the ADC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">6.13. Generating analog with PWM and an RC filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/led-dimming.html">6.14. LED dimming with PWM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/dc-motors.html">6.15. DC motor control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/servos.html">6.16. Servo control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pulse-io/pulse-io.html">6.17. Bit streams and pulse measurement</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">6.18. UART basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="uart-code.html">6.19. UART in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="serial-protocols.html">6.20. Serial protocols, framing, and CRCs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">6.21. SPI basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">6.22. SPI in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-basics.html">6.23. I2C basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-code.html">6.24. I2C in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-basics.html">6.25. CAN bus basics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-code.html">6.26. CAN bus in code</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">6.27. Watchdog timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">6.28. Real-time clock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">6.29. Low-power and sleep modes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">6.30. Wrap up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../script_structure.html">7. Script Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../system_architecture.html">8. System Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">9. numpy / scipy on the OpenMV Cam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tls_certificates.html">10. Working with TLS certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../battery_life.html">11. Battery Life Estimator</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../firmware_development.html">12. Building, flashing, and debugging the firmware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production.html">13. Releasing your OpenMV Cam Scripts for Production</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../more_information.html">14. More Information</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Libraries</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensors</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Language</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Internals</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">License</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#the-frame">6.18.1. The frame</a></li>
+<li><a class="reference internal" href="#the-baud-rate">6.18.2. The baud rate</a></li>
+<li><a class="reference internal" href="#wiring">6.18.3. Wiring</a></li>
+<li><a class="reference internal" href="#voltage-levels-and-physical-layers">6.18.4. Voltage levels and physical layers</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/8e5f94d940ca09de8778d7f017e9d652a9888b3b/docs/openmvcam/tutorial/hardware/uart/uart-basics.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Tutorial</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">6. </span>Hardware Control</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">6.18. </span>UART basics</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/uart-basics.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/uart-basics.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/uart-basics.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/uart-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/uart-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/uart-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="uart-basics">
+<h1><span class="section-number">6.18. </span>UART basics<a class="headerlink" href="#uart-basics" title="Link to this heading">¶</a></h1>
+<p>A UART (Universal Asynchronous Receiver-Transmitter) is the
+oldest and simplest way to move bytes between two
+microcontrollers, or between a microcontroller and a host PC.
+Two wires carry the data – one for each direction – and a
+shared ground returns the signal. Neither side runs a shared
+clock; they agree on a <em>baud rate</em> up front and recover bit
+timing from the data line itself.</p>
+<section id="the-frame">
+<h2><span class="section-number">6.18.1. </span>The frame<a class="headerlink" href="#the-frame" title="Link to this heading">¶</a></h2>
+<p>Each character on the wire is wrapped in a frame: a start
+bit, the data bits, an optional parity bit, and one or two
+stop bits.</p>
+<figure class="align-default" id="id1">
+<img alt="A UART frame waveform. The signal sits idle high on the left, falls low for one bit time (the start bit), then carries eight data bits in sequence, then returns high for one bit time (the stop bit) before returning to idle." src="../../../../_images/uart-frame.svg" />
+<figcaption>
+<p><span class="caption-text">One UART frame: a start bit, eight data bits, and a stop
+bit, each one bit period (<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">baudrate</span></code> seconds) wide.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>The line idles high. The receiver watches for a falling edge,
+which marks the start of a new frame. It then samples the data
+line once per bit period – typically in the middle of each
+bit – and reassembles the bits into a character. The stop bit
+returns the line to idle so the next start bit can be detected.</p>
+</section>
+<section id="the-baud-rate">
+<h2><span class="section-number">6.18.2. </span>The baud rate<a class="headerlink" href="#the-baud-rate" title="Link to this heading">¶</a></h2>
+<p>The bit period – and the speed of the link – is set by the
+<em>baud rate</em>, the number of bits per second. <code class="docutils literal notranslate"><span class="pre">9600</span></code>, <code class="docutils literal notranslate"><span class="pre">19200</span></code>,
+<code class="docutils literal notranslate"><span class="pre">38400</span></code>, <code class="docutils literal notranslate"><span class="pre">57600</span></code>, <code class="docutils literal notranslate"><span class="pre">115200</span></code>, <code class="docutils literal notranslate"><span class="pre">230400</span></code>, <code class="docutils literal notranslate"><span class="pre">460800</span></code> and
+<code class="docutils literal notranslate"><span class="pre">921600</span></code>
+are the standard values; <code class="docutils literal notranslate"><span class="pre">115200</span></code> is the most common default.
+Both ends must agree on the baud rate to within a few percent
+or the receiver samples the bits at the wrong points and the
+data comes back garbled.</p>
+<p>Higher baud rates move more data per second but are more
+sensitive to cable length, capacitance, and the precision of
+the clocks at each end. For short links between two boards on
+the same bench, <code class="docutils literal notranslate"><span class="pre">115200</span></code> to <code class="docutils literal notranslate"><span class="pre">921600</span></code> works comfortably.</p>
+</section>
+<section id="wiring">
+<h2><span class="section-number">6.18.3. </span>Wiring<a class="headerlink" href="#wiring" title="Link to this heading">¶</a></h2>
+<p>A UART link uses three wires:</p>
+<figure class="align-default" id="id2">
+<img alt="Two boards labelled A and B, connected by three wires. Board A's TX pin connects to board B's RX pin; board B's TX pin connects to board A's RX pin; and both boards' ground pins are tied together." src="../../../../_images/uart-wiring.svg" />
+<figcaption>
+<p><span class="caption-text">UART wiring: TX on one board goes to RX on the other, and
+both grounds are tied.</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<ul class="simple">
+<li><p><strong>TX → RX, both ways.</strong> Each board’s transmit pin is the
+other board’s receive pin. A common newcomer mistake is to
+wire TX → TX – two outputs fighting each other, with no
+data on either receiver.</p></li>
+<li><p><strong>Shared ground.</strong> The signal levels are referenced to
+ground, so the two boards must have a common ground or the
+receiver sees the wrong voltage on the line.</p></li>
+</ul>
+</section>
+<section id="voltage-levels-and-physical-layers">
+<h2><span class="section-number">6.18.4. </span>Voltage levels and physical layers<a class="headerlink" href="#voltage-levels-and-physical-layers" title="Link to this heading">¶</a></h2>
+<p>The signal levels on the camera’s UART pins are 3.3 V CMOS:
+ground for a logical zero, 3.3 V for a logical one. Anything
+that speaks 3.3 V CMOS UART – another microcontroller, a
+USB-to-serial adapter set to 3.3 V, a 3.3 V GPS module – can
+be wired directly.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>5 V CMOS UART devices (older microcontrollers, certain GPS
+modules, some older sensor breakouts) speak the same UART
+framing at 5 V logic levels. Wiring them directly to the
+camera is unsafe: a 5 V TX driving the camera’s RX exceeds
+the absolute-maximum input voltage on cams that are not
+5 V-tolerant, and the camera’s 3.3 V TX may not reach the
+5 V device’s high threshold for a clean logical one.</p>
+<p>Translating between the two voltages needs an <em>active line
+driver</em> – a dedicated bidirectional level-shifter IC with
+its own drive transistors on both sides of each line. The
+passive MOSFET-and-pull-up shifters from
+<a class="reference internal" href="../gpio-output/level-shifting.html"><span class="doc">Level shifting</span></a> are not enough here:
+their rising edges rely on charging the line through a
+resistor, which is fine at switch speeds but far too slow
+for UART. At 115200 baud each bit lasts about 8 µs, and
+the passive shifter’s RC slew smears one bit into the
+next.</p>
+<p>An active line driver produces clean edges in both
+directions at full UART rates. Pick a part rated for the
+baud rate the link will run at, wire the camera’s TX and
+RX to the shifter’s 3.3 V side, and wire the 5 V device’s
+TX and RX to the shifter’s 5 V side.</p>
+</div>
+<p>Three older physical layers use the same framing but different
+voltages, and need a level converter between them and a 3.3 V
+microcontroller:</p>
+<ul class="simple">
+<li><p><strong>RS-232.</strong> Used by serial ports on desktop PCs and some
+industrial equipment. The line swings between roughly
+<code class="docutils literal notranslate"><span class="pre">±5</span> <span class="pre">V</span></code> and <code class="docutils literal notranslate"><span class="pre">±15</span> <span class="pre">V</span></code>, with idle at the negative rail.
+Inverted polarity and high voltage compared to CMOS; a chip
+from the MAX232 / MAX3232 family (or similar) handles the
+conversion.</p></li>
+<li><p><strong>RS-422.</strong> A differential signalling standard for
+point-to-point links (one driver, up to ten receivers). The
+driver sends on a balanced pair of wires; the receiver sees
+the <em>difference</em> between them and ignores common-mode noise
+along the way. Full-duplex links use two pairs – one for
+each direction. RS-422 reaches tens of metres to a kilometre
+depending on the baud rate, and an RS-422 transceiver chip
+sits between the camera’s TX / RX and the balanced pair.</p></li>
+<li><p><strong>RS-485.</strong> The multi-drop cousin of RS-422 – the same
+differential signalling, but designed to put up to 32 drivers
+and receivers on one bus. Most links are half-duplex on a
+single pair, with the driver and receiver of each node sharing
+the same wires and software arbitrating who talks. Used in
+industrial automation buses (Modbus, DMX512, Profibus) where
+the wires run far and noise is bad; an RS-485 transceiver chip
+sits between the camera’s TX / RX and the differential pair.</p></li>
+</ul>
+<p>Both still send UART frames at the underlying bit level. The
+camera’s <a class="reference internal" href="../../../../library/machine.UART.html#machine.UART" title="machine.UART"><code class="xref py py-class docutils literal notranslate"><span class="pre">machine.UART</span></code></a> configuration (baud rate, bits,
+parity, stop bits) is the same regardless of which physical
+layer carries the signal on the other side of the transceiver.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../pulse-io/pulse-io.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">6.17. </span>Bit streams and pulse measurement</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="uart-code.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">6.19. </span>UART in code</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 28 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=3011ec97"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script></body>
+</html>

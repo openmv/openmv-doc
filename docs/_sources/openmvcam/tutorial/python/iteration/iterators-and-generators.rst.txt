@@ -137,6 +137,40 @@ the consumer (``for v in pipeline``) decides when to stop.
    Each ``next()`` on the consumer triggers one pull through
    the chain; values exist only when something asks for them.
 
+``yield from``
+~~~~~~~~~~~~~~
+
+A loop that pulls items from another iterable and yields each
+one is common enough that Python provides a shortcut. The
+expression ``yield from iter`` yields each value the iterable
+produces, in order -- as if the generator had a
+``for x in iter: yield x`` loop inline:
+
+::
+
+    def chain(*sources):
+        for source in sources:
+            yield from source
+
+    for v in chain([1, 2, 3], (4, 5), "abc"):
+        print(v)
+
+Output::
+
+    1
+    2
+    3
+    4
+    5
+    a
+    b
+    c
+
+``yield from`` is exactly equivalent to the explicit ``for``
+loop, just shorter, and it propagates :exc:`StopIteration`
+from the inner iterable up to the outer generator cleanly --
+useful when chaining several generators end-to-end.
+
 When ``yield`` runs out
 ~~~~~~~~~~~~~~~~~~~~~~~
 

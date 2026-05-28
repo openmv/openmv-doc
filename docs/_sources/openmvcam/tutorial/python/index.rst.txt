@@ -87,7 +87,7 @@ is Python code.
 
    iteration/comprehensions.rst
    iteration/iterators-and-generators.rst
-   iteration/async-and-await.rst
+   iteration/coroutines.rst
 
 .. toctree::
    :caption: Metaprogramming
