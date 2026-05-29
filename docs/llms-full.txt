@@ -35,8 +35,7 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
    hardware/index.rst
 
-   script_structure.rst
-   system_architecture.rst
+   vision/index.rst
 
    numpy/index.rst
 
@@ -10615,182 +10614,2671 @@ sleep functions, :class:`~machine.RTC` alarms, and
 Wrap up
 =======
 
-The :mod:`machine` module is now a familiar surface. The
-camera can talk to the physical world along several paths:
+You have walked through the parts of the :mod:`machine`
+module that come up the moment a script talks to the
+physical world:
 
-* **GPIO output and input.** Drive an LED, switch a transistor,
-  read a button -- the building blocks of every hardware
-  project. Pull resistors and debouncing make those reads
-  reliable.
-* **Analog signals.** Read a sensor or a potentiometer with
-  the ADC; produce a controlled voltage with PWM and an RC
-  filter when no DAC is available.
-* **PWM applications.** Dim an LED, vary the speed of a DC
-  motor through an H-bridge, position a servo. Same waveform,
-  different averagers (the eye, the motor's inductance) and
-  different framing (duty cycle vs absolute pulse width).
-* **Serial buses.** UART for asynchronous point-to-point
-  links; SPI for fast on-board peripherals with one CS per
-  device; I2C for slow multi-device sensor buses on just two
-  wires; CAN for robust multi-master field buses between
+* **GPIO output and input** -- driving an LED or a
+  transistor, reading a button or a limit switch. The
+  building blocks every hardware project rests on, with pull
+  resistors and software debouncing for reads that have to
+  be reliable.
+
+* **Analog signals** -- reading a sensor, a potentiometer, or
+  any other continuously-varying voltage with the ADC; and,
+  when no DAC is available, producing a controlled voltage
+  with PWM and a low-pass RC filter.
+
+* **PWM applications** -- dimming an LED, varying the speed
+  of a DC motor through an H-bridge, positioning a servo.
+  One waveform, different physical averagers (the eye, the
+  motor's inductance) and different framings (duty cycle
+  versus absolute pulse width).
+
+* **Serial buses** -- :mod:`UART` for asynchronous
+  point-to-point links; :mod:`SPI` for fast on-board
+  peripherals with one chip-select per device; :mod:`I2C`
+  for slow multi-device sensor buses on just two wires;
+  :mod:`CAN` for robust multi-master field buses between
   modules.
-* **Production patterns.** A watchdog timer to recover from
-  hangs; sleep modes to stretch a battery; both essential the
-  first time a camera leaves the bench.
 
-That coverage is enough to build the "sense, plan, act" loop
-of an embedded device: read sensors over I2C / SPI / ADC,
-make decisions in Python, drive actuators through PWM / GPIO,
+* **Production patterns** -- a watchdog timer to recover
+  from hangs, sleep modes to stretch a battery. Both become
+  essential the first time a camera leaves the bench.
+
+That is enough to build the *sense -- plan -- act* loop of
+an embedded device: read sensors over I2C / SPI / ADC, make
+decisions in Python, drive actuators through PWM / GPIO,
 report status over UART / CAN, sleep between events.
 
-What is *not* in this section is the camera's other half --
-its imaging pipeline. That is the subject of the next
-super-section, which picks up where the :mod:`machine` module
-leaves off and shows how the same Python loop drives an
-image sensor, runs computer-vision algorithms over the frames,
-and feeds the results back into the same actuators and buses
-covered here.
+Using this reference later
+--------------------------
+
+Treat the hardware chapters as reference material, not a
+one-pass read. The :mod:`machine` module reference page
+lists every class and method in one place when the question
+is just "what is the exact name of this call". The
+per-chapter pages here are where to come back for the
+"which knob does what, and why" view that the reference
+material does not give on its own.
+
+Where to go from here
+---------------------
+
+**Vision sensors** is the next major topic. Where this
+section taught the generic peripherals -- Pin, ADC, PWM,
+UART, SPI, I2C, CAN -- that show up on almost any MCU, the
+next section teaches the camera's *defining* peripheral
+very deeply: the image sensor, and the long chain of
+optics, silicon, and signal processing between photons
+hitting glass and a buffer of pixels in RAM. The toolkit
+shifts to the :mod:`csi` and :mod:`image` modules, but
+everything you have learned about driving GPIOs, talking
+over I2C, and using PWM carries forward unchanged --
+strobes, triggers, and sensor shields all use the same
+buses you have just covered.
 
 
-Script Structure
+Vision Sensors
+==============
+
+Every page so far has treated the OpenMV Cam as a small
+microcontroller that happens to have a camera attached.
+Vision sensors swaps the framing: the camera *is* the
+product, and everything else on the board exists to feed
+pixels out of it into Python.
+
+The :mod:`csi` module is the bridge. A single class
+(:class:`~csi.CSI`) wraps the long chain of physics and
+silicon between photons and a buffer. A lens focuses the
+scene onto a grid of photodiodes that turn photons into
+charge; an exposure / gain / read-out controller decides
+how brightly each pixel is reported; an *image signal
+processor* (ISP) corrects, debayers, colour-grades, and
+packs the pixels into a chosen format; and an MCU
+peripheral catches the resulting stream into RAM, ready
+for :meth:`~csi.CSI.snapshot` to return as an
+:class:`image.Image`.
+
+.. toctree::
+   :caption: Optics
+   :maxdepth: 1
+
+   optics/pinhole-camera.rst
+   optics/lenses-and-focus.rst
+   optics/field-of-view.rst
+   optics/real-lens-effects.rst
+
+.. toctree::
+   :caption: Sensor
+   :maxdepth: 1
+
+   sensor/sensor-grid.rst
+   sensor/shutter-types.rst
+   sensor/exposure-and-gain.rst
+   sensor/calibration.rst
+   sensor/data-bus.rst
+
+.. toctree::
+   :caption: Colour and the ISP
+   :maxdepth: 1
+
+   color/color-sensors.rst
+   color/debayering.rst
+   color/isp-pipeline.rst
+
+.. toctree::
+   :caption: Image formats
+   :maxdepth: 1
+
+   formats/pixel-formats.rst
+
+.. toctree::
+   :caption: CSI
+   :maxdepth: 1
+
+   csi/csi-basics.rst
+   csi/framebuffers.rst
+   csi/ide-preview.rst
+   csi/sensor-knobs.rst
+
+.. toctree::
+   :caption: Advanced
+   :maxdepth: 1
+
+   advanced/multi-sensor.rst
+   advanced/memory-pools.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst
+
+
+The pinhole camera
+==================
+
+Before there is a sensor there is an image to form, and the
+geometry of that image is set by whatever optical element
+sits in front of the sensor. The simplest such element is a
+pinhole -- a single small opening in an otherwise opaque
+wall, and the conceptual ancestor of every camera lens.
+
+Image formation
+---------------
+
+A scene has to be lit for there to be anything to image. Light
+from the sun, a lamp, or any other source hits the objects in
+the scene; each point on each object absorbs some of that
+light and scatters the rest in every direction. Those
+scattered rays are what the camera collects.
+
+Most of the rays leaving any one scene point hit the wall of
+the box and stop; the handful that pass through the pinhole
+each travel in a straight line and strike the back of the
+box at a single point determined by the pinhole's geometry.
+
+.. figure:: https://docs.openmv.io/_images/pinhole-projection.svg
+   :alt: A vertical arrow on the left represents an object in
+         the scene. Two rays leave its tip and base, pass
+         through a pinhole in a wall, and continue in straight
+         lines to land on a back wall on the right, where they
+         form a smaller inverted arrow. The object distance D
+         is labelled between the scene and the pinhole; the
+         focal length f is labelled between the pinhole and
+         the back wall.
+
+   Each scene point projects through the pinhole onto a unique
+   point on the back wall. Because the rays cross at the
+   pinhole, the image is inverted.
+
+Top and bottom swap, and left and right swap with them.
+Cameras un-swap both further down the pipeline so the final
+image looks right side up.
+
+Projection geometry
+-------------------
+
+Let :math:`f` be the distance from the pinhole to the back
+wall and :math:`D` the distance from the pinhole to a scene
+point of real height :math:`H`. A straight ray from the top
+of the scene point through the pinhole lands on the back
+wall at an image height
+
+.. math::
+
+   h = H \cdot \frac{f}{D}
+
+A 1 m-tall object 5 m away, viewed by a pinhole 25 mm from
+the back wall, projects to an image :math:`25 / 5000 = 1/200`
+of its real size -- a 5 mm-tall inverted arrow on the wall.
+
+The distance :math:`f` here is the camera's *focal length*.
+It helps to meet the term in a setting where it is literally
+a length -- the depth between the imaging plane and the
+element that focuses light onto it. Every lens that replaces
+this pinhole later will have a focal length too, and the
+same :math:`f / D` projection scale will apply.
+
+The aperture trade-off
+----------------------
+
+A pinhole that is mathematically a point makes a perfectly
+sharp image of every scene point, but a point gathers no
+light -- the image is invisibly dim. Drilling out the hole
+lets more light through, so the image is brighter, but each
+scene point now projects through to a *spot* the size of the
+hole rather than to a single point. The image gets brighter
+and blurrier at the same time, and there is no hole size
+that gives both a sharp and a bright image.
+
+A lens removes the trade-off. It is a wider opening that
+*also* refocuses every ray entering it back to a single point
+on the wall, so the image is both bright (because the opening
+is wide) and sharp (because the rays still meet at one
+point). The next page introduces it in those terms.
+
+
+Lenses and focus
 ================
 
-Let's learn how to program your OpenMV Cam now! Note that this tuturial assumes
-you know how the python language works. If you don't know how python works
-please study up on it. There are plenty of web tuturials about how to write
-python code (finally, if you know any other C like programming language you can
-pick up python easily since it's VERY similar).
+A pinhole works but is dim. A lens replaces the pinhole with
+a wider aperture and refocuses every ray entering it back to
+a single point on the image plane, so the image is both
+bright and sharp -- the trade-off the pinhole forced disappears.
 
-Anyway, any script you write is going to have three distinct parts::
+Refraction
+----------
 
-    import ...
+Light slows down when it enters a denser medium (glass)
+from a lighter one (air), and the change of speed at the
+interface bends the ray. A lens is a piece of glass shaped
+so that every ray from a given scene point bends by exactly
+the amount needed to converge again at the same point on the
+back wall. Rays from a different scene point converge at a
+different point, and so on; the image is built up one scene
+point at a time, exactly like the pinhole's, but with vastly
+more light per point.
 
-    ...
+The thin-lens model
+-------------------
 
-    one time setup ...
+Real lens design accounts for glass shape, multiple elements,
+and the wavelength of light passing through them. The geometry
+the rest of this section needs comes from a simpler
+idealisation -- the *thin-lens model* -- which treats the
+lens as a vertical plane on the optical axis where rays
+change direction instantaneously, ignoring the lens's actual
+thickness.
 
-    ...
+The model is anchored by one starting observation: rays
+arriving at the lens *parallel* to the optical axis all
+refract to pass through the same point behind the lens. That
+point is the *focal point*, and its distance from the lens
+is the lens's *focal length*, conventionally written
+:math:`f`. A "50 mm lens" is one whose focal length is
+50 mm. Every lens has *two* focal points, one on each side,
+at equal distance :math:`f` -- the one on the image side and
+one symmetrically on the object side.
 
-    while(True): # Loop
-        ...
+From that single fact, two ray-tracing rules drop out and
+let the model locate any image point:
 
-The first part of your OpenMV Cam code should include some header comments,
-import statements to bring modules into scope, and finally constants and global
-variables in your code.
+* A ray entering the lens parallel to the axis refracts to
+  pass through the *far* focal point on the image side.
+* A ray passing through the *centre* of the lens continues
+  straight, undeflected -- because at the centre the lens is
+  thin enough that there is effectively no glass to bend the
+  ray.
 
-Next, you're going to want to do one-time setup code. This includes things like
-creating I/O pin objects, setting up the camera, defining helper functions,
-etc.
+Those rules might look like the description of a single
+ray-trace, but they describe what the lens does at every
+scene point at the same time. Each visible point scatters
+light in every direction; whichever of its rays enter the
+lens converge again at that point's image on the far side.
+The complete picture is the union of millions of those
+per-point convergences, all happening in parallel.
 
-Finally, you'll create a ``while(True):`` loop under which you'll put all code
-that gets called in a loop repeatedly until power-off.
+.. figure:: https://docs.openmv.io/_images/thin-lens-multipoint.svg
+   :alt: A vertical object arrow on the left of a lens, with
+         three sample points marked along its length. From
+         each sample point, a horizontal ray enters the lens,
+         refracts to pass through the same far focal point on
+         the optical axis, and continues to a distinct image
+         point on the right, where three image points trace
+         the inverted image arrow.
 
-Here's an example of this::
+   The same parallel-to-focal-point rule applies at every
+   point of the object. Each scene point produces its own
+   image point on the far side; together they trace out a
+   complete inverted image.
 
-    ### Header comments, import statements, etc.
+Zooming in on a single scene point makes the construction
+explicit. Two rays leaving that scene point -- one parallel
+to the axis (refracted through the far focal point) and one
+through the centre of the lens (undeflected) -- cross again
+on the far side of the lens, and where they cross is the
+image of that point.
 
-    # Hello World Example
-    #
-    # Welcome to the OpenMV IDE! Click on the green run arrow button below to run the script!
+.. figure:: https://docs.openmv.io/_images/thin-lens.svg
+   :alt: Two diagrams stacked. The top diagram shows three
+         parallel rays entering a vertical lens from the left
+         and refracting to converge at a focal point on the
+         optical axis at distance f behind the lens. The
+         bottom diagram shows the thin-lens construction: an
+         upright arrow on the left at distance u in front of
+         the lens, with the near and far focal points marked
+         on the axis. A parallel-then-through-focal-point ray
+         and a straight-through-centre ray leave the arrow's
+         tip, refract at the lens, and meet on the right at
+         distance v behind the lens, where an inverted image
+         arrow ends.
+
+   Top: parallel rays converge at the focal point. Bottom:
+   the two construction rays from a scene point locate its
+   image on the far side of the lens.
+
+The same geometry expressed algebraically is the *thin-lens
+equation*. It relates object distance :math:`u`, image
+distance :math:`v`, and focal length :math:`f`:
+
+.. math::
+
+   \frac{1}{u} + \frac{1}{v} = \frac{1}{f}
+
+Given any two of the three, the equation gives the third.
+
+For a very distant scene (:math:`u` large), the term
+:math:`1/u` becomes negligible and :math:`v` approaches
+:math:`f` -- distant scenes focus at the focal point. Closer
+scenes need :math:`v` larger than :math:`f`, meaning the
+lens has to sit *farther* from the sensor to stay in focus.
+That is what every focusing mechanism -- manual barrel,
+autofocus motor, fixed-focus shim -- is physically doing:
+shifting the lens back and forth so :math:`v` matches the
+:math:`u` of the scene the camera is asked to image sharply.
+
+Depth of field
+--------------
+
+A lens focused at one object distance only forms a perfectly
+sharp image of points at *exactly* that distance. Points
+nearer or farther focus to spots in front of or behind the
+sensor and arrive at the sensor as small blur circles. The
+range of object distances over which those blur circles are
+small enough to look sharp is the *depth of field* (DOF).
+
+.. figure:: https://docs.openmv.io/_images/depth-of-field.svg
+   :alt: Three object points at three different distances --
+         near, focused, far -- each projecting through the
+         lens to a small region on the image plane. The middle
+         object's image is a point; the near and far objects'
+         images are small blur circles. A band labelled
+         "in focus" marks the range of distances whose blur
+         circles fall under an acceptable size.
+
+   Only points at the focused distance project to true points
+   on the image plane; nearer and farther points arrive as
+   blur circles. The range of acceptable blur is the depth of
+   field.
+
+Depth of field grows when the lens is *stopped down* -- a
+smaller hole admits a narrower bundle of rays from each scene
+point, and those narrower bundles produce smaller blur
+circles for off-focus points. So a smaller aperture gives
+more DOF but admits less light, and a larger aperture admits
+more light but cuts DOF. Aperture is the second knob the lens
+hands the photographer, and like the pinhole/lens choice
+before it, it is a sharpness-vs-brightness trade.
+
+Aperture and F-number
+---------------------
+
+Lens apertures are expressed as *F-numbers*, the ratio of the
+focal length to the aperture diameter:
+
+.. math::
+
+   N = \frac{f}{D}
+
+where :math:`D` is the diameter of the opening. A 50 mm lens
+with a 25 mm-wide opening has :math:`N = 2`, written ``f/2``.
+Smaller F-numbers mean a wider opening (more light, less DOF);
+larger F-numbers mean a narrower opening (less light, more
+DOF). The ratio rather than absolute diameter is what matters
+because the same :math:`f / D` ratio gives the same image
+brightness for the same scene, regardless of focal length.
+
+The OpenMV Cam's stock lenses come with fixed apertures
+chosen for general-purpose use; the F-number is one of the
+specs given in the lens datasheet. Aperture matters less
+day-to-day than focal length on these cameras, but the
+concept matters to read a datasheet.
+
+
+Field of view
+=============
+
+A camera sees a cone of the world in front of it; everything
+outside that cone falls off the side of the sensor. The
+angular width of that cone is the *field of view* (FOV), and
+it is determined by two numbers -- the sensor size and the
+lens focal length.
+
+The FOV formula
+---------------
+
+.. figure:: https://docs.openmv.io/_images/fov-from-focal-length.svg
+   :alt: A vertical lens with a sensor of width S behind it
+         at distance f. Two rays leave the top and bottom
+         edges of the sensor, pass through the centre of the
+         lens, and diverge into the scene on the far side,
+         defining a cone whose full angle is labelled FOV.
+
+   A sensor of width :math:`S` at distance :math:`f` behind
+   the lens defines a cone of incoming rays. The full angle
+   of that cone is the field of view.
+
+A sensor of width :math:`S` sits at distance :math:`f`
+behind the lens, perpendicular to the optical axis. The
+thin-lens model says a ray through the centre of the lens
+continues undeflected, so trace one such ray from each edge
+of the sensor: each one heads straight through the lens
+centre and out into the scene on the far side. Together
+they bound the cone of light the sensor can collect, and
+the angle between them at the lens is the field of view.
+
+Half of that cone is a right triangle. One leg is the
+optical axis from the lens centre to the centre of the
+sensor -- length :math:`f`. The other leg is the
+half-sensor from the sensor centre out to one edge --
+length :math:`S / 2`. The hypotenuse is the ray itself,
+running from the lens centre to the sensor edge.
+
+The Pythagorean theorem ties the three side lengths
+together, but Pythagoras does not give angles, and the
+angle at the lens vertex is what we are after.
+*Trigonometry* is the bridge from side ratios to angles. In
+any right triangle, the *tangent* of an angle is defined as
+its opposite side over its adjacent side. For the half-FOV
+angle, the opposite side is the half-sensor :math:`S / 2`
+and the adjacent side is the optical-axis leg :math:`f`,
+so
+
+.. math::
+
+   \tan(\text{half-FOV}) = \frac{S / 2}{f} = \frac{S}{2f}
+
+The angle itself comes out by applying the inverse of the
+tangent -- the *arctangent* function -- to both sides:
+
+.. math::
+
+   \text{half-FOV} = \arctan \! \left( \frac{S}{2f} \right)
+
+The cone is symmetric about the axis, so the full FOV is
+twice the half-angle:
+
+.. math::
+
+   \text{FOV} = 2 \cdot \arctan \! \left( \frac{S}{2f} \right)
+
+Two consequences fall out of the formula:
+
+* **The lens focal length sets the angle, not the absolute
+  size.** A "wide-angle" lens is wide because its focal
+  length is *short* -- the smaller :math:`f` is, the larger
+  the ratio :math:`S / 2f` becomes, and the wider the cone.
+  A long focal length narrows the cone (a "telephoto" lens).
+* **The sensor size matters too.** Mounting the same lens in
+  front of a smaller sensor crops the cone -- the same lens
+  has a narrower field of view on a smaller sensor than on a
+  larger one. This is why focal length numbers on different
+  cameras are not directly comparable; the FOV depends on
+  both :math:`f` and :math:`S`.
+
+Three lens choices
+------------------
+
+Take a 4.8 mm × 3.6 mm sensor (a common small-format size
+roughly matching what OpenMV Cam sensors deliver) and three
+lens choices.
+
+==============   =============   ==============   ============   ============
+focal length     diagonal FOV    horizontal FOV   vertical FOV   description
+==============   =============   ==============   ============   ============
+2.8 mm           ~94°            ~81°             ~66°           wide angle
+4 mm             ~74°            ~62°             ~48°           normal
+8 mm             ~41°            ~33°             ~25°           narrow / tele
+==============   =============   ==============   ============   ============
+
+All three columns go through the same formula. The diagonal
+FOV uses :math:`S` equal to the sensor diagonal
+:math:`\sqrt{W^2 + H^2}` (6 mm for this sensor); the
+horizontal FOV uses :math:`S = W = 4.8` mm; the vertical
+FOV uses :math:`S = H = 3.6` mm. Halving the focal length
+nearly doubles each cone; doubling it nearly halves them.
+
+Lens datasheets usually publish the *diagonal* FOV as the
+single headline number, since it spans the sensor corner to
+corner. The horizontal and vertical FOVs are more directly
+useful when planning what will fit in the frame, because
+the frame is rectangular and a rectangular working area is
+bounded along the horizontal and vertical, not the
+diagonal.
+
+Choosing a focal length
+-----------------------
+
+The FOV the application needs is set by how big a region the
+camera has to see and how far away the camera will be. If
+the camera sits 1 m above a 0.6 m × 0.6 m work area, the
+angular FOV needed to cover one edge is
+:math:`2 \cdot \arctan(0.3 / 1) \approx 33°`, and the 8 mm
+lens above comes close.
+
+Going wider than the application needs makes objects smaller
+in the frame, wastes pixels on background, and increases
+lens distortion. Going narrower drops parts of the scene off
+the side of the sensor. The right lens is the longest focal
+length that still covers the working area at the camera's
+intended distance.
+
+
+
+Real-lens effects
+=================
+
+The thin-lens model and the FOV formula match real lenses
+well near the centre of the frame. Off-centre, three
+physical effects show up that the sensor pipeline has to
+account for: straight lines in the scene curve on the
+sensor, corner pixels record the scene dimmer than centre
+pixels, and the rays converging onto each pixel arrive at
+an angle that depends on where the pixel sits.
+
+Barrel and pincushion distortion
+--------------------------------
+
+The thin-lens model says straight lines in the scene
+project to straight lines on the sensor. Real lenses bend
+off-axis rays slightly differently from what the model
+predicts, and the result is that straight lines in the
+scene curve gently on the sensor. The bending is *radial*
+-- lines passing through the centre of the frame stay
+straight, but lines offset from the centre bow outward or
+inward.
+
+.. figure:: https://docs.openmv.io/_images/barrel-pincushion.svg
+   :alt: Three panels showing the same square outline. The
+         left panel is an ideal undistorted square. The
+         middle panel shows barrel distortion: the square's
+         sides bulge outward. The right panel shows
+         pincushion distortion: the square's sides bow
+         inward toward the centre. In all three panels a
+         horizontal and a vertical line through the centre
+         stay straight.
+
+   Left: an ideal frame. Middle: barrel distortion bulges
+   the edges outward. Right: pincushion distortion bows
+   them inward.
+
+Two flavours of distortion show up in practice:
+
+* *Barrel* distortion bows lines outward from the centre,
+  like the staves of a barrel. Short focal lengths
+  (wide-angle lenses) are the usual culprit, and a fish-eye
+  lens at the extreme is just severe barrel distortion.
+* *Pincushion* distortion pinches lines inward toward the
+  centre, like the laces of a pincushion. Long focal
+  lengths (telephoto lenses) tend to produce it, usually
+  more subtly than wide-angle barrel.
+
+Software can correct distortion after the fact, given a
+calibrated description of how a particular lens deviates
+from the ideal. The fix is a per-pixel coordinate remap
+from the distorted image back to where each ray would have
+landed without the bending.
+
+Light falloff at the corners
+----------------------------
+
+A uniformly bright scene comes out brighter at the centre
+of the recorded image than at the corners. Three geometric
+effects compound multiplicatively. For a scene point at
+angle :math:`\theta` from the optical axis:
+
+**1. The corner is farther from the lens than the centre.**
+A point at angle :math:`\theta` on the same scene plane
+sits at distance :math:`D / \cos\theta` from the lens,
+against distance :math:`D` for the on-axis point. The
+inverse-square law says intensity falls as the square of
+distance, so on its own this effect contributes
+
+.. math::
+
+   \frac{1}{(D / \cos\theta)^2} \div \frac{1}{D^2}
+   = \cos^2\theta
+
+-- two factors of :math:`\cos\theta`.
+
+**2. The lens aperture is foreshortened from the corner.**
+Seen from the off-axis point, the aperture surface is
+tilted by angle :math:`\theta` relative to the line of
+sight. Its projected area, and so the amount of light it
+collects, is reduced by :math:`\cos\theta`.
+
+**3. The sensor receives the light at an angle.** Rays
+converging onto a corner pixel hit the sensor at angle
+:math:`\theta` from the normal. The same light bundle
+spreads across a patch larger by :math:`1 / \cos\theta`,
+so per-area intensity drops by :math:`\cos\theta`.
+
+The three effects multiply:
+
+.. math::
+
+   \cos^2\theta \;\cdot\; \cos\theta \;\cdot\; \cos\theta
+   = \cos^4\theta
+
+This is the *cos⁴ falloff*. For a wide-angle lens whose
+corner ray makes a 60° angle with the optical axis,
+:math:`\cos^4 60° = 0.0625` -- the corner records at about
+6% of the brightness of the centre.
+
+.. figure:: https://docs.openmv.io/_images/light-falloff.svg
+   :alt: A rectangular frame filled with a radial gradient
+         that is bright in the centre and dim toward the
+         corners.
+
+   A uniformly lit scene comes out bright in the centre and
+   dim at the corners, falling off as
+   :math:`\cos^4(\theta)` of the corner angle.
+
+Mechanical *vignetting* from the lens housing -- light
+clipped by the rim of the lens barrel or by the mount --
+adds to the geometric falloff and looks the same: darker
+corners. A common mitigation on the lens side is to pick a
+lens whose image circle is substantially larger than the
+sensor diagonal: the sensor then captures only the inner,
+better-corrected portion of the lens's image, where the
+corner angle :math:`\theta` is smaller and the
+:math:`\cos^4` term is correspondingly less severe. The
+same choice helps with barrel distortion and chief ray
+angle at the corners, since all three effects worsen
+toward the edge of the image circle. Whatever falloff
+remains is handled by the on-sensor *lens-shading
+correction* (LSC), covered in :doc:`on-sensor calibration
+<../sensor/calibration>`.
+
+Chief ray angle
+---------------
+
+A bundle of rays from a single scene point converges
+through the lens and lands on a single sensor pixel. The
+central ray of that bundle -- the one passing through the
+centre of the lens aperture -- is the *chief ray*. At the
+centre of the sensor (the optical axis), the chief ray
+arrives perpendicular to the sensor surface. At pixels
+away from the centre, the chief ray arrives at an angle.
+
+.. figure:: https://docs.openmv.io/_images/chief-ray-angle.svg
+   :alt: A side view of a lens and a sensor with three
+         chief rays drawn from the centre of the lens to
+         three pixels on the sensor -- top, centre, and
+         bottom. The chief ray to the centre pixel is along
+         the optical axis and is perpendicular to the
+         sensor surface. The chief rays to the top and
+         bottom pixels arrive at the sensor at a slant. The
+         angle between the chief ray and the sensor normal
+         at the top pixel is labelled CRA.
+
+   The chief ray for each pixel converges through the lens
+   centre. The angle it makes with the sensor normal is the
+   chief ray angle (CRA), zero on the optical axis and
+   growing toward the corners.
+
+The angle between the chief ray and the sensor normal at a
+given pixel is the *chief ray angle*, or CRA. CRA is zero
+at the centre of the sensor and grows toward the corners.
+The maximum value depends on the lens design -- common
+values for small fixed-lens cameras range from about 15° to
+30° at the corners.
+
+CRA matters because sensor pixels respond best to light
+arriving close to perpendicular to the sensor surface. At
+steep angles the response drops off, and some of the light
+can leak between neighbouring pixels. Sensor designs
+accommodate a specific CRA profile -- pairing a sensor
+with a lens whose profile differs substantially shows up
+as visible sensitivity and colour errors in the corners,
+which is why image sensors and lenses are usually chosen
+together.
+
+
+The pixel cell
+==============
+
+A camera sensor is a two-dimensional grid of light-sensitive
+cells, one per pixel. Each cell is a small electrical
+circuit built around a *photodiode* that turns light into a
+voltage, which at the end of each frame is digitised into a
+single numerical pixel value.
+
+The circuit
+-----------
+
+The active element in each cell is a *photodiode* -- a
+small light-sensitive p-n junction in silicon. Under
+reverse bias the photodiode stores a small reservoir of
+charge that incoming photons can release, one little bit
+at a time.
+
+.. figure:: https://docs.openmv.io/_images/pixel-circuit.svg
+   :alt: A schematic of one CMOS pixel cell. A reset switch
+         labelled RST connects the supply rail (VDD) at the
+         top of the figure to a node labelled A. A
+         photodiode connects node A downward to ground,
+         with arrows representing incoming light pointing
+         at the photodiode. A transfer switch labelled TX
+         connects node A horizontally to a second node
+         labelled B. A storage capacitor labelled C connects
+         node B downward to ground. A wire from node B leads
+         off to the right, labelled "to read-out".
+
+   The pixel circuit: a photodiode with a reset switch that
+   pre-charges it, a transfer switch that hands the exposed
+   voltage to a small holding capacitor, and an output to
+   the read-out amplifier.
+
+The exposure cycle
+------------------
+
+Every cell follows the same four-step cycle each frame.
+
+**Precharge.** The cycle begins with a brief reset pulse
+that closes the reset switch ``RST``, connecting the
+photodiode to the supply rail and lifting its stored
+voltage up to a known reference. The switch then opens,
+leaving the photodiode isolated at the reset voltage with
+its charge reservoir full.
+
+**Exposure.** During the exposure window the photodiode is
+left to collect light. Each photon absorbed costs the
+photodiode a small amount of its stored charge. Light makes
+the stored charge *disappear* -- the brighter the scene,
+the faster the photodiode discharges and the lower its
+voltage by the end of the window. The total drop is the
+pixel's signal.
+
+**Sample.** The exposure window ends with a brief pulse on
+the transfer switch ``TX``. While ``TX`` is closed the
+photodiode's remaining charge is dumped onto the small
+holding capacitor ``C`` wired to node ``B``. The voltage on
+``C`` now records the pixel's measurement. ``TX`` then
+opens again, locking the value on ``C`` and freeing the
+photodiode to be reset for the next frame while ``C`` waits
+for its turn at the read-out amplifier.
+
+**Read-out.** The read-out amplifier feeds the voltage on
+``C`` to an ADC, which converts it to an integer count --
+typically 10 to 12 bits of raw precision per pixel
+(sometimes 14 in higher-end sensors). That count is the
+*raw pixel value*. Everything else the pipeline does to the
+image -- corrections, debayering, colour grading, format
+conversion -- starts from this number, one per cell.
+
+Saturation
+----------
+
+The photodiode has a maximum amount of charge it can give
+up before its reservoir is fully drained. Past that point
+the pixel is *saturated* -- additional light has no effect
+on the recorded voltage, and the cell reads its maximum
+value no matter how much brighter the scene gets.
+
+The maximum amount the photodiode can lose before
+saturating is its *full-well capacity*. Larger physical
+pixels hold more stored charge and so have a higher
+full-well capacity, which is why sensors with smaller, more
+numerous pixels generally have a lower dynamic range than
+their lower-resolution counterparts.
+
+
+Rolling and global shutter
+==========================
+
+The sensor reads out its two-dimensional pixel grid one
+cell at a time. Two things about that read-out shape the
+recorded image: the order in which the pixels are scanned,
+and how each row's exposure window lines up with that scan
+in time. The first is fixed by the silicon; the second
+comes in two established flavours that matter a lot for
+scenes that move.
+
+Read-out order
+--------------
+
+Typical sensors start at the bottom-left pixel and scan
+rightward along that row, then advance up to the next row
+and scan rightward again, and so on until they finish at
+the top-right.
+
+.. figure:: https://docs.openmv.io/_images/sensor-grid.svg
+   :alt: A grid of 6 columns by 4 rows of pixel cells. The
+         bottom-left cell is marked "read first". A
+         rightward arrow runs along each row showing the
+         scan direction. To the right of the grid, an
+         upward arrow labelled "rows advance" indicates
+         that the scan moves up to the next row after each
+         row finishes. The top-right cell is marked "read
+         last".
+
+   The pixel array is read out starting at the bottom-left
+   pixel, scanning rightward along each row, and advancing
+   up to the next row between rows.
+
+The order is no accident. The lens horizontally mirrors
+and vertically flips the scene as it projects it onto the
+sensor -- scene-top lands at sensor-bottom and scene-left
+at sensor-right -- and the bottom-left-then-up read-out
+walks the sensor in the order that undoes both flips,
+putting the pixels into memory right-side up.
+
+Rolling shutter
+---------------
+
+In a *rolling-shutter* sensor, each row is exposed and
+read out in turn. While one row is being read, the next is
+still finishing its exposure, the row after that has just
+started, and so on -- each row's exposure window is offset
+slightly in time from the next. The sensor's integration
+window rolls across the frame in scan order, and a full
+scan takes the full frame period.
+
+For stationary scenes this is invisible. For scenes with
+fast motion the offset shows up as a *skew* -- an object
+that moves between the time the first row is captured and
+the time the last row is captured appears in different
+positions in different rows of the same frame.
+
+.. figure:: https://docs.openmv.io/_images/rolling-vs-global.svg
+   :alt: Three panels showing a vertical bar moving to the
+         right. The first panel shows the bar at one
+         instant, vertical. The second panel shows the same
+         bar captured by rolling shutter: it appears as a
+         slanted parallelogram, leaning to the right at the
+         bottom, because the top rows were captured when
+         the bar was at its earlier position and the bottom
+         rows when it had moved to the right. The third
+         panel shows the bar captured by global shutter:
+         vertical and at one position.
+
+   A vertical bar moving rightward, captured by each
+   shutter type. Rolling shutter slants the bar because the
+   top of the frame is read at a different time from the
+   bottom; global shutter freezes the bar at one instant.
+
+Rolling shutter is the cheaper design. Because each row is
+read promptly after it finishes exposing, the pixel circuit
+needs no per-pixel shielded storage to hold its value
+through a sensor-wide read-out. The transistors saved leave
+the photodiode a larger fraction of the pixel area, which
+translates directly into higher sensitivity and lower noise
+at the same physical pixel size. Most consumer image
+sensors are rolling-shutter for this reason.
+
+Global shutter
+--------------
+
+In a *global-shutter* sensor, every pixel begins its
+exposure at the same instant and ends it at the same
+instant. The captured charge is then transferred into a
+shielded storage area on the pixel, and the row-by-row
+read-out happens from there. The captured frame represents
+one moment in time, no matter how fast the scene moves.
+
+Global shutter costs more silicon, and the cost lands on
+the photodiode. Holding every row's value through a
+sensor-wide read-out needs an extra shielded storage cell
+on each pixel plus the transistors that gate it off from
+the photodiode -- area that would otherwise belong to the
+photodiode itself. A smaller photodiode catches fewer
+photons per unit time, so a global-shutter pixel is less
+sensitive than an equivalent-size rolling-shutter pixel.
+The same scene needs a longer exposure or higher gain to
+record at the same brightness, and the extra circuitry
+raises read-noise slightly on top of that.
+
+The other tax is on exposure budget. In a rolling-shutter
+sensor each row's exposure overlaps with neighbouring rows'
+read-out, so every row can integrate light for very nearly
+the full frame period. In a global shutter the read-out
+cannot start until every row has finished exposing, so at
+a given frame rate the maximum exposure time is the frame
+period minus the full read-out time. For the same frame
+rate, the rolling-shutter pixel ends up with more light per
+frame.
+
+These costs compound: global-shutter sensors are smaller
+in pixel count, noisier, less sensitive, and more expensive
+per pixel than their rolling-shutter counterparts. The
+trade is only worthwhile when fast motion has to be
+captured cleanly.
+
+When to use which
+-----------------
+
+The shutter type is a hardware property of the sensor, not
+a software setting. The choice is made when the camera is
+designed.
+
+Rolling shutter is fine when:
+
+* the scene is stationary or moves slowly;
+* the application can tolerate some skew (most
+  photography and most user-interface work);
+* cost and resolution per dollar are the priorities.
+
+Global shutter is the right choice when:
+
+* the scene contains fast motion that has to be captured
+  cleanly (robotics, drones, conveyor-belt inspection);
+* the camera itself is vibrating or moving relative to a
+  static scene;
+* the image is fed into a vision algorithm that assumes
+  each frame is a single time instant (most pose-estimation
+  and structure-from-motion pipelines).
+
+.. note::
+
+   The OpenMV Cam line defaults to global-shutter sensors
+   for machine-vision use, where motion blur on a moving
+   subject (or a moving camera) breaks downstream detection
+   and tracking. Rolling-shutter sensor modules are also
+   offered for applications where image quality of a slow
+   or static scene matters more than freezing fast motion --
+   classic photography-style capture.
+
+
+Exposure and gain
+=================
+
+Two knobs change how brightly each pixel cell is reported
+to the rest of the pipeline:
+
+* *Exposure time* (also called integration time) -- how
+  long the photodiode is allowed to collect charge before
+  the read-out.
+* *Analog gain* -- the multiplier applied to the read-out
+  voltage by an on-chip amplifier before the ADC.
+
+Both knobs make the recorded image brighter, but the way
+they get there is different and each carries its own cost.
+
+Exposure time
+-------------
+
+Longer exposure means each cell collects more electrons per
+frame, so the digital count comes out higher for the same
+scene. Halving the exposure roughly halves the count;
+doubling it roughly doubles. The relationship is linear up
+until the well saturates.
+
+The cost is motion. The cell records the average light
+arriving at it across the whole integration window, so any
+object that moves a noticeable distance during that window
+gets smeared across multiple pixels -- *motion blur*. A
+walking person at 1/30 s exposure blurs over several
+pixels; the same person at 1/500 s appears sharp.
+
+Long exposure also brings the cell closer to saturation, so
+in well-lit scenes the exposure has to come *down* even
+though brightness is fine -- otherwise the highlights clip.
+
+Analog gain
+-----------
+
+Analog gain is a small amplifier between the photodiode
+read-out and the ADC. The signal voltage is multiplied by
+the gain before it is digitized, so the same number of
+electrons ends up reading as a bigger number. Gain is
+usually expressed in decibels (dB); a doubling of gain is
++6 dB.
+
+Gain helps in light too dim to expose any longer -- where
+extending the exposure would either drop the frame rate
+below the application's needs or introduce too much motion
+blur. The cost is noise. The amplifier multiplies the noise
+floor along with the signal, so the *signal-to-noise ratio*
+does not improve with more gain. High gain produces a
+grainier, noisier image at the same scene brightness as low
+gain.
+
+Some sensors also expose a *digital gain* knob, which is a
+post-ADC integer multiplier. Digital gain is even worse for
+the noise picture than analog gain, because it also
+amplifies the quantization noise from the ADC. Reach for it
+last.
+
+Auto-exposure and auto-gain
+---------------------------
+
+Real cameras need to handle scenes that span a huge range
+of brightness -- a dim indoor room and a sunlit window in
+the same field of view. Two control loops adjust the knobs
+in real time:
+
+* *Auto-exposure control* (AEC) measures the average pixel
+  value in the recent frame (often weighted toward the
+  centre, or weighted away from the brightest pixels) and
+  adjusts the exposure time to drive that average toward a
+  target.
+* *Auto-gain control* (AGC) does the same with analog
+  gain, usually as a fallback once the exposure time has
+  already been pushed to its safe maximum.
+
+The order matters. Adjusting exposure first and gain
+second gives the best signal-to-noise ratio for a given
+target brightness, since exposure gathers more signal
+without amplifying noise, while gain amplifies both. AEC
+and AGC therefore work in priority: exposure increases
+first to brighten a dim scene, and gain only kicks in once
+the exposure has hit its ceiling (set by the frame rate or
+by an explicit motion-blur budget).
+
+High dynamic range
+------------------
+
+AEC and AGC pick the right single-frame brightness for the
+*average* of the scene, but every scene has parts brighter
+and dimmer than the average. A single exposure can only
+cover so much of that range at once -- short exposures
+preserve the highlights but bury the shadows in read-noise;
+long exposures pull up the shadows but clip the highlights
+at saturation. The sensor's *dynamic range* -- the ratio
+between the brightest pixel it can record without clipping
+and the darkest it can distinguish from noise -- is fixed
+by the photodiode's full-well capacity and the read-noise
+floor, and many scenes have a wider range than the sensor
+can capture in one frame. A sunlit window in a dim indoor
+room is the classic example.
+
+*High dynamic range* (HDR) imaging works around the limit
+by combining two or more exposures of the same scene -- at
+minimum a short and a long, sometimes more -- into a
+single output frame. The short exposures preserve the
+highlights without saturating; the long exposures pull the
+shadows up out of the noise floor. The combined image
+takes the highlights from the short frames and the shadows
+from the long ones, ending up with more usable dynamic
+range than any single input could carry on its own.
+
+Combining can happen off-chip, with software stitching a
+multi-frame burst, or on-chip, with the sensor interleaving
+short- and long-exposure rows in alternating scan lines or
+running each pixel through two read-out paths at different
+conversion gains. Either way the result is one frame with
+more bits of dynamic range than the photodiode could record
+in a single shot.
+
+That extended-range frame is not directly displayable. The
+framebuffer and any consumer downstream of it run at a
+fixed bit depth (usually 8 bits per channel), and the HDR
+signal can run to 12, 16, or more. *Tone mapping*
+compresses the extra bits back down to the output depth by
+applying a non-linear curve that keeps both shadow and
+highlight detail visible. A straight linear scaling of the
+HDR signal would either crush the dim regions to black or
+clip the bright regions to white; a good tone map gives up
+some absolute brightness fidelity to retain detail across
+both ends of the range, and the output looks much closer
+to what the eye actually sees in the scene than any single
+sensor exposure ever could.
+
+
+On-sensor calibration
+=====================
+
+The raw output of a pixel cell is not yet ready to be used.
+A handful of corrections are applied to it before the data
+leaves the sensor -- partly in the chip's silicon, partly
+in the driver code that programs the chip -- to deal with
+imperfections the sensor introduces along the way. They run
+in a fixed order on every frame: column *fixed-pattern
+noise* (FPN) trim first, then black-level subtraction,
+then defect-pixel correction, then lens-shading correction.
+Knowing what each does matters because the image that
+reaches user code has already been through all of them.
+
+Column-FPN correction
+---------------------
+
+Each column of the sensor has its own amplifier and column
+ADC, and small manufacturing variations between them mean
+every column reads slightly differently from its
+neighbours. Without correction, this *fixed pattern* shows
+up as faint vertical streaks in the output -- the streaks
+stay put from frame to frame because they come from the
+silicon itself rather than from the scene. The sensor
+measures the per-column offset and gain trims at the
+factory, stores them in its calibration ROM, and applies
+them on every read-out before any further correction runs.
+Doing this first lets the rest of the pipeline assume
+every column behaves the same way, including the dark
+reference pixels that black-level calibration uses next.
+
+Black-level calibration
+-----------------------
+
+The ADC's zero -- the digital count that should correspond
+to an empty photodiode -- is not perfectly stable. It
+drifts with temperature, with supply-voltage variation,
+and slightly from one pixel to the next. Without
+correction, a perfectly dark frame would not read as zero;
+each pixel would carry a small positive *dark offset*.
+
+The standard fix is to include rows or columns at the edge
+of the sensor that are physically covered by metal so that
+no light ever reaches them. Their digital counts give the
+true dark reference at the current operating conditions.
+The sensor reads those covered pixels every frame, averages
+them per row or column, and subtracts the average from
+every other pixel. The light pixels then come out with
+zero count for an unilluminated photodiode, regardless of
+temperature or supply drift.
+
+Defect-pixel correction
+-----------------------
+
+A small fraction of pixels in any sensor are *defective* --
+they read a constant value (stuck high or stuck low)
+regardless of how much light reaches them. Some defects
+come from manufacturing variation, and more accumulate
+slowly over the sensor's life (cosmic-ray hits during long
+periods of operation are the usual culprit).
+
+Modern sensors handle this on the fly with a small spatial
+filter. Every frame, each pixel is compared to its
+same-colour neighbours; any pixel that lies far enough
+outside the local median to be implausible is replaced by
+a value derived from those neighbours. The filter catches
+both factory defects and ones that develop later, without
+needing a per-sensor calibrated bad-pixel map, and the
+defect is invisible in the output.
+
+Lens-shading correction
+-----------------------
+
+The :doc:`cos⁴ falloff <../optics/real-lens-effects>`
+combined with mechanical vignetting from the lens housing
+gives every uncorrected frame a noticeable corner
+darkening. The *lens-shading correction* (LSC) hardware on
+the sensor compensates by multiplying each pixel by a gain
+that depends on its position in the frame -- 1.0 at the
+centre, rising smoothly toward the corners to follow the
+inverse of the measured falloff curve.
+
+The sensor provides the multiplier hardware, but the gain
+map itself is the MCU's responsibility. The driver writes
+the map into the sensor's LSC registers at start-up,
+either from a calibration the driver stores or from a
+fresh measurement against a flat reference target. Some
+sensors compress the map down to a small set of polynomial
+coefficients so the on-chip registers can hold it.
+
+LSC depends on the lens. Swapping lenses moves the falloff
+curve, so an LSC map calibrated for one lens will not
+match another -- a misapplied map looks like dim corners
+(under-correction) or bright corner blotches
+(over-correction).
+
+
+Sensor buses
+============
+
+A camera sensor and the MCU it talks to exchange two
+different kinds of data on two different buses.
+
+Control bus
+-----------
+
+Every sensor setting lives in a register on the chip --
+pixel format, frame size, exposure time, gain,
+white-balance gains, auto-control targets, and so on. The
+MCU reads and writes those registers across an
+:doc:`I2C bus <../../hardware/i2c/i2c-basics>` (some
+sensors use SPI instead). Two wires (SCL and SDA) connect
+the MCU's I2C peripheral to the sensor's I2C interface,
+and every configuration the user picks is translated by
+the driver into one or more register writes on this bus.
+
+The control bus runs at a relaxed speed -- 100 kHz or
+400 kHz typically. Setting one register takes tens of
+microseconds; reconfiguring the whole sensor (a reset, a
+fresh frame size, a fresh pixel format) takes tens to
+hundreds of milliseconds, mostly because the chip needs a
+moment to bring the new mode up to a clean state after
+each register write. None of that has to keep up with the
+pixel stream.
+
+Pixel data bus
+--------------
+
+The pixel data leaves the sensor on a separate, wider,
+much faster bus. Two families dominate.
+
+**Parallel** is the older of the two. It carries eight or
+ten data lines for the pixel bits, plus a pixel clock
+(PCLK), a line-valid signal (HSYNC), and a frame-valid
+signal (VSYNC). On each clock edge one pixel byte appears
+on the data lines; HSYNC and VSYNC tell the receiver
+where each row and each frame start and stop. Parallel
+buses are simple, but throughput is limited by how fast
+the MCU's pin matrix can clock data in -- typically a 50
+to 100 MHz pixel clock at the high end.
+
+**MIPI CSI-2** -- the Mobile Industry Processor Interface
+Camera Serial Interface, version 2 -- has largely replaced
+parallel on new image sensors. It carries the pixels on
+one or more differential lane pairs at hundreds of
+megabits per second per pair, with a smaller pin count,
+much higher bandwidth, and lower EMI. Parallel persists
+mostly on legacy designs and on smaller, lower-rate parts
+where its simplicity still pays off.
+
+.. figure:: https://docs.openmv.io/_images/sensor-buses.svg
+   :alt: A diagram showing a sensor block on the left and
+         an MCU block on the right. A bidirectional arrow
+         between them is labelled "I2C (SCL, SDA)". A
+         thicker arrow pointing from the sensor to the MCU
+         is labelled "parallel or MIPI".
+
+   The sensor and the MCU exchange control on a slow
+   bidirectional I2C bus and pixel data on a wider, faster,
+   one-way parallel or MIPI bus.
+
+Whichever family the sensor uses, the MCU side has a
+fixed-function peripheral that catches the incoming
+pixels and writes them into a framebuffer in memory. The
+Python code never drives this bus directly; it only reads
+the framebuffer once that hardware has finished filling
+it.
+
+
+Colour sensors
+==============
+
+The photodiode in each cell is colour-blind. It counts
+photons of every wavelength the silicon absorbs without
+distinguishing red from green from blue. To get a colour
+image out of a colour-blind sensor, the manufacturer covers
+the pixel grid with a *colour filter array* (CFA): a thin
+film of dye that lets each cell see only one of the three
+primary colours.
+
+The Bayer pattern
+-----------------
+
+The dominant CFA layout is the *Bayer pattern*, named for
+its inventor at Kodak. The film alternates two row types:
+even rows are a repeating red-green pattern (red, green,
+red, green) and odd rows are a repeating green-blue pattern
+(green, blue, green, blue). In the smallest repeating
+tile -- two rows by two columns -- one cell sees red, one
+sees blue, and two see green.
+
+.. figure:: https://docs.openmv.io/_images/bayer-pattern.svg
+   :alt: A 6 column by 4 row grid of small squares
+         coloured according to the Bayer pattern. Even rows
+         alternate red and green; odd rows alternate green
+         and blue. Letters R, G, and B mark the colour of
+         each cell. The top-left two-by-two block is
+         outlined to indicate the smallest repeating tile,
+         which contains one red cell, one blue cell, and
+         two green cells.
+
+   The Bayer colour filter array. Each cell of the sensor
+   sees only one of the three primary colours; green
+   appears in two of every four cells.
+
+Green is doubled on purpose. Human vision is much more
+sensitive to green than to red or blue, and the perceived
+luminance of a scene is mostly carried by the green
+channel. Sampling green at twice the density of red and
+blue puts the resolution budget where the eye notices it
+most, and hides the chrominance softness that follows.
+
+What each pixel records
+-----------------------
+
+A colour sensor still stores only one number per pixel --
+the count of photons that made it through that pixel's
+colour filter. A red-filter cell records its red-channel
+value; the green and blue values at the same location are
+simply missing from the data. The same is true for green
+and blue cells.
+
+The data that leaves the sensor in raw *Bayer* format is
+therefore one channel per pixel, laid out in the Bayer
+pattern, rather than the three channels per pixel of a
+finished colour image. Reconstructing the missing two
+channels at every cell position is called *debayering*.
+
+Microlenses and the chief ray angle
+-----------------------------------
+
+The colour filter is not the only thing on top of the
+photodiode. Above it sits a tiny *microlens* that focuses
+the incoming light cone onto the photodiode's active area,
+and the microlens is designed assuming the light comes in
+close to perpendicular to the sensor surface. When light
+arrives at a steep angle instead -- the
+:doc:`chief ray angle <../optics/real-lens-effects>` that
+grows toward the corners of every real lens -- some of it
+can land on the neighbouring pixel's filter instead,
+picking up the wrong colour and producing *colour
+crosstalk*. Corner pixels lose saturation as well, because
+part of the cone misses the photodiode entirely.
+
+Sensors compensate by shifting each pixel's microlens
+radially outward from the centre of the sensor, in
+concentric rings that expand from the middle out to the
+corners. The shift is zero at the centre and grows to a
+few microns at the outermost ring, tuned to a specific
+CRA profile baked into the sensor's design. Pairing a
+sensor with a lens whose CRA profile differs substantially
+from the design target leaves visible colour and
+sensitivity errors in the corners, which is why image
+sensors and lenses are usually chosen together.
+
+
+Debayering
+==========
+
+The raw Bayer frame carries only one colour channel per
+pixel. Turning it into a normal three-channel RGB image
+means filling in the two missing channels at every pixel
+by interpolating from nearby pixels of the right colour.
+That interpolation is *debayering* (also called
+demosaicing). A handful of algorithm families dominate.
+
+Super-pixel
+-----------
+
+The cheapest approach collapses every 2x2 Bayer tile -- one
+red cell, one blue cell, and two green cells -- into a
+single output pixel:
+
+* the red channel is the red cell's value;
+* the blue channel is the blue cell's value;
+* the green channel is the average of the two green cells.
+
+Each 2x2 input tile becomes one output pixel, so the
+finished image is half the width and half the height of
+the sensor, with a quarter of the pixel count. Super-pixel
+is fast and free of interpolation artefacts, but the
+resolution cost makes it a last resort -- it is rarely
+used.
+
+Bilinear
+--------
+
+*Bilinear* interpolation averages the nearest pixels of
+the right colour rather than copying or summarising. The
+exact averaging depends on which colour the centre pixel
+records, because the four cases distribute the missing
+channels around the 3x3 neighbourhood differently.
+
+**Green pixel in a red-green row.** The missing red value
+averages the two red neighbours to the left and right; the
+missing blue averages the two blue neighbours above and
+below.
+
+.. figure:: https://docs.openmv.io/_images/debayer-green-rg.svg
+   :alt: A 3 column by 3 row Bayer-pattern neighbourhood
+         centred on a green pixel in a red-green row. The
+         cells to the left and right of the centre are
+         red; the cells above and below are blue; the
+         corner cells are green. White arrows point inward
+         from the two red cells and the two blue cells
+         into the centre.
+
+   The missing red comes from the horizontal red
+   neighbours; the missing blue from the vertical blue
+   neighbours.
+
+**Green pixel in a green-blue row.** Same shape with red
+and blue swapped. The missing red value averages the two
+red neighbours above and below; the missing blue averages
+the two blue neighbours to the left and right.
+
+.. figure:: https://docs.openmv.io/_images/debayer-green-gb.svg
+   :alt: A 3 column by 3 row Bayer-pattern neighbourhood
+         centred on a green pixel in a green-blue row. The
+         cells above and below the centre are red; the
+         cells to the left and right are blue; the corner
+         cells are green. White arrows point inward from
+         the two red cells and the two blue cells into the
+         centre.
+
+   The missing red comes from the vertical red neighbours;
+   the missing blue from the horizontal blue neighbours.
+
+**Red pixel.** The missing green value averages the four
+cardinal green neighbours (above, below, left, right). The
+missing blue averages the four diagonal blue neighbours.
+
+.. figure:: https://docs.openmv.io/_images/debayer-red.svg
+   :alt: A 3 column by 3 row Bayer-pattern neighbourhood
+         centred on a red pixel. The four cardinal
+         neighbours (above, below, left, right) are green;
+         the four diagonal corner cells are blue. White
+         arrows point inward from all eight neighbours
+         into the centre.
+
+   The missing green comes from the four cardinal green
+   neighbours; the missing blue from the four diagonal
+   blue neighbours.
+
+**Blue pixel.** Mirror of the red case. The missing green
+averages the four cardinal green neighbours, and the
+missing red averages the four diagonal red neighbours.
+
+.. figure:: https://docs.openmv.io/_images/debayer-blue.svg
+   :alt: A 3 column by 3 row Bayer-pattern neighbourhood
+         centred on a blue pixel. The four cardinal
+         neighbours are green; the four diagonal corner
+         cells are red. White arrows point inward from all
+         eight neighbours into the centre.
+
+   The missing green comes from the four cardinal green
+   neighbours; the missing red from the four diagonal red
+   neighbours.
+
+Bilinear keeps the sensor's full resolution and is smooth
+enough for most uses, but it still shows artefacts at
+edges. A sharp transition between two colours crosses the
+pixel grid in a particular orientation, and averaging
+across the edge softens it slightly. Where the colour and
+luminance edges do not line up exactly, faint coloured
+fringes appear in the output.
+
+Beyond bilinear
+---------------
+
+A range of better debayer algorithms exists. Some use
+larger neighbourhoods than bilinear's small cross of
+same-colour neighbours and weigh the samples with more
+carefully chosen coefficients; others detect the direction
+of local edges and bias the interpolation along that
+direction so an edge running across the pixel grid stays
+sharp instead of softening. Either approach reduces the
+colour fringes and edge softening bilinear leaves behind,
+at the cost of more arithmetic per pixel and more silicon
+(or more compute on the MCU side).
+
+The debayer quality available on any given OpenMV Cam is
+platform-specific -- it depends on what the sensor and
+MCU on that camera provide.
+
+Where debayering runs
+---------------------
+
+The *image signal processor* (ISP) -- on the sensor chip
+itself or on the MCU side -- debayers each frame before it
+leaves the imaging pipeline in most cases. User code
+receives a finished three-channel RGB image without ever
+touching the raw mosaic.
+
+The ISP can also be told to pass the raw Bayer frame
+through unchanged. Raw Bayer takes less memory than the
+debayered image -- one byte per pixel versus three -- which
+makes it useful when frame storage is the bottleneck, when
+capturing for off-line processing, or when the project
+wants to apply a custom debayer algorithm in software.
+
+
+The ISP pipeline
+================
+
+The *image signal processor* (ISP) is the hardware pipeline
+that turns the raw pixel values from the sensor into a
+finished colour image. The on-sensor :doc:`pixel-level
+corrections <../sensor/calibration>` are the first stages
+of that pipeline. After those run, the rest of the pipeline
+does the colour processing and output formatting in a
+fixed order on every frame.
+
+.. figure:: https://docs.openmv.io/_images/isp-pipeline.svg
+   :alt: A vertical pipeline diagram with eight labelled
+         boxes, top to bottom: statistics extraction, auto
+         white balance, debayering, colour matrix
+         correction, gamma correction, image scaling,
+         image cropping, and pixel packing. An arrow at
+         the top is labelled "corrected Bayer pixels" and
+         an arrow at the bottom is labelled "finished
+         frame".
+
+   The colour-processing and output stages of the ISP. The
+   pipeline runs each stage over every pixel in the frame
+   before the next one starts.
+
+The stages
+----------
+
+Each stage applies one well-defined transformation in
+turn. The order matters -- later stages assume earlier
+ones have already run, and a couple of stages take inputs
+from the *previous* frame's output as well.
+
+1. **Statistics extraction** measures per-region average
+   brightness and per-channel sums from the corrected
+   Bayer frame. The numbers feed the auto-exposure,
+   auto-gain, and auto-white-balance control loops, which
+   then update the sensor's settings for the *next*
+   frame.
+2. **Auto-white-balance gains** scale each Bayer pixel
+   by a per-colour multiplier -- red pixels by an R gain,
+   green pixels by a G gain, blue pixels by a B gain --
+   pushing the scene's white reference toward neutral
+   grey so the recorded colours look the way the eye saw
+   them. The multipliers come from the previous frame's
+   AWB statistics.
+3. **Debayering** reconstructs the missing two colour
+   channels at every pixel from the Bayer mosaic, turning
+   one-channel-per-pixel raw data into three-channel RGB.
+   (See :doc:`debayering`.) Everything after this stage
+   runs on RGB pixels rather than on the Bayer mosaic.
+4. **Colour matrix correction (CCM)** applies a 3x3
+   matrix multiply to each RGB pixel that maps the
+   sensor's native red-green-blue response into a standard
+   colour space. Each sensor's filters have their own
+   spectral response, which is not exactly what any
+   standard expects; the matrix is a per-sensor calibrated
+   transform that turns "sensor RGB" into "standard RGB".
+5. **Gamma correction** applies a non-linear curve to
+   each channel that compresses the linear sensor signal
+   into a perception-matched encoding. The eye notices
+   differences between dark tones more than differences
+   between bright tones, so an encoding that spends more
+   of its bit budget on the dark end captures more visible
+   detail at a given bit depth.
+6. **Image scaling** resizes the frame from the sensor's
+   native resolution to the target output resolution.
+   Most applications run at less than the sensor's full
+   pixel count, and scaling down reduces both the
+   bandwidth and the memory pressure on everything that
+   follows.
+7. **Image cropping** extracts a sub-rectangle of the
+   scaled frame and discards the pixels outside it. Used
+   to capture a region of interest, match a specific
+   aspect ratio, or drop a border the application does
+   not need.
+8. **Pixel packing** converts the per-channel internal
+   representation (typically 10 or 12 bits per channel)
+   into the chosen output format and writes the result to
+   RAM.
+
+The control-loop feedback
+-------------------------
+
+Stages 1 and 2 form a control loop that spans multiple
+frames. The statistics extracted from frame N tell the
+sensor how bright the scene was and how its colour balance
+sat that frame; the auto-exposure, auto-gain, and
+auto-white-balance controllers use those numbers to pick
+new exposure, gain, and white-balance register values for
+frame N+1. The new values take effect on the next frame's
+read-out, the new frame's statistics come back, and the
+loop closes.
+
+For a scene that does not change, the loop converges
+within a few frames and stays at a constant setting. For a
+scene whose brightness or colour cast changes -- the
+camera panning from indoors to a sunlit window, for
+example -- the loop tracks the change over several frames,
+and the user sees a brief brightness or colour drift on
+the way to the new steady state.
+
+Where the ISP runs
+------------------
+
+Two arrangements are common.
+
+* An *on-sensor ISP* runs the whole pipeline inside the
+  sensor chip and outputs a finished RGB image. The MCU
+  just collects the result.
+* An *off-sensor ISP* lives in the host MCU or SoC. The
+  sensor outputs raw Bayer; the MCU's silicon (or its
+  driver code) runs the pipeline before handing the
+  finished frame to user code.
+
+The split affects what output formats the sensor can hand
+the user directly. A sensor with a full on-chip ISP lets
+the user pick from any finished format the chip supports.
+A sensor without one outputs Bayer only, and the format
+conversions happen in MCU silicon or software.
+
+
+Pixel formats
+=============
+
+The final stage of the ISP pipeline packs each pixel into
+a particular byte layout in memory. The format chosen
+trades off image quality, memory size, and how downstream
+code reads the bytes back out. A handful of formats
+dominate.
+
+RAW (Bayer)
+-----------
+
+The default output is raw Bayer -- the same one-channel-
+per-pixel mosaic the sensor produces. One byte per pixel,
+laid out in the Bayer pattern: red and green alternating
+on even rows, green and blue alternating on odd rows. No
+debayering has been applied, so each cell still holds
+only the value its colour filter passed through.
+
+Raw Bayer is one third the memory of a finished
+three-channel RGB image -- one byte per pixel versus
+three -- and no ISP cycles have been spent debayering or
+converting it. The cost is that user code has to do the
+debayering itself before any colour-aware processing can
+run.
+
+RGB888
+------
+
+RGB888 is the natural finished format for a colour
+image: three bytes per pixel, one each for the red,
+green, and blue channels at 8 bits per channel.
+Twenty-four bits per pixel and just under seventeen
+million distinct colours.
+
+RGB888 is the conceptual reference for finished colour
+images and most off-board software speaks it. On
+embedded hardware its main drawback is the 24-bit pixel
+size -- not a multiple of the processor's word size,
+awkward for memory alignment, and 50% bigger than the
+next format down.
+
+RGB565
+------
+
+RGB565 packs each pixel into two bytes: five bits of
+red, six bits of green, five bits of blue. The extra
+green bit reflects the eye's higher sensitivity to
+green, and it matches the green channel's double weight
+in the Bayer pattern.
+
+RGB565 is the default colour format on the OpenMV Cam.
+Two bytes per pixel is 16-bit aligned, which fits the
+MCU's natural data widths -- pixel loads, stores, and
+arithmetic all run at full speed, and many operations
+can process a pair of pixels at once. RGB888's 24-bit
+pixels do not line up that way and pay a cost on every
+access. The 33-percent memory saving over RGB888 also
+adds up: QVGA (320 x 240) is 150 KB in RGB565 against
+225 KB in RGB888, and the gap grows with resolution.
+
+The trade-off is 65 thousand distinct colours instead of
+seventeen million. For most machine-vision tasks the
+difference is invisible, because the algorithms reduce
+the frame to thresholded or edge-detected representations
+that drop most of the colour detail anyway. For human
+viewing the missing bits show up as faint banding in
+smooth colour gradients but not as anything the eye
+flags immediately.
+
+YUV422
+------
+
+YUV422 splits each pixel's colour into a *luminance*
+value (Y) and two *chrominance* values (U and V), and
+then subsamples the chrominance because human vision is
+much less sensitive to colour variation than to
+brightness variation. Each pixel carries its own Y, but
+adjacent pixel pairs share one U and one V. The byte
+layout for each pair is four bytes -- Y0, U, Y1, V --
+which works out to two bytes per pixel on average,
+identical to RGB565.
+
+The two bytes mean different things from RGB565's
+though. The Y channel alone is a ready-to-use 8-bit
+grayscale image, which is what most classical
+machine-vision algorithms (edge detection, template
+matching, blob analysis) actually consume; the U and V
+channels carry the colour information for the small
+number of algorithms that need it.
+
+YUV422 is the right choice when the pipeline needs both
+-- an early-stage algorithm that reads only Y followed
+by a later stage that uses the chroma for finer colour
+decisions -- because the Y values are sitting right
+there ready to use without a colour-space conversion.
+
+Grayscale
+---------
+
+Grayscale is one byte per pixel: the luminance value
+only, no colour at all. It is the smallest finished
+format -- half the size of RGB565 and YUV422, one-third
+the size of RGB888.
+
+Most classical machine-vision algorithms work on
+grayscale anyway, so dropping the colour channel
+directly out of the sensor is often the simplest and
+most memory-efficient choice. Edge detection,
+line-finding, blob analysis, QR-code decoding, template
+matching, and AprilTag detection all run on grayscale
+and benefit from the smaller buffer.
+
+Other formats
+-------------
+
+A few formats the OpenMV Cam can produce do not come out
+of the ISP pipeline as part of the normal flow.
+
+**BINARY** is one bit per pixel -- the smallest possible
+representation. Used for thresholded images, mask
+buffers, and the output of any operation that
+distinguishes only between match and no-match at each
+pixel.
+
+**JPEG** is a compressed colour format. Some sensors
+include an on-chip JPEG encoder and can deliver
+JPEG-compressed frames directly; for sensors without
+one, the MCU runs a JPEG encoder over a finished RGB or
+grayscale frame after the ISP. Either way the output is
+a JPEG bitstream, useful for saving frames to storage or
+sending them over a bandwidth-limited link.
+
+**PNG** is a lossless compressed format. Sensors do not
+produce PNG directly; the MCU compresses a finished RGB
+or grayscale frame on demand. Useful when bandwidth or
+storage matters but the lossy compression JPEG applies
+would discard information the application later needs.
+
+
+CSI basics
+==========
+
+The :mod:`csi` module is how Python code drives the camera
+sensor. Every script that captures a frame follows the
+same three-part shape: imports at the top, one-time
+configuration in the middle, and a ``while True`` loop at
+the bottom that pulls frames from the camera one at a
+time.
+
+The typical loop
+----------------
+
+::
 
     import csi, image, time
 
-    ### One time setup
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.QVGA)
 
-    csi0 = csi.CSI()                    # Create a CSI object for the camera.
-    csi0.reset()                        # Reset and initialize the sensor.
-    csi0.pixformat(csi.RGB565)          # Set pixel format to RGB565 (or GRAYSCALE)
-    csi0.framesize(csi.QVGA)            # Set frame size to QVGA (320x240)
-    csi0.snapshot(time=2000)            # Wait for settings take effect.
-    clock = time.clock()                # Create a clock object to track the FPS.
+    clock = time.clock()
+    while True:
+        clock.tick()
+        img = csi0.snapshot()
+        # process img here
+        print(clock.fps())
 
-    ### Infinite loop
-
-    while(True):
-        clock.tick()                    # Update the FPS clock.
-        img = csi0.snapshot()           # Take a picture and return the image.
-        print(clock.fps())              # Note: OpenMV Cam runs about half as fast when connected
-                                        # to the IDE. The FPS should increase once disconnected.
-
-Note that if you do not have an infinite while loop in your code then once your
-OpenMV Cam finishes running the script it will sit there and do nothing.
-
-
-System Architecture
-===================
-
-Thanks for reading what of the tuturial has been completed so far. It probably
-won't ever be done. Anyway, I'd like to discuss the system architecture quickly.
-
-First, the OpenMV Cam is based off of the STM32 Microcontroller architecture because the
-MicroPython pyboard is based off of the STM32 Microcontroller architecture. If the
-project was started using some other system things might have been totally different.
-
-Moving on, we choose not to use DRAM with the original OpenMV Cam because it made the
-system too expensive to produce at low volumes. SDR DRAM (which is what the STM32 supports)
-isn't the cheapest at low manufacturing volumes and greatly increases board design
-complexity (e.g. you need to do 8-layer boards to route all the signals). As we've
-revved the OpenMV Cam with a faster and faster main processor the SDR DRAM speed
-also has not kept up with the internal RAM speed. On the STM32H7 for example the
-internal RAM bandwidth is 3.2GB/s versus a maximum SDR RAM bandwidth of 666MB/s
-even if we built the system with an 8-layer board using a 32-bit DRAM bus
-requring 50+ I/O pins for the DRAM.
-
-So, since we're built on the STM32 architecture and limited to using expensive
-and slow SDR DRAM for now we haven't added it as our internal SRAM is way faster.
-As production volumes go up and technology improves hopefully we'll be able to
-have more memory while still keeping the OpenMV Cam simple to use.
-
-Memory Architecture
+What each call does
 -------------------
 
-Given the above memory architecture limitations we built all of our code to run
-inside of the STM32 microcontroller memory. However, the STM32 doesn't have one
-large contigous memory map. It features different segments of RAM for different
-situations.
+``import csi, image, time``
+    Brings in three modules. :mod:`csi` controls the
+    sensor, :mod:`image` defines the
+    :class:`~image.Image` class that :meth:`~csi.CSI.snapshot`
+    returns, and :mod:`time` provides the
+    :func:`time.clock` helper used to measure frames per
+    second.
 
-First, there's a segment of RAM which contains global variables, the heap, and
-the stack. The heap and global variables are fixed in size so only the stack
-grows and shrinks. For performance reasons heap/stack collision is not checked
-constantly so don't use recursive functions on the OpenMV Cam.
+``csi.CSI()``
+    Constructs a :class:`~csi.CSI` instance that wraps
+    one physical camera sensor. The constructor claims
+    the camera peripheral and records the per-sensor
+    configuration. Cameras with a single sensor have one
+    :class:`~csi.CSI` instance; cameras with two sensors
+    (colour plus thermal, colour plus event) have two,
+    each selected by a ``cid`` argument to the
+    constructor.
 
-As for the heap, it's fixed in size versus growing towards the stack and managed
-by MicroPython's garbage collector. MicroPython automagically free's up unused
-blocks inside of the heap. However, the design of the MicroPython heap does not
-allow it to be arbitrarily large (e.g. in the megabyte range) like heaps on PCs.
-So, even if we have DRAM it would be hard to leverage using MicroPython's heap.
+``csi0.reset()``
+    Powers and configures the sensor. By default it
+    pulses the sensor's reset pin, then writes the
+    sensor's I2C registers to a known starting state.
+    Subsequent configuration calls -- ``pixformat``,
+    ``framesize``, the auto-control knobs -- push more
+    register writes over the same I2C control bus.
 
-Next, there's a larger memory segment for the frame buffer to store images in.
-On the bottom of the frame buffer new images are stored when functions like
-`csi.CSI.snapshot()` are called. Any unused space in the frame buffer is then
-available to be used as a "frame buffer stack" that builds from the top of the
-frame buffer down. This memory architecture design is what allows a lot of our
-computer vision methods to execute without having to allocate large data
-structures inside of the MicroPython heap.
+``csi0.pixformat(csi.RGB565)``
+    Writes the sensor registers that pick the output
+    pixel format. The available choices are the formats
+    the :doc:`pixel formats <../formats/pixel-formats>`
+    page introduced: :data:`~csi.RGB565`,
+    :data:`~csi.GRAYSCALE`, :data:`~csi.BAYER`,
+    :data:`~csi.YUV422`, and :data:`~csi.JPEG` on the
+    sensors that support it.
 
-That said, the frame buffer stack is still a stack and doesn't support random
-allocations and deallocations. Luckily, most computer vision algorithms have very
-predictable memory allocations. For ones that don't (like AprilTags) we allocate
-a temporary heap inside of the frame buffer stack when we need it (again to avoid
-fragmenting the MicroPython heap).
+``csi0.framesize(csi.QVGA)``
+    Writes the registers that pick the output resolution.
+    :data:`~csi.QVGA` is 320 × 240; the named sizes run
+    up to :data:`~csi.WQXGA2` (2592 × 1944, about 5 MP)
+    on sensors that support them. A custom ``(width,
+    height)`` tuple works too, as long as it lines up
+    with the sensor's output capabilities.
 
-Finally, vision algorithms return their results (which are small usually) by
-allocating objects in the MicroPython heap. The results can then be garbage
-collected easily by MicroPython while the frame buffer stack is fully cleared
-after any computer vision algorithms finish executing.
+``clock = time.clock()``
+    Creates a clock helper. Each call to ``clock.tick()``
+    inside the loop records the iteration start time;
+    :meth:`time.clock.fps` reports the recent loop rate
+    in frames per second.
 
-Now while this works great it means you can only have one big image in the frame
-buffer in RAM. As the MicroPython heap is optimized for small objects storing
-large 100KB images in it doesn't make sense. To enable more images to fit in RAM
-we allow the frame buffer stack to be used for secondary image storage using
-``image.Image()`` with a custom buffer. By allocating a secondary frame buffer on the
-frame buffer stack you can now have two or more images in RAM at the cost
-of reducing memory space for more complex algorithms (like AprilTags).
+``img = csi0.snapshot()``
+    Captures one frame from the sensor and returns it as
+    an :class:`~image.Image`. The mechanics of how that
+    frame ends up in memory are worth a closer look.
 
-So, that's the memory architecture. And... we allow images to be stored in
-the frame buffer, heap, and the frame buffer stack. Yes, our code is rather
-complex to handle all of this and it would have been great to just throw
-everything in a large DRAM. But, now you know why this isn't the case.
+How snapshot fills memory
+-------------------------
+
+The sensor delivers pixels on the pixel-data bus described
+in :doc:`sensor buses <../sensor/data-bus>` at rates of
+hundreds of megabytes per second -- far too fast for the
+CPU to copy pixel by pixel in software.
+
+Instead, the MCU offloads the transfer to *Direct Memory
+Access* (DMA) -- a hardware engine separate from the CPU
+that copies bytes from one place to another inside the
+MCU without involving the CPU at all. The camera input
+peripheral catches each incoming pixel byte into a small
+on-chip FIFO; whichever ISP stages run on the MCU side
+process the data on the way through; and the DMA engine
+writes the finished pixels into a framebuffer in RAM at
+the corresponding pixel offset. Nothing in that chain
+needs the CPU once the DMA channel has been programmed.
+
+When ``snapshot()`` is called:
+
+1. The CSI driver programs the DMA engine with the
+   framebuffer's address, the transfer length (one
+   frame's worth of pixels), and a callback for the
+   DMA-done interrupt.
+2. The driver enables the camera input peripheral and
+   waits for the sensor to signal the start of the next
+   frame.
+3. As the sensor streams the frame out, the peripheral
+   hands each pixel byte through the ISP and on to the
+   DMA engine, which writes the result into RAM at the
+   next framebuffer offset. The CPU is free to run other
+   code during the transfer.
+4. When the last pixel of the frame arrives, the DMA
+   fires its done interrupt, the driver wraps the
+   framebuffer in an :class:`~image.Image`, and
+   ``snapshot()`` returns it to user code.
+
+The :class:`~image.Image` returned does not own a copy of
+the pixel data -- it points at one of the camera's
+framebuffers in RAM. How many framebuffers the camera
+keeps, and how they get handed between the DMA and user
+code on each call to :meth:`~csi.CSI.snapshot`, depends on
+the buffering mode the application has selected through
+:meth:`~csi.CSI.framebuffers`.
+
+
+Framebuffers
+============
+
+Once the camera sensor is initialised it emits frames
+continuously at its frame rate -- one new frame every
+frame period whether or not the application is ready for
+it. Each frame needs somewhere in RAM to land or it is
+lost. The framebuffer pool is where those frames live
+between leaving the DMA and being processed by user code,
+and how many framebuffers the camera keeps in that pool
+controls how the DMA and the application share them. The
+choice is exposed through :meth:`~csi.CSI.framebuffers`,
+and four modes are available, selected by the buffer
+count.
+
+Single buffer (count = 1)
+-------------------------
+
+One framebuffer in RAM. The DMA fills it; the application
+reads from it; the next call to :meth:`~csi.CSI.snapshot`
+cannot start until the application has released the
+buffer, because the same buffer is needed for both.
+
+The camera and the application run in lock-step. The DMA
+has to wait for the application to finish, and the
+application has to wait for the DMA to finish, which
+means the achievable frame rate is *half* the sensor's
+frame rate at best -- every other frame the sensor
+emits arrives while the buffer is busy and is lost.
+
+This mode is the smallest in RAM and the slowest in
+throughput. Use it only when RAM is too tight to allocate
+a second buffer.
+
+Double buffer (count = 2)
+-------------------------
+
+Two framebuffers in RAM: one *back* buffer that the DMA
+fills, and one *front* buffer that the application reads
+from. When the application finishes the front buffer the
+two roles swap, and the DMA starts filling the freshly
+released buffer while the application reads from the
+just-filled one.
+
+As long as the application processes each frame in less
+than one camera frame period, the application sees the
+sensor's full frame rate -- the DMA's next frame is
+already waiting in the back buffer when the application
+calls :meth:`~csi.CSI.snapshot` again. The moment the
+processing time exceeds one frame period, however, the
+rate halves: the camera will produce two frames in the
+time the application takes to process one, and only the
+second of those two will be delivered.
+
+Past that point the rate degrades smoothly with the
+processing time. Every time the DMA finishes a new
+back-buffer frame while the application is still working
+on the front buffer, the new frame overwrites the
+previous capture in place rather than being discarded.
+The application always gets the most recent frame the
+camera produced on its next :meth:`~csi.CSI.snapshot`,
+and the achievable application rate becomes the inverse
+of its processing time.
+
+Triple buffer (count = 3)
+-------------------------
+
+Three framebuffers in RAM: two *back* buffers that the
+DMA cycles through and one *front* buffer the application
+is currently working on. This is the default mode the
+OpenMV Cam picks when there is enough RAM to spare, with
+automatic fall-back to double or single buffer when there
+is not.
+
+The third buffer fully decouples the camera frame rate
+from the application frame rate. The DMA always has a
+buffer to write into; the application always has a buffer
+to read from; on each :meth:`~csi.CSI.snapshot` the most
+recent ready back buffer becomes the new front buffer and
+the previous front buffer is freed for the DMA. The
+application's frame rate matches the time it actually
+takes to process each frame -- without the 1/2-step that
+double buffer falls into when the processing time slips
+just past one frame period.
+
+Video FIFO (count = 4 or more)
+------------------------------
+
+Four or more framebuffers in RAM, arranged as a ring of
+frames captured back-to-back. Every frame the camera
+delivers is queued into the FIFO, and
+:meth:`~csi.CSI.snapshot` returns the *oldest* queued
+frame rather than the most recent one. The application
+walks through the captured frames in capture order, in
+the time it actually has to spend on each.
+
+This mode is the right choice when every frame matters
+and brief processing stalls are expected: writing video
+to an SD card whose storage stack can block for tens of
+milliseconds during an erase, streaming over USB to a
+host that briefly stops reading, or buffering a short
+burst of a fast event for inspection in code.
+
+Two policies handle the case where the FIFO fills before
+the application has drained it.
+
+* **Drop old frames (default).** When the FIFO fills, all
+  queued frames except the active one are discarded so
+  the next :meth:`~csi.CSI.snapshot` returns a recent
+  frame rather than a stale one. The DMA keeps capturing
+  throughout, so the application always sees fresh data
+  after a stall. This is the right policy when the goal
+  is keeping the captured stream current -- video
+  recording, live streaming.
+* **Stop capturing on overflow.** Pass ``fflush=False``
+  to the :class:`~csi.CSI` constructor and the DMA stops
+  filling the FIFO when it is full, leaving the queued
+  frames intact. :meth:`~csi.CSI.snapshot` continues to
+  return frames in capture order until the application
+  has drained them, after which the DMA resumes. This is
+  the right policy when the goal is preserving every
+  frame of a short burst -- capturing fast motion to
+  inspect frame by frame in code afterwards.
+
+See :meth:`csi.CSI.framebuffers` for the full API.
+
+Triggered mode
+--------------
+
+An alternative to the always-running modes above is
+*triggered* capture, where the sensor emits a frame only
+when :meth:`~csi.CSI.snapshot` asks for one. The camera
+sits idle between snapshots and starts a fresh exposure
+each time the application calls in.
+
+The cost is throughput: a triggered capture cannot
+overlap with the previous one, so the maximum achievable
+frame rate is half the sensor's normal rate. The benefit
+is exposure timing. Snapshot controls exactly when the
+exposure begins, which is what an application wants when
+the exposure has to line up with an external event -- a
+strobe flash, a conveyor-position sensor, a pulse on a
+GPIO line -- rather than landing wherever the
+free-running sensor's rolling frame happens to be when
+the application is ready to read it.
+
+Triggered mode is sensor-specific. On supported sensors
+it is enabled by calling
+``csi0.ioctl(csi.IOCTL_SET_TRIGGERED_MODE, True)`` and
+disabled by passing ``False``.
+
+
+Image preview
+=============
+
+The framebuffer pool is where the application reads its
+frames. While the application is working on those frames,
+whatever is connected to the camera to preview them needs a
+copy of each frame too. The camera has a second, dedicated
+buffer for that purpose, and a single rule for when it gets
+filled: *every time the application calls*
+:meth:`~csi.CSI.snapshot`, *the previous captured frame is
+copied into the preview buffer* before the new frame is
+handed back.
+
+The application and the previewer never contend for the same
+memory. The application reads its frame out of the pool; the
+previewer reads its frame out of the preview buffer. Both
+happen in parallel.
+
+The stream framebuffer
+----------------------
+
+The preview buffer -- the *stream framebuffer* -- is a single
+fixed-size region of RAM separate from the framebuffer pool.
+Its size is set at firmware build time and does not change
+with :meth:`~csi.CSI.framesize` or
+:meth:`~csi.CSI.pixformat`. About a megabyte is typical on
+recent OpenMV Cams -- big enough to hold a moderate-resolution
+preview, much smaller than a full-resolution frame at the
+largest sensor sizes.
+
+The application code does not read or write this buffer
+directly; the camera driver fills it as a side effect of
+:meth:`~csi.CSI.snapshot`.
+
+What snapshot does for the preview
+----------------------------------
+
+On each call to :meth:`~csi.CSI.snapshot`, before the driver
+releases the application's previous framebuffer back into the
+pool and hands the new one out, it copies the previous frame
+through to the preview buffer -- with whatever the application
+drew on top of it during processing still on the image.
+Two branches are possible. Which one runs is *picked by the
+previewer*, not by the camera: the consumer that opened the
+preview tells the driver whether it wants the raw image or a
+JPEG, and what raw window size it can accept.
+
+* **Raw downscaled copy.** When the previewer has asked for
+  raw frames, the driver copies the previous frame across in
+  its native pixel format (RGB565, grayscale, etc.). If the
+  frame is larger than the raw window the previewer
+  requested, the driver scales it down with bilinear
+  filtering until it fits; otherwise the pixels go through
+  unchanged. No compression artefacts; the previewer sees
+  the same pixels the application was working on.
+* **JPEG compression.** When the previewer has asked for
+  JPEG -- or when the raw copy would not fit in the stream
+  buffer at all -- the driver JPEG-compresses the previous
+  frame at its full resolution into the stream buffer. The
+  quality is adjusted *adaptively* per-frame so the
+  compressed output stays within the stream buffer's
+  capacity. When a frame fits, the driver creeps the quality
+  back up by one step toward a ceiling that depends on the
+  captured frame's pixel size (smaller frames are allowed
+  higher quality; larger frames are capped lower so they
+  cannot overflow on a small content change). When a frame
+  does *not* fit, the driver halves the current quality,
+  holds it at the reduced level for the next several dozen
+  frames so the new setting has time to settle, and drops
+  the overflowed frame from the preview. The application
+  loop keeps running unaffected; only the previewer misses
+  the dropped frame.
+
+Frames the camera produces in a format that is already
+compressed (the JPEG pixel format on sensors that emit JPEG
+directly) skip both branches: the encoded bitstream is
+copied straight into the preview buffer as-is.
+
+The previewer polls on its own schedule, generally much
+slower than the camera captures, so it *sub-samples* the
+raw capture rate: only the snapshots it happens to read out
+in time are shown. If a fresh
+:meth:`~csi.CSI.snapshot` arrives at the preview buffer
+before the previewer has read the previous frame out, the
+buffer is still locked by the previewer and the new preview
+update is skipped -- that capture is lost from the preview
+stream. The application's own framebuffer pool is unaffected;
+the captured frame still goes to the application normally.
+
+Pushing the last frame manually
+-------------------------------
+
+Because the preview is updated as a side effect of
+:meth:`~csi.CSI.snapshot`, a script that finishes without
+ever calling snapshot again leaves whatever it last sent to
+the preview sitting on the previewer indefinitely -- which,
+for a script that does its work before the first snapshot
+and then exits, is an empty preview.
+:meth:`image.Image.flush` (or the equivalent
+:meth:`~csi.CSI.flush` on the :class:`~csi.CSI` object)
+copies the current contents of the application's framebuffer
+into the stream buffer on demand, without capturing a new
+frame::
+
+    img = csi0.snapshot()
+    # process the image and draw on it
+    img.flush()                               # previewer sees the annotated frame
+
+The same call is also useful when a long-running operation
+sits between snapshots and the previewer would otherwise show
+a stale preview the whole time.
+
+.. note::
+
+   The preview application has to read the frame out of the
+   stream buffer before the script exits. A flush at the end
+   of a short script only stages the frame; if the script
+   then returns control to the camera before the previewer
+   has polled, the buffer is reused on the next run and that
+   final frame is lost. For end-of-script previews, give the
+   previewer a moment to pick the frame up (a brief sleep
+   after the flush, or simply not exiting immediately) before
+   the script ends.
+
+
+Sensor knobs
+============
+
+Beyond :meth:`~csi.CSI.pixformat` and
+:meth:`~csi.CSI.framesize`, the :class:`~csi.CSI` class
+exposes a handful of per-sensor controls that almost every
+application reaches for sooner or later -- mounting
+orientation, exposure, gain, white balance, and a few
+debugging aids. Each one maps directly onto a sensor concept
+covered earlier; the API just provides a Python handle for
+the register write the driver makes underneath.
+
+All of the methods below act on the underlying sensor. They
+all push register writes over the sensor's :doc:`I2C control
+bus <../sensor/data-bus>`, so the cost is microseconds and
+the new setting takes effect on the *next* exposure --
+typically the next :meth:`~csi.CSI.snapshot`.
+
+Orientation
+-----------
+
+The camera does not know which way up it has been mounted.
+Two flip flags applied at the sensor turn the picture the
+right way around before any pixel leaves the chip::
+
+    csi0.hmirror(True)
+    csi0.vflip(True)
+
+:meth:`~csi.CSI.hmirror` flips left-to-right and
+:meth:`~csi.CSI.vflip` flips top-to-bottom. Together they
+cover the cases that come up in practice: a board mounted
+upside down (both flags ``True``), a board behind a
+front-silvered mirror (``hmirror`` only), or one looking at a
+reflected scene from below (``vflip`` only).
+
+Because the flip happens in the sensor's read-out logic,
+there is no CPU cost and no memory overhead -- the frame
+lands in the framebuffer already oriented.
+
+Exposure
+--------
+
+Exposure is the integration time -- how long the photodiode
+in each pixel collects charge before the row is read out, in
+microseconds. The driver starts with the sensor's
+auto-exposure loop running, so the camera tries to keep the
+average pixel value near a target. Disabling the loop pins
+the exposure to a value the application chooses::
+
+    csi0.auto_exposure(False, exposure_us=8000)
+
+A fixed exposure is the right choice when the scene
+brightness is stable and the application needs predictable
+motion blur or consistent frame-to-frame intensity for
+thresholding. Reading the current exposure back -- whether
+the loop set it or the application did -- is a separate
+call::
+
+    us = csi0.exposure_us()
+
+Calling :meth:`~csi.CSI.auto_exposure` with ``True`` and no
+exposure value hands control back to the loop.
+
+Gain
+----
+
+Gain is the amplifier applied to the pixel voltage before it
+reaches the ADC, in decibels. Like exposure, the driver
+starts with the auto-gain loop on. Two patterns come up
+often. Capping the ceiling lets the loop adapt to lighting
+but stops it from amplifying noise indefinitely in dim
+scenes::
+
+    csi0.auto_gain(True, gain_db_ceiling=16)
+
+Pinning a fixed gain is the right move when the application
+also pins the exposure -- gain stability matters for
+applications that compare pixel values frame to frame, like
+colour tracking::
+
+    csi0.auto_gain(False, gain_db=0)
+
+The current gain reads back through :meth:`~csi.CSI.gain_db`.
+Whenever the application disables auto-gain it should also
+disable auto-white-balance and auto-exposure -- otherwise the
+control loops still in play will pull the image around in
+ways that defeat the fixed gain.
+
+White balance
+-------------
+
+White balance is the per-channel gain the ISP applies to the
+red, green, and blue channels coming out of the debayer
+stage so a white object looks white under any colour of
+light. The auto-white-balance loop computes those three
+gains from the per-region :doc:`statistics
+<../color/isp-pipeline>` the ISP collects on every frame and
+applies them on the next frame.
+
+Most applications leave the loop running. Colour tracking is
+the common exception -- the gains are also what the loop
+will push around to chase a coloured object, so if the
+application is trying to find a red blob, the loop will
+quietly dim the red channel and the blob will stop matching.
+Locking the loop fixes that::
+
+    csi0.auto_whitebal(False)
+
+Pass an explicit ``(r, g, b)`` tuple in decibels for repeatable
+colour calibration -- the same gains across boards and
+sessions::
+
+    csi0.auto_whitebal(False, rgb_gain_db=(0.0, 0.0, 0.0))
+
+The current gains read back as a tuple through
+:meth:`~csi.CSI.rgb_gain_db`.
+
+Frame rate cap
+--------------
+
+Sensors run at their native frame rate by default -- 30 to
+60 frames per second on most parts, much higher on the
+high-speed sensors when the framesize is small enough.
+Capping the rate lets the application throttle the camera
+to whatever the downstream processing can keep up with::
+
+    csi0.framerate(15)
+
+On sensors that support a hardware rate control the call
+also lengthens the per-frame exposure budget, which can
+help in low light; on the others the driver simply skips
+the extra frames at the framebuffer level.
+
+Test pattern
+------------
+
+The colour-bar test pattern is built into most sensors and
+useful for separating an *imaging* problem from an *output*
+problem. Turning it on bypasses the photodiode array and
+sends a fixed pattern down the same pixel data path::
+
+    csi0.colorbar(True)
+
+If the test pattern looks right but the live image does
+not, the fault is in the optics or the sensor's analog
+front-end; if even the test pattern is corrupted, the
+problem is somewhere on the pixel-data bus or in the
+:meth:`~csi.CSI.pixformat` / :meth:`~csi.CSI.framesize`
+configuration. Pass ``False`` to return to the live image.
+
+See :class:`csi.CSI` for the full API, including the
+sensor-specific :meth:`~csi.CSI.ioctl` commands that expose
+controls unique to particular sensor families.
+
+
+Multiple sensors
+================
+
+A handful of OpenMV Cams pair two image sensors on the same
+board -- most commonly a colour camera alongside a FLIR®
+Lepton® thermal sensor, but the same shape applies to the
+colour-plus-event boards and any future dual-sensor
+hardware. Each sensor has its own pixel array, its own
+control bus, and runs its own pipeline at its own frame
+rate. The :class:`~csi.CSI` API extends to cover them by
+letting the application instantiate one :class:`~csi.CSI`
+object per physical sensor.
+
+Selecting which sensor
+----------------------
+
+The :class:`~csi.CSI` constructor takes a ``cid`` argument
+that names a specific sensor on the board. ``cid=-1``
+(the default) selects the *primary* sensor; the named ``cid``
+constants select a secondary by chip ID::
+
+    import csi
+
+    csi_rgb     = csi.CSI()                    # primary colour sensor
+    csi_thermal = csi.CSI(cid=csi.LEPTON)      # FLIR® Lepton®
+
+Each instance owns its own configuration -- pixel format,
+framesize, exposure / gain knobs, framebuffer pool -- and
+is reset, configured, and read independently of the other.
+The constants for the supported secondary sensors
+(:data:`~csi.LEPTON`, :data:`~csi.GENX320`, and the others
+listed in the :class:`~csi.CSI` reference) name the chip
+the application expects on the secondary port; the driver
+fails the construction if the actual chip does not match.
+
+Capturing from both sensors
+---------------------------
+
+Each sensor runs its capture pipeline independently of the
+other -- the colour sensor might deliver thirty frames a
+second while the Lepton® delivers nine. The straightforward
+way to handle that mismatch is to let the *faster* sensor
+drive the loop and read the slower sensor non-blockingly,
+taking whatever is ready and skipping the iteration when
+nothing is::
+
+    import csi
+
+    csi_rgb     = csi.CSI()
+    csi_thermal = csi.CSI(cid=csi.LEPTON)
+
+    csi_rgb.reset()                        # powers the rail, pulses RESET
+    csi_rgb.pixformat(csi.RGB565)
+    csi_rgb.framesize(csi.QVGA)
+
+    csi_thermal.reset(hard=False)          # I2C reconfigure only
+    csi_thermal.pixformat(csi.GRAYSCALE)
+    csi_thermal.framesize(csi.QQVGA)
+
+    while True:
+        rgb_img     = csi_rgb.snapshot()                  # blocks for next colour frame
+        thermal_img = csi_thermal.snapshot(blocking=False)  # returns None if not ready
+        if thermal_img is not None:
+            # process aligned colour + thermal pair
+            pass
+        else:
+            # process colour only on this iteration
+            pass
+
+The blocking :meth:`~csi.CSI.snapshot` paces the loop; the
+non-blocking one returns the most recent thermal frame when
+a fresh one has landed since the previous call, and ``None``
+otherwise. The application keeps running at the colour
+sensor's frame rate and gets a thermal frame whenever the
+Lepton® produces one.
+
+The opposite pattern -- two blocking snapshots back to back
+-- works too, but the loop then runs at the *slower* of the
+two sensors' rates, with the faster sensor's pipeline
+stalling between iterations. Pick whichever rate the
+application's downstream processing actually wants to drive.
+
+Reset on shared power rails
+---------------------------
+
+Some dual-sensor boards run both chips off a single power
+rail or share a reset line. On those, the first
+:meth:`~csi.CSI.reset` brings the rail up and pulses the
+shared signal; subsequent resets on the other
+:class:`~csi.CSI` instances should pass ``hard=False`` so
+they reprogram only their own chip without dragging the
+neighbour through a reset::
+
+    csi_rgb.reset()                        # primary -- powers the rail, pulses RESET
+    csi_thermal.reset(hard=False)          # secondary -- I2C reconfigure only
+
+A ``hard=True`` on a secondary in this shape would re-reset
+the primary as a side effect, undoing any setup the
+application had already pushed. The reference page for each
+dual-sensor board calls out whether the rails are shared.
+
+Selecting the stream source
+---------------------------
+
+Cameras with two sensors have two :class:`~csi.CSI`
+instances but still only one stream framebuffer between them.
+A constructor argument picks which sensor's frames feed the
+preview::
+
+    csi_rgb     = csi.CSI()                    # primary
+    csi_thermal = csi.CSI(cid=csi.LEPTON,
+                          stream=True)         # preview source
+
+``stream=True`` makes the named instance the source. With no
+``stream=`` argument the primary sensor (``cid=-1``, the
+default) is the source; instances built with ``cid=`` of a
+secondary sensor stay silent on the preview unless
+``stream=True`` is passed explicitly. Calls to
+:meth:`~csi.CSI.snapshot` on the non-selected sensor still
+capture frames into that sensor's framebuffers normally --
+they just do not update the preview.
+
+
+Memory pools
+============
+
+A camera that holds three full-resolution frames in a
+framebuffer pool, runs a separate preview buffer alongside,
+and still has room for a Python script and its objects is
+juggling more memory than a single block of RAM on the MCU
+could provide. MicroPython fits everything in by spreading
+it across the **several distinct kinds of memory** the MCU
+provides, and by routing each kind of allocation to the
+kind of memory it actually needs.
+
+Kinds of memory
+---------------
+
+A modern OpenMV Cam MCU exposes four distinct kinds of
+memory. The first is invisible to the application; the other
+three are pools that allocations can come from.
+
+* **The CPU's data cache** -- a small, very fast region of
+  memory that sits between the CPU and the rest of RAM.
+  When the CPU reads or writes a value from main memory the
+  cache automatically keeps a copy, so repeated accesses to
+  the same data stay in the cache and never pay the cost of
+  going out to slower memory. The cache is *not* a pool
+  allocations come from. It is transparent to the
+  application -- it just makes the rest of RAM feel faster
+  in practice than its raw latency would suggest, up to the
+  point where a working set stops fitting in it.
+* **Tightly-coupled processor memory** -- a small block of
+  RAM wired directly to the CPU with no bus in between.
+  Single-cycle access, never misses, never waits.
+  Allocations that genuinely need the fastest possible
+  memory -- where every cycle of latency matters -- come
+  out of this pool.
+* **Fast on-chip memory** -- a few hundred kilobytes up to
+  about a megabyte of RAM, built into the MCU package. Low
+  latency, high bandwidth, but limited in size. The
+  MicroPython heap lives here so Python object accesses stay
+  quick; smaller working buffers that the CPU touches a lot
+  share the pool.
+* **Slower bulk memory** -- on boards that pair the MCU with
+  an external memory die, tens of megabytes of off-chip
+  RAM reached over the external bus. Much larger, but each
+  access takes longer than on-chip memory; the data cache
+  hides much of that cost for working sets it can hold, and
+  the gap shows up on operations that sweep across data
+  too big to cache. Used for allocations that have to be
+  large and that the CPU can tolerate at slower speed --
+  most importantly, the framebuffer pool.
+
+Boards in the family fall on a spectrum: some have only
+on-chip RAM; some pair on-chip RAM with a much larger
+external block. Each of the three allocatable kinds is
+treated as a **memory pool** -- a chunk that allocations
+come out of -- and labelled so each request can ask for the
+kind of memory it actually needs.
+
+The primary framebuffer
+-----------------------
+
+The framebuffer that backs :meth:`~csi.CSI.snapshot` does
+not ask for fast memory. It asks for *enough* memory --
+nothing more. That puts it in whichever pool is largest, so
+on a board with both on-chip and external memory the
+framebuffer lands in the external block.
+
+A full-resolution, triple-buffered framebuffer is far too
+big to fit in the fast on-chip pool on most parts; the
+larger pool is the only one that can hold it at all. The
+CPU's data cache hides much of the per-access cost when the
+application processes the image, and the DMA engine that
+fills the framebuffer from the sensor keeps up with the
+sensor's data rate either way.
+
+The exact size the framebuffer takes is picked from the
+current :meth:`~csi.CSI.pixformat`,
+:meth:`~csi.CSI.framesize`, and
+:meth:`~csi.CSI.framebuffers` count; it grows or shrinks
+each time any of those changes.
+
+Secondary sensor framebuffers
+-----------------------------
+
+A second :class:`~csi.CSI` instance gets its own
+framebuffer, allocated from the same pool the primary uses.
+The pool is shared; the buffers are independent. The
+secondary's footprint is normally much smaller than the
+primary's, because secondary sensors run at lower
+resolutions, so the extra memory the second framebuffer
+takes is a small fraction of the primary's.
+
+The stream framebuffer
+----------------------
+
+The :doc:`image preview <../csi/ide-preview>` buffer is the
+exception. It is not allocated from any of the pools at
+runtime; it is a *fixed region* reserved at build time,
+with a known address and a known size. That keeps the
+preview path out of the way of every other allocation --
+the region exists from boot and never moves.
+
+The MicroPython heap
+--------------------
+
+Python objects -- variables, lists, dictionaries, class
+instances, the :class:`~image.Image` wrapper an
+:meth:`~csi.CSI.snapshot` call returns, every string and
+tuple the application creates -- live on the **MicroPython
+garbage-collected heap**, which is *separate* from the
+camera's memory pools. The garbage-collected (GC) heap is
+a region of memory MicroPython manages itself: Python code
+allocates from it implicitly every time an object is
+created, and MicroPython periodically scans the heap and
+reclaims the space taken by objects the application is no
+longer referencing, so the application never has to free
+anything by hand.
+
+A dedicated region is set aside for the GC heap at boot,
+typically placed in fast on-chip memory so Python access
+stays quick, with an optional overflow into the larger
+external block on boards that need more headroom for big
+data structures.
+
+The :class:`~image.Image` returned by
+:meth:`~csi.CSI.snapshot` is a small wrapper object on the
+GC heap; the underlying pixel data lives in the framebuffer
+in one of the camera's pools. The two never compete for the
+same memory.
+
+Putting it together
+-------------------
+
+Steering each kind of allocation to the right pool -- big
+buffers to the larger pool where they fit, latency-sensitive
+data to the faster pools, the Python heap to its own region,
+the preview to its reserved slot -- is what makes it
+possible to run a full-resolution capture pipeline, a
+preview channel, and a non-trivial Python script alongside
+each other on parts that have only a few megabytes of fast
+memory total.
+
+
+Wrap up
+=======
+
+You have walked through the parts of the camera's imaging
+stack that come up every time a script captures a frame:
+
+* **The optics in front of the sensor** -- a pinhole as the
+  simplest image-forming element, then lenses, which gather
+  far more light while still focusing, with focal length,
+  aperture, depth of field, and field of view as the knobs
+  the application picks from. Real lenses come with
+  distortion, vignetting, and chief-ray-angle effects that
+  the sensor and ISP later compensate for.
+
+* **The sensor grid** -- a two-dimensional array of
+  photodiodes that turns photons into charge, with exposure
+  time and analog gain trading brightness against motion blur
+  and noise. Rolling and global shutters pick how rows of the
+  array are read out, and a small set of on-chip calibrations
+  -- column FPN, black level, defect pixel, lens shading --
+  clean the data before it leaves the chip. Two buses connect
+  the chip to the MCU: a slow I2C control bus for registers
+  and a fast parallel or MIPI bus for pixels.
+
+* **Colour and the ISP** -- a Bayer colour filter array gives
+  each pixel one of red, green, or blue; debayering
+  interpolates the missing two channels. The image signal
+  processor stitches the rest of the pipeline together --
+  statistics extraction, auto-white-balance, debayering,
+  colour-matrix correction, gamma, scaling, cropping, and a
+  final pack into the requested pixel format.
+
+* **Pixel formats** -- raw Bayer, RGB888, RGB565, YUV422,
+  grayscale, BINARY, and the compressed JPEG / PNG outputs
+  trade memory size against colour fidelity and downstream
+  algorithm compatibility. RGB565 is the default for finished
+  colour because it lines up with the MCU's word width and
+  halves the memory cost relative to RGB888.
+
+* **The CSI API** -- five lines of setup plus a snapshot loop
+  is the shape every script starts from. Framebuffer pools
+  (single, double, triple, video FIFO, or triggered) decide
+  how the application and the camera share frames; a separate
+  preview channel feeds whatever debug program is attached
+  without competing for the application's buffers; sensor
+  knobs cover orientation, exposure, gain, white balance,
+  frame-rate cap, and a colour-bar test pattern.
+
+* **Multiple sensors and memory pools** -- boards with two
+  sensors instantiate one :class:`~csi.CSI` per chip and run
+  each at its own rate. Underneath, the framebuffer pool, the
+  preview region, the MicroPython heap, and the smaller
+  fast-memory allocations live in distinct regions of RAM,
+  placed so the parts that need speed get it and the parts
+  that just need size get that instead.
+
+That is enough to take a frame out of the sensor with the
+right format, framesize, and exposure for the scene; pick a
+framebuffer mode that matches the application's processing
+time; expose a live preview to whatever is attached; and read
+the :class:`~image.Image` back into Python ready to be
+operated on.
+
+Using this reference later
+--------------------------
+
+Treat the imaging chapters as reference material, not a
+one-pass read. Coming back to refresh on framebuffer modes,
+pixel formats, or the meaning of a given sensor knob is the
+intended use. The :class:`csi.CSI` reference page lists every
+method in one place when the question is just "what is the
+exact name of this call again".
+
+Where to go from here
+---------------------
+
+**Image processing** is the natural next topic. With the
+buffer in hand and the :mod:`csi` API understood, what is
+left is what to *do* with the pixels: thresholds, edge
+detection, blob finding, line and shape detection, QR codes,
+AprilTags, machine-learning inference. The toolkit shifts to
+the :mod:`image` module and its catalogue of methods on the
+:class:`~image.Image` object. Everything from this section
+carries forward; the loop shape, the framebuffer mode, the
+pixel format -- all of it is what the image-processing
+methods operate on.
 
 
 numpy / scipy on the OpenMV Cam
@@ -64556,7 +67044,7 @@ Pin reference
    "P0",        "SPI MOSI — data out to the LCD"
    "P2",        "SPI clock"
    "P3",        "SPI chip select"
-   "P5",        "Backlight control"
+   "P6",        "Backlight control"
    "P7",        "LCD reset"
    "P8",        "SPI command (data / command select)"
    "3.3V rail", "Powers the LCD"
@@ -64564,7 +67052,7 @@ Pin reference
 
 .. note::
 
-   Cut the solder trace on the back of the shield to disconnect P5
+   Cut the solder trace on the back of the shield to disconnect P6
    from the backlight; the backlight is then permanently on.
 
 Usage
@@ -64619,7 +67107,7 @@ whenever it needs to update the level::
     csi0.pixformat(csi.RGB565)
     csi0.framesize((128, 160))
 
-    lcd = display.SPIDisplay(backlight=PWMBacklight("P5"))
+    lcd = display.SPIDisplay(backlight=PWMBacklight("P6"))
     lcd.backlight(50)  # 0–100
     clock = time.clock()
 
@@ -73801,7 +76289,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Thu 28 May 2026 07:15:21 UTC
+Generated Fri 29 May 2026 07:02:23 UTC
 
 Literals
 --------
@@ -73984,7 +76472,7 @@ Sample code::
 Core language
 =============
 
-Generated Thu 28 May 2026 07:15:21 UTC
+Generated Fri 29 May 2026 07:02:23 UTC
 
 Classes
 -------
@@ -74586,7 +77074,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7fc023005260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7fe868605260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -74768,7 +77256,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Thu 28 May 2026 07:15:21 UTC
+Generated Fri 29 May 2026 07:02:23 UTC
 
 Exception
 ---------
@@ -75635,7 +78123,7 @@ Sample code::
 Modules
 =======
 
-Generated Thu 28 May 2026 07:15:21 UTC
+Generated Fri 29 May 2026 07:02:23 UTC
 
 .. Preamble section inserted into generated output
 
@@ -75935,7 +78423,7 @@ Sample code::
 +--------------------------+--------------------------------------------+
 | ::                       | ::                                         |
 |                          |                                            |
-|     14189273888346537789 |     Traceback (most recent call last):     |
+|     17834999597932693143 |     Traceback (most recent call last):     |
 |                          |       File "<stdin>", line 11, in <module> |
 |                          |     ValueError: bits must be 32 or less    |
 +--------------------------+--------------------------------------------+
@@ -75963,7 +78451,7 @@ Sample code::
 +-----------------------------------------------+-----------------------------------------------------------------+
 | ::                                            | ::                                                              |
 |                                               |                                                                 |
-|     x=340282366920938463463374607431768211455 |     Traceback (most recent call last):                          |
+|     x=340282366920938463463374607431768211456 |     Traceback (most recent call last):                          |
 |                                               |       File "<stdin>", line 11, in <module>                      |
 |                                               |     OverflowError: overflow converting long int to machine word |
 +-----------------------------------------------+-----------------------------------------------------------------+

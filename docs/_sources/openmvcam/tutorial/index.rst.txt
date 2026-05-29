@@ -18,8 +18,7 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
 
    hardware/index.rst
 
-   script_structure.rst
-   system_architecture.rst
+   vision/index.rst
 
    numpy/index.rst
 

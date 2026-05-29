@@ -34,7 +34,7 @@ Pin reference
    "P0",        "SPI MOSI — data out to the LCD"
    "P2",        "SPI clock"
    "P3",        "SPI chip select"
-   "P5",        "Backlight control"
+   "P6",        "Backlight control"
    "P7",        "LCD reset"
    "P8",        "SPI command (data / command select)"
    "3.3V rail", "Powers the LCD"
@@ -42,7 +42,7 @@ Pin reference
 
 .. note::
 
-   Cut the solder trace on the back of the shield to disconnect P5
+   Cut the solder trace on the back of the shield to disconnect P6
    from the backlight; the backlight is then permanently on.
 
 Usage
@@ -99,7 +99,7 @@ whenever it needs to update the level::
     csi0.pixformat(csi.RGB565)
     csi0.framesize((128, 160))
 
-    lcd = display.SPIDisplay(backlight=PWMBacklight("P5"))
+    lcd = display.SPIDisplay(backlight=PWMBacklight("P6"))
     lcd.backlight(50)  # 0–100
     clock = time.clock()
 
