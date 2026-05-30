@@ -3,11 +3,27 @@
 OpenMV Cam Tutorial
 ===================
 
-The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
+The OpenMV Cam is a small, programmable, MicroPython-driven
+camera designed for embedded machine vision. This tutorial
+covers what to do with one, end to end -- from unboxing a
+camera and writing the first script in the OpenMV IDE, to
+the Python and hardware basics every script rests on, to the
+camera's imaging stack and the image-processing and machine-
+learning tools built on top of it, through the concurrency
+and networking pieces an application reaches for when it
+grows up, and finally the practical work of taking a working
+prototype to a shipped product.
+
+The sections are written to be readable in order for a new
+user, but each super-section is also self-contained -- a
+reader who already knows Python can skip the Python
+Overview, and a reader who has shipped before can skip
+straight to *Production*. Where one section builds on
+something covered earlier, it links back.
 
 .. toctree::
-   :maxdepth: 1
    :numbered:
+   :maxdepth: 1
 
    overview.rst
    software_setup.rst
@@ -15,18 +31,15 @@ The OpenMV Cam tutorial covers how to use your OpenMV Cam and its accessories.
    openmvide_overview.rst
 
    python/index.rst
-
    hardware/index.rst
 
    vision/index.rst
-
+   image/index.rst
    numpy/index.rst
+   ml/index.rst
 
-   tls_certificates.rst
-   battery_life.rst
+   asyncio/index.rst
+   networking/index.rst
+   webservers/index.rst
 
-   firmware_development.rst
-
-   production.rst
-
-   more_information.rst
+   production/index.rst

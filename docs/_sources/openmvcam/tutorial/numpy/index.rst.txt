@@ -1,79 +1,84 @@
-numpy / scipy on the OpenMV Cam
-===============================
+NumPy
+=====
 
-The OpenMV Cam ships with `ulab <https://github.com/v923z/micropython-ulab>`_,
-a ``numpy`` and ``scipy`` compatible library written in C for
-MicroPython. ``ulab`` lets you do fast, vectorised numerical work on
-the camera itself: array math, linear algebra, FFTs, polynomial
-fitting, basic statistics and signal processing -- without leaving
-MicroPython.
+The :class:`~image.Image` class covers the per-pixel
+work the camera already knows how to do -- thresholds,
+blob finding, edge detection, and the rest of the image
+library. The :mod:`numpy` module covers everything
+else: ADC readings and other buffers of plain numbers,
+math that runs across a whole buffer at once, and
+per-pixel transforms the image library has not already
+built in.
 
-What it is
-----------
-
-``ulab`` is a *subset* of ``numpy`` and ``scipy`` that has been
-trimmed and tuned to fit on a microcontroller. The Python-level API
-matches CPython ``numpy`` very closely, so most code that works on
-your desktop also runs on the OpenMV Cam. It is conventionally
-imported as::
-
-   from ulab import numpy as np
-   from ulab import scipy as sp
-
-When to use it
---------------
-
-Reach for ``numpy`` on the OpenMV Cam when you want to:
-
-* Process buffers from sensors (ADC samples, IMU data, microphone
-  audio, time-of-flight depth maps, low-resolution thermal images).
-* Run an FFT or simple filter on a streamed signal.
-* Do linear algebra on small matrices (camera calibration, sensor
-  fusion, kinematics).
-* Manipulate pixel data with element-wise math, masks and slicing
-  before or after running OpenMV's built-in image processing.
-
-For pure pixel-level work, OpenMV's built-in :doc:`image library
-</library/omv.image>` is usually faster and uses less RAM, because it
-operates directly on the framebuffer in the camera's native pixel format.
-``numpy`` is the right tool when you need a *generic numerical*
-operation that the image library does not provide, or when you want
-to bridge to algorithms expressed in standard ``numpy`` form.
-
-When *not* to use it
-~~~~~~~~~~~~~~~~~~~~
-
-* For simple per-pixel thresholding, blob detection, edge filtering,
-  template matching, etc., use the built-in ``image`` module --
-  it is much faster than the equivalent ``numpy`` expression.
-* For very large arrays. The OpenMV Cam has limited RAM. A 320x240
-  ``float32`` array is 300 kB.
-
-Tutorial pages
---------------
+Enter the :class:`~ulab.numpy.ndarray`, a single class
+that holds a packed block of equally typed numbers.
+Everything else in ``numpy`` is a math function that
+operates on an ``ndarray``. Adding two arrays together,
+summing one of them, taking a sine of every element --
+each is a single library call that processes the whole
+buffer in one go, much faster than the equivalent
+Python ``for`` loop.
 
 .. toctree::
+   :caption: Concepts
    :maxdepth: 1
 
-   getting-started.rst
-   ndarray.rst
-   universal.rst
-   images.rst
-   fft.rst
+   basics/why-arrays.rst
+   basics/the-ndarray.rst
+   basics/making-arrays.rst
+   basics/dtypes.rst
+
+.. toctree::
+   :caption: Shape and indexing
+   :maxdepth: 1
+
+   shape/shape-and-strides.rst
+   shape/indexing-and-slicing.rst
+   shape/views-and-copies.rst
+
+.. toctree::
+   :caption: Math
+   :maxdepth: 1
+
+   math/operators.rst
+   math/universal-functions.rst
+   math/broadcasting.rst
+   math/reductions.rst
+   math/selection.rst
+
+.. toctree::
+   :caption: Linear algebra
+   :maxdepth: 1
+
    linalg.rst
-   scipy.rst
-   utils.rst
-   tricks.rst
-   programming.rst
 
-API reference
--------------
+.. toctree::
+   :caption: Signal processing
+   :maxdepth: 1
 
-The full ``ulab`` API reference lives under the library section:
+   signals/fft.rst
+   signals/filtering.rst
 
-* :doc:`/library/omv.ulab.numpy` - the ``numpy`` submodule (and the ``ndarray`` class).
-* :doc:`/library/omv.ulab.numpy.fft` - Fourier transforms.
-* :doc:`/library/omv.ulab.numpy.linalg` - linear algebra.
-* :doc:`/library/omv.ulab.numpy.random` - random number generation.
-* :doc:`/library/omv.ulab.scipy` - the ``scipy`` submodule.
-* :doc:`/library/omv.ulab` - top-level ``ulab`` module.
+.. toctree::
+   :caption: Numerical extras
+   :maxdepth: 1
+
+   numerical.rst
+
+.. toctree::
+   :caption: Images
+   :maxdepth: 1
+
+   images.rst
+
+.. toctree::
+   :caption: Performance
+   :maxdepth: 1
+
+   performance.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst

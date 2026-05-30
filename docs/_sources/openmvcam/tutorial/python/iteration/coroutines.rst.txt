@@ -95,7 +95,9 @@ Coroutines need a driver
 
 A coroutine is inert without a runtime to drive it. Defining
 one is fine; running one needs an event loop. MicroPython's
-:mod:`asyncio` module provides that event loop. Until you reach
-for asyncio, treat coroutines as syntax you can read in other
-people's code and understand the shape of -- without yet needing
-to write your own concurrent scripts.
+:mod:`asyncio` module provides that event loop. The
+:doc:`Asyncio </openmvcam/tutorial/asyncio/index>` section
+covers how to start the loop, schedule coroutines on it, share
+state between them with locks and events, handle cancellation
+and timeouts, and shape a real application around the
+``async`` / ``await`` keywords introduced here.

@@ -124,7 +124,7 @@ regulator.
 
 .. tip::
 
-   Use the :doc:`battery life estimator <../tutorial/battery_life>` to
+   Use the :doc:`battery life estimator <../tutorial/production/battery-life>` to
    model how long the AE3 will run on a battery for a given
    active / deep-sleep duty cycle.
 
