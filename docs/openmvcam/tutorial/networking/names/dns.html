@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>12.15. Names and DNS - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="12.16. Time and NTP" href="ntp.html" /><link rel="prev" title="12.14. Sockets with asyncio" href="../sockets/async-sockets.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/networking/names/dns.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=7fb566aa" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/networking/names/dns.html"/>
+  <meta property="og:title" content="12.15. Names and DNS"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../overview.html">1. Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../software_setup.html">2. Software Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware_setup.html">3. Hardware Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../openmvide_overview.html">4. OpenMV IDE Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">5. Python Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">6. Hardware Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">7. Vision Sensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">8. Image Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">9. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">10. Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">11. Asyncio</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">12. Networking</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-networks.html">12.1. Why networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-protocols.html">12.2. Layered protocols</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/physical-and-link.html">12.3. The cable and the frame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/bringing-the-link-up.html">12.4. Bringing the link up</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/ip-addresses.html">12.5. IP addresses</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/packets-and-routing.html">12.6. Packets and routing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/private-networks.html">12.7. Private networks and NAT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/ports.html">12.8. Ports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/udp.html">12.9. UDP &#8211; send a packet, hope for the best</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/tcp.html">12.10. TCP &#8211; a reliable stream of bytes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/socket-objects.html">12.11. Socket objects</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/udp-sockets.html">12.12. UDP sockets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/tcp-sockets.html">12.13. TCP sockets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/async-sockets.html">12.14. Sockets with asyncio</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">12.15. Names and DNS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ntp.html">12.16. Time and NTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../encrypted-sockets.html">12.17. Encrypted sockets and TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">12.18. Wrap up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">13. Web Servers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Production</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Libraries</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensors</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Language</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Internals</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">License</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#what-a-name-resolves-to">12.15.1. What a name resolves to</a></li>
+<li><a class="reference internal" href="#how-the-lookup-happens">12.15.2. How the lookup happens</a></li>
+<li><a class="reference internal" href="#the-python-interface">12.15.3. The Python interface</a></li>
+<li><a class="reference internal" href="#what-can-go-wrong">12.15.4. What can go wrong</a></li>
+<li><a class="reference internal" href="#the-camera-s-own-name">12.15.5. The camera&#8217;s own name</a></li>
+<li><a class="reference internal" href="#when-names-are-not-enough">12.15.6. When names are not enough</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/946d329ef15e728c06d9a872e9e5335d785f0f64/docs/openmvcam/tutorial/networking/names/dns.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Tutorial</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">12. </span>Networking</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">12.15. </span>Names and DNS</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/names/dns.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/names/dns.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/names/dns.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/names/dns.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/names/dns.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/names/dns.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="names-and-dns">
+<h1><span class="section-number">12.15. </span>Names and DNS<a class="headerlink" href="#names-and-dns" title="Link to this heading">¶</a></h1>
+<p>Every page so far has used numeric IP addresses –
+<code class="docutils literal notranslate"><span class="pre">192.168.1.20</span></code> and the like. Real applications almost
+never do that. Servers are named <code class="docutils literal notranslate"><span class="pre">example.com</span></code> or
+<code class="docutils literal notranslate"><span class="pre">api.example.com</span></code>, and the application looks the
+name up at runtime to find an IP to send packets to.
+That lookup is the <em>Domain Name System</em>, or DNS.</p>
+<section id="what-a-name-resolves-to">
+<h2><span class="section-number">12.15.1. </span>What a name resolves to<a class="headerlink" href="#what-a-name-resolves-to" title="Link to this heading">¶</a></h2>
+<p>A name is just a label. <code class="docutils literal notranslate"><span class="pre">example.com</span></code> does not carry
+any IP information itself – it has to be looked up,
+the same way a phone number is looked up in a phone
+book. The DNS infrastructure is the distributed phone
+book of the internet, and the result of a lookup is
+one or more IP addresses the camera can connect to.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">example</span><span class="o">.</span><span class="n">com</span>  <span class="o">-&gt;</span>  <span class="mf">93.184.216.34</span>
+</span></pre></div>
+</div>
+<p>A single name often resolves to several addresses (for
+load balancing, geographic redundancy, IPv4 <em>and</em> IPv6
+versions of the same service). Any of them works; the
+application picks one and tries it, falling back to the
+next if that fails.</p>
+</section>
+<section id="how-the-lookup-happens">
+<h2><span class="section-number">12.15.2. </span>How the lookup happens<a class="headerlink" href="#how-the-lookup-happens" title="Link to this heading">¶</a></h2>
+<p>When the camera asks for <code class="docutils literal notranslate"><span class="pre">example.com</span></code>:</p>
+<ol class="arabic simple">
+<li><p>The camera sends a small UDP datagram (yes, UDP –
+see <a class="reference internal" href="../transport/udp.html"><span class="doc">UDP – send a packet, hope for the best</span></a>) to its configured DNS
+server. The DNS server’s address came from the same
+DHCP exchange that handed the camera its own IP.</p></li>
+<li><p>The DNS server may already have the answer cached
+(it has been asked recently). If so, it replies
+immediately.</p></li>
+<li><p>If not, the DNS server walks the global DNS
+hierarchy: ask the <em>root</em> servers about <code class="docutils literal notranslate"><span class="pre">.com</span></code>,
+ask those servers about <code class="docutils literal notranslate"><span class="pre">example.com</span></code>, ask
+<em>those</em> servers about the name. The whole tree-walk
+is hidden from the camera; the camera sees one
+query and one reply.</p></li>
+<li><p>The DNS server caches the result for next time and
+sends the reply back to the camera as another UDP
+datagram.</p></li>
+</ol>
+<p>The whole exchange typically takes a few milliseconds
+on a warm cache, up to a hundred or so on a cold one.</p>
+</section>
+<section id="the-python-interface">
+<h2><span class="section-number">12.15.3. </span>The Python interface<a class="headerlink" href="#the-python-interface" title="Link to this heading">¶</a></h2>
+<p>The <a class="reference internal" href="../../../../library/socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">getaddrinfo()</span></code></a> function does the
+lookup and returns an address ready to hand to a
+socket constructor:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">addr</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="mi">80</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="4"><span class="nb">print</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+</span><span data-line="5"><span class="c1"># (&#39;93.184.216.34&#39;, 80)</span>
+</span></pre></div>
+</div>
+<p>The signature is <code class="docutils literal notranslate"><span class="pre">getaddrinfo(host,</span> <span class="pre">port)</span></code>. The
+return value is a <em>list</em> of 5-tuples (one per resolved
+address); the <code class="docutils literal notranslate"><span class="pre">[0]</span></code> picks the first one and the
+<code class="docutils literal notranslate"><span class="pre">[-1]</span></code> picks the last field, which is the
+<code class="docutils literal notranslate"><span class="pre">(ip,</span> <span class="pre">port)</span></code> tuple a socket can be handed directly:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">with</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">s</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="mi">80</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+</span><span data-line="3">    <span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;GET / HTTP/1.0</span><span class="se">\r\n</span><span class="s2">Host: example.com</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="4">    <span class="o">...</span>
+</span></pre></div>
+</div>
+<p>Most camera code that talks to a remote server starts
+with that one line. The <a class="reference internal" href="../../../../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> helpers
+(<a class="reference internal" href="../../../../library/asyncio.html#asyncio.open_connection" title="asyncio.open_connection"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.open_connection()</span></code></a>) do the lookup
+internally if a name is passed instead of a numeric IP,
+so async code typically does not call
+<a class="reference internal" href="../../../../library/socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">getaddrinfo()</span></code></a> directly.</p>
+</section>
+<section id="what-can-go-wrong">
+<h2><span class="section-number">12.15.4. </span>What can go wrong<a class="headerlink" href="#what-can-go-wrong" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>No DNS server reachable.</strong> If Wi-Fi just came up
+and the link is flaky, the first
+<a class="reference internal" href="../../../../library/socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">getaddrinfo()</span></code></a> call may time out.
+<a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> is raised; retry once the link is
+stable.</p></li>
+<li><p><strong>Name does not exist.</strong> A typo or a stale name
+raises <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> after the DNS server returns
+“no such name”. The error code distinguishes this
+from “DNS server unreachable”, but for most camera
+applications the retry/give-up policy is the same.</p></li>
+<li><p><strong>Returned address does not work.</strong> DNS may return an
+address that no longer hosts the service. The fix is
+to fall back to the next entry in
+<a class="reference internal" href="../../../../library/socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">getaddrinfo()</span></code></a>’s result list, or look
+the name up again later (the DNS cache will likely
+have updated by then).</p></li>
+<li><p><strong>Captive portals.</strong> Some Wi-Fi networks intercept
+DNS and return the captive-portal page’s IP for
+<em>everything</em>. The camera will appear to connect but
+the data it gets back will not match what the actual
+service would send. Not common in deployed
+environments, but a thing that happens on conference
+Wi-Fi and similar networks.</p></li>
+</ul>
+</section>
+<section id="the-camera-s-own-name">
+<h2><span class="section-number">12.15.5. </span>The camera’s own name<a class="headerlink" href="#the-camera-s-own-name" title="Link to this heading">¶</a></h2>
+<p>The pages so far have looked up <em>other</em> devices’ names.
+The camera also has a name of its own that it
+advertises to the local network when it asks for an
+address. The default is a generic identifier that
+varies by board; <a class="reference internal" href="../../../../library/network.html#network.hostname" title="network.hostname"><code class="xref py py-func docutils literal notranslate"><span class="pre">network.hostname()</span></code></a> overrides it
+with something the rest of the network will recognise:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">network</span>
+</span><span data-line="2"><span class="n">network</span><span class="o">.</span><span class="n">hostname</span><span class="p">(</span><span class="s2">&quot;kitchen-cam&quot;</span><span class="p">)</span>
+</span><span data-line="3"><span class="c1"># ... then bring the link up as usual ...</span>
+</span></pre></div>
+</div>
+<p>Set the hostname <em>before</em> bringing the interface up,
+so the name goes out as part of the camera’s initial
+address request rather than after.</p>
+<p>Two things now happen once the camera has joined the
+network. First, most home routers register the
+hostnames they hand addresses to into their own local
+lookup, so other devices can reach the cam as
+<code class="docutils literal notranslate"><span class="pre">kitchen-cam</span></code> – without having to know the numeric
+address the router happened to assign. (Enterprise
+networks may or may not honour this; the behaviour is
+up to the router.) Second, the cam <em>itself</em> runs an
+mDNS responder out of the box, so the same name is also
+reachable as <code class="docutils literal notranslate"><span class="pre">kitchen-cam.local</span></code> on any network whose
+clients understand mDNS – which most modern desktop
+operating systems do.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pass the <em>bare</em> hostname to
+<a class="reference internal" href="../../../../library/network.html#network.hostname" title="network.hostname"><code class="xref py py-func docutils literal notranslate"><span class="pre">network.hostname()</span></code></a> – just <code class="docutils literal notranslate"><span class="pre">&quot;kitchen-cam&quot;</span></code>,
+no <code class="docutils literal notranslate"><span class="pre">.local</span></code> suffix. The <code class="docutils literal notranslate"><span class="pre">.local</span></code> form is what
+mDNS adds at lookup time; baking it into the
+hostname makes the cam advertise
+<code class="docutils literal notranslate"><span class="pre">kitchen-cam.local</span></code> as a plain hostname, which is
+not what either side of the lookup expects.</p>
+</div>
+</section>
+<section id="when-names-are-not-enough">
+<h2><span class="section-number">12.15.6. </span>When names are not enough<a class="headerlink" href="#when-names-are-not-enough" title="Link to this heading">¶</a></h2>
+<p>A few situations DNS does not help with:</p>
+<ul>
+<li><p><strong>Discovery on the local network.</strong> Standard DNS
+answers questions about names registered in the
+global directory; it knows nothing about devices on
+the local segment. <em>Multicast DNS</em> (mDNS) is the
+system that fills that gap. Every participating
+device joins a special multicast group on the local
+network and listens for queries; when a device asks
+for a name ending in <code class="docutils literal notranslate"><span class="pre">.local</span></code>, whichever device
+owns that name answers directly. No central server,
+no DNS configuration. Bonjour on Apple devices,
+Avahi on Linux, and Windows 10+ all speak the same
+protocol – which is why the <code class="docutils literal notranslate"><span class="pre">kitchen-cam.local</span></code>
+name the previous section set up resolves on a home
+network with nothing extra configured.</p>
+<p>The cam’s side of that exchange is the <em>responder</em>,
+and it is already running. What the cam does not
+have is a <em>resolver</em> – the other half, which would
+let a script ask the network “where is
+<code class="docutils literal notranslate"><span class="pre">printer.local</span></code>?” and get an answer back. The
+bundled mDNS code is responder-only (embedded
+devices are typically the <em>thing being found</em>, not
+the thing doing the finding). When discovery has to
+flow the other direction, UDP broadcast (see
+<a class="reference internal" href="../transport/udp.html"><span class="doc">UDP – send a packet, hope for the best</span></a>) is the simpler answer for
+the local-segment case, or a pure-Python module
+such as <a class="reference external" href="https://github.com/cbrand/micropython-mdns">cbrand/micropython-mdns</a> adds
+a full resolver.</p>
+</li>
+<li><p><strong>IPv6 names.</strong> <a class="reference internal" href="../../../../library/socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">getaddrinfo()</span></code></a> returns
+both IPv4 and IPv6 results if both are available.
+Pick the family the application’s socket can use.</p></li>
+</ul>
+<p>For most camera-side code, <code class="docutils literal notranslate"><span class="pre">getaddrinfo</span></code> is a
+one-liner at the top of any function that opens a
+network connection. The examples elsewhere in this
+section that ran against <code class="docutils literal notranslate"><span class="pre">&quot;192.168.1.20&quot;</span></code> would all
+work the same way against a public name like
+<code class="docutils literal notranslate"><span class="pre">&quot;api.example.com&quot;</span></code> – just resolve first.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../sockets/async-sockets.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">12.14. </span>Sockets with asyncio</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="ntp.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">12.16. </span>Time and NTP</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 31 May 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=3011ec97"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script></body>
+</html>

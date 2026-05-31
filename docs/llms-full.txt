@@ -18008,16 +18008,2821 @@ synchronisation primitives carries straight forward.
 Networking
 ==========
 
-This super-section is **planned** -- pages will land in a
-later session.
+Hardware control connected the camera to a wire and a
+known partner on the other end. Networking is what
+happens when the partner is not on that wire -- a laptop
+on the same Wi-Fi, a sensor in another room, a server in
+another country -- and when the path between the two
+endpoints passes through hardware nobody on either side
+controls.
 
-Once the application can run concurrently, the next layer
-is talking to the rest of the network. This section covers
-the :mod:`network` module, the camera's wireless interfaces,
-TCP and UDP sockets, DNS, and the patterns for building
-network clients and small servers on top of them.
+Two modules cover Python's side of this. The
+:mod:`network` module brings the camera onto a network
+in the first place: joining a Wi-Fi network or plugging
+into Ethernet, picking up an address, getting the cam
+ready to participate. The :mod:`socket` module is what
+Python code opens to actually send and receive bytes
+once the link is up. The pages ahead walk through what
+sits between, layer by layer, so "open a socket and
+write bytes" feels inevitable instead of magic.
 
-(Placeholder.)
+.. toctree::
+   :caption: Concepts
+   :maxdepth: 1
+
+   basics/why-networks.rst
+   basics/layered-protocols.rst
+
+.. toctree::
+   :caption: The bottom layers
+   :maxdepth: 1
+
+   lower-layers/physical-and-link.rst
+   lower-layers/bringing-the-link-up.rst
+
+.. toctree::
+   :caption: The network layer
+   :maxdepth: 1
+
+   network/ip-addresses.rst
+   network/packets-and-routing.rst
+   network/private-networks.rst
+
+.. toctree::
+   :caption: The transport layer
+   :maxdepth: 1
+
+   transport/ports.rst
+   transport/udp.rst
+   transport/tcp.rst
+
+.. toctree::
+   :caption: Sockets in Python
+   :maxdepth: 1
+
+   sockets/socket-objects.rst
+   sockets/udp-sockets.rst
+   sockets/tcp-sockets.rst
+   sockets/async-sockets.rst
+
+.. toctree::
+   :caption: Names
+   :maxdepth: 1
+
+   names/dns.rst
+   names/ntp.rst
+
+.. toctree::
+   :caption: Security
+   :maxdepth: 1
+
+   encrypted-sockets.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst
+
+
+Why networks
+============
+
+Hardware control gave the camera ways to talk to a
+specific other device on a specific other wire. UART
+between the camera and a single companion board. I2C
+between the camera and the sensors hanging off the same
+short bus. CAN between a small set of modules sharing
+one robust bus. Each case follows the same shape: two
+parties (or a small known group), one shared medium, an
+agreement between them about what the bytes on that
+medium mean.
+
+That shape stops scaling
+------------------------
+
+The point-to-point pattern works as long as both ends are
+nearby, both ends are known in advance, and the script
+gets to pick which wire it talks down. Once any of those
+constraints break, the wiring stops being enough.
+
+* **Many counterparts.** A network of fifty cameras
+  reporting to one server cannot be wired one-to-one;
+  there are not enough UARTs on the server, and the
+  cable runs would be impossible.
+* **Counterparts not on the same wire.** A camera in a
+  factory and a dashboard in an office across town cannot
+  share a serial cable. Some path has to exist between
+  them through whatever infrastructure already runs
+  between the two buildings.
+* **Counterparts not known in advance.** A camera that
+  publishes its results to the cloud does not pick which
+  server it talks to in the wiring diagram; the cloud's
+  address is something the script looks up at runtime
+  and routes data to.
+* **Many programs on one cable.** A laptop today is
+  running a browser, a chat app, a video call, and a
+  backup, all talking through the same network interface
+  at the same time. The wire cannot be "owned" by one
+  conversation the way a UART is.
+
+Each of those failures is a different *kind* of
+addressing problem. Solving them all together requires
+more than a wire and a baud rate.
+
+What a network is
+-----------------
+
+A *network* is the infrastructure that lets any of a
+large number of computers exchange messages with any
+other, without each pair needing its own dedicated link.
+Three properties make a network something more than a
+big serial cable:
+
+* **Shared medium.** Many devices attach to the same
+  cable, switch, or radio channel. They take turns or
+  multiplex so that more than one conversation can fit
+  on the same physical link.
+* **Logical addresses.** Each device has a number that
+  identifies it independently of which cable it is
+  plugged into. Sending a message means writing that
+  number on the message, not connecting a specific wire.
+* **Routing.** When the sender and the receiver are not
+  on the same local segment, the infrastructure
+  *between* them carries the message hop by hop. The
+  endpoints do not know the route; they just know each
+  other's address.
+
+A laptop on the office Wi-Fi reaching a server in a
+distant data centre uses all three. The Wi-Fi link is a
+shared radio medium; the laptop and server each have
+their own logical address; the message threads through
+whatever infrastructure sits between the two,
+forwarded one hop at a time. The user clicks a link,
+the laptop sends a packet, and the network handles the
+rest.
+
+What about the cam?
+-------------------
+
+The camera plays exactly the same role on a network as
+the laptop. It picks up a logical address when it joins
+the network, addresses outgoing messages to other
+devices' logical addresses, and lets the infrastructure
+route them.
+
+What changes from the hardware-control chapters is the
+*interface*. Instead of opening a UART instance and
+writing bytes to it, the script opens a *socket* and
+writes bytes to that. The socket is an endpoint into the
+network, the same way a UART instance is an endpoint
+into a wire. The pieces between the socket and the wire
+-- frames, packets, routing tables, switches, radios --
+all sit underneath and are mostly invisible to the
+Python code.
+
+The pages ahead spell out those pieces, layer by layer,
+so the abstraction "open a socket and send bytes" feels
+inevitable instead of magic.
+
+
+Layered protocols
+=================
+
+Sending a frame from the camera to a server in another
+city means solving several problems at once. The
+electrical signal has to make it across the first wire.
+The bytes on that wire have to find their way through a
+local switch. The local network has to hand the message
+off to whatever sits between it and the rest of the
+internet. The packets that survive the trip have to be
+re-assembled in order. The receiver has to know which of
+its programs to give them to. And the bytes themselves
+have to mean something both ends agree on.
+
+Trying to solve all of that in one block of code would
+be unmanageable. The standard answer is to split the job
+into *layers*. Each layer solves one well-defined
+problem and exposes a simple service to the layer above.
+A program only ever talks to the layer directly under
+it; the layers beneath that one are invisible.
+
+.. figure:: https://docs.openmv.io/_images/layered-stack.svg
+   :alt: A vertical stack of five boxes labelled from
+         bottom to top: physical, link, network,
+         transport, application. An arrow on the right
+         points up the stack labelled "what we build".
+         An arrow on the left points down the stack
+         labelled "what is provided".
+
+   Each layer of a network stack solves one problem and
+   hands a clean abstraction up to the next.
+
+The five layers
+---------------
+
+The names below are the ones the rest of this section
+uses. They come from the standard model networks were
+designed around. The exact boundaries between layers are
+sometimes fuzzy, but the role each one plays is stable.
+
+**Physical layer.** Move *bits* between two devices on
+the same wire or radio. Voltage levels, light pulses, RF
+modulation. The camera's job here is mostly to plug in
+the right cable or join the right wireless network; the
+silicon does the rest.
+
+**Link layer.** Move *frames* (small chunks of bytes)
+between two devices that share a local segment. Adds
+hardware addresses so each frame can be directed at one
+specific neighbour. Ethernet and Wi-Fi are the two link
+technologies the camera meets in practice.
+
+**Network layer.** Move *packets* between any two
+devices on the *internet*, not just on the same local
+segment. Adds a software-level address that identifies a
+host independently of which cable it is on, and a
+*routing* mechanism that hops a packet from one local
+segment to the next until it arrives. This is the first
+layer where the camera's Python code starts having
+something to say.
+
+**Transport layer.** Sit on top of packets and offer
+delivery between *programs* on two hosts, not just the
+hosts themselves. Two flavours are common: one delivers
+a connected, ordered stream of bytes (the workhorse for
+most traffic), the other delivers self-contained
+messages that travel independently of each other (used
+when low overhead matters more than guarantees). Adds
+*port numbers* so multiple programs on the same host
+can hold conversations in parallel.
+
+**Application layer.** Everything above transport: the
+protocols that give the bytes meaning. The ones a web
+browser speaks to load pages -- and the ones behind
+almost every other internet service the reader already
+uses every day -- live here. The tutorial covers
+transport in depth; this layer gets a follow-on section
+of its own.
+
+How the layers stack at run time
+--------------------------------
+
+When the camera sends bytes over the network, every
+layer adds its own header in front of the data, like
+nesting an envelope inside another envelope:
+
+* The application's bytes go in first.
+* The transport layer wraps them with a small header
+  saying which program they belong to (the port number).
+* The network layer wraps *that* with a header saying
+  which host they are destined for (the software-level
+  address).
+* The link layer wraps *that* with a header saying which
+  device on the local segment to hand them to next (the
+  hardware address).
+* The physical layer turns the whole bundle into bits on
+  a wire.
+
+At the other end, each layer peels off its own header
+and hands the rest up. The receiving application gets
+its bytes back unaware that the network, link, and
+physical layers ever existed.
+
+This nesting is why the tutorial walks bottom-up.
+Understanding what the layer beneath does makes the
+layer above feel inevitable. The bottom two layers are
+covered in a single page each because there is almost
+nothing to configure from Python. From the network layer
+upward, the pace slows down as Python's role gets
+bigger.
+
+
+The cable and the frame
+=======================
+
+The two lowest layers of the stack are the easiest to
+take for granted on the camera, because everything they
+do happens inside the chip and the camera handles them
+without any Python code being involved. They are still
+worth a brief tour, because they explain what "local
+network" means and where the boundary to the rest of
+the infrastructure starts.
+
+The physical layer
+------------------
+
+The bottom layer is the actual signalling -- the wires,
+optical fibres, or radio waves that carry bits between
+two devices. Ethernet over twisted-pair cables encodes
+each bit as a voltage transition at a fixed rate.
+Wi-Fi modulates the same bits onto a radio carrier in
+the 2.4 GHz or 5 GHz band. Both produce a stream of
+binary digits between two pieces of hardware; both are
+the kind of detail the camera's silicon handles without
+software having to think about it.
+
+From a Python script's perspective the physical layer is
+"the link is up" or "the link is down". The :mod:`network`
+module reports that state through its
+:meth:`~network.WLAN.isconnected` method on the Wi-Fi
+interface and through the link status on a wired
+Ethernet interface. Beyond that, everything else this
+layer does is hidden.
+
+The link layer
+--------------
+
+One step up sits the *link layer* -- the rules for
+sending a chunk of bytes (a *frame*) between two devices
+that share the same physical segment. The link layer
+adds two things on top of raw signalling:
+
+* **Hardware addressing.** Every network interface comes
+  with a unique 48-bit identifier called a *MAC address*
+  (Media Access Control). On Ethernet it is burned into
+  the chip; on Wi-Fi it is the same kind of identifier
+  burned into the wireless module. MAC addresses are
+  what a *switch* -- the box with multiple Ethernet
+  ports that nearby devices plug into -- uses to decide
+  which port a given frame should go out on. A Wi-Fi
+  access point plays the same role for wireless devices
+  on its channel.
+
+* **Framing.** The bytes a higher layer hands down are
+  packaged into a frame with a small header, the
+  payload, and a checksum at the end. The header
+  carries the source and destination MAC addresses; the
+  checksum lets the receiver detect a frame whose
+  bytes were corrupted in transit. Frames that fail the
+  check are discarded silently -- whoever cares about
+  reliability has to put it back at a higher layer.
+
+A *local segment* is whatever group of devices can see
+each other's frames directly -- the wired ports on one
+switch, all the devices associated with one Wi-Fi access
+point, or a small mesh of interconnected switches. The
+link layer cannot reach beyond that segment. As soon as
+the destination sits on a different segment, the message
+has to be handed off to the layer above.
+
+What the camera exposes
+-----------------------
+
+The camera has a MAC address for each network interface
+it has -- a Wi-Fi one if the cam has wireless support,
+an Ethernet one if the board has the corresponding
+port. The :mod:`network` module gives
+access to it through ``network_interface.config("mac")``
+on whichever interface object the application is using,
+when it needs to read the address. Some applications need to, for instance to register
+the device with a fleet management system. Otherwise,
+this is the only knob the link layer turns over to
+Python.
+
+Everything else -- framing, the actual MAC traffic on
+the wire or the air, the negotiation between the camera
+and the access point about which channel and rate to
+use -- happens entirely inside the wireless or Ethernet
+hardware. The :doc:`next page <bringing-the-link-up>`
+covers the one place a Python script does have a say in
+the link layer: telling the camera which network to
+join.
+
+
+Bringing the link up
+====================
+
+The link layer covered on the previous page is mostly
+automatic, but there is one place a Python script has
+to step in: telling the camera which network to join.
+Until that step succeeds, none of the network features
+the rest of this section covers will work.
+
+The :mod:`network` module
+-------------------------
+
+The :mod:`network` module exposes the camera's
+networking hardware to Python. The exact set of
+interfaces depends on the board: many cams have a
+wireless chip and expose a :class:`~network.WLAN`
+class (named for *Wireless Local Area Network*);
+some boards also have a built-in Ethernet port and
+expose a :class:`~network.LAN` class (named for
+*Local Area Network*, i.e. the wired version). The
+pattern of use is the same for both, with one
+important difference: a wireless interface has to be
+told which network to join, while Ethernet picks up
+whatever is on the cable.
+
+The Wi-Fi flow
+--------------
+
+Joining a Wi-Fi network is three steps: construct the
+interface, bring it up, ask it to connect to a named
+network with a password. The interface negotiates
+with the access point in the background; an
+:meth:`~network.WLAN.isconnected` call reports when
+the link has finished coming up::
+
+    import network
+    import time
+
+    wlan = network.WLAN(network.WLAN.IF_STA)
+    wlan.active(True)
+    wlan.connect("my-network", "my-password")
+
+    while not wlan.isconnected():
+        time.sleep_ms(100)
+
+    print("link up")
+
+The argument ``IF_STA`` selects *station* mode -- the
+camera joins a network somebody else is hosting. The
+opposite mode, ``IF_AP``, makes the camera host its
+own small network that other devices can join; useful
+for configuration interfaces and on-site setup, but
+not the common case.
+
+Once :meth:`~network.WLAN.isconnected` returns
+:data:`True`, the camera is on the network. Everything
+else the higher layers needed to set themselves up
+has happened automatically while the link was coming
+up; the pages ahead spell those pieces out one at a
+time.
+
+What can go wrong
+-----------------
+
+A few practical failure modes show up at this step.
+
+* **Wrong network name or password.** The connection
+  attempt silently retries until the application gives
+  up. Wrap the wait with a timeout so the loop above
+  does not block forever::
+
+      start = time.ticks_ms()
+      while not wlan.isconnected():
+          if time.ticks_diff(time.ticks_ms(), start) > 10000:
+              raise OSError("Wi-Fi did not come up in 10 s")
+          time.sleep_ms(100)
+
+* **Out of range.** The camera and the access point
+  have to be close enough that the signal is strong
+  enough to hold a link.
+  :meth:`~network.WLAN.status` returns a code
+  indicating why the link is not up;
+  :meth:`~network.WLAN.scan` returns the list of
+  networks the radio can see, which is the diagnostic
+  to run when ``connect`` will not succeed.
+
+* **Access point asks for more than a password.**
+  Open networks (no password) and the common
+  password-protected ones are covered by ``connect``
+  as shown above. Larger networks at workplaces and
+  schools sometimes use a different scheme where the
+  camera has to authenticate against a separate login
+  server; those need extra arguments to ``connect``.
+  See :doc:`/library/network.WLAN` for the full
+  surface.
+
+Ethernet, when present
+----------------------
+
+Boards with built-in Ethernet expose the same pattern
+without the ``connect`` step. The :class:`~network.LAN`
+interface is brought up with
+:meth:`~network.LAN.active`, and as soon as the cable
+is plugged in the interface is ready to use::
+
+    import network
+
+    lan = network.LAN()
+    lan.active(True)
+    print("link up")
+
+After this point the rest of this section's pages
+apply the same way regardless of which interface
+brought the camera onto the network. The higher
+layers do not care whether the link below them is
+Wi-Fi or Ethernet -- "connected" is "connected".
+
+For the full :class:`~network.WLAN` and
+:class:`~network.LAN` reference, including the
+configuration knobs that did not fit here, see
+:doc:`/library/network`.
+
+
+IP addresses
+============
+
+A hardware address picks a device out from the others on
+the same local cable or radio cell. It is fine for that
+job, but it is useless beyond the local segment: a
+switch in the next building cannot route by it, because
+the underlying mechanism that lets a switch learn MAC
+addresses only works inside one segment.
+
+The *network layer* solves that with a second kind of
+address that is independent of which cable a device is
+plugged into. The name for this kind of address is the
+*Internet Protocol address*, or *IP address*, and the
+"Internet Protocol" half names the set of rules every
+host on the internet follows when it sends or forwards
+one. The current internet uses two versions of the
+addressing scheme in parallel -- IPv4 (the older form,
+still dominant on small networks) and IPv6 (the newer
+form, slowly replacing it).
+
+What an IP address is
+---------------------
+
+An IP address is a number large enough to identify any
+device on the internet uniquely. It is written in a
+human-readable form that the rest of the section uses,
+but in the packet header it is just a fixed-size integer.
+
+* **IPv4** addresses are 32 bits long and are written as
+  four decimal numbers separated by dots, each number
+  being one byte::
+
+      192.168.1.42
+      8.8.8.8
+      10.0.0.1
+
+  Thirty-two bits gives roughly four billion possible
+  addresses, which sounded like plenty when IPv4 was
+  designed in the 1970s and was not enough by the early
+  2010s.
+
+* **IPv6** addresses are 128 bits long and are written as
+  eight groups of four hexadecimal digits separated by
+  colons::
+
+      2001:0db8:85a3:0000:0000:8a2e:0370:7334
+
+  Runs of zeros can be shortened to ``::``, and leading
+  zeros in a group can be dropped, so the address above
+  is normally written ``2001:db8:85a3::8a2e:370:7334``.
+
+The two address families are otherwise different
+languages; an IPv4 host cannot directly send a packet to
+an IPv6 host without help from a gateway. The camera's
+:mod:`network` and :mod:`socket` modules support both.
+This tutorial uses IPv4 in examples because most local
+networks the camera will join are still IPv4-only, but
+everything that follows works exactly the same way for
+IPv6 once the addresses are swapped out.
+
+What an IP address is *for*
+---------------------------
+
+The IP address says *which host on the internet a
+packet is meant for*. A router that does not know how to
+reach a destination directly knows that some other
+router probably does, and forwards the packet there. The
+packet hops between routers, each one a little closer to
+the destination, until a router that *is* on the
+destination's local segment delivers the final hop.
+
+That hop-by-hop behaviour is what makes the internet
+work as one big network instead of many small islands.
+The :doc:`next page <packets-and-routing>` covers how
+the hops are chosen; this one is just about the address.
+
+How a camera gets one
+---------------------
+
+A camera that has just joined a Wi-Fi network needs an
+IP address before it can talk to anything. There are
+two common ways for that to happen.
+
+The first is *automatic assignment*. The camera asks the
+local network for an address; the device that hands one
+out is the *router* -- the box that connects the local
+network to the wider internet. In most home and
+small-office setups, the same physical box also acts as
+the switch wired devices plug into and as the Wi-Fi
+access point wireless ones associate with, so "the
+router", "the switch", and "the access point" may all be
+the same piece of hardware. The router runs a small
+service called *DHCP* (the Dynamic Host Configuration
+Protocol), which keeps a pool of available addresses,
+picks one for each newly-arrived device, and *leases*
+it for a fixed time. While DHCP is at it, the router also hands the
+camera a couple of other useful pieces of configuration:
+
+* the address to send outbound traffic to when the
+  destination is off the local network (the *default
+  gateway*, which is the router's own address); and
+* the addresses of one or more *name servers* that turn
+  human-readable names like ``example.com`` into IP
+  addresses. The name-lookup service is called *DNS*,
+  the Domain Name System, and :doc:`../names/dns`
+  covers it in detail.
+
+All of this happens automatically while the link is
+coming up. The camera does not have to ask for any of
+it explicitly; the moment
+:meth:`~network.WLAN.isconnected` returns :data:`True`
+in the example on the previous page, the cam already
+has its address, its gateway, and its name servers.
+
+The second option is *static configuration*. Some
+deployments want a known address for the camera so that
+other devices can reach it without first looking it up.
+The :meth:`~network.WLAN.ipconfig` method sets the
+address, the gateway, and the name server by hand::
+
+    wlan.ipconfig(addr4=("192.168.1.50/24", "192.168.1.1"))
+    wlan.ipconfig(dns="192.168.1.1")
+
+Static configuration is fragile (two devices
+accidentally given the same address conflict). Reach
+for the DHCP default unless a specific reason to
+override it shows up.
+
+Once the camera has an IP address, it has *joined* the
+internet (or at least the local network's piece of it).
+Other devices can now address packets to it by that
+address, and it can address packets to them.
+
+The netmask and the ``/24``
+---------------------------
+
+The ``/24`` at the end of the address in the static
+example above is the *netmask*. An IP address by
+itself does not say where the local network ends --
+``192.168.1.50`` could be one of a few hundred
+addresses on a small home network, or one of thousands
+on a larger one. The netmask says how much of the
+address names the *network* and how much names the
+*host* inside it.
+
+``/24`` means "the first 24 of the 32 bits name the
+network; the last 8 name the host". For
+``192.168.1.50/24`` that splits the address into
+``192.168.1`` for the network and ``.50`` for the host,
+leaving room for about 254 devices on the same local
+network. ``/16`` would leave more bits for the host
+half and fit far more devices on one network; ``/30``
+would leave only two host addresses and fit a
+point-to-point link.
+
+The netmask is also commonly written as a four-byte
+number in the same dotted notation as the address.
+``/24`` is equivalent to ``255.255.255.0`` -- read each
+byte as "all the bits that belong to the network half".
+The two forms are interchangeable; the
+:meth:`~network.WLAN.ipconfig` reader in the next
+subsection happens to return the four-byte form.
+
+Why the split matters at all -- how a device uses the
+netmask to decide whether a destination is on the
+local network or needs to go out through the gateway,
+and why most home networks land on ``/24`` -- is
+covered on :doc:`private-networks`.
+
+Reading the address back
+------------------------
+
+The :meth:`~network.WLAN.ipconfig` method without
+arguments returns the active configuration. The
+``addr4`` view returns the IP address and netmask::
+
+    >>> wlan.ipconfig("addr4")
+    ('192.168.1.50', '255.255.255.0')
+
+
+Packets and routing
+===================
+
+An IP address says *who* a message is for. The
+mechanism that actually delivers it is called *routing*,
+and it is the hop-by-hop process by which a packet
+travels from a sender's local network to a receiver's
+local network, possibly very far away.
+
+A packet, briefly
+-----------------
+
+A *packet* is the IP layer's unit of work -- a chunk of
+bytes with a small header and a payload. The header has
+two fields that matter for routing:
+
+* The **source** IP address (where the packet came
+  from).
+* The **destination** IP address (where it is going).
+
+The payload is whatever the transport layer asked the
+network layer to deliver. The packet header also
+includes a *time-to-live* counter, a checksum over the
+header, and a few control flags. None of those are
+things the camera's Python code touches directly.
+
+Packets do not promise anything more than "we tried" --
+they can be lost, duplicated, or delivered out of order.
+Reliability and ordering are problems the transport
+layer above solves; the network layer just does its best
+to forward each packet toward its destination.
+
+Hop by hop
+----------
+
+The packet leaves the camera and arrives at the first
+device that does not sit on the camera's local segment:
+the *default gateway*. (The :doc:`previous page <ip-addresses>`
+mentioned DHCP handing the camera the gateway's address
+when the network came up.) That device is a *router* --
+a box whose job is to receive packets, look at their
+destination, and forward them onward.
+
+.. figure:: https://docs.openmv.io/_images/hop-by-hop.svg
+   :alt: A diagram showing five boxes. On the left, a
+         camera labelled "10.0.0.42". Connected to a
+         router labelled "10.0.0.1 / 203.0.113.5".
+         Then a sequence of two unnamed routers in the
+         middle. Then a router labelled
+         "198.51.100.1 / 198.51.100.x". Finally a
+         server labelled "198.51.100.20". An arrow with
+         the label "destination: 198.51.100.20" travels
+         along the chain from left to right.
+
+   A packet from the camera to the destination hops
+   between routers, each one a step closer.
+
+The router has a *routing table* -- a list of "for
+destinations matching this pattern, send the packet out
+this interface". For destinations on the same network as
+the camera, the entry says "send it back down the cable
+it came in on". For destinations on the wider internet,
+the entry says "send it to the upstream router". For
+known patterns of destinations (a corporate VPN, a
+specific business partner's network, a satellite link),
+the router may have a more specific entry that overrides
+the default.
+
+The upstream router does the same thing. And the next
+one. And the next. Each hop is the same shape: receive
+the packet, look up the destination in the table, send
+it out the correct interface. Eventually the packet
+arrives at a router that *is* on the same local segment
+as the destination IP. That router delivers the final
+hop, the destination receives the packet, and the trip
+is over.
+
+The endpoints do not know the route
+-----------------------------------
+
+A camera sending a packet to a remote server does not
+know *how* the packet will get there. It only knows the
+destination IP and the address of its own default
+gateway. Everything between -- which routers, which
+fibres, which underwater cables -- is something the
+routers along the path decide as they go, based on
+their own tables. The routers themselves only know
+their immediate neighbours and the rough direction of
+common destinations; no single device on the internet
+has a complete map of it.
+
+That decentralisation is why the network keeps working
+when individual paths fail. A cut cable somewhere in
+the middle becomes a re-routing event at a few routers;
+the endpoints never notice. It is also why a packet
+from a Tokyo camera to a Dublin server can succeed
+without either side knowing what countries lie
+in between.
+
+What this means for a Python script
+-----------------------------------
+
+The camera's job at the network layer comes down to:
+
+* Have an IP address.
+* Know the address of the default gateway (DHCP fills
+  this in automatically).
+* Hand outbound packets, addressed to *any* IP, to that
+  gateway and trust the rest of the path.
+
+A script never picks a route, never names an
+intermediate hop, and never sees the routers in the
+middle. It writes the destination IP onto the packet
+and the network layer takes over. From a Python script
+all of routing is just a property of the network the
+camera has joined -- "the gateway sends packets
+somewhere useful for me".
+
+The transport layer that comes next assumes routing
+just works, and builds reliability, ordering, and
+program-to-program addressing on top of that.
+
+
+Private networks and NAT
+========================
+
+IPv4 was designed with four billion addresses, which
+sounded like enough at the time. It is not. Every
+internet-connected home, office, and factory needs its
+own block of addresses for its internal devices, and
+adding the world's worth of cameras, phones, and
+appliances does not leave four billion to go around.
+
+The workaround the internet settled on is *private
+networks*: most devices on a local network use addresses
+that are not unique globally but only inside that
+network, and a single device at the edge translates
+between the two worlds. The camera, almost always, sits
+on one of these private networks.
+
+The private address ranges
+--------------------------
+
+Three IPv4 ranges are reserved as *not routable on the
+public internet*. Any local network is free to use
+addresses from inside these ranges without coordinating
+with anyone, because no router outside the local
+network will ever try to deliver to them:
+
+* ``10.0.0.0`` -- ``10.255.255.255`` (16 million
+  addresses; common in larger corporate networks).
+* ``172.16.0.0`` -- ``172.31.255.255`` (about a million
+  addresses; less common in the wild).
+* ``192.168.0.0`` -- ``192.168.255.255`` (65 thousand
+  addresses; the default for almost every home router).
+
+On a typical home network the camera and the laptop
+talking to it both sit on ``192.168.x.x`` addresses,
+because that is the range the home router picks for the
+network it hosts.
+
+How the netmask is used
+~~~~~~~~~~~~~~~~~~~~~~~
+
+The :doc:`ip-addresses` page introduced the ``/24``
+notation. The reason it matters here is that the
+netmask is what each device uses to decide where a
+packet has to go next. Every time the camera sends a
+packet, it applies its own netmask to the destination
+address and looks at the result:
+
+* If the destination shares the network bits with the
+  camera's own address, the destination is on the
+  *same local network*. The camera sends the packet
+  to it directly.
+* If the destination does *not* share the network bits,
+  it must be on some other network. The camera sends
+  the packet to its *default gateway* (the router
+  configured automatically at link-up) and lets the
+  gateway handle the rest.
+
+That single test -- "do we share network bits?" -- is
+what the netmask is for. It is also why home networks
+default to ``/24``: a 254-device cap fits a household
+comfortably and keeps the network simple.
+
+Network Address Translation
+---------------------------
+
+A camera on ``192.168.1.50`` cannot just send a packet
+to a server on the public internet -- the public
+internet does not route to ``192.168.x.x``. The home
+router solves this with *Network Address Translation*,
+or NAT, and it does so transparently.
+
+.. figure:: https://docs.openmv.io/_images/nat.svg
+   :alt: A diagram with three blocks. On the left, two
+         devices on a private network labelled "camera
+         192.168.1.50" and "laptop 192.168.1.51",
+         both connected to a central box labelled
+         "router". The router has two faces -- a private
+         face labelled "192.168.1.1" toward the
+         devices, and a public face labelled
+         "203.0.113.5" toward the internet. The
+         internet is drawn as a cloud on the right.
+         Arrows from the devices pass through the
+         router and emerge as if from the public
+         address.
+
+   NAT rewrites the source address of outbound packets
+   to the router's public address, and reverses the
+   rewrite on incoming replies, so private devices
+   appear to share one public address.
+
+The router has *two* addresses: a private one on the
+local network (commonly ``192.168.1.1``) and a public
+one assigned by the internet provider. When the camera
+sends a packet to a public address, the router
+
+#. records the camera's private address + port and
+   pairs it with a temporary outbound port of its own;
+#. rewrites the source address on the packet to its own
+   public address (and the source port to the chosen
+   outbound port);
+#. sends the rewritten packet out the public side.
+
+When the reply comes back addressed to the router's
+public address + port, the router looks up the pairing,
+rewrites the destination back to the camera's private
+address + port, and delivers it on the local side. The
+camera never knows the rewrite happened; the server
+never knows the original source.
+
+NAT is what makes home networks practical. It also has
+two consequences worth knowing about.
+
+What NAT changes
+----------------
+
+**Outbound is easy.** A camera on a private network can
+talk *out* freely. Any time it opens a TCP connection
+or sends a UDP packet to a remote server, NAT sets up
+the pairing automatically. Most camera applications
+work in this direction: capture an image, push it to a
+server somewhere, receive the reply.
+
+**Inbound is hard.** A device on the public internet
+*cannot* directly connect to a camera on a private
+network. There is no pairing for the router to look up
+when an unsolicited packet arrives at its public
+address, so the packet has nowhere to go. The router
+either drops it or hands it to a service running on the
+router itself.
+
+Three workarounds for the inbound case are common, in
+roughly increasing order of practicality:
+
+* **Port forwarding.** Configure the router to direct
+  all inbound packets on a chosen public port to a
+  specific private device. Requires admin access to the
+  router; brittle when the router's public address
+  changes.
+* **VPN.** Run a virtual private network that puts the
+  camera on the same logical network as whoever needs
+  to reach it. Heavyweight; out of scope for most cam
+  deployments.
+* **Outbound-initiated connection.** The camera
+  connects out to a known server somewhere on the
+  public internet and keeps that connection open; the
+  server uses the existing connection to push messages
+  back. This is how push notifications and most
+  cloud-connected device protocols work, and it is the
+  pattern most camera applications end up using.
+
+NAT is invisible to the Python code on the camera. The
+script just talks to whatever destination it needs to;
+the router handles the translation behind the scenes.
+But the *direction* of the connection does matter, and
+NAT is why "the camera reaches out to a cloud server"
+is a much easier shape than "a cloud server reaches in
+to the camera".
+
+
+Ports
+=====
+
+An IP address says which *host* a packet is for. A
+modern host runs many programs at once -- a web browser,
+a chat client, a video call, a backup task -- and each
+of those is sending and receiving packets in parallel.
+The IP layer has no way to tell them apart; it just
+hands every arriving packet to "the host". Something has
+to decide which packet belongs to which program.
+
+The *port number* is the answer. Every packet at the
+transport layer carries two extra fields beyond the IP
+header: a *source port* and a *destination port*. Each
+is a 16-bit integer, so there are 65535 possible port
+numbers per host. Combined with the IP address, the port
+identifies one specific endpoint *inside* a host -- one
+specific program's specific conversation.
+
+.. figure:: https://docs.openmv.io/_images/ports.svg
+   :alt: A single host box on the right with an IP
+         address labelled at the top. Three programs
+         inside the host are labelled "HTTP server",
+         "video call", "chat client", each connected
+         to a different port number labelled 80, 5004,
+         and 4321 respectively. Three arrows arrive at
+         the host from the network, each tagged with
+         a destination port; each arrow lands on the
+         matching program.
+
+   Many programs share one IP address; the destination
+   port routes each arriving packet to the right one.
+
+Well-known ports
+----------------
+
+The first 1024 port numbers are reserved by convention
+for standard services. A few the reader will meet:
+
+* **22** -- SSH (the Secure Shell protocol, used for
+  encrypted remote login).
+* **53** -- DNS, the Domain Name System (covered on
+  :doc:`../names/dns`).
+* **80** -- HTTP, the Hypertext Transfer Protocol --
+  the unencrypted protocol of the web.
+* **123** -- NTP, the Network Time Protocol (how
+  devices set their clocks from a time server).
+* **443** -- HTTPS, HTTP carried over *TLS* (Transport
+  Layer Security, the standard encryption wrapper for
+  internet protocols) -- the protocol behind every web
+  page that shows a lock icon in the browser.
+
+The convention is what makes it possible for a browser
+to connect to ``http://example.com`` without specifying
+a port -- it assumes 80 because that is the well-known
+port for HTTP. A camera connecting to a web server does
+the same.
+
+Above 1024, port numbers are unrestricted and any
+program can claim one. Database servers (5432 for
+PostgreSQL, 3306 for MySQL), application servers, and
+custom protocols all live somewhere in the higher
+range.
+
+Ephemeral ports
+---------------
+
+Servers listen on a known port. Clients use a *different*
+port on their own end, picked fresh for each outgoing
+connection.
+
+When the camera connects to a web server on port 443,
+the conversation is between
+
+::
+
+    camera IP : <some-port>     <-->     server IP : 443
+
+The ``<some-port>`` is an *ephemeral port* -- MicroPython
+picks an unused number from a high range, uses it for
+the duration of the connection, and releases it
+afterwards. The script does not have to care which
+number was chosen; the socket layer handles it.
+
+Listening vs talking
+--------------------
+
+The job a port plays depends on which side of the
+conversation it is on. Two distinct cases:
+
+* A *listening* port belongs to a program that wants to
+  *receive* unsolicited connections. The program tells
+  MicroPython "any incoming packets addressed to me at
+  port 80 are mine", and waits. Servers do this.
+
+* A *connected* port belongs to a program that wants to
+  *initiate* a conversation. The program picks (or asks
+  MicroPython to pick) an ephemeral port, sends a packet
+  with that as the source port and the server's
+  well-known port as the destination, and uses the same
+  port pair for the rest of the conversation.
+
+A single program can do both at once, holding different
+ports for each role. A camera might listen on port 8000
+for inbound HTTP connections from a configuration user
+interface *and* hold an outbound HTTPS connection to a
+remote server on port 443. The two roles do not interfere --
+each conversation is identified by the full
+``(src IP, src port, dst IP, dst port)`` quadruple, and
+no two conversations share the same quadruple.
+
+What ports unlock
+-----------------
+
+With ports in place, the transport layer can finally
+solve the *program-to-program* delivery problem. A
+packet now carries enough information to be routed not
+just to the right *host* (the IP address) but to the
+right *socket* inside that host (the port number).
+
+The next two pages cover the two flavours the transport
+layer offers on top of that addressing:
+:doc:`UDP <udp>` (the User Datagram Protocol -- each
+packet independent, no guarantees) and :doc:`TCP <tcp>`
+(the Transmission Control Protocol -- a connected,
+reliable, ordered stream).
+
+
+UDP -- send a packet, hope for the best
+=======================================
+
+UDP, the User Datagram Protocol, is the simpler of the
+two services the transport layer offers. Each UDP send
+is one *datagram* -- a self-contained chunk of bytes
+addressed to an IP and a port, dropped into the network
+on its own. The protocol delivers it if it can; if it
+cannot, it does not retry, does not warn the sender, and
+does not preserve any ordering between datagrams.
+
+What UDP adds to IP
+-------------------
+
+UDP is a thin layer on top of IP. It adds three things
+to the raw IP delivery:
+
+* **Port numbers** at both ends, so a datagram can be
+  delivered to the right *program* on the destination
+  host, not just the host (see :doc:`ports`).
+* **A length field** so the receiver knows exactly how
+  many bytes of payload to read.
+* **A small checksum** over the header and payload, so
+  the receiver can detect a corrupt datagram and discard
+  it.
+
+That is it. Everything else IP did or did not do, UDP
+keeps. Datagrams are not retried. They can arrive out of
+order. They can be duplicated by quirks of the
+underlying network. They can be silently dropped if the
+network is congested, the buffer at the destination is
+full, or one of the routers in between decides to.
+
+.. figure:: https://docs.openmv.io/_images/udp.svg
+   :alt: A diagram with sender on the left and
+         receiver on the right. Three arrows point
+         from sender to receiver, labelled "datagram 1",
+         "datagram 2", "datagram 3". The arrow for
+         datagram 2 is shown as a dashed line with an
+         X over it, indicating loss.
+
+   Each UDP datagram is sent independently. If one is
+   lost in transit, nothing tells the sender or the
+   receiver -- the gap is silent.
+
+Why anyone would use it
+-----------------------
+
+If UDP is so unreliable, why have it at all? Three
+reasons.
+
+* **Speed and overhead.** A UDP send is a single packet
+  going out; no handshake, no acknowledgements, no
+  connection state to maintain. Latency and bandwidth
+  cost are minimal.
+* **Independent messages.** Some traffic is a stream of
+  *status updates* where every message is a fresh
+  snapshot and an old one is worthless. A camera
+  publishing "I am still alive, here is my current
+  reading" every second cares about delivering each
+  *new* reading, not about replaying the readings that
+  got lost.
+* **Multicast.** A single UDP datagram can be sent to
+  many receivers at once. (TCP cannot do that; every
+  TCP connection is between exactly two endpoints.)
+  Useful for service discovery, telemetry to many
+  listeners, video streaming.
+
+Where the network is good and the sender's tolerance
+for loss is high, UDP is the right answer. Where
+delivery and ordering have to be guaranteed, UDP either
+needs another layer of reliability on top, or the
+application should just use TCP instead.
+
+When *not* to use it
+--------------------
+
+The opposite is also worth being explicit about. UDP is
+the wrong choice when:
+
+* **Every byte matters.** Configuration data, code
+  updates, signed transactions -- any case where a
+  missing byte makes the result wrong.
+* **Order matters.** UDP datagram 2 might arrive
+  before datagram 1.
+* **The message is large.** Big payloads have to be
+  split into smaller datagrams by the application; the
+  transport layer will not do it. If any one piece is
+  lost the whole message is incomplete.
+
+If any of those apply, reach for TCP instead.
+
+Concrete examples on a camera
+-----------------------------
+
+Camera-side examples of UDP traffic in the wild:
+
+* **Discovery.** A camera broadcasts a "who is here"
+  datagram to the local network on startup; other
+  devices reply.
+* **Telemetry.** Once a second, the camera sends a
+  small datagram with its current sensor readings to a
+  collector. Losing the occasional sample does not
+  matter because the next one arrives in a second
+  anyway.
+* **Time synchronisation.** NTP, the network time
+  protocol, runs over UDP. The client sends a small
+  request, the server replies with the current time; if
+  the reply is lost, the client just asks again later.
+* **DNS lookups.** Asking the network "what IP does
+  this name map to?" runs over UDP. (Covered on
+  :doc:`../names/dns`.)
+
+The Python API for sending and receiving datagrams is on
+:doc:`../sockets/udp-sockets`, after the rest of the
+transport layer story is in place.
+
+
+TCP -- a reliable stream of bytes
+=================================
+
+TCP, the Transmission Control Protocol, is the other
+transport-layer service on top of IP. Where UDP is best
+described as "send a packet and hope", TCP is "open a
+connection between two endpoints and treat it as a
+two-way pipe of bytes that the other side definitely
+gets, in order, and exactly once". Most internet
+traffic uses it, and most of what the camera does on the
+network uses it too.
+
+What TCP adds to IP
+-------------------
+
+TCP does much more than UDP. It adds:
+
+* **A connection.** Before any data flows, the two
+  endpoints exchange a short handshake to agree they
+  are talking. The connection has a state -- "open",
+  "half-closed", "closed" -- that both sides track.
+* **Reliable delivery.** Every byte the sender puts
+  in is acknowledged by the receiver. Anything not
+  acknowledged within a timeout is sent again. The
+  application never sees a lost byte; it sees a delay
+  while the protocol resends.
+* **In-order delivery.** Bytes arrive in the same order
+  they were sent. Even if packets arrive at the
+  receiver out of order, TCP re-orders them before the
+  application reads.
+* **Flow control.** If the receiver is slow, the sender
+  is told to slow down; the connection adapts to the
+  weaker end's rate.
+* **Congestion control.** If the network in the middle
+  starts dropping packets, the sender backs off until
+  things recover. This keeps any one connection from
+  taking down a saturated link.
+
+All of this is automatic. The Python API the
+application uses is simply ``send(bytes)`` and
+``recv(n)``; TCP handles everything else underneath.
+
+The handshake
+-------------
+
+A TCP connection opens with a three-way exchange before
+any data is allowed through:
+
+.. figure:: https://docs.openmv.io/_images/tcp-handshake.svg
+   :alt: A diagram with two columns labelled "client"
+         and "server". An arrow from client to server
+         labelled "SYN", then an arrow from server to
+         client labelled "SYN-ACK", then an arrow
+         from client to server labelled "ACK". Below
+         that a thick arrow labelled "data flowing
+         both ways".
+
+   The three-way handshake. Once both sides have
+   acknowledged, the connection is open and data can
+   flow.
+
+The client sends a *SYN* (synchronise) packet asking to
+open. The server replies with *SYN-ACK* (synchronise +
+acknowledge), accepting. The client sends a final *ACK*
+to confirm. After this round trip, both sides agree the
+connection is open and have synchronised their counters
+for tracking which bytes have been sent and received.
+
+The handshake costs one round-trip-time of latency
+before the first useful byte gets through. For local
+networks that is a millisecond; for cross-continent
+connections that is roughly 100 ms. This is the main
+cost of TCP and the reason short, one-shot messages
+are sometimes better off using UDP instead.
+
+The closing handshake
+~~~~~~~~~~~~~~~~~~~~~
+
+TCP connections also close with an exchange (a *FIN*
+from each side). Either end can close its half of the
+connection independently; a *half-closed* state where
+one side has finished sending but the other is still
+talking is legal, though uncommon. The application
+normally just calls ``close()`` and lets the protocol
+handle the shutdown sequence.
+
+What TCP does *not* guarantee
+-----------------------------
+
+A few things TCP is sometimes assumed to do but does
+not:
+
+* **Message boundaries.** The application sends a
+  *stream of bytes*, not a stream of messages. Two
+  ``send(b"hello")`` calls might arrive as one
+  ``recv()`` of ``b"hellohello"``, or as two
+  ``recv()``\ s of varying sizes. If the application
+  wants message framing, it has to add the framing
+  itself (a newline, a length prefix, whatever).
+  Sending JSON documents over TCP, for example, needs
+  each document separated by a newline or some other
+  marker.
+* **Encryption.** TCP carries the bytes the
+  application gave it, in the clear, all the way. If
+  the contents need to be confidential, the
+  application has to wrap the connection in TLS (see
+  :doc:`/openmvcam/tutorial/networking/encrypted-sockets`).
+* **Authentication.** TCP makes sure the bytes arrived
+  intact. It says nothing about *who* sent them.
+  Authentication is also a higher-layer concern.
+* **Liveness on a quiet connection.** If neither side
+  sends data for a long time, the connection is
+  technically still open but cannot detect that the
+  other end has crashed or disappeared. *Keepalive*
+  probes can be enabled on the socket to fix this when
+  it matters.
+
+When to use TCP
+---------------
+
+TCP is the right answer for almost any conversation
+that fits the shape "client opens a connection to a
+server, they exchange some bytes, the connection
+closes when done". HTTP and HTTPS requests, SSH
+sessions, database queries, file transfers, image
+uploads -- all over TCP.
+
+Reach for UDP only when the conversation does not fit
+that shape: independent self-contained messages where
+loss is acceptable, multicast traffic, time
+synchronisation, name lookups, or extreme
+latency-sensitive cases where the handshake cost is
+prohibitive.
+
+With ports, UDP, and TCP all on the table, the
+transport layer story is done. The Python API that
+exposes both is on the next page:
+:doc:`../sockets/socket-objects`.
+
+
+Socket objects
+==============
+
+The Python interface to the transport layer is the
+:class:`socket.socket` class. A *socket* represents one
+endpoint of a network conversation -- an address, a
+port, and the protocol (UDP or TCP) the conversation
+runs over. The hardware control chapters opened
+:class:`~machine.UART` instances to talk on a wire; this
+section opens :class:`~socket.socket` instances to talk
+on the network. The shape is the same; the underlying
+service is just a lot more capable.
+
+Creating a socket
+-----------------
+
+Three arguments describe a socket: which *address
+family* it speaks, which *socket type* it offers, and
+which *protocol* it uses. The defaults cover the cases
+the rest of this section uses::
+
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)   # IPv4 TCP
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    # IPv4 UDP
+
+The two constants the application picks between in
+almost every case:
+
+* :data:`~socket.AF_INET` -- IPv4 addresses (a numeric
+  IP plus a port). The most common choice.
+  :data:`~socket.AF_INET6` is the IPv6 equivalent.
+* :data:`~socket.SOCK_STREAM` -- a TCP connection, the
+  reliable byte stream. :data:`~socket.SOCK_DGRAM` is
+  the UDP equivalent.
+
+The third argument (the *protocol*) is left at zero,
+which picks the right default based on the first two.
+The full constructor is documented on
+:doc:`/library/socket`.
+
+Addresses on a socket
+---------------------
+
+A socket address is a tuple of ``(host, port)``::
+
+    ("192.168.1.50", 80)
+    ("0.0.0.0", 8000)
+
+The host is the IP address as a string. The port is
+the 16-bit integer covered on :doc:`../transport/ports`.
+
+A handful of *special* host strings are worth knowing:
+
+* ``"0.0.0.0"`` means "every IPv4 interface on this
+  device". A server bound to this address accepts
+  connections on any address the camera holds.
+* ``"127.0.0.1"`` is *localhost* -- traffic to it never
+  leaves the device. Useful for testing.
+* ``"255.255.255.255"`` is the local broadcast address.
+  A UDP datagram sent to it goes to every device on the
+  local segment.
+
+Domain names like ``"example.com"`` are *not* valid host
+strings in a socket address. They have to be resolved to
+an IP first; :doc:`../names/dns` covers the
+:func:`~socket.getaddrinfo` call that does that.
+
+The two roles
+-------------
+
+The lifecycle of a socket depends on which side of the
+conversation it is on. A *client* socket calls
+:meth:`~socket.socket.connect` (or, for UDP, just
+:meth:`~socket.socket.sendto`) to talk to a known
+server. A *server* socket calls
+:meth:`~socket.socket.bind` to claim a port, then either
+:meth:`~socket.socket.listen` and
+:meth:`~socket.socket.accept` (for TCP) or
+:meth:`~socket.socket.recvfrom` (for UDP) to receive
+incoming traffic.
+
+The same :class:`~socket.socket` constructor is used in
+both cases; only the methods called afterwards differ.
+The next three pages walk through the practical patterns:
+
+* :doc:`udp-sockets` -- send and receive datagrams.
+* :doc:`tcp-sockets` -- TCP client and server.
+* :doc:`async-sockets` -- everything above, but inside
+  an :mod:`asyncio` event loop.
+
+Closing a socket
+----------------
+
+Every socket holds a small piece of operating-system
+state (a port reservation, buffers, the connection's
+TCP state). When the application is done with it,
+:meth:`~socket.socket.close` releases that state. A
+forgotten socket is a slow leak that adds up; in a
+loop that opens connections, missing a ``close`` will
+eventually exhaust the cam's pool of available sockets.
+
+The cleanest pattern is the :keyword:`with` statement::
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(addr)
+        s.send(b"GET / HTTP/1.0\r\n\r\n")
+        ...
+    # socket is closed automatically here, even on error
+
+Sockets implement the context-manager protocol covered
+in the Python overview, so the ``with`` block guarantees
+``close()`` is called regardless of whether the block
+exited normally or by raising an exception.
+
+The :mod:`socket` reference
+---------------------------
+
+This and the next pages walk through the API in narrative
+form. For the full argument-level reference of every
+method, every flag, and every constant the module
+exposes, see :doc:`/library/socket`. The reference is
+also the place to look for the less-common operations
+(socket options, multicast group membership, IPv6 scope
+IDs) that this section does not cover.
+
+
+UDP sockets
+===========
+
+UDP traffic in Python is sent and received with two
+methods on a datagram socket:
+:meth:`~socket.socket.sendto` to fire off a datagram at
+a chosen destination, and :meth:`~socket.socket.recvfrom`
+to receive a datagram and find out where it came from.
+Each call moves one self-contained message; there is no
+connection state.
+
+Sending a datagram
+------------------
+
+The simplest UDP send is one line of Python on top of a
+socket constructor::
+
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.sendto(b"hello", ("192.168.1.20", 9000))
+    s.close()
+
+That sends ``b"hello"`` to port ``9000`` on
+``192.168.1.20`` and walks away. MicroPython picks an
+ephemeral source port; the script does not have to bind
+anything.
+
+Sending the same payload to many destinations is just a
+loop -- the socket is reusable between sends, and there
+is no connection to set up::
+
+    targets = [
+        ("192.168.1.20", 9000),
+        ("192.168.1.21", 9000),
+        ("192.168.1.22", 9000),
+    ]
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        for addr in targets:
+            s.sendto(b"hello", addr)
+
+Receiving a datagram
+--------------------
+
+To receive datagrams, the socket has to claim a known
+port that the senders will use as their destination.
+That is the :meth:`~socket.socket.bind` call::
+
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(("0.0.0.0", 9000))
+
+    while True:
+        data, src = s.recvfrom(1024)
+        print("from", src, "got", data)
+
+The ``"0.0.0.0"`` address means "every IPv4 interface
+on the camera" -- whatever Wi-Fi or Ethernet interface
+brings packets in, port ``9000`` belongs to this
+socket.
+
+The ``1024`` argument to :meth:`~socket.socket.recvfrom`
+is the maximum number of bytes to read into the
+returned buffer. UDP datagrams above this size will be
+*truncated*; pick the value to match the largest
+datagram the application expects.
+
+:meth:`~socket.socket.recvfrom` returns ``(data,
+src)``: the bytes received, and the address of the
+sender. The sender's address is what to reply to,
+making it easy to write a small request/response
+protocol::
+
+    while True:
+        request, src = s.recvfrom(1024)
+        if request == b"ping":
+            s.sendto(b"pong", src)
+
+By default :meth:`~socket.socket.recvfrom` *blocks*
+until a datagram arrives. The patterns for making it
+not block -- timeouts, non-blocking sockets, asyncio --
+are on :doc:`async-sockets`.
+
+A request and a reply
+---------------------
+
+Two short scripts: one sends a request, one receives
+and replies.
+
+The receiver::
+
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.bind(("0.0.0.0", 9000))
+
+    while True:
+        req, src = s.recvfrom(64)
+        print("got", req, "from", src)
+        s.sendto(b"ack: " + req, src)
+
+The sender::
+
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        s.settimeout(2.0)                              # 2 s reply window
+        s.sendto(b"ping", ("192.168.1.20", 9000))
+        try:
+            reply, _ = s.recvfrom(64)
+            print("reply:", reply)
+        except OSError:
+            print("no reply in 2 s -- packet lost?")
+
+A few things worth noting in the sender:
+
+* No :meth:`~socket.socket.bind` and no
+  :meth:`~socket.socket.connect`. UDP clients just send.
+* :meth:`~socket.socket.settimeout` puts a deadline on
+  the receive call. If no reply lands in two seconds,
+  the call raises :exc:`OSError` rather than blocking
+  forever -- a natural way to detect a lost packet.
+* The :class:`with` block closes the socket
+  automatically.
+
+Datagram size limits
+--------------------
+
+UDP datagrams can be up to about 64 KB in theory, but
+the practical limit is much smaller. Every link in the
+path between the sender and receiver has a *Maximum
+Transmission Unit* (MTU) -- the largest single block of
+bytes that link can carry in one frame. Ethernet and
+Wi-Fi both cap this at around 1500 bytes, and almost
+every internet path traces back to that limit somewhere.
+
+When a datagram exceeds the MTU of a link it has to
+cross, the network layer splits it into smaller
+*fragments* and re-assembles them at the destination.
+UDP itself never sees the split, but fragments have
+several inconvenient properties:
+
+* If any one fragment is lost, the whole datagram is
+  dropped at the receiver -- there is no per-fragment
+  retransmission. The loss probability grows with the
+  fragment count.
+* Some networks and firewalls drop fragmented packets
+  entirely, treating them as suspicious.
+* Re-assembly costs memory at the receiver, which on a
+  microcontroller is in short supply.
+
+The practical rule on the camera: keep UDP messages
+well under 1500 bytes. About 1400 bytes leaves room for
+the IP and UDP headers, any tunneling overhead the path
+adds, and small variations in MTU between Ethernet,
+Wi-Fi, and VPN links. Applications that need to send
+more than that should either chunk the data at the
+application layer or switch to TCP, which handles the
+splitting and re-assembly automatically.
+
+Common pitfalls
+---------------
+
+* **Forgetting that UDP can lose packets.** Code that
+  works perfectly on a quiet local network sometimes
+  fails in subtle ways on a busier or wider one. Always
+  design for the possibility that the message did not
+  arrive.
+* **Receiver not bound before sender sends.** A
+  datagram sent to a port that nobody is listening on
+  is silently dropped. Start the receiver first.
+* **Sending a datagram larger than the path's MTU.**
+  See the previous section -- keep messages under
+  ~1400 bytes.
+
+The patterns above cover almost every UDP use the
+camera reaches for. The next page does the equivalent
+for TCP.
+
+
+TCP sockets
+===========
+
+TCP sockets come in two shapes that look different but
+share the same underlying type: *client* sockets that
+:meth:`~socket.socket.connect` to a remote server, and
+*server* sockets that :meth:`~socket.socket.bind`,
+:meth:`~socket.socket.listen`, and
+:meth:`~socket.socket.accept` incoming connections. Both
+roles use the same :class:`~socket.socket` class
+introduced on :doc:`socket-objects`; only the methods
+called on them differ.
+
+A TCP client
+------------
+
+The simplest client opens a connection, sends a
+request, reads the reply, and closes::
+
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("192.168.1.20", 9000))
+
+    s.send(b"hello\n")
+    reply = s.recv(1024)
+    print("reply:", reply)
+
+    s.close()
+
+:meth:`~socket.socket.connect` runs the three-way
+handshake covered on :doc:`../transport/tcp` and
+returns when the connection is open.
+:meth:`~socket.socket.send` writes bytes to the
+connection; :meth:`~socket.socket.recv` reads up to a
+given number of bytes from it. Once the application is
+done, :meth:`~socket.socket.close` shuts the connection
+down.
+
+The same script wrapped in the
+:keyword:`with`-statement idiom from
+:doc:`socket-objects`, so the socket is closed even if
+something raises::
+
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(("192.168.1.20", 9000))
+        s.send(b"hello\n")
+        print(s.recv(1024))
+
+Reading until done
+~~~~~~~~~~~~~~~~~~
+
+A single :meth:`~socket.socket.recv` returns *up to*
+the requested number of bytes -- it can return fewer,
+because TCP is a stream rather than a sequence of
+messages. The application has to keep reading until it
+has the full reply::
+
+    chunks = []
+    while True:
+        chunk = s.recv(1024)
+        if not chunk:                  # empty bytes -> other side closed
+            break
+        chunks.append(chunk)
+    reply = b"".join(chunks)
+
+The loop ends when :meth:`~socket.socket.recv` returns
+an empty :class:`bytes`. That happens when the other
+side has cleanly closed its half of the connection;
+the application reads "end of stream" as the same as
+"end of message" in this style of protocol.
+
+Sending until done
+~~~~~~~~~~~~~~~~~~
+
+The opposite caveat applies to
+:meth:`~socket.socket.send`: it may send *fewer* bytes
+than requested, returning the count of bytes actually
+written. For large payloads, retry the unsent
+remainder::
+
+    payload = some_big_bytes
+    while payload:
+        n = s.send(payload)
+        payload = payload[n:]
+
+:meth:`~socket.socket.sendall` does the loop
+internally, so most code can just call that and avoid
+the manual retry::
+
+    s.sendall(some_big_bytes)
+
+A TCP server
+------------
+
+The server side is four steps: claim a port, switch
+the socket to listening mode, accept connections one
+by one, talk on each accepted socket. A minimal echo
+server::
+
+    import socket
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(("0.0.0.0", 9000))
+    server.listen(1)
+    print("listening on port 9000")
+
+    while True:
+        conn, addr = server.accept()
+        print("connection from", addr)
+
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                break
+            conn.send(data)            # echo back
+
+        conn.close()
+
+Step by step:
+
+* :meth:`~socket.socket.bind` claims a host and port
+  on the camera. ``"0.0.0.0"`` accepts on any
+  interface; replacing it with a specific IP restricts
+  the listener to that interface.
+* :meth:`~socket.socket.listen` switches the socket
+  from a normal socket to a *listening* socket. The
+  argument is the *backlog* -- how many pending
+  connections MicroPython will queue while the
+  application is busy. Pick a small number; ``1`` is
+  fine for most cases.
+* :meth:`~socket.socket.accept` blocks until a client
+  connects, then returns ``(conn, addr)``: a *new*
+  socket representing this one connection, and the
+  client's address. The listening socket itself stays
+  open to accept more.
+* All the bytes for the conversation flow through
+  ``conn``, the new socket. Reads and writes use the
+  same :meth:`~socket.socket.recv` /
+  :meth:`~socket.socket.send` calls as on the client
+  side.
+* When the client closes, :meth:`~socket.socket.recv`
+  returns ``b""``; the inner loop ends and the server
+  closes its end with :meth:`~socket.socket.close`.
+
+The outer ``while True`` jumps back to
+:meth:`~socket.socket.accept` to wait for the next
+client. The server handles one client at a time in this
+shape; running multiple clients in parallel needs
+either threads or :mod:`asyncio`. The latter is the
+subject of the next page.
+
+Common pitfalls
+---------------
+
+* **Treating recv() as message-shaped.** It is not.
+  Two ``send(b"hi")`` calls might arrive as one
+  ``recv(4)`` of ``b"hihi"``, or as two ``recv(2)``\ s.
+  The application has to add framing if message
+  boundaries matter -- a newline, a length prefix,
+  whatever.
+* **Forgetting to retry on short sends.** Use
+  :meth:`~socket.socket.sendall` for anything beyond a
+  few hundred bytes.
+* **Forgetting to close the accepted socket.** Each
+  ``conn`` is a separate socket; closing the listening
+  socket does not close the accepted ones.
+  :class:`with`-blocks on both make this hard to get
+  wrong::
+
+      while True:
+          with server.accept()[0] as conn:
+              # ... talk on conn ...
+
+* **Re-binding to a port still in TIME_WAIT.** When a
+  server restarts within a few seconds of closing,
+  :meth:`~socket.socket.bind` may fail with "address in
+  use" because MicroPython is still holding the port
+  for the previous connection.
+  ``server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)``
+  before :meth:`~socket.socket.bind` clears this.
+
+What's next
+-----------
+
+Blocking on :meth:`~socket.socket.accept` means the
+server can serve only one client at a time. Blocking on
+:meth:`~socket.socket.recv` means a single slow client
+hangs the whole loop. The standard answer on the camera
+is :mod:`asyncio` -- run each connection as its own
+task, let the event loop dispatch between them. The
+next page covers the asyncio versions of everything on
+this one.
+
+
+Sockets with asyncio
+====================
+
+A blocking :meth:`~socket.socket.recv` call freezes the
+whole script until a byte arrives. A blocking
+:meth:`~socket.socket.accept` call serves only one
+client at a time. Both of these are exactly the kind of
+"wait on I/O" situation :mod:`asyncio` exists to handle.
+The :doc:`asyncio chapter </openmvcam/tutorial/asyncio/index>`
+covers the event loop, coroutines, and the synchronisation
+primitives; this page covers the network-specific
+pieces.
+
+The asyncio module exposes networking through a small
+number of helpers that take and return *streams* --
+high-level objects that wrap a socket and offer
+``await``\ -able versions of read and write. The
+underlying socket is still there; the application just
+does not touch it directly.
+
+A client with asyncio
+---------------------
+
+:func:`asyncio.open_connection` is the asyncio
+counterpart to :meth:`socket.socket.connect`. It opens
+a TCP connection and returns two stream objects: a
+*reader* and a *writer*::
+
+    import asyncio
+
+    async def client():
+        reader, writer = await asyncio.open_connection("192.168.1.20", 9000)
+
+        writer.write(b"hello\n")
+        await writer.drain()                   # wait until bytes have been sent
+
+        reply = await reader.readline()
+        print("reply:", reply)
+
+        writer.close()
+        await writer.wait_closed()
+
+    asyncio.run(client())
+
+Three things to note:
+
+* The connection setup is one ``await`` instead of a
+  blocking call. While the handshake is in flight, the
+  event loop is free to run other coroutines.
+* :meth:`~asyncio.StreamWriter.write` puts bytes into
+  an outbound buffer; :meth:`~asyncio.StreamWriter.drain`
+  is the ``await`` that yields to the loop until those
+  bytes have actually been sent over the network.
+* :meth:`~asyncio.StreamReader.readline` reads bytes
+  until a newline arrives. The stream class includes
+  :meth:`~asyncio.StreamReader.read` (read up to N
+  bytes) and :meth:`~asyncio.StreamReader.readexactly`
+  (read exactly N bytes) as well, which solve TCP's
+  message-boundary problem without writing the framing
+  loops by hand.
+
+A server with asyncio
+---------------------
+
+:func:`asyncio.start_server` is the asyncio counterpart
+to the bind/listen/accept dance. It takes a callback
+that will be run once per incoming connection, with the
+same reader/writer pair the client side uses::
+
+    import asyncio
+
+    async def handle(reader, writer):
+        addr = writer.get_extra_info("peername")
+        print("connection from", addr)
+
+        while True:
+            data = await reader.read(1024)
+            if not data:
+                break
+            writer.write(data)                 # echo back
+            await writer.drain()
+
+        writer.close()
+        await writer.wait_closed()
+
+    async def main():
+        server = await asyncio.start_server(handle, "0.0.0.0", 9000)
+        print("listening on", server.sockets[0].getsockname())
+        async with server:
+            await server.serve_forever()
+
+    asyncio.run(main())
+
+Every accepted connection becomes its own task running
+``handle``. The event loop dispatches between them
+naturally -- one slow client cannot block the others,
+because while it is waiting on ``await reader.read(...)``
+the loop is free to make progress on every other
+connection. Adding ten concurrent clients does not
+require ten threads; the same single-threaded event
+loop drives them all.
+
+This is the practical reason camera networking
+applications written for asyncio scale so much better
+than the equivalent blocking code: the server picture
+on :doc:`tcp-sockets` was one-client-at-a-time; this
+one is many-clients-at-once with no extra effort.
+
+Concurrent work alongside networking
+------------------------------------
+
+The big payoff is mixing networking with the rest of
+the camera's work in the same loop. The camera can
+capture a frame, run image processing, *and* serve a
+network protocol, all interleaved::
+
+    import asyncio
+
+    async def capture_loop():
+        while True:
+            img = await camera.snapshot()
+            # process img ...
+            await asyncio.sleep_ms(100)
+
+    async def handle(reader, writer):
+        ...
+
+    async def main():
+        server = await asyncio.start_server(handle, "0.0.0.0", 9000)
+        await asyncio.gather(
+            server.serve_forever(),
+            capture_loop(),
+        )
+
+    asyncio.run(main())
+
+:func:`asyncio.gather` runs the two coroutines on the
+same event loop. While the camera is sleeping in
+:func:`~asyncio.sleep_ms` between frames, the server
+gets to dispatch network traffic. While the server is
+waiting for the next byte, the camera gets to capture.
+Both make progress on a single MicroPython thread.
+
+UDP with asyncio
+----------------
+
+The asyncio module does *not* offer the same high-level
+streams for UDP -- datagrams do not fit the read/write
+shape of a stream. The practical approach on the camera
+is to put the UDP work in its own coroutine, switch the
+socket to non-blocking mode, and yield to the event
+loop between read attempts::
+
+    import asyncio
+    import socket
+
+    async def udp_listener(port):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setblocking(False)
+        s.bind(("0.0.0.0", port))
+
+        while True:
+            try:
+                data, src = s.recvfrom(1024)
+            except OSError:
+                await asyncio.sleep_ms(10)
+                continue
+            print("got", data, "from", src)
+
+The socket is set non-blocking with
+``s.setblocking(False)``, so
+:meth:`~socket.socket.recvfrom` raises
+:exc:`OSError` immediately when no datagram is waiting
+instead of blocking the whole event loop. The
+``await asyncio.sleep_ms(10)`` in the empty branch
+hands control back to the event loop until the next
+poll.
+
+Sending follows the same shape:
+:meth:`~socket.socket.sendto` on a non-blocking socket
+either succeeds immediately or raises. There is no
+``sendallto`` -- UDP datagrams are atomic, so each send
+is one whole datagram or none. If the send buffer is
+full, the right move for UDP is usually to drop the
+datagram and let the next one go out the next time
+through the loop::
+
+    async def udp_telemetry(target_addr, period_ms):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.setblocking(False)
+
+        while True:
+            payload = collect_telemetry()
+            try:
+                s.sendto(payload, target_addr)
+            except OSError:
+                pass                # buffer full -- skip this one
+
+            await asyncio.sleep_ms(period_ms)
+
+The failing branch is rare in practice. UDP has no flow
+control, so :meth:`~socket.socket.sendto` almost always
+succeeds on first try; the ``except`` mostly exists so
+a brief network hiccup does not crash the coroutine.
+
+The :doc:`Asyncio </openmvcam/tutorial/asyncio/index>`
+section covers the broader patterns for mixing
+blocking I/O into an asyncio program; the same
+patterns apply directly to a UDP socket.
+
+Timeouts and cancellation
+-------------------------
+
+Wrapping a network call in :func:`asyncio.wait_for`
+puts a deadline on it::
+
+    try:
+        reply = await asyncio.wait_for(reader.readline(), timeout=2.0)
+    except asyncio.TimeoutError:
+        print("server is slow")
+
+A coroutine that is taking too long can also be
+:meth:`~asyncio.Task.cancel`-led from elsewhere. Both
+mechanisms are covered in detail in the
+:doc:`coordination chapter </openmvcam/tutorial/asyncio/coordination/timeouts-and-cancellation>`;
+they apply unchanged to streams returned by
+:func:`asyncio.open_connection` and
+:func:`asyncio.start_server`.
+
+For the full :class:`~asyncio.Stream` reference (the
+class behind the readers and writers, plus the helpers
+this page used in passing), see
+:doc:`/library/asyncio`.
+
+
+Names and DNS
+=============
+
+Every page so far has used numeric IP addresses --
+``192.168.1.20`` and the like. Real applications almost
+never do that. Servers are named ``example.com`` or
+``api.example.com``, and the application looks the
+name up at runtime to find an IP to send packets to.
+That lookup is the *Domain Name System*, or DNS.
+
+What a name resolves to
+-----------------------
+
+A name is just a label. ``example.com`` does not carry
+any IP information itself -- it has to be looked up,
+the same way a phone number is looked up in a phone
+book. The DNS infrastructure is the distributed phone
+book of the internet, and the result of a lookup is
+one or more IP addresses the camera can connect to.
+
+::
+
+    example.com  ->  93.184.216.34
+
+A single name often resolves to several addresses (for
+load balancing, geographic redundancy, IPv4 *and* IPv6
+versions of the same service). Any of them works; the
+application picks one and tries it, falling back to the
+next if that fails.
+
+How the lookup happens
+----------------------
+
+When the camera asks for ``example.com``:
+
+#. The camera sends a small UDP datagram (yes, UDP --
+   see :doc:`../transport/udp`) to its configured DNS
+   server. The DNS server's address came from the same
+   DHCP exchange that handed the camera its own IP.
+#. The DNS server may already have the answer cached
+   (it has been asked recently). If so, it replies
+   immediately.
+#. If not, the DNS server walks the global DNS
+   hierarchy: ask the *root* servers about ``.com``,
+   ask those servers about ``example.com``, ask
+   *those* servers about the name. The whole tree-walk
+   is hidden from the camera; the camera sees one
+   query and one reply.
+#. The DNS server caches the result for next time and
+   sends the reply back to the camera as another UDP
+   datagram.
+
+The whole exchange typically takes a few milliseconds
+on a warm cache, up to a hundred or so on a cold one.
+
+The Python interface
+--------------------
+
+The :func:`~socket.getaddrinfo` function does the
+lookup and returns an address ready to hand to a
+socket constructor::
+
+    import socket
+
+    addr = socket.getaddrinfo("example.com", 80)[0][-1]
+    print(addr)
+    # ('93.184.216.34', 80)
+
+The signature is ``getaddrinfo(host, port)``. The
+return value is a *list* of 5-tuples (one per resolved
+address); the ``[0]`` picks the first one and the
+``[-1]`` picks the last field, which is the
+``(ip, port)`` tuple a socket can be handed directly::
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(socket.getaddrinfo("example.com", 80)[0][-1])
+        s.send(b"GET / HTTP/1.0\r\nHost: example.com\r\n\r\n")
+        ...
+
+Most camera code that talks to a remote server starts
+with that one line. The :mod:`asyncio` helpers
+(:func:`asyncio.open_connection`) do the lookup
+internally if a name is passed instead of a numeric IP,
+so async code typically does not call
+:func:`~socket.getaddrinfo` directly.
+
+What can go wrong
+-----------------
+
+* **No DNS server reachable.** If Wi-Fi just came up
+  and the link is flaky, the first
+  :func:`~socket.getaddrinfo` call may time out.
+  :exc:`OSError` is raised; retry once the link is
+  stable.
+* **Name does not exist.** A typo or a stale name
+  raises :exc:`OSError` after the DNS server returns
+  "no such name". The error code distinguishes this
+  from "DNS server unreachable", but for most camera
+  applications the retry/give-up policy is the same.
+* **Returned address does not work.** DNS may return an
+  address that no longer hosts the service. The fix is
+  to fall back to the next entry in
+  :func:`~socket.getaddrinfo`'s result list, or look
+  the name up again later (the DNS cache will likely
+  have updated by then).
+* **Captive portals.** Some Wi-Fi networks intercept
+  DNS and return the captive-portal page's IP for
+  *everything*. The camera will appear to connect but
+  the data it gets back will not match what the actual
+  service would send. Not common in deployed
+  environments, but a thing that happens on conference
+  Wi-Fi and similar networks.
+
+The camera's own name
+---------------------
+
+The pages so far have looked up *other* devices' names.
+The camera also has a name of its own that it
+advertises to the local network when it asks for an
+address. The default is a generic identifier that
+varies by board; :func:`network.hostname` overrides it
+with something the rest of the network will recognise::
+
+    import network
+    network.hostname("kitchen-cam")
+    # ... then bring the link up as usual ...
+
+Set the hostname *before* bringing the interface up,
+so the name goes out as part of the camera's initial
+address request rather than after.
+
+Two things now happen once the camera has joined the
+network. First, most home routers register the
+hostnames they hand addresses to into their own local
+lookup, so other devices can reach the cam as
+``kitchen-cam`` -- without having to know the numeric
+address the router happened to assign. (Enterprise
+networks may or may not honour this; the behaviour is
+up to the router.) Second, the cam *itself* runs an
+mDNS responder out of the box, so the same name is also
+reachable as ``kitchen-cam.local`` on any network whose
+clients understand mDNS -- which most modern desktop
+operating systems do.
+
+.. note::
+
+   Pass the *bare* hostname to
+   :func:`network.hostname` -- just ``"kitchen-cam"``,
+   no ``.local`` suffix. The ``.local`` form is what
+   mDNS adds at lookup time; baking it into the
+   hostname makes the cam advertise
+   ``kitchen-cam.local`` as a plain hostname, which is
+   not what either side of the lookup expects.
+
+When names are not enough
+-------------------------
+
+A few situations DNS does not help with:
+
+* **Discovery on the local network.** Standard DNS
+  answers questions about names registered in the
+  global directory; it knows nothing about devices on
+  the local segment. *Multicast DNS* (mDNS) is the
+  system that fills that gap. Every participating
+  device joins a special multicast group on the local
+  network and listens for queries; when a device asks
+  for a name ending in ``.local``, whichever device
+  owns that name answers directly. No central server,
+  no DNS configuration. Bonjour on Apple devices,
+  Avahi on Linux, and Windows 10+ all speak the same
+  protocol -- which is why the ``kitchen-cam.local``
+  name the previous section set up resolves on a home
+  network with nothing extra configured.
+
+  The cam's side of that exchange is the *responder*,
+  and it is already running. What the cam does not
+  have is a *resolver* -- the other half, which would
+  let a script ask the network "where is
+  ``printer.local``?" and get an answer back. The
+  bundled mDNS code is responder-only (embedded
+  devices are typically the *thing being found*, not
+  the thing doing the finding). When discovery has to
+  flow the other direction, UDP broadcast (see
+  :doc:`../transport/udp`) is the simpler answer for
+  the local-segment case, or a pure-Python module
+  such as `cbrand/micropython-mdns
+  <https://github.com/cbrand/micropython-mdns>`_ adds
+  a full resolver.
+* **IPv6 names.** :func:`~socket.getaddrinfo` returns
+  both IPv4 and IPv6 results if both are available.
+  Pick the family the application's socket can use.
+
+For most camera-side code, ``getaddrinfo`` is a
+one-liner at the top of any function that opens a
+network connection. The examples elsewhere in this
+section that ran against ``"192.168.1.20"`` would all
+work the same way against a public name like
+``"api.example.com"`` -- just resolve first.
+
+
+Time and NTP
+============
+
+A freshly powered-up camera has no idea what time it
+is. The on-board clock starts at some arbitrary moment
+(``1970-01-01`` on most boards) and counts forward
+from there until something tells it otherwise. *NTP*
+-- the Network Time Protocol -- is how the cam asks
+the network for the real-world wall-clock time and
+sets its own clock from the answer.
+
+Why the cam needs to know the time
+----------------------------------
+
+For a lot of scripts the cam's clock does not matter
+-- a frame-capture loop does not care what day it is.
+For a few common things it matters a lot:
+
+* **Timestamps in logs or uploaded data.** Entries
+  that all say ``1970-01-01`` are hard to make sense
+  of after the fact.
+* **Scheduled tasks.** "Run at 03:00" needs the
+  camera to know what 03:00 is.
+
+What NTP does
+-------------
+
+NTP is a small public service: a network of servers
+that answer "what time is it?" over a single UDP
+exchange. The camera sends a short request to a known
+NTP server; the server replies with a precise
+timestamp (accurate to a few milliseconds for any
+common public server); the camera uses that to set
+its own clock. The default server the cam uses is
+``pool.ntp.org``, a globally load-balanced pool
+designed for exactly this kind of client.
+
+The Python API: :mod:`ntptime`
+------------------------------
+
+MicroPython wraps the protocol in one call. The
+common pattern is to bring the link up first, then
+ask NTP for the time::
+
+    import network
+    import ntptime
+    import time
+
+    wlan = network.WLAN(network.WLAN.IF_STA)
+    wlan.active(True)
+    wlan.connect("my-network", "my-password")
+
+    while not wlan.isconnected():
+        time.sleep_ms(100)
+
+    ntptime.settime()                 # cam's clock is now UTC
+    print(time.localtime())
+
+After :func:`ntptime.settime` returns, the on-board
+real-time clock and :func:`time.localtime` reflect
+the current UTC time. Two knobs adjust the defaults:
+
+* :data:`ntptime.host` is the server name to query.
+  Override it (``ntptime.host = "time.google.com"``)
+  before calling :func:`~ntptime.settime` to point
+  at a different server.
+* :data:`ntptime.timeout` is the number of seconds
+  to wait for a reply before giving up; the default
+  is short.
+
+When to call it
+---------------
+
+* **After the network link is up.** NTP rides on UDP,
+  which rides on an established IP setup. Wait for
+  :meth:`~network.WLAN.isconnected` to return
+  :data:`True` first.
+* **Periodically on long-running cams.** The
+  on-board clock drifts over hours and days. A daily
+  or weekly :func:`~ntptime.settime` keeps it
+  honest.
+
+Time zones
+----------
+
+NTP returns UTC. MicroPython does not ship a
+time-zone database, so converting UTC to local time
+is the script's job. A fixed offset for the
+deployment's zone is the usual approach::
+
+    import time
+
+    offset = -5 * 3600                  # hours -> seconds, US Eastern
+    local = time.localtime(time.time() + offset)
+    print(local)
+
+Daylight Saving Time, leap seconds, and historical
+zone changes are not handled by this approach. For
+most camera deployments a fixed offset is enough; if
+a script genuinely needs civil time with Daylight
+Saving Time, do the conversion server-side.
+
+What can go wrong
+-----------------
+
+* **No network yet.** :func:`ntptime.settime` raises
+  :exc:`OSError` if it cannot reach the server.
+  Either the link is not up, the name lookup
+  failed, the server is unreachable, or no reply
+  arrived inside :data:`ntptime.timeout`. Retry
+  once the link is stable.
+* **Captive portals.** A Wi-Fi network that
+  intercepts DNS may answer the NTP server name with
+  the portal's own IP, and NTP requests to that
+  return nonsense. The cam will think the network is
+  up but the time set will fail or be wildly wrong.
+  Move to a clean network or hard-code an IP.
+* **Hammering public pools.** Public NTP pools rate-
+  limit abusive clients. Once an hour is plenty;
+  once per minute will get the cam banned.
+
+For the full :mod:`ntptime` reference, see
+:doc:`/library/ntptime`.
+
+
+Encrypted sockets and TLS
+=========================
+
+Everything covered up to here moves bytes around in the
+clear. Any device on the path between the camera and
+the server -- the home router, the internet service
+provider, a malicious access point in a coffee shop --
+can in principle read or modify what passes through.
+For most internet traffic that is not acceptable. The
+standard fix is to wrap the connection in a layer of
+encryption: *TLS*, the Transport Layer Security
+protocol. The "HTTPS" lock icon in a browser is TLS
+running over TCP, and the same wrapping is what makes
+any other internet protocol "secure". The camera's
+:mod:`ssl` module is what wraps a
+:class:`~socket.socket` in TLS.
+
+What TLS adds, and what the cam ships with
+------------------------------------------
+
+TLS sits between TCP and the application -- the
+application writes bytes to a TLS-wrapped socket, TLS
+encrypts them and hands the result to TCP, and the
+process is reversed on the other side. In its full
+form TLS gives three guarantees on top of plain TCP:
+
+* **Confidentiality.** Eavesdroppers on the path
+  cannot read what the two endpoints are exchanging.
+* **Integrity.** Any modification of the traffic in
+  transit is detected; the connection breaks rather
+  than delivering tampered data.
+* **Authentication.** The server proves it is the
+  named server, not an impostor (and, optionally, the
+  client proves who *it* is too).
+
+The first two come from the encryption itself. The
+third needs *certificates* on at least one side, plus
+something pre-trusted to verify those certificates
+against. The OpenMV cam ships with **no built-in
+certificate store at all**: a freshly flashed cam
+trusts no certificate authority, has no server
+certificate of its own, and the default verify mode
+(:data:`ssl.CERT_NONE`) does not check the peer's
+certificate against anything. So out of the box, TLS
+on the cam gives you the first two guarantees --
+encryption against eavesdropping and tampering by a
+passive observer -- but **not** the third.
+
+Encrypting an outbound connection
+---------------------------------
+
+The simplest use is wrapping an outbound TCP
+connection. The flow is: open a normal TCP socket,
+hand it to :func:`ssl.wrap_socket`, then read and
+write through the wrapped socket exactly the way you
+would the plain one::
+
+    import socket
+    import ssl
+
+    addr = socket.getaddrinfo("example.com", 443)[0][-1]
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(addr)
+
+    s = ssl.wrap_socket(sock)
+
+    s.send(b"GET / HTTP/1.0\r\nHost: example.com\r\n\r\n")
+    print(s.recv(4096))
+    s.close()
+
+The wrap performs the TLS handshake; afterwards every
+byte through ``s.send`` is encrypted on the way out
+and every byte from ``s.recv`` was encrypted on the
+wire. No certificates were configured, no trust
+anchor was supplied -- TLS just negotiates an
+ephemeral session key with whichever server answers
+and uses it.
+
+.. figure:: https://docs.openmv.io/_images/tls-handshake.svg
+   :alt: A diagram with two columns labelled "client"
+         and "server". A dashed horizontal line near
+         the top is labelled "TCP connection already
+         open". Below it, three arrows show the TLS
+         handshake: "ClientHello" from client to
+         server, "ServerHello + certificate + key
+         share" back, and "Finished" forward again. A
+         second dashed horizontal line below is
+         labelled "TLS session open -- everything
+         after this is encrypted". Two thick
+         bidirectional arrows below it carry
+         "encrypted data".
+
+   The TLS handshake :func:`ssl.wrap_socket` runs.
+   It sits on top of the already-open TCP connection
+   from the previous figure; once both sides have
+   sent ``Finished``, the rest of the conversation is
+   encrypted in both directions.
+
+.. warning::
+
+   This is encryption-only, **not** authenticated TLS.
+   The cam talks securely to *whatever* answered on the
+   other end of the TCP connection. If a man-in-the-
+   middle redirects the connection to a server it
+   controls and that server presents *any* certificate,
+   the handshake still succeeds and the cam ends up
+   securely talking to the attacker. Use this mode only
+   when a man-in-the-middle is not part of the threat
+   model -- a closed local network, a development
+   environment, the cam talking to a service running on
+   the same hardware -- *not* when reaching out to the
+   public internet.
+
+   For real authentication -- the cam verifying a
+   public server, the cam acting as a TLS server, or
+   mutual TLS -- you need to bring certificates onto
+   the device. The full story is in
+   :doc:`/openmvcam/tutorial/production/tls/index`.
+
+The same wrap works for incoming TCP traffic, by
+selecting the server protocol and passing
+``server_side=True`` to :func:`ssl.wrap_socket`. The
+warning above still applies: without a certificate of
+its own the cam cannot prove who it is to the client,
+and a curious client would see a "no certificate"
+handshake failure on most TLS stacks. The
+production-side cert workflow is what unblocks running
+the cam as a TLS server in a useful way.
+
+With asyncio
+------------
+
+The :doc:`asyncio chapter </openmvcam/tutorial/asyncio/index>`
+showed :func:`asyncio.open_connection` for plain TCP
+clients. The same call accepts an ``ssl=True`` keyword
+that wraps the connection in TLS, again without any
+certificate setup::
+
+    import asyncio
+
+    async def main():
+        reader, writer = await asyncio.open_connection(
+            "example.com", 443, ssl=True,
+        )
+        writer.write(b"GET / HTTP/1.0\r\nHost: example.com\r\n\r\n")
+        await writer.drain()
+        print(await reader.read(4096))
+        writer.close()
+        await writer.wait_closed()
+
+    asyncio.run(main())
+
+The reader/writer pair behind a TLS connection is the
+same shape as for a plain TCP connection -- only the
+setup differs. The same caveat about authentication
+applies: ``ssl=True`` alone gives encryption only, not
+verification.
+
+DTLS -- TLS over UDP
+--------------------
+
+TLS as discussed so far rides on top of TCP. The
+parallel protocol for UDP is *DTLS* (Datagram TLS),
+and the camera's :mod:`ssl` module supports it the
+same way. Where TLS turns one TCP connection into one
+encrypted byte stream, DTLS turns one UDP socket into
+a stream of encrypted, individually-delivered
+datagrams -- so the loss / out-of-order / no-flow-
+control properties of UDP from :doc:`transport/udp`
+all carry over, with the bytes inside each datagram
+now encrypted.
+
+The wrap looks the same as the TLS case, just with a
+:data:`~socket.SOCK_DGRAM` socket and the DTLS
+protocol constants::
+
+    import socket
+    import ssl
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.connect(socket.getaddrinfo("example.com", 4433)[0][-1])
+
+    ctx = ssl.SSLContext(ssl.PROTOCOL_DTLS_CLIENT)
+    s = ctx.wrap_socket(sock)
+
+    s.send(b"ping")
+    print(s.recv(64))
+    s.close()
+
+(Calling :meth:`~socket.socket.connect` on a UDP socket
+does not open a connection -- it just remembers a
+default destination so subsequent
+:meth:`~socket.socket.send` / :meth:`~socket.socket.recv`
+calls do not have to repeat it. DTLS needs that fixed
+destination to run its handshake against.)
+
+The handshake is the same shape as the TLS diagram
+above; the difference is that each handshake message
+is itself a UDP datagram, and either side will retry
+on loss.
+
+.. note::
+
+   Does losing packets break the encryption? No. Each
+   DTLS packet carries a sequence number, and the
+   encryption uses that number to produce different
+   output for each packet -- so the same input never
+   encrypts to the same bytes twice, and any packet
+   can be decrypted on its own without the previous
+   one having arrived. Lost or out-of-order packets
+   do not desync the two sides. (The handshake itself
+   is the one part that has to land reliably, and
+   DTLS handles that with its own retransmission.)
+
+The same encryption-only-without-certs warning from
+above applies: a DTLS handshake against a
+``CERT_NONE`` peer encrypts the traffic but does not
+verify who the other side is. The full DTLS workflow
+-- certificates, the server-side anti-spoofing cookie,
+how this is the same surface as TLS apart from the
+protocol constants -- is covered alongside the TLS
+material in
+:doc:`/openmvcam/tutorial/production/tls/index`.
+
+The asyncio version uses the same non-blocking-UDP
+pattern from :doc:`sockets/async-sockets`. Do the
+handshake synchronously up front, switch the socket
+to non-blocking, then poll inside a coroutine::
+
+    import asyncio
+    import socket
+    import ssl
+
+    async def dtls_ping(target_addr, period_ms):
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.connect(target_addr)
+
+        # Handshake while still blocking, then switch to async polling.
+        ctx = ssl.SSLContext(ssl.PROTOCOL_DTLS_CLIENT)
+        s = ctx.wrap_socket(sock)
+        s.setblocking(False)
+
+        while True:
+            try:
+                s.send(b"ping")
+            except OSError:
+                pass
+            await asyncio.sleep_ms(period_ms)
+
+The handshake is the one place this coroutine blocks
+the event loop; after that, every ``s.send`` /
+``s.recv`` returns immediately (or raises
+:exc:`OSError`), and the ``await asyncio.sleep_ms``
+keeps the rest of the program running.
+
+Going further
+-------------
+
+Everything *more* than encryption-only TLS -- verifying
+a public HTTPS server's certificate, running the cam as
+an authenticated TLS server, mutual TLS between the cam
+and a back-end, choosing keys and key types, dealing
+with certificate expiry -- is in
+:doc:`/openmvcam/tutorial/production/tls/index`. That
+section covers how to generate self-signed certificates
+for local testing, how to obtain CA-signed certificates
+for production, how to get them onto the cam in the
+right format (DER), how to verify a public server when
+the cam is the client, how to think about key
+protection on a device an attacker may take apart, and
+how to plan for the day the certificate expires.
+
+For the full :mod:`ssl` API reference -- supported TLS
+versions, cipher suites, and context options -- see
+:doc:`/library/ssl`.
+
+
+Wrap up
+=======
+
+You have walked through the layers a network message
+crosses on its way from the camera to the rest of the
+world:
+
+* **The motivation** -- networks exist because
+  point-to-point wiring stops scaling the moment more
+  than a couple of devices need to talk, or the
+  counterpart is not on the same wire, or many
+  programs share the same link at once. The answer is
+  shared media, logical addresses, and routing.
+
+* **The layered model** -- five layers, each solving
+  one problem and offering a clean interface to the
+  next. Physical and link layers handle bits and
+  frames between immediate neighbours, the network
+  layer handles addressing and routing across the
+  internet, the transport layer handles
+  program-to-program delivery, and application
+  protocols build on all of that.
+
+* **The bottom layers** -- Ethernet and Wi-Fi as
+  practical link technologies; MAC addresses identify
+  hardware on a local segment. The camera's
+  :mod:`network` module exposes one knob worth
+  knowing about: which Wi-Fi network to join. After
+  that, everything below is automatic.
+
+* **The network layer (IP)** -- IPv4 and IPv6
+  addresses identify hosts independently of which
+  cable they are plugged into. Routers hop packets
+  between local segments until they arrive. Private
+  address ranges and NAT are why home and office
+  networks have their own internal address space and
+  one shared public address at the edge; outbound
+  traffic works freely, inbound needs help.
+
+* **The transport layer** -- ports identify
+  *programs* inside a host; the full ``(IP, port)``
+  pair identifies one specific socket. UDP is a thin
+  layer that sends one self-contained datagram at a
+  time with no guarantees -- fast, cheap, and the
+  right tool when loss is acceptable. TCP is a
+  connection-oriented, reliable, ordered byte stream
+  -- the workhorse for most internet traffic, paid
+  for with one round-trip of handshake latency.
+
+* **The Python API** -- :class:`socket.socket` is the
+  one class for both protocols.
+  :meth:`~socket.socket.sendto` /
+  :meth:`~socket.socket.recvfrom` for UDP; the
+  connect-or-listen patterns plus
+  :meth:`~socket.socket.send` /
+  :meth:`~socket.socket.recv` for TCP. Sockets pair
+  cleanly with :mod:`asyncio`:
+  :func:`asyncio.open_connection` and
+  :func:`asyncio.start_server` give every TCP
+  connection a reader/writer pair, so many concurrent
+  conversations share one event loop without
+  threading.
+
+* **Names and time** --
+  :func:`socket.getaddrinfo` turns a name like
+  ``example.com`` into an IP address ready to hand to
+  a socket. :func:`network.hostname` sets the cam's
+  own name, which routers register under their local
+  DNS and which the cam's built-in mDNS responder
+  answers for as ``<name>.local``.
+  :func:`ntptime.settime` is the same "look up a
+  thing on the network" idea applied to the
+  wall-clock time, setting the on-board clock to UTC
+  from a public NTP server.
+
+* **Encryption** -- :mod:`ssl` wraps a socket in TLS.
+  The cam ships with no certificate authority store,
+  so out of the box you get encryption only -- the
+  conversation is no longer in the clear, but the cam
+  is not verifying who answered. For real
+  authentication -- verifying public HTTPS servers,
+  running the cam as a TLS server, mutual TLS -- the
+  certificate-based workflow is covered in
+  :doc:`/openmvcam/tutorial/production/tls/index`.
+  DTLS (TLS over UDP) uses the same module the same
+  way.
+
+That is enough to write camera applications that talk
+to other machines, publish data to remote services,
+accept connections from clients on the local network,
+and do all of it concurrently with the rest of the
+camera's work.
+
+Using this reference later
+--------------------------
+
+Treat the networking chapters as reference material;
+coming back for the exact shape of a UDP listener or
+the TLS-with-asyncio pattern is the intended use. The
+:doc:`/library/network`, :doc:`/library/socket`,
+:doc:`/library/ssl`, and :doc:`/library/ntptime`
+reference pages list every method, flag, and constant
+in one place when the question is just "what is the
+exact name of this call".
+
+Where to go from here
+---------------------
+
+**Web servers** is the next major topic. With sockets
+working and TLS available, the natural next layer up
+is the protocols that build on them: HTTP for serving
+content and APIs, WebSockets for keeping connections
+open both ways, and the small frameworks that hide
+the boilerplate. Everything from this section carries
+forward -- a web server is, after all, just a TCP
+server that speaks HTTP on its accepted sockets,
+often with TLS wrapping the whole thing.
 
 
 Web Servers
@@ -18038,26 +20843,43 @@ running a server alongside the imaging loop.
 Production
 ==========
 
-A working script on the bench is the start, not the end. A
-camera that ships in a product has to do its job unattended,
-on battery, against a network the script does not control,
-without the source code being readable by whoever takes the
-enclosure apart. The pages in this section cover the
-practical work between *the demo runs* and *the device is
-out the door*.
+A working script on the bench is the start, not the
+end. A camera that ships in a product has to do its job
+unattended, on battery, against a network the script
+does not control, without the source code being
+readable by whoever takes the enclosure apart. The
+pages in this section cover the practical work between
+*the demo runs* and *the device is out the door*.
 
-The order is roughly the path of a product: pick a battery
-that fits the duty cycle, freeze the application into the
-firmware so it ships as one binary, secure the network
-connections it makes, and -- when the stock firmware needs
-to change -- build, flash, and debug the firmware itself.
+The order is roughly the path of a product: pick a
+battery that fits the duty cycle, freeze the
+application into the firmware so it ships as one
+binary, secure the network connections it makes, and --
+when the stock firmware needs to change -- build,
+flash, and debug the firmware itself.
 
 .. toctree::
+   :caption: Power and battery life
    :maxdepth: 1
 
    battery-life.rst
+
+.. toctree::
+   :caption: Shipping the application
+   :maxdepth: 1
+
    freezing-scripts.rst
-   tls-certificates.rst
+
+.. toctree::
+   :caption: Working with TLS certificates
+   :maxdepth: 1
+
+   tls/index.rst
+
+.. toctree::
+   :caption: Custom firmware builds
+   :maxdepth: 1
+
    firmware-development.rst
 
 
@@ -18168,116 +20990,201 @@ rest assured. If you really need to prevent anyone from seeing your scripts it's
 Working with TLS certificates
 =============================
 
-The :mod:`ssl` module on the OpenMV Cam (built on mbedTLS) lets a script make
-encrypted, authenticated network connections. To do anything beyond plain
-encryption you need certificates. This page covers what they are, which key
-types and file formats the camera accepts, how to create self-signed
-certificates for development and obtain CA-signed ones for production, how to
-get them onto the camera and verify a remote server, how to protect the
-private key, and how certificate expiry and rotation affect a deployed device.
+The :mod:`ssl` module on the OpenMV Cam (built on
+mbedTLS) lets a script make encrypted, authenticated
+network connections. To do anything beyond plain
+encryption you need certificates. The pages in this
+section cover what they are, which key types and file
+formats the camera accepts, how to create self-signed
+certificates for development and obtain CA-signed ones
+for production, how to get them onto the camera and
+verify a remote server, how to protect the private key,
+and how certificate expiry and rotation affect a
+deployed device.
 
 .. note::
 
-   Self-signed certificates are appropriate for development, testing, and
-   closed deployments where you control both ends of the connection. For a
-   service that arbitrary clients (browsers, phones, third parties) must trust
-   without extra configuration you need a certificate signed by a public
-   Certificate Authority; see *CA-signed (publicly trusted) certificates*
-   below.
+   Self-signed certificates are appropriate for
+   development, testing, and closed deployments where
+   you control both ends of the connection. For a
+   service that arbitrary clients (browsers, phones,
+   third parties) must trust without extra configuration
+   you need a certificate signed by a public
+   Certificate Authority; see :doc:`ca-signed`.
+
+.. toctree::
+   :maxdepth: 1
+
+   concepts.rst
+   prerequisites.rst
+   self-signed.rst
+   ca-signed.rst
+   as-client.rst
+   operations.rst
+
+
+Concepts: trust, keys, and file format
+======================================
+
+Before any commands, three pieces of background that
+apply to every other page in this section.
 
 Trust models
 ------------
 
-A TLS connection can provide three increasing levels of assurance:
+A TLS connection can provide three increasing levels of
+assurance:
 
-* **Encryption only** -- the traffic is encrypted but neither side proves who
-  it is. Easy to set up (no certificate validation) but vulnerable to a
+* **Encryption only** -- the traffic is encrypted but
+  neither side proves who it is. Easy to set up (no
+  certificate validation) but vulnerable to a
   man-in-the-middle attack. Use only for local testing.
-* **Server authentication** -- the client verifies the server's certificate
-  against a trusted certificate (the familiar HTTPS model). The OpenMV Cam can
-  act as either the client (verifying a remote server) or the server
-  (presenting its own certificate).
-* **Mutual authentication (mTLS)** -- both ends present and verify
-  certificates. Used where the server must also be sure of the client's
-  identity.
+* **Server authentication** -- the client verifies the
+  server's certificate against a trusted certificate
+  (the familiar HTTPS model). The OpenMV Cam can act
+  as either the client (verifying a remote server) or
+  the server (presenting its own certificate).
+* **Mutual authentication (mTLS)** -- both ends present
+  and verify certificates. Used where the server must
+  also be sure of the client's identity.
 
 Choosing a key type
 -------------------
 
-The camera's mbedTLS build supports ECDSA on the NIST/SEC prime curves and
-RSA. There are three practical ways to make a key; **ECDSA P-256
+The camera's mbedTLS build supports ECDSA on the
+NIST/SEC prime curves and RSA. There are three
+practical ways to make a key; **ECDSA P-256
 (prime256v1) is recommended**:
 
-* **ECDSA P-256 (prime256v1)** -- about 128-bit security with a 256-bit key.
-  Tiny keys and signatures, and by far the fastest handshake of the supported
-  options on a Cortex-M (elliptic-curve operations are much cheaper than RSA
-  private-key operations). Universally supported by TLS peers. This is the best
-  balance of security, speed, RAM/flash use and compatibility on an embedded
-  device, which is why it is the default choice here.
-* **ECDSA P-384 (secp384r1)** -- about 192-bit security. Still elliptic-curve,
-  so reasonably efficient, but larger and slower than P-256 for a security
-  margin that typical IoT deployments do not need. Use only if a long-lived
-  certificate or a compliance requirement calls for it.
-* **RSA-2048** -- about 112-bit security. Universally compatible, including
-  with very old peers, but RSA keys and certificates are much larger and RSA
-  private-key operations (done by the side presenting the certificate) are the
-  slowest and most memory-hungry option on a microcontroller. Use only when a
-  peer cannot do ECDSA.
+* **ECDSA P-256 (prime256v1)** -- about 128-bit security
+  with a 256-bit key. Tiny keys and signatures, and by
+  far the fastest handshake of the supported options on
+  a Cortex-M (elliptic-curve operations are much cheaper
+  than RSA private-key operations). Universally
+  supported by TLS peers. This is the best balance of
+  security, speed, RAM/flash use and compatibility on
+  an embedded device, which is why it is the default
+  choice here.
+* **ECDSA P-384 (secp384r1)** -- about 192-bit security.
+  Still elliptic-curve, so reasonably efficient, but
+  larger and slower than P-256 for a security margin
+  that typical IoT deployments do not need. Use only
+  if a long-lived certificate or a compliance
+  requirement calls for it.
+* **RSA-2048** -- about 112-bit security. Universally
+  compatible, including with very old peers, but RSA
+  keys and certificates are much larger and RSA
+  private-key operations (done by the side presenting
+  the certificate) are the slowest and most
+  memory-hungry option on a microcontroller. Use only
+  when a peer cannot do ECDSA.
 
 .. note::
 
-   **Ed25519 / Curve25519 keys are not supported.** The OpenMV Cam's mbedTLS
-   build does not enable EdDSA or Curve25519, so an Ed25519 certificate or key
-   will fail to load or handshake. Use one of the three options above.
+   **Ed25519 / Curve25519 keys are not supported.** The
+   OpenMV Cam's mbedTLS build does not enable EdDSA or
+   Curve25519, so an Ed25519 certificate or key will
+   fail to load or handshake. Use one of the three
+   options above.
 
 File format: use DER
 --------------------
 
-The mbedTLS build used by the OpenMV Cam does not include PEM parsing, so the
-camera reads certificates and keys only in **DER** form (the binary encoding).
-OpenSSL produces PEM (base64 text) by default, so every file you copy to the
-camera must be converted to DER first (shown below). You will need:
+The mbedTLS build used by the OpenMV Cam does not
+include PEM parsing, so the camera reads certificates
+and keys only in **DER** form (the binary encoding).
+OpenSSL produces PEM (base64 text) by default, so every
+file you copy to the camera must be converted to DER
+first (covered on :doc:`self-signed`). You will need:
 
-* A **private key** -- kept secret, used by whichever side presents a
-  certificate.
-* A **certificate** -- the public part, presented to the other side during the
-  handshake.
-* A **CA / trust certificate** -- the certificate the *verifying* side loads to
-  decide whether the peer is trusted. For a self-signed setup this is simply
-  the peer's own certificate.
+* A **private key** -- kept secret, used by whichever
+  side presents a certificate.
+* A **certificate** -- the public part, presented to
+  the other side during the handshake.
+* A **CA / trust certificate** -- the certificate the
+  *verifying* side loads to decide whether the peer is
+  trusted. For a self-signed setup this is simply the
+  peer's own certificate.
+
+
+Prerequisites: OpenSSL and the clock
+====================================
+
+Two pieces have to be in place before any of the
+hands-on pages will work: the OpenSSL command-line tool
+on your development machine, and a correct clock on the
+camera at the moment of every TLS handshake.
 
 Installing OpenSSL
 ------------------
 
-The commands in this guide use the ``openssl`` command-line tool, run on your
-development machine -- not on the camera. It is often already installed; check
+The commands in this section use the ``openssl``
+command-line tool, run on your development machine --
+not on the camera. It is often already installed; check
 with::
 
     openssl version
 
 If it is missing, install it for your operating system:
 
-* **Linux** -- use the package manager, e.g. ``sudo apt install openssl``
-  (Debian/Ubuntu), ``sudo dnf install openssl`` (Fedora/RHEL) or
+* **Linux** -- use the package manager, e.g.
+  ``sudo apt install openssl`` (Debian/Ubuntu),
+  ``sudo dnf install openssl`` (Fedora/RHEL) or
   ``sudo pacman -S openssl`` (Arch).
-* **macOS** -- ``brew install openssl`` using `Homebrew
-  <https://brew.sh>`__.
-* **Windows** -- install a build such as `Win32/Win64 OpenSSL
-  <https://slproweb.com/products/Win32OpenSSL.html>`__, use a package
-  manager (``winget install ShiningLight.OpenSSL.Light`` or
-  ``choco install openssl``), or use the ``openssl`` that ships with
-  `Git for Windows <https://git-scm.com/download/win>`__ (run it from Git
-  Bash).
+* **macOS** -- ``brew install openssl`` using
+  `Homebrew <https://brew.sh>`__.
+* **Windows** -- install a build such as `Win32/Win64
+  OpenSSL <https://slproweb.com/products/Win32OpenSSL.html>`__,
+  use a package manager
+  (``winget install ShiningLight.OpenSSL.Light`` or
+  ``choco install openssl``), or use the ``openssl``
+  that ships with `Git for Windows
+  <https://git-scm.com/download/win>`__ (run it from
+  Git Bash).
+
+Setting the clock
+-----------------
+
+:data:`ssl.CERT_REQUIRED` checks each certificate's
+validity period, so the camera's clock must be correct
+or verification fails (a freshly powered-up camera has
+no idea what time it is). With a working network
+connection, the :mod:`ntptime` module fetches the time
+over NTP and sets the on-board RTC
+(:class:`machine.RTC`), in UTC::
+
+    import ntptime
+
+    ntptime.settime()                 # query NTP and set machine.RTC (UTC)
+
+After this, :func:`time.localtime` and
+:class:`machine.RTC` reflect the current UTC time.
+Bringing the network interface up is board-specific and
+is not shown here; the examples on the following pages
+assume the camera is already connected.
+
+
+Self-signed certificates
+========================
+
+The fastest way to get TLS working between two devices
+you control. Both ends trust a single certificate that
+you generate yourself; the public CA flow on
+:doc:`ca-signed` is only needed when third-party clients
+have to connect *without* being told to trust a custom
+certificate.
 
 Creating a self-signed certificate
 ----------------------------------
 
-Run OpenSSL on your development machine. The ``subjectAltName`` (SAN) is what
-modern TLS clients check during hostname verification, so set it to the
-host name(s) and/or IP address(es) clients will use to reach the camera
-(``CN`` alone is legacy and is ignored by many clients). Replace
-``DNS:openmv`` / ``IP:192.168.1.50`` with the address your clients actually
-connect to.
+Run OpenSSL on your development machine. The
+``subjectAltName`` (SAN) is what modern TLS clients
+check during hostname verification, so set it to the
+host name(s) and/or IP address(es) clients will use to
+reach the camera (``CN`` alone is legacy and is ignored
+by many clients). Replace ``DNS:openmv`` /
+``IP:192.168.1.50`` with the address your clients
+actually connect to.
 
 ECDSA P-256 -- recommended::
 
@@ -18303,29 +21210,34 @@ RSA-2048 -- maximum compatibility::
 
 .. note::
 
-   A **client** certificate (used for mutual authentication, below) is created
-   with exactly these same commands -- there is nothing client-specific about
-   the certificate itself. Just generate a second, independent key/certificate
-   pair under different names (e.g. ``client.key`` / ``client.crt``) and use it
-   on the client as shown in the mTLS example. The ``subjectAltName`` only
-   matters for the side whose host name the peer verifies (the client checks
-   the server's name; nothing checks the client's), so it can be omitted for a
-   client-only certificate. The ``-subj`` / ``CN`` is likewise just a label on
-   a client certificate -- the server side here checks only that the
-   certificate chains to a trusted CA, it never matches the name -- so set it
-   to whatever identifies that client (e.g. ``/CN=sensor-01``). Keep some
-   ``-subj`` value regardless, so OpenSSL can generate the certificate
-   non-interactively.
+   A **client** certificate (used for mutual
+   authentication, below) is created with exactly these
+   same commands -- there is nothing client-specific
+   about the certificate itself. Just generate a second,
+   independent key/certificate pair under different
+   names (e.g. ``client.key`` / ``client.crt``) and use
+   it on the client as shown in the mTLS example. The
+   ``subjectAltName`` only matters for the side whose
+   host name the peer verifies (the client checks the
+   server's name; nothing checks the client's), so it
+   can be omitted for a client-only certificate. The
+   ``-subj`` / ``CN`` is likewise just a label on a
+   client certificate -- the server side here checks
+   only that the certificate chains to a trusted CA, it
+   never matches the name -- so set it to whatever
+   identifies that client (e.g. ``/CN=sensor-01``).
+   Keep some ``-subj`` value regardless, so OpenSSL
+   can generate the certificate non-interactively.
 
-Certificate lifetime is set by ``-days``; certificates expire and must be
-regenerated and redeployed before then -- see `Certificate expiry and
-rotation`_ below.
+Certificate lifetime is set by ``-days``; certificates
+expire and must be regenerated and redeployed before
+then -- see :doc:`operations`.
 
 Converting to DER
 -----------------
 
-Convert both the certificate and the private key to DER before copying them to
-the camera::
+Convert both the certificate and the private key to
+DER before copying them to the camera::
 
     openssl x509 -in server.crt -outform DER -out server.der
     openssl pkey -in server.key -outform DER -out server.key.der
@@ -18333,45 +21245,39 @@ the camera::
 Copying files to the camera
 ---------------------------
 
-Copy the DER files to the camera's filesystem -- for example by dragging them
-onto the OpenMV Cam's USB drive, or with ``mpremote cp server.der :`` and
-``mpremote cp server.key.der :``. On the verifying side, also copy the CA /
-peer certificate in DER form.
+Copy the DER files to the camera's filesystem -- for
+example by dragging them onto the OpenMV Cam's USB
+drive, or with ``mpremote cp server.der :`` and
+``mpremote cp server.key.der :``. On the verifying
+side, also copy the CA / peer certificate in DER form.
 
-The DER files do not have to live on the writable filesystem. MicroPython can
-also mount a read-only **ROMFS** image at ``/rom``, and certificates placed
+The DER files do not have to live on the writable
+filesystem. MicroPython can also mount a read-only
+**ROMFS** image at ``/rom``, and certificates placed
 there are loaded exactly like any other file -- e.g.
-``ctx.load_cert_chain("/rom/server.der", "/rom/server.key.der")``. A ROMFS
-image is prepared on your development machine (for example with
-``mpremote romfs``) and is read-only at runtime, so the certificate cannot be
-altered on the device -- useful for locking down a production unit. Note that a
-private key stored in ROMFS is still readable by code running on the camera;
-ROMFS protects against *modification*, not *extraction*. A ROMFS-resident
-certificate can only be replaced by rebuilding and reflashing the image, so
-weigh that against `Certificate expiry and rotation`_ below.
-
-Setting the clock
------------------
-
-:data:`ssl.CERT_REQUIRED` checks each certificate's validity period, so the
-camera's clock must be correct or verification fails (a freshly powered-up
-camera has no idea what time it is). With a working network connection, the
-:mod:`ntptime` module fetches the time over NTP and sets the on-board RTC
-(:class:`machine.RTC`), in UTC::
-
-    import ntptime
-
-    ntptime.settime()                 # query NTP and set machine.RTC (UTC)
-
-After this, :func:`time.localtime` and :class:`machine.RTC` reflect the
-current UTC time. Bringing the network interface up is board-specific and is
-not shown here; the examples below assume the camera is already connected.
+``ctx.load_cert_chain("/rom/server.der",
+"/rom/server.key.der")``. A ROMFS image is prepared on
+your development machine (for example with
+``mpremote romfs``) and is read-only at runtime, so the
+certificate cannot be altered on the device -- useful
+for locking down a production unit. Note that a private
+key stored in ROMFS is still readable by code running
+on the camera; ROMFS protects against *modification*,
+not *extraction*. A ROMFS-resident certificate can only
+be replaced by rebuilding and reflashing the image, so
+weigh that against the rotation discussion on
+:doc:`operations`.
 
 Using the certificate
-----------------------
+---------------------
 
-A complete **client** that sets the clock, opens a socket, verifies a
-self-signed server, and exchanges data::
+The clock setup from :doc:`prerequisites` has to happen
+before any of these examples; the validity check fails
+otherwise.
+
+A complete **client** that sets the clock, opens a
+socket, verifies a self-signed server, and exchanges
+data::
 
     import socket
     import ssl
@@ -18394,7 +21300,8 @@ self-signed server, and exchanges data::
     print(ssock.read())
     ssock.close()
 
-A complete **server** presenting its certificate and key::
+A complete **server** presenting its certificate and
+key::
 
     import socket
     import ssl
@@ -18417,8 +21324,9 @@ A complete **server** presenting its certificate and key::
         print(sclient.read())
         sclient.close()
 
-For **mutual authentication (mTLS)** the server additionally requires and
-verifies a client certificate, and the client presents one of its own::
+For **mutual authentication (mTLS)** the server
+additionally requires and verifies a client
+certificate, and the client presents one of its own::
 
     # Server side: also demand and verify a client certificate.
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -18432,47 +21340,64 @@ verifies a client certificate, and the client presents one of its own::
     ctx.verify_mode = ssl.CERT_REQUIRED
     ctx.load_verify_locations(cafile="server.der")
 
-See the :mod:`ssl` module documentation for the full API.
+See the :mod:`ssl` module documentation for the full
+API.
 
 .. note::
 
-   Everything on this page applies unchanged to **DTLS** (TLS over UDP). The
-   keys, certificates, DER format, trust model, expiry concerns, and the
-   ``load_cert_chain`` / ``load_verify_locations`` calls are identical; only
-   the transport differs -- you wrap a ``socket.SOCK_DGRAM`` socket and select
-   :data:`ssl.PROTOCOL_DTLS_CLIENT` / :data:`ssl.PROTOCOL_DTLS_SERVER` instead
-   of the ``TLS`` protocol constants. The one extra wrinkle is a server-side
-   anti-spoofing cookie -- the first connection from a new client is expected
-   to fail and the client simply retries; see :ref:`dtls` for details.
+   Everything on this page applies unchanged to
+   **DTLS** (TLS over UDP). The keys, certificates,
+   DER format, trust model, expiry concerns, and the
+   ``load_cert_chain`` / ``load_verify_locations``
+   calls are identical; only the transport differs --
+   you wrap a ``socket.SOCK_DGRAM`` socket and select
+   :data:`ssl.PROTOCOL_DTLS_CLIENT` /
+   :data:`ssl.PROTOCOL_DTLS_SERVER` instead of the
+   ``TLS`` protocol constants. The one extra wrinkle is
+   a server-side anti-spoofing cookie -- the first
+   connection from a new client is expected to fail and
+   the client simply retries; see :ref:`dtls` for
+   details.
+
 
 CA-signed (publicly trusted) certificates
------------------------------------------
+=========================================
 
-Self-signed certificates work when you control both ends. If instead arbitrary
-clients (browsers, phones, third-party software) must connect to the camera
-*without* being told to trust a custom certificate, the certificate has to be
-signed by a public Certificate Authority (CA) that those clients already
-trust. The TLS code on the camera is identical to the self-signed case --
-``load_cert_chain`` with a certificate and a key in DER form -- only how you
-obtain that certificate changes.
+Self-signed certificates work when you control both
+ends. If instead arbitrary clients (browsers, phones,
+third-party software) must connect to the camera
+*without* being told to trust a custom certificate, the
+certificate has to be signed by a public Certificate
+Authority (CA) that those clients already trust. The
+TLS code on the camera is identical to the self-signed
+case -- ``load_cert_chain`` with a certificate and a
+key in DER form -- only how you obtain that certificate
+changes.
 
-The single most important point: **you generate the private key yourself and
-it never leaves your machine.** The CA never sees it. What you send the CA is
-a *certificate signing request* (CSR) -- a small file containing your public
-key and your domain name -- and what you get back is a *certificate* (your
-public key and name, signed by the CA). The key and the certificate are two
-separate files produced by two separate steps; the CA only ever handles the
-public half.
+The single most important point: **you generate the
+private key yourself and it never leaves your machine.**
+The CA never sees it. What you send the CA is a
+*certificate signing request* (CSR) -- a small file
+containing your public key and your domain name -- and
+what you get back is a *certificate* (your public key
+and name, signed by the CA). The key and the
+certificate are two separate files produced by two
+separate steps; the CA only ever handles the public
+half.
 
-The general flow, all done on a normal machine (never on the camera):
+The general flow, all done on a normal machine (never
+on the camera):
 
-#. **Get a domain name.** Public CAs certify a DNS name you control
-   (e.g. ``cam.example.com``); they will not issue for a bare IP address or a
-   made-up name like ``openmv``.
+#. **Get a domain name.** Public CAs certify a DNS name
+   you control (e.g. ``cam.example.com``); they will
+   not issue for a bare IP address or a made-up name
+   like ``openmv``.
 
-#. **Generate a key and a CSR.** One OpenSSL command produces the private key
-   and the matching CSR. Use the same key type you would for a self-signed
-   certificate (see `Choosing a key type`_); ECDSA P-256 is recommended.
+#. **Generate a key and a CSR.** One OpenSSL command
+   produces the private key and the matching CSR. Use
+   the same key type you would for a self-signed
+   certificate (see :doc:`concepts`); ECDSA P-256 is
+   recommended.
 
    ECDSA P-256 -- recommended::
 
@@ -18495,123 +21420,161 @@ The general flow, all done on a normal machine (never on the camera):
            -subj "/CN=cam.example.com" \
            -addext "subjectAltName=DNS:cam.example.com"
 
-   Keep ``domain.key`` secret -- this is the key file you will eventually put
-   on the camera. ``domain.csr`` is the file you hand to the CA; it contains
-   no secrets.
+   Keep ``domain.key`` secret -- this is the key file
+   you will eventually put on the camera.
+   ``domain.csr`` is the file you hand to the CA; it
+   contains no secrets.
 
-#. **Submit the CSR and prove you control the domain.** This is where the two
-   common routes differ:
+#. **Submit the CSR and prove you control the domain.**
+   This is where the two common routes differ:
 
    * An automated ACME CA such as `Let's Encrypt
-     <https://letsencrypt.org>`__, driven by a tool like ``certbot`` or
-     ``acme.sh``, does steps 2 and 3 for you: it generates the key, builds the
-     CSR, answers the challenge automatically (HTTP-01: serve a token over
-     port 80 on the domain, or DNS-01: publish a TXT record in its DNS) and
+     <https://letsencrypt.org>`__, driven by a tool
+     like ``certbot`` or ``acme.sh``, does steps 2 and
+     3 for you: it generates the key, builds the CSR,
+     answers the challenge automatically (HTTP-01:
+     serve a token over port 80 on the domain, or
+     DNS-01: publish a TXT record in its DNS) and
      writes out the finished files.
-   * A commercial CA (bought directly or through a domain/hosting reseller):
-     you paste the ``domain.csr`` text into a web form, then prove control by
-     replying to a validation email, publishing a DNS record, or placing a
-     file on a web server for that domain. Once validated you download the
-     issued files.
+   * A commercial CA (bought directly or through a
+     domain/hosting reseller): you paste the
+     ``domain.csr`` text into a web form, then prove
+     control by replying to a validation email,
+     publishing a DNS record, or placing a file on a
+     web server for that domain. Once validated you
+     download the issued files.
 
-#. **Collect the issued files.** To make sense of what you receive, it helps
-   to know that certificates form a *chain of trust*: your domain's
-   certificate is signed by an intermediate CA, which is in turn signed by a
-   root CA. Each link vouches for the one below it. You end up with:
+#. **Collect the issued files.** To make sense of what
+   you receive, it helps to know that certificates form
+   a *chain of trust*: your domain's certificate is
+   signed by an intermediate CA, which is in turn
+   signed by a root CA. Each link vouches for the one
+   below it. You end up with:
 
-   * Your **private key** (from step 2). The CA never had it; it stays on
-     your machine and is the key you eventually put on the camera.
-   * The **leaf** certificate -- also called the *end-entity* or *server*
-     certificate. This is the certificate for your specific domain
-     (``cam.example.com``): it contains your public key and your name, and is
-     signed by the CA's intermediate. This is the certificate the camera
+   * Your **private key** (from step 2). The CA never
+     had it; it stays on your machine and is the key
+     you eventually put on the camera.
+   * The **leaf** certificate -- also called the
+     *end-entity* or *server* certificate. This is the
+     certificate for your specific domain
+     (``cam.example.com``): it contains your public key
+     and your name, and is signed by the CA's
+     intermediate. This is the certificate the camera
      presents to identify itself.
-   * One or more **intermediate CA certificates** (the "chain" or "CA
-     bundle"). A CA does not sign your leaf with its root directly -- the
-     root's key is kept offline and heavily protected -- so it signs with an
-     intermediate, which is itself signed by the root. The intermediate is the
-     link that connects your leaf up to the root.
+   * One or more **intermediate CA certificates** (the
+     "chain" or "CA bundle"). A CA does not sign your
+     leaf with its root directly -- the root's key is
+     kept offline and heavily protected -- so it signs
+     with an intermediate, which is itself signed by
+     the root. The intermediate is the link that
+     connects your leaf up to the root.
 
-   The **root** certificate is the *trust anchor*: a self-signed certificate
-   belonging to the CA that sits at the top of the chain. You are not given it
-   and never deploy it, because every client already has it -- operating
-   systems, browsers, phones and language runtimes ship with a built-in
-   "trust store" of root certificates. A client trusts your leaf by walking
-   the chain: it already trusts the root, the root vouches for the
-   intermediate, and the intermediate vouches for your leaf. (This is exactly
-   the job your single ``server.der`` / ``cafile`` does in the self-signed
-   case -- there *you* are your own root.)
+   The **root** certificate is the *trust anchor*: a
+   self-signed certificate belonging to the CA that
+   sits at the top of the chain. You are not given it
+   and never deploy it, because every client already
+   has it -- operating systems, browsers, phones and
+   language runtimes ship with a built-in "trust store"
+   of root certificates. A client trusts your leaf by
+   walking the chain: it already trusts the root, the
+   root vouches for the intermediate, and the
+   intermediate vouches for your leaf. (This is exactly
+   the job your single ``server.der`` / ``cafile`` does
+   in the self-signed case -- there *you* are your own
+   root.)
 
-   A **fullchain** file is simply the leaf and the intermediate(s)
-   concatenated into one file, leaf first, deliberately *without* the root
-   (sending the root is pointless -- a client only trusts roots it already
-   has). A normal server presents this entire fullchain so any client can walk
-   it. The camera cannot: it loads and presents a single certificate, which is
-   the reason for the limitation noted below.
+   A **fullchain** file is simply the leaf and the
+   intermediate(s) concatenated into one file, leaf
+   first, deliberately *without* the root (sending the
+   root is pointless -- a client only trusts roots it
+   already has). A normal server presents this entire
+   fullchain so any client can walk it. The camera
+   cannot: it loads and presents a single certificate,
+   which is the reason for the limitation noted below.
 
-   File names you will actually see: an ACME tool such as ``certbot`` writes
-   ``privkey.pem`` (your key), ``cert.pem`` (the leaf alone), ``chain.pem``
-   (the intermediate(s) alone) and ``fullchain.pem`` (leaf + intermediate(s)).
-   A commercial CA usually gives you a ``.crt`` for the leaf and a
-   ``.ca-bundle`` for the intermediate(s), with the ``.key`` being the one you
-   generated yourself.
+   File names you will actually see: an ACME tool such
+   as ``certbot`` writes ``privkey.pem`` (your key),
+   ``cert.pem`` (the leaf alone), ``chain.pem`` (the
+   intermediate(s) alone) and ``fullchain.pem``
+   (leaf + intermediate(s)). A commercial CA usually
+   gives you a ``.crt`` for the leaf and a
+   ``.ca-bundle`` for the intermediate(s), with the
+   ``.key`` being the one you generated yourself.
 
-#. **Convert and copy.** Convert the private key and the leaf certificate to
-   DER and copy them to the camera exactly as in `Converting to DER`_ and
-   `Copying files to the camera`_ above. The camera then presents them as its
-   server certificate and standard clients accept the connection
-   automatically, because they already trust the CA -- no client-side
+#. **Convert and copy.** Convert the private key and
+   the leaf certificate to DER and copy them to the
+   camera exactly as on :doc:`self-signed`. The camera
+   then presents them as its server certificate and
+   standard clients accept the connection automatically,
+   because they already trust the CA -- no client-side
    configuration is needed.
 
-There is one embedded limitation to be aware of regarding the chain from
-step 4. The camera loads and presents **one** certificate -- the leaf. It
-cannot also send the intermediate certificate(s) the CA gave you.
+There is one embedded limitation to be aware of
+regarding the chain from step 4. The camera loads and
+presents **one** certificate -- the leaf. It cannot
+also send the intermediate certificate(s) the CA gave
+you.
 
 .. tip::
 
    In practice:
 
-   * Clients that already have the CA's intermediate cached -- mainstream
-     browsers and HTTPS libraries usually do -- complete the chain themselves
-     and connect fine.
-   * Clients that rely on the *server* to supply the intermediate will fail
-     the handshake against the camera.
+   * Clients that already have the CA's intermediate
+     cached -- mainstream browsers and HTTPS libraries
+     usually do -- complete the chain themselves and
+     connect fine.
+   * Clients that rely on the *server* to supply the
+     intermediate will fail the handshake against the
+     camera.
 
-   If every possible client must succeed, do not terminate public TLS on the
-   camera directly. Put a gateway / reverse proxy in front of it that serves
-   the full chain to the outside world, and have the proxy reach the camera
-   over the self-signed flow described above.
+   If every possible client must succeed, do not
+   terminate public TLS on the camera directly. Put a
+   gateway / reverse proxy in front of it that serves
+   the full chain to the outside world, and have the
+   proxy reach the camera over the self-signed flow
+   described above.
+
 
 Verifying a public server (camera as client)
---------------------------------------------
+============================================
 
-Everything above about a client "already having the root" is true of browsers,
-phones and PCs -- it is **not** true of the camera. MicroPython's :mod:`ssl`
-ships with no built-in trust store: a freshly flashed camera trusts no CA at
-all, and the default (:data:`ssl.CERT_NONE`) verifies nothing and is wide open
-to a man-in-the-middle. So when the camera is the *client* connecting out to a
-public TLS server (an HTTPS API, an MQTT broker, ...) and you want it to truly
-verify that server, you have to supply the trust anchor yourself.
+Everything on the previous page about a client "already
+having the root" is true of browsers, phones and PCs --
+it is **not** true of the camera. MicroPython's
+:mod:`ssl` ships with no built-in trust store: a freshly
+flashed camera trusts no CA at all, and the default
+(:data:`ssl.CERT_NONE`) verifies nothing and is wide
+open to a man-in-the-middle. So when the camera is the
+*client* connecting out to a public TLS server (an
+HTTPS API, an MQTT broker, ...) and you want it to truly
+verify that server, you have to supply the trust anchor
+yourself.
 
-The mechanics are the same as the self-signed client example; the only
-difference is that the file you load is a real CA certificate instead of the
-peer's own certificate:
+The mechanics are the same as the self-signed client
+example on :doc:`self-signed`; the only difference is
+that the file you load is a real CA certificate instead
+of the peer's own certificate:
 
-#. **Get the CA certificate that anchors the server's chain.** "Anchors"
-   means the certificate at (or near) the top of the server's chain that you
-   choose as your starting point of trust. A TLS server sends its leaf and
-   usually its intermediate(s); it never sends its root. You must obtain that
-   trust anchor yourself and *independently of the server* -- simply trusting
-   whatever a server hands you would defeat the entire point of verification.
+#. **Get the CA certificate that anchors the server's
+   chain.** "Anchors" means the certificate at (or
+   near) the top of the server's chain that you choose
+   as your starting point of trust. A TLS server sends
+   its leaf and usually its intermediate(s); it never
+   sends its root. You must obtain that trust anchor
+   yourself and *independently of the server* -- simply
+   trusting whatever a server hands you would defeat
+   the entire point of verification.
 
-   First find out which CA actually issued the server's certificate. For
-   example, against ``openmv.io``::
+   First find out which CA actually issued the server's
+   certificate. For example, against ``openmv.io``::
 
        openssl s_client -connect openmv.io:443 -showcerts < /dev/null
 
-   The ``Certificate chain`` block lists each certificate with its subject
-   (``s:``) and issuer (``i:``); newer OpenSSL also prints ``a:`` (key type)
-   and ``v:`` (validity) lines you can ignore here::
+   The ``Certificate chain`` block lists each
+   certificate with its subject (``s:``) and issuer
+   (``i:``); newer OpenSSL also prints ``a:`` (key
+   type) and ``v:`` (validity) lines you can ignore
+   here::
 
        Certificate chain
         0 s:CN=openmv.io
@@ -18619,47 +21582,59 @@ peer's own certificate:
         1 s:C=US, O=Let's Encrypt, CN=E8
           i:C=US, O=Internet Security Research Group, CN=ISRG Root X1
 
-   Entry 0 is the leaf (``openmv.io``), issued by the intermediate ``E8``.
-   Entry 1 is that intermediate, issued by the root ``ISRG Root X1``. The
-   issuer (``i:``) of the topmost entry names the root -- here
-   ``ISRG Root X1``. (The intermediate is ``E8`` rather than the ``R10`` /
-   ``R11`` you may have seen elsewhere because ``openmv.io`` uses an ECDSA
-   certificate; Let's Encrypt signs ECDSA leaves with its ``E``-series
-   intermediates and RSA leaves with its ``R``-series ones. Both chain to
-   ``ISRG Root X1``.)
+   Entry 0 is the leaf (``openmv.io``), issued by the
+   intermediate ``E8``. Entry 1 is that intermediate,
+   issued by the root ``ISRG Root X1``. The issuer
+   (``i:``) of the topmost entry names the root -- here
+   ``ISRG Root X1``. (The intermediate is ``E8`` rather
+   than the ``R10`` / ``R11`` you may have seen
+   elsewhere because ``openmv.io`` uses an ECDSA
+   certificate; Let's Encrypt signs ECDSA leaves with
+   its ``E``-series intermediates and RSA leaves with
+   its ``R``-series ones. Both chain to ``ISRG Root
+   X1``.)
 
-   OpenSSL also prints ``depth=`` lines and may report the root with
-   ``Verification: OK``. That happens only because *your PC* already trusts
-   ``ISRG Root X1`` -- the server did **not** send it (a server never sends
-   its root), and the camera, having no trust store, will not have it either.
-   That is exactly why you must supply it.
+   OpenSSL also prints ``depth=`` lines and may report
+   the root with ``Verification: OK``. That happens
+   only because *your PC* already trusts ``ISRG Root
+   X1`` -- the server did **not** send it (a server
+   never sends its root), and the camera, having no
+   trust store, will not have it either. That is
+   exactly why you must supply it.
 
-   Download *that* root from the CA's own published roots. Let's Encrypt
-   catalogues all of theirs on the `Let's Encrypt certificates page
-   <https://letsencrypt.org/certs/>`__; the direct file for ISRG Root X1 is
-   `isrgrootx1.pem <https://letsencrypt.org/certs/isrgrootx1.pem>`__ (they
-   also offer it pre-encoded as `isrgrootx1.der
-   <https://letsencrypt.org/certs/isrgrootx1.der>`__, which lets you skip the
-   DER conversion in the next step). Other CAs publish theirs on a similar
-   "root certificates" / "repository" page; the canonical public set is the
-   `Mozilla CA program (CCADB) <https://www.ccadb.org/>`__. Confirm you
-   fetched the right file by comparing its fingerprint against the value the
-   CA publishes (add ``-inform DER`` if you downloaded the ``.der``)::
+   Download *that* root from the CA's own published
+   roots. Let's Encrypt catalogues all of theirs on the
+   `Let's Encrypt certificates page
+   <https://letsencrypt.org/certs/>`__; the direct file
+   for ISRG Root X1 is `isrgrootx1.pem
+   <https://letsencrypt.org/certs/isrgrootx1.pem>`__
+   (they also offer it pre-encoded as `isrgrootx1.der
+   <https://letsencrypt.org/certs/isrgrootx1.der>`__,
+   which lets you skip the DER conversion in the next
+   step). Other CAs publish theirs on a similar "root
+   certificates" / "repository" page; the canonical
+   public set is the `Mozilla CA program (CCADB)
+   <https://www.ccadb.org/>`__. Confirm you fetched the
+   right file by comparing its fingerprint against the
+   value the CA publishes (add ``-inform DER`` if you
+   downloaded the ``.der``)::
 
        openssl x509 -in isrgrootx1.pem -noout -subject -fingerprint -sha256
 
-   If you would rather not track a root, you can instead copy the
-   **intermediate** straight out of the ``-showcerts`` output (the second
-   ``-----BEGIN CERTIFICATE-----`` block), trust that, and accept that you
-   must refresh it whenever the CA rotates the intermediate -- far more often
-   than the root (see the trade-off below).
+   If you would rather not track a root, you can
+   instead copy the **intermediate** straight out of
+   the ``-showcerts`` output (the second
+   ``-----BEGIN CERTIFICATE-----`` block), trust that,
+   and accept that you must refresh it whenever the CA
+   rotates the intermediate -- far more often than the
+   root (see the trade-off below).
 
 #. **Convert it to DER**, exactly as before::
 
        openssl x509 -in isrgrootx1.pem -outform DER -out ca.der
 
-#. **Copy** ``ca.der`` to the camera (filesystem or ROMFS) and load it as the
-   trust anchor::
+#. **Copy** ``ca.der`` to the camera (filesystem or
+   ROMFS) and load it as the trust anchor::
 
        import socket
        import ssl
@@ -18676,137 +21651,192 @@ peer's own certificate:
        ctx.load_verify_locations(cafile="ca.der")
        ssock = ctx.wrap_socket(sock, server_hostname="api.example.com")
 
-   ``server_hostname`` is required here: it drives SNI and is the name checked
-   against the server certificate's ``subjectAltName``.
+   ``server_hostname`` is required here: it drives SNI
+   and is the name checked against the server
+   certificate's ``subjectAltName``.
 
 .. tip::
 
-   **Common-case shortcut.** Let's Encrypt is the most widely used public CA,
-   and both its RSA and ECDSA certificates currently chain to ISRG Root X1
-   (as the ``openmv.io`` example above shows). If the servers your camera
-   talks to use Let's Encrypt, you can skip the inspection entirely: just put
-   `isrgrootx1.der <https://letsencrypt.org/certs/isrgrootx1.der>`__ on the
-   camera and ``load_verify_locations`` it.
+   **Common-case shortcut.** Let's Encrypt is the most
+   widely used public CA, and both its RSA and ECDSA
+   certificates currently chain to ISRG Root X1 (as
+   the ``openmv.io`` example above shows). If the
+   servers your camera talks to use Let's Encrypt, you
+   can skip the inspection entirely: just put
+   `isrgrootx1.der
+   <https://letsencrypt.org/certs/isrgrootx1.der>`__
+   on the camera and ``load_verify_locations`` it.
 
-   This does **not** make TLS work to *every* site. A server whose
-   certificate comes from a different CA (DigiCert, Google Trust Services,
-   Amazon, Sectigo, ...) will still fail verification, and because the camera
-   trusts a single DER certificate per :class:`ssl.SSLContext` you cannot
-   bundle every root the way a browser does. When in doubt, identify the
-   server's actual CA as shown above and trust that root.
+   This does **not** make TLS work to *every* site. A
+   server whose certificate comes from a different CA
+   (DigiCert, Google Trust Services, Amazon, Sectigo,
+   ...) will still fail verification, and because the
+   camera trusts a single DER certificate per
+   :class:`ssl.SSLContext` you cannot bundle every root
+   the way a browser does. When in doubt, identify the
+   server's actual CA as shown above and trust that
+   root.
 
 Which certificate you trust is a trade-off:
 
-* **The root** (recommended). Long-lived -- often decades -- so ``ca.der``
-  rarely changes. It requires the server to send its intermediate so mbedTLS
-  can build the path leaf → intermediate → your trusted root; virtually every
-  correctly configured public server does.
-* **The intermediate.** Also works, and keeps working even if a server omits
-  the intermediate, but intermediates are rotated far more often than roots,
-  so you will have to refresh ``ca.der`` more frequently.
-* **The leaf itself** (certificate pinning). Tightest, but the leaf changes on
-  every renewal -- roughly every 90 days for Let's Encrypt -- so this only
-  makes sense when you also control the server and can push the new pin to
-  every camera in lockstep. This is exactly what the self-signed client
-  example does.
+* **The root** (recommended). Long-lived -- often
+  decades -- so ``ca.der`` rarely changes. It requires
+  the server to send its intermediate so mbedTLS can
+  build the path leaf → intermediate → your trusted
+  root; virtually every correctly configured public
+  server does.
+* **The intermediate.** Also works, and keeps working
+  even if a server omits the intermediate, but
+  intermediates are rotated far more often than roots,
+  so you will have to refresh ``ca.der`` more
+  frequently.
+* **The leaf itself** (certificate pinning). Tightest,
+  but the leaf changes on every renewal -- roughly
+  every 90 days for Let's Encrypt -- so this only
+  makes sense when you also control the server and can
+  push the new pin to every camera in lockstep. This
+  is exactly what the self-signed client example does.
 
 .. note::
 
-   :meth:`ssl.SSLContext.load_verify_locations` takes a single DER-encoded CA
-   certificate, so the camera trusts exactly one anchor at a time. To reach
-   servers under different CAs, use a separate :class:`ssl.SSLContext` per
-   anchor. And because that certificate will itself eventually expire or be
-   rotated by the CA, treat it like any other certificate on the device --
-   see `Certificate expiry and rotation`_.
+   :meth:`ssl.SSLContext.load_verify_locations` takes a
+   single DER-encoded CA certificate, so the camera
+   trusts exactly one anchor at a time. To reach
+   servers under different CAs, use a separate
+   :class:`ssl.SSLContext` per anchor. And because that
+   certificate will itself eventually expire or be
+   rotated by the CA, treat it like any other
+   certificate on the device -- see :doc:`operations`.
+
+
+Operations: keys, expiry, and troubleshooting
+=============================================
+
+The pages above cover how to *get* and *use*
+certificates. The pieces that span every deployed
+device come next: protecting the private key once it is
+on the camera, planning for the day the certificate
+expires, and the short list of error modes that show up
+in practice.
 
 Protecting the private key
 --------------------------
 
-Whenever the camera *presents* a certificate -- as a TLS server, or as the
-client in mTLS -- its private key has to live on the device, in plain DER, on
-the filesystem or in ROMFS. Stored that way it is readable by any code running
-on the camera and by anyone with physical access to it: the USB mass-storage
-drive, a REPL prompt, or the raw flash. ROMFS and read-only flags prevent *modification*, not
-*extraction*. **Treat any private key shipped on a device as recoverable by a
-determined attacker with physical or code access.**
+Whenever the camera *presents* a certificate -- as a
+TLS server, or as the client in mTLS -- its private
+key has to live on the device, in plain DER, on the
+filesystem or in ROMFS. Stored that way it is readable
+by any code running on the camera and by anyone with
+physical access to it: the USB mass-storage drive, a
+REPL prompt, or the raw flash. ROMFS and read-only
+flags prevent *modification*, not *extraction*.
+**Treat any private key shipped on a device as
+recoverable by a determined attacker with physical or
+code access.**
 
-This does not make TLS pointless -- it shapes how you deploy it:
+This does not make TLS pointless -- it shapes how you
+deploy it:
 
-* **Use a unique key and certificate per device.** Never flash one shared key
-  across the fleet: extracting it from a single unit would then let an
-  attacker impersonate every camera. Per-device keys keep a compromise to that
-  one device, which you can revoke or disable server-side.
-* **Keep certificates short-lived.** A stolen key is only useful while its
-  certificate is valid; short lifetimes plus routine rotation bound the
-  damage (see `Certificate expiry and rotation`_).
-* **Avoid putting a secret on the device at all when you can.** If you only
-  need to verify the *server* (server authentication, not mTLS), the camera
-  as a client stores only the CA certificate -- which is public -- and holds
-  no private key worth stealing.
-* **Never ship a key in a public firmware image.** A key baked into ROMFS in
-  a firmware build you distribute is not secret; anyone who downloads the
-  firmware has it. Per-device provisioning means programming the key *after*
-  the generic firmware, not inside it.
-* **Limit blast radius.** Scope whatever the certificate authenticates to
-  (least privilege), and make sure a single leaked device identity can be
+* **Use a unique key and certificate per device.**
+  Never flash one shared key across the fleet:
+  extracting it from a single unit would then let an
+  attacker impersonate every camera. Per-device keys
+  keep a compromise to that one device, which you can
+  revoke or disable server-side.
+* **Keep certificates short-lived.** A stolen key is
+  only useful while its certificate is valid; short
+  lifetimes plus routine rotation bound the damage
+  (see `Certificate expiry and rotation`_ below).
+* **Avoid putting a secret on the device at all when
+  you can.** If you only need to verify the *server*
+  (server authentication, not mTLS), the camera as a
+  client stores only the CA certificate -- which is
+  public -- and holds no private key worth stealing.
+* **Never ship a key in a public firmware image.** A
+  key baked into ROMFS in a firmware build you
+  distribute is not secret; anyone who downloads the
+  firmware has it. Per-device provisioning means
+  programming the key *after* the generic firmware,
+  not inside it.
+* **Limit blast radius.** Scope whatever the
+  certificate authenticates to (least privilege), and
+  make sure a single leaked device identity can be
   revoked or disabled without affecting the rest.
 
-If your threat model includes attackers with physical access, design on the
-assumption that the device key *will* eventually leak and make that
-survivable, rather than assuming it can be kept secret on hardware that has no
-facility to do so.
+If your threat model includes attackers with physical
+access, design on the assumption that the device key
+*will* eventually leak and make that survivable, rather
+than assuming it can be kept secret on hardware that
+has no facility to do so.
 
 Certificate expiry and rotation
 -------------------------------
 
-Every certificate carries a validity window. Once it passes, a
-:data:`ssl.CERT_REQUIRED` peer rejects the connection -- so expiry is a real,
-scheduled outage, not a theoretical risk. The camera's clock must also be
-correct for the validity check to be evaluated honestly (set it with
-:func:`ntptime.settime`, as shown under *Setting the clock* above).
+Every certificate carries a validity window. Once it
+passes, a :data:`ssl.CERT_REQUIRED` peer rejects the
+connection -- so expiry is a real, scheduled outage,
+not a theoretical risk. The camera's clock must also
+be correct for the validity check to be evaluated
+honestly (set it with :func:`ntptime.settime`, as
+shown on :doc:`prerequisites`).
 
-* **Self-signed.** You picked the lifetime with ``-days``. When it lapses you
-  must regenerate the key/certificate and redeploy it: re-copy the DER files,
-  or rebuild and reflash the ROMFS image if the certificate is baked in. Pick a
-  ``-days`` value you will actually remember to act on.
-* **Public CA.** These are deliberately short-lived. Let's Encrypt issues
-  90-day certificates and expects automated renewal roughly every 60 days;
-  there is no "install once and forget" option.
+* **Self-signed.** You picked the lifetime with
+  ``-days``. When it lapses you must regenerate the
+  key/certificate and redeploy it: re-copy the DER
+  files, or rebuild and reflash the ROMFS image if the
+  certificate is baked in. Pick a ``-days`` value you
+  will actually remember to act on.
+* **Public CA.** These are deliberately short-lived.
+  Let's Encrypt issues 90-day certificates and expects
+  automated renewal roughly every 60 days; there is no
+  "install once and forget" option.
 
-The broader trend is one-directional: the maximum validity of publicly-trusted
-TLS certificates keeps shrinking. It was 825 days, is currently capped at 398
-days, and the CA/Browser Forum has adopted a schedule that steps it down toward
-roughly 47 days by 2029. The takeaway for a device design is to assume
-certificates are short-lived and that rotation must be automated or at least
-routine -- do not ship a product that depends on a human swapping a ten-year
-certificate.
+The broader trend is one-directional: the maximum
+validity of publicly-trusted TLS certificates keeps
+shrinking. It was 825 days, is currently capped at 398
+days, and the CA/Browser Forum has adopted a schedule
+that steps it down toward roughly 47 days by 2029. The
+takeaway for a device design is to assume certificates
+are short-lived and that rotation must be automated or
+at least routine -- do not ship a product that depends
+on a human swapping a ten-year certificate.
 
-Practically, on the camera: prefer designs where the certificate can be
-replaced without reflashing (a writable filesystem plus a remote-update path,
-or running the camera as a *client* that trusts a CA you rotate centrally). If
-a certificate must live in ROMFS, schedule firmware updates around its
-lifetime. In all cases keep the clock synchronised with :func:`ntptime.settime`
-so the validity check is accurate.
+Practically, on the camera: prefer designs where the
+certificate can be replaced without reflashing (a
+writable filesystem plus a remote-update path, or
+running the camera as a *client* that trusts a CA you
+rotate centrally). If a certificate must live in
+ROMFS, schedule firmware updates around its lifetime.
+In all cases keep the clock synchronised with
+:func:`ntptime.settime` so the validity check is
+accurate.
 
 Troubleshooting
 ---------------
 
-* **The clock must be set.** If the camera's clock is wrong (for example not
-  yet set after power-up) the certificate validity check fails -- call
-  :func:`ntptime.settime` first, as shown above.
-* **Host name must match.** When the client passes ``server_hostname`` it must
-  match the certificate's ``subjectAltName`` (or ``CN`` on older stacks), or
+* **The clock must be set.** If the camera's clock is
+  wrong (for example not yet set after power-up) the
+  certificate validity check fails -- call
+  :func:`ntptime.settime` first, as shown on
+  :doc:`prerequisites`.
+* **Host name must match.** When the client passes
+  ``server_hostname`` it must match the certificate's
+  ``subjectAltName`` (or ``CN`` on older stacks), or
   verification fails.
-* **Wrong format.** A PEM file copied to the camera will not load -- convert
-  to DER as shown above.
-* **Certificate expired.** A connection that worked before and now fails with
-  :exc:`OSError` may simply have an expired certificate -- check the validity
-  dates and regenerate/redeploy as needed (see `Certificate expiry and
-  rotation`_ above).
-* **Ed25519 keys fail.** Use ECDSA P-256/P-384 or RSA, not Ed25519.
-* **Errors are** :exc:`OSError`. MicroPython does not implement
-  ``ssl.SSLError``; TLS failures (bad certificate, expired, unknown CA, format
-  error, handshake failure) are raised as :exc:`OSError`.
+* **Wrong format.** A PEM file copied to the camera
+  will not load -- convert to DER as shown on
+  :doc:`self-signed`.
+* **Certificate expired.** A connection that worked
+  before and now fails with :exc:`OSError` may simply
+  have an expired certificate -- check the validity
+  dates and regenerate/redeploy as needed (see
+  `Certificate expiry and rotation`_ above).
+* **Ed25519 keys fail.** Use ECDSA P-256/P-384 or RSA,
+  not Ed25519.
+* **Errors are** :exc:`OSError`. MicroPython does not
+  implement ``ssl.SSLError``; TLS failures (bad
+  certificate, expired, unknown CA, format error,
+  handshake failure) are raised as :exc:`OSError`.
 
 
 .. _firmware_development:
@@ -78750,7 +81780,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Sat 30 May 2026 06:37:26 UTC
+Generated Sun 31 May 2026 02:28:36 UTC
 
 Literals
 --------
@@ -78933,7 +81963,7 @@ Sample code::
 Core language
 =============
 
-Generated Sat 30 May 2026 06:37:26 UTC
+Generated Sun 31 May 2026 02:28:36 UTC
 
 Classes
 -------
@@ -79535,7 +82565,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f6d53c05260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7f4307205260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -79717,7 +82747,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Sat 30 May 2026 06:37:26 UTC
+Generated Sun 31 May 2026 02:28:36 UTC
 
 Exception
 ---------
@@ -80584,7 +83614,7 @@ Sample code::
 Modules
 =======
 
-Generated Sat 30 May 2026 06:37:26 UTC
+Generated Sun 31 May 2026 02:28:36 UTC
 
 .. Preamble section inserted into generated output
 
@@ -80879,15 +83909,15 @@ Sample code::
     x = random.getrandbits(64)
     print("{}".format(x))
 
-+-------------------------+--------------------------------------------+
-| CPython output:         | MicroPython output:                        |
-+-------------------------+--------------------------------------------+
-| ::                      | ::                                         |
-|                         |                                            |
-|     1697328590573594612 |     Traceback (most recent call last):     |
-|                         |       File "<stdin>", line 11, in <module> |
-|                         |     ValueError: bits must be 32 or less    |
-+-------------------------+--------------------------------------------+
++--------------------------+--------------------------------------------+
+| CPython output:          | MicroPython output:                        |
++--------------------------+--------------------------------------------+
+| ::                       | ::                                         |
+|                          |                                            |
+|     18371587261875989007 |     Traceback (most recent call last):     |
+|                          |       File "<stdin>", line 11, in <module> |
+|                          |     ValueError: bits must be 32 or less    |
++--------------------------+--------------------------------------------+
 
 .. _cpydiff_modules_random_randint:
 
@@ -80912,7 +83942,7 @@ Sample code::
 +-----------------------------------------------+-----------------------------------------------------------------+
 | ::                                            | ::                                                              |
 |                                               |                                                                 |
-|     x=340282366920938463463374607431768211456 |     Traceback (most recent call last):                          |
+|     x=340282366920938463463374607431768211455 |     Traceback (most recent call last):                          |
 |                                               |       File "<stdin>", line 11, in <module>                      |
 |                                               |     OverflowError: overflow converting long int to machine word |
 +-----------------------------------------------+-----------------------------------------------------------------+
