@@ -58,6 +58,7 @@ something covered earlier, it links back.
    asyncio/index.rst
    networking/index.rst
    webservers/index.rst
+   bluetooth/index.rst
 
    production/index.rst
 
@@ -20838,6 +20839,2850 @@ controls as JSON endpoints, and the operational notes for
 running a server alongside the imaging loop.
 
 (Placeholder.)
+
+
+Bluetooth
+=========
+
+Networking connected the camera to anything reachable
+through an access point and a router. Bluetooth is the
+opposite trade. The camera gives up *reach* and gets
+*short range, low power, and no infrastructure* in
+return -- a couple of metres of direct radio link to a
+phone or a sensor in the same room, no Wi-Fi network to
+join, no router to route through, power draw small
+enough that a coin cell can keep the camera alive for
+months.
+
+The Python side of this is the :mod:`aioble` module --
+an :mod:`asyncio`-friendly wrapper that turns the BLE
+radio's roles, advertising, discovery, and read/write/
+notify primitives into coroutines.
+
+.. toctree::
+   :caption: Concepts
+   :maxdepth: 1
+
+   basics/why-bluetooth.rst
+   basics/layered-model.rst
+
+.. toctree::
+   :caption: The radio
+   :maxdepth: 1
+
+   radio/physical-and-link.rst
+
+.. toctree::
+   :caption: Generic Access Profile
+   :maxdepth: 1
+
+   gap/advertising-and-scanning.rst
+   gap/connections.rst
+
+.. toctree::
+   :caption: Generic Attribute Profile
+   :maxdepth: 1
+
+   gatt/services-and-characteristics.rst
+   gatt/operations.rst
+
+.. toctree::
+   :caption: aioble in Python
+   :maxdepth: 1
+
+   aioble/overview.rst
+   aioble/peripheral.rst
+   aioble/central.rst
+   aioble/l2cap.rst
+   aioble/concurrency.rst
+
+.. toctree::
+   :caption: Security
+   :maxdepth: 1
+
+   security/pairing-and-bonding.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst
+
+
+Why Bluetooth
+=============
+
+Networking gets the camera onto a Wi-Fi or Ethernet
+network so it can talk to anything reachable from there.
+A laptop down the hall, a server on another continent, a
+phone roaming on cellular. That reach comes with
+prerequisites. A network has to exist. Some access point
+has to be in range, some credentials have to be
+available, some router has to be willing to hand the
+camera an address. The camera also has to keep the
+radio (or the Ethernet port) running hard enough to
+maintain the link.
+
+Bluetooth covers the opposite case -- short range, no
+infrastructure, low power. The camera and a phone in
+the same room exchange data over a direct radio link,
+with nothing between them. No access point, no router,
+no need for either side to be on any network at all.
+The radio stays mostly off between brief bursts of
+activity, so a battery that would barely survive a day
+on Wi-Fi can run for months.
+
+When Bluetooth is the right tool
+--------------------------------
+
+The common cases on a camera:
+
+* **A phone or tablet pairs with the camera.** A nearby
+  user opens an app on their phone and configures the
+  camera, reads its status, or downloads results --
+  without first putting both devices on the same Wi-Fi
+  network. Most phones speak Bluetooth Low Energy
+  natively, so the user experience is "open the app,
+  press connect", not "join this network first".
+* **A wearable or sensor reports to the camera.** A
+  heart-rate strap, a thermometer, a beacon, a contact
+  switch -- all are battery-powered devices designed
+  around Bluetooth Low Energy. The camera connects as a
+  client, reads their values, and folds the data into
+  whatever else it is doing.
+* **The camera publishes a small status feed.** Battery
+  level, last-detected object, frame rate -- a few
+  numbers exposed for anything nearby that wants to read
+  them. Pairing is optional; for non-sensitive data the
+  camera can advertise the values directly with no
+  connection needed at all.
+* **Two cameras (or a camera and a microcontroller)
+  share data without a network.** Both ends know each
+  other; both ends are in the same building; there is
+  no reason for the bytes to travel up to the cloud and
+  back down to cross the room.
+
+When networking is the right tool instead
+-----------------------------------------
+
+Bluetooth's trade-offs are wrong for several common
+cases:
+
+* **Out-of-range counterparts.** Bluetooth Low Energy is
+  a couple of metres in practice, and tens of metres in
+  free space at best. Anything across a building, across
+  town, or across the internet needs Wi-Fi or Ethernet.
+* **High-bandwidth links.** Bluetooth Low Energy
+  delivers tens to a few hundred kilobits per second in
+  practice. Streaming frames or any meaningful video
+  needs Wi-Fi.
+* **Many-to-many group communication on shared
+  infrastructure.** A roomful of devices that all talk
+  to one server, or a mesh of cameras sharing results --
+  that pattern is what an IP network is built for.
+
+Low Energy, not classic
+-----------------------
+
+"Bluetooth" in casual use covers two distinct radio
+stacks. *Classic Bluetooth* is the one in wireless
+headsets, in-car audio, and keyboard / mouse links: a
+voice-and-audio-grade radio, a comparatively complex
+stack, and noticeable power draw. *Bluetooth Low
+Energy* (BLE) is a separate, newer protocol that shares
+the brand name and the 2.4 GHz band but very little
+else. It is built around short, infrequent radio bursts
+to keep average power tiny, and around a key/value data
+model rather than streaming audio.
+
+MicroPython on the camera supports BLE only. Classic
+Bluetooth is not part of the API at all. "Bluetooth"
+below means BLE.
+
+What changes from the networking model
+--------------------------------------
+
+BLE has the same five-layer stack networking did, but
+the upper layers behave differently:
+
+* There is no "open a socket and send bytes"
+  abstraction. BLE is built around a small *key/value
+  database* that one side hosts and the other side
+  reads, writes, or subscribes to. The camera publishes
+  named values (a battery level, a temperature, a
+  command register); the peer reads or watches them.
+* There is no addressing-by-name. Devices identify
+  themselves by *advertising* a short broadcast that
+  describes who they are; peers *scan* for those
+  broadcasts and pick one to connect to.
+* The radio is mostly idle. Both ends agree at
+  connection time on how often to wake up and talk. In
+  between, both go back to sleep.
+
+Those three differences are what drive the rest of the
+BLE API away from the socket model.
+
+
+The BLE stack
+=============
+
+Like networking, Bluetooth Low Energy is built as a
+stack of layers, each one solving a single problem and
+exposing a clean abstraction to the layer above. The
+names below come straight from the Bluetooth Core
+specification and show up in the :mod:`aioble` and
+:mod:`bluetooth` APIs.
+
+.. figure:: https://docs.openmv.io/_images/ble-stack.svg
+   :alt: A vertical stack of five labelled boxes. From
+         bottom to top: Physical (radio), Link Layer,
+         GAP, GATT, Application. An arrow on the right
+         points up the stack labelled "what we build". An
+         arrow on the left points down the stack labelled
+         "what is provided".
+
+   The Bluetooth Low Energy stack. Each layer hands a
+   cleaner abstraction up to the next, the same pattern
+   the networking stack uses.
+
+**Physical layer.** Move *bits* between two devices over
+the 2.4 GHz radio. Channel selection, modulation, transmit
+power. The camera's job is to be powered up; the silicon
+does the rest.
+
+**Link layer.** Move *packets* between two devices that
+agree to talk to each other. Adds device addresses so
+each packet can be aimed at one neighbour, schedules
+the periodic radio events that make up a connection, and
+handles retransmission of any packet the receiver did
+not acknowledge.
+
+**Generic Access Profile (GAP).** The discovery and
+connection layer. Defines four *roles* -- broadcaster,
+observer, peripheral, central -- and the *advertising* /
+*scanning* protocol that lets two devices find each
+other in the first place, plus the procedure for opening
+and closing a connection between them. This is where
+addresses, advertising payloads, connection parameters,
+and pairing live.
+
+**Generic Attribute Profile (GATT).** The data layer.
+Sits on top of an open GAP connection and exposes a
+small key/value database: one side hosts a tree of named
+values called *characteristics*, the other side reads,
+writes, or subscribes to them. This is where the actual
+application bytes flow.
+
+**Application.** Whatever the camera and the peer agree
+the bytes mean. The Bluetooth SIG publishes standard
+*profiles* -- heart rate, battery level, environmental
+sensing -- that define commonly-used characteristics so
+unrelated devices can interoperate, but any application
+is free to define its own.
+
+How the layers stack at run time
+--------------------------------
+
+The pattern matches the networking stack:
+
+* The application's bytes go into a *characteristic
+  value*.
+* GATT wraps that with a header identifying which
+  characteristic the bytes belong to.
+* GAP keeps an open connection running so GATT has
+  somewhere to send.
+* The link layer wraps the lot in a packet, addressed
+  to the peer's device address, and schedules a radio
+  event to transmit it.
+* The physical layer turns the packet into a brief
+  burst of 2.4 GHz radio.
+
+The physical layer and the link layer are almost
+invisible from Python -- the silicon and the radio
+firmware handle them. From GAP upward, the camera's
+Python code gets more to say.
+
+Two layers that the user-facing API quietly skips
+-------------------------------------------------
+
+The Bluetooth specification names two more layers that
+sit between the link layer and GAP/GATT: the *Host
+Controller Interface* (HCI) -- the protocol the host CPU
+uses to drive a separate radio chip -- and *L2CAP* --
+the multiplexer that splits one link-layer connection
+into several logical channels.
+
+Neither is visible in the :mod:`aioble` API, but neither
+disappears. HCI sits inside the BLE port and is invisible
+unless a custom build of MicroPython is in play, and
+L2CAP is the carrier that GATT runs on top of. An
+application that wants raw byte streams can claim its
+own L2CAP channel
+(:doc:`/openmvcam/tutorial/bluetooth/aioble/l2cap`).
+
+
+The radio and the link layer
+============================
+
+The bottom two layers of the BLE stack are almost
+entirely automatic from Python's perspective -- the
+radio silicon and the layers MicroPython runs on top of
+it handle everything from picking a channel to
+retransmitting a lost packet. Three of the choices they
+make still show through into the user-facing API: power,
+range, and throughput.
+
+The radio
+---------
+
+BLE uses the same 2.4 GHz Industrial-Scientific-Medical
+(ISM) band as Wi-Fi, microwave ovens, and most other
+short-range wireless. The band is split into 40 channels
+2 MHz wide.
+
+* **Three** of the 40 channels are reserved for
+  *advertising* -- short broadcasts that announce a
+  device's presence to anyone listening. They are spaced
+  out across the band so a listener can sweep all three
+  quickly and so interference on any one is unlikely to
+  knock the device off the air entirely.
+* **Thirty-seven** are *data* channels. Once two devices
+  connect, they exchange packets on these, hopping
+  between them on a pseudo-random sequence the two sides
+  agree on at connection time. *Adaptive frequency
+  hopping* lets either side mark a channel as bad (heavy
+  Wi-Fi interference, microwave, neighbouring BLE
+  network) so the sequence skips it.
+
+.. figure:: https://docs.openmv.io/_images/advertising-channels.svg
+   :alt: A horizontal frequency axis from 2400 MHz to
+         2480 MHz with 40 narrow channel slots drawn on
+         it. Three of the slots, at the bottom edge,
+         middle, and upper edge of the band, are
+         highlighted as "advertising channels". The
+         remaining 37 are labelled "data channels".
+
+   The 40 BLE channels on the 2.4 GHz band. Three are
+   for advertising, the rest carry traffic on an open
+   connection.
+
+The radio transmits brief packets -- at most a couple of
+milliseconds long -- and sleeps in between. That sleep
+is what makes the technology *low energy*. A typical BLE
+peripheral spends well under one percent of its time
+actually transmitting; the rest is the radio powered
+down between scheduled events.
+
+The link layer
+--------------
+
+The link layer is the smallest unit of BLE that talks to
+its counterpart on another device. It handles four jobs.
+
+* **Packet framing.** Each packet carries a short
+  header (channel access address, packet length, control
+  bits), a payload, and a CRC. The receiver checks the
+  CRC and drops anything corrupted.
+* **Addressing.** Every BLE device has a 48-bit
+  *device address* that identifies it on the radio. Some
+  are *public* -- a hardware identifier the manufacturer
+  has assigned, traceable forever. Some are *random* --
+  generated on the device, rotated periodically, and
+  optionally encrypted so that an eavesdropper cannot
+  link two transmissions to the same physical hardware.
+  Addresses come up again in
+  :doc:`/openmvcam/tutorial/bluetooth/gap/advertising-and-scanning`.
+* **Connection scheduling.** Once two devices connect,
+  the link layer schedules periodic radio events on the
+  hopping sequence -- a fixed *connection interval*
+  apart -- and packs whatever data is queued from the
+  GATT layer above into each one. Both sides go back to
+  sleep between events. The connection interval is a
+  knob the application can request (see
+  :doc:`/openmvcam/tutorial/bluetooth/gap/connections`).
+* **Reliability.** Each packet on a connection is
+  acknowledged by the other side. The link layer
+  retransmits anything that did not get a response, so
+  the layers above see an ordered, lossless byte stream.
+  Unlike :doc:`/openmvcam/tutorial/networking/transport/udp`
+  on the networking side, BLE does not have a separate
+  unreliable mode in normal use -- every packet on an
+  open connection is retried until it arrives or the
+  link is declared lost.
+
+The link layer is also where *encryption* runs once a
+pair of devices has agreed on a key during pairing
+(see
+:doc:`/openmvcam/tutorial/bluetooth/security/pairing-and-bonding`).
+Every packet on an encrypted link is decrypted at the
+receiver before the layers above ever see it.
+
+What the camera and a peer share
+--------------------------------
+
+The radios on both ends agree at connection time on a
+handful of parameters that govern the conversation:
+
+* The *connection interval* -- how often the two sides
+  wake up to exchange packets, anywhere from 7.5 ms to
+  4 s.
+* The *peripheral latency* -- how many consecutive
+  intervals the peripheral may skip if it has nothing
+  to say, to save power.
+* The *supervision timeout* -- how long either side
+  waits before declaring the link lost when the other
+  goes quiet.
+* The *MTU* -- the largest single packet either side
+  will deliver to GATT (defaults to 23 bytes, can be
+  negotiated up).
+
+The radio and the link layer together are responsible
+for getting reliable, ordered packets from one device
+to another while keeping both radios off as much as
+possible. Every layer above is free to behave as if a
+clean, private byte channel exists between the two
+endpoints.
+
+What Python sees of all this
+----------------------------
+
+Almost nothing. The :mod:`bluetooth` and :mod:`aioble`
+APIs do not expose channels, hopping sequences, packet
+CRCs, or retransmission timers; those are all handled
+inside the BLE port and the radio. The pieces that *do*
+show through are the ones the connection-time
+negotiation exposes -- connection interval, MTU,
+address type.
+
+
+Advertising and scanning
+========================
+
+Two BLE devices that have never met before have to find
+each other first. Networking solves that by handing
+every device an address out of a shared pool and letting
+either side reach the other through routers. BLE has no
+routers, no shared pool, and -- between most pairs of
+devices -- no prior relationship at all. The Generic
+Access Profile (GAP) solves discovery with a
+broadcast-and-listen pattern instead. One side
+*advertises* -- it transmits a short packet on the three
+advertising channels at a regular interval, describing
+who it is. The other side *scans* -- it sweeps the same
+three channels listening for those packets.
+
+GAP defines four roles around that pattern, each one a
+specific combination of advertising and listening.
+
+The four GAP roles
+------------------
+
+.. figure:: https://docs.openmv.io/_images/ble-roles.svg
+   :alt: A two-by-two matrix. Rows are labelled
+         "advertises" and "does not advertise". Columns
+         are labelled "accepts connections" and "does
+         not accept connections". The four cells contain
+         the role names: Peripheral, Broadcaster,
+         Central, Observer.
+
+   The four GAP roles. The vertical axis is whether the
+   device advertises; the horizontal axis is whether it
+   accepts (or initiates) connections.
+
+* A *peripheral* advertises packets that say "I'm here
+  and you can connect to me". When another device opens
+  a connection, the peripheral stops advertising and
+  starts serving GATT requests. Heart-rate straps,
+  thermometers, and most cameras-as-sensors act as
+  peripherals.
+* A *central* scans for peripherals, picks one, and
+  initiates a connection. After connecting it speaks
+  GATT as a client. Phones, laptops, and cameras
+  acting as data collectors are centrals.
+* A *broadcaster* advertises but never accepts
+  connections. Its advertising payload *is* the data --
+  there is nothing to connect to. iBeacons and most
+  store-presence beacons are broadcasters.
+* An *observer* scans for those advertisements and reads
+  the payload, again without ever connecting. A camera
+  that listens for nearby beacons and acts on what it
+  hears is an observer.
+
+A single device can play more than one role at the same
+time -- a camera can be a peripheral that publishes its
+own state *and* a central that connects to a nearby
+sensor. The radio multiplexes the work.
+
+What an advertising packet contains
+-----------------------------------
+
+An advertising packet is small: 31 bytes of payload, or
+62 if the advertiser also publishes a *scan response*
+that scanners can request on the fly. The payload is a
+list of short typed fields:
+
+* **Flags.** Connectable or not, general / limited
+  discoverable.
+* **Local name.** A short, human-friendly string --
+  the name the operating system on a phone or laptop
+  shows in its Bluetooth menu.
+* **Service UUIDs.** A list of GATT service identifiers
+  the device hosts, so a scanner can recognise capable
+  peripherals without connecting first. A heart-rate
+  strap advertises ``0x180D`` -- the standard
+  Heart-Rate service UUID -- and a heart-rate app on
+  the phone knows from that alone that the device is
+  worth connecting to.
+* **Appearance.** A 16-bit value from the Bluetooth
+  assigned-numbers list (sensor, generic media, generic
+  watch, ...) -- a hint to the central about what to
+  display.
+* **Manufacturer-specific data.** Free-form bytes
+  prefixed with a company ID. iBeacons use this field
+  to carry their UUID, major, and minor; custom
+  applications can put anything they like in here.
+
+Advertising payloads are tight. The 31-byte limit makes
+choosing what to include a real design decision -- a
+long human-readable name can quickly leave no room for
+service UUIDs. The :func:`aioble.advertise` API takes
+each of these as a keyword argument and assembles the
+bytes for you, overflowing into the scan response
+automatically if the main packet fills up.
+
+Active and passive scanning
+---------------------------
+
+A scanner can run *passive*, where it listens for
+advertising packets and parses what arrives, or
+*active*, where it also sends a *scan request* to each
+advertiser and parses the scan response that comes back.
+
+Passive scanning sees only the initial advertising
+packet (up to 31 bytes). Active scanning doubles that --
+the scan response is another 31 bytes the peripheral can
+use for fields that did not fit. Active scanning also
+costs power on both sides, since the scanner transmits
+and the advertiser transmits an extra packet, so it is a
+choice rather than a default.
+
+In the :mod:`aioble` API, ``active=True`` on
+:func:`aioble.scan` switches the mode, and each
+``ScanResult`` exposes the combined ``adv_data`` plus
+``resp_data`` as well as helpers like
+``result.name()`` and ``result.services()`` that hide
+the byte-level parsing.
+
+.. note::
+
+   The :attr:`~aioble.ScanResult.adv_data` and
+   :attr:`~aioble.ScanResult.resp_data` attributes are
+   the *raw* advertising and scan-response payloads
+   (``bytes``). The helpers --
+   :meth:`~aioble.ScanResult.name`,
+   :meth:`~aioble.ScanResult.services`,
+   :meth:`~aioble.ScanResult.manufacturer` -- cover
+   the common standard fields and are the right
+   choice 99% of the time. Reach for the raw bytes
+   only when you need a vendor field the helpers do
+   not parse (Eddystone URLs, iBeacon UUID/major/
+   minor, custom advertising types). The byte layout
+   is the standard TLV one: each field is
+   ``length, type, value...``.
+
+The advertising interval
+------------------------
+
+How often the peripheral broadcasts is a power /
+discovery-latency trade-off. Adverts that go out every
+20 ms get picked up almost immediately by a scanner but
+keep the radio busy and drain the battery; adverts every
+second use almost no power but make a scanner sweep
+slower to notice the device.
+
+``interval_us`` on :func:`aioble.advertise` sets the
+interval in microseconds:
+
+* **20,000 to 100,000 us** (20 ms - 100 ms) -- fast
+  pairing, app expects a quick response, plugged-in
+  device.
+* **250,000 to 1,000,000 us** (250 ms - 1 s) -- a
+  reasonable default for a battery-powered peripheral
+  that wants to be discoverable without burning charge.
+* **Above 1,000,000 us** -- slow background broadcast,
+  beacons that send a position update every few
+  seconds.
+
+The scanner side has its own knobs --
+:func:`aioble.scan` takes ``interval_us`` and
+``window_us`` (how often the scanner wakes up its radio
+and how long it listens each time). The defaults are
+fine; the only common change is to set both equal for a
+continuous scan when battery is not a concern.
+
+Connectionless patterns -- broadcaster and observer
+---------------------------------------------------
+
+The pages on :doc:`/openmvcam/tutorial/bluetooth/aioble/peripheral`
+and :doc:`/openmvcam/tutorial/bluetooth/aioble/central`
+work through the *connectable* shape of the API --
+where a peripheral accepts a connection and the two
+sides exchange data through GATT. The other shape is
+*connectionless*: a broadcaster transmits payload-as-
+advertisement, and any observer in range can read it
+without ever connecting. Beacons, presence sensors,
+and one-way telemetry all live here.
+
+A broadcaster is :func:`aioble.advertise` with
+``connectable=False``. Manufacturer-specific data
+carries the payload::
+
+    import aioble
+    import asyncio
+    import struct
+
+    _COMPANY_ID = const(0xFFFF)                # 0xFFFF is "no specific vendor"
+
+    async def beacon():
+        seq = 0
+        while True:
+            seq = (seq + 1) & 0xFFFF
+            payload = struct.pack("<H", seq)
+            await aioble.advertise(
+                interval_us=500000,
+                connectable=False,
+                name="openmv-beacon",
+                manufacturer=(_COMPANY_ID, payload),
+                timeout_ms=1000,                # one cycle, then loop
+            )
+
+    asyncio.run(beacon())
+
+The ``timeout_ms`` keyword ends the advertise call
+after a second; the outer loop reissues it with the
+next sequence number so listeners see fresh data. The
+``connectable=False`` flag is what makes the
+advertisement broadcaster-style -- the cam will not
+respond to a connect request even if one arrives.
+
+An observer is the matching read-only scanner. It runs
+:func:`aioble.scan` forever, parses incoming
+advertisements, and never calls
+:meth:`~aioble.Device.connect`::
+
+    import aioble
+    import asyncio
+
+    _COMPANY_ID = const(0xFFFF)
+
+    async def watch():
+        async with aioble.scan(duration_ms=0, active=False) as scanner:
+            async for result in scanner:
+                for company, data in result.manufacturer(filter=_COMPANY_ID):
+                    print(result.device.addr_hex(),
+                          "rssi", result.rssi, "data", data)
+
+    asyncio.run(watch())
+
+``duration_ms=0`` scans until the context manager
+exits; ``active=False`` keeps the observer's own radio
+silent (no scan-response requests) for the lowest power
+draw. The ``filter=`` argument on
+:meth:`~aioble.ScanResult.manufacturer` discards every
+advertisement that does not match the company ID, so
+the loop only fires for the broadcaster's traffic.
+
+From discovery to a connection
+------------------------------
+
+Once a central picks a peripheral to talk to, it stops
+listening, sends a *connect request* on the advertising
+channel the peripheral last used, and both sides drop
+into the hopping data channels of the link layer. The
+peripheral typically stops advertising at this point.
+What happens next -- connection parameters, GATT
+discovery, the lifetime of the link -- is on
+:doc:`connections`.
+
+
+Connections
+===========
+
+Once a central picks a peripheral from the advertising
+stream and sends it a *connect request*, both sides drop
+out of advertising / scanning mode and into a *connection*.
+The radio now schedules its activity on the data channels
+of the link layer, hopping pseudo-randomly between them
+on the sequence agreed at connection time. Everything
+above the link layer -- GATT, security, L2CAP -- runs on
+top of the connection that is established here.
+
+The connection event
+--------------------
+
+Two devices in a BLE connection do not stream
+continuously. They agree on a *connection interval*, and
+at every interval both sides wake up the radio, exchange
+whatever packets are queued, acknowledge what they have
+received, and go back to sleep. Each of those exchanges
+is called a *connection event*.
+
+.. figure:: https://docs.openmv.io/_images/connection-events.svg
+   :alt: A timeline with the central on the top track and
+         the peripheral on the bottom track. At each
+         connection interval boundary both tracks show a
+         short pulse labelled "TX/RX". The gap between
+         pulses is labelled "connection interval"; the
+         duration of each pulse is "connection event".
+         The peripheral has a few skipped events labelled
+         "peripheral latency: peripheral may skip if idle".
+
+   The radio on each side is awake only during the brief
+   connection events, with everything else asleep. The
+   peripheral may skip events under *peripheral latency*.
+
+The numbers that govern this are negotiated at connect
+time and the link layer enforces them. They are visible
+to the application both as request-side knobs and as
+the resulting values reported back.
+
+* **Connection interval.** 7.5 ms to 4 s, in 1.25 ms
+  steps. The central picks the value the peripheral
+  asks for unless the request is unreasonable. Shorter
+  intervals deliver data with lower latency at the
+  cost of more radio activity; longer ones save power
+  but make every round trip slower.
+* **Peripheral latency.** A non-negative integer N.
+  The peripheral is allowed to skip up to N connection
+  events with nothing to send, going back to sleep
+  instead of waking the radio for an empty exchange.
+  Useful for sensors that wake to report once a second
+  but want a low *responsive* connection interval for
+  the rare immediate message.
+* **Supervision timeout.** 100 ms to 32 s. If either
+  side hears nothing from the other for this long, the
+  link is declared lost and both sides go back to
+  advertising / scanning. The timeout must be longer
+  than ``connection_interval * (1 + peripheral_latency)``
+  -- the link layer rejects values that violate that.
+
+:meth:`aioble.Device.connect` takes
+``min_conn_interval_us`` and ``max_conn_interval_us`` so
+the central can request a particular range; the actual
+value the radio settled on can be read back through the
+link-layer configuration after the connection is up.
+
+What "central" and "peripheral" mean inside a connection
+--------------------------------------------------------
+
+The roles set at advertising time stick after the
+connection comes up:
+
+* The *central* drives the timing -- it owns the master
+  side of the hopping sequence and the connection
+  events.
+* The *peripheral* is reactive. It can request a change
+  to the connection parameters (a slower interval to
+  save power, say) but the central decides whether to
+  accept.
+
+The roles are independent of who hosts the GATT
+database, which is a separate axis. By convention the
+peripheral is also the GATT *server* and the central is
+the GATT *client*, but BLE allows either side to host
+GATT services. Cameras almost always follow the
+convention: peripheral + server for "the camera publishes
+data" applications, central + client for "the camera
+reads from a sensor" applications.
+
+The maximum transmission unit (MTU)
+-----------------------------------
+
+The link layer carries packets that are short by
+default -- 27 bytes of payload, of which only 23 are
+available to GATT. That is enough for a small reading
+or a short command but tiny next to anything
+multi-byte. Both sides can negotiate this upward, up to
+the limit the radio firmware supports (typically a few
+hundred bytes on modern controllers).
+
+The ``aioble`` API drives the negotiation through
+:meth:`aioble.DeviceConnection.exchange_mtu` and the
+result becomes available on the
+:attr:`~aioble.DeviceConnection.mtu` attribute. Larger
+MTUs mean fewer round trips for any value bigger than
+~20 bytes, at a small cost in buffer memory.
+
+Lifetime
+--------
+
+A connection lasts until one of:
+
+* either side calls
+  :meth:`~aioble.DeviceConnection.disconnect`,
+* the supervision timeout fires (out-of-range, radio
+  off, peer crashed), or
+* an explicit link-layer failure (encryption mismatch,
+  pairing rejection).
+
+When the connection drops, every GATT operation queued
+or in flight on it raises
+:exc:`aioble.DeviceDisconnectedError`, and any
+``async with connection`` blocks the application is in
+exit cleanly. A peripheral typically responds by going
+back to :func:`aioble.advertise` and waiting for the
+next central; a central responds by either scanning
+again or surfacing the disconnect to the application.
+
+The lifetime is one of the reasons :mod:`aioble` is
+useful. A synchronous BLE API would have to expose
+disconnect callbacks and event masks; the asyncio
+version turns disconnects into exceptions inside the
+coroutine that was waiting for the operation, which is
+what ``async with`` cleanup is built for.
+
+
+Services and characteristics
+============================
+
+Once GAP has gotten two devices into an open connection,
+the layer above it -- the *Generic Attribute Profile*,
+GATT -- has to give the bytes flowing through that
+connection meaning. BLE's choice here is unusual. Where
+TCP exposes a raw byte stream and leaves it to the
+application to invent its own framing, GATT exposes a
+*small key/value database* that one side hosts and the
+other reads, writes, or subscribes to.
+
+That database is what application designers spend most
+of their BLE time thinking about. What the camera
+publishes to a phone, what it watches on a remote
+sensor, how a Bluetooth keyboard tells its host which
+key was pressed -- all are characteristic values in
+some GATT database somewhere.
+
+Two role axes, not one
+----------------------
+
+A frequent source of confusion: *peripheral* /
+*central* and *server* / *client* are **two
+independent axes**, not synonyms.
+
+* **Peripheral** and **central** are GAP roles, set
+  during connection. The peripheral advertises and is
+  connected to; the central scans and initiates the
+  connection. This is settled the moment the link
+  comes up and does not change.
+* **Server** and **client** are GATT roles, set per
+  characteristic operation. The server hosts the
+  characteristic; the client reads, writes, or
+  subscribes to it.
+
+The two axes are decoupled by the spec. A peripheral
+is *usually* the server (a heart-rate strap publishes
+its readings) and a central is *usually* the client
+(a phone reads them), but BLE allows any combination
+-- a peripheral may discover a characteristic on the
+central it just got connected to, or a single
+connection can host services on both sides at once.
+
+Most camera applications stick to the conventional
+pairing (peripheral + server, or central + client), so
+the rest of this section treats them as one axis when
+the conventional case is what's being described. When
+the distinction matters, both terms are spelled out
+explicitly.
+
+Inside the database
+-------------------
+
+A GATT database is a tree. The leaves carry the actual
+bytes. The branches group related leaves into
+human-meaningful units.
+
+.. figure:: https://docs.openmv.io/_images/gatt-tree.svg
+   :alt: A tree with a top node labelled "GATT
+         database". Below it, three Service nodes
+         labelled "Generic Access (0x1800)", "Battery
+         (0x180F)", and "Environmental Sensing
+         (0x181A)". Each Service has child
+         Characteristic nodes; the Battery service has
+         "Battery Level (0x2A19)" with a child Descriptor
+         "CCCD". The Environmental Sensing service has
+         "Temperature (0x2A6E)" and "Humidity (0x2A6F)".
+
+   A GATT database. Services group characteristics;
+   characteristics carry the application's bytes;
+   descriptors carry metadata about the characteristic.
+
+There are three kinds of node:
+
+* A **service** is a logical group of related values.
+  The Bluetooth SIG publishes standard service
+  definitions for common use cases -- *Battery Service*
+  for battery level, *Environmental Sensing* for
+  temperature / humidity / pressure, *Heart Rate* for
+  heart-rate monitors -- so a generic app on a phone
+  can recognise a service it has never seen before. An
+  application is also free to define its own services
+  for things the SIG has not standardised.
+* A **characteristic** is one named value inside a
+  service. Battery service has a single characteristic
+  -- *Battery Level*, a one-byte percentage.
+  Environmental Sensing has separate characteristics for
+  temperature, humidity, pressure, and so on. A
+  characteristic is the unit of GATT operations -- you
+  read a characteristic, you write a characteristic,
+  you subscribe to a characteristic.
+* A **descriptor** is metadata attached to a
+  characteristic. Some descriptors are standardised --
+  the *Client Characteristic Configuration Descriptor*
+  (CCCD) is the famous one, because writing to it is how
+  a client tells the server "send me notifications on
+  this characteristic". Others are user-defined and
+  carry things like presentation format or extended
+  properties.
+
+A GATT server (typically the peripheral) declares its
+database once at startup and the database does not
+change while running. A GATT client (typically the
+central) *discovers* what is in the database after
+connecting -- walking the tree, reading the UUIDs of the
+services it finds, then the characteristics inside each.
+
+UUIDs
+-----
+
+Every service, characteristic, and descriptor has a
+*UUID* (Universally Unique IDentifier) that identifies
+*what kind of thing it is*. UUIDs come in three widths:
+
+* **16-bit.** Reserved for standards defined by the
+  Bluetooth SIG. Battery Service is ``0x180F``. Battery
+  Level (a characteristic) is ``0x2A19``. The full list
+  is published on the Bluetooth SIG's assigned-numbers
+  site at https://www.bluetooth.com/specifications/assigned-numbers/.
+* **32-bit.** A rarely-used middle ground.
+* **128-bit.** What everyone else uses -- a vendor or
+  application generates one at random and uses it for
+  their custom service or characteristic. Cameras
+  defining their own protocol live here.
+
+The :class:`bluetooth.UUID` class accepts any of the
+three widths::
+
+    import bluetooth
+
+    BATTERY_SERVICE = bluetooth.UUID(0x180F)
+    CUSTOM_SERVICE = bluetooth.UUID("12345678-1234-5678-9abc-def012345678")
+
+A 16-bit UUID encodes into a small advertising payload,
+which is one reason standard services are preferable
+when one exists -- a heart-rate strap that advertises
+``0x180D`` (Heart Rate) costs two bytes; a custom UUID
+costs sixteen. For applications that do not need
+standard interoperability, a generated 128-bit UUID is
+the right answer.
+
+What the SIG-standardised services buy you
+------------------------------------------
+
+The case for using a standard service is straightforward:
+*existing apps already know how to talk to it*. A device
+that advertises the Heart Rate service (``0x180D``) and
+exposes the Heart Rate Measurement characteristic
+(``0x2A37``) works with every fitness app on the planet
+without anyone writing new code. A device that
+re-implements the same data with custom UUIDs needs its
+own companion app and its own protocol document.
+
+The standards do come at a cost. The byte layouts inside
+each characteristic are specified -- the SIG decided
+that Heart Rate Measurement is a single-byte flags field
+followed by either an 8-bit or 16-bit heart rate value,
+optionally followed by R-R intervals -- and a
+conformant device has to follow those layouts. Custom
+services are free of that constraint.
+
+The pragmatic answer for cameras: use the standard
+service when one exists for the kind of data you have
+(Battery Service, Environmental Sensing), and define a
+custom one with a 128-bit UUID for anything specific to
+your application.
+
+Server-side and client-side objects
+-----------------------------------
+
+For the same conceptual building blocks (service,
+characteristic, descriptor), every GATT library exposes
+two parallel sets of objects:
+
+* *Server-side* objects -- what the peripheral declares
+  it hosts. In :mod:`aioble`: :class:`aioble.Service`,
+  :class:`aioble.Characteristic`,
+  :class:`aioble.Descriptor`. These are constructed
+  before advertising starts and registered with
+  :func:`aioble.register_services`.
+* *Client-side* objects -- what the central discovers
+  on the peer after connecting. In :mod:`aioble`:
+  :class:`aioble.ClientService`,
+  :class:`aioble.ClientCharacteristic`,
+  :class:`aioble.ClientDescriptor`. These are walked
+  through :meth:`aioble.DeviceConnection.service` /
+  :meth:`~aioble.DeviceConnection.services` after
+  connecting.
+
+
+GATT operations
+===============
+
+A characteristic just sits in the GATT database as a
+named value. What makes it useful is the small,
+well-defined set of operations a client can run on it.
+Each characteristic declares which operations it
+supports as a *property bitmask* -- a server that has
+nothing to expose can publish a read-only value, a
+control register might be write-only, a sensor that
+streams updates would set the notify bit. The client
+discovers the bitmask during discovery and respects it.
+
+The five operations are *read*, *write*, *write without
+response*, *notify*, and *indicate*. They split into two
+groups -- pull (the client asks) and push (the server
+sends).
+
+Pull: read and write
+--------------------
+
+These two are the simplest and look exactly like
+function calls.
+
+* **Read.** The client asks for the current value, the
+  server sends it back. One round trip, the client gets
+  whatever bytes the server has set for that
+  characteristic, the server gets nothing about who
+  read.
+* **Write.** The client sends new bytes, the server
+  stores them (and optionally runs application logic on
+  the new value). Two flavours exist:
+
+  * *Write with response* -- the server acknowledges,
+    raising any application error on a non-zero status.
+    Reliable, one round trip.
+  * *Write without response* -- the server stores the
+    bytes silently; the client gets no acknowledgement
+    at all. Faster (no round trip waiting on the ack)
+    and useful for streaming, at the cost of finding
+    out about errors only via side-channel readback.
+
+In :mod:`aioble`, the client-side API hides the choice
+behind a single :meth:`aioble.ClientCharacteristic.write`
+method with a ``response`` keyword (``True`` /
+``False`` / ``None`` to auto-select based on what the
+peer advertises).
+
+Push: notify and indicate
+-------------------------
+
+The pull model is wrong for sensor data. A heart-rate
+strap that the phone has to poll every second would
+burn battery on a hundred unnecessary radio events; one
+that pushes a value only when it has a new reading is
+the point of BLE in the first place.
+
+GATT solves this with *server-initiated* operations. The
+client *subscribes* to a characteristic; from that point
+on, every time the server updates the value, the new
+value is pushed across the link to the client. Two
+flavours:
+
+* **Notify.** Fire-and-forget. The server queues a
+  notification, the link layer transmits it during the
+  next connection event, the client receives it. There
+  is no acknowledgement at the GATT level; the link
+  layer's normal retransmission handles loss on the
+  radio side, but the application sees no confirmation
+  that the value was processed.
+* **Indicate.** The server sends a notification *and*
+  waits for the client's GATT-level confirmation before
+  sending the next one. One indication at a time. Used
+  when the server needs to know the client actually
+  saw the value -- a critical-alarm characteristic, a
+  configuration acknowledgement.
+
+.. figure:: https://docs.openmv.io/_images/notify-vs-read.svg
+   :alt: Two side-by-side diagrams of a server and a
+         client. On the left, the client sends "read",
+         the server replies with the value. Three reads
+         in a row, each pair of arrows. On the right,
+         the client sends a single "subscribe", then the
+         server pushes three "notify" packets at the
+         times it chooses, without any client request
+         in between.
+
+   Pull (read) versus push (notify). With notifications,
+   the client subscribes once and the server pushes new
+   values whenever they change.
+
+Subscribing happens by writing to a descriptor attached
+to the characteristic -- the *Client Characteristic
+Configuration Descriptor* (CCCD, ``0x2902``). Writing
+``0x0001`` enables notifications, ``0x0002`` enables
+indications, ``0x0000`` disables both. The
+:meth:`aioble.ClientCharacteristic.subscribe` method
+performs the write for you, with ``notify=True`` and
+``indicate=True`` keyword flags.
+
+Once subscribed, the client waits for incoming pushes
+with :meth:`~aioble.ClientCharacteristic.notified` and
+:meth:`~aioble.ClientCharacteristic.indicated` -- both
+async coroutines that suspend until the next push
+arrives.
+
+The MTU governs payload size
+----------------------------
+
+Every operation is constrained by the negotiated
+*MTU* the connection settled on at link-up time. The
+default MTU is 23 bytes, which leaves 20 bytes for
+characteristic value bytes after the GATT header.
+Anything larger than that has to either fit into a
+larger MTU (negotiated up via
+:meth:`aioble.DeviceConnection.exchange_mtu`, up to 512
+bytes on the camera) or be split into multiple
+characteristics or multiple notifications.
+
+Client-initiated reads and writes of values larger than
+the MTU are handled by GATT's *long* procedures behind
+the scenes (Read Long / Prepare-Write + Execute-Write);
+``aioble`` runs these transparently, so calling
+:meth:`~aioble.ClientCharacteristic.read` /
+:meth:`~aioble.ClientCharacteristic.write` with an
+oversized value just costs more round trips. Server-
+initiated notifications and indications are *not*
+fragmented -- one push is bounded by the MTU, and the
+application splits anything larger into multiple
+notifications or steps off GATT entirely.
+
+For genuinely large transfers -- a captured frame, a
+batch of measurements, a firmware blob -- the right
+answer is usually to step off GATT entirely and use an
+*L2CAP channel* instead (see
+:doc:`/openmvcam/tutorial/bluetooth/aioble/l2cap`).
+
+The two sides at a glance
+-------------------------
+
+The five operations expose differently on each side of
+the connection:
+
+* On the **server** (the peripheral, in the common
+  layout):
+
+  * :meth:`aioble.Characteristic.read` -- read the
+    current local value out of the GATT database (the
+    server side of "what would the client see").
+  * :meth:`aioble.Characteristic.write` -- update the
+    local value, optionally pushing the update to every
+    subscribed client.
+  * :meth:`aioble.Characteristic.notify` /
+    :meth:`~aioble.Characteristic.indicate` -- send a
+    push to one specific client.
+  * :meth:`aioble.Characteristic.written` -- await the
+    next incoming write from any client.
+  * :meth:`aioble.Characteristic.on_read` -- callback
+    invoked synchronously when a client reads, useful
+    for computing a value on demand.
+
+* On the **client** (the central, in the common
+  layout):
+
+  * :meth:`aioble.ClientCharacteristic.read` -- ask the
+    server for the current value.
+  * :meth:`aioble.ClientCharacteristic.write` -- send a
+    new value, with or without response.
+  * :meth:`aioble.ClientCharacteristic.subscribe` --
+    enable / disable notifications and indications.
+  * :meth:`aioble.ClientCharacteristic.notified` /
+    :meth:`~aioble.ClientCharacteristic.indicated` --
+    await the next push.
+
+
+The aioble module
+=================
+
+The Bluetooth Core specification gives a vocabulary
+that maps onto two MicroPython modules.
+
+* :mod:`bluetooth` -- the *low-level* binding to the
+  BLE controller. Synchronous, event-driven through an
+  IRQ-style callback, and structured around byte
+  buffers, handles, and the bare GATT primitives. It
+  exposes the protocol as it is, not as Python
+  applications want to consume it.
+* :mod:`aioble` -- a higher-level wrapper, written in
+  Python on top of :mod:`bluetooth`, that turns every
+  remote operation into an :mod:`asyncio` coroutine
+  and every BLE object (services, characteristics,
+  connections, scan results, L2CAP channels) into an
+  ergonomic Python class. Scans become async iterators;
+  connections become async context managers;
+  notifications become awaitable.
+
+When to reach for the lower-level module
+----------------------------------------
+
+:mod:`bluetooth` is still the right answer for two
+narrow cases:
+
+* You are writing the kind of code :mod:`aioble` itself
+  is built out of -- a new pattern that needs IRQ-level
+  control over the protocol.
+* You are running on a hardware target where the
+  :mod:`aioble` package is not available, and a thin
+  shim around the controller is the only option.
+
+For every camera application, :mod:`aioble` is the
+right answer.
+
+Pieces of an aioble program
+---------------------------
+
+Every :mod:`aioble`-based application has a small set of
+moving parts, regardless of which roles it plays.
+
+* A long-running :mod:`asyncio` event loop. Everything
+  in :mod:`aioble` is a coroutine, so the application
+  is structured as one or more tasks on a single event
+  loop. See :doc:`/openmvcam/tutorial/asyncio/index` for
+  the loop, tasks, and exceptions in detail.
+* A radio that is on. :mod:`aioble` activates the BLE
+  radio implicitly on first use, but it can also be
+  controlled explicitly with :func:`aioble.config`
+  (which forwards to :meth:`bluetooth.BLE.config` after
+  ensuring the radio is up) and shut down with
+  :func:`aioble.stop`.
+* One or more *roles* in flight at once. On the
+  peripheral side: a registered set of GATT services
+  (see :func:`aioble.register_services`) and a running
+  :func:`aioble.advertise` coroutine. On the central
+  side: a running :func:`aioble.scan` iterator or a
+  pending :meth:`aioble.Device.connect`. The radio
+  multiplexes the work; the application sees each role
+  as an independent task.
+
+A minimal peripheral
+--------------------
+
+The smallest useful :mod:`aioble` program -- a
+peripheral that advertises a single read-only
+characteristic -- is short::
+
+    import aioble
+    import asyncio
+    import bluetooth
+
+    SERVICE_UUID = bluetooth.UUID(0x181A)            # Environmental Sensing
+    TEMP_UUID = bluetooth.UUID(0x2A6E)               # Temperature
+
+    service = aioble.Service(SERVICE_UUID)
+    temp = aioble.Characteristic(service, TEMP_UUID, read=True)
+    aioble.register_services(service)
+
+    async def main():
+        while True:
+            conn = await aioble.advertise(
+                interval_us=250000,
+                name="openmv-temp",
+                services=[SERVICE_UUID],
+            )
+            async with conn:
+                await conn.disconnected()
+
+    asyncio.run(main())
+
+A central that does nothing more than connect and read
+once is similarly short::
+
+    import aioble
+    import asyncio
+    import bluetooth
+
+    SERVICE_UUID = bluetooth.UUID(0x181A)
+    TEMP_UUID = bluetooth.UUID(0x2A6E)
+
+    async def main():
+        device = None
+        async with aioble.scan(duration_ms=5000, active=True) as scanner:
+            async for result in scanner:
+                if SERVICE_UUID in result.services():
+                    device = result.device
+                    break
+        if device is None:
+            return
+
+        async with await device.connect() as conn:
+            service = await conn.service(SERVICE_UUID)
+            char = await service.characteristic(TEMP_UUID)
+            print(await char.read())
+
+    asyncio.run(main())
+
+Both programs are about fifteen lines and they cover
+the whole flow from "radio is off" to "useful work
+done".
+
+Turning the radio off
+---------------------
+
+On a battery-powered camera the BLE radio is the
+biggest discretionary draw on the budget. Two knobs
+matter.
+
+The first is *implicit*: :mod:`aioble` activates the
+radio on first use, and the radio sleeps between
+scheduled events (advertising bursts, connection
+events, scan windows) automatically. Picking longer
+intervals on
+:func:`aioble.advertise` / :func:`aioble.scan` and
+agreeing on a longer connection interval at
+:meth:`~aioble.Device.connect` time keeps the radio
+off proportionally more of the time. The advertising
+table in
+:doc:`/openmvcam/tutorial/bluetooth/gap/advertising-and-scanning`
+is the practical guide here.
+
+The second is *explicit* shutdown::
+
+    import aioble
+
+    await do_burst_of_ble_work()
+    aioble.stop()                             # radio deactivated; in-flight tasks unwound
+    await asyncio.sleep(60)                   # sleep with the radio off
+    # ... next aioble call brings the radio back up automatically
+
+:func:`aioble.stop` deactivates the underlying BLE
+radio and tears down anything in flight -- open
+connections drop, scanners and advertisers cancel,
+L2CAP channels close. Coroutines that were waiting on
+those operations raise their usual exceptions
+(:exc:`~aioble.DeviceDisconnectedError` and friends),
+which is the cleanup mechanism the surrounding
+``async with`` blocks were written for. Calling any
+:mod:`aioble` coroutine afterwards activates the
+radio again from cold.
+
+The typical pattern for a periodic battery-powered
+sensor cam is:
+
+* Wake on a schedule (timer, motion sensor, button).
+* Run the burst of BLE work -- advertise, accept a
+  connection, push the value, disconnect.
+* Call :func:`aioble.stop` and sleep until the next
+  wake.
+
+What aioble does not do
+-----------------------
+
+:mod:`aioble` deliberately covers GATT, GAP, and L2CAP
+-- the layers an application uses. Three pieces are
+out of scope:
+
+* **Anything below the link layer.** Channel selection,
+  frequency hopping, packet acknowledgements, and
+  link-layer encryption all happen inside the BLE port
+  and the controller silicon; :mod:`aioble` does not
+  expose hooks at that level.
+* **Classic Bluetooth.** :mod:`aioble` is BLE-only.
+  Audio links, RFCOMM, A2DP, and other classic-profile
+  features are not part of the API.
+* **Bluetooth Mesh.** The Bluetooth SIG's mesh
+  networking layer (a separate stack on top of BLE
+  advertising) is not implemented on the camera. The
+  cam can advertise and observe, but it cannot
+  participate in a mesh network's relay / friend /
+  proxy roles.
+
+Exceptions
+----------
+
+Four exception types come out of :mod:`aioble`. Each
+fires from inside a coroutine that was awaiting an
+operation when something went wrong; ``async with``
+blocks unwind cleanly when they propagate.
+
+* :exc:`aioble.DeviceDisconnectedError` -- the BLE
+  link to the peer dropped while a GATT operation
+  (``read``, ``write``, ``notified``, ``indicated``,
+  ``subscribe``, ``exchange_mtu``, ...) was in flight.
+  Raised inside whichever coroutine was waiting. The
+  most common exception by far; catch it in any code
+  that should reconnect on loss.
+* :exc:`aioble.GattError` -- a GATT operation reached
+  the peer but completed with a non-zero ATT status
+  (write-with-response rejected, indicate not
+  acknowledged, read-not-permitted, ...). The status
+  code is on the exception's ``_status`` attribute.
+* :exc:`aioble.L2CAPDisconnectedError` -- the L2CAP
+  channel dropped while a
+  :meth:`~aioble.L2CAPChannel.send`,
+  :meth:`~aioble.L2CAPChannel.recvinto`, or
+  :meth:`~aioble.L2CAPChannel.flush` was in flight.
+  Either side may have closed the channel, or the
+  underlying GAP connection went away.
+* :exc:`aioble.L2CAPConnectionError` -- raised by
+  :meth:`~aioble.DeviceConnection.l2cap_connect` when
+  the listener refused or the controller failed the
+  channel setup. The Bluetooth status code is the
+  first positional argument.
+
+Operations that take an explicit ``timeout_ms`` (the
+connect / discovery / read / write / pair calls, plus
+:meth:`~aioble.DeviceConnection.timeout` as a wrapper)
+additionally raise :exc:`asyncio.TimeoutError` from
+:mod:`asyncio` when the deadline elapses before the
+operation completes.
+
+
+Acting as a peripheral
+======================
+
+The most common camera-side BLE pattern is to act as a
+*peripheral* -- publish a small GATT database, advertise
+its existence, accept a connection from a phone or a
+companion device, and stream values to whoever is on
+the other end.
+
+Building the GATT database
+--------------------------
+
+The first thing a peripheral does at startup -- even
+before turning the radio on -- is build the database it
+plans to expose, construct objects for each service and
+characteristic, then register the lot::
+
+    import aioble
+    import bluetooth
+
+    ENV_SERVICE = bluetooth.UUID(0x181A)              # Environmental Sensing
+    TEMP_UUID = bluetooth.UUID(0x2A6E)                # Temperature
+    HUMID_UUID = bluetooth.UUID(0x2A6F)               # Humidity
+
+    env = aioble.Service(ENV_SERVICE)
+    temp_char = aioble.Characteristic(
+        env, TEMP_UUID,
+        read=True, notify=True, initial=b"\\x00\\x00",
+    )
+    humid_char = aioble.Characteristic(
+        env, HUMID_UUID,
+        read=True, notify=True, initial=b"\\x00\\x00",
+    )
+
+    aioble.register_services(env)
+
+Each :class:`aioble.Characteristic` is attached to its
+service simply by constructing it with the service as
+the first argument. The boolean keyword arguments
+(``read``, ``write``, ``write_no_response``, ``notify``,
+``indicate``) select which GATT operations the client
+will be allowed to perform; passing ``False`` (the
+default) means the property bit is not set.
+
+:func:`aioble.register_services` commits the assembled
+tree to the GATT server. It must be called once, before
+any :func:`aioble.advertise` starts; calling it again
+replaces the previous database.
+
+Advertising
+-----------
+
+Once the database is in place, advertising is one
+coroutine call that waits for a connection::
+
+    async def serve_one():
+        connection = await aioble.advertise(
+            interval_us=250000,
+            name="openmv-env",
+            services=[ENV_SERVICE],
+            appearance=0x0540,           # Generic Sensor
+        )
+
+The keyword arguments map directly onto the advertising
+payload fields. ``name`` is the local-name field;
+``services`` is the list of service UUIDs the device
+hosts (a phone-side scanner can filter on these);
+``appearance`` is a hint from the standard 16-bit
+appearance values that lets the central display a
+sensible icon. Manufacturer-specific data goes in via
+``manufacturer=(company_id, data_bytes)``.
+
+A handful of less-common keywords cover the rest of the
+advertising flag space:
+
+* ``connectable=False`` -- broadcast-only mode (no
+  connection ever accepted). The right choice for
+  beacon-style payloads.
+* ``limited_disc=True`` -- use the *limited
+  discoverable* flag instead of *general
+  discoverable*; some operating systems treat the two
+  differently in their pairing UI.
+* ``adv_data`` / ``resp_data`` -- raw bytes if the
+  application needs full control over the layout.
+* ``timeout_ms`` -- give up after a fixed time. The
+  default is to advertise forever.
+
+When a central connects, :func:`aioble.advertise`
+returns the resulting :class:`aioble.DeviceConnection`.
+The peripheral stops advertising at this point.
+
+Serving one client
+------------------
+
+A peripheral's main loop typically looks like this:
+
+::
+
+    async def serve():
+        while True:
+            connection = await aioble.advertise(
+                interval_us=250000,
+                name="openmv-env",
+                services=[ENV_SERVICE],
+            )
+            print("connected:", connection.device.addr_hex())
+            async with connection:
+                await connection.disconnected()
+            print("disconnected; advertising again")
+
+    asyncio.run(serve())
+
+``async with connection`` makes the disconnect cleanup
+automatic.
+:meth:`~aioble.DeviceConnection.disconnected` is a
+coroutine that suspends until either side ends the
+connection -- a clean way to keep the peripheral
+serving until the central goes away, then loop back to
+advertising the next round.
+
+Updating a characteristic
+-------------------------
+
+The peripheral updates the local GATT database with
+:meth:`aioble.Characteristic.write`::
+
+    temp_char.write(b"\\x9a\\x09")              # 24.58 deg C as sint16, 0.01 units
+
+That changes the value the next ``read`` from any
+client would return. By itself, it does *not* push the
+new value -- a subscribed client will not see anything
+until either the client polls or the peripheral sends
+an explicit notification.
+
+The push side is a single keyword on the same call::
+
+    temp_char.write(temp_bytes, send_update=True)
+
+``send_update=True`` notifies (or indicates) every
+client that has subscribed to this characteristic. Most
+sensor-style code lives in a per-connection task that
+loops reading the sensor and writing the value with
+``send_update=True`` every second or so::
+
+    async def stream_temperature(connection):
+        while connection.is_connected():
+            temp_char.write(encode_temperature(read_sensor()), send_update=True)
+            await asyncio.sleep(1)
+
+    async def serve():
+        while True:
+            connection = await aioble.advertise(
+                interval_us=250000,
+                name="openmv-env",
+                services=[ENV_SERVICE],
+            )
+            async with connection:
+                asyncio.create_task(stream_temperature(connection))
+                await connection.disconnected()
+
+If you would rather direct a notification at one
+specific client rather than the whole subscribed set
+(say a connection-private response to that client's
+command), :meth:`aioble.Characteristic.notify` and
+:meth:`~aioble.Characteristic.indicate` take a
+:class:`~aioble.DeviceConnection` argument and an
+optional payload.
+
+Receiving writes
+----------------
+
+The other direction -- a client *writing* to a
+characteristic -- becomes available when the
+characteristic is constructed with ``write=True`` or
+``write_no_response=True``. The peripheral awaits the
+next write with
+:meth:`aioble.Characteristic.written`::
+
+    cmd_char = aioble.Characteristic(env, CMD_UUID, write=True, capture=True)
+
+    async def handle_commands():
+        while True:
+            connection, data = await cmd_char.written()
+            print("command from", connection.device.addr_hex(), "=", data)
+
+Without ``capture=True``, ``written()`` returns just
+the writing connection; the new value lives in the
+characteristic's backing buffer and the application
+fetches it with :meth:`~aioble.Characteristic.read`.
+If a second write arrives before the application has
+read the first, the second value *overwrites* the first
+in the buffer and the original value is lost --
+``written()`` still wakes the application up, but only
+once per "there is something new", not once per write.
+
+The ``capture=True`` keyword fixes that. Each incoming
+write is appended to a module-wide queue, and
+``written()`` returns a ``(connection, data)`` tuple
+for every individual write -- the application loop sees
+each one exactly once, in arrival order. Two practical
+consequences:
+
+* The queue is bounded and is *shared across every
+  capture-enabled characteristic on the device*. Short
+  bursts of back-to-back writes are tolerated;
+  sustained overrun (writes arriving faster than the
+  application drains them) silently drops the
+  **oldest** queued entries, and bursty traffic on one
+  characteristic can evict pending entries from
+  another.
+* Pick ``capture=True`` for command-style writes where
+  every value matters. Leave it off for state-style
+  characteristics where the latest value is the only
+  one of interest.
+
+If a read from the client should be answered by code
+running on demand rather than a static value, override
+:meth:`~aioble.Characteristic.on_read`. The method is
+called synchronously when a read comes in; return ``0``
+to permit the read (the current value from
+:meth:`~aioble.Characteristic.write` will be sent), or a
+non-zero ATT error code to reject it::
+
+    import time
+
+    _ATT_ERR_READ_NOT_PERMITTED = const(0x02)
+    _MIN_READ_INTERVAL_MS = const(1000)            # at most once per second
+
+    class TempChar(aioble.Characteristic):
+        _last_read_ms = 0
+
+        def on_read(self, connection):
+            now = time.ticks_ms()
+            if time.ticks_diff(now, self._last_read_ms) < _MIN_READ_INTERVAL_MS:
+                return _ATT_ERR_READ_NOT_PERMITTED
+            self._last_read_ms = now
+            self.write(encode_temperature(read_sensor()))
+            return 0
+
+    temp_char = TempChar(env, TEMP_UUID, read=True)
+
+The callback samples the sensor and updates the
+characteristic's value just before the GATT stack serves
+the read, so the client always sees fresh data. The
+rate limit stops a client from hammering the sensor
+faster than it can be sampled -- any read inside the
+one-second cooldown is bounced back as a
+``Read Not Permitted`` ATT error rather than a stale
+value.
+
+Larger backing buffers -- BufferedCharacteristic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The backing buffer for a regular
+:class:`~aioble.Characteristic` is 20 bytes wide -- the
+practical limit at the default 23-byte MTU. A client
+that writes more than that into a regular characteristic
+gets its value truncated. For larger incoming values or
+for queuing back-to-back writes that the application
+loop will catch up to later, declare the characteristic
+as :class:`~aioble.BufferedCharacteristic` and pick the
+buffer size up front::
+
+    blob = aioble.BufferedCharacteristic(
+        service, BLOB_UUID,
+        max_len=512, append=True,
+        write=True, capture=True,
+    )
+
+    async def receive_blob():
+        while True:
+            connection, chunk = await blob.written()
+            handle_chunk(connection, chunk)
+
+Two knobs distinguish it from a plain
+:class:`~aioble.Characteristic`:
+
+* ``max_len`` is the size of the backing buffer in
+  bytes. Pick it to match the largest single write the
+  client is expected to make (after MTU negotiation).
+* ``append=True`` makes sequential writes *append*
+  into the buffer rather than overwriting -- useful for
+  receiving a value that arrives across several writes
+  (firmware-update chunks, log lines). With
+  ``append=False`` the buffer behaves like a normal
+  characteristic, just wider.
+
+All the other constructor flags (``read``, ``write``,
+``notify``, ``indicate``, ``capture``, ``initial``)
+forward unchanged to the underlying characteristic.
+
+Standard services and the SIG-assigned UUIDs
+--------------------------------------------
+
+Sticking to the assigned-numbers UUIDs (``0x180F`` for
+Battery Service, ``0x181A`` for Environmental Sensing,
+``0x180D`` for Heart Rate, and so on) means a phone's
+generic Bluetooth menu or any third-party scanner app
+can identify the device's purpose without any custom
+client code. The byte layout inside each standard
+characteristic is also fixed by the spec -- Battery
+Level (``0x2A19``) is a single byte 0..100; Temperature
+(``0x2A6E``) is little-endian sint16 in 0.01 deg-C
+units. For applications that do *not* fit a standard
+service, generate a 128-bit UUID once and use it
+across the device's services and characteristics.
+
+A peripheral that publishes only custom UUIDs is still
+fine -- it just needs a custom client app that knows
+about those UUIDs.
+
+.. note::
+
+   BLE values are **little-endian everywhere** -- the
+   GATT spec, every standard characteristic, every
+   advertising field. Multi-byte integers go on the
+   wire low byte first. The ``<`` prefix in
+   :mod:`struct` format strings is what you want for
+   encoding/decoding (``"<h"``, ``"<H"``, ``"<I"``,
+   ...); using the default native byte order on a
+   little-endian MCU happens to work for now, but
+   spelling out ``<`` is the safe habit.
+
+The radio behind it all
+-----------------------
+
+The radio is on the moment the first :mod:`aioble`
+coroutine touches it. Until a central is connected the
+peripheral spends its time switching between brief
+advertising bursts and sleep; after a connection it
+follows the negotiated connection interval. The
+peripheral pays a small power cost per advertisement,
+so the choice of ``interval_us`` on
+:func:`aioble.advertise` is the most direct knob a
+peripheral has for trading discovery latency against
+battery life.
+
+
+Acting as a central
+===================
+
+The other side of the conversation is the *central* --
+the device that scans for advertising peripherals, picks
+one to talk to, opens a connection, walks the remote
+GATT database, and reads or subscribes to characteristics
+on it. A camera that collects readings from a wearable
+sensor, listens to a beacon, or talks to a companion
+microcontroller is a central.
+
+The central pattern in :mod:`aioble` runs through four
+stages: scan, connect, discover, operate.
+
+Scanning
+--------
+
+:func:`aioble.scan` returns an async context manager
+that doubles as an async iterator over discovered
+devices. The typical use is to scan until a device of
+interest shows up, then break out of the iteration::
+
+    import aioble
+    import asyncio
+    import bluetooth
+
+    HR_SERVICE = bluetooth.UUID(0x180D)
+
+    async def find_heart_rate():
+        async with aioble.scan(duration_ms=5000, active=True) as scanner:
+            async for result in scanner:
+                if HR_SERVICE in result.services():
+                    return result.device
+        return None
+
+``duration_ms=5000`` caps how long the scan runs;
+``duration_ms=0`` scans forever (until the context
+manager exits). ``active=True`` requests scan
+responses, which doubles the per-device payload size at
+the cost of a small additional transmission from both
+sides. The remaining ``interval_us`` / ``window_us``
+keyword arguments tune the scanner's own radio duty
+cycle and are rarely changed from the defaults.
+
+Each :class:`aioble.ScanResult` exposes the device
+address, the last RSSI, the raw advertising and scan
+response bytes, and helpers that parse the standard
+fields:
+
+* ``result.device`` -- a :class:`aioble.Device` ready
+  to call :meth:`~aioble.Device.connect` on.
+* ``result.rssi`` -- received-signal-strength
+  indicator in dBm, useful for "pick the closest" logic.
+* ``result.name()`` -- the local-name string, or
+  ``None`` if not advertised.
+* ``result.services()`` -- a generator of
+  :class:`bluetooth.UUID` for every service the device
+  advertises.
+* ``result.manufacturer()`` -- a generator of
+  ``(company_id, data)`` tuples for the manufacturer-
+  specific fields.
+* ``result.connectable`` -- whether the most recent
+  advertisement was a connectable one.
+
+The same ``ScanResult`` is re-yielded as new advertising
+data arrives for the same device, so a passive listener
+that just wants to track devices indefinitely can run
+the async iterator forever and dispatch on each event.
+
+Connecting
+----------
+
+Once a target device is identified, opening a connection
+is one ``await``::
+
+    async def talk_to(device):
+        connection = await device.connect()           # 10 s timeout
+        async with connection:
+            # ... do GATT work ...
+            pass
+
+:meth:`aioble.Device.connect` takes ``timeout_ms`` (how
+long to wait for the connection to come up; default
+10 s), and ``min_conn_interval_us`` /
+``max_conn_interval_us`` (the requested connection-
+interval range from
+:doc:`/openmvcam/tutorial/bluetooth/gap/connections`).
+
+Reconnecting to a known peer without scanning
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once a bond exists with a peer, the address is already
+known and another scan-and-pick round is wasted radio
+time. Construct a :class:`aioble.Device` directly with
+the saved address and skip straight to
+:meth:`~aioble.Device.connect`::
+
+    import aioble
+
+    KITCHEN_CAM = aioble.Device(aioble.ADDR_PUBLIC,
+                                "aa:bb:cc:dd:ee:ff")
+
+    async def talk_to_kitchen():
+        async with await KITCHEN_CAM.connect() as connection:
+            # ... GATT work ...
+            pass
+
+The first argument is one of
+:data:`aioble.ADDR_PUBLIC` (a controller's factory
+address) or :data:`aioble.ADDR_RANDOM` (a generated
+static or resolvable private address); the second is
+either a six-byte ``bytes`` value or a colon-separated
+hex string. The :attr:`~aioble.Device.addr_type` and
+:attr:`~aioble.Device.addr` attributes of any
+:class:`~aioble.Device` (e.g. one obtained earlier from
+a :class:`~aioble.ScanResult`) can be persisted and
+fed back in here.
+
+The returned :class:`aioble.DeviceConnection` is what
+the rest of the central's work hangs off. ``async
+with`` ensures the connection is closed when the block
+exits -- on success, on cancellation, or on any
+exception including
+:exc:`aioble.DeviceDisconnectedError` from the peer
+going away.
+
+If the central needs a larger characteristic value than
+the default 23-byte MTU allows, this is the place to
+negotiate it::
+
+    await connection.exchange_mtu(512)
+
+(:meth:`~aioble.DeviceConnection.exchange_mtu` returns
+the actually negotiated MTU, which is the minimum of
+the requested value and what the peer supports.)
+
+Discovery
+---------
+
+Discovery walks the remote GATT database to find the
+services and characteristics by their UUIDs. There are
+two flavours: targeted (you know the UUID and want one
+specific thing) and exhaustive (you want everything).
+
+Targeted -- the common case::
+
+    service = await connection.service(HR_SERVICE)
+    if service is None:
+        return                                        # no such service
+
+    char = await service.characteristic(HR_MEASUREMENT)
+    if char is None:
+        return                                        # no such characteristic
+
+:meth:`aioble.DeviceConnection.service` and
+:meth:`aioble.ClientService.characteristic` each take a
+:class:`bluetooth.UUID` and return the matching object
+(or ``None``). Both have a per-discovery
+``timeout_ms`` keyword that defaults to 2 s.
+
+Exhaustive::
+
+    async for service in connection.services():
+        print("service:", service.uuid)
+        async for char in service.characteristics():
+            print("  characteristic:", char.uuid, "properties:", hex(char.properties))
+
+This is what generic Bluetooth-explorer apps do --
+useful for development, less so for production code
+that knows what UUIDs it expects.
+
+Inspecting what a characteristic supports
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Discovery returns the GATT property bitmask the peer
+advertised for each characteristic as
+:attr:`~aioble.ClientCharacteristic.properties`. The
+bits are the GATT-defined ones -- read (``0x02``),
+write-without-response (``0x04``), write (``0x08``),
+notify (``0x10``), indicate (``0x20``), and friends.
+Inspecting the bitmask before issuing an operation
+lets a generic client adapt to characteristics whose
+capabilities it does not know in advance::
+
+    _PROP_READ = const(0x02)
+    _PROP_NOTIFY = const(0x10)
+
+    char = await service.characteristic(STATUS_UUID)
+    if char.properties & _PROP_NOTIFY:
+        await char.subscribe(notify=True)
+        value = await char.notified()
+    elif char.properties & _PROP_READ:
+        value = await char.read()
+    else:
+        value = None                                  # nothing the client can do
+
+Production code that already knows the peer's GATT
+profile usually does not need this -- the UUIDs were
+documented up front. Generic / exploratory clients
+(a settings page that walks an unknown device, a
+plugin host) lean on it.
+
+Operating
+---------
+
+Once the central holds a
+:class:`~aioble.ClientCharacteristic`, each GATT
+operation is one coroutine call:
+
+* **Read.** Issue a GATT read and get the value back::
+
+      value = await char.read()
+      print("value:", value)
+
+  Long reads (values larger than the MTU) are handled
+  transparently.
+
+* **Write.** Send a new value to the server::
+
+      await char.write(b"\\x01")
+
+  ``response=True`` waits for a write-response and
+  raises :exc:`aioble.GattError` if the server rejects
+  the write. ``response=False`` is write-without-
+  response: fire-and-forget. ``response=None`` (the
+  default) auto-picks based on what the peer advertised.
+
+* **Subscribe.** Enable notifications or indications by
+  writing to the characteristic's CCCD::
+
+      await char.subscribe(notify=True)
+
+  After this returns, the central can wait for incoming
+  pushes.
+
+* **Notified / indicated.** Wait for the next push from
+  the server::
+
+      while True:
+          data = await char.notified()
+          print("push:", data)
+
+  ``timeout_ms=None`` (the default) waits forever;
+  pass an integer in milliseconds to give up after a
+  while.
+
+Putting the four together gives the canonical "connect,
+subscribe, stream" central program::
+
+    async def stream_heart_rate():
+        async with aioble.scan(duration_ms=5000, active=True) as scanner:
+            async for result in scanner:
+                if HR_SERVICE in result.services():
+                    device = result.device
+                    break
+            else:
+                return
+
+        async with await device.connect() as connection:
+            service = await connection.service(HR_SERVICE)
+            char = await service.characteristic(HR_MEASUREMENT)
+            await char.subscribe(notify=True)
+            while connection.is_connected():
+                data = await char.notified()
+                print("hr push:", data)
+
+    asyncio.run(stream_heart_rate())
+
+The whole thing is about a dozen lines and covers the
+flow from "no Bluetooth running" to "live data
+streaming". The scan iterator matches the
+broadcaster/observer pattern, ``connect`` opens the
+GAP connection, ``service`` / ``characteristic`` walks
+the GATT tree, ``subscribe`` writes the CCCD, and
+``notified`` waits for pushes.
+
+Disconnects and reconnection
+----------------------------
+
+Anything that happens to the radio link surfaces in the
+coroutine that was waiting on it.
+:exc:`aioble.DeviceDisconnectedError` is the signal that
+the peer went away or the supervision timeout fired; the
+exception terminates whatever
+:meth:`~aioble.ClientCharacteristic.read`,
+:meth:`~aioble.ClientCharacteristic.write`, or
+:meth:`~aioble.ClientCharacteristic.notified` call was
+in flight, and any ``async with connection`` block exits
+cleanly.
+
+A central that should reconnect on loss wraps the work
+in its own outer loop::
+
+    async def keep_streaming():
+        while True:
+            try:
+                await stream_heart_rate()
+            except aioble.DeviceDisconnectedError:
+                print("disconnected, retrying...")
+                await asyncio.sleep(2)
+
+Bracketing a sequence with timeout()
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When several GATT operations in a row should all
+complete within one budget -- not each individually
+on its own ``timeout_ms`` -- use
+:meth:`aioble.DeviceConnection.timeout` to wrap them.
+The returned context manager cancels its body if the
+budget elapses (raising :exc:`asyncio.TimeoutError`)
+or if the peer disconnects (raising
+:exc:`aioble.DeviceDisconnectedError`)::
+
+    async with await device.connect() as connection:
+        try:
+            with connection.timeout(2000):                    # 2 s for the whole block
+                service = await connection.service(HR_SERVICE)
+                char = await service.characteristic(HR_MEASUREMENT)
+                await char.subscribe(notify=True)
+        except asyncio.TimeoutError:
+            print("discovery + subscribe took too long")
+
+This is the cleaner alternative to wrapping each call
+individually in :func:`asyncio.wait_for` and avoids
+spurious successes where each call meets its own deadline
+but the sequence as a whole runs over. Passing
+``timeout_ms=None`` to :meth:`~aioble.DeviceConnection.timeout`
+disables the deadline and leaves only the disconnect
+guard active.
+
+
+L2CAP channels
+==============
+
+GATT is a key/value model. The operations it offers
+(read, write, notify, indicate) move one short value at
+a time, and the largest single payload they can carry
+is whatever the negotiated MTU allows -- a few hundred
+bytes at best. That works well for sensor readings,
+command registers, and status flags. It falls apart on
+kilobytes or megabytes: splitting a long blob into
+hundreds of small writes costs round trips that the
+radio is much faster than.
+
+For bulk-data flows -- a captured frame the camera
+streams to a phone, an over-the-air update image, a
+batched export of measurements -- BLE offers an
+alternative path: the *Logical Link Control and
+Adaptation Protocol*, L2CAP. L2CAP sits between the link
+layer and GATT and lets an application claim its own
+*connection-oriented channel* on top of the same radio
+link. The channel is a credit-flow-controlled byte path
+with a much larger per-packet MTU and no GATT framing
+in the middle.
+
+When to use L2CAP
+-----------------
+
+L2CAP channels are the right tool when:
+
+* The transfer is more than a few hundred bytes.
+* The two ends both know an L2CAP channel will be used
+  (it is not exposed in the advertising payload; the
+  client has to know the channel's *protocol/service
+  multiplexer*, or PSM, number out of band).
+* The application is willing to give up the GATT
+  niceties: no built-in addressability by UUID, no
+  client-discoverability through standard apps, no
+  notifications.
+
+The most common case in :mod:`aioble`-based applications
+is moving a binary blob between two pieces of software
+that both know about the PSM convention -- a custom
+camera-to-phone protocol, a pair of openmv cameras
+talking to each other, an internal firmware-update path
+under a peripheral's GATT service.
+
+For everything else, stay on GATT. A short status, a
+control register, a sensor reading -- all of those
+belong in a characteristic.
+
+Establishing a channel
+----------------------
+
+L2CAP runs *on top of* an existing
+:class:`aioble.DeviceConnection`, so the GAP-side
+discovery / advertising / connecting flow is exactly the
+same as for GATT. Once both sides hold a connection,
+one side listens on a PSM, the other side connects to
+it.
+
+The PSM is just a small integer. The Bluetooth SIG
+reserves the bottom of the range for standardised use
+(``0x0001``-``0x007F``); for application-specific
+channels use a number from the dynamic range
+(``0x0080``-``0x00FF`` for fixed PSMs, ``0x0040``
+onwards typically free for custom use). Both sides have
+to agree on the value beforehand.
+
+The MTU on an L2CAP channel is the largest single SDU
+(*Service Data Unit*) either side will deliver in one
+:meth:`~aioble.L2CAPChannel.send` -- not the BLE link
+MTU. Aioble fragments larger payloads automatically.
+The camera's BLE host caps L2CAP MTU at 1017 bytes;
+``512`` is a sensible default that leaves room on both
+sides without burning RAM.
+
+On the listener side (e.g. the camera as a peripheral)::
+
+    async def serve_l2cap(connection, image_bytes):
+        channel = await connection.l2cap_accept(psm=0x80, mtu=512)
+        async with channel:
+            # image_bytes is a bytearray -- e.g. csi0.snapshot().bytearray()
+            # or a compressed JPEG buffer. send() fragments into MTU-sized
+            # chunks automatically and awaits flow-control credits between.
+            await channel.send(image_bytes)
+            await channel.flush()
+
+On the connector side (e.g. a phone or central)::
+
+    async def open_l2cap(connection, total_bytes):
+        channel = await connection.l2cap_connect(psm=0x80, mtu=512)
+        async with channel:
+            image_bytes = bytearray(total_bytes)
+            view = memoryview(image_bytes)
+            received = 0
+            while received < total_bytes:
+                n = await channel.recvinto(view[received:])
+                if n == 0:
+                    break
+                received += n
+            return image_bytes
+
+:meth:`~aioble.DeviceConnection.l2cap_accept` blocks
+until the peer connects (or ``timeout_ms`` fires);
+:meth:`~aioble.DeviceConnection.l2cap_connect` blocks
+until the listener accepts (or fails). Both return an
+:class:`aioble.L2CAPChannel` -- itself an async context
+manager that closes the channel on exit.
+
+Sending and receiving
+---------------------
+
+The two main operations on a channel are
+:meth:`~aioble.L2CAPChannel.send` (writes bytes to the
+peer) and :meth:`~aioble.L2CAPChannel.recvinto` (reads
+into a pre-allocated buffer). Both are coroutines.
+
+* :meth:`~aioble.L2CAPChannel.send` fragments the
+  buffer into MTU-sized chunks and awaits link-layer
+  flow-control credits between them. A long send is
+  one ``await`` from the application's perspective;
+  internally it may queue many packets and pause
+  whenever the peer's receive credits run out.
+* :meth:`~aioble.L2CAPChannel.recvinto` fills the
+  passed buffer with whatever is available (up to the
+  channel's MTU) and returns the byte count. Awaits
+  if nothing is available.
+* :meth:`~aioble.L2CAPChannel.available` returns
+  ``True`` synchronously if there is buffered data
+  ready -- useful for polling without suspending.
+* :meth:`~aioble.L2CAPChannel.flush` awaits until any
+  outstanding send has been fully transmitted to the
+  controller.
+
+L2CAP channels are stream-like in the sense that the
+bytes arrive in order and without loss, but the
+boundaries of a single ``send`` are *preserved* -- each
+SDU comes out of a single ``recvinto``. That is unlike
+TCP, where the boundaries of one ``send()`` may smear
+across multiple ``recv()`` calls.
+
+Disconnect handling
+-------------------
+
+The channel goes away on three conditions: either side
+calls :meth:`~aioble.L2CAPChannel.disconnect`, the
+underlying GAP connection drops, or the L2CAP-level
+disconnect arrives. Active operations raise
+:exc:`aioble.L2CAPDisconnectedError`. As with the GATT
+side, this surfaces as an exception in the coroutine
+that was waiting, and the ``async with channel`` block
+exits cleanly.
+
+If a channel becomes unreachable through a GAP-level
+disconnect, the application loops back to advertising
+or scanning the same way it would for a GATT
+disconnect.
+
+Memory cost
+-----------
+
+Larger MTUs and longer queues use more RAM on both
+sides. A 512-byte MTU plus a per-channel receive buffer
+is around 1 KB per channel -- not free on a small camera
+if several channels are open at once. Stick to one
+channel per connection and pick an MTU that matches the
+expected message size; the default of one
+``L2CAPChannel`` per ``DeviceConnection`` is enough for
+most applications.
+
+L2CAP is BLE's safety valve. GATT is what almost every
+application reaches for first, and the rest of this
+section's central / peripheral examples stick to GATT.
+The channel-flavoured API is the answer when an
+application outgrows the key/value model.
+
+
+Concurrent roles and multiple connections
+=========================================
+
+The peripheral and central pages each show a single
+role serving a single connection at a time. Real
+applications are rarely that simple. A camera may
+publish a sensor service to a phone *while also*
+reading values from a heart-rate strap, or accept
+connections from two simultaneously paired phones.
+The :mod:`aioble` API supports both patterns because
+the radio multiplexes underneath and every operation
+is already a coroutine -- run more coroutines, and
+the work happens in parallel on one event loop.
+
+This page collects the patterns that come up.
+
+Multiple clients connecting to one peripheral
+---------------------------------------------
+
+The simple peripheral loop on
+:doc:`/openmvcam/tutorial/bluetooth/aioble/peripheral`
+serves one connected central at a time:
+
+::
+
+    async def serve():
+        while True:
+            connection = await aioble.advertise(...)
+            async with connection:
+                await connection.disconnected()
+
+The pattern that lets it accept *more than one* client
+is to fire off a per-connection task and immediately
+loop back to :func:`aioble.advertise` so the next
+client can connect too::
+
+    async def handle_client(connection):
+        async with connection:
+            # ... per-client work: subscribe their CCCDs,
+            # push notifications, await writes ...
+            await connection.disconnected()
+
+    async def serve():
+        while True:
+            connection = await aioble.advertise(
+                interval_us=250000,
+                name="openmv-env",
+                services=[ENV_SERVICE],
+            )
+            asyncio.create_task(handle_client(connection))
+
+Each connection runs in its own task. The GATT
+database is shared -- all clients see the same
+services and characteristics -- but per-connection
+state lives inside the task. Notifications go to
+*every* subscribed client when
+:meth:`~aioble.Characteristic.write` is called with
+``send_update=True``; directed pushes that should
+only reach one client use
+:meth:`~aioble.Characteristic.notify` /
+:meth:`~aioble.Characteristic.indicate` with the
+specific :class:`~aioble.DeviceConnection` argument.
+
+Keep the fan-out small. Each held connection costs
+radio time, RAM, and a slot in the controller's
+connection table, and the camera is not designed to be
+a hub for dozens of clients. Two or three centrals (a
+phone, a tablet, a companion microcontroller) are well
+within reach; designs that need more belong on a
+proper BLE gateway rather than on the cam.
+
+Peripheral and central at the same time
+---------------------------------------
+
+A camera can advertise its own service to a phone
+while *also* acting as a central to a wearable.
+:mod:`aioble` does not have a "mode" switch -- the
+advertise loop and the scan-and-connect loop are
+just independent coroutines::
+
+    async def be_peripheral():
+        while True:
+            connection = await aioble.advertise(
+                interval_us=250000,
+                name="openmv-hub",
+                services=[ENV_SERVICE],
+            )
+            asyncio.create_task(handle_client(connection))
+
+    async def be_central():
+        while True:
+            sensor = await find_sensor()
+            if sensor is None:
+                await asyncio.sleep(5)
+                continue
+            try:
+                async with await sensor.connect() as conn:
+                    await stream_from_sensor(conn)
+            except aioble.DeviceDisconnectedError:
+                pass
+
+    async def main():
+        await asyncio.gather(be_peripheral(), be_central())
+
+    asyncio.run(main())
+
+The radio time-shares between the two roles -- a
+scan window here, an advertising burst there, a
+connection event when one of either side's
+connections is live. Throughput on each role drops
+when both are active because the radio cannot
+literally do two things at once, but for the
+low-bandwidth conversations BLE was designed for,
+the cost is usually invisible.
+
+Two practical things to keep in mind:
+
+* **Both roles need to be in their own coroutine.**
+  Calling :func:`aioble.scan` from inside the
+  per-client task that handles a connected central
+  works, but blocks that client's notifications
+  until the scan finishes -- run scanning on its own
+  task instead.
+* **Only one scan runs at a time.** If you need to
+  scan from two different places, share the scan
+  iterator or coordinate access; do not enter two
+  :func:`aioble.scan` context managers in parallel.
+
+Coordinating multiple connections from one task
+-----------------------------------------------
+
+When several connections need to be combined into
+one logical operation -- for example, the camera
+talks to two sensors at once and only reports the
+result after both have answered -- the standard
+:mod:`asyncio` primitives apply directly.
+:func:`asyncio.gather` runs the per-connection
+coroutines concurrently and returns when all have
+finished; :func:`asyncio.wait_for` adds a deadline.
+
+::
+
+    async def read_pair():
+        async with await sensor_a.connect() as a:
+            async with await sensor_b.connect() as b:
+                value_a, value_b = await asyncio.gather(
+                    read_value(a, A_SERVICE, A_CHAR),
+                    read_value(b, B_SERVICE, B_CHAR),
+                )
+                return value_a, value_b
+
+Same pattern that the asyncio chapter
+(:doc:`/openmvcam/tutorial/asyncio/index`) uses for
+networking -- BLE coroutines plug into ``gather`` /
+``wait_for`` / ``Event`` / ``Lock`` the same way TCP
+ones do.
+
+When one role finishes per-cycle and the other does not
+-------------------------------------------------------
+
+A cycle in a battery-powered cam might look like:
+
+* Wake.
+* As a central, read fresh values from a paired
+  sensor strap.
+* As a peripheral, advertise for a phone to
+  download the day's measurements.
+* When both are idle, call :func:`aioble.stop` and
+  sleep.
+
+The sequencing is straightforward with two tasks and
+an :class:`asyncio.Event`::
+
+    phone_done = asyncio.Event()
+
+    async def serve_phone():
+        connection = await aioble.advertise(
+            interval_us=250000,
+            name="openmv-hub",
+            services=[ENV_SERVICE],
+        )
+        async with connection:
+            await stream_measurements(connection)
+        phone_done.set()
+
+    async def read_strap():
+        async with await strap.connect() as conn:
+            await pull_fresh_values(conn)
+
+    async def cycle():
+        await asyncio.gather(read_strap(), serve_phone())
+        aioble.stop()                              # radio off until next wake
+
+
+Pairing and bonding
+===================
+
+Everything covered up to here moves bytes over the
+radio in the clear. Anyone with a BLE-capable laptop in
+the same room can listen on the advertising channels,
+follow the hopping sequence of an open connection, and
+read out every read, write, and notification that goes
+across. For most public sensor data (battery level,
+ambient temperature) that is fine. For anything the two
+endpoints want to keep private -- a control register
+that arms a relay, a password, a measurement that
+should not be widely broadcast -- the link needs to be
+encrypted, and ideally the camera needs to know *who*
+it is talking to.
+
+BLE provides both through *pairing* and *bonding*.
+
+Pairing, bonding, encryption
+----------------------------
+
+Three closely related concepts:
+
+* **Encryption** is the bottom-line goal. Once the link
+  is encrypted, every packet on the data channels is
+  decipherable only by the two endpoints; an
+  eavesdropper sees noise.
+* **Pairing** is the procedure the two endpoints run
+  *to agree on the keys* that encryption uses. It is a
+  one-time exchange that produces shared key material
+  the link layer plugs into its encryption engine.
+* **Bonding** is the choice to *persist* the keys to
+  non-volatile storage after pairing finishes, so the
+  next connection between the same two devices skips
+  pairing and goes straight to encryption.
+
+Plain English: pairing is "introduce yourselves";
+bonding is "remember this introduction"; encryption is
+"speak in private from now on".
+
+.. figure:: https://docs.openmv.io/_images/pairing-flow.svg
+   :alt: Two columns labelled "Central" and
+         "Peripheral". A dashed line near the top
+         labelled "BLE connection open (unencrypted)".
+         Below it, three arrows: "pairing request" from
+         central to peripheral, "key exchange" both
+         directions, "pairing complete" forward. A
+         second dashed line below labelled "link
+         encrypted". Two thick bidirectional arrows
+         carry "encrypted GATT traffic". An optional
+         "store keys to flash" box on the side, labelled
+         "bonding".
+
+   The pairing flow on top of an open BLE connection.
+   Once the key exchange completes, the link layer
+   encrypts every subsequent packet. Bonding is the
+   extra step of writing the keys to flash.
+
+LE Secure Connections
+---------------------
+
+The modern key exchange used by BLE is *LE Secure
+Connections*, built on Elliptic Curve Diffie-Hellman.
+Both sides generate a temporary key pair, exchange the
+public halves, and combine the result with their own
+private keys to arrive at the same shared secret -- a
+secret an eavesdropper cannot compute even with a full
+record of the exchange.
+
+The older *LE Legacy* method is less safe (an
+eavesdropper with the full exchange can usually
+recover the key) and exists only for backward
+compatibility with old peripherals. The :mod:`aioble`
+default is the modern method (``le_secure=True``);
+keep it.
+
+Initiating pairing
+------------------
+
+A central pairs by calling
+:meth:`aioble.DeviceConnection.pair` on an already-open
+connection::
+
+    async with await device.connect() as connection:
+        await connection.pair(bond=True, le_secure=True, mitm=False)
+        # ... GATT work, now over an encrypted link ...
+
+After ``pair`` returns, the
+:attr:`~aioble.DeviceConnection.encrypted`,
+:attr:`~aioble.DeviceConnection.authenticated`,
+:attr:`~aioble.DeviceConnection.bonded`, and
+:attr:`~aioble.DeviceConnection.key_size` attributes on
+the connection reflect what was negotiated.
+
+The four most useful keyword arguments:
+
+* ``bond=True`` -- save the resulting keys to flash so
+  the next connection between the same two devices
+  skips the pairing handshake. Default ``True``.
+* ``le_secure=True`` -- use LE Secure Connections.
+  Default ``True``. Leave it on.
+* ``mitm=False`` -- whether to require
+  *man-in-the-middle* protection. This needs an
+  out-of-band channel (a numeric code displayed on
+  one side and confirmed on the other, a passkey
+  typed in, ...) so the user can verify the two
+  devices in the pairing handshake are actually the
+  ones they think.
+  Defaults to ``False`` (no MITM protection -- a
+  passive eavesdropper cannot read the link, but an
+  attacker actively redirecting connections could pair
+  themselves in). Set to ``True`` for anything
+  sensitive, but be aware that it requires the
+  peripheral to actually support an IO capability.
+* ``io=3`` -- the IO capability the device claims. The
+  Bluetooth spec defines five: ``0`` display only, ``1``
+  display + yes/no, ``2`` keyboard only, ``3`` no
+  input no output, ``4`` keyboard + display. A camera
+  with no UI typically reports ``3``; if the camera
+  itself has a display the application could display
+  the numeric confirmation and use ``1``. The
+  combination of the two sides' IO capabilities
+  decides whether real MITM protection is achievable.
+
+Peripherals do not call ``pair`` themselves -- they
+respond to whatever the central initiates. Whether
+encryption is required for a given characteristic is a
+property of how it is declared in the GATT database;
+encryption-required access bits are part of the
+low-level :mod:`bluetooth` API and not currently
+exposed through the :mod:`aioble` characteristic
+constructor.
+
+Bonding -- and where the keys live
+----------------------------------
+
+When ``bond=True``, :mod:`aioble` writes the keys to a
+JSON file on the local filesystem. The default filename
+is ``ble_secrets.json``, written relative to the current
+working directory. On a freshly booted cam ``_boot.py``
+has already chosen that directory: ``/sdcard`` when a
+card is mounted, ``/flash`` otherwise -- so the file
+lands at ``/sdcard/ble_secrets.json`` or
+``/flash/ble_secrets.json``. The file holds the entries
+needed to re-encrypt the link the next time the bonded
+peer reconnects, including the peer's identity address.
+
+One asymmetry to keep in mind: *saving* happens
+automatically as keys change, but *loading* the file on
+the next boot does not. Call
+:func:`aioble.security.load_secrets` once at startup
+(before any pairing or advertising) so previously bonded
+peers are recognised::
+
+    import aioble
+    aioble.security.load_secrets()        # default path: ble_secrets.json
+
+After that, the next time a bonded peer shows up,
+:mod:`aioble` re-uses the stored keys and the link goes
+encrypted with no further handshake.
+
+Two practical consequences of storing keys on flash:
+
+* **Forgetting a device.** Delete ``ble_secrets.json``
+  (or remove the relevant entry) to forget all bonded
+  peers, then re-pair from scratch.
+* **Physical access leaks keys.** Anyone with access
+  to the camera's filesystem can read the JSON. This
+  is the same kind of constraint that came up on the
+  networking side with TLS keys
+  (:doc:`/openmvcam/tutorial/production/tls/operations`):
+  use per-device keys, treat any stored key as
+  recoverable, and rely on the ability to revoke (here,
+  removing the bond on the central side) rather than
+  on the key staying secret.
+
+What encryption guarantees -- and what it does not
+--------------------------------------------------
+
+A pair-then-encrypt link gives, in order of strength:
+
+* **Confidentiality.** Always. An eavesdropper cannot
+  read the bytes.
+* **Integrity.** Always. Modified packets fail the
+  link-layer authenticated-encryption check and are
+  dropped.
+* **Authentication.** Only with ``mitm=True`` and a
+  capable IO. Without it, a man-in-the-middle that
+  intercepted the *original* pairing exchange could
+  have inserted themselves; without MITM protection
+  there is no way for the two sides to know.
+
+For most camera use cases -- a phone pairing with the
+camera once, then connecting again later -- ``mitm=False``
+is usually enough, because the original pairing happens
+in a controlled environment (the user holds both devices
+in the same room). For applications where a paired
+device might first encounter the camera over a long
+distance or through an untrusted intermediary, MITM is
+the right setting.
+
+When pairing is the wrong answer
+--------------------------------
+
+Pairing has a real cost: a few seconds of exchange on
+first connect, persistent flash use for every bonded
+device, and the recovery story of "forget the bond" if
+something goes wrong. For genuinely public data --
+ambient sensor readings published as a beacon, a sign
+displaying its name, anything that does not change the
+world by being read or written -- the right answer is
+*not* to encrypt at all, and let any nearby scanner
+read the values.
+
+For everything else, ``connection.pair(bond=True)`` on
+the central is the one-line addition that turns the
+link from a public channel into a private one.
+
+
+Wrap up
+=======
+
+You have walked through Bluetooth Low Energy from the
+radio up to the Python API used to drive it:
+
+* **The motivation** -- BLE is the answer when the
+  camera wants to talk to something close by without
+  any infrastructure between them. A phone in the same
+  room, a wearable on a wrist, a beacon on a wall.
+  Short range, no network to join, almost no power.
+
+* **The radio** -- 2.4 GHz, 40 channels: three for
+  advertising, 37 for connection data, hopped on a
+  pseudo-random sequence with adaptive avoidance of
+  noisy channels. Brief packets, mostly-asleep radios.
+
+* **The link layer** -- packet framing, addressing,
+  connection scheduling, retransmission, and link-layer
+  encryption. None of it is configured from Python; all
+  of it shows through in the connection parameters and
+  the MTU.
+
+* **Generic Access Profile (GAP)** -- discovery and
+  connection management. Four roles: peripheral and
+  broadcaster (advertise), central and observer (scan).
+  Advertising payloads carry the local name, service
+  UUIDs, appearance, and manufacturer-specific data --
+  31 bytes plus an optional 31-byte scan response. The
+  connection interval, peripheral latency, and supervision
+  timeout govern what an open connection feels like.
+
+* **Generic Attribute Profile (GATT)** -- a tree of
+  services, each holding characteristics, each
+  optionally holding descriptors, identified by UUIDs
+  (16-bit for Bluetooth-SIG standards, 128-bit for
+  custom ones). Five operations: *read* and *write*
+  (pull, client-initiated), *notify* and *indicate*
+  (push, server-initiated, subscribed via the
+  Client Characteristic Configuration Descriptor).
+  Payload size is bounded by the negotiated MTU.
+
+* **The Python API** -- :mod:`aioble` turns every BLE
+  pattern into an asyncio coroutine. A peripheral is
+  :func:`aioble.advertise` looping over connections,
+  with :class:`~aioble.Service` /
+  :class:`~aioble.Characteristic` objects built once
+  and committed by
+  :func:`aioble.register_services`. A central is
+  :func:`aioble.scan` to find a peer,
+  :meth:`~aioble.Device.connect` to open the link,
+  :meth:`~aioble.DeviceConnection.service` and
+  :meth:`~aioble.ClientService.characteristic` to walk
+  the remote GATT tree, then :meth:`~aioble.ClientCharacteristic.read`
+  / :meth:`~aioble.ClientCharacteristic.write` /
+  :meth:`~aioble.ClientCharacteristic.subscribe` /
+  :meth:`~aioble.ClientCharacteristic.notified` for the
+  actual data. Disconnects surface as
+  :exc:`aioble.DeviceDisconnectedError` inside the
+  coroutine that was waiting.
+
+* **L2CAP channels** -- the escape hatch for bulk
+  byte streams that do not fit GATT's key/value model.
+  :meth:`aioble.DeviceConnection.l2cap_accept` /
+  :meth:`~aioble.DeviceConnection.l2cap_connect` open a
+  per-application channel on top of the GAP
+  connection, with credit-flow-controlled send / recv
+  and a larger MTU than GATT can carry.
+
+* **Pairing and encryption** -- BLE links are public
+  by default. :meth:`aioble.DeviceConnection.pair`
+  initiates a key exchange that produces an encrypted
+  link; ``bond=True`` (the default) persists the keys
+  so subsequent connections skip the handshake. Without
+  ``mitm=True`` and a usable IO capability, encryption
+  protects against passive eavesdroppers but not
+  against an active redirect during the original
+  pairing.
+
+That is enough to write camera applications that
+publish status as a peripheral, read sensor data as a
+central, push live values to a phone over BLE, secure
+the link with a pair-and-bond step, and -- for the rare
+bulk-transfer case -- step off GATT into an L2CAP
+channel.
+
+Troubleshooting
+---------------
+
+BLE failures are mostly mismatches between what the two
+sides expect, and a phone-side inspector is the fastest
+way to see whose expectations are off. The standard
+tool is **nRF Connect for Mobile** (Nordic Semiconductor,
+free on Android and iOS): it scans, connects, walks the
+GATT database, reads and writes characteristics, and
+subscribes to notifications -- so the camera-side
+behaviour can be tested in isolation, without writing a
+companion app at all.
+
+The common failure modes:
+
+* **"My device shows up in the scanner but won't
+  connect."** Most often the advertising packet has
+  ``connectable=False`` (broadcaster mode), or a
+  previous connection is still open and the cam is
+  already past :func:`aioble.advertise`. Add print
+  statements around the advertise call to confirm.
+
+* **"exchange_mtu(512) ran but my notifications are
+  still capped at 20 bytes."** The negotiated MTU is
+  ``min(local, peer)`` -- the phone or central library
+  may not have requested a larger MTU on its side, in
+  which case the connection stays at 23. Inspect
+  :attr:`~aioble.DeviceConnection.mtu` after
+  :meth:`~aioble.DeviceConnection.exchange_mtu`
+  returns. Also note that
+  :meth:`~aioble.DeviceConnection.exchange_mtu` only
+  works once per connection; call it before the first
+  large operation.
+
+* **"Pairing fails with a generic error."** Two usual
+  culprits: the IO-capability mismatch (asking for
+  ``mitm=True`` on a cam declaring ``io=3`` / no input
+  no output -- there is no way to confirm the numeric
+  code, so the pairing engine bails), and a wildly
+  wrong wall-clock time on the cam when the peer
+  requires it. Set the clock with
+  :func:`ntptime.settime` before the first pairing
+  attempt.
+
+* **"Notifications never arrive at the client."** Two
+  things to check, in order: (a) was the characteristic
+  declared with ``notify=True``? -- the property bit
+  must be set on the server side; (b) did the client
+  call :meth:`~aioble.ClientCharacteristic.subscribe`?
+  -- without writing the Client Characteristic
+  Configuration Descriptor (CCCD), the server is told
+  no client wants notifications and silently drops
+  them.
+
+* **"The advertised name is truncated or missing."**
+  The advertising payload is 31 bytes, and the
+  flags + service-UUID + appearance fields each take
+  bytes off the top. A long ``name=`` plus several
+  service UUIDs overflows. Either shorten the name or
+  use active scanning so the scan response (another
+  31 bytes) carries the overflow. nRF Connect shows
+  both halves separately, which makes the split
+  obvious.
+
+* **"L2CAP connect raises immediately."** Usually a PSM
+  mismatch -- both sides have to agree on the same PSM
+  number out of band. A
+  :exc:`~aioble.L2CAPConnectionError` carries the
+  Bluetooth status code as its first argument; status
+  ``2`` ("PSM not supported") is the giveaway.
+
+* **"Bonded connections still trigger a full pairing
+  handshake on every reconnect."** :func:`aioble.security.load_secrets`
+  was not called at startup. Without it, the saved
+  keys are on flash but never loaded into memory, so
+  the peer's identity is unknown and pairing runs from
+  scratch every time.
+
+When all else fails, the lower-level :mod:`bluetooth`
+module exposes an IRQ callback that fires for every
+underlying event; subscribing to it briefly and printing
+the events is the equivalent of a Wireshark trace for
+the cam side.
+
+Using this reference later
+--------------------------
+
+Treat the Bluetooth chapters as reference material;
+coming back for the exact layout of a peripheral's
+advertising payload or the central scan-and-subscribe
+flow is the intended use. The :doc:`/library/aioble`
+and :doc:`/library/bluetooth` reference pages list
+every method, flag, and constant in one place when the
+question is just "what is the exact name of this call".
 
 
 Production
@@ -81780,7 +84625,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Sun 31 May 2026 02:28:36 UTC
+Generated Tue 02 Jun 2026 00:44:25 UTC
 
 Literals
 --------
@@ -81963,7 +84808,7 @@ Sample code::
 Core language
 =============
 
-Generated Sun 31 May 2026 02:28:36 UTC
+Generated Tue 02 Jun 2026 00:44:25 UTC
 
 Classes
 -------
@@ -82565,7 +85410,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f4307205260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7f1a51205260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -82747,7 +85592,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Sun 31 May 2026 02:28:36 UTC
+Generated Tue 02 Jun 2026 00:44:25 UTC
 
 Exception
 ---------
@@ -83614,7 +86459,7 @@ Sample code::
 Modules
 =======
 
-Generated Sun 31 May 2026 02:28:36 UTC
+Generated Tue 02 Jun 2026 00:44:25 UTC
 
 .. Preamble section inserted into generated output
 
@@ -83909,15 +86754,15 @@ Sample code::
     x = random.getrandbits(64)
     print("{}".format(x))
 
-+--------------------------+--------------------------------------------+
-| CPython output:          | MicroPython output:                        |
-+--------------------------+--------------------------------------------+
-| ::                       | ::                                         |
-|                          |                                            |
-|     18371587261875989007 |     Traceback (most recent call last):     |
-|                          |       File "<stdin>", line 11, in <module> |
-|                          |     ValueError: bits must be 32 or less    |
-+--------------------------+--------------------------------------------+
++-------------------------+--------------------------------------------+
+| CPython output:         | MicroPython output:                        |
++-------------------------+--------------------------------------------+
+| ::                      | ::                                         |
+|                         |                                            |
+|     5387420976995068633 |     Traceback (most recent call last):     |
+|                         |       File "<stdin>", line 11, in <module> |
+|                         |     ValueError: bits must be 32 or less    |
++-------------------------+--------------------------------------------+
 
 .. _cpydiff_modules_random_randint:
 

@@ -41,5 +41,6 @@ something covered earlier, it links back.
    asyncio/index.rst
    networking/index.rst
    webservers/index.rst
+   bluetooth/index.rst
 
    production/index.rst
