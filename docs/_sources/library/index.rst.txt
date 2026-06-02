@@ -230,7 +230,6 @@ Cortex-M55 @ 160 MHz (HE), with two on-chip NPUs (400 MHz / 204 GOPS HP
 NPU + 160 MHz / 46 GOPS HE NPU).
 
 * :mod:`alif` --- Alif Ensemble SoC functions
-* :mod:`lsm6dsox` --- LSM6DSOX 6-axis IMU
 * :mod:`romfs` --- ROMFS helper utilities
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
 

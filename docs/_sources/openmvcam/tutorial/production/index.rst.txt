@@ -38,4 +38,4 @@ flash, and debug the firmware itself.
    :caption: Custom firmware builds
    :maxdepth: 1
 
-   firmware-development.rst
+   firmware/index.rst
