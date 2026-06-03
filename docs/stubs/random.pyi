@@ -27,10 +27,10 @@ def randrange(start: int, stop: int | None = None, step: int = 1) -> int:
     ...
 def seed(n: int | None = None, /) -> None:
     """
-    Initialise the random number generator module with the seed n, which
-    should be an integer.  When no argument (or None) is passed in, the
-    PRNG is initialised with a true random number from the hardware random
-    number generator.
+    Initialise the random number generator module with the seed n,
+    which should be an integer. When no argument (or None) is
+    passed in, the PRNG is re-seeded from the same port-specific
+    source os.urandom() uses.
     """
     ...
 def uniform(a: float, b: float) -> float:

@@ -20829,16 +20829,1664 @@ often with TLS wrapping the whole thing.
 Web Servers
 ===========
 
-This super-section is **planned** -- pages will land in a
-later session.
+The networking chapters got the cam onto the network and gave it
+sockets to talk through (:doc:`/openmvcam/tutorial/networking/index`).
+What now? Most camera applications boil down to two things --
+*expose what the cam sees to the world* and *react to what other
+things on the network say*. HTTP is how that conversation happens, and
+it works in both directions:
 
-Built on top of networking and asyncio, this section covers
-hosting a small HTTP service directly on the camera using
-Microdot. Routing, serving frames over HTTP, exposing
-controls as JSON endpoints, and the operational notes for
-running a server alongside the imaging loop.
+* As a **server**, the cam answers requests from phones, browsers,
+  and other devices on the network. The :mod:`microdot` framework
+  is the cam's server.
+* As a **client**, the cam reaches out to cloud services to upload,
+  fetch, or coordinate. The :mod:`requests` module is the cam's
+  client.
 
-(Placeholder.)
+Across the next 14 chapters we'll build *one* running camera
+application that exercises both.
+
+A *backyard motion-trigger cam* sits on a pole in the yard, sees what's
+going on, and tells the owner about anything interesting. We'll grow
+the cam from a one-route "I'm alive" server into a shippable thing:
+live preview to the owner's phone, a dashboard with a threshold slider
+and an event log, push notifications when motion fires, login, HTTPS,
+and a cloud archive of every triggered frame.
+
+Each chapter adds *one* feature. Code samples assume the earlier
+chapters are in place -- we don't re-paste the whole script every
+time.
+
+.. image:: https://docs.openmv.io/_images/system-overview.svg
+   :alt: The phone or laptop talks to the cam over HTTPS for the
+         dashboard, SSE events, and WebSocket commands; the cam talks
+         out to a cloud archive over HTTPS POST.
+   :align: center
+
+.. toctree::
+   :maxdepth: 1
+
+   first-endpoint.rst
+   snapshot.rst
+   live-stream.rst
+   multi-client-stream.rst
+   control-api.rst
+   control-panel.rst
+   events.rst
+   commands.rst
+   auth-headers.rst
+   sessions-login.rst
+   https.rst
+   cors-csrf.rst
+   cloud-uploads.rst
+   wrap-up.rst
+
+
+Your first endpoint
+===================
+
+Before the cam can do anything interesting, the rest of the network
+has to be able to reach it. The cheapest thing that proves the server
+is alive is a one-route HTTP endpoint that returns some JSON:
+
+.. code-block:: python
+
+   from microdot import Microdot
+
+   app = Microdot()
+
+   frame_count = 0
+   trigger_count = 0
+
+   @app.get('/status')
+   async def status(request):
+       return {'frames': frame_count, 'triggers': trigger_count}
+
+   app.run(host='0.0.0.0', port=80)
+
+Run it in the IDE. From any other machine on the LAN open
+``http://<cam-ip>/status``. The browser shows::
+
+   {"frames": 0, "triggers": 0}
+
+The counters are placeholders -- nothing is touching them yet -- but
+the request crossed the network, the cam routed it, ran a handler,
+and sent JSON back.
+
+What each line does
+-------------------
+
+One :class:`microdot.Microdot` instance per script. The instance owns
+the routing table, the error handlers, and the lifecycle (start,
+serve, stop). Big apps split into several Python modules but still
+share one ``app`` object.
+
+``@app.get('/status')`` is the route decorator. We're only using
+:meth:`microdot.Microdot.get` here; :meth:`~microdot.Microdot.post`,
+:meth:`~microdot.Microdot.put`, and :meth:`~microdot.Microdot.delete`
+show up on later pages when the cam starts accepting writes.
+
+Every route handler is an asyncio coroutine and receives the request
+as its first argument. The handler doesn't have to use *request* --
+this one ignores it -- but the parameter is always there so the
+signature is consistent.
+
+Returning a dict is the shortest way to send JSON. Microdot serializes
+the dict to JSON automatically and sets
+``Content-Type: application/json`` on the response. Returning a string
+sends ``text/plain``. Returning a :class:`microdot.Response`
+explicitly is the long form -- needed when the body is binary or when
+the response wants custom headers.
+
+``app.run(host='0.0.0.0', port=80)`` starts the server. ``0.0.0.0``
+means *listen on every interface the cam has* -- both the wired
+ethernet and the wifi STA, if both are up. Port 80 is the HTTP
+default, so browsers don't need to type a port number.
+
+One request, end to end
+-----------------------
+
+.. image:: https://docs.openmv.io/_images/request-lifecycle.svg
+   :alt: The phone opens a TCP connection to the cam, sends an HTTP
+         request, the cam parses, routes, runs the handler, then
+         writes a response back.
+   :align: center
+
+The phone opens a TCP connection, writes the request line and
+headers, and waits. The cam reads the bytes off the socket, parses
+them into a :class:`microdot.Request` object, matches the path and
+method against the routing table, awaits the handler coroutine,
+serializes whatever it returned, writes a status line, headers, and
+body back down the socket, then closes the connection (HTTP/1.0
+default) or recycles it (HTTP/1.1 with ``Connection: keep-alive``).
+The whole exchange takes about as long as the network round-trip
+plus whatever the handler did.
+
+A note on blocking
+------------------
+
+:meth:`~microdot.Microdot.run` is **blocking** -- it never returns
+until the server stops. That's fine for a single-purpose server. An
+app that also captures frames or runs other coroutines uses
+:meth:`~microdot.Microdot.start_server` inside an :func:`asyncio.run`
+instead, so the HTTP server can share the loop with everything else.
+
+The app answers one URL.
+
+
+Returning a snapshot
+====================
+
+A status endpoint is fine, but the reason the cam exists is the lens.
+Add an endpoint that returns the JPEG of whatever the sensor is
+looking at right now.
+
+.. code-block:: python
+
+   import csi
+   from microdot import Response
+
+   csi0 = csi.CSI()
+   csi0.reset()
+   csi0.pixformat(csi.RGB565)
+   csi0.framesize(csi.QVGA)
+
+   @app.get('/snapshot.jpg')
+   async def snapshot(request):
+       img = csi0.snapshot().compress(quality=85)
+       return Response(
+           body=img.bytearray(),
+           headers={'Content-Type': 'image/jpeg'},
+       )
+
+Hit ``http://<cam-ip>/snapshot.jpg`` from a browser and a JPEG of the
+current view fills the tab. Refresh and you get a fresh one.
+
+The Response object
+-------------------
+
+A dict-returning handler lets microdot do the rest. JPEG bytes need
+the long form: a :class:`microdot.Response` constructed explicitly.
+The ``body`` argument takes any bytes-like value -- the camera's
+:class:`image.Image` buffer is exposed via
+:meth:`~image.Image.bytearray`, so the same buffer the sensor wrote
+into goes straight to the socket.
+
+``Content-Type: image/jpeg`` is what tells the browser to render the
+body as an image. Without it the browser would try to display the
+JPEG bytes as text and you'd see a screenful of garbage.
+
+:meth:`image.Image.compress` runs JPEG encoding on the existing image
+buffer in place and returns the same image (now JPEG-formatted) so
+its bytes can be sent as-is. ``quality=85`` is the usual default --
+high enough that the picture is sharp, low enough that the file fits
+through a slow link.
+
+Capture blocks the loop
+-----------------------
+
+:meth:`csi.CSI.snapshot` waits for the sensor to finish exposing and
+DMA'ing a frame before it returns. Inside an async handler that means
+the event loop stalls for the duration of the exposure -- ten,
+twenty, fifty milliseconds depending on lighting. With one client
+asking one route at a time this is invisible; with multiple clients,
+or a capture coroutine running alongside, it would block everything
+else.
+
+A non-blocking variant of :meth:`~csi.CSI.snapshot` exists for the
+multi-coroutine case (``blocking=False`` returns the next ready frame
+or :data:`None`). For one snapshot per request, the default blocking
+call is fine.
+
+The owner can now poke a URL and get a fresh frame.
+
+
+Live streaming -- one viewer
+============================
+
+Browsers can render multi-part *Motion JPEG* (MJPEG) streams
+directly inside an ``<img>`` tag. Hand the browser one HTTP response
+that never finishes, write JPEGs separated by a multipart boundary,
+and the browser displays each frame as it arrives.
+
+.. image:: https://docs.openmv.io/_images/mjpeg-stream.svg
+   :alt: The browser sends GET /stream.jpg; the cam responds with
+         Content-Type multipart/x-mixed-replace and writes one
+         JPEG-bodied part per frame until the browser disconnects.
+   :align: center
+
+The wire is straightforward: one response header,
+``Content-Type: multipart/x-mixed-replace; boundary=frame``, then a
+``--frame`` line, ``Content-Type: image/jpeg``, a blank line, the
+JPEG bytes, ``\r\n``, and repeat. The browser closes the connection
+when the ``<img>`` is removed or the tab is closed.
+
+Capturing without blocking
+--------------------------
+
+The blocking ``csi0.snapshot()`` used so far stalls the whole event
+loop until the sensor delivers a frame. That was fine when one
+request fired one snapshot and nothing else was running. Once a
+stream is open the server has to keep handling other requests while
+the next frame is being captured -- the capture call needs to
+*yield* to the event loop while it's waiting on the sensor.
+
+The pattern is a thin ``AsyncCSI`` wrapper that polls
+:meth:`csi.CSI.snapshot` in non-blocking mode and sleeps the
+coroutine between polls. The asyncio chapter walked through this
+pattern in :doc:`/openmvcam/tutorial/asyncio/capstone/snapshot-loop`;
+inline it into the script for now:
+
+.. code-block:: python
+
+   import asyncio
+
+   class AsyncCSI:
+       def __init__(self, *args, **kwargs):
+           self._csi = csi.CSI(*args, **kwargs)
+
+       def __getattr__(self, name):
+           return getattr(self._csi, name)
+
+       async def snapshot(self):
+           while True:
+               img = self._csi.snapshot(blocking=False)
+               if img is not None:
+                   return img
+               await asyncio.sleep_ms(0)
+
+Every other CSI method (:meth:`~csi.CSI.reset`,
+:meth:`~csi.CSI.pixformat`, :meth:`~csi.CSI.framesize`,
+:meth:`~csi.CSI.gain_db`, ...) is forwarded through ``__getattr__``;
+only :meth:`~csi.CSI.snapshot` is replaced with an awaitable version
+that lets the event loop schedule other coroutines between polls.
+
+Swap the bare ``csi.CSI()`` from the snapshot route for an
+``AsyncCSI()``:
+
+.. code-block:: python
+
+   csi0 = AsyncCSI()
+   csi0.reset()
+   csi0.pixformat(csi.RGB565)
+   csi0.framesize(csi.QVGA)
+
+Streaming bodies are class-based iterators
+------------------------------------------
+
+A streaming response body is just an object microdot iterates with
+``async for``, sending each yielded chunk down the socket. On CPython
+this is normally an *async generator function* -- ``async def`` with
+``yield``. MicroPython doesn't support that:
+
+.. note::
+
+   MicroPython's :mod:`asyncio` does not support async-generator
+   functions (``async def name(): ... yield ...``). Streaming
+   response bodies must be **class-based** async iterators with
+   ``__aiter__`` returning ``self`` and ``__anext__`` defined as
+   ``async def``.
+
+For an MJPEG stream that means a class whose ``__anext__`` awaits one
+frame and returns it framed in the multipart wrapper:
+
+.. code-block:: python
+
+   BOUNDARY = b'frame'
+
+   class FrameStream:
+       def __aiter__(self):
+           return self
+
+       async def __anext__(self):
+           img = await csi0.snapshot()
+           jpeg = bytes(img.compress(quality=85).bytearray())
+           return (b'--' + BOUNDARY + b'\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n'
+                   + jpeg + b'\r\n')
+
+   @app.get('/stream.jpg')
+   async def stream(request):
+       return Response(
+           body=FrameStream(),
+           headers={
+               'Content-Type':
+                   b'multipart/x-mixed-replace; boundary=' + BOUNDARY,
+           },
+       )
+
+The instance is fresh per request, so each connected client gets its
+own iterator. When the browser disconnects, microdot stops awaiting
+``__anext__`` and the iterator is garbage-collected.
+
+.. note::
+
+   The ``bytes(...)`` wrap around the JPEG is defensive.
+   :meth:`~image.Image.bytearray` returns a view into the camera's
+   image buffer, and the next :meth:`~csi.CSI.snapshot` call
+   rewrites that buffer in place. Wrapping in :class:`bytes` copies
+   the JPEG out so the chunk microdot is mid-write stays stable even
+   if the writer's flush has not finished by the time ``__anext__``
+   runs again.
+
+Running the server inside asyncio
+---------------------------------
+
+The earlier ``app.run(host=..., port=...)`` call is blocking. The
+MJPEG handler needs to share the loop with the AsyncCSI snapshot
+polls, so swap ``app.run`` for :meth:`~microdot.Microdot.start_server`
+inside an :func:`asyncio.run`:
+
+.. code-block:: python
+
+   async def main():
+       await app.start_server(host='0.0.0.0', port=80)
+
+   asyncio.run(main())
+
+The :func:`asyncio.run` wrapper lets the server be one task among
+several -- the ``main`` coroutine is then the natural place to spawn
+capture, motion detection, and anything else that has to share the
+loop with the HTTP server.
+
+One viewer at a time
+--------------------
+
+Every connected client runs its own ``FrameStream`` iterator, which
+means every client triggers its own ``csi0.snapshot()`` call. Two
+browsers means two sensor reads per frame interval, three means
+three, and so on. The sensor can't actually deliver frames faster
+than its own frame rate, so the requests queue up behind each other
+and everyone's stream slows down.
+
+The fix is a single shared capture loop publishing one frame to many
+readers.
+
+
+Sharing one capture loop across viewers
+=======================================
+
+Each connected client calling ``csi0.snapshot()`` independently is
+wasteful, and once two streams are open at once it gets worse: the
+sensor delivers frames at its own rate, and every duplicated capture
+slows everybody down. The right approach is one capture coroutine
+that publishes "the latest frame" to a shared slot, plus per-client
+iterators that read from the slot.
+
+.. image:: https://docs.openmv.io/_images/shared-capture-loop.svg
+   :alt: One capture task writes JPEG bytes to a single latest_jpeg
+         slot; three stream-client iterators read from the slot and
+         each wait on the shared new_frame event.
+   :align: center
+
+The capture task
+----------------
+
+A background coroutine grabs frames as fast as the sensor delivers
+them, JPEG-compresses each one into a shared ``bytes``, and pulses an
+event so any waiting client wakes up:
+
+.. code-block:: python
+
+   latest_jpeg = None
+   new_frame = asyncio.Event()
+
+   async def capture_loop():
+       global latest_jpeg
+       while True:
+           img = await csi0.snapshot()
+           latest_jpeg = bytes(img.compress(quality=85).bytearray())
+           new_frame.set()
+           new_frame.clear()
+
+The ``set()`` / ``clear()`` pair is the *pulse* pattern. ``set()``
+unblocks every coroutine currently waiting on the event in one go;
+``clear()`` immediately resets the event so the next ``wait()``
+blocks again. With multiple consumers (a viewer, another viewer, any
+other coroutine that needs to react to a new frame), no single
+consumer is responsible for resetting the event, and nobody steals a
+wake-up from anybody else.
+
+.. note::
+
+   The ``bytes(...)`` wrap around the JPEG is load-bearing here.
+   :meth:`~image.Image.bytearray` returns a view into the camera's
+   image buffer; the very next :meth:`~csi.CSI.snapshot` call
+   rewrites that buffer in place with the next frame.
+   ``latest_jpeg`` outlives the local ``img``, so without the copy
+   every reader would see the slot shift under them on every
+   capture.
+
+Per-client iterators read from the slot
+---------------------------------------
+
+The MJPEG stream handler stops calling ``csi0.snapshot()`` itself.
+Instead, each ``FrameStream`` instance waits on the shared event and
+reads from the shared bytes:
+
+.. code-block:: python
+
+   class FrameStream:
+       # One instance per connected client. Each one independently
+       # waits on the shared new_frame pulse; the capture loop is
+       # responsible for resetting the event between frames.
+
+       def __aiter__(self):
+           return self
+
+       async def __anext__(self):
+           await new_frame.wait()
+           if latest_jpeg is None:
+               return b''
+           return (b'--' + BOUNDARY + b'\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n'
+                   + latest_jpeg + b'\r\n')
+
+The snapshot route changes too: it no longer triggers a capture, it
+returns whatever ``latest_jpeg`` currently holds:
+
+.. code-block:: python
+
+   @app.get('/snapshot.jpg')
+   async def snapshot(request):
+       if latest_jpeg is None:
+           return 'no frame yet', 503
+       return Response(
+           body=latest_jpeg,
+           headers={'Content-Type': 'image/jpeg'},
+       )
+
+The ``(body, status)`` tuple is microdot's shorthand for setting an
+HTTP status code without constructing a :class:`microdot.Response`.
+503 says *I'm here but not ready* -- the right code for "ask again in
+a moment."
+
+Running capture alongside the server
+------------------------------------
+
+``main`` now has two top-level coroutines: the capture loop and the
+HTTP server. :func:`asyncio.gather` runs them both, and if either
+crashes the other is cancelled:
+
+.. code-block:: python
+
+   async def main():
+       await asyncio.gather(
+           capture_loop(),
+           app.start_server(host='0.0.0.0', port=80),
+       )
+
+   asyncio.run(main())
+
+Now the sensor reads one frame per cycle no matter how many viewers
+are connected. The first browser to ``/stream.jpg`` sees frames; so
+does the second, the third, the tenth -- they all share the same
+capture, and the cam stays as responsive on its other routes.
+
+
+A control API for the cam
+=========================
+
+The owner needs to set the motion detector's sensitivity from
+anywhere -- the wind moves trees more on a windy day. That means
+routes the dashboard can read the current settings from and post
+changes to.
+
+A small shared state dict on the module is enough to hold the knobs.
+Later pages add more keys to it; for now there's one:
+
+.. code-block:: python
+
+   state = {
+       'threshold': 12,
+       'frame_count': 0,
+       'trigger_count': 0,
+   }
+
+GET to read, POST to write
+--------------------------
+
+A pair of routes -- one ``get``, one ``post`` -- gives the dashboard
+read/write access to ``state``:
+
+.. code-block:: python
+
+   from microdot import abort
+
+   @app.get('/config')
+   async def get_config(request):
+       return state
+
+   @app.post('/config')
+   async def set_config(request):
+       body = request.json
+       if not body or 'threshold' not in body:
+           abort(400, 'missing threshold')
+       try:
+           threshold = int(body['threshold'])
+       except (TypeError, ValueError):
+           abort(400, 'threshold must be an integer')
+       if not 0 <= threshold <= 100:
+           abort(400, 'threshold out of range')
+       state['threshold'] = threshold
+       return {'ok': True, 'threshold': threshold}
+
+:attr:`microdot.Request.json` returns the body parsed as JSON, or
+:data:`None` if ``Content-Type`` wasn't ``application/json``. The
+``post`` handler walks each failure mode -- missing key, wrong type,
+out of range -- and bails with :func:`microdot.abort`, which raises
+:class:`microdot.HTTPException` to short-circuit the handler with the
+given status and message.
+
+GET, POST, PUT, DELETE
+----------------------
+
+:meth:`~microdot.Microdot.get` and :meth:`~microdot.Microdot.post` are
+the two we'll use most. :meth:`~microdot.Microdot.put` and
+:meth:`~microdot.Microdot.delete` exist for cases that follow REST
+conventions -- a ``PUT /events/42`` to replace event 42, a
+``DELETE /events/42`` to drop it. The handler is otherwise identical.
+
+Reading query strings and forms
+-------------------------------
+
+The dashboard posts JSON, so ``request.json`` is what we want. Two
+other ways the cam might receive data:
+
+* :attr:`~microdot.Request.args` -- the query string. ``?foo=1&bar=2``
+  becomes a :class:`microdot.MultiDict` you can read with
+  ``request.args.get('foo')``.
+* :attr:`~microdot.Request.form` -- an HTML form posted as
+  ``application/x-www-form-urlencoded``. Same :class:`MultiDict`
+  type.
+
+The MultiDict is dict-like but lets one key carry multiple values
+(``?tag=cat&tag=dog`` is two ``tag`` values); see
+:class:`microdot.MultiDict` for the full surface.
+
+Dynamic URL segments
+--------------------
+
+A route path can declare typed placeholders that microdot passes to
+the handler as extra arguments:
+
+.. code-block:: python
+
+   @app.get('/events/<int:event_id>')
+   async def get_event(request, event_id):
+       return {'id': event_id, 'msg': 'placeholder'}
+
+The supported converters are ``<int:>``, ``<re:>`` for a custom
+regex, ``<path:>`` for a segment that can contain slashes, and the
+default (no prefix) for "match anything up to the next slash."
+``<int:event_id>`` accepts ``/events/42`` and rejects
+``/events/abc`` -- the rejection becomes a 404 without the handler
+running.
+
+Custom error responses
+----------------------
+
+The default 404 microdot sends is plain ``Not found``. The dashboard
+expects JSON for every response; override the 404 handler so it
+returns JSON too:
+
+.. code-block:: python
+
+   @app.errorhandler(404)
+   async def not_found(request):
+       return {'error': 'not found', 'path': request.path}, 404
+
+:meth:`~microdot.Microdot.errorhandler` takes either a status code
+(catches every error of that status) or an exception class (catches
+every handler that raised that exception). The ``(body, status)``
+tuple short-circuits the response without constructing a
+:class:`~microdot.Response`.
+
+The cam now exposes its state and accepts edits.
+
+
+Building the dashboard
+======================
+
+The cam's JSON API is fine for ``curl``, but the owner wants to point
+a phone at a URL and *see* something. That means serving HTML, JS,
+and CSS from the cam alongside the API.
+
+Static files from the filesystem
+--------------------------------
+
+:meth:`microdot.Response.send_file` reads a file from the cam's
+filesystem and writes it back with the right ``Content-Type`` inferred
+from the extension. One catch-all route at the bottom of the routing
+table sends everything that didn't match an API route:
+
+.. code-block:: python
+
+   @app.get('/<path:filename>')
+   async def static(request, filename):
+       if '..' in filename or filename.startswith('/'):
+           abort(403)
+       return Response.send_file('/sdcard/static/' + filename)
+
+The ``<path:filename>`` converter from the last page matches segments
+that contain slashes -- ``app.js`` and ``css/site.css`` both come
+through. The two-line sanity check rejects any path that tries to
+escape ``/sdcard/static/`` with ``..`` or an absolute path -- without
+it a curious client could read ``../../boot.py`` or
+``/flash/secrets.txt``. :func:`~microdot.Response.send_file` itself
+does *no* sanitization: it opens whatever path you hand it.
+
+The dashboard files
+-------------------
+
+Three files on the cam under ``/sdcard/static/``:
+
+.. code-block:: html
+
+   <!-- /sdcard/static/index.html -->
+   <!doctype html>
+   <html>
+     <head>
+       <meta charset="utf-8">
+       <title>Backyard cam</title>
+       <link rel="stylesheet" href="style.css">
+     </head>
+     <body>
+       <h1>Backyard cam</h1>
+       <img id="stream" src="/stream.jpg">
+       <label>Threshold:
+         <input id="threshold" type="range" min="0" max="100">
+         <span id="threshold-value"></span>
+       </label>
+       <h2>Recent events</h2>
+       <ul id="events"></ul>
+       <script src="app.js"></script>
+     </body>
+   </html>
+
+.. code-block:: javascript
+
+   // /sdcard/static/app.js
+   const slider = document.getElementById('threshold');
+   const sliderValue = document.getElementById('threshold-value');
+
+   async function loadConfig() {
+       const r = await fetch('/config');
+       const cfg = await r.json();
+       slider.value = cfg.threshold;
+       sliderValue.textContent = cfg.threshold;
+   }
+   loadConfig();
+
+   slider.addEventListener('change', async () => {
+       sliderValue.textContent = slider.value;
+       await fetch('/config', {
+           method: 'POST',
+           headers: {'Content-Type': 'application/json'},
+           body: JSON.stringify({threshold: parseInt(slider.value)}),
+       });
+   });
+
+.. code-block:: css
+
+   /* /sdcard/static/style.css */
+   body { font-family: sans-serif; max-width: 720px; margin: 1em auto; }
+   img#stream { width: 100%; }
+
+The HTML loads the MJPEG stream straight into an ``<img>`` -- the
+browser handles the multipart response transparently. The slider
+reads the threshold from ``/config`` on page load and posts the new
+value back on every change.
+
+MIME types and compression
+--------------------------
+
+:meth:`~microdot.Response.send_file` reads the file's extension and
+picks a ``Content-Type`` from :attr:`microdot.Response.types_map`.
+``.html`` becomes ``text/html``, ``.js`` becomes
+``text/javascript``, ``.css`` becomes ``text/css``, ``.jpg`` becomes
+``image/jpeg``. Extensions you've added to your dashboard
+(``.svg``, ``.ico``) are already registered. Anything unknown
+defaults to ``application/octet-stream`` -- to add a new mapping,
+extend ``Response.types_map`` once at startup.
+
+For assets you've pre-compressed (``style.css.gz``, ``app.js.gz``)
+pass ``compressed=True`` and microdot serves the ``.gz`` file with
+``Content-Encoding: gzip``. The browser decompresses transparently
+and you save a few KB on each page load.
+
+The owner now opens ``http://yard-cam.local/index.html`` and sees the
+live feed, the current threshold, and an empty event log.
+
+
+Pushing events to the dashboard
+===============================
+
+The dashboard needs to be told the moment motion fires -- not on the
+next poll. That's what Server-Sent Events do: one HTTP connection
+from the browser to the cam, and the cam pushes events down it
+whenever they happen.
+
+A motion-detector coroutine
+---------------------------
+
+A third top-level task runs alongside the capture loop and the HTTP
+server. It waits for each new frame, runs a difference against the
+previous frame, and -- when the change is above the configured
+threshold -- bumps a counter and signals an event:
+
+.. code-block:: python
+
+   import time
+
+   motion_event = asyncio.Event()
+   last_motion = None
+
+   async def motion_detector():
+       global last_motion
+       prev = None
+       while True:
+           await new_frame.wait()
+           change = compute_change(prev, latest_jpeg)
+           if change > state['threshold']:
+               state['trigger_count'] += 1
+               last_motion = {
+                   'ts': time.time(),
+                   'count': state['trigger_count'],
+                   'change': change,
+               }
+               motion_event.set()
+           prev = latest_jpeg
+           await asyncio.sleep_ms(50)
+
+The ``compute_change`` implementation is out of scope for this
+chapter -- the image-processing section covers frame-differencing
+properly. For now treat it as a placeholder that returns a number.
+
+Add the new task to ``main``:
+
+.. code-block:: python
+
+   async def main():
+       await asyncio.gather(
+           capture_loop(),
+           motion_detector(),
+           app.start_server(host='0.0.0.0', port=80),
+       )
+
+The /events route
+-----------------
+
+:func:`microdot.sse.with_sse` decorates an async handler so microdot
+performs the SSE handshake (status 200, ``Content-Type:
+text/event-stream``, no buffering) and hands the handler an
+:class:`~microdot.sse.SSE` object. The handler stays awake for as long
+as the browser keeps the connection open:
+
+.. code-block:: python
+
+   from microdot.sse import with_sse
+
+   @app.get('/events')
+   @with_sse
+   async def events(request, sse):
+       while True:
+           try:
+               await asyncio.wait_for(motion_event.wait(), timeout=15)
+               motion_event.clear()
+               if last_motion:
+                   await sse.send(last_motion, event='motion')
+           except asyncio.TimeoutError:
+               await sse.send('keepalive', comment=True)
+
+:meth:`~microdot.sse.SSE.send` writes one event to the wire and
+yields back to the event loop. ``event='motion'`` names the event
+type so the browser-side ``EventSource`` can register a listener for
+just that name. ``event_id=`` (not shown) sets the
+``id:`` line so the browser can resume from a known offset on
+reconnect via the ``Last-Event-ID`` header.
+
+The 15-second timeout + ``comment=True`` send is the keep-alive
+trick. Comment lines start with ``:`` and the browser ignores them
+entirely, but the bytes moving over the wire stop intermediate
+proxies and NAT boxes from killing an idle connection.
+
+The dashboard consumes events
+-----------------------------
+
+Add this to ``app.js``:
+
+.. code-block:: javascript
+
+   const events = document.getElementById('events');
+   const source = new EventSource('/events');
+   source.addEventListener('motion', (e) => {
+       const data = JSON.parse(e.data);
+       const li = document.createElement('li');
+       const t = new Date(data.ts * 1000).toLocaleTimeString();
+       li.textContent = t + ' -- change ' + data.change;
+       events.prepend(li);
+   });
+
+The browser opens one persistent HTTP connection to ``/events`` and
+re-opens it automatically on any disconnect. Every ``motion`` event
+the cam pushes appears as a new ``<li>`` at the top of the list.
+
+The owner now sees motion events the instant they fire.
+
+
+Two-way control with WebSockets
+===============================
+
+Server-Sent Events are push-only. When the owner taps "save a
+snapshot right now" or "reset the trigger counter" on the dashboard,
+the dashboard has to send a message *to* the cam. That's WebSockets
+-- one TCP socket, framed messages flowing both directions.
+
+The /control route
+------------------
+
+:func:`microdot.websocket.with_websocket` performs the WebSocket
+upgrade handshake and hands the handler a
+:class:`~microdot.websocket.WebSocket` object. The handler loops
+forever, reading commands and sending acknowledgements:
+
+.. code-block:: python
+
+   from microdot.websocket import with_websocket
+   from microdot.websocket import WebSocketError
+   import json
+
+   @app.get('/control')
+   @with_websocket
+   async def control(request, ws):
+       while True:
+           try:
+               msg = await ws.receive()
+           except WebSocketError:
+               break
+           try:
+               cmd = json.loads(msg)
+           except ValueError:
+               await ws.send({'error': 'bad json'})
+               continue
+
+           if cmd.get('cmd') == 'snapshot_now':
+               if latest_jpeg:
+                   path = '/sdcard/snaps/manual-{}.jpg'.format(
+                       int(time.time()))
+                   with open(path, 'wb') as f:
+                       f.write(latest_jpeg)
+                   await ws.send({'ok': True, 'saved': path})
+               else:
+                   await ws.send({'ok': False, 'reason': 'no frame yet'})
+           elif cmd.get('cmd') == 'reset':
+               state['trigger_count'] = 0
+               await ws.send({'ok': True, 'counters': 'reset'})
+           else:
+               await ws.send({'error': 'unknown command'})
+
+:meth:`~microdot.websocket.WebSocket.receive` returns a string for
+text frames and bytes for binary frames. The browser-side
+``WebSocket.send(...)`` sends text by default, so JSON-encoded
+commands are the natural choice.
+
+:meth:`~microdot.websocket.WebSocket.send` accepts strings, bytes, or
+anything JSON-serializable -- a dict is sent as a JSON text frame.
+
+:exc:`~microdot.websocket.WebSocketError` is raised when the client
+disconnects (clean close, network drop, or protocol error). The
+handler exits the loop and returns; microdot tidies up the socket.
+
+The dashboard sends commands
+----------------------------
+
+Two buttons go into ``index.html`` next to the slider:
+
+.. code-block:: html
+
+   <button id="snap-btn">Save snapshot</button>
+   <button id="reset-btn">Reset counter</button>
+
+and ``app.js`` opens the WebSocket once and wires both buttons to
+``send``:
+
+.. code-block:: javascript
+
+   const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+   const ws = new WebSocket(proto + location.host + '/control');
+
+   document.getElementById('snap-btn').addEventListener('click', () =>
+       ws.send(JSON.stringify({cmd: 'snapshot_now'})));
+   document.getElementById('reset-btn').addEventListener('click', () =>
+       ws.send(JSON.stringify({cmd: 'reset'})));
+
+   ws.addEventListener('message', (e) => {
+       console.log('cam:', JSON.parse(e.data));
+   });
+
+The ``ws://`` vs ``wss://`` choice mirrors ``http://`` vs ``https://``
+-- the WebSocket inherits the same TLS handling. With HTTPS in place
+the dashboard automatically connects via ``wss://``.
+
+When to pick SSE vs WebSockets
+------------------------------
+
+Use SSE when the cam pushes and the browser only listens --
+notifications, telemetry, status changes. The wire is plain HTTP,
+the client side is one line (``new EventSource``), and reconnect is
+automatic.
+
+Use WebSockets when the browser also needs to push -- buttons,
+sliders that send keystroke-rate updates, anything where waiting on
+the next request would be too slow. The connection is bidirectional
+and framed, but the API is more involved on both sides.
+
+The cam is now an interactive thing -- watch, push events out, accept
+commands in.
+
+
+Auth for programmatic clients
+=============================
+
+Bearer tokens are how phones, companion microcontrollers, and cloud
+workers authenticate to a server -- the client puts a token in the
+``Authorization`` header on every request and the server checks it.
+The companion phone app POSTs an "ack" when the owner taps "seen" on
+a motion notification; those requests need a token.
+
+The signing secret
+------------------
+
+The secret is the cam's private key for signing and verifying tokens.
+Generate 32 random bytes from the hardware RNG on the cam's first
+boot, persist them to the filesystem, and reuse the same bytes on
+every subsequent boot:
+
+.. code-block:: python
+
+   # auth/tokens.py
+   import os
+
+   try:
+       with open('secret.bin', 'rb') as f:
+           SECRET = f.read()
+   except OSError:
+       SECRET = os.urandom(32)
+       with open('secret.bin', 'wb') as f:
+           f.write(SECRET)
+
+:func:`os.urandom` is the cryptographically suitable random source on
+each cam port -- on most ports it reads the chip's hardware
+random-number generator directly. The file lives in the cam's working
+directory (``/sdcard`` if an SD card is mounted, ``/flash`` otherwise)
+and never leaves the cam. Deleting ``secret.bin`` and rebooting
+rotates the secret and invalidates every token issued under the old
+one.
+
+.. note::
+
+   :func:`machine.unique_id` is *not* a substitute. On some cam
+   ports it is also used to derive the network MAC address, which
+   means its value travels with every packet the cam sends -- not
+   the property a signing secret needs.
+
+Issuing tokens
+--------------
+
+The phone needs a way to *get* a token in the first place. A
+short-lived *JSON Web Token* (JWT) -- a base64-encoded JSON payload
+with a signature appended -- is enough for a first pass: the owner
+trades a password for a token, then uses the token until it
+expires:
+
+.. code-block:: python
+
+   import jwt
+   import time
+
+   @app.post('/api/login')
+   async def api_login(request):
+       creds = request.json
+       if creds.get('user') != 'owner' or creds.get('pass') != load_password():
+           abort(401)
+       token = jwt.encode({
+           'sub': 'owner',
+           'exp': int(time.time()) + 3600,
+       }, SECRET)
+       return {'token': token}
+
+The phone POSTs ``{user, pass}`` once, stores the returned token in
+local storage, and includes it as ``Authorization: Bearer <token>``
+on every subsequent request.
+
+The ``exp`` claim is a Unix timestamp. The verifier on the next
+section relies on this claim to reject expired tokens automatically
+-- which means the cam's wall clock has to be set, because otherwise
+every token will look either far in the future or already expired.
+See :doc:`/openmvcam/tutorial/networking/names/ntp` for the NTP-sync
+recipe.
+
+Verifying tokens with TokenAuth
+-------------------------------
+
+:class:`microdot.auth.TokenAuth` is the decorator factory for routes
+that require an ``Authorization: Bearer <token>`` header. The
+verifier callback receives the token string and returns whatever
+identity object should be attached to the request -- or
+:data:`None` to reject:
+
+.. code-block:: python
+
+   from microdot.auth import TokenAuth
+
+   tokens = TokenAuth()
+
+   @tokens.authenticate
+   async def check_token(request, token):
+       try:
+           claims = jwt.decode(token, SECRET)
+       except jwt.exceptions.PyJWTError:
+           return None
+       return claims['sub']
+
+   @app.post('/api/ack')
+   @tokens
+   async def ack(request):
+       body = request.json
+       if not body or 'count' not in body:
+           abort(400, 'missing count')
+       return {'ok': True, 'user': request.g.current_user}
+
+:func:`jwt.decode` raises :exc:`jwt.exceptions.PyJWTError` (or a
+subclass) when the signature is wrong, the token is malformed, or
+the ``exp`` claim has passed. The verifier swallows all of those and
+returns :data:`None`, so microdot responds 401 without the handler
+seeing anything.
+
+When the verifier returns a non-:data:`None` value, microdot stores
+it on :attr:`request.g.current_user` so the handler can read it -- in
+this case it's the JWT ``sub`` (subject) claim.
+
+BasicAuth for closed networks
+-----------------------------
+
+For an admin endpoint that's only ever hit from a trusted network,
+:class:`microdot.auth.BasicAuth` is simpler -- the browser pops a
+native username/password dialog and sends them in the
+``Authorization: Basic ...`` header on every request:
+
+.. code-block:: python
+
+   from microdot.auth import BasicAuth
+
+   basic = BasicAuth(realm='Backyard cam admin')
+
+   @basic.authenticate
+   async def check_basic(request, username, password):
+       if username == 'owner' and password == load_password():
+           return 'owner'
+       return None
+
+   @app.get('/admin')
+   @basic
+   async def admin(request):
+       return 'hi ' + request.g.current_user
+
+The credentials travel in the clear unless the connection is HTTPS,
+so this approach only makes sense on a trusted network or with HTTPS
+in place.
+
+``/api/ack`` and ``/api/login`` now understand tokens; ``/admin``
+requires Basic auth.
+
+
+Login for the dashboard
+=======================
+
+The web dashboard needs a login form -- random people on the LAN
+shouldn't see the yard. That's what cookie-backed sessions and the
+login decorator do.
+
+A session is a small dict the cam writes into a cookie. The cookie is
+signed with the JWT-signing secret loaded earlier in the chapter, so
+the browser can carry it around but can't tamper with the contents
+without invalidating the signature.
+
+Set up the session and login objects
+------------------------------------
+
+:class:`microdot.session.Session` installs the session machinery on
+``app``. :class:`microdot.login.Login` adds the
+``login_required``-style decorator and the ``login_user`` /
+``logout_user`` helpers:
+
+.. code-block:: python
+
+   # auth/login.py
+   from microdot.session import Session
+   from microdot.login import Login
+
+   Session(app, secret_key=SECRET,
+           cookie_options={'http_only': True, 'secure': False})
+   login = Login()
+
+   USERS = {
+       'owner': {'id': 'owner', 'password_hash': load_password_hash()},
+   }
+
+   @login.user_loader
+   async def load_user(user_id):
+       return USERS.get(user_id)
+
+``http_only=True`` keeps JavaScript on the page from reading the
+cookie -- a layered defense against an XSS attacker hijacking the
+session. ``secure=False`` is a placeholder until HTTPS is in place;
+flip it to ``True`` once the server runs over TLS so the cookie
+never travels over plain HTTP.
+
+.. note::
+
+   *Cross-site scripting* (XSS) is the class of attacks where the
+   attacker gets JavaScript executing inside the user's view of a
+   trusted page -- typically through an unescaped form field, an
+   HTML-rendered comment, or a vulnerable third-party widget. The
+   ``http_only`` cookie flag doesn't prevent XSS; it just keeps the
+   session cookie out of reach of the injected script, so a
+   successful XSS can't trivially be turned into session
+   hijacking.
+
+The ``user_loader`` is called on every protected request to turn the
+ID stored in the session into the user record the handler will see.
+Keep it cheap -- it runs on the hot path.
+
+Login form, login post, logout
+------------------------------
+
+The login form itself is a static page served from ``/sdcard/static/``
+just like the dashboard. The form ``POST``\ s to ``/login``:
+
+.. code-block:: python
+
+   from microdot import redirect
+
+   @app.get('/login')
+   async def login_form(request):
+       return Response.send_file('/sdcard/static/login.html')
+
+   @app.post('/login')
+   async def do_login(request):
+       form = request.form
+       user = USERS.get(form.get('user'))
+       if not user or not check_password(user, form.get('pass')):
+           return redirect('/login?error=1')
+       return await login.login_user(request, user, remember=True)
+
+   @app.post('/logout')
+   async def logout(request):
+       await login.logout_user(request)
+       return redirect('/login')
+
+:meth:`microdot.login.Login.login_user` writes the session cookie and
+returns a 302 redirect to whatever page the client originally tried
+to reach (``next=`` query argument, falling back to ``/``).
+``remember=True`` also writes a longer-lived ``_remember`` cookie so
+the session survives a browser restart.
+
+:meth:`microdot.login.Login.logout_user` clears both cookies and a
+follow-up redirect sends the browser back to the form.
+
+Protecting the dashboard
+------------------------
+
+Decorate every dashboard-facing route with ``@login`` so an
+unauthenticated request gets a 302 to ``/login`` instead of the
+content:
+
+.. code-block:: python
+
+   @app.get('/<path:filename>')
+   @login
+   async def static(request, filename):
+       ...
+
+   @app.get('/config')
+   @login
+   async def get_config(request):
+       ...
+
+   @app.post('/config')
+   @login
+   async def set_config(request):
+       ...
+
+   @app.get('/events')
+   @login
+   @with_sse
+   async def events(request, sse):
+       ...
+
+   @app.get('/control')
+   @login
+   @with_websocket
+   async def control(request, ws):
+       ...
+
+The token-based API endpoints (``/api/login``, ``/api/ack``) stay
+token-based -- they're for the phone app, not the browser. Token
+auth and session auth happily coexist on the same ``app``.
+
+Fresh vs remembered sessions
+----------------------------
+
+The ``_remember`` cookie keeps the user logged in across browser
+restarts, but it's a weaker form of auth -- the browser could have
+been left in a cafe. For routes that change passwords, register API
+tokens, or do anything else worth re-authenticating for, decorate
+with :meth:`@login.fresh <microdot.login.Login.fresh>` instead of
+``@login``. A fresh login is one where the user typed their password
+*this* session; a remembered login is not. The dashboard has nothing
+that rises to that bar, but the decorator is there when you need it.
+
+The dashboard now requires a login before any of its routes respond.
+
+
+HTTPS -- transport encryption for the server
+============================================
+
+Up to now everything has been plain HTTP on port 80. Anyone with a
+packet capture between the browser and the cam can read the login
+form's password, the session cookie that comes back from it, the JWT
+in the ``Authorization`` header, and the JPEG bytes of every captured
+frame. HTTPS encrypts the wire end to end.
+
+The cert workflow itself -- generating a self-signed cert for
+development, getting a CA-signed cert for production, copying the
+files onto the cam in the right format -- is covered in
+:doc:`/openmvcam/tutorial/production/tls/index`. This page is about
+*plugging an already-loaded cert into microdot*.
+
+Building the SSL context
+------------------------
+
+:class:`ssl.SSLContext` is the standard library's container for cert,
+key, and protocol options. For a server you want
+``PROTOCOL_TLS_SERVER`` and a cert chain loaded from the cam's
+filesystem:
+
+.. code-block:: python
+
+   import ssl
+
+   ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+   ctx.load_cert_chain('/flash/cert.der', '/flash/key.der')
+
+The DER paths come from whichever workflow you ran in the TLS section
+-- self-signed for dev, CA-signed for production. The files don't
+have to be on ``/flash``; ``/sdcard`` works equally well.
+
+Pass the context to start_server
+--------------------------------
+
+The only difference from the earlier
+:meth:`~microdot.Microdot.start_server` call is the ``ssl=ctx``
+argument and the port number. Port 443 is the HTTPS default, which
+means browsers don't need to type ``:443`` -- just
+``https://yard-cam.local/`` works:
+
+.. code-block:: python
+
+   async def main():
+       await asyncio.gather(
+           capture_loop(),
+           motion_detector(),
+           app.start_server(host='0.0.0.0', port=443, ssl=ctx),
+       )
+
+   asyncio.run(main())
+
+That's it for the server side. Every existing route -- ``/status``,
+``/snapshot.jpg``, ``/stream.jpg``, ``/config``, ``/events``,
+``/control``, the static dashboard -- now runs over TLS without any
+other code changes.
+
+Tightening the session cookie
+-----------------------------
+
+The session cookie was created with ``secure=False`` as a
+placeholder. With HTTPS in place, flip it to ``True`` so the cookie
+is never sent over plain HTTP -- even if a misconfigured client or
+a stale link tries to:
+
+.. code-block:: python
+
+   Session(app, secret_key=SECRET,
+           cookie_options={'http_only': True, 'secure': True})
+
+The same applies to the ``_remember`` cookie that
+:meth:`~microdot.login.Login.login_user` writes when ``remember=True``
+is set -- microdot picks up the ``secure`` flag from the same
+``cookie_options`` dict.
+
+What's not covered here
+-----------------------
+
+*HTTP Strict Transport Security* (HSTS), certificate auto-renewal,
+the CA trust chain on the cam side for outbound requests, and the
+choice of cipher suites all live in the TLS section. The plug-in here -- one ``SSLContext``, one
+``ssl=ctx`` -- is the only piece that's specific to microdot.
+
+The dashboard URL bar now goes from ``http://`` to ``https://`` and
+the WebSocket from ``ws://`` to ``wss://`` -- the dashboard
+JavaScript already chose the right scheme based on
+``location.protocol``, so no client changes are needed.
+
+The cam serves over HTTPS. The login form, the JWT, and the captured
+frames are encrypted in transit.
+
+
+CORS and CSRF
+=============
+
+*CORS* and *CSRF* are the two browser-side protections an
+open-internet cam needs alongside HTTPS and login. Each takes a few
+lines to set up. The sections below define the term and show the
+microdot integration.
+
+What CORS does
+--------------
+
+*Cross-Origin Resource Sharing* (CORS) is the browser mechanism that
+lets a server opt in to letting specific other origins read its
+responses. The browser's default *same-origin policy* blocks that
+read: JavaScript on ``https://example.com`` cannot read responses
+from ``https://yard-cam.example.com``, because different host counts
+as different origin. CORS is the server-side way to grant exceptions
+for chosen peers.
+
+If the dashboard is served from the cam itself, every request is
+same-origin and CORS isn't doing anything. The setup matters when the
+dashboard lives somewhere else -- a public URL like
+``https://app.example.com`` that talks to a cam at
+``https://yard-cam.example.com``:
+
+.. code-block:: python
+
+   from microdot.cors import CORS
+
+   cors = CORS(
+       app,
+       allowed_origins=['https://app.example.com'],
+       allow_credentials=True,
+       max_age=86400,
+   )
+
+``allowed_origins`` is the list of origins that are permitted to read
+the cam's responses. The dashboard's origin and *only* the
+dashboard's origin -- not ``*`` -- so a third-party site can't read
+the cam's responses by accident.
+
+``allow_credentials=True`` lets cross-origin requests include the
+session cookie, which is what the dashboard needs to stay logged in
+across an origin boundary.
+
+``max_age=86400`` tells the browser it can cache the preflight result
+for a day. Browsers fire an extra ``OPTIONS`` request before any
+cross-origin call that uses methods other than GET/HEAD/POST or sends
+custom headers; ``max_age`` cuts that overhead to one preflight per
+day per route.
+
+What CSRF does
+--------------
+
+*Cross-Site Request Forgery* (CSRF) is the attack where a malicious
+page makes the user's browser fire an authenticated request at a
+trusted server. Even with CORS in place, a hidden ``<form>`` on
+``evil.com`` that POSTs to ``https://yard-cam.example.com/config``
+will reach the cam, and the browser will attach the cam's session
+cookie -- cookies follow the destination host, not the origin of the
+page making the request -- so the cam happily processes the POST as
+if it were the owner.
+
+CSRF protection rejects those requests. :class:`microdot.csrf.CSRF`
+adds middleware that inspects the ``Sec-Fetch-Site`` header on every
+state-changing request and rejects anything not labeled
+``same-origin`` (or coming from a CORS-allowed origin):
+
+.. code-block:: python
+
+   from microdot.csrf import CSRF
+
+   CSRF(app, cors=cors)
+
+Passing the ``cors`` instance lets the middleware grandfather in the
+dashboard's allowed origin -- the cam still accepts dashboard POSTs
+even though they're cross-origin.
+
+``Sec-Fetch-Site`` is set by modern browsers automatically; the cam
+doesn't have to do anything on the client side. For older browsers
+that don't send the header, the CORS allow-list is the fallback
+check.
+
+Exempting webhooks
+------------------
+
+If the cam needs a webhook endpoint to accept POSTs from a third-party
+cloud service -- a callback from the archive provider, say -- mark
+the route :meth:`@csrf.exempt <microdot.csrf.CSRF.exempt>` so the
+middleware lets it through. The handler is responsible for verifying
+the request some other way -- usually a *Hash-based Message
+Authentication Code* (HMAC) over the payload, computed with a secret
+the cam and the third party share, which proves the request came
+from someone who knew the secret. The backyard cam doesn't have any
+of those, but the decorator is there when you need it.
+
+The four-line baseline
+----------------------
+
+Once HTTPS is in place, the recommended stack for any cam-facing-
+internet deployment is:
+
+.. code-block:: python
+
+   Session(app, secret_key=SECRET,
+           cookie_options={'http_only': True, 'secure': True})
+   login = Login()
+   cors = CORS(app, allowed_origins=[...], allow_credentials=True)
+   CSRF(app, cors=cors)
+
+Session and login earlier in the chapter, CORS and CSRF here, HTTPS
+from the previous topic. The four pieces stack on top of each other
+and stay out of each route's way.
+
+The cam is now safe to face the open internet -- HTTPS, login, CSRF,
+CORS.
+
+
+Uploading triggered frames to the cloud
+=======================================
+
+When motion fires the cam now lights up the dashboard. That's enough
+for live use, but the owner also wants a permanent archive of every
+triggered frame, stored somewhere outside the cam. That's an outbound
+HTTP call -- the cam acting as a *client*.
+
+The cam as a client
+-------------------
+
+The :mod:`requests` module is the cam's outbound HTTP client. Its
+surface is a deliberate copy of CPython's ``requests`` -- the same
+verb-named module functions, the same ``files=``, ``json=``,
+``headers=``, ``auth=`` keyword arguments. If you've made HTTP calls
+from CPython you already know the API:
+
+.. code-block:: python
+
+   import requests
+   import io
+
+   ARCHIVE_URL = 'https://api.backyard-cloud.com/frames'
+   ARCHIVE_TOKEN = load_archive_token()
+
+   async def archive_frame(jpeg, ts):
+       try:
+           r = requests.post(
+               ARCHIVE_URL,
+               files={'image': (
+                   'frame-{}.jpg'.format(ts),
+                   io.BytesIO(jpeg),
+               )},
+               headers={'Authorization': 'Bearer ' + ARCHIVE_TOKEN},
+           )
+       except OSError as e:
+           print('upload failed:', e)
+           return False
+       if r.status_code >= 400:
+           print('archive rejected:', r.status_code, r.reason)
+           return False
+       return True
+
+:func:`requests.post` opens a TCP connection, sends the request, and
+returns a :class:`~requests.Response` with ``status_code``,
+``reason``, ``headers``, ``content``, ``json()``, and the rest of
+the familiar properties.
+
+``files={...}`` builds a ``multipart/form-data`` body. The value is a
+``(filename, file-like)`` tuple; :func:`requests.post` reads the
+file-like in chunks so the whole JPEG doesn't have to be re-buffered
+into a string first. :class:`io.BytesIO` wraps the already-in-memory
+JPEG bytes so they expose a read-as-file interface.
+
+``headers={...}`` is a straight dict that gets sent as request
+headers -- here, a bearer token in the standard ``Authorization``
+position. The archive provider documents what token format they want;
+the example is the most common form.
+
+Wiring it into the motion detector
+----------------------------------
+
+The motion-detector coroutine introduced earlier already runs on
+every new frame and fires when ``change > state['threshold']``. Add
+the upload there, but fire it as a *background* task so the detector
+doesn't stop watching while the upload is in flight:
+
+.. code-block:: python
+
+   async def motion_detector():
+       global last_motion
+       prev = None
+       while True:
+           await new_frame.wait()
+           change = compute_change(prev, latest_jpeg)
+           if change > state['threshold']:
+               state['trigger_count'] += 1
+               ts = int(time.time())
+               last_motion = {'ts': ts,
+                              'count': state['trigger_count'],
+                              'change': change}
+               motion_event.set()
+               asyncio.create_task(archive_frame(latest_jpeg, ts))
+           prev = latest_jpeg
+           await asyncio.sleep_ms(50)
+
+:func:`asyncio.create_task` schedules the upload coroutine and
+returns immediately. The detector keeps grabbing frames; the upload
+runs alongside it; the cam never stalls.
+
+Failure modes
+-------------
+
+Network code fails. The cam might be offline, the archive might be
+down, the bearer token might have expired. The categories worth
+catching:
+
+* :exc:`OSError` -- the TCP connection couldn't be opened or was
+  closed mid-transfer. DNS failure, no route, connection reset.
+  ``requests`` raises this exact exception.
+* ``status_code >= 400`` -- the server received the request and
+  rejected it. 401 for an expired token, 403 for a revoked one, 413
+  for a too-large body, 5xx for the archive being unhealthy.
+* Silent timeout -- ``requests`` uses a default socket timeout (a few
+  seconds); past that it raises :exc:`OSError` with
+  :data:`errno.ETIMEDOUT`.
+
+For an archive that genuinely matters, you'd queue rejected frames to
+``/sdcard/pending/`` and retry on a slower loop -- that's a few more
+lines per case, on top of what's shown.
+
+What :mod:`requests` doesn't do
+-------------------------------
+
+The MicroPython port is deliberately small. A few things the CPython
+``requests`` does that this one doesn't:
+
+* Connection pooling. Every call opens a new TCP connection.
+* Automatic retries on transient errors. Wrap the call yourself.
+* Streaming responses. ``r.content`` is read into RAM in full;
+  there's no ``stream=True`` equivalent.
+* Automatic decompression of gzipped responses. Set the
+  ``Accept-Encoding`` header explicitly only if the server is
+  configured for it.
+
+See :doc:`/library/omv.requests` for the full method list and what's
+in / out of scope.
+
+HTTPS works out of the box -- the URL scheme drives it, and the
+default SSL context is created on the fly. For verifying the
+archive's cert against a CA bundle you've loaded onto the cam, see
+the *as a client* section of :doc:`/openmvcam/tutorial/production/tls/as-client`.
+
+The app is fully shipped: live preview, motion detection, dashboard
+with login, HTTPS, CORS/CSRF, cloud archive.
+
+
+Wrap up
+=======
+
+The cam in the yard now watches what's in front of it, streams the
+view to whichever phone is logged in, fires Server-Sent Events the
+moment something moves, accepts dashboard commands over a WebSocket,
+and uploads a JPEG of every triggered frame to a cloud archive --
+all over HTTPS, behind a login, with CORS and CSRF closing the door
+on cross-site mischief. One script, four background coroutines
+sharing the asyncio loop with one HTTP server, three small files in
+``/sdcard/static/`` for the dashboard, one signing secret on the
+filesystem.
+
+Reference roadmap
+-----------------
+
+When you reach for one of these features in your own application,
+the reference pages are the lookup destinations:
+
+* :doc:`/library/microdot` -- :class:`microdot.Microdot`,
+  :class:`~microdot.Request`, :class:`~microdot.Response`, the
+  route decorators, :meth:`~microdot.Microdot.mount`,
+  :func:`microdot.abort`, :func:`microdot.redirect`,
+  :meth:`~microdot.Microdot.start_server`,
+  :meth:`~microdot.Microdot.run`.
+* :doc:`/library/microdot.auth` --
+  :class:`~microdot.auth.BasicAuth` and
+  :class:`~microdot.auth.TokenAuth` for header-based auth.
+* :doc:`/library/microdot.session` -- the signed-cookie session
+  store.
+* :doc:`/library/microdot.login` -- the login flow built on top of
+  session.
+* :doc:`/library/microdot.sse` -- Server-Sent Events for one-way
+  push.
+* :doc:`/library/microdot.websocket` -- WebSockets for two-way
+  framed messaging.
+* :doc:`/library/microdot.cors` -- the CORS middleware.
+* :doc:`/library/microdot.csrf` -- the CSRF middleware.
+* :doc:`/library/microdot.multipart` -- form and file upload
+  parsing (the backyard cam doesn't accept uploads, but most
+  dashboards eventually do).
+* :doc:`/library/jwt` -- the JWT primitive that backs both
+  :class:`~microdot.auth.TokenAuth` and the session store.
+* :doc:`/library/omv.requests` -- the outbound HTTP client.
+
+Each one is a one-page lookup. Use them now that you've seen each
+piece in context.
 
 
 Bluetooth
@@ -26382,6 +28030,18 @@ Networking helpers (require a working network interface):
    ntptime.rst
    webrepl.rst
 
+Web framework
+~~~~~~~~~~~~~
+
+Webserver framework modules. See the per-board sections below for
+which boards include each one.
+
+.. toctree::
+   :maxdepth: 1
+
+   jwt.rst
+   microdot.rst
+
 Port-specific modules
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -26449,6 +28109,8 @@ sensor.
 * :mod:`stm` --- functionality specific to STM32 MCUs
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
+* :mod:`jwt` --- JSON Web Tokens
+* :mod:`microdot` --- minimal HTTP framework
 
 .. rubric:: OpenMV AE3
 
@@ -26459,6 +28121,8 @@ NPU + 160 MHz / 46 GOPS HE NPU).
 * :mod:`alif` --- Alif Ensemble SoC functions
 * :mod:`romfs` --- ROMFS helper utilities
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
+* :mod:`jwt` --- JSON Web Tokens
+* :mod:`microdot` --- minimal HTTP framework
 
 .. rubric:: OpenMV Cam RT1062
 
@@ -26474,6 +28138,8 @@ Bluetooth and 10/100 Ethernet.
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
+* :mod:`jwt` --- JSON Web Tokens
+* :mod:`microdot` --- minimal HTTP framework
 
 .. rubric:: OpenMV Pure Thermal
 
@@ -29718,8 +31384,20 @@ General functions
 
 .. function:: urandom(n: int) -> bytes
 
-   Return a bytes object with *n* random bytes. Whenever possible, it is
-   generated by the hardware random number generator.
+   Return a bytes object with *n* random bytes. The source is
+   cryptographically suitable on every supported cam, though the
+   implementation varies by port:
+
+   - **STM32 cams** (M4, M7, H7, H7+, PT, N6) use the STM32 hardware
+     RNG peripheral.
+   - **i.MX RT1062 cams** (RT1060) use the chip's hardware TRNG.
+   - **Alif Ensemble cams** (AE3) use the Secure Enclave's hardware
+     random service.
+   - **Arduino Nano 33 BLE Sense** uses the nRF52 hardware RNG
+     peripheral.
+   - **Arduino Nano RP2040 Connect** has no hardware TRNG; the
+     pico-sdk PRNG is seeded and continuously re-mixed with the
+     RP2040's on-chip entropy sources.
 
 Filesystem access
 -----------------
@@ -29976,7 +31654,19 @@ Functions
 .. module:: random
    :synopsis: random numbers
 
-This module implements a pseudo-random number generator (PRNG).
+This module implements a pseudo-random number generator (PRNG). The
+PRNG is a 32-bit *Yasmarang*-style LCG; on first import it draws one
+32-bit seed from the same hardware source :func:`os.urandom` uses,
+and every subsequent number is a deterministic function of that
+seed.
+
+.. warning::
+
+   The output is not cryptographically secure -- the algorithm is
+   predictable from a short output sequence, and the initial seed
+   carries only 32 bits of entropy. For keying material, session
+   tokens, password salts, or any other security-sensitive use,
+   call :func:`os.urandom` instead.
 
 .. note::
 
@@ -30027,10 +31717,10 @@ Other Functions
 
 .. function:: seed(n: Optional[int] = None, /) -> None
 
-    Initialise the random number generator module with the seed *n*, which
-    should be an integer.  When no argument (or ``None``) is passed in, the
-    PRNG is initialised with a true random number from the hardware random
-    number generator.
+    Initialise the random number generator module with the seed *n*,
+    which should be an integer. When no argument (or :data:`None`) is
+    passed in, the PRNG is re-seeded from the same port-specific
+    source :func:`os.urandom` uses.
 
 .. function:: choice(sequence: Any) -> Any
 
@@ -54690,6 +56380,1859 @@ Constants
 
    The currently-connected client socket, or ``None`` if no client is
    attached. Set by `accept_conn` and cleared by `stop`.
+
+
+:mod:`jwt` --- JSON Web Tokens
+==============================
+
+.. module:: jwt
+   :synopsis: Minimal JSON Web Token (JWT) encoder and decoder
+
+A small implementation of the JSON Web Token (JWT) standard for
+MicroPython. JWT is a compact, URL-safe container for a JSON payload
+that the issuer signs so the verifier can detect tampering and expiry.
+
+This MicroPython port is intentionally tiny:
+
+* Only **HS256** (HMAC with SHA-256) is supported. RSA / ECDSA / EdDSA
+  algorithms are not implemented; the issuer and verifier must share a
+  symmetric secret key.
+* The optional ``exp`` (expiration) claim is honored. Other registered
+  claims (``nbf``, ``iat``, ``iss``, ``aud``, ``sub``, ``jti``) are
+  passed through unchanged in the payload but **not validated**; the
+  application checks them if it cares.
+* No key-rotation, JWKS, or audience-list handling.
+
+Functions
+---------
+
+.. function:: encode(payload: dict, key: bytes | str, algorithm: str = "HS256") -> str
+
+   Encode *payload* into a signed JWT and return the resulting compact
+   serialization (a ``str`` of the form ``"header.payload.signature"``,
+   each segment Base64-URL-encoded).
+
+   *payload*
+       A JSON-serializable dict of claims. Standard claims (``exp``,
+       ``iat``, ``sub``, ...) are passed through verbatim; custom
+       application keys are allowed.
+
+   *key*
+       The shared HMAC secret. ``bytes`` is preferred; ``str`` is
+       UTF-8-encoded automatically.
+
+   *algorithm*
+       Must be ``"HS256"`` (the default). Anything else raises
+       :exc:`exceptions.InvalidAlgorithmError`.
+
+.. function:: decode(token: str, key: bytes | str, algorithms: list = ["HS256"]) -> dict
+
+   Verify *token*'s signature and (if present) its ``exp`` claim, and
+   return the decoded payload dict. Raises a subclass of
+   :exc:`exceptions.PyJWTError` on any failure -- the caller usually
+   catches the base class.
+
+   *token*
+       The compact JWT string produced by :func:`encode` (or any
+       compatible issuer).
+
+   *key*
+       The shared HMAC secret. Must match the key used at encode time.
+
+   *algorithms*
+       The list of algorithms the caller is willing to accept. ``HS256``
+       must be present, and the token's header ``alg`` must be in the
+       list. Defaults to ``["HS256"]``.
+
+   **Raises:**
+
+   * :exc:`exceptions.InvalidAlgorithmError` -- ``HS256`` is not in
+     *algorithms*, or the token's header ``alg`` is anything other than
+     ``HS256``.
+   * :exc:`exceptions.InvalidTokenError` -- the token is malformed (does
+     not split into three Base64-URL segments, or a segment fails to
+     decode / parse as JSON).
+   * :exc:`exceptions.InvalidSignatureError` -- the signature does not
+     match the recomputed HMAC over the header and payload.
+   * :exc:`exceptions.ExpiredSignatureError` -- the payload contains an
+     ``exp`` claim whose value is less than the current Unix time. The
+     camera's clock must be set for this check to be meaningful; see
+     :func:`ntptime.settime`.
+
+Exceptions
+----------
+
+All exceptions are nested under the module attribute ``jwt.exceptions``.
+
+.. exception:: exceptions.PyJWTError
+
+   Base class for every JWT failure. Catch this if you do not need to
+   distinguish among the cases below.
+
+.. exception:: exceptions.InvalidTokenError
+
+   The token is structurally invalid -- wrong number of segments, a
+   segment that fails Base64 decode, or JSON that fails to parse.
+   Subclass of :exc:`exceptions.PyJWTError`.
+
+.. exception:: exceptions.InvalidAlgorithmError
+
+   The token's algorithm is not in the caller-accepted list, or the
+   caller asked for an algorithm other than ``HS256``. Subclass of
+   :exc:`exceptions.PyJWTError`.
+
+.. exception:: exceptions.InvalidSignatureError
+
+   The token's signature does not match the HMAC computed from the
+   header and payload using the supplied key. Subclass of
+   :exc:`exceptions.PyJWTError`.
+
+.. exception:: exceptions.ExpiredSignatureError
+
+   The token's ``exp`` claim is in the past. Subclass of
+   :exc:`exceptions.PyJWTError`. The camera's wall-clock time must be
+   set (via :func:`ntptime.settime`) for this check to be meaningful.
+
+Example
+-------
+
+A symmetric-secret issue/verify cycle::
+
+    import jwt
+    import time
+
+    SECRET = b"keep-this-out-of-source-control"
+
+    payload = {
+        "sub": "kitchen-cam",
+        "role": "admin",
+        "exp": time.time() + 3600,                 # 1 hour from now
+    }
+
+    token = jwt.encode(payload, SECRET)
+    print("token:", token)
+
+    try:
+        claims = jwt.decode(token, SECRET)
+    except jwt.exceptions.PyJWTError as e:
+        print("rejected:", type(e).__name__)
+    else:
+        print("subject:", claims["sub"])
+
+The same secret is used to sign and verify, so the verifier must hold
+the key the issuer used. For services where the camera is the issuer
+(handing out tokens to a paired phone), keep the secret on the camera
+filesystem and treat it like any other long-lived credential -- see
+:doc:`/openmvcam/tutorial/production/tls/operations`.
+
+.. note::
+
+   This module relies on :mod:`hmac` and :mod:`hashlib`, both of which
+   are built into the camera. No external configuration is needed.
+   Keys may be any length, but the HMAC construction is most useful
+   with keys at least as long as the SHA-256 block size (32 bytes).
+
+
+:mod:`microdot` --- minimal HTTP framework
+==========================================
+
+.. module:: microdot
+   :synopsis: A small, asyncio-based HTTP framework for MicroPython
+
+Microdot is a small, Flask-inspired HTTP framework for MicroPython. It runs
+on top of :mod:`asyncio`, handles multiple concurrent clients without
+threads, and exposes a familiar route-decorator API. A minimal application
+looks like::
+
+    from microdot import Microdot
+
+    app = Microdot()
+
+    @app.route('/')
+    async def index(request):
+        return 'Hello, world!'
+
+    app.run(host='0.0.0.0', port=80)
+
+class Microdot
+--------------
+
+.. class:: Microdot()
+
+   An HTTP application instance. One instance is constructed near the top
+   of the script and decorated with route handlers; calling
+   :meth:`run` or awaiting :meth:`start_server` begins serving.
+
+   .. rubric:: Route registration
+
+   .. method:: route(url_pattern: str, methods: list | None = None) -> Callable
+
+      Decorator that registers a handler for *url_pattern* under the listed
+      HTTP methods (default ``['GET']``). Returns the decorator that, when
+      applied to a function, registers it as the handler and returns the
+      function unchanged.
+
+      *url_pattern*
+          A path pattern. Supports static segments (``/users``) and dynamic
+          segments enclosed in ``<`` / ``>``. Dynamic segments accept an
+          optional type prefix separated by ``:`` -- ``<int:id>``,
+          ``<path:rest>``, ``<re:[0-9a-f]+:hex>``. The default type is
+          ``string``.
+
+      *methods*
+          List of HTTP method names. If omitted, only ``GET`` is matched.
+
+      The handler is called with the request object first, then any
+      captured dynamic segments as keyword arguments. The handler's
+      return value becomes the HTTP response: a :class:`Response`, a
+      string, a tuple ``(body, status_code[, headers])``, or a dict /
+      list (sent as JSON).
+
+   .. method:: get(url_pattern: str) -> Callable
+
+      Convenience alias for ``route(url_pattern, methods=['GET'])`` --
+      register the decorated function as a ``GET`` handler for
+      *url_pattern*. Returns the decorator.
+
+   .. method:: post(url_pattern: str) -> Callable
+
+      Convenience alias for ``route(url_pattern, methods=['POST'])`` --
+      register the decorated function as a ``POST`` handler for
+      *url_pattern*. Returns the decorator.
+
+   .. method:: put(url_pattern: str) -> Callable
+
+      Convenience alias for ``route(url_pattern, methods=['PUT'])`` --
+      register the decorated function as a ``PUT`` handler for
+      *url_pattern*. Returns the decorator.
+
+   .. method:: patch(url_pattern: str) -> Callable
+
+      Convenience alias for ``route(url_pattern, methods=['PATCH'])`` --
+      register the decorated function as a ``PATCH`` handler for
+      *url_pattern*. Returns the decorator.
+
+   .. method:: delete(url_pattern: str) -> Callable
+
+      Convenience alias for ``route(url_pattern, methods=['DELETE'])`` --
+      register the decorated function as a ``DELETE`` handler for
+      *url_pattern*. Returns the decorator.
+
+   .. rubric:: Lifecycle hooks
+
+   .. method:: before_request(f: Callable) -> Callable
+
+      Decorator that registers *f* to run before every request. *f*
+      takes the request object; its return value is normally ignored.
+      To short-circuit the request, return a :class:`Response` (or a
+      value that converts to one) -- the rest of the pipeline is then
+      skipped and that response is sent. Returns *f* unchanged.
+
+   .. method:: after_request(f: Callable) -> Callable
+
+      Decorator that registers *f* to run after every successful
+      request. *f* takes ``(request, response)`` and must return the
+      (possibly modified) response object. Returns *f* unchanged.
+
+   .. method:: after_error_request(f: Callable) -> Callable
+
+      Decorator that registers *f* to run after Microdot generates an
+      error response (404, 500, raised exception, etc.). *f* takes
+      ``(request, response)`` and must return the (possibly modified)
+      response object. Returns *f* unchanged.
+
+   .. method:: errorhandler(status_code_or_exception_class) -> Callable
+
+      Decorator that registers a custom handler for an HTTP status code
+      or a Python exception class. For status codes, the handler takes
+      only the request; for exception classes, ``(request, exception)``.
+      Returns the decorator.
+
+   .. rubric:: Mounting and aborting
+
+   .. method:: mount(subapp: Microdot, url_prefix: str = '', local: bool = False) -> None
+
+      Attach another :class:`Microdot` instance's routes under
+      *url_prefix*. When *local* is ``False`` (default), the sub-app's
+      before / after / error handlers are also attached to the parent. When
+      ``True``, those handlers run only for sub-app routes. Returns
+      ``None``.
+
+   .. staticmethod:: abort(status_code: int, reason: str | None = None) -> None
+
+      Raise :exc:`HTTPException` to abort the current request with the
+      given status code. Never returns normally -- the framework catches
+      the exception and turns it into the corresponding error response.
+      Convenient inside route bodies::
+
+          from microdot import abort
+
+          @app.get('/users/<int:id>')
+          def get_user(request, id):
+              user = lookup(id)
+              if user is None:
+                  abort(404)
+              return user.to_dict()
+
+   .. rubric:: Running the server
+
+   .. method:: run(host: str = '0.0.0.0', port: int = 5000, debug: bool = False, ssl=None) -> None
+
+      Block the calling thread, run :func:`asyncio.run` on
+      :meth:`start_server`. Returns ``None`` only after :meth:`shutdown`
+      has been called and the listening loop exits. The simplest way to
+      launch a standalone app::
+
+          app.run(host='0.0.0.0', port=80)
+
+   .. method:: start_server(host: str = '0.0.0.0', port: int = 5000, debug: bool = False, ssl=None, start_serving: bool = True) -> None
+      :async:
+
+      Start the server as a coroutine. Use this when integrating with an
+      existing :mod:`asyncio` event loop alongside other tasks. The
+      coroutine does not return until :meth:`shutdown` is called::
+
+          async def main():
+              await asyncio.gather(
+                  app.start_server(port=80),
+                  capture_loop(),
+              )
+
+      *host*
+          Network interface to listen on. ``'0.0.0.0'`` (default) means
+          all interfaces; ``'127.0.0.1'`` means loopback only.
+
+      *port*
+          TCP port to listen on. Default ``5000`` -- pick ``80`` for plain
+          HTTP, ``443`` for HTTPS.
+
+      *debug*
+          If ``True``, log every request and dump tracebacks to stdout.
+
+      *ssl*
+          An :class:`ssl.SSLContext` to wrap incoming connections in TLS.
+          ``None`` (default) means plain HTTP.
+
+      *start_serving*
+          Only relevant on CPython; ignored on MicroPython.
+
+   .. method:: shutdown() -> None
+
+      Request a graceful server shutdown. Safe to call from a route
+      handler -- the current request completes before the loop exits.
+      Returns immediately; the actual shutdown happens once the
+      in-flight request finishes.
+
+   .. rubric:: Attributes
+
+   .. attribute:: url_map
+      :type: list
+
+      List of registered routes as ``(methods, URLPattern, handler,
+      url_prefix, subapp)`` tuples.
+
+   .. attribute:: before_request_handlers
+      :type: list
+
+      List of callables registered with :meth:`before_request`, in
+      registration order. Each runs with the request object before the
+      route handler. Mutating the list directly works but is rarely
+      needed -- prefer the decorator.
+
+   .. attribute:: after_request_handlers
+      :type: list
+
+      List of callables registered with :meth:`after_request`, in
+      registration order. Each runs with ``(request, response)`` after a
+      successful request and must return the (possibly modified)
+      response.
+
+   .. attribute:: after_error_request_handlers
+      :type: list
+
+      List of callables registered with :meth:`after_error_request`, in
+      registration order. Each runs with ``(request, response)`` after
+      an error response is generated (by the framework or by an
+      application error handler) and must return the response.
+
+   .. attribute:: error_handlers
+      :type: dict
+
+      Mapping of error keys to handler callables, populated by
+      :meth:`errorhandler`. Keys are either HTTP status codes
+      (``int``) or Python exception classes; values are the registered
+      handlers. Status-code handlers take ``(request)``; exception-class
+      handlers take ``(request, exception)``.
+
+   .. attribute:: debug
+      :type: bool
+
+      ``True`` while the server is running with ``debug=True``.
+
+class Request
+-------------
+
+.. class:: Request
+
+   An incoming HTTP request. Instances are passed to route handlers as
+   the first positional argument. Applications do not construct
+   :class:`Request` directly.
+
+   .. rubric:: Class attributes
+
+   .. attribute:: max_content_length
+      :type: int
+
+      Reject requests whose ``Content-Length`` exceeds this many bytes
+      with a 413 response. Default 16 KB.
+
+   .. attribute:: max_body_length
+      :type: int
+
+      Largest body that is buffered into memory and exposed via
+      :attr:`body`. Larger bodies (up to :attr:`max_content_length`)
+      remain on the socket and must be read through :attr:`stream`.
+      Default 16 KB.
+
+   .. attribute:: max_readline
+      :type: int
+
+      Maximum length of a single request line / header line in bytes.
+      Default 2 KB.
+
+   .. rubric:: Instance attributes
+
+   .. attribute:: app
+      :type: Microdot
+
+      The :class:`Microdot` instance handling the request.
+
+   .. attribute:: client_addr
+      :type: tuple
+
+      The client's address as ``(host, port)``.
+
+   .. attribute:: method
+      :type: str
+
+      HTTP method string (``'GET'``, ``'POST'``, ...).
+
+   .. attribute:: scheme
+      :type: str
+
+      ``'http'`` or ``'https'``.
+
+   .. attribute:: url
+      :type: str
+
+      The full request URL path and query string (everything after the
+      host).
+
+   .. attribute:: path
+      :type: str
+
+      Just the path portion.
+
+   .. attribute:: query_string
+      :type: str | None
+
+      The raw query string portion, or ``None``.
+
+   .. attribute:: args
+      :type: MultiDict
+
+      Parsed query string as a :class:`MultiDict`.
+
+   .. attribute:: headers
+      :type: NoCaseDict
+
+      Request headers as a :class:`NoCaseDict` (case-insensitive lookup).
+
+   .. attribute:: cookies
+      :type: dict
+
+      Parsed ``Cookie`` header as a ``dict``.
+
+   .. attribute:: content_length
+      :type: int
+
+      The integer ``Content-Length`` value, or 0 if absent.
+
+   .. attribute:: content_type
+      :type: str | None
+
+      The ``Content-Type`` header value, or ``None``.
+
+   .. attribute:: g
+      :type: object
+
+      A free-form per-request container (a bare object). Assign
+      attributes to it to pass values between hooks and handlers
+      (``request.g.user = ...``).
+
+   .. attribute:: route
+      :type: Callable
+
+      The handler function that matched this request.
+
+   .. attribute:: url_prefix
+      :type: str
+
+      Prefix the route was mounted under, or ``''``.
+
+   .. attribute:: subapp
+      :type: Microdot | None
+
+      The mounted sub-app instance, or ``None``.
+
+   .. rubric:: Body access
+
+   .. attribute:: body
+      :type: bytes
+
+      The full request body as ``bytes``. Empty when the body is being
+      streamed (see :attr:`stream`).
+
+   .. attribute:: stream
+      :type: object
+
+      An async stream object exposing ``read()`` over the body. Use this
+      for bodies larger than :attr:`max_body_length`.
+
+   .. attribute:: json
+      :type: dict | list | str | int | float | bool | None
+
+      The body parsed as JSON (a ``dict``, ``list``, ``str``, ``int``,
+      ``float``, or ``bool`` -- whatever the payload encodes), or
+      ``None`` if the ``Content-Type`` is not ``application/json``.
+
+   .. attribute:: form
+      :type: MultiDict | None
+
+      URL-encoded form fields as a :class:`MultiDict`, or ``None``. For
+      ``multipart/form-data``, decorate the route with
+      :func:`microdot.multipart.with_form_data`.
+
+   .. attribute:: files
+      :type: dict | None
+
+      Uploaded files as ``{name: FileUpload}``, populated by
+      :func:`microdot.multipart.with_form_data`. ``None`` until that
+      decorator runs.
+
+   .. method:: after_request(f: Callable) -> Callable
+
+      Register a request-local after-request hook -- runs after the
+      application-level after-request handlers, only on success. *f*
+      takes ``(request, response)`` and must return the (possibly
+      modified) response object. Returns *f* unchanged.
+
+class Response
+--------------
+
+.. class:: Response(body=b'', status_code: int = 200, headers: dict | None = None, reason: str | None = None)
+
+   An HTTP response. Most handlers return values that Microdot converts
+   to a :class:`Response` automatically; construct one directly when you
+   need custom headers or a specific status code.
+
+   *body*
+       Response body. ``str`` is UTF-8-encoded; ``dict`` / ``list`` is
+       JSON-encoded and the ``Content-Type`` set accordingly; ``bytes``
+       is sent as-is; a file-like object or async generator streams.
+
+   *status_code*
+       Numeric HTTP status. Default 200.
+
+   *headers*
+       Dict of response headers (case-insensitive).
+
+   *reason*
+       Custom reason phrase. Defaults to ``"OK"`` for 200 and ``"N/A"``
+       otherwise.
+
+   .. rubric:: Class attributes
+
+   .. attribute:: default_content_type
+      :type: str
+
+      Content-Type used when none is set explicitly. Default
+      ``'text/plain'``.
+
+   .. attribute:: default_send_file_max_age
+      :type: int | None
+
+      ``Cache-Control: max-age`` value for :meth:`send_file` when ``max_age``
+      is not given. ``None`` (default) means no Cache-Control header.
+
+   .. attribute:: send_file_buffer_size
+      :type: int
+
+      Chunk size for :meth:`send_file` streaming. Default 1024.
+
+   .. attribute:: already_handled
+      :type: None
+
+      Sentinel returned from handlers that have already written the
+      response directly (used by WebSocket upgrades). Always ``None``;
+      the identity is what matters.
+
+   .. attribute:: types_map
+      :type: dict
+
+      Extension-to-mime-type map used by :meth:`send_file` for content-
+      type inference. Maps ``css``, ``gif``, ``html``, ``jpg``, ``js``,
+      ``json``, ``png``, ``txt``, ``svg``.
+
+   .. rubric:: Methods
+
+   .. method:: set_cookie(cookie: str, value: str, path: str | None = None, domain: str | None = None, expires=None, max_age: int | None = None, secure: bool = False, http_only: bool = False, partitioned: bool = False) -> None
+
+      Add a ``Set-Cookie`` header. *expires* may be a pre-formatted
+      string or a ``datetime``-like object with ``timetuple()``.
+      Returns ``None``; the header is appended to this response in
+      place.
+
+   .. method:: delete_cookie(cookie: str, **kwargs) -> None
+
+      Set a ``Set-Cookie`` that expires the given cookie immediately.
+      ``kwargs`` accepts the same options as :meth:`set_cookie` (``path``,
+      ``domain``, ``secure``, ``http_only``, ``partitioned``); ``expires``
+      and ``max_age`` are ignored. Returns ``None``; the header is
+      appended to this response in place.
+
+   .. classmethod:: redirect(location: str, status_code: int = 302) -> Response
+
+      Return a redirect response::
+
+          @app.get('/old')
+          def old(request):
+              return Response.redirect('/new')
+
+   .. classmethod:: send_file(filename: str, status_code: int = 200, content_type: str | None = None, stream=None, max_age: int | None = None, compressed: bool | str = False, file_extension: str = '') -> Response
+
+      Stream a file from the filesystem as the response body.
+      ``content_type`` is inferred from the extension via
+      :attr:`types_map` if not given. ``compressed=True`` sets
+      ``Content-Encoding: gzip`` (the file must already be compressed).
+
+      .. warning::
+
+         *filename* is opened directly. Never pass an unsanitized
+         user-supplied path -- doing so allows arbitrary file
+         disclosure.
+
+Exceptions
+----------
+
+.. exception:: HTTPException
+
+   Raised by :func:`abort` to short-circuit a request with a specific
+   status code. Microdot catches this and turns it into the corresponding
+   error response.
+
+   .. attribute:: status_code
+      :type: int
+
+      Numeric HTTP status code to return -- the value passed to
+      :func:`abort`.
+
+   .. attribute:: reason
+      :type: str
+
+      Reason phrase to include in the error response. If not given to
+      :func:`abort`, defaults to ``"<status_code> error"`` (e.g.
+      ``"404 error"``).
+
+class URLPattern
+----------------
+
+.. class:: URLPattern(url_pattern: str)
+
+   The compiled form of a route's URL pattern. Constructed automatically
+   by :meth:`Microdot.route`; applications rarely instantiate one
+   directly.
+
+   .. classmethod:: register_type(type_name: str, pattern: str = '[^/]+', parser: Callable | None = None) -> None
+
+      Register a new dynamic-segment type for use in route patterns.
+      Returns ``None``; the type is added to the class-level type
+      registry. For example to add a ``<uuid:...>`` type::
+
+          URLPattern.register_type('uuid', '[0-9a-f-]{36}')
+
+      *parser* is an optional callable that converts the captured string
+      before it reaches the handler.
+
+   .. method:: match(path: str) -> dict | None
+
+      Match *path* against the pattern and return a dict of captured
+      groups, or ``None`` on no match.
+
+Helper classes
+--------------
+
+.. class:: MultiDict(initial_dict: dict | None = None)
+
+   A dict subclass that stores multiple values per key. Used for query
+   strings and URL-encoded form bodies where the same key can appear
+   more than once (``?tag=a&tag=b``).
+
+   .. method:: get(key, default=None, type: Callable | None = None)
+
+      Return the first value for *key*, optionally converted with
+      *type* (a callable). Returns *default* if the key is missing or
+      the conversion fails; otherwise returns the (optionally
+      converted) value.
+
+   .. method:: getlist(key, type: Callable | None = None) -> list
+
+      Return all values for *key* as a list, optionally with each
+      value converted by *type*. Returns an empty list if *key* is not
+      present.
+
+.. class:: NoCaseDict
+
+   A dict subclass with case-insensitive string keys. Used for
+   :attr:`Request.headers` and :attr:`Response.headers`.
+
+Module-level functions
+----------------------
+
+.. function:: abort(status_code: int, reason: str | None = None) -> None
+
+   Shortcut for :meth:`Microdot.abort`. Never returns normally -- raises
+   :exc:`HTTPException`. Importable as ``from microdot import abort``.
+
+.. function:: redirect(location: str, status_code: int = 302) -> Response
+
+   Shortcut for :meth:`Response.redirect`. Importable as ``from microdot
+   import redirect``.
+
+.. function:: send_file(filename: str, **kwargs) -> Response
+
+   Shortcut for :meth:`Response.send_file`.
+
+.. function:: urlencode(s: str) -> str
+
+   Percent-encode a URL component. Replaces characters that have
+   reserved meaning in a URL (``/``, ``?``, ``&``, ``=``, ``#``, space,
+   ...) with their ``%xx`` hex escapes so the result can safely sit
+   inside a path segment or query value. Returns the encoded ``str``.
+
+.. function:: urldecode(s: str) -> str
+
+   Percent-decode a URL component -- the inverse of :func:`urlencode`.
+   ``%xx`` escapes are replaced with the byte they encode, and
+   ``+`` is converted to a space (the historical query-string
+   convention). Returns the decoded ``str``.
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   microdot.auth.rst
+   microdot.cors.rst
+   microdot.csrf.rst
+   microdot.login.rst
+   microdot.multipart.rst
+   microdot.session.rst
+   microdot.sse.rst
+   microdot.websocket.rst
+
+
+:mod:`microdot.auth` --- HTTP authentication
+============================================
+
+.. module:: microdot.auth
+   :synopsis: HTTP basic and bearer-token authentication for Microdot
+
+Decorators that gate routes behind HTTP authentication. Two flavors:
+:class:`BasicAuth` for the ``Authorization: Basic <base64>`` scheme that
+browsers prompt for natively, and :class:`TokenAuth` for the
+``Authorization: Bearer <token>`` scheme that APIs use.
+
+Both classes derive from a common :class:`BaseAuth` base; an application
+constructs the auth object, registers an authentication callback with
+:meth:`~BaseAuth.authenticate`, then decorates protected routes with the
+auth instance.
+
+class BasicAuth
+---------------
+
+.. class:: BasicAuth(realm: str = 'Please login', charset: str = 'UTF-8', scheme: str = 'Basic', error_status: int = 401)
+
+   HTTP Basic authentication. The browser pops a username / password
+   dialog when an unauthenticated request hits a protected route and
+   sends ``Authorization: Basic <base64(user:pass)>`` on subsequent
+   requests.
+
+   *realm*
+       The realm string the browser shows next to the prompt.
+
+   *charset*
+       Charset advertised in the ``WWW-Authenticate`` challenge.
+
+   *scheme*
+       Authentication scheme name. Default ``'Basic'``.
+
+   *error_status*
+       HTTP status returned on failed authentication. Default 401.
+
+   .. method:: authenticate(f)
+
+      Decorator that registers the credential check. *f* takes
+      ``(request, username, password)`` and returns the authenticated
+      user object (or ``None`` on bad credentials). The returned object
+      is stored on ``request.g.current_user``.
+
+      ::
+
+          basic = BasicAuth(realm='Camera')
+
+          @basic.authenticate
+          async def check(request, username, password):
+              user = users.get(username)
+              if user and user.check_password(password):
+                  return user
+
+   .. method:: __call__(f)
+
+      Decorating a route with the :class:`BasicAuth` instance protects
+      it::
+
+          @app.route('/admin')
+          @basic
+          def admin(request):
+              return 'hello ' + request.g.current_user.name
+
+   .. method:: optional(f)
+
+      Like :meth:`__call__`, but does not reject requests that lack
+      credentials -- the handler still runs, with
+      ``request.g.current_user`` set to either the authenticated user or
+      ``None``.
+
+class TokenAuth
+---------------
+
+.. class:: TokenAuth(header: str = 'Authorization', scheme: str = 'Bearer', error_status: int = 401)
+
+   Bearer-token authentication. Clients send a token in the
+   ``Authorization`` header; the application validates it against
+   whatever backing store it likes.
+
+   *header*
+       The header name carrying the token. The default
+       ``'Authorization'`` expects the value ``Bearer <token>``; a
+       custom header carries the token value directly.
+
+   *scheme*
+       Auth scheme for the ``Authorization`` header. Default
+       ``'Bearer'``.
+
+   *error_status*
+       HTTP status on auth failure. Default 401.
+
+   .. method:: authenticate(f)
+
+      Decorator that registers the token check. *f* takes
+      ``(request, token)`` and returns a user object or ``None``::
+
+          import jwt
+
+          tokens = TokenAuth()
+
+          @tokens.authenticate
+          async def check(request, token):
+              try:
+                  claims = jwt.decode(token, SECRET)
+              except jwt.exceptions.PyJWTError:
+                  return None
+              return claims['sub']
+
+   .. method:: errorhandler(f)
+
+      Decorator that overrides the default 401 response. *f* takes the
+      request object and returns a response (or aborts).
+
+   .. method:: __call__(f: Callable) -> Callable
+
+      Decorating a route with the :class:`TokenAuth` instance protects
+      it. Requests without a valid token are rejected (401 by default,
+      or whatever :meth:`errorhandler` returned). On success the
+      authenticated user is on ``request.g.current_user``::
+
+          @app.get('/api/me')
+          @tokens
+          async def me(request):
+              return {'user': request.g.current_user}
+
+      Returns the wrapped handler.
+
+   .. method:: optional(f: Callable) -> Callable
+
+      Like :meth:`__call__`, but does not reject requests that lack a
+      token -- the handler still runs, with ``request.g.current_user``
+      set to either the authenticated user or ``None``. Useful for
+      routes that change their output based on whether the caller is
+      authenticated without requiring it::
+
+          @app.get('/api/feed')
+          @tokens.optional
+          async def feed(request):
+              if request.g.current_user:
+                  return personalized_feed(request.g.current_user)
+              return public_feed()
+
+      Returns the wrapped handler.
+
+class BaseAuth
+--------------
+
+.. class:: BaseAuth
+
+   Common base for :class:`BasicAuth` and :class:`TokenAuth`. Custom auth
+   schemes can subclass it.
+
+   .. attribute:: auth_callback
+      :type: Callable | None
+
+      The callback registered via :meth:`authenticate
+      <BasicAuth.authenticate>`. ``None`` until the application
+      registers the callback (decorating a function with
+      ``@auth.authenticate`` is what sets it).
+
+   .. attribute:: error_callback
+      :type: Callable
+
+      Async callable returning the response sent on auth failure.
+      Set by the constructor to a default that returns a 401
+      response; replace it via :meth:`errorhandler
+      <TokenAuth.errorhandler>` on :class:`TokenAuth`, or directly on
+      a custom :class:`BaseAuth` subclass.
+
+The decorated routes get ``request.g.current_user`` populated with the
+value returned from the authentication callback. Inside the route,
+inspect that attribute to identify the caller.
+
+
+:mod:`microdot.cors` --- Cross-Origin Resource Sharing
+======================================================
+
+.. module:: microdot.cors
+   :synopsis: CORS support for Microdot
+
+Adds the headers a browser needs to allow JavaScript running on one
+origin to call your camera-hosted endpoints on a different origin. The
+class wires itself into the application's ``OPTIONS`` handler (for
+preflight requests) and after-request hook (for the ``Access-Control-*``
+headers on normal responses).
+
+class CORS
+----------
+
+.. class:: CORS(app: Microdot | None = None, allowed_origins=None, allow_credentials: bool = False, allowed_methods: list | None = None, expose_headers: list | None = None, allowed_headers: list | None = None, max_age: int | None = None, handle_cors: bool = True)
+
+   *app*
+       The :class:`microdot.Microdot` instance to attach to. May be
+       ``None`` to defer attachment; call :meth:`initialize` later.
+
+   *allowed_origins*
+       A list of origin strings (``["https://app.example.com"]``) or the
+       literal ``'*'`` to allow any origin. Origins that do not match
+       this list get no CORS headers, which the browser interprets as
+       "this request is not allowed".
+
+   *allow_credentials*
+       If ``True``, add ``Access-Control-Allow-Credentials: true`` so
+       the browser sends cookies and auth headers with cross-origin
+       requests. Cannot be used with ``allowed_origins='*'`` for any
+       request that needs credentials (browsers reject that
+       combination).
+
+   *allowed_methods*
+       List of methods (``['GET', 'POST']``) the browser may use cross-
+       origin. ``None`` means any.
+
+   *expose_headers*
+       List of response header names the browser may expose to
+       JavaScript.
+
+   *allowed_headers*
+       List of request header names clients may include cross-origin.
+       ``None`` means any (echoes the preflight's
+       ``Access-Control-Request-Headers``).
+
+   *max_age*
+       Seconds the browser may cache the preflight result. Skipping it
+       means the browser revalidates every preflight.
+
+   *handle_cors*
+       If ``False``, the class is configured but does not actually
+       attach itself -- useful when you want to manually combine its
+       :meth:`get_cors_headers` output with other middleware.
+
+   .. method:: initialize(app: Microdot, handle_cors: bool = True)
+
+      Attach to *app* if construction was deferred.
+
+   .. method:: get_cors_headers(request) -> dict
+
+      Compute the set of ``Access-Control-*`` headers that apply to
+      *request*. Used internally by the after-request hook;
+      applications can call it directly when emitting CORS headers from
+      custom middleware.
+
+   .. attribute:: allowed_origins
+      :type: list | str | None
+
+      The configured list of origins, or the literal ``'*'``. Mirrors
+      the *allowed_origins* constructor argument; reassign at runtime
+      to change the policy without rebuilding the object.
+
+   .. attribute:: allow_credentials
+      :type: bool
+
+      Whether ``Access-Control-Allow-Credentials: true`` is emitted on
+      matching requests. Mirrors the *allow_credentials* constructor
+      argument.
+
+   .. attribute:: allowed_methods
+      :type: list | None
+
+      List of method names allowed cross-origin, or ``None`` for "any".
+      Mirrors the *allowed_methods* constructor argument.
+
+   .. attribute:: expose_headers
+      :type: list | None
+
+      List of response headers the browser may expose to JavaScript,
+      or ``None`` to omit the ``Access-Control-Expose-Headers`` header.
+      Mirrors the *expose_headers* constructor argument.
+
+   .. attribute:: allowed_headers
+      :type: list | None
+
+      List of request header names accepted cross-origin, lowercased,
+      or ``None`` for "echo whatever the preflight asked for". Mirrors
+      the *allowed_headers* constructor argument (the constructor
+      lowercases the list before storing it).
+
+   .. attribute:: max_age
+      :type: int | None
+
+      Seconds the browser may cache the preflight response, or
+      ``None`` to omit the ``Access-Control-Max-Age`` header. Mirrors
+      the *max_age* constructor argument.
+
+Example::
+
+    from microdot import Microdot
+    from microdot.cors import CORS
+
+    app = Microdot()
+    CORS(app,
+         allowed_origins=['https://dashboard.example.com'],
+         allow_credentials=True,
+         max_age=86400)
+
+    @app.get('/api/status')
+    async def status(request):
+        return {'ok': True}
+
+The preflight ``OPTIONS`` request is handled automatically; the camera
+returns the appropriate ``Access-Control-*`` headers and ``204 No
+Content``. Actual ``GET`` / ``POST`` / etc. responses pick up the
+``Access-Control-Allow-Origin`` header via the registered after-request
+hook.
+
+
+:mod:`microdot.csrf` --- CSRF protection
+========================================
+
+.. module:: microdot.csrf
+   :synopsis: Cross-Site Request Forgery protection for Microdot
+
+Rejects state-changing requests that originate cross-site. The check
+runs as a ``before_request`` hook and uses the browser-supplied
+``Sec-Fetch-Site`` header (with the ``Origin`` header as a fallback for
+older browsers, when paired with a :class:`microdot.cors.CORS`
+instance).
+
+class CSRF
+----------
+
+.. class:: CSRF(app: Microdot | None = None, cors=None, protect_all: bool = True, allow_subdomains: bool = False)
+
+   *app*
+       The :class:`microdot.Microdot` instance to install on. Optional;
+       call :meth:`initialize` later if not given.
+
+   *cors*
+       The :class:`microdot.cors.CORS` instance that defines the
+       application's trusted origins. Required for falling back to the
+       ``Origin`` header on browsers that do not send
+       ``Sec-Fetch-Site``. Optional; without it, only the
+       ``Sec-Fetch-Site`` check applies.
+
+   *protect_all*
+       If ``True`` (default), every route except ``GET``, ``HEAD``, and
+       ``OPTIONS`` is protected automatically. Routes can be exempted
+       individually with :meth:`exempt`. If ``False``, no routes are
+       protected by default and individual routes opt in with
+       :meth:`protect`.
+
+   *allow_subdomains*
+       If ``True``, requests from subdomains of the application's
+       origins are accepted (``same-site`` Sec-Fetch-Site, or matching
+       origin suffix).
+
+   .. method:: initialize(app: Microdot, cors=None)
+
+      Attach to *app* if construction was deferred.
+
+   .. method:: exempt(f)
+
+      Decorator that exempts a route from CSRF protection. Place it
+      directly after the route decorator::
+
+          @app.post('/webhook')
+          @csrf.exempt
+          async def webhook(request):
+              # accepts cross-site POSTs
+
+   .. method:: protect(f)
+
+      Decorator that forces CSRF protection on a route that would
+      otherwise be exempt (e.g. a ``GET`` route or every route when
+      ``protect_all=False``).
+
+   .. attribute:: SAFE_METHODS
+      :type: list
+
+      Class attribute listing methods that are not protected by default
+      -- ``['GET', 'HEAD', 'OPTIONS']``.
+
+Example::
+
+    from microdot import Microdot
+    from microdot.cors import CORS
+    from microdot.csrf import CSRF
+
+    app = Microdot()
+    cors = CORS(app, allowed_origins=['https://app.example.com'])
+    csrf = CSRF(app, cors=cors)
+
+    @app.post('/api/save')
+    async def save(request):
+        # automatically CSRF-protected
+        return {'ok': True}
+
+A request is allowed when ``Sec-Fetch-Site`` reports ``same-origin`` or
+``none`` (or ``same-site`` when ``allow_subdomains=True``). If the
+header is absent, the request's ``Origin`` is matched against the CORS
+allow-list. Requests with neither header are accepted (typical for
+direct API calls that aren't subject to browser CSRF).
+
+
+:mod:`microdot.login` --- user login flow
+=========================================
+
+.. module:: microdot.login
+   :synopsis: Cookie-based user login flow for Microdot
+
+A higher-level wrapper around :mod:`microdot.session` that implements
+the conventional username / password login flow: a *user loader*
+callback maps the session's stored user-id back to the application's
+user object, route decorators redirect unauthenticated requests to a
+configurable login URL, and optional "remember me" cookies let returning
+visitors stay signed in across browser sessions.
+
+Requires :mod:`microdot.session` to be initialized on the application
+*before* the login object is constructed -- the session is where the
+user-id is stored.
+
+class Login
+-----------
+
+.. class:: Login(login_url: str = '/login')
+
+   *login_url*
+       URL the decorator redirects unauthenticated requests to. The
+       application provides the actual login form/handler at this
+       route. Default ``'/login'``.
+
+   .. method:: user_loader(f)
+
+      Decorator that registers the user-resolver callback. *f* takes
+      the user-id stored in the session and returns the user object
+      (or ``None`` if the id is no longer valid -- a deleted account,
+      a revoked session, etc.).
+
+      ::
+
+          login = Login()
+
+          @login.user_loader
+          async def load_user(user_id):
+              return users.get(user_id)
+
+   .. method:: __call__(f)
+
+      Decorating a route with the :class:`Login` instance gates it
+      behind authentication::
+
+          @app.get('/dashboard')
+          @login
+          async def dashboard(request):
+              user = request.g.current_user
+              # ...
+
+      Unauthenticated requests are redirected to *login_url* with a
+      ``?next=<original-url>`` query parameter so the login handler
+      can send the user back where they came from.
+
+   .. method:: fresh(f)
+
+      Like :meth:`__call__`, but rejects sessions restored from a
+      "remember me" cookie -- the user must have logged in explicitly
+      since the last full login. Used to gate sensitive routes
+      (password change, account deletion) so a stolen remember-me
+      cookie cannot reach them.
+
+   .. method:: login_user(request, user, remember: bool | int = False, redirect_url: str = '/')
+      :async:
+
+      Mark *user* as logged in for *request*. Stores the user id in
+      the session and returns a redirect response.
+
+      *user*
+          The user object returned by the user loader. Must have an
+          ``id`` attribute.
+
+      *remember*
+          If truthy, also set a long-lived ``_remember`` cookie. Pass
+          ``True`` for the default 30 days, or an integer for the
+          number of days the cookie should last.
+
+      *redirect_url*
+          Where to redirect after login. Overridden by ``?next=<url>``
+          from the original request if it points to a same-site path.
+
+      Returns the redirect response -- return its value from the login
+      route handler.
+
+   .. method:: logout_user(request)
+      :async:
+
+      Clear the user id from the session and remove any
+      ``_remember`` cookie. Use from a ``/logout`` route::
+
+          @app.post('/logout')
+          async def logout(request):
+              await login.logout_user(request)
+              return redirect('/')
+
+   .. method:: get_current_user(request)
+      :async:
+
+      Return the currently logged-in user object (or ``None``).
+      Memoized on ``request.g.current_user`` so repeated calls within
+      one request hit the loader only once.
+
+Example
+-------
+
+A minimal login flow::
+
+    from microdot import Microdot, redirect
+    from microdot.session import Session
+    from microdot.login import Login
+
+    app = Microdot()
+    Session(app, secret_key=load_secret())
+    login = Login()
+
+    @login.user_loader
+    async def load_user(user_id):
+        return users.get(user_id)
+
+    @app.get('/login')
+    async def login_page(request):
+        return Response.send_file('static/login.html')
+
+    @app.post('/login')
+    async def do_login(request):
+        user = authenticate(request.form['user'], request.form['pass'])
+        if not user:
+            return redirect('/login?error=1')
+        return await login.login_user(request, user, remember=True)
+
+    @app.get('/dashboard')
+    @login
+    async def dashboard(request):
+        return 'hi ' + request.g.current_user.name
+
+    @app.post('/logout')
+    async def logout(request):
+        await login.logout_user(request)
+        return redirect('/')
+
+The ``_remember`` cookie is itself a signed JWT (using the session's
+secret), so a stolen cookie cannot be reused on a different
+application or after the secret has been rotated.
+
+
+:mod:`microdot.multipart` --- multipart/form-data parsing
+=========================================================
+
+.. module:: microdot.multipart
+   :synopsis: multipart/form-data body parser for Microdot
+
+Parses ``Content-Type: multipart/form-data`` request bodies -- the
+encoding browsers use for forms that include ``<input type="file">``
+fields. Two flavors of API:
+
+* A streaming :class:`FormDataIter` that yields fields one at a time --
+  useful when the application has to handle very large uploads piece
+  by piece on a memory-constrained device.
+* A :func:`with_form_data` decorator that buffers everything and
+  populates :attr:`request.form <microdot.Request.form>` /
+  :attr:`request.files <microdot.Request.files>` -- the convenient API
+  for normal-sized uploads.
+
+class FormDataIter
+------------------
+
+.. class:: FormDataIter(request)
+
+   Async iterator over the parts of *request*'s multipart body.
+   Yielded values are ``(name, value)`` tuples; *value* is a ``str``
+   for regular fields and a :class:`FileUpload` for file fields.
+
+   Used directly when memory matters more than ergonomics::
+
+       from microdot.multipart import FormDataIter, FileUpload
+
+       @app.post('/upload')
+       async def upload(request):
+           async for name, value in FormDataIter(request):
+               if isinstance(value, FileUpload):
+                   await value.save('/sdcard/' + value.filename)
+               else:
+                   print(name, '=', value)
+           return 'ok'
+
+   .. note::
+
+      When iterating over file fields, the file must be consumed
+      (via :meth:`FileUpload.read` or :meth:`FileUpload.save`) before
+      the next ``async for`` iteration -- the underlying stream is
+      invalidated when iteration advances.
+
+   .. attribute:: buffer_size
+      :type: int
+
+      Class attribute. Chunk size used while reading from the request
+      stream. Default 256 bytes. Increase for higher throughput at the
+      cost of RAM.
+
+class FileUpload
+----------------
+
+.. class:: FileUpload(filename: str, content_type: str | None, read)
+
+   A single uploaded file. Instances are yielded by
+   :class:`FormDataIter` and collected into
+   :attr:`request.files <microdot.Request.files>` by
+   :func:`with_form_data`. Applications do not normally construct
+   :class:`FileUpload` directly.
+
+   .. attribute:: filename
+      :type: str
+
+      The file's original name as the client sent it (untrusted -- do
+      not pass to :func:`open` without sanitizing).
+
+   .. attribute:: content_type
+      :type: str | None
+
+      The MIME type from the part's ``Content-Type`` header, or
+      ``None`` if not provided.
+
+   .. attribute:: max_memory_size
+      :type: int
+
+      Class attribute. Threshold (in bytes) above which
+      :meth:`copy` switches from in-memory buffering to a temporary
+      file. Default 1024.
+
+   .. method:: read(n: int = -1)
+      :async:
+
+      Read up to *n* bytes from the upload stream. ``-1`` reads to end.
+
+   .. method:: save(path_or_file)
+      :async:
+
+      Save the upload to *path_or_file*, which can be a filesystem
+      path or an already-open file object.
+
+   .. method:: copy(max_memory_size: int | None = None)
+      :async:
+
+      Buffer the upload (either in RAM or in a temp file, depending on
+      ``max_memory_size``) so the rest of the multipart body can be
+      parsed without the original stream being invalidated. The
+      :func:`with_form_data` decorator calls this automatically.
+
+   .. method:: close()
+      :async:
+
+      Release any temporary file created by :meth:`copy`. Called
+      automatically when the request finishes if the upload reached
+      :attr:`request.files` via :func:`with_form_data`.
+
+Module-level decorators
+-----------------------
+
+.. function:: with_form_data(f)
+
+   Decorator that parses the multipart body up front and populates
+   :attr:`request.form <microdot.Request.form>` and
+   :attr:`request.files <microdot.Request.files>` before the handler
+   runs::
+
+       from microdot import Microdot
+       from microdot.multipart import with_form_data
+
+       app = Microdot()
+
+       @app.post('/upload')
+       @with_form_data
+       async def upload(request):
+           print('fields:', dict(request.form))
+           for name, file in request.files.items():
+               await file.save('/sdcard/' + sanitize(file.filename))
+           return 'ok'
+
+   File uploads are buffered via :meth:`FileUpload.copy`, so the
+   handler can iterate ``request.files`` and ``request.form`` freely.
+   Temporary files are cleaned up automatically when the request
+   ends.
+
+For uploads larger than a couple of megabytes, prefer the streaming
+:class:`FormDataIter` API; :func:`with_form_data` accumulates the
+entire request in memory or on the filesystem before the handler
+runs.
+
+
+:mod:`microdot.session` --- signed cookie sessions
+==================================================
+
+.. module:: microdot.session
+   :synopsis: Signed-cookie session store for Microdot
+
+A per-user key/value store backed by a :mod:`jwt` in a single
+``session`` cookie. The JWT is signed with a secret known only to the
+application, so the client can read the cookie but cannot tamper with
+the payload without the server detecting it.
+
+class Session
+-------------
+
+.. class:: Session(app: Microdot | None = None, secret_key: bytes | str | None = None, cookie_options: dict | None = None)
+
+   *app*
+       The :class:`microdot.Microdot` instance to install on. Optional;
+       call :meth:`initialize` later if not given.
+
+   *secret_key*
+       Symmetric key used to sign the session JWT. Required before any
+       session is read or written -- accessing :meth:`get` without one
+       raises :exc:`ValueError`. Store it outside source control; on a
+       camera this is typically a file on the FAT filesystem.
+
+   *cookie_options*
+       Dict of options forwarded to
+       :meth:`microdot.Response.set_cookie` whenever the session cookie
+       is written. Defaults set ``path='/'`` and ``http_only=True``.
+       Add ``secure=True`` for HTTPS-only deployments.
+
+   .. method:: initialize(app: Microdot, secret_key=None, cookie_options=None)
+
+      Attach to *app* if construction was deferred. *secret_key* /
+      *cookie_options* override constructor values if given.
+
+   .. method:: get(request) -> SessionDict
+
+      Return the session dictionary for *request*. The dictionary is
+      lazily decoded from the ``session`` cookie on first access and
+      cached on ``request.g._session`` for the rest of the request.
+      Tampered / unsignable cookies return an empty dict.
+
+   .. method:: encode(payload: dict, secret_key=None) -> str
+
+      Encode *payload* as a JWT with the session's secret. Used
+      internally; exposed for callers that want to mint compatible
+      tokens.
+
+   .. method:: decode(session: str, secret_key=None) -> dict
+
+      Verify and decode a JWT-string session value. Returns ``{}`` on
+      any verification failure.
+
+   .. attribute:: secret_key
+      :type: bytes | str | None
+
+      The signing secret used to sign and verify the session JWT.
+      Settable post-construction. ``None`` until set; reading the
+      session without it raises :exc:`ValueError`.
+
+   .. attribute:: cookie_options
+      :type: dict
+
+      The dict of options applied to the session cookie when it is
+      written, forwarded to :meth:`microdot.Response.set_cookie`.
+      Defaults set ``path='/'`` and ``http_only=True`` after
+      :meth:`initialize` runs.
+
+class SessionDict
+-----------------
+
+.. class:: SessionDict(request, session_dict)
+
+   The dict-like object returned by :meth:`Session.get`. Subclasses
+   ``dict``, so all standard mutations work; two extra methods commit
+   the changes back into the response.
+
+   .. method:: save()
+
+      Write the (possibly mutated) session back into the response as a
+      new ``session`` cookie. Without this call, in-place edits are
+      lost when the request ends.
+
+   .. method:: delete()
+
+      Remove the session by emitting a cookie-deletion header on the
+      response.
+
+Module-level decorators
+-----------------------
+
+.. function:: with_session(f)
+
+   Decorator that passes the session dictionary to the route handler as
+   a second argument::
+
+       from microdot import Microdot
+       from microdot.session import Session, with_session
+
+       app = Microdot()
+       Session(app, secret_key=load_secret())
+
+       @app.get('/counter')
+       @with_session
+       async def counter(request, session):
+           session['n'] = session.get('n', 0) + 1
+           session.save()
+           return {'n': session['n']}
+
+   The decorator does not auto-save -- call :meth:`SessionDict.save`
+   when the session was modified.
+
+The session payload itself is a regular Python dict serialized as JSON
+inside the JWT. Keep it small: every request and every response carries
+the full cookie, and JWTs are not designed for storing large objects.
+For per-user state larger than a few hundred bytes, store the data
+server-side keyed by a small session identifier.
+
+
+:mod:`microdot.sse` --- Server-Sent Events
+==========================================
+
+.. module:: microdot.sse
+   :synopsis: Server-Sent Events (one-way push streaming) for Microdot
+
+Server-Sent Events (SSE) is a simple one-way push protocol: the client
+opens a normal HTTP request to ``Content-Type: text/event-stream``, and
+the server keeps the connection open and writes formatted events as
+they happen. The browser exposes the stream as a JavaScript
+``EventSource`` object. Compared to WebSockets, SSE is simpler when
+only the server pushes; the client always requests.
+
+The typical camera use is publishing detections / sensor readings /
+status updates to a phone or dashboard at the rate they happen, without
+the dashboard having to poll.
+
+class SSE
+---------
+
+.. class:: SSE
+
+   The handle the route receives. Passed to handlers as the second
+   argument when :func:`with_sse` is in use.
+
+   .. method:: send(data, event: str | None = None, event_id: str | None = None, retry: int | None = None, comment: bool = False)
+      :async:
+
+      Push a single event to the client.
+
+      *data*
+          The event payload. Strings and bytes are sent as-is. Dicts
+          and lists are serialized to JSON. Anything else is
+          ``str()``-converted.
+
+      *event*
+          Optional event name -- the browser's ``EventSource``
+          dispatches to a JavaScript listener of the same name when
+          this is set.
+
+      *event_id*
+          Optional event id -- the browser sends it back as
+          ``Last-Event-ID`` if the connection drops and reconnects,
+          which lets the server resume from where it left off.
+
+      *retry*
+          Reconnection delay in seconds; the browser uses this if the
+          connection drops.
+
+      *comment*
+          If ``True``, the payload is sent as an SSE comment line
+          (ignored by the browser). Useful as a keep-alive heartbeat
+          to stop NAT timeouts from closing an otherwise-idle stream.
+
+Module-level decorators
+-----------------------
+
+.. function:: with_sse(f)
+
+   Decorator that turns a route into an SSE endpoint. The handler
+   receives the request and an :class:`SSE` object::
+
+       from microdot import Microdot
+       from microdot.sse import with_sse
+
+       app = Microdot()
+
+       @app.get('/events')
+       @with_sse
+       async def events(request, sse):
+           import asyncio
+           while True:
+               await sse.send({'temp': read_sensor()}, event='reading')
+               await asyncio.sleep(1)
+
+   The handler's lifetime equals the stream's lifetime -- it runs for
+   as long as the client stays connected. Cancellation (the client
+   disconnects, the server shuts down) propagates as
+   :exc:`asyncio.CancelledError`, which the framework swallows.
+
+.. function:: sse_response(request, event_function, *args, **kwargs)
+
+   Low-level entry point: returns the response tuple that
+   :func:`with_sse` returns under the hood. Useful when an SSE
+   endpoint needs custom headers or status codes that the decorator
+   does not allow::
+
+       from microdot.sse import sse_response
+
+       @app.get('/events')
+       async def events(request):
+           if not request.g.current_user:
+               return 401
+           async def emit(req, sse):
+               await sse.send('hello')
+           return sse_response(request, emit)
+
+   *event_function* takes ``(request, sse, *args, **kwargs)`` and uses
+   ``await sse.send(...)`` to push events.
+
+The SSE response sets ``Content-Type: text/event-stream`` and keeps
+the connection open until *event_function* returns or the client
+disconnects. Use a ``while True`` loop with an ``await asyncio.sleep``
+between sends to avoid hot-looping.
+
+
+:mod:`microdot.websocket` --- WebSocket support
+===============================================
+
+.. module:: microdot.websocket
+   :synopsis: WebSocket endpoint support for Microdot
+
+WebSockets are a two-way persistent connection over HTTP -- after an
+upgrade handshake, client and server send and receive framed messages
+on the same socket. Use them when the camera and a browser-side
+application need full-duplex traffic that SSE (one-way push) and plain
+HTTP polling cannot give them cheaply.
+
+class WebSocket
+---------------
+
+.. class:: WebSocket(request)
+
+   The handle the route receives. Passed to handlers as the second
+   argument when :func:`with_websocket` is in use; do not construct
+   directly.
+
+   .. rubric:: Class attributes
+
+   .. attribute:: max_message_length
+      :type: int
+
+      Maximum payload size that :meth:`receive` will accept. Messages
+      larger than this raise :exc:`WebSocketError` and close the
+      connection. ``0`` disables the check (be aware of memory-
+      exhaustion attacks if you set this). ``-1`` (default) uses
+      :attr:`Request.max_body_length <microdot.Request.max_body_length>`.
+
+   .. attribute:: CONT
+      :type: int
+
+      Continuation-frame opcode, ``0x0``. Marks a frame that
+      continues the payload of the previous frame for the same
+      message. Microdot does not generate continuation frames itself
+      (each message goes out as a single frame) and rejects them on
+      receive, but the constant is exposed for applications that
+      implement custom framing.
+
+   .. attribute:: TEXT
+      :type: int
+
+      Text-frame opcode, ``0x1``. The opcode :meth:`send` picks
+      automatically when *data* is a ``str``; the payload is
+      UTF-8-encoded on the way out.
+
+   .. attribute:: BINARY
+      :type: int
+
+      Binary-frame opcode, ``0x2``. The opcode :meth:`send` picks
+      automatically when *data* is ``bytes`` / ``bytearray``; the
+      payload is sent verbatim.
+
+   .. attribute:: CLOSE
+      :type: int
+
+      Close-frame opcode, ``0x8``. Sent by :meth:`close`; receiving
+      one raises :exc:`WebSocketError` ("Websocket connection
+      closed") out of :meth:`receive`.
+
+   .. attribute:: PING
+      :type: int
+
+      Ping-frame opcode, ``0x9``. Microdot answers incoming pings
+      with a matching :attr:`PONG` automatically inside
+      :meth:`receive`; the application does not normally observe
+      them.
+
+   .. attribute:: PONG
+      :type: int
+
+      Pong-frame opcode, ``0xA``. Sent automatically in reply to a
+      :attr:`PING`. Incoming pongs are silently dropped.
+
+   .. rubric:: Instance attributes
+
+   .. attribute:: request
+      :type: microdot.Request
+
+      The originating :class:`microdot.Request` -- the same object the
+      route handler received.
+
+   .. attribute:: closed
+      :type: bool
+
+      ``True`` once :meth:`close` has run. Inspect to avoid double-
+      closing in cleanup paths.
+
+   .. rubric:: Methods
+
+   .. method:: receive()
+      :async:
+
+      Wait for and return the next message from the client. The return
+      type matches the frame opcode: ``str`` for text frames, ``bytes``
+      for binary frames. ``ping`` frames are answered automatically
+      with a ``pong``; ``pong`` frames are silently dropped; a ``close``
+      frame raises :exc:`WebSocketError` ("Websocket connection
+      closed").
+
+   .. method:: send(data, opcode: int | None = None)
+      :async:
+
+      Send *data* to the client. Strings are sent as text frames,
+      bytes as binary frames; pass *opcode* explicitly to override.
+
+   .. method:: close()
+      :async:
+
+      Send a close frame and mark the connection as closed. Called
+      automatically when :func:`with_websocket`'s wrapper exits.
+
+class WebSocketError
+--------------------
+
+.. exception:: WebSocketError
+
+   Raised inside :meth:`WebSocket.receive` when the connection ends or
+   the protocol is violated. Use this in a route to detect normal
+   client disconnects::
+
+       try:
+           message = await ws.receive()
+       except WebSocketError:
+           # client closed the connection
+
+Module-level decorators
+-----------------------
+
+.. function:: with_websocket(f)
+
+   Decorator that turns a route into a WebSocket endpoint. The handler
+   receives the request and a :class:`WebSocket` object::
+
+       from microdot import Microdot
+       from microdot.websocket import with_websocket
+
+       app = Microdot()
+
+       @app.get('/echo')
+       @with_websocket
+       async def echo(request, ws):
+           while True:
+               msg = await ws.receive()
+               await ws.send(msg)
+
+   The handler's lifetime equals the connection lifetime. Returning,
+   raising, or a client disconnect closes the WebSocket cleanly.
+
+.. function:: websocket_upgrade(request)
+   :async:
+
+   Low-level upgrade helper. Use this inside a route when the upgrade
+   should happen conditionally -- e.g. only after an authorization
+   check passes::
+
+       @app.get('/private')
+       async def private(request):
+           if not authenticate(request):
+               abort(401)
+           ws = await websocket_upgrade(request)
+           while True:
+               msg = await ws.receive()
+               await ws.send(msg.upper())
+
+   Returns the upgraded :class:`WebSocket`. The handler must return
+   :attr:`microdot.Response.already_handled` (or raise) once it's
+   done -- microdot has already taken over the socket.
+
+The implementation supports the standard text and binary opcodes,
+ping / pong, and a clean close. Fragmented (continuation) frames are
+not supported -- each message is sent as a single frame, which is
+appropriate for the typical small-message camera applications.
 
 
 :mod:`pyb` --- functions related to the board
@@ -84703,7 +88246,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Tue 02 Jun 2026 03:53:48 UTC
+Generated Wed 03 Jun 2026 07:44:06 UTC
 
 Literals
 --------
@@ -84886,7 +88429,7 @@ Sample code::
 Core language
 =============
 
-Generated Tue 02 Jun 2026 03:53:48 UTC
+Generated Wed 03 Jun 2026 07:44:06 UTC
 
 Classes
 -------
@@ -85488,7 +89031,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f2caae05260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7fc651a05260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -85670,7 +89213,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Tue 02 Jun 2026 03:53:48 UTC
+Generated Wed 03 Jun 2026 07:44:06 UTC
 
 Exception
 ---------
@@ -86537,7 +90080,7 @@ Sample code::
 Modules
 =======
 
-Generated Tue 02 Jun 2026 03:53:48 UTC
+Generated Wed 03 Jun 2026 07:44:06 UTC
 
 .. Preamble section inserted into generated output
 
@@ -86832,15 +90375,15 @@ Sample code::
     x = random.getrandbits(64)
     print("{}".format(x))
 
-+--------------------------+--------------------------------------------+
-| CPython output:          | MicroPython output:                        |
-+--------------------------+--------------------------------------------+
-| ::                       | ::                                         |
-|                          |                                            |
-|     17476464219418115404 |     Traceback (most recent call last):     |
-|                          |       File "<stdin>", line 11, in <module> |
-|                          |     ValueError: bits must be 32 or less    |
-+--------------------------+--------------------------------------------+
++-------------------------+--------------------------------------------+
+| CPython output:         | MicroPython output:                        |
++-------------------------+--------------------------------------------+
+| ::                      | ::                                         |
+|                         |                                            |
+|     4535488341379497010 |     Traceback (most recent call last):     |
+|                         |       File "<stdin>", line 11, in <module> |
+|                         |     ValueError: bits must be 32 or less    |
++-------------------------+--------------------------------------------+
 
 .. _cpydiff_modules_random_randint:
 

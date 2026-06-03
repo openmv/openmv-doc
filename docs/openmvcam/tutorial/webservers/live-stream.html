@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="blue" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>13.3. Live streaming – one viewer - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" /><link rel="next" title="13.4. Sharing one capture loop across viewers" href="multi-client-stream.html" /><link rel="prev" title="13.2. Returning a snapshot" href="snapshot.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/webservers/live-stream.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=7fb566aa" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/webservers/live-stream.html"/>
+  <meta property="og:title" content="13.3. Live streaming – one viewer"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      <img class="light-logo" src="../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../index.html">Home</a></li><li class="link"><a href="../index.html">Tutorial</a></li><li class="link"><a href="../../../library/index.html">Libraries</a></li><li class="link"><a href="../../quickref.html">Boards</a></li><li class="link"><a href="../../shields.html">Shields</a></li><li class="link"><a href="../../sensors.html">Sensors</a></li><li class="link"><a href="../../../reference/index.html">Language</a></li><li class="link"><a href="../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../overview.html">1. Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../software_setup.html">2. Software Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware_setup.html">3. Hardware Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../openmvide_overview.html">4. OpenMV IDE Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python/index.html">5. Python Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware/index.html">6. Hardware Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../vision/index.html">7. Vision Sensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">8. Image Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../numpy/index.html">9. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">10. Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asyncio/index.html">11. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networking/index.html">12. Networking</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">13. Web Servers</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="first-endpoint.html">13.1. Your first endpoint</a></li>
+<li class="toctree-l3"><a class="reference internal" href="snapshot.html">13.2. Returning a snapshot</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">13.3. Live streaming &#8211; one viewer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="multi-client-stream.html">13.4. Sharing one capture loop across viewers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="control-api.html">13.5. A control API for the cam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="control-panel.html">13.6. Building the dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="events.html">13.7. Pushing events to the dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="commands.html">13.8. Two-way control with WebSockets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="auth-headers.html">13.9. Auth for programmatic clients</a></li>
+<li class="toctree-l3"><a class="reference internal" href="sessions-login.html">13.10. Login for the dashboard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="https.html">13.11. HTTPS &#8211; transport encryption for the server</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cors-csrf.html">13.12. CORS and CSRF</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cloud-uploads.html">13.13. Uploading triggered frames to the cloud</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wrap-up.html">13.14. Wrap up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../bluetooth/index.html">14. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../production/index.html">15. Production</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../library/index.html">Libraries</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../sensors.html">Sensors</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../reference/index.html">Language</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../develop/index.html">Internals</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../license.html">License</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#capturing-without-blocking">13.3.1. Capturing without blocking</a></li>
+<li><a class="reference internal" href="#streaming-bodies-are-class-based-iterators">13.3.2. Streaming bodies are class-based iterators</a></li>
+<li><a class="reference internal" href="#running-the-server-inside-asyncio">13.3.3. Running the server inside asyncio</a></li>
+<li><a class="reference internal" href="#one-viewer-at-a-time">13.3.4. One viewer at a time</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/b21b07f9e6cb694b03f17c89da2655b12b0b997a/docs/openmvcam/tutorial/webservers/live-stream.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV Cam Tutorial</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">13. </span>Web Servers</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">13.3. </span>Live streaming – one viewer</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/webservers/live-stream.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/webservers/live-stream.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/webservers/live-stream.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/webservers/live-stream.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/webservers/live-stream.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/webservers/live-stream.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="live-streaming-one-viewer">
+<h1><span class="section-number">13.3. </span>Live streaming – one viewer<a class="headerlink" href="#live-streaming-one-viewer" title="Link to this heading">¶</a></h1>
+<p>Browsers can render multi-part <em>Motion JPEG</em> (MJPEG) streams
+directly inside an <code class="docutils literal notranslate"><span class="pre">&lt;img&gt;</span></code> tag. Hand the browser one HTTP response
+that never finishes, write JPEGs separated by a multipart boundary,
+and the browser displays each frame as it arrives.</p>
+<img alt="The browser sends GET /stream.jpg; the cam responds with Content-Type multipart/x-mixed-replace and writes one JPEG-bodied part per frame until the browser disconnects." class="align-center" src="../../../_images/mjpeg-stream.svg" />
+<p>The wire is straightforward: one response header,
+<code class="docutils literal notranslate"><span class="pre">Content-Type:</span> <span class="pre">multipart/x-mixed-replace;</span> <span class="pre">boundary=frame</span></code>, then a
+<code class="docutils literal notranslate"><span class="pre">--frame</span></code> line, <code class="docutils literal notranslate"><span class="pre">Content-Type:</span> <span class="pre">image/jpeg</span></code>, a blank line, the
+JPEG bytes, <code class="docutils literal notranslate"><span class="pre">\r\n</span></code>, and repeat. The browser closes the connection
+when the <code class="docutils literal notranslate"><span class="pre">&lt;img&gt;</span></code> is removed or the tab is closed.</p>
+<section id="capturing-without-blocking">
+<h2><span class="section-number">13.3.1. </span>Capturing without blocking<a class="headerlink" href="#capturing-without-blocking" title="Link to this heading">¶</a></h2>
+<p>The blocking <code class="docutils literal notranslate"><span class="pre">csi0.snapshot()</span></code> used so far stalls the whole event
+loop until the sensor delivers a frame. That was fine when one
+request fired one snapshot and nothing else was running. Once a
+stream is open the server has to keep handling other requests while
+the next frame is being captured – the capture call needs to
+<em>yield</em> to the event loop while it’s waiting on the sensor.</p>
+<p>The pattern is a thin <code class="docutils literal notranslate"><span class="pre">AsyncCSI</span></code> wrapper that polls
+<a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">csi.CSI.snapshot()</span></code></a> in non-blocking mode and sleeps the
+coroutine between polls. The asyncio chapter walked through this
+pattern in <a class="reference internal" href="../asyncio/capstone/snapshot-loop.html"><span class="doc">AsyncCSI</span></a>;
+inline it into the script for now:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">class</span><span class="w"> </span><span class="nc">AsyncCSI</span><span class="p">:</span>
+</span><span data-line="4">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span data-line="5">        <span class="bp">self</span><span class="o">.</span><span class="n">_csi</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7">    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+</span><span data-line="8">        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_csi</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</span><span data-line="9">
+</span><span data-line="10">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="11">        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="12">            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_csi</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="13">            <span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="14">                <span class="k">return</span> <span class="n">img</span>
+</span><span data-line="15">            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Every other CSI method (<a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.reset" title="csi.CSI.reset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reset()</span></code></a>,
+<a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.pixformat" title="csi.CSI.pixformat"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pixformat()</span></code></a>, <a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.framesize" title="csi.CSI.framesize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">framesize()</span></code></a>,
+<a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.gain_db" title="csi.CSI.gain_db"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gain_db()</span></code></a>, …) is forwarded through <code class="docutils literal notranslate"><span class="pre">__getattr__</span></code>;
+only <a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">snapshot()</span></code></a> is replaced with an awaitable version
+that lets the event loop schedule other coroutines between polls.</p>
+<p>Swap the bare <code class="docutils literal notranslate"><span class="pre">csi.CSI()</span></code> from the snapshot route for an
+<code class="docutils literal notranslate"><span class="pre">AsyncCSI()</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">csi0</span> <span class="o">=</span> <span class="n">AsyncCSI</span><span class="p">()</span>
+</span><span data-line="2"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="3"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span></pre></div>
+</div>
+</section>
+<section id="streaming-bodies-are-class-based-iterators">
+<h2><span class="section-number">13.3.2. </span>Streaming bodies are class-based iterators<a class="headerlink" href="#streaming-bodies-are-class-based-iterators" title="Link to this heading">¶</a></h2>
+<p>A streaming response body is just an object microdot iterates with
+<code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">for</span></code>, sending each yielded chunk down the socket. On CPython
+this is normally an <em>async generator function</em> – <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span></code> with
+<code class="docutils literal notranslate"><span class="pre">yield</span></code>. MicroPython doesn’t support that:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>MicroPython’s <a class="reference internal" href="../../../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> does not support async-generator
+functions (<code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span> <span class="pre">name():</span> <span class="pre">...</span> <span class="pre">yield</span> <span class="pre">...</span></code>). Streaming
+response bodies must be <strong>class-based</strong> async iterators with
+<code class="docutils literal notranslate"><span class="pre">__aiter__</span></code> returning <code class="docutils literal notranslate"><span class="pre">self</span></code> and <code class="docutils literal notranslate"><span class="pre">__anext__</span></code> defined as
+<code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span></code>.</p>
+</div>
+<p>For an MJPEG stream that means a class whose <code class="docutils literal notranslate"><span class="pre">__anext__</span></code> awaits one
+frame and returns it framed in the multipart wrapper:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">BOUNDARY</span> <span class="o">=</span> <span class="sa">b</span><span class="s1">&#39;frame&#39;</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">class</span><span class="w"> </span><span class="nc">FrameStream</span><span class="p">:</span>
+</span><span data-line="4">    <span class="k">def</span><span class="w"> </span><span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="5">        <span class="k">return</span> <span class="bp">self</span>
+</span><span data-line="6">
+</span><span data-line="7">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__anext__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="8">        <span class="n">img</span> <span class="o">=</span> <span class="k">await</span> <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</span><span data-line="9">        <span class="n">jpeg</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">quality</span><span class="o">=</span><span class="mi">85</span><span class="p">)</span><span class="o">.</span><span class="n">bytearray</span><span class="p">())</span>
+</span><span data-line="10">        <span class="k">return</span> <span class="p">(</span><span class="sa">b</span><span class="s1">&#39;--&#39;</span> <span class="o">+</span> <span class="n">BOUNDARY</span> <span class="o">+</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span>
+</span><span data-line="11">                <span class="sa">b</span><span class="s1">&#39;Content-Type: image/jpeg</span><span class="se">\r\n\r\n</span><span class="s1">&#39;</span>
+</span><span data-line="12">                <span class="o">+</span> <span class="n">jpeg</span> <span class="o">+</span> <span class="sa">b</span><span class="s1">&#39;</span><span class="se">\r\n</span><span class="s1">&#39;</span><span class="p">)</span>
+</span><span data-line="13">
+</span><span data-line="14"><span class="nd">@app</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;/stream.jpg&#39;</span><span class="p">)</span>
+</span><span data-line="15"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">stream</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+</span><span data-line="16">    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+</span><span data-line="17">        <span class="n">body</span><span class="o">=</span><span class="n">FrameStream</span><span class="p">(),</span>
+</span><span data-line="18">        <span class="n">headers</span><span class="o">=</span><span class="p">{</span>
+</span><span data-line="19">            <span class="s1">&#39;Content-Type&#39;</span><span class="p">:</span>
+</span><span data-line="20">                <span class="sa">b</span><span class="s1">&#39;multipart/x-mixed-replace; boundary=&#39;</span> <span class="o">+</span> <span class="n">BOUNDARY</span><span class="p">,</span>
+</span><span data-line="21">        <span class="p">},</span>
+</span><span data-line="22">    <span class="p">)</span>
+</span></pre></div>
+</div>
+<p>The instance is fresh per request, so each connected client gets its
+own iterator. When the browser disconnects, microdot stops awaiting
+<code class="docutils literal notranslate"><span class="pre">__anext__</span></code> and the iterator is garbage-collected.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">bytes(...)</span></code> wrap around the JPEG is defensive.
+<a class="reference internal" href="../../../library/omv.image.Image.html#image.Image.bytearray" title="image.Image.bytearray"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bytearray()</span></code></a> returns a view into the camera’s
+image buffer, and the next <a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">snapshot()</span></code></a> call
+rewrites that buffer in place. Wrapping in <a class="reference internal" href="../../../library/builtins.html#bytes" title="bytes"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a> copies
+the JPEG out so the chunk microdot is mid-write stays stable even
+if the writer’s flush has not finished by the time <code class="docutils literal notranslate"><span class="pre">__anext__</span></code>
+runs again.</p>
+</div>
+</section>
+<section id="running-the-server-inside-asyncio">
+<h2><span class="section-number">13.3.3. </span>Running the server inside asyncio<a class="headerlink" href="#running-the-server-inside-asyncio" title="Link to this heading">¶</a></h2>
+<p>The earlier <code class="docutils literal notranslate"><span class="pre">app.run(host=...,</span> <span class="pre">port=...)</span></code> call is blocking. The
+MJPEG handler needs to share the loop with the AsyncCSI snapshot
+polls, so swap <code class="docutils literal notranslate"><span class="pre">app.run</span></code> for <a class="reference internal" href="../../../library/microdot.html#microdot.Microdot.start_server" title="microdot.Microdot.start_server"><code class="xref py py-meth docutils literal notranslate"><span class="pre">start_server()</span></code></a>
+inside an <a class="reference internal" href="../../../library/asyncio.html#asyncio.run" title="asyncio.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.run()</span></code></a>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="2">    <span class="k">await</span> <span class="n">app</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s1">&#39;0.0.0.0&#39;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>The <a class="reference internal" href="../../../library/asyncio.html#asyncio.run" title="asyncio.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.run()</span></code></a> wrapper lets the server be one task among
+several – the <code class="docutils literal notranslate"><span class="pre">main</span></code> coroutine is then the natural place to spawn
+capture, motion detection, and anything else that has to share the
+loop with the HTTP server.</p>
+</section>
+<section id="one-viewer-at-a-time">
+<h2><span class="section-number">13.3.4. </span>One viewer at a time<a class="headerlink" href="#one-viewer-at-a-time" title="Link to this heading">¶</a></h2>
+<p>Every connected client runs its own <code class="docutils literal notranslate"><span class="pre">FrameStream</span></code> iterator, which
+means every client triggers its own <code class="docutils literal notranslate"><span class="pre">csi0.snapshot()</span></code> call. Two
+browsers means two sensor reads per frame interval, three means
+three, and so on. The sensor can’t actually deliver frames faster
+than its own frame rate, so the requests queue up behind each other
+and everyone’s stream slows down.</p>
+<p>The fix is a single shared capture loop publishing one frame to many
+readers.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="snapshot.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">13.2. </span>Returning a snapshot</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="multi-client-stream.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">13.4. </span>Sharing one capture loop across viewers</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 03 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=3011ec97"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script></body>
+</html>

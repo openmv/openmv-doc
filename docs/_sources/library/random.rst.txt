@@ -4,7 +4,19 @@
 .. module:: random
    :synopsis: random numbers
 
-This module implements a pseudo-random number generator (PRNG).
+This module implements a pseudo-random number generator (PRNG). The
+PRNG is a 32-bit *Yasmarang*-style LCG; on first import it draws one
+32-bit seed from the same hardware source :func:`os.urandom` uses,
+and every subsequent number is a deterministic function of that
+seed.
+
+.. warning::
+
+   The output is not cryptographically secure -- the algorithm is
+   predictable from a short output sequence, and the initial seed
+   carries only 32 bits of entropy. For keying material, session
+   tokens, password salts, or any other security-sensitive use,
+   call :func:`os.urandom` instead.
 
 .. note::
 
@@ -58,10 +70,10 @@ Other Functions
 
 .. function:: seed(n: Optional[int] = None, /) -> None
 
-    Initialise the random number generator module with the seed *n*, which
-    should be an integer.  When no argument (or ``None``) is passed in, the
-    PRNG is initialised with a true random number from the hardware random
-    number generator.
+    Initialise the random number generator module with the seed *n*,
+    which should be an integer. When no argument (or :data:`None`) is
+    passed in, the PRNG is re-seeded from the same port-specific
+    source :func:`os.urandom` uses.
 
 .. function:: choice(sequence: Any) -> Any
 

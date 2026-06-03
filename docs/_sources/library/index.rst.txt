@@ -155,6 +155,18 @@ Networking helpers (require a working network interface):
    ntptime.rst
    webrepl.rst
 
+Web framework
+~~~~~~~~~~~~~
+
+Webserver framework modules. See the per-board sections below for
+which boards include each one.
+
+.. toctree::
+   :maxdepth: 1
+
+   jwt.rst
+   microdot.rst
+
 Port-specific modules
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -222,6 +234,8 @@ sensor.
 * :mod:`stm` --- functionality specific to STM32 MCUs
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
+* :mod:`jwt` --- JSON Web Tokens
+* :mod:`microdot` --- minimal HTTP framework
 
 .. rubric:: OpenMV AE3
 
@@ -232,6 +246,8 @@ NPU + 160 MHz / 46 GOPS HE NPU).
 * :mod:`alif` --- Alif Ensemble SoC functions
 * :mod:`romfs` --- ROMFS helper utilities
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
+* :mod:`jwt` --- JSON Web Tokens
+* :mod:`microdot` --- minimal HTTP framework
 
 .. rubric:: OpenMV Cam RT1062
 
@@ -247,6 +263,8 @@ Bluetooth and 10/100 Ethernet.
 * :mod:`ssd1306` --- OLED driver
 * :mod:`tb6612` --- TB6612 motor driver
 * :mod:`pca9674a` --- PCA9674A I2C expander driver
+* :mod:`jwt` --- JSON Web Tokens
+* :mod:`microdot` --- minimal HTTP framework
 
 .. rubric:: OpenMV Pure Thermal
 
