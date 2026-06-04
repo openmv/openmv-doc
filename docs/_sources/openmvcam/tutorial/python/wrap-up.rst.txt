@@ -40,6 +40,23 @@ constantly when writing scripts for the OpenMV Cam:
   when not to reach for them) is part of reading other
   people's Python.
 
+* **Pattern matching on text** -- the :mod:`re` module for
+  strings whose form you can describe but cannot enumerate.
+  Character classes, quantifiers, capturing groups, anchors,
+  and the greedy-versus-lazy trade-off, together with the
+  specific places MicroPython's subset stops short of CPython.
+  Reach for it when ``str.find`` or ``str.split`` runs out of
+  road.
+
+* **Containers past the built-ins** --
+  :func:`collections.namedtuple` for typed records,
+  :class:`collections.deque` for bounded ring buffers and
+  rolling windows, :class:`collections.OrderedDict` when
+  insertion order is part of equality, and :mod:`heapq` for
+  "what's the smallest" or "what's the most urgent" questions
+  built on a plain list. Each one fills a gap the four core
+  container types leave behind.
+
 * **The everyday workflow tools** -- comprehensions for
   building collections from existing ones, generators and
   the iterator protocol for processing data lazily, decorators

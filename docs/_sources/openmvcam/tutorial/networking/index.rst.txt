@@ -72,6 +72,13 @@ write bytes" feels inevitable instead of magic.
    encrypted-sockets.rst
 
 .. toctree::
+   :caption: A real protocol: MQTT
+   :maxdepth: 1
+
+   mqtt/protocol-on-the-wire.rst
+   mqtt/mqtt-in-python.rst
+
+.. toctree::
    :caption: Wrap up
    :maxdepth: 1
 

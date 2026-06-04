@@ -85,6 +85,18 @@ world:
   DTLS (TLS over UDP) uses the same module the same
   way.
 
+* **A real application protocol** -- MQTT as the
+  worked example of every layer below it wired
+  together. A 1-byte type-and-flags byte, a
+  variable-length remaining-length field, a length-
+  prefixed UTF-8 topic, and the payload, all
+  travelling over TCP (and optionally inside TLS) to
+  a broker that fans the message out to every
+  subscriber on the topic. The bundled :mod:`mqtt`
+  client wraps the wire format in a
+  ``connect`` / ``publish`` / ``subscribe`` API
+  small enough to read in one sitting.
+
 That is enough to write camera applications that talk
 to other machines, publish data to remote services,
 accept connections from clients on the local network,

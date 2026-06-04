@@ -97,6 +97,20 @@ is Python code.
    metaprogramming/dynamic-code.rst
 
 .. toctree::
+   :caption: Regular expressions
+   :maxdepth: 1
+
+   regex/pattern-basics.rst
+   regex/groups-and-anchors.rst
+
+.. toctree::
+   :caption: Advanced data structures
+   :maxdepth: 1
+
+   advanced-collections/named-tuples-and-deques.rst
+   advanced-collections/priority-queues.rst
+
+.. toctree::
    :caption: Practical MicroPython
    :maxdepth: 1
 

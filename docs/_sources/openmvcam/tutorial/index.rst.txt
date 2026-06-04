@@ -42,5 +42,6 @@ something covered earlier, it links back.
    networking/index.rst
    webservers/index.rst
    bluetooth/index.rst
+   protocol/index.rst
 
    production/index.rst

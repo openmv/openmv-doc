@@ -59,6 +59,7 @@ something covered earlier, it links back.
    networking/index.rst
    webservers/index.rst
    bluetooth/index.rst
+   protocol/index.rst
 
    production/index.rst
 
@@ -933,6 +934,20 @@ is Python code.
 
    metaprogramming/introspection.rst
    metaprogramming/dynamic-code.rst
+
+.. toctree::
+   :caption: Regular expressions
+   :maxdepth: 1
+
+   regex/pattern-basics.rst
+   regex/groups-and-anchors.rst
+
+.. toctree::
+   :caption: Advanced data structures
+   :maxdepth: 1
+
+   advanced-collections/named-tuples-and-deques.rst
+   advanced-collections/priority-queues.rst
 
 .. toctree::
    :caption: Practical MicroPython
@@ -5895,6 +5910,645 @@ call site, log the exact string that is about to be executed,
 and treat the source as the most suspicious thing in your code.
 
 
+Pattern basics
+==============
+
+A regular expression is a small language for describing strings by
+form rather than by their exact contents. Use it when a string
+matches if-and-only-if it follows a *pattern* you can describe but
+can't enumerate -- "a sequence of digits followed by a unit", "a line
+that starts with ``ERROR`` and ends with a number", "any of these
+file extensions, in any order, with optional ``v`` prefixes".
+
+Reach for :mod:`re` *only* when a plain string method won't do.
+
+* :meth:`str.startswith`, :meth:`str.endswith` -- testing for a
+  fixed prefix or suffix.
+* ``in`` -- testing whether a fixed substring is present.
+* :meth:`str.split`, :meth:`str.find`, :meth:`str.replace` -- working
+  with fixed delimiters.
+
+Each of those is faster, easier to read, and harder to get wrong than
+the equivalent regex. Use regex when the *form* of the string matters
+and the exact substring does not.
+
+The four things you'll use
+--------------------------
+
+The MicroPython :mod:`re` module surfaces four things:
+
+* :func:`re.compile` -- turn a pattern string into a compiled pattern
+  object you can reuse.
+* :func:`re.match` -- try the pattern at the *start* of a string. The
+  pattern is anchored at position 0.
+* :func:`re.search` -- try the pattern *anywhere* in a string. Returns
+  the first match.
+* :func:`re.sub` -- find every match and replace it.
+
+Notable omissions vs CPython: no ``re.findall``, no ``re.finditer``,
+no ``re.split`` at module level (compiled patterns have a ``split``
+method instead), no ``re.fullmatch``, no flag constants like
+``re.IGNORECASE``. Where you'd reach for one of those on CPython,
+build the equivalent from :func:`re.search` in a loop.
+
+A first pattern
+---------------
+
+The pattern ``r'\d+'`` matches one or more digits::
+
+    >>> import re
+    >>> m = re.search(r'\d+', 'sensor reading 42 ok')
+    >>> m.group(0)
+    '42'
+
+A few things to notice:
+
+* The pattern is written as a *raw string* (``r'...'``) so the
+  backslash in ``\d`` reaches :mod:`re` instead of being processed
+  as a Python string escape. Always use raw strings for regex
+  patterns.
+* :func:`re.search` returns a *match object* on success and
+  :data:`None` on failure. Always check before calling
+  :meth:`match.group`.
+* ``m.group(0)`` is the full text the pattern matched. Group 1, 2,
+  ... appear later, once the pattern contains capturing parentheses.
+
+The same pattern with :func:`re.match` returns :data:`None` because
+the string doesn't *start* with a digit::
+
+    >>> re.match(r'\d+', 'sensor reading 42 ok') is None
+    True
+    >>> re.match(r'\d+', '42 readings')
+    <match num=1>
+
+The pieces of a pattern
+-----------------------
+
+Most useful patterns are built from a small set of pieces. The ones
+that work in MicroPython:
+
+**Literal characters** -- any character that isn't special matches
+itself. ``hello`` matches ``hello``.
+
+**Special characters** -- ``. ^ $ * + ? { } [ ] \ | ( )`` all have
+meanings below. To match one of them literally, escape it with a
+backslash: ``\.`` matches a literal dot.
+
+**Character classes** -- shorthands for common character sets:
+
+* ``\d`` -- any digit ``0``-``9``
+* ``\D`` -- any non-digit
+* ``\s`` -- any whitespace character (space, tab, newline)
+* ``\S`` -- any non-whitespace
+* ``\w`` -- any "word" character: letters, digits, underscore
+* ``\W`` -- any non-word character
+* ``.`` -- any character except newline
+
+**Quantifiers** -- how many times the previous piece must match:
+
+* ``*`` -- zero or more (greedy)
+* ``+`` -- one or more (greedy)
+* ``?`` -- zero or one
+* ``{n}`` -- exactly *n*
+* ``{m,n}`` -- between *m* and *n* (inclusive)
+
+Combining: ``\d{3}-\d{4}`` matches three digits, a dash, four digits.
+``\s+`` matches one or more whitespace characters. ``hello.*world``
+matches ``hello``, anything (including nothing), then ``world``.
+
+.. note::
+
+   *Greedy* means the quantifier consumes as much of the input as it
+   can while still letting the rest of the pattern match. Against
+   ``hello x world y world``, the ``.*`` in ``hello.*world`` matches
+   the longest run that still leaves a ``world`` at the end -- it
+   captures ``x world y``, not the shorter ``x``. The same is true of
+   ``+`` and the ``{m,n}`` range form: the engine takes the longest
+   match it can, then backs off only if the rest of the pattern
+   fails.
+
+Substitution
+------------
+
+:func:`re.sub` finds every match and replaces it with a string. The
+replacement can reference captured groups via ``\1``, ``\2``, ...
+(covered with the rest of the group syntax later). Without groups,
+``re.sub`` is a straight find-and-replace on a regex::
+
+    >>> re.sub(r'\s+', ' ', 'too    many   spaces')
+    'too many spaces'
+
+    >>> re.sub(r'\d+', 'N', 'log 12, log 345, log 6')
+    'log N, log N, log N'
+
+The third argument is the string to operate on; the result is a new
+string with every match replaced.
+
+Splitting -- on a compiled pattern only
+---------------------------------------
+
+There is no ``re.split`` at module level. To split on a regex, compile
+the pattern first and call its ``split`` method::
+
+    >>> sep = re.compile(r'\s*,\s*')
+    >>> sep.split('a , b,c ,  d')
+    ['a', 'b', 'c', 'd']
+
+The optional second argument caps the number of splits::
+
+    >>> sep.split('a, b, c, d', 2)
+    ['a', 'b', 'c, d']
+
+Compiling for reuse
+-------------------
+
+If the same pattern runs many times -- inside a loop or in a hot
+function -- compile it once and reuse the compiled object::
+
+    digit_run = re.compile(r'\d+')
+
+    def first_number(line):
+        m = digit_run.search(line)
+        return int(m.group(0)) if m else None
+
+Calling :meth:`pattern.match` and :meth:`pattern.search` on a compiled
+object is the same as the module-level functions but skips the
+recompile cost on every call.
+
+Patterns that don't match anything
+----------------------------------
+
+Three patterns in particular catch developers out:
+
+* ``.*`` matches the empty string. ``re.search(r'.*', s).group(0)``
+  returns ``''`` on any input.
+* A pattern with an unescaped special character is a syntax error.
+  ``re.compile(r'cost: $5')`` raises ``ValueError`` because ``$``
+  means "end of string". Use ``r'cost: \$5'``.
+* The dot ``.`` does *not* match a newline. To match across
+  newlines, write the pattern to handle them explicitly with
+  ``[\s\S]`` or feed one line at a time.
+
+With these pieces a pattern can match almost any *fixed-form* slice
+of text. Pulling structured *data* back out of the match requires
+capturing groups.
+
+
+Groups and anchors
+==================
+
+A pattern can do more than say "this string matches" -- it can pull
+the matched pieces apart and hand each one to the application by
+name. Parentheses around part of a pattern make it a *capturing
+group*; the match object then exposes each group as a separate
+substring.
+
+Capturing groups
+----------------
+
+Wrap any part of a pattern in ``(...)`` to capture what it matched::
+
+    >>> import re
+    >>> m = re.search(r'temp (\d+) at (\d+)s', 'temp 42 at 137s ok')
+    >>> m.group(0)
+    'temp 42 at 137s'
+    >>> m.group(1)
+    '42'
+    >>> m.group(2)
+    '137'
+
+* Group 0 is always the entire match.
+* Groups 1, 2, ... are the captured substrings, numbered left to
+  right by their *opening* parenthesis.
+* Calling :meth:`match.group` with an index past the last group
+  raises ``IndexError``.
+
+A common pattern is "match a known structure, capture the variable
+parts as ints"::
+
+    def parse_temp(line):
+        m = re.search(r'temp (\d+) at (\d+)s', line)
+        if not m:
+            return None
+        return int(m.group(1)), int(m.group(2))
+
+Non-capturing groups
+--------------------
+
+Parentheses also *group* a sub-expression so a quantifier can apply
+to the whole group. That's the only purpose of grouping in
+``r'(ab)+'`` -- "one or more of ``ab``". The fact that ``ab`` shows
+up as group 1 is a side effect.
+
+To group without capturing, use ``(?:...)``::
+
+    >>> re.search(r'(?:ab)+', 'xababy').group(0)
+    'abab'
+
+Non-capturing groups keep the group numbers tidy when a pattern uses
+grouping for structure but doesn't care about pulling each piece
+out.
+
+Anchors
+-------
+
+Anchors don't match a character -- they match a *position*.
+
+* ``^`` -- start of the string.
+* ``$`` -- end of the string.
+
+Anchors are what make :func:`re.match` and :func:`re.search` behave
+differently. ``re.match(p, s)`` is the same as
+``re.search('^' + p, s)``: it forces the pattern to start at
+position 0. Adding ``$`` to the end of a pattern then makes the
+pattern match the *entire* string and nothing else::
+
+    >>> re.search(r'^\d+$', '12345')
+    <match num=1>
+    >>> re.search(r'^\d+$', '12345 ok') is None
+    True
+
+``^`` and ``$`` in MicroPython :mod:`re` always mean the start and
+end of the *whole* string passed to :func:`re.search`. There is no
+``re.MULTILINE`` flag to make them match at every embedded newline,
+and ``$`` does not match the position before a trailing ``\n`` either
+-- it has to be the absolute end of the input. To get per-line
+behaviour, split the input on newlines first and run the pattern on
+each line.
+
+Character sets
+--------------
+
+Square brackets define an explicit set of characters. The match
+consumes exactly one character from the set.
+
+* ``[abc]`` -- one of ``a``, ``b``, ``c``.
+* ``[a-z]`` -- one character in the range ``a``-``z`` (inclusive).
+* ``[a-zA-Z0-9]`` -- letters or digits. Three ranges combined.
+* ``[^abc]`` -- *not* one of ``a``, ``b``, ``c``. The ``^`` only
+  negates when it's the first character inside the brackets.
+
+Examples::
+
+    >>> re.search(r'[A-F0-9]{6}', 'colour #1a2b3c rest').group(0)
+    '1A2B3C'
+    >>> re.search(r'[A-F0-9]{6}', 'colour #1a2b3c rest') is None
+    True
+
+The first call returns :data:`None` in practice because the literal
+text is lowercase. MicroPython :mod:`re` has no ``re.IGNORECASE``
+flag -- to match case-insensitively, write both cases into the set::
+
+    >>> re.search(r'[A-Fa-f0-9]{6}', 'colour #1a2b3c rest').group(0)
+    '1a2b3c'
+
+The class shortcuts (``\d``, ``\s``, ``\w``, and their negated
+forms) can be used inside ``[...]`` too: ``[\w-]`` is "word
+characters or a literal dash."
+
+Greedy vs lazy quantifiers
+--------------------------
+
+The quantifiers ``*``, ``+``, ``?``, and ``{m,n}`` are *greedy* by
+default -- they match as many characters as the rest of the pattern
+will still allow. Often that's exactly what's wanted; sometimes it
+isn't::
+
+    >>> re.search(r'<(.+)>', 'a <b> <c> d').group(1)
+    'b> <c'
+
+The greedy ``.+`` grabbed all the way to the last ``>``. Appending
+``?`` makes the quantifier *lazy* -- it matches as little as
+possible::
+
+    >>> re.search(r'<(.+?)>', 'a <b> <c> d').group(1)
+    'b'
+
+The lazy form stops at the first ``>``. Lazy quantifiers come up
+constantly when extracting balanced delimiters from a string.
+
+Backreferences in substitution
+------------------------------
+
+:func:`re.sub` can refer back to captured groups in the replacement
+string via ``\1``, ``\2``, ... The substitution rewrites every match
+using the captured pieces::
+
+    >>> re.sub(r'(\d+)\.(\d+)', r'\2.\1', 'swap 12.34 and 5.6')
+    'swap 34.12 and 6.5'
+
+Each match captures two numbers, and the replacement swaps them.
+``\g<1>`` is an alternative syntax for the same thing -- useful when
+the next character in the replacement is a digit (``r'\g<1>0'`` to
+append a literal zero to group 1 rather than reading "group 10").
+
+What's not available
+--------------------
+
+A reminder of what the MicroPython :mod:`re` does *not* support, in
+case a pattern from CPython lands here and surprises you:
+
+* Lookahead ``(?=...)`` and lookbehind ``(?<=...)`` -- not
+  implemented.
+* Named groups ``(?P<name>...)`` and named backreferences
+  ``(?P=name)`` -- not implemented.
+* Flag constants like ``re.IGNORECASE``, ``re.MULTILINE``,
+  ``re.DOTALL`` -- not honored. Build the case-insensitive set or
+  pre-split the input yourself.
+* The :meth:`match.groups`, :meth:`match.span`, :meth:`match.start`,
+  and :meth:`match.end` methods are gated on a ROM level that no
+  shipped OpenMV board enables. Code that relies on them won't run on
+  the cam.
+
+With patterns, groups, and anchors, the regex toolset on the cam is
+small enough to learn in one sitting and rich enough to do everything
+short of context-sensitive parsing.
+
+
+Named tuples and deques
+=======================
+
+Lists, tuples, dictionaries, and sets cover most data needs. Three
+other containers in the :mod:`collections` module fit specific
+problems that the built-ins handle clumsily.
+
+namedtuple -- typed records without a class
+-------------------------------------------
+
+A plain tuple stores values by position. That's fine for a small,
+short-lived 2- or 3-tuple, but past that ``point[0]`` and
+``point[1]`` start to lie about what they hold. :func:`collections.namedtuple`
+returns a new tuple subclass whose fields have names::
+
+    >>> from collections import namedtuple
+    >>> Reading = namedtuple('Reading', ('temp', 'humidity', 'ts'))
+    >>> r = Reading(22.5, 41.0, 137204)
+    >>> r.temp
+    22.5
+    >>> r.humidity
+    41.0
+    >>> r[0]
+    22.5
+
+The fields argument is a sequence of name strings (or one whitespace-
+separated string in CPython; MicroPython is stricter -- pass a tuple
+or list).
+
+Why use a ``namedtuple`` instead of a class?
+
+* It's a tuple. Iteration, unpacking, equality, hashing, and use as
+  a dict key all work for free.
+* It's immutable. Reassigning ``r.temp = ...`` raises ``AttributeError``,
+  which is exactly what you want for a record type.
+* It costs less RAM than a class instance with the same fields --
+  the tuple's storage is contiguous, with no ``__dict__``.
+
+Compared with the equivalent class, a ``namedtuple`` declaration is
+one line. The trade-off is that fields are read-only -- to "change"
+a reading you make a new one.
+
+deque -- a bounded ring buffer
+------------------------------
+
+A list is fast at the *end* (``append`` / ``pop``) and slow at the
+*start* (``insert(0, ...)`` / ``pop(0)`` both shift every other
+element). A :class:`collections.deque` is fast at both ends -- it's
+a ring buffer indexed by head and tail pointers, so append and pop
+on either side run in the same fixed amount of work regardless of
+how many items the deque holds.
+
+Construction in MicroPython requires both an initial iterable *and*
+a max length, in that order::
+
+    >>> from collections import deque
+    >>> events = deque((), 5)
+    >>> for i in range(8):
+    ...     events.append(i)
+    >>> list(events)
+    [3, 4, 5, 6, 7]
+
+When a bounded deque is full, every ``append`` drops the oldest item.
+That makes the deque ideal for "the last N samples", "the last N log
+lines", or any rolling window that doesn't need to grow forever.
+
+The methods exposed on MicroPython's deque are deliberately minimal:
+
+* ``append(x)`` -- add to the right.
+* ``appendleft(x)`` -- add to the left.
+* ``extend(iterable)`` -- append each item from the iterable.
+* ``pop()`` -- remove and return the right end. Raises ``IndexError``
+  on empty.
+* ``popleft()`` -- remove and return the left end.
+
+Notable omissions from CPython's deque: no ``clear``, ``count``,
+``index``, ``remove``, ``reverse``, ``rotate``, ``maxlen`` attribute,
+or ``__contains__``. Iteration and subscript indexing work::
+
+    >>> events[0]
+    3
+    >>> for e in events:
+    ...     print(e)
+
+A typical use: keeping the last few sensor readings to detect trend
+changes::
+
+    history = deque((), 10)
+
+    def push(reading):
+        history.append(reading)
+        if len(history) == 10 and history[-1] > 2 * history[0]:
+            print('reading is climbing')
+
+OrderedDict -- when order is part of equality
+---------------------------------------------
+
+Regular :class:`dict` has preserved insertion order since
+MicroPython 1.13 and CPython 3.7. That covers the most common reason
+people used to reach for :class:`collections.OrderedDict`.
+
+What :class:`OrderedDict` still gives you that a plain dict does
+not:
+
+* ``OrderedDict`` equality considers order. Two regular dicts
+  compare equal whenever they have the same key/value pairs,
+  regardless of insertion order. Two ``OrderedDict`` instances are
+  equal only if their pairs are in the same order::
+
+    >>> from collections import OrderedDict
+    >>> OrderedDict([('a', 1), ('b', 2)]) == OrderedDict([('b', 2), ('a', 1)])
+    False
+    >>> {'a': 1, 'b': 2} == {'b': 2, 'a': 1}
+    True
+
+* ``OrderedDict`` is useful when you're serialising config to a
+  format that *does* care about key order (TOML, some YAML
+  consumers), or when you want a clear documentation hint that
+  order matters for the readers of your code.
+
+For everyday code, prefer the built-in :class:`dict`. Reach for
+``OrderedDict`` only when the order-is-part-of-equality semantics or
+the documentary value actually buys something.
+
+The three containers each have one narrow fit. Named tuples replace
+hand-rolled record classes; deques replace lists for bounded
+queues; ordered dicts make insertion order part of the contract.
+
+
+Priority queues
+===============
+
+A priority queue is a container that always knows which of its items
+is the smallest (or the largest) without sorting the whole thing.
+:mod:`heapq` implements one in MicroPython using a plain :class:`list`
+as the storage and a tree-based algorithm called a *min-heap* to keep
+the smallest item at index 0.
+
+The mental model
+----------------
+
+A min-heap is a list arranged so that the item at every index is
+less-than-or-equal-to the items at indices ``2*i + 1`` and
+``2*i + 2``. That arrangement makes three operations cheap:
+
+* Finding the smallest item -- it's at ``heap[0]``. A single index
+  lookup, no scan.
+* Adding an item -- it bubbles up through the tree, comparing against
+  one parent per level. A thousand items is about ten comparisons; a
+  million is about twenty.
+* Removing the smallest item -- the same walk in reverse, with the
+  same handful of comparisons.
+
+The list is *not* sorted. Iterating over it gives the items in
+arbitrary order. Only ``heap[0]`` is guaranteed to be the minimum.
+
+The three functions on MicroPython
+----------------------------------
+
+MicroPython's :mod:`heapq` exposes exactly three functions:
+
+* :func:`heapq.heappush` -- insert an item, keeping the heap
+  invariant intact.
+* :func:`heapq.heappop` -- remove and return the smallest item.
+* :func:`heapq.heapify` -- rearrange an existing list into a heap
+  in place.
+
+That's the full surface. CPython's ``heappushpop``, ``heapreplace``,
+``nlargest``, ``nsmallest``, and ``merge`` do *not* exist; the
+patterns below show how to build the common ones by hand.
+
+Starting fresh::
+
+    >>> import heapq
+    >>> heap = []
+    >>> heapq.heappush(heap, 5)
+    >>> heapq.heappush(heap, 1)
+    >>> heapq.heappush(heap, 3)
+    >>> heap
+    [1, 5, 3]
+    >>> heapq.heappop(heap)
+    1
+    >>> heapq.heappop(heap)
+    3
+    >>> heapq.heappop(heap)
+    5
+
+Starting from existing data::
+
+    >>> samples = [5, 1, 3, 2, 4]
+    >>> heapq.heapify(samples)
+    >>> samples
+    [1, 2, 3, 5, 4]
+    >>> heapq.heappop(samples)
+    1
+
+Heapifying touches each item once and is noticeably faster than
+pushing the same items one at a time.
+
+Top-N over a stream
+-------------------
+
+A natural use of a priority queue: track the *N* largest items in a
+stream you can only read once.
+
+The trick is to keep a min-heap of size *N*. Every new value gets
+pushed; if the heap grows past *N*, drop the smallest. The smallest
+is always at ``heap[0]``, so a single comparison decides whether to
+keep or discard each incoming item::
+
+    def top_n_brightest(readings, n):
+        heap = []
+        for r in readings:
+            if len(heap) < n:
+                heapq.heappush(heap, r)
+            elif r > heap[0]:
+                heapq.heappop(heap)
+                heapq.heappush(heap, r)
+        return sorted(heap, reverse=True)
+
+The heap never grows past *N*, so each incoming value costs the same
+handful of comparisons no matter how long the stream is. The final
+``sorted`` is the only step whose cost depends on *N* directly.
+
+Scheduled events
+----------------
+
+A priority queue of ``(deadline, payload)`` tuples is the standard
+form for an event scheduler. Tuples compare lexicographically, so
+the tuple with the smallest deadline floats to the top automatically::
+
+    import heapq
+    import time
+
+    queue = []
+    heapq.heappush(queue, (time.time() + 5, 'check sensors'))
+    heapq.heappush(queue, (time.time() + 1, 'blink LED'))
+    heapq.heappush(queue, (time.time() + 3, 'send heartbeat'))
+
+    while queue:
+        deadline, task = queue[0]
+        now = time.time()
+        if now < deadline:
+            time.sleep(deadline - now)
+        heapq.heappop(queue)
+        run(task)
+
+If two events share a deadline, the tuple comparison falls through to
+the second element. For payloads that aren't naturally comparable,
+add a counter as the second element of the tuple to force a stable
+ordering::
+
+    counter = 0
+    def schedule(deadline, task):
+        global counter
+        counter += 1
+        heapq.heappush(queue, (deadline, counter, task))
+
+Now the smallest-deadline-first behaviour is intact, ties break on
+the counter so earlier-scheduled tasks run first, and ``task`` doesn't
+have to be comparable.
+
+What ``heapq`` does not give you
+--------------------------------
+
+A few patterns that look like they should work, but don't:
+
+* Iterating ``for x in heap`` does *not* give sorted output -- the
+  list's underlying order is the heap's tree layout. To consume the
+  heap in order, ``heappop`` until empty.
+* There's no way to *change* the priority of an item already in the
+  heap. The standard workaround is to push the new priority as a
+  fresh entry and mark the old one as cancelled (skip it when it
+  pops).
+* The heap stores references to its items, not copies. Mutating an
+  item after it's pushed can break the heap invariant. Use immutable
+  values (numbers, tuples) as the comparison key.
+
+A min-heap on a plain list is the right tool for any "what's the
+smallest" or "what's the most urgent" question on a small embedded
+device. Three functions, one list, and the heap takes care of the
+rest.
+
+
 Working with floats
 ===================
 
@@ -6354,6 +7008,23 @@ constantly when writing scripts for the OpenMV Cam:
   Most scripts never touch these, but knowing they exist (and
   when not to reach for them) is part of reading other
   people's Python.
+
+* **Pattern matching on text** -- the :mod:`re` module for
+  strings whose form you can describe but cannot enumerate.
+  Character classes, quantifiers, capturing groups, anchors,
+  and the greedy-versus-lazy trade-off, together with the
+  specific places MicroPython's subset stops short of CPython.
+  Reach for it when ``str.find`` or ``str.split`` runs out of
+  road.
+
+* **Containers past the built-ins** --
+  :func:`collections.namedtuple` for typed records,
+  :class:`collections.deque` for bounded ring buffers and
+  rolling windows, :class:`collections.OrderedDict` when
+  insertion order is part of equality, and :mod:`heapq` for
+  "what's the smallest" or "what's the most urgent" questions
+  built on a plain list. Each one fills a gap the four core
+  container types leave behind.
 
 * **The everyday workflow tools** -- comprehensions for
   building collections from existing ones, generators and
@@ -18080,6 +18751,13 @@ write bytes" feels inevitable instead of magic.
    encrypted-sockets.rst
 
 .. toctree::
+   :caption: A real protocol: MQTT
+   :maxdepth: 1
+
+   mqtt/protocol-on-the-wire.rst
+   mqtt/mqtt-in-python.rst
+
+.. toctree::
    :caption: Wrap up
    :maxdepth: 1
 
@@ -20707,6 +21385,391 @@ versions, cipher suites, and context options -- see
 :doc:`/library/ssl`.
 
 
+MQTT, byte by byte
+==================
+
+By this point the cam has every piece it needs to talk to a real
+service on the open internet: a TCP socket, TLS to wrap it, DNS to
+name the peer, and asyncio to let the same script do other work while
+the connection is open. MQTT is the first wire protocol that pulls
+all of those together into something a deployed product actually
+uses.
+
+This page covers the protocol itself -- the on-the-wire format, the
+roles each participant plays, and the trade-offs in its design --
+honestly enough that the bundled :mod:`mqtt` client looks like an
+obvious wrapping of what's already known instead of a leap of faith.
+
+Pub/sub vs request/response
+---------------------------
+
+HTTP -- the protocol most cam projects reach for first -- is
+*request/response*. A client asks a specific server for a specific
+resource; the server answers. Every exchange is one-to-one, and both
+ends know each other's address in advance.
+
+MQTT is *publish/subscribe*. Clients connect to a third party in the
+middle called the **broker**. A *publisher* sends a message to a
+named **topic** without knowing or caring who is listening. A
+*subscriber* tells the broker which topics it wants and receives
+every message published to those topics afterwards. The broker is
+the fan-out: one publish on ``yard-cam/motion`` reaches every device
+subscribed to ``yard-cam/motion``, even if there are zero, one, or
+fifty of them.
+
+Three things follow from that change of model:
+
+* **Decoupling.** Publishers don't have to know subscribers exist.
+  Subscribers can come and go without the publisher noticing. Adding
+  a second dashboard is one line of code on the new dashboard; the
+  cam doesn't change.
+* **Fan-out.** The broker handles every duplicate, so the cam sends
+  one packet regardless of how many devices read it. That's the use
+  case MQTT was built for.
+* **Asymmetry.** The broker is now a required piece of infrastructure
+  -- without one, the protocol doesn't work. For home projects this
+  is usually a free public broker (``test.mosquitto.org``,
+  ``broker.hivemq.com``) or a small one you run yourself.
+
+.. image:: https://docs.openmv.io/_images/mqtt-fanout.svg
+   :alt: One cam publishing to a yard-cam/motion topic on a broker
+         while two browser dashboards and one cloud archiver each
+         receive the same message.
+   :align: center
+
+Topics
+------
+
+Topics are slash-separated strings. The convention is most-general
+on the left, most-specific on the right::
+
+    yard-cam/motion
+    yard-cam/temperature
+    workshop-cam/motion
+    workshop-cam/temperature/sensor-3
+
+Two wildcards work in *subscriptions* (not in publishes):
+
+* ``+`` matches a single level. ``+/motion`` subscribes to every
+  cam's motion topic; ``yard-cam/+`` subscribes to every yard-cam
+  sub-topic.
+* ``#`` matches one or more trailing levels. ``yard-cam/#``
+  subscribes to ``yard-cam/motion``, ``yard-cam/temperature``,
+  ``yard-cam/temperature/sensor-3``, and anything else under
+  ``yard-cam/``. It must appear at the end of the subscription.
+
+Topic strings are case-sensitive. Per the spec a leading ``$``
+marks broker-internal topics (``$SYS/...``) that publishers should
+not write to.
+
+The packet format
+-----------------
+
+MQTT runs over TCP. Every control packet starts with a one-byte
+*fixed header* followed by a variable-length *Remaining Length*
+field, then a packet-type-specific *variable header*, then the
+*payload*. The same outer format covers every command -- CONNECT,
+PUBLISH, SUBSCRIBE, PUBACK, DISCONNECT, and the rest -- which is
+why an MQTT client can be written in a few hundred lines.
+
+.. image:: https://docs.openmv.io/_images/mqtt-publish-packet.svg
+   :alt: The byte layout of an MQTT PUBLISH packet showing the
+         fixed-header type and flags byte, the variable-length
+         Remaining Length field, the topic name, the optional packet
+         identifier, and the payload bytes.
+   :align: center
+
+The fixed header is one byte:
+
+* Bits 7..4 are the **control packet type**. ``0x3`` is PUBLISH
+  (so the first byte usually starts ``0x3?``). ``0x1`` is CONNECT,
+  ``0x2`` CONNACK, ``0x8`` SUBSCRIBE, ``0xC`` PINGREQ,
+  ``0xE`` DISCONNECT, etc.
+* Bits 3..0 are packet-type-specific **flags**. For PUBLISH the
+  flags encode the DUP retransmit flag, the QoS level (2 bits), and
+  the RETAIN flag.
+
+The Remaining Length is a 1-to-4-byte variable-length integer that
+counts every byte after itself. Each byte's top bit is a
+continuation marker -- 1 means "another length byte follows", 0
+means "this is the last". A length under 128 fits in one byte;
+larger payloads use more. The maximum encoded length is 256 MiB.
+
+For a PUBLISH the variable header is the topic name -- a 2-byte
+length, then UTF-8 bytes -- followed by a 2-byte *packet identifier*
+that only exists when QoS is 1 or 2. The remaining bytes are the
+payload, treated as opaque bytes by the protocol.
+
+A minimal QoS-0 PUBLISH of ``ok`` to ``a/b`` is::
+
+    30 07 00 03 'a' '/' 'b' 'o' 'k'
+
+* ``30`` -- PUBLISH, all flags zero.
+* ``07`` -- 7 bytes follow.
+* ``00 03`` -- topic length 3.
+* ``'a' '/' 'b'`` -- topic.
+* ``'o' 'k'`` -- payload.
+
+Nine bytes on the wire and the message lands at every subscriber to
+``a/b`` on the broker.
+
+QoS levels
+----------
+
+Quality-of-Service controls how hard the broker (and client) work to
+ensure delivery. The three levels:
+
+**QoS 0 -- at most once.** Fire and forget. The PUBLISH packet is
+sent and never confirmed. If TCP delivers, the broker forwards. If
+the connection drops mid-send, the message is gone. Most sensor
+telemetry is fine at QoS 0 -- a single missed temperature reading
+in a stream that emits every 30 seconds doesn't matter.
+
+**QoS 1 -- at least once.** The publisher includes a packet
+identifier and waits for a PUBACK. If no PUBACK arrives before a
+timeout, the publisher retransmits with the DUP flag set. The
+broker may end up delivering the same message twice to a subscriber
+on the same level; the subscriber has to be willing to handle
+duplicates.
+
+**QoS 2 -- exactly once.** A four-step handshake (PUBREC / PUBREL /
+PUBCOMP) makes sure the message lands exactly once, even across
+reconnects. Expensive in round-trips and broker state. Few cam apps
+need it.
+
+The bundled :mod:`mqtt` client implements QoS 0 and QoS 1; QoS 2
+raises if you ask for it. For a cam reporting sensor readings,
+QoS 0 is almost always the right answer.
+
+Retained messages and last will
+-------------------------------
+
+Two features are worth knowing about because they change what the
+broker remembers about your topic.
+
+**RETAIN.** If a PUBLISH has the RETAIN flag set, the broker stores
+the message and forwards it to every *future* subscriber the moment
+they subscribe. That's how MQTT handles "what's the current value?"
+-- a sensor publishes its latest reading retained, and a dashboard
+that subscribes ten minutes later still receives the most recent
+value instead of waiting for the next publish. Re-publishing with
+the same topic overwrites the retained value; publishing an empty
+payload clears it.
+
+**Last will.** When a client connects it can give the broker a
+"last will and testament": a topic, a payload, a QoS, and a retain
+flag. If that client disconnects *uncleanly* -- TCP RESET, power
+loss, network drop with no DISCONNECT packet -- the broker
+publishes the will on the client's behalf. Subscribers see it as
+the cam's notification that it has gone offline. The cam itself
+never sends the will; the broker does, because by then the cam is
+gone.
+
+Keepalive and reconnect
+-----------------------
+
+CONNECT carries a *keepalive* interval in seconds. If the client has
+been silent for that long the broker considers it dead. To prevent
+that, the client periodically sends a PINGREQ (one byte: ``0xC0``)
+and gets back a PINGRESP (``0xD0``) -- the smallest, cheapest
+heartbeat the protocol can carry. Most cam apps set keepalive to 30
+or 60 seconds.
+
+If the TCP connection drops, both sides notice and reconnect from
+scratch. Subscriptions made before the drop are lost unless the
+client used a *persistent session* on connect; for simple cam apps
+the resubscribe-on-reconnect pattern is shorter and just as good.
+
+This is enough to read the MQTT spec or hand-roll a client over a
+:class:`socket.socket`. The bundled client in
+:mod:`mqtt` does exactly that, plus a sensible API for application
+code.
+
+
+MQTT in Python
+==============
+
+The bundled :mod:`mqtt` module on every networked OpenMV cam wraps
+the MQTT wire protocol in one class, :class:`mqtt.MQTTClient`. The
+class opens the TCP socket, performs the CONNECT handshake, packs
+and unpacks the byte-level packets, handles PINGREQ keepalive, and
+dispatches incoming PUBLISH messages to a callback. Application code calls :meth:`connect`, :meth:`publish`,
+:meth:`subscribe`, and :meth:`wait_msg` / :meth:`check_msg`.
+
+A publisher in fifteen lines
+----------------------------
+
+The smallest useful program is a single publish. Connect, publish
+one message, disconnect::
+
+   from mqtt import MQTTClient
+
+   client = MQTTClient(
+       client_id='yard-cam',
+       server='test.mosquitto.org',
+       port=1883,
+   )
+   client.connect()
+   client.publish(b'yard-cam/motion', b'detected at 14:02', qos=0)
+   client.disconnect()
+
+``test.mosquitto.org`` is the public test broker run by the Eclipse
+Mosquitto project. It accepts plain-TCP connections on port 1883 with
+no credentials. Don't use it for anything serious; it has no privacy
+guarantees and the topic namespace is shared with every other tester
+on the internet.
+
+``client_id`` must be unique per broker connection -- the broker uses
+it to track sessions. Topics and message payloads are bytes; pass
+:class:`str` if it's more convenient and the client will encode it as
+UTF-8.
+
+Connecting over TLS
+-------------------
+
+For anything past quick experiments, MQTT over TLS is one extra
+argument. The ``ssl_params`` dict is forwarded to :func:`ssl.wrap_socket`,
+so anything that works there works here::
+
+   import ssl
+
+   client = MQTTClient(
+       client_id='yard-cam',
+       server='broker.example.com',
+       port=8883,                          # TLS-MQTT default port
+       ssl_params={'server_hostname': 'broker.example.com'},
+       user='yard-cam',
+       password=load_token(),
+   )
+
+Port ``8883`` is the IANA-reserved TLS-MQTT port. ``server_hostname``
+turns on SNI so brokers behind a shared IP can route to the right
+certificate -- the same mechanism HTTPS uses. ``user`` /
+``password`` map to the CONNECT packet's username/password fields;
+the broker decides whether those credentials grant publish or
+subscribe rights to specific topics.
+
+Subscribing and receiving
+-------------------------
+
+To receive messages a client provides a callback and calls
+:meth:`subscribe`. The callback receives two bytes arguments, the
+topic and the payload::
+
+   def on_message(topic, msg):
+       print('received on', topic.decode(), ':', msg.decode())
+
+   client = MQTTClient(
+       client_id='dashboard',
+       server='test.mosquitto.org',
+       port=1883,
+       callback=on_message,
+   )
+   client.connect()
+   client.subscribe(b'yard-cam/motion', qos=0)
+   while True:
+       client.wait_msg()
+
+:meth:`wait_msg` blocks until one MQTT packet arrives, parses it,
+calls the callback if it was a PUBLISH on a subscribed topic, and
+returns. Subscribed callbacks fire from inside that call -- there is
+no background thread.
+
+For an interactive cam loop that needs to keep doing other work,
+:meth:`check_msg` is the same logic in non-blocking form. It uses
+:func:`select.select` with a 50 ms timeout and returns immediately if
+nothing is pending::
+
+   while True:
+       client.check_msg()
+       run_frame()                  # capture + processing
+       check_motion_threshold()
+
+Reconnecting cleanly
+--------------------
+
+Any long-running MQTT client has to handle dropped connections.
+Wi-Fi disconnects, broker restarts, NAT timeouts, or simply running
+past keepalive without traffic all end the socket. The bundled
+client raises :exc:`OSError` (or a bare exception with the broker's
+return code) from the call that noticed the drop, and the standard
+pattern is a retry loop::
+
+   import time
+
+   def keep_publishing(client, topic, get_message):
+       while True:
+           try:
+               client.connect()
+               while True:
+                   client.publish(topic, get_message())
+                   time.sleep(5)
+           except OSError:
+               print('connection lost, reconnecting in 5s')
+               time.sleep(5)
+
+Subscriptions are *not* persisted across reconnects unless the
+client passed ``clean_session=False`` on connect, so the inner
+``connect`` should also re-issue any :meth:`subscribe` calls before
+falling into the publish loop.
+
+The last-will hook
+------------------
+
+A cam reporting status should tell the broker what message to send
+on the cam's behalf if the connection dies unexpectedly. Set the
+will *before* :meth:`connect`::
+
+   client = MQTTClient(
+       client_id='yard-cam',
+       server='broker.example.com',
+       port=8883,
+       ssl_params={'server_hostname': 'broker.example.com'},
+   )
+   client.set_last_will(
+       b'yard-cam/status',
+       b'offline',
+       retain=True,
+       qos=0,
+   )
+   client.connect()
+   client.publish(b'yard-cam/status', b'online', retain=True)
+
+Now any dashboard subscribed to ``yard-cam/status`` sees ``online``
+the moment the cam connects and ``offline`` whenever the broker
+notices the cam dropped. The retained ``offline`` message persists
+on the broker so a dashboard that connects ten minutes later still
+sees the correct current state.
+
+When to pick MQTT over HTTP
+---------------------------
+
+The webservers chapter covers the cam acting as an HTTP server and,
+on the cloud-upload page, as an HTTP client posting JPEGs to a fixed
+URL. Both have their place. The right time to reach for MQTT
+instead:
+
+* The same data needs to go to several listeners (a dashboard, a
+  notification service, a recorder) without the cam knowing the
+  list in advance.
+* Listeners may come and go without the cam restarting.
+* The cam wants to *subscribe* -- to receive commands from a
+  controller -- which an HTTP client can't do without long polling
+  or a server pushing on a callback URL.
+* The connection has to survive long idle periods cheaply.
+
+The right time to stick with HTTP: one cam, one server, a fixed
+request/response pattern with a body that's too large for a single
+MQTT topic (JPEG frames over MQTT works but is rude to the broker;
+HTTP POST is the natural fit).
+
+Cross-link: the cloud-upload page in the webservers chapter shows
+the HTTP version of "cam → cloud archive". The MQTT version of the
+same problem keeps the cam decoupled from the archive's URL and
+lets a second consumer (a phone alert app, say) tap the same
+stream.
+
+
 Wrap up
 =======
 
@@ -20793,6 +21856,18 @@ world:
   :doc:`/openmvcam/tutorial/production/tls/index`.
   DTLS (TLS over UDP) uses the same module the same
   way.
+
+* **A real application protocol** -- MQTT as the
+  worked example of every layer below it wired
+  together. A 1-byte type-and-flags byte, a
+  variable-length remaining-length field, a length-
+  prefixed UTF-8 topic, and the payload, all
+  travelling over TCP (and optionally inside TLS) to
+  a broker that fans the message out to every
+  subscriber on the topic. The bundled :mod:`mqtt`
+  client wraps the wire format in a
+  ``connect`` / ``publish`` / ``subscribe`` API
+  small enough to read in one sitting.
 
 That is enough to write camera applications that talk
 to other machines, publish data to remote services,
@@ -25331,6 +26406,1340 @@ flow is the intended use. The :doc:`/library/aioble`
 and :doc:`/library/bluetooth` reference pages list
 every method, flag, and constant in one place when the
 question is just "what is the exact name of this call".
+
+
+Host Protocol
+=============
+
+Every OpenMV cam ships with a protocol stack that exposes the camera
+as a set of named data channels to a host program. The host program
+might be a Python script on the developer's laptop, a desktop GUI,
+another cam on the other end of a UART, or a service running on a
+workstation watching a fleet of cameras.
+The cam doesn't care which -- the same framing, the same reliability
+machinery, the same channel abstraction works for all of them.
+
+This is the answer to two questions that come up constantly once a
+cam project leaves the IDE:
+
+* *"How do I get a live view of what the cam sees into a custom GUI
+  on my laptop?"*
+* *"How do I let an operator change a threshold or pick a region of
+  interest at runtime, without reflashing?"*
+
+The :mod:`protocol` module on the cam side and the `openmv-python
+<https://github.com/openmv/openmv-python>`_ package on the host side
+answer both questions, by letting a Python class on the cam expose a
+*channel* that a Python class on the host can read from, write to,
+and react to events on, all over a single USB or serial connection.
+
+.. image:: https://docs.openmv.io/_images/system-overview.svg
+   :alt: A host PC connects to a cam over USB; the cam exposes three
+         channels -- a frame channel for image data, a config
+         channel for control values, and the built-in stdout
+         channel for prints -- and the host script reads or writes
+         each.
+   :align: center
+
+The chapter teaches both sides. The cam-side code shows how to
+register channels and feed them; the host-side code shows how to
+connect, list the channels, pull data, and push commands back. Real
+tools that ship in the `openmv-projects/tools/
+<https://github.com/openmv/openmv-projects/tree/master/tools>`_
+directory use exactly the patterns shown here.
+
+.. toctree::
+   :caption: Concepts
+   :maxdepth: 1
+
+   concepts/why-a-protocol.rst
+   concepts/the-four-layers.rst
+
+.. toctree::
+   :caption: Framing
+   :maxdepth: 1
+
+   framing/packet-format.rst
+   framing/handshake.rst
+   framing/reliability.rst
+
+.. toctree::
+   :caption: Channels
+   :maxdepth: 1
+
+   channels/named-channels.rst
+   channels/channel-callbacks.rst
+
+.. toctree::
+   :caption: Streaming
+   :maxdepth: 1
+
+   streaming/streaming-frames.rst
+   streaming/bidirectional.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst
+
+
+Why a protocol library
+======================
+
+A pair of cables and a baud rate is enough to move bytes from a cam
+to a host PC. USB-CDC and UART both give the cam program a stream
+where ``write`` puts bytes in one end and ``read`` takes them out
+the other. So what does a *protocol library* add on top of that?
+
+Three things you would have to write yourself, every time, if you
+tried to build a serious cam-to-host channel directly on raw bytes:
+
+**Framing.**
+A byte stream has no inherent structure. The cam writes
+``temp=42`` and the host reads ``temp=`` plus an interrupt arriving
+later, then ``42`` plus the next message starting with ``humid=...``
+already running into it. Bytes don't have boundaries. Every
+non-trivial host link ends up inventing some marker -- ``\n``
+between messages, length-prefix headers, escape sequences for
+binary payloads -- so the receiver knows where one message ends and
+the next begins. The protocol library gives you a uniform packet
+format with a sync word and a length field, and the receiver never
+has to guess.
+
+**Reliability.**
+USB-CDC doesn't drop bytes silently in normal operation, but UART
+does (when the host stops servicing the port quickly enough), and a
+serial cable unplugged and reseated can leave one side with a
+partial packet. The right thing to do is to detect the corruption,
+ask the other side to retransmit, and only ever hand application
+code messages that arrived intact. The protocol library does that
+for every packet with a CRC and per-packet acknowledgements -- on
+by default; the application doesn't see the retries.
+
+**Multiplexing.**
+There's exactly one USB-CDC port between the cam and the host. If
+the cam is streaming an image *and* the host is sending it
+configuration *and* the IDE is reading ``stdout`` for ``print``
+output, all three exchanges have to share that single byte stream.
+The protocol library gives each independent stream a *channel*
+number, lets the cam register a Python class for each one, and
+keeps the host's reads on each channel from interfering with the
+others. From application code, each channel looks like its own
+private link.
+
+Why not write that yourself
+---------------------------
+
+You can. It's a few weeks of work to get all three correct on a
+serial line and another few weeks to make the framing handle
+hot-plug recovery cleanly, the retransmits work without burning
+energy on round-trips, and the multiplexer survive partial reads
+without corrupting one channel's bytes into another's.
+
+The protocol library has already done that work, has been validated
+on every supported cam, and has matching libraries on the host side
+that speak the same wire format. Using it means the cam-side code
+is one small class per channel and the host-side code is a
+:class:`~openmv.camera.Camera` object with ``channel_read`` and
+``channel_write`` methods. The mental space saved goes to whatever
+the application actually does.
+
+This chapter teaches the protocol from the ground up: the wire
+format, the framing rules, the reliability machinery, the channel
+model, and finally the Python classes on both ends. By the end the
+reader can build a host GUI that talks to the cam, a script that
+streams sensor data from cam to laptop, and the kind of interactive
+calibration tool that ships in `openmv-projects/tools/
+<https://github.com/openmv/openmv-projects/tree/master/tools>`_.
+
+
+The four layers
+===============
+
+The protocol library is built as a stack of four layers, each one
+solving a single problem and building on the layer below it. The
+rest of the chapter walks the stack from bottom to top.
+
+.. image:: https://docs.openmv.io/_images/the-four-layers.svg
+   :alt: A vertical stack of four labelled layers: transport at the
+         bottom (USB or UART), framing above it (packet header with
+         CRC), reliability above that (sequence numbers, ACK / NAK,
+         retransmits), and channels at the top (named logical
+         streams).
+   :align: center
+
+Transport
+---------
+
+At the bottom is the byte pipe between the cam and the host. The
+protocol library doesn't care which one carries the bytes:
+
+* USB-CDC over the USB port the cam is plugged into. The default
+  and highest-bandwidth option for every cam.
+* UART over a pair of GPIO pins on the cam connected to a serial
+  adapter on the host. Useful for headless deployments where the
+  USB port is busy or isn't physically accessible.
+
+The transport's only job is "bytes go in, bytes come out, in order".
+Everything above this layer assumes that the transport delivers
+bytes in the order they were written, but allows for the bytes
+themselves to be corrupted or for the link to drop entirely. Lossy
+bursts (a few bytes missing) and clean drops (the whole link gone
+for a while, then back) are both handled higher up.
+
+Framing
+-------
+
+The next layer up imposes structure on the byte stream. Every
+message becomes a packet -- a 10-byte header followed by a payload
+followed by a 4-byte trailer. The header carries:
+
+* A 2-byte sync word (``0xD5AA``) that lets a receiver re-find the
+  start of a packet after a desync.
+* A 1-byte sequence number used by the reliability layer.
+* A 1-byte channel ID that says which logical stream the packet
+  belongs to.
+* A 1-byte flags field for ACK / NAK / fragment / event bits.
+* A 1-byte opcode that distinguishes protocol commands, system
+  commands, and channel commands.
+* A 2-byte payload length.
+* A 2-byte CRC over the previous eight header bytes.
+
+The payload follows, then a 4-byte CRC over the payload itself. The
+two CRCs catch corruption independently: a flipped bit in the
+header invalidates the header CRC, and the receiver can drop the
+packet without ever needing to read the payload.
+
+Reliability
+-----------
+
+The reliability layer turns "packets that *might* arrive" into
+"packets that *have* arrived." It tracks the sequence numbers in
+the header, asks the other side to send acknowledgements for every
+packet that requires one, and retransmits when an acknowledgement
+doesn't arrive within a timeout. By default the retransmit timeout
+starts at 500 ms and doubles on each retry, with three retries
+before giving up.
+
+Each of those behaviours is configurable in the :func:`protocol.init`
+call: ACK can be turned off for one-way streams, CRC validation
+can be skipped on perfectly clean transports, and the retransmit
+parameters can be tuned for slow or high-latency links.
+
+Channels
+--------
+
+The top layer is what application code sees. A *channel* is a named
+logical stream identified by a channel ID from 0 to 31. Up to 32
+channels can coexist on one transport; each one is independent of
+the others, addressed by its ID in every packet's header. The cam
+boots with four built-in channels -- ``stdin``, ``stdout``,
+``stream``, and ``profile`` -- and application code registers more
+on top by calling :func:`protocol.register` with a Python class.
+
+The four layers don't mix concerns. Framing doesn't know about
+channels; reliability doesn't know about packet contents; the
+channel layer doesn't know how the bytes arrive. That separation is
+why a transport swap (USB to UART, for example) doesn't ripple up
+into the channel code, and it's what makes the rest of the chapter
+walkable one layer at a time.
+
+
+The packet format
+=================
+
+Every byte that crosses the wire between the cam and the host is
+part of a packet. A packet starts with a 10-byte header, runs a
+variable-length payload, and ends with a 4-byte trailing CRC. No
+other bytes appear on the wire -- once the host has seen the
+2-byte sync word, the next bytes are a header in this exact
+sequence.
+
+.. image:: https://docs.openmv.io/_images/packet-format.svg
+   :alt: A horizontal layout of a protocol packet showing the
+         10-byte header (sync word, sequence number, channel ID,
+         flags, opcode, payload length, header CRC) followed by the
+         variable-length payload and a 4-byte payload CRC.
+   :align: center
+
+The header
+----------
+
+Ten bytes, packed without padding. Each field:
+
+* ``sync`` -- the 16-bit word ``0xD5AA`` in little-endian order.
+  Byte 0 on the wire is ``0xAA``, byte 1 is ``0xD5``. A receiver
+  scanning bytes can find the start of a packet by searching for
+  the pair ``AA D5``; anything before it is treated as garbage.
+  The choice of value is deliberate: ``0xAA`` and ``0xD5`` rarely
+  appear in printable text, and the pair is unlikely to occur by
+  accident in the middle of a payload.
+* ``seq`` -- one byte. A counter that increments by one for each
+  packet sent on a given direction. The receiver checks that the
+  next packet's sequence number is the expected one; if not, the
+  reliability layer asks for a retransmit.
+* ``chan`` -- one byte. The channel ID this packet belongs to.
+  Channels 0..31 are usable; the built-in ``stdin``, ``stdout``,
+  ``stream``, and (optionally) ``profile`` channels take fixed IDs
+  the cam reserves.
+* ``flags`` -- one byte. A bit-field telling the receiver how to
+  interpret the packet:
+
+  - bit 0 ``ACK`` -- this packet is an acknowledgement of a
+    previous one.
+  - bit 1 ``NAK`` -- this packet rejects a previous one.
+  - bit 2 ``RTX`` -- this packet is a retransmit.
+  - bit 3 ``ACK_REQ`` -- the sender wants this packet
+    acknowledged.
+  - bit 4 ``FRAGMENT`` -- more fragments follow this one in a
+    larger message.
+  - bit 5 ``EVENT`` -- this packet carries a channel event
+    rather than data.
+  - bits 6 and 7 are reserved.
+
+* ``opcode`` -- one byte. The command or response code. The
+  protocol library reserves opcode ranges by purpose:
+
+  - ``0x00..0x0F`` -- protocol commands (SYNC, GET_CAPS, SET_CAPS,
+    STATS, VERSION).
+  - ``0x10..0x1F`` -- system commands (RESET, BOOT, INFO, EVENT,
+    MEMORY).
+  - ``0x20..0x2F`` -- channel commands (LIST, POLL, LOCK, UNLOCK,
+    SHAPE, SIZE, READ, WRITE, IOCTL, EVENT).
+
+* ``len`` -- two bytes, little-endian. The number of payload bytes
+  that follow the header. A length of zero is legal -- many
+  acknowledgements and small commands carry no payload.
+* ``crc`` -- two bytes. A CRC-16 over the previous eight header
+  bytes. A receiver that gets a header with a bad CRC drops the
+  whole packet without even looking at the payload.
+
+The payload
+-----------
+
+Zero or more bytes, treated as opaque by the framing layer. What's
+in the payload depends on the opcode: for a ``CHANNEL_READ`` reply
+it's the actual channel data; for a ``GET_CAPS`` reply it's a
+small fixed structure; for a channel write it's whatever the host
+sent.
+
+The maximum payload size depends on the cam's protocol buffer size
+(refer to the per-board table in :func:`protocol.init`). Messages
+longer than the cap are split into fragments with the ``FRAGMENT``
+flag set on all but the last.
+
+The trailing CRC
+----------------
+
+Four bytes, a CRC-32 over the payload. Catches corruption that the
+header CRC can't see, particularly on long payloads where a
+single-bit error mid-frame would otherwise slip through.
+
+Splitting the integrity check across two CRCs is deliberate. The
+header CRC protects the framing fields themselves -- particularly
+the payload length. Without a separate header CRC, a single bit
+flip in the length byte would cause the receiver to read the wrong
+number of bytes for the payload and desync from the byte stream
+entirely; with one, a damaged header is rejected outright and the
+receiver re-scans for the next sync word. The payload CRC then
+protects the message body as a separate concern, so a bit flip in
+the data is reported as a corrupt payload rather than mistaken for
+a framing error.
+
+The format is small enough to walk through byte by byte, and the
+fact that every packet has the same layout -- sync, then header,
+then payload, then CRC -- means a hand-rolled parser fits in a
+screen of code. That's why a tiny host implementation in C, Python,
+or Rust is a weekend project; the protocol library is the
+maintained Python version on each side.
+
+
+Handshake and capability negotiation
+====================================
+
+The cam and host both arrive at the transport with their own ideas
+about how the protocol should run: which CRC modes, whether ACKs
+are required, what the largest payload they can buffer is. Before
+real traffic starts they exchange a handshake that fixes those
+parameters for the rest of the session.
+
+The host opens the connection
+-----------------------------
+
+The cam side starts the protocol stack at boot (or the application
+restarts it with :func:`protocol.init` to change parameters), then
+sits quietly waiting for a host. From the cam's point of view there
+is nothing to do until a packet arrives.
+
+The host side opens the transport -- USB port or UART -- and
+immediately sends a ``PROTO_SYNC`` packet
+(opcode ``0x00``). This packet has a magic payload that lets the cam
+recognise it even if both sides got out of sync, and it's the only
+packet the cam ever responds to before capabilities are negotiated.
+
+If the cam doesn't reply within the retransmit timeout the host
+sends ``PROTO_SYNC`` again, up to ``rtx_retries`` times. After that
+it gives up and reports a connection failure. The retry is what
+makes "unplug, replug, restart the host script" work without the
+cam needing to know the host went away.
+
+Capability exchange
+-------------------
+
+Once the cam acknowledges the sync, the host sends
+``PROTO_GET_CAPS`` (opcode ``0x01``) to ask what the cam supports.
+The reply payload reports:
+
+* CRC validation enabled or disabled
+* Sequence-number tracking enabled or disabled
+* ACKs enabled or disabled
+* Event notifications enabled or disabled
+* The cam's maximum payload size in bytes
+* The current retransmit retry count, timeout, and polling
+  parameters
+
+The host compares those against its own configuration. If the host
+needs to *change* any of them -- for example, to negotiate a smaller
+max payload because its receive buffer is smaller than the cam's --
+it sends ``PROTO_SET_CAPS`` (opcode ``0x02``) with the new values.
+The cam reconfigures its stack and acknowledges. From here on, every
+packet that crosses the wire follows that shared contract.
+
+If the host doesn't override anything, the defaults are all on:
+CRC validation, sequence-number tracking, ACKs, and event
+notifications. The default max payload is the cam's per-board
+buffer minus 14 bytes of framing overhead (the 10-byte header plus
+the 4-byte trailing payload CRC). For most cam-to-laptop work the
+defaults are the right starting point; the reliability page covers
+when and why an application opts pieces of them off.
+
+Channel discovery
+-----------------
+
+After capabilities, the host sends ``CHANNEL_LIST`` (opcode
+``0x20``). The cam replies with a list of registered channels --
+the four built-in ones (``stdin``, ``stdout``, ``stream``,
+``profile``) plus any the application registered with
+:func:`protocol.register`. Each entry carries the channel's ID, its
+name, and its capability flags (read-only, write-only, lockable).
+
+The host stashes the list and uses it later when application code
+asks for ``channel_read("frame")`` or ``channel_write("config",
+...)`` -- the name is looked up to a channel ID once, then every
+subsequent packet on that channel uses the ID directly.
+
+If the cam registers a new channel after the initial list -- common
+when an application starts running after the handshake -- the cam
+emits a ``CHANNEL_REGISTERED`` event packet. The host listens for
+those and refreshes its internal channel list, so a host script that
+attached early sees newly-registered channels appear without
+restarting.
+
+The handshake takes a few round-trips on connection setup and then
+never repeats. Steady-state traffic is just packets: framed bytes
+in, framed bytes out, the channel IDs already known on both sides.
+
+
+Reliability -- sequences, ACKs, retransmits
+===========================================
+
+The framing layer detects corruption with its CRCs. The reliability
+layer turns "detected corruption" into "the application never sees
+broken data" by negotiating retransmits whenever a packet doesn't
+arrive intact.
+
+Sequence numbers
+----------------
+
+Each packet header carries a one-byte sequence number, separate
+for each direction of travel. The sender increments the counter
+before transmit; the receiver checks that each received packet's
+sequence is the previous one plus one (modulo 256).
+
+Three things can show up at the receiver instead of a clean
+in-order packet:
+
+* The expected sequence number, with a valid CRC. The packet is
+  delivered up to the next layer.
+* The expected sequence number, with a bad CRC. The receiver drops
+  the packet and (if ACKs are negotiated) sends a NAK asking for a
+  retransmit.
+* A sequence number that's one higher than expected, with a valid
+  CRC. The receiver knows the previous packet went missing; it
+  sends a NAK referencing the missed sequence and stashes the new
+  one.
+
+The duplicate case (a retransmit arriving after the original
+finally made it through) is handled by checking against the
+expected counter: if the sequence is *behind* the expected one,
+the packet is a duplicate and the receiver discards it after
+sending the ACK the sender clearly didn't get the first time.
+
+ACK and NAK
+-----------
+
+Two flag bits in the packet header carry the reliability traffic
+itself:
+
+* ``ACK_REQ`` set on an outgoing packet means "I want an
+  acknowledgement back." Data packets normally set this; status
+  pings and one-off events may not.
+* ``ACK`` set on a packet means "this packet is the acknowledgement
+  for the sequence number in the header." It carries no payload of
+  its own.
+* ``NAK`` set means "this packet rejects a previous one" -- usually
+  because of a bad CRC or a sequence-number gap. The header points
+  the sender at which sequence to retransmit.
+
+The sender runs a stop-and-wait loop: it transmits one packet that
+requires acknowledgement, then waits for the matching ACK (or NAK)
+before sending the next. The single-in-flight model keeps the
+sender state bounded -- a few hundred bytes on the smallest cams --
+and matches the protocol's role as a control channel between two
+endpoints rather than a throughput-optimised pipe. On NAK the
+sender retransmits the same packet with the ``RTX`` flag set so the
+receiver knows it's a retry.
+
+Retransmit timing
+-----------------
+
+If neither ACK nor NAK arrives within the *retransmit timeout*, the
+sender retransmits the in-flight packet on its own. The timeout
+defaults to ``500 ms`` and doubles on each consecutive retry (1 s,
+2 s, ...). After the configured number of retries -- default three
+-- the sender gives up and reports a transport error to the
+application.
+
+Doubling the timeout is the standard *exponential backoff* pattern.
+A short first timeout catches lost packets quickly; the doubling
+means a host that's busy for a few hundred milliseconds doesn't
+trigger a storm of duplicates that compound the load.
+
+Configuring reliability
+-----------------------
+
+Both ends can turn pieces of the reliability layer off, by
+agreement, when the application can afford to lose data:
+
+* ``protocol.init(ack=False)`` disables per-packet ACKs. The sender
+  fires and forgets; the receiver delivers whatever arrives. Good
+  for streaming sensor data where a stale sample is acceptable.
+* ``protocol.init(seq=False)`` turns sequence-number tracking off,
+  which implies ACKs off too. Useful only on perfectly reliable
+  transports.
+* ``protocol.init(crc=False)`` turns the CRC validation off but
+  leaves the rest of the framing intact. Worth doing only when the
+  transport itself is robust enough that CRC errors don't happen.
+
+The defaults -- everything on -- are the right starting point for
+any host-to-cam debugging session. Once the application is in
+production the trade-offs become specific to its data and its
+transport.
+
+The status codes
+----------------
+
+When a transport error does propagate up to application code it
+arrives as a status code. The protocol library defines ten:
+
+* ``SUCCESS`` -- operation completed.
+* ``FAILED`` -- command failed for an unspecified reason.
+* ``INVALID`` -- the receiver rejected the command or one of its
+  arguments.
+* ``TIMEOUT`` -- a retry timer ran out.
+* ``BUSY`` -- the cam is busy (typically a locked channel).
+* ``CHECKSUM`` -- the header or payload CRC didn't match.
+* ``SEQUENCE`` -- the sequence number was out of order beyond what
+  the layer can recover from.
+* ``OVERFLOW`` -- a payload exceeded the negotiated maximum.
+* ``FRAGMENT`` -- a multi-fragment message arrived with missing
+  pieces.
+* ``UNKNOWN`` -- a defensive catch-all for genuinely unexpected
+  conditions.
+
+Host code calling :meth:`~openmv.camera.Camera.channel_read` sees
+these as Python exceptions; cam-side application code that has
+opted into custom error handling sees them as return values from
+the backend callbacks. Most cam apps don't need to look at the
+status codes at all -- the library handles the retry, and only
+genuinely unrecoverable failures (e.g. the transport itself is
+gone) reach the application.
+
+With framing in place to detect corruption and reliability in place
+to recover from it, the wire-level work is done. Application code
+sees framed, ordered, intact packets; the bytes inside them are
+free to mean whatever the channel above wants them to.
+
+
+Named channels
+==============
+
+The channel ID in each packet's header lets up to 32 independent
+streams share the same physical transport. The channel layer turns
+those numeric IDs into named, application-visible endpoints that
+the host code can refer to by string.
+
+.. image:: https://docs.openmv.io/_images/named-channels.svg
+   :alt: One transport wire on the left fanning out into four
+         labelled channels on the cam side -- stdin, stdout,
+         stream, and a user-registered status channel -- each
+         showing as an independent box.
+   :align: center
+
+The four built-in channels
+--------------------------
+
+The cam registers four channels at boot, before any application
+code runs:
+
+* ``stdin`` -- script bytes the host pushes to the cam to execute.
+  The IDE uses this channel to send the script being edited;
+  :meth:`~openmv.camera.Camera.exec` on the host SDK is the
+  equivalent call from a Python program.
+* ``stdout`` -- bytes from cam ``print()`` calls and uncaught
+  exception tracebacks. The IDE's serial console reads this
+  channel.
+* ``stream`` -- the live preview channel. The IDE pulls JPEG frames
+  from it; any host script can do the same with
+  :meth:`~openmv.camera.Camera.read_frame`.
+* ``profile`` -- profiler events, present only when the cam was
+  built with profiling enabled. Most release builds omit it.
+
+Application code rarely needs to touch any of the built-ins; the
+interesting work happens on channels the application registers
+itself.
+
+Registering a channel
+---------------------
+
+A cam-side script registers a new channel by calling
+:func:`protocol.register` with a name and a Python *backend* object::
+
+   import json
+   import protocol
+   import time
+
+   trigger_count = 0
+
+   class StatusChannel:
+       def size(self):
+           # Refresh the snapshot on every host query.
+           self._buf = json.dumps({
+               'uptime_s': time.ticks_ms() // 1000,
+               'triggers': trigger_count,
+           }).encode()
+           return len(self._buf)
+
+       def read(self, offset, size):
+           return self._buf[offset:offset + size]
+
+   protocol.register(name='status', backend=StatusChannel())
+
+The backend object's methods decide what the channel can do. A
+backend with only ``size`` and ``read`` is a *read-only data
+channel*; add ``write`` and it becomes bidirectional; add ``poll``
+and the host can ask whether new data is ready before paying for a
+read. Sampling the data inside ``size`` is the simplest pattern
+when the payload is small enough to fit in one fragment -- the
+buffer is generated on demand, never cached, never raced. Larger
+payloads -- image frames, sensor traces -- need a latching pattern
+that holds the buffer until the host finishes its multi-fragment
+read, covered with the frame channel.
+
+A small amount of bookkeeping happens automatically:
+
+* The library assigns the next free channel ID (between 0 and 31).
+* The capability flags are derived from the methods present:
+  ``CHANNEL_FLAG_READ`` if ``read`` is defined,
+  ``CHANNEL_FLAG_WRITE`` if ``write`` is defined,
+  ``CHANNEL_FLAG_LOCK`` if ``lock`` / ``unlock`` are defined.
+* A ``CHANNEL_REGISTERED`` event packet is sent to any connected
+  host so its channel list updates.
+
+The return value is a :class:`protocol.ProtocolChannel` handle the
+application can hold on to. The handle's
+:meth:`~protocol.ProtocolChannel.send_event` method is the cam-side
+hook for telling the host "something happened on this channel
+without changing the readable data" -- a trigger fired, a button
+was pressed, a sample-count milestone passed.
+
+Reading channels from the host
+------------------------------
+
+The host SDK ships as the ``openmv`` package on PyPI
+(``pip install openmv``), built on ``pyserial`` for the transport.
+Its :class:`openmv.camera.Camera` class exposes the cam's named
+channels through high-level methods::
+
+   from openmv.camera import Camera
+
+   with Camera('/dev/ttyACM0', baudrate=921600) as cam:
+       cam.update_channels()
+       if cam.has_channel('status'):
+           size = cam.channel_size('status')
+           data = cam.channel_read('status', size)
+
+.. warning::
+
+   The ``openmv`` package requires **CPython 3.12 or newer**.
+   Earlier interpreters lack features the SDK depends on; install
+   a 3.12+ build before ``pip install openmv``.
+
+A few things to notice about the setup:
+
+* The serial-port string -- ``/dev/ttyACM0`` here -- is
+  ``COM3``-style on Windows, ``/dev/cu.usbmodemXXXX`` on macOS, and
+  ``/dev/ttyACM*`` on Linux. The actual number depends on which
+  port the cam enumerated as.
+* The baud rate is the protocol's magic value ``921600``, which the
+  cam's USB-CDC stack recognises as "this client speaks the
+  protocol, not the REPL." Any other rate falls back to a plain
+  serial line.
+* The ``with Camera(...) as cam:`` context manager opens the
+  transport, runs ``PROTO_SYNC``, exchanges capabilities, and on
+  exit closes the port cleanly. The explicit
+  :meth:`~openmv.camera.Camera.update_channels` call after entry
+  refreshes the local channel list with any channels the
+  application registered after boot.
+
+:meth:`~openmv.camera.Camera.channel_size` and
+:meth:`~openmv.camera.Camera.channel_read` are the workhorse
+methods; :meth:`~openmv.camera.Camera.channel_write` round-trips a
+buffer to the cam if the backend has a ``write`` method;
+:meth:`~openmv.camera.Camera.has_channel` is the safe way to check
+that a name is registered before using it. The channel name is
+looked up once into the channel ID the cam assigned during
+``register`` and used in every packet from then on.
+
+Each :meth:`~openmv.camera.Camera.channel_size` /
+:meth:`~openmv.camera.Camera.channel_read` pair costs two
+round-trips: one packet to ask for the size, one to ask for the
+bytes. Over USB-CDC both finish in about a millisecond combined;
+over UART the same exchange takes longer in proportion to the
+serial line's baud rate. Application code that reads in a tight
+loop should call :meth:`~openmv.camera.Camera.channel_size`
+only when the size can actually change -- for fixed-size data, the
+size from the first call can be cached.
+
+Independence between channels
+-----------------------------
+
+Three things are worth knowing about how channels interact:
+
+* **Independent flow control.** Each channel has its own pending
+  read state, its own data, and its own ``size`` / ``read`` /
+  ``write`` callbacks. A long-running read on the ``stream``
+  channel doesn't block reads on the application's ``config``
+  channel.
+* **Sequential per channel.** Within a single channel, packets are
+  delivered in order. The reliability layer guarantees this even
+  when retransmits are involved.
+* **Shared transport, shared retransmit budget.** All channels
+  share the one physical link, so a torrent of traffic on one
+  channel slows the others down by hogging the wire. The
+  ``CHANNEL_LOCK`` mechanism lets one channel reserve the wire for
+  an atomic multi-packet read; the backend opts in by implementing
+  the ``lock`` / ``unlock`` callbacks.
+
+A channel is the minimum surface area on which a host program and a
+cam program agree to cooperate. The name, the directionality (read
+or write or both), the callback methods on the cam side, and the
+matching method calls on the host side are the entire contract.
+
+
+Channel callbacks
+=================
+
+The backend object handed to :func:`protocol.register` is a Python
+class. The protocol library doesn't ask the class which methods it
+implements; it inspects the instance and wires the ones it finds.
+That introspection is what makes the backend interface flexible:
+the smallest useful backend is two methods, the most elaborate is
+twelve, and the application opts in to each capability one method
+at a time.
+
+The introspection rules
+-----------------------
+
+When :func:`protocol.register` runs, the library walks a fixed list
+of callable names and binds each one it finds on the backend
+instance:
+
+* Adding ``read`` to the class flips ``CHANNEL_FLAG_READ`` on. A
+  host call to :meth:`~openmv.camera.Camera.channel_read` only
+  reaches the backend if this flag is set.
+* Adding ``write`` flips ``CHANNEL_FLAG_WRITE`` on, enabling
+  :meth:`~openmv.camera.Camera.channel_write`.
+* Adding ``lock`` and ``unlock`` flips ``CHANNEL_FLAG_LOCK`` on,
+  enabling the host to lock the channel for a multi-packet atomic
+  read.
+* Adding ``poll`` lets the host ask "is anything ready?" cheaply,
+  without forcing a full read.
+
+Missing methods are not errors -- the protocol library just leaves
+the corresponding capability disabled. A backend with only ``size``
+and ``read`` is perfectly valid; it's a read-only data channel.
+
+A read-only sensor channel
+--------------------------
+
+A sensor channel that publishes a fresh reading every time the host
+asks, refusing host writes, exercises four of the callbacks::
+
+   import protocol
+   import struct
+
+   class TempChannel:
+       def __init__(self, read_sensor):
+           self._read_sensor = read_sensor
+           self._buf = b''
+           self._fresh = False
+
+       def poll(self):
+           # Tell the host whether a reading is waiting.
+           return self._fresh
+
+       def size(self):
+           # Sample fresh data on every host-side size query.
+           value = self._read_sensor()
+           self._buf = struct.pack('<f', value)
+           self._fresh = True
+           return len(self._buf)
+
+       def read(self, offset, size):
+           end = offset + size
+           if end >= len(self._buf):
+               self._fresh = False
+           return self._buf[offset:end]
+
+   protocol.register(name='temp', backend=TempChannel(read_temperature))
+
+Walking through what each method does:
+
+* ``poll`` returns the freshness flag. The host calls it before
+  reading and skips the read entirely when it returns
+  :data:`False`. That saves the round-trip cost for "no new data
+  yet."
+* ``size`` regenerates the buffer on demand and reports its length.
+  Doing the sampling here means the backend doesn't need a
+  background task -- a host call drives every measurement.
+* ``read`` returns a slice of the buffer. The protocol library may
+  call it more than once when the buffer is larger than the
+  negotiated max payload; the ``offset`` argument walks through
+  the fragments.
+* No ``write`` means host writes are refused at the framing layer,
+  before the backend is involved.
+
+The full callback set
+---------------------
+
+For reference, every method the library looks for on a backend:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 28 12 60
+
+   * - Method
+     - Returns
+     - Purpose
+   * - ``init(self)``
+     - object
+     - Optional one-shot initialisation when the channel first
+       binds to a host. Return any non-:data:`None` value on
+       success.
+   * - ``poll(self)``
+     - bool
+     - Return :data:`True` when data is available.
+   * - ``lock(self)``
+     - bool
+     - Acquire the channel for an atomic multi-packet transfer.
+   * - ``unlock(self)``
+     - bool
+     - Release a prior ``lock``.
+   * - ``size(self)``
+     - int
+     - Number of bytes currently readable from the channel.
+   * - ``shape(self)``
+     - tuple
+     - Up to four integers describing the data structure (e.g.
+       image height, width, byte count). Used by the host to
+       unpack typed buffers.
+   * - ``read(self, offset, size)``
+     - bytes
+     - Return up to *size* bytes starting at *offset*. Called once
+       per fragment when the payload exceeds the negotiated max.
+   * - ``readp(self, offset, size)``
+     - bytes
+     - Zero-copy variant of ``read``: the buffer's memory must
+       stay valid for the duration of the transfer.
+   * - ``write(self, offset, data)``
+     - int
+     - Host wrote *data* at *offset*. ``data`` is a ``bytearray``
+       view into the protocol layer's receive buffer -- copy out
+       what you want to keep before returning.
+   * - ``ioctl(self, cmd, length, arg)``
+     - int
+     - Application-defined opcode outside the read/write model.
+       Negative return is an error.
+   * - ``flush(self)``
+     - object
+     - Drop any buffered data. Called when the host wants to
+       reset the channel.
+   * - ``is_active(self)``
+     - bool
+     - Only meaningful on backends that represent a physical
+       transport (the built-in USB channels). Application channels
+       don't need this.
+
+That's the entire backend interface. Twelve method names, all
+optional, and the protocol library decides what each channel can
+do based on which ones are present.
+
+
+Streaming frames
+================
+
+The most common real use of a custom channel is streaming image
+frames from the cam to a host program at the cam's frame rate. The
+mechanics are subtler than they look: a JPEG can run to 25 KB or
+more, so the host reads it as several fragments, and the cam's
+capture loop must be prevented from overwriting the buffer
+mid-read. The right pattern -- shown here and used by the tools in
+``openmv-projects/tools/`` -- *latches* the buffer until the host
+finishes pulling the last byte.
+
+The cam side
+------------
+
+A frame channel that captures into a single framebuffer, latches it
+on the host's first read, and only takes the next snapshot once the
+host has consumed the full image::
+
+   import csi
+   import protocol
+
+   csi0 = csi.CSI()
+   csi0.reset()
+   csi0.pixformat(csi.RGB565)
+   csi0.framesize(csi.QVGA)
+   csi0.framebuffers(1)
+
+   img = csi0.snapshot()
+   img.compress(quality=85)
+   img_mv = memoryview(img.bytearray())
+   img_size = len(img_mv)
+   frame_available = True
+
+   class FrameChannel:
+       def poll(self):
+           return frame_available
+
+       def size(self):
+           return img_size
+
+       def readp(self, offset, size):
+           global frame_available
+           end = offset + size
+           mv = img_mv[offset:end]
+           if end == img_size:
+               # Host has just read the last byte of this frame --
+               # release the buffer so the capture loop can refresh.
+               frame_available = False
+           return mv
+
+   ch = protocol.register(name='frame', backend=FrameChannel())
+
+   while True:
+       if not frame_available:
+           img = csi0.snapshot()
+           img.compress(quality=85)
+           img_mv = memoryview(img.bytearray())
+           img_size = len(img_mv)
+           frame_available = True
+           ch.send_event(0x01)   # notify host that a new frame is ready
+
+Four pieces are doing real work here:
+
+* ``frame_available`` is the *latch*. The capture loop only takes a
+  new snapshot when it is :data:`False` -- meaning the host has
+  pulled the last byte of the previous frame. The host's read sets
+  it back to :data:`False` from inside ``readp`` once the final
+  offset has been served. Without this guard, the next
+  ``csi0.snapshot()`` would overwrite the buffer mid-read and the
+  host would receive a frame stitched together from two captures.
+* ``readp`` rather than ``read`` is what the backend implements.
+  The protocol library treats the returned buffer as authoritative
+  and reads its bytes directly into the outgoing packet -- no copy.
+  For frame-sized payloads ``readp`` is noticeably faster than
+  ``read``, which forces an intermediate copy.
+* ``size`` returns the cached JPEG length without recomputing
+  anything; the capture loop maintains it whenever it refreshes the
+  buffer. The host calls ``size`` between ``poll`` and ``readp`` to
+  know how many bytes to pull.
+* :meth:`~protocol.ProtocolChannel.send_event` notifies the host
+  the instant a new frame lands so it can begin pulling without
+  polling. The event ID ``0x01`` is application-defined ("frame
+  ready" in this case); use a different small integer for each
+  kind of notification.
+
+Fragmentation
+-------------
+
+QVGA RGB565 at JPEG quality 85 compresses to roughly 10-25 KB,
+depending on the scene -- much bigger than the negotiated max
+payload on any cam (see the per-board table in
+:func:`protocol.init`). One JPEG read won't fit in one packet, and
+that's fine, because the protocol library fragments it
+transparently.
+
+When the host asks for ``channel_read('frame', 12000)``:
+
+1. The cam's ``readp`` is called *once* with ``offset=0`` and the
+   full 12000-byte request. It returns one memoryview covering the
+   whole range.
+2. The protocol library breaks that memoryview into max-payload-
+   sized fragments on the wire, one ``CHANNEL_READ`` reply packet
+   per fragment, each with its own header and CRC. The bytes are
+   streamed out of the backend's buffer directly -- no copy.
+3. The host receives the fragments in order, the reliability layer
+   retransmits any one chunk that fails its CRC, and the host SDK
+   glues the chunks into the 12000-byte result returned to the
+   caller.
+
+.. note::
+
+   This is the key practical difference between ``readp`` and
+   ``read``. ``readp`` is called *once per host request*; the
+   protocol layer fragments and transmits out of the single
+   returned buffer. ``read`` is called *once per fragment*, and
+   the library copies each returned chunk into its own packet
+   buffer. For frame-sized payloads ``readp`` saves both the
+   per-fragment Python-level call overhead and the copy.
+
+.. tip::
+
+   Want to see the gap for yourself? Rename the backend's
+   ``readp`` method to ``read`` -- nothing else changes; the
+   library will pick up the ``read`` capability instead -- and
+   compare the host's frame-rate counter before and after. The
+   slower number is the per-fragment copy and Python-call cost
+   you avoid by using ``readp``.
+
+The latch in ``FrameChannel.readp`` releases the buffer when
+``offset + size == img_size`` -- the moment the host has pulled
+the last byte. Until then, the buffer must stay valid, which is
+why the capture loop only takes the next snapshot once
+``frame_available`` flips back to :data:`False`.
+
+The host side
+-------------
+
+The host pulls frames in a tight loop::
+
+   import io
+   from PIL import Image
+   from openmv.camera import Camera
+
+   with Camera('/dev/ttyACM0', baudrate=921600) as cam:
+       cam.update_channels()
+
+       while True:
+           size = cam.channel_size('frame')
+           if not size:
+               continue
+           data = cam.channel_read('frame', size)
+           img = Image.open(io.BytesIO(data))
+           img.show()                  # or feed to a GUI
+
+The :meth:`~openmv.camera.Camera.channel_size` call doubles as a
+"is anything ready" check -- zero means the cam hasn't captured
+yet -- so the loop skips read attempts on an empty buffer. For
+GUI applications that already poll on a timer, this is the natural
+pattern.
+
+Pillow's ``Image.open`` decodes the JPEG; the cam already
+JPEG-compressed it so the host doesn't have to redo expensive
+bit-packing on RGB565. The host script could just as easily save
+the bytes to disk, hand them to OpenCV, or push them through a web
+view.
+
+Throughput thinking
+-------------------
+
+Three things bound the achievable frame rate:
+
+* The cam's capture rate. The protocol can't deliver frames faster
+  than the sensor produces them; whatever cap the chosen pixel
+  format and frame size impose on capture is the ceiling.
+* The negotiated max payload. Bigger payloads mean fewer fragments
+  per frame and less framing overhead, so cams with larger protocol
+  buffers move bytes faster than smaller ones.
+* CRC and ACK overhead. Each packet costs 14 bytes of framing plus
+  one ACK round-trip. For long fragments the per-payload overhead
+  is small; for tiny payloads it dominates.
+
+For most cam-to-laptop GUI work the limiting factor is the cam's
+capture and JPEG compression time, not the protocol stack. Where
+the protocol does become the bottleneck -- streaming uncompressed
+raw frames at high frame rates, for example -- the levers are
+turning off ACKs (``protocol.init(ack=False)``), increasing the
+protocol buffer if the cam supports it, or capturing in GRAYSCALE
+so each compressed JPEG carries one channel instead of three and
+the encoded frame ends up noticeably smaller on the wire.
+
+The frame channel is the canonical cam-to-host data flow. The same
+backend interface, with a ``write`` method added, lets the host
+push data the other way too -- which is what an interactive cam
+tool needs as soon as the operator wants to *change* something
+rather than just watch.
+
+
+Bidirectional flow
+==================
+
+Channels are not one-way. A backend that implements ``write`` lets
+the host push bytes *to* the cam, and the cam reacts. That's the
+pattern behind every real interactive tool: the operator turns a
+knob on the host GUI, the host writes the new value to a config
+channel, the cam reads it the next time it captures.
+
+A config channel
+----------------
+
+Adding to the streaming cam-side script, expose a second channel for
+the JPEG quality::
+
+   class ConfigChannel:
+       def __init__(self):
+           self.quality = 85
+
+       def size(self):
+           return 0
+
+       def read(self, offset, size):
+           # Not used for "host writes to cam" -- but the library
+           # still needs the method present.
+           return b''
+
+       def write(self, offset, data):
+           # data is a bytearray view into the protocol buffer.
+           # Copy out the contents before doing anything with it.
+           new_q = int(bytes(data))
+           if 1 <= new_q <= 100:
+               self.quality = new_q
+           return len(data)
+
+   config = ConfigChannel()
+   protocol.register(name='config', backend=config)
+
+The capture loop reads from ``config.quality`` whenever it
+compresses a frame::
+
+   while True:
+       img = csi0.snapshot()
+       latest_jpeg = bytes(
+           img.compress(quality=config.quality).bytearray()
+       )
+       ch.send_event(0x01)
+
+The host now has a knob. Set it to 50 and the next frame is
+smaller (and uglier); set it to 95 and the next frame is bigger
+(and sharper). The cam keeps capturing without restarting; the host
+doesn't have to push a new script.
+
+The write call from the host
+----------------------------
+
+On the host side, :meth:`~openmv.camera.Camera.channel_write`
+sends bytes to a named channel::
+
+   cam.channel_write('config', b'50')
+
+The host SDK encodes the bytes as a single (or fragmented)
+``CHANNEL_WRITE`` packet, the protocol layer delivers it to the
+cam, the cam's ``write(offset=0, data=...)`` runs, and the cam's
+side acknowledges. By the time the call returns the cam has
+received and accepted the new value.
+
+The write is atomic from the cam's point of view -- the protocol
+library guarantees the backend's ``write`` runs to completion before
+any other operation on that channel proceeds. Application code can
+read ``config.quality`` from inside the capture loop without
+worrying about the host stomping mid-snapshot.
+
+Stub size and read on a write-only channel
+------------------------------------------
+
+A pure write channel still needs ``size`` and ``read`` defined,
+even if they're stubs returning 0 and ``b''``. The library uses
+the *presence* of methods to derive the channel's capability flags;
+a backend that's missing ``read`` won't get ``CHANNEL_FLAG_READ``
+set and the host will refuse a read attempt.
+
+The bytes returned from ``read`` on a write-only channel are
+useful for a different purpose, though: echoing back the current
+value so a host that just attached can ask the cam "what's the
+current setting?" rather than starting from a default. To make
+that work both directions have to agree on a serialisation. The
+raw-bytes ``int(bytes(data))`` parse in the earlier example works
+for a single integer field but won't scale once there's a second
+knob to set. Switching ``write`` to parse JSON and pairing it with
+a ``read`` that returns the matching JSON dump turns the channel
+into a true round-trip configuration store::
+
+   import json
+
+   class ConfigChannel:
+       def __init__(self):
+           self.quality = 85
+           self._buf = b''
+       def size(self):
+           self._buf = json.dumps({'quality': self.quality}).encode()
+           return len(self._buf)
+       def read(self, offset, size):
+           return self._buf[offset:offset + size]
+       def write(self, offset, data):
+           new = json.loads(bytes(data))
+           if 'quality' in new:
+               self.quality = int(new['quality'])
+           return len(data)
+
+The host now writes ``cam.channel_write('config',
+b'{"quality": 50}')`` to set a value and ``cam.channel_read('config')``
+to read the current state back. The cam serialises a fresh JSON
+dump on every read so the host always sees the latest values, and
+adding another knob (``threshold``, ``exposure``, ``orientation``)
+is one line in the JSON dict on each side.
+
+A complete loop
+---------------
+
+With a frame channel for cam → host data, a config channel for
+host → cam control, and a small amount of glue, the application is
+an interactive tool:
+
+* The host opens the cam, starts pulling frames, and displays
+  them in a window.
+* When the operator drags a slider, the host writes the new value
+  on ``config``.
+* The cam's capture loop picks the value up on the next frame.
+* The new frames flow through the same ``frame`` channel.
+
+That's the entire model. Two channels, two callbacks each, a
+capture loop on the cam, a read-and-write loop on the host. No
+framing logic visible, no error handling visible -- the protocol
+library makes the reliable byte movement disappear.
+
+Everything past this point is application code. Adding a third
+channel for a histogram, a fourth for telemetry, or a fifth for
+sensor triggers is the same backend-class-and-``protocol.register``
+recipe, repeated. Once a cam project reaches this point the
+protocol stops being the interesting problem; the application's
+own logic does.
+
+
+Wrap up
+=======
+
+A cam plugged into a USB cable that streams frames to a host
+program, accepts config updates back from the host, and survives
+unplug/replug without losing sync -- with retransmits hidden,
+multiple logical streams sharing one port, and zero framing code in
+the application -- comes out of about forty lines of cam-side code
+and a similar amount on the host. The protocol library turns a byte
+pipe into a programmable channel surface and keeps everything below
+the application invisible.
+
+What the chapter built
+----------------------
+
+* A four-layer mental model of the stack: transport, framing,
+  reliability, channels. Each layer solves one problem and ignores
+  everything above.
+* The on-the-wire packet format -- 10-byte header with CRC,
+  variable payload, trailing CRC. Small enough to walk through
+  byte by byte.
+* The handshake the cam and host run when a transport connects:
+  PROTO_SYNC, capability exchange, channel discovery.
+* The reliability machinery on top: sequence numbers, ACKs, NAKs,
+  retransmits with exponential backoff, the ten status codes.
+* The channel model: up to 32 named logical streams on one wire,
+  with built-in ``stdin`` / ``stdout`` / ``stream`` / ``profile``
+  and application channels registered by Python class.
+* The backend interface -- ``size``, ``read``, ``write``, ``poll``,
+  ``lock`` / ``unlock``, ``shape``, ``ioctl``, ``flush``,
+  ``is_active`` -- and how the protocol library uses the methods
+  present on a backend to decide what the channel supports.
+* The host side: the openmv-python SDK's
+  :class:`~openmv.camera.Camera` class, the ``921600``-baud magic
+  rate that switches USB-CDC into protocol mode, and the
+  ``channel_size`` / ``channel_read`` / ``channel_write``
+  round-trip pattern.
+* A frame-streaming pattern -- single-buffer capture, ``readp``
+  with a latch, ``send_event`` for new-frame notifications -- and a
+  bidirectional config pattern (host-writable channel, JSON
+  round-trip) that together form the foundation for every
+  interactive cam tool.
+
+Reference roadmap
+-----------------
+
+The library reference pages are the lookup destinations when one of
+these features comes up in real code:
+
+* :doc:`/library/omv.protocol` -- the :mod:`protocol` module,
+  :func:`protocol.init`, :func:`protocol.register`,
+  :class:`~protocol.ProtocolChannel`, channel flag constants, and
+  the per-cam max-payload table.
+* The host SDK -- ``pip install openmv``,
+  :class:`openmv.camera.Camera`. Methods touched in this chapter:
+  :meth:`~openmv.camera.Camera.update_channels`,
+  :meth:`~openmv.camera.Camera.has_channel`,
+  :meth:`~openmv.camera.Camera.channel_size`,
+  :meth:`~openmv.camera.Camera.channel_read`,
+  :meth:`~openmv.camera.Camera.channel_write`,
+  :meth:`~openmv.camera.Camera.poll_events`,
+  :meth:`~openmv.camera.Camera.read_frame`,
+  :meth:`~openmv.camera.Camera.exec`, and
+  :meth:`~openmv.camera.Camera.stop`.
+* The `openmv-projects
+  <https://github.com/openmv/openmv-projects>`_ repository -- real
+  tools built on the protocol library. The `tools/
+  <https://github.com/openmv/openmv-projects/tree/master/tools>`_
+  directory includes ``thermal-overlay-calibration`` (RGB + thermal
+  alignment GUI), ``ccm-tuning`` (colour-correction matrix tuner),
+  ``genx320-event-streaming`` and ``genx320-overlay-calibration``
+  (event-camera tooling). Each one uses the patterns from this
+  chapter end to end.
+
+Where to take it next
+---------------------
+
+A few directions cam projects move from here:
+
+* **Building a host GUI.** A frame channel feeding a video widget,
+  one or two config channels feeding sliders and buttons. For the
+  GUI layer itself, `DearPyGui
+  <https://github.com/hoffstadt/DearPyGui>`_ is the natural choice
+  -- pure-Python, pip-installable, fast enough for live preview,
+  and what every existing OpenMV host tool reaches for first.
+* **Multi-channel telemetry dashboard.** Several application
+  channels on the same cam (sensor readings, counters, status
+  events) each refreshed in its own callback, and a host GUI that
+  reads them on a timer and renders each one separately. The
+  channel layer's independent flow control means one slow read
+  doesn't stall the others.
+* **Remote tuning over UART.** The same channel callbacks; the
+  application calls ``protocol.init`` to switch from USB to a UART
+  transport. The cam keeps running headless and a Python script on
+  a Raspberry Pi or laptop talks to it over a serial line for
+  field tuning.
+
+The wire format, the reliability layer, and the channel abstraction
+don't change. Picking the transport that fits the deployment and
+adding a channel for each thing the host needs to see or set is the
+entire engineering job from here on.
 
 
 Production
@@ -88246,7 +90655,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Wed 03 Jun 2026 07:44:06 UTC
+Generated Thu 04 Jun 2026 00:45:09 UTC
 
 Literals
 --------
@@ -88429,7 +90838,7 @@ Sample code::
 Core language
 =============
 
-Generated Wed 03 Jun 2026 07:44:06 UTC
+Generated Thu 04 Jun 2026 00:45:09 UTC
 
 Classes
 -------
@@ -89031,7 +91440,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7fc651a05260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7f1446005260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -89213,7 +91622,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Wed 03 Jun 2026 07:44:06 UTC
+Generated Thu 04 Jun 2026 00:45:09 UTC
 
 Exception
 ---------
@@ -90080,7 +92489,7 @@ Sample code::
 Modules
 =======
 
-Generated Wed 03 Jun 2026 07:44:06 UTC
+Generated Thu 04 Jun 2026 00:45:09 UTC
 
 .. Preamble section inserted into generated output
 
@@ -90380,7 +92789,7 @@ Sample code::
 +-------------------------+--------------------------------------------+
 | ::                      | ::                                         |
 |                         |                                            |
-|     4535488341379497010 |     Traceback (most recent call last):     |
+|     9882509384511311337 |     Traceback (most recent call last):     |
 |                         |       File "<stdin>", line 11, in <module> |
 |                         |     ValueError: bits must be 32 or less    |
 +-------------------------+--------------------------------------------+
