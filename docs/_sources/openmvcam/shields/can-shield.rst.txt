@@ -82,9 +82,10 @@ Send and receive frames on the CAN bus at 1 Mb/s::
     from machine import CAN
     import time
 
-    can = CAN(1, 1_000_000)
+    can = CAN(2, 1_000_000)
+    can.set_filters(None)
 
-    can.send([0xDE, 0xAD, 0xBE, 0xEF], 0x123)
+    can.send(0x123, b"\xDE\xAD\xBE\xEF")
     print(can.recv())
 
 With the on-board solder bridge connected, drive P6 high to put the

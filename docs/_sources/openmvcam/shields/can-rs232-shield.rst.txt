@@ -101,8 +101,9 @@ Send and receive CAN-FD frames — TX on P1 (default) or P2 (alternative), RX on
 
     from machine import CAN
 
-    can = CAN(0, 1_000_000)
-    can.send([0xDE, 0xAD, 0xBE, 0xEF], 0x123)
+    can = CAN(2, 1_000_000)
+    can.set_filters(None)
+    can.send(0x123, b"\xDE\xAD\xBE\xEF")
     print(can.recv())
 
 Echo bytes over RS-232 on P4 (TX) / P5 (RX)::

@@ -683,7 +683,8 @@ FDCAN2        D94   D93
     from machine import CAN
 
     can = CAN(2, 500_000)
-    can.send([0xDE, 0xAD, 0xBE, 0xEF], 0x123)
+    can.set_filters(None)
+    can.send(0x123, b"\xDE\xAD\xBE\xEF")
     print(can.recv())
 
 ADC

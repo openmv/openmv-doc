@@ -90,8 +90,17 @@ into the third argument:
 Receiving frames
 ----------------
 
-:meth:`~machine.CAN.recv` returns the next frame in the receive
-FIFO, or ``None`` if nothing is waiting:
+The controller starts up with no filter installed and drops
+every incoming frame. Before :meth:`~machine.CAN.recv` will
+return anything, call :meth:`~machine.CAN.set_filters` once --
+the simplest form is ``None``, which accepts every ID:
+
+::
+
+    can.set_filters(None)   # accept every frame
+
+:meth:`~machine.CAN.recv` then returns the next frame in the
+receive FIFO, or ``None`` if nothing is waiting:
 
 ::
 
