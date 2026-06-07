@@ -75,7 +75,7 @@ the data block and reads ``itemsize`` bytes from there.
 The same formula extends to any number of dimensions.
 
 This layout -- rows stored end to end, with the last
-axis varying fastest as you walk through memory -- is
+axis varying fastest along memory -- is
 called *row-major* or *C order*. Every array
 :mod:`numpy` allocates on the camera uses this layout;
 the Fortran-order option that desktop ``numpy`` offers
@@ -101,9 +101,9 @@ does not, so a layout choice that desktop ``numpy``
 would have papered over still costs time here.
 ``np.sum(m, axis=1)`` collapses the last axis and runs
 in the contiguous direction; ``np.sum(m, axis=0)`` does
-not. When you have a choice about how to lay out a
-buffer, put the long axis last so operations along it
-stay in the inner loop.
+not. When the application has a choice about how to
+lay out a buffer, put the long axis last so operations
+along it stay in the inner loop.
 
 If the layout starts out wrong,
 :meth:`~ulab.numpy.ndarray.transpose` (or the ``.T``
@@ -127,14 +127,14 @@ strides. ``a[::2]`` doubles a stride. Each returns a
 Anything that has to walk the data and write a new
 buffer is a copy. The detail of which is which is on
 :doc:`views-and-copies`; the rule for now is that
-"shape math" is free and "data math" is not.
+descriptor edits are free and data walks are not.
 
 A note about ndim
 -----------------
 
 :mod:`numpy` on the camera is built with a maximum
-supported ``ndim`` of either 2 or 4, fixed in the
-firmware. The suffix on :data:`ulab.__version__`
+supported ``ndim`` of either 2 or 4, fixed when the cam
+was built. The suffix on :data:`ulab.__version__`
 (``-2D``, ``-4D``) reports which. Operations that
 would produce a higher-rank array raise
 :exc:`ValueError`. The vast majority of camera-side

@@ -127,7 +127,7 @@ along an existing axis::
 
 All inputs must share the same dtype and ``ndim``, and
 match on every axis other than the joining one. This is
-the right shape for accumulating short buffers into a
+the right tool for accumulating short buffers into a
 longer one when the final length is known up front; for
 the streaming-append pattern see :doc:`../performance`.
 

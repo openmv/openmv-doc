@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>8.33. ImageIO streams - OpenMV MicroPython 1.28 documentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Search" href="../../../../search.html" /><link rel="next" title="8.34. Wrap up" href="../wrap-up.html" /><link rel="prev" title="8.32. Saving and compression" href="saving-and-compression.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/io/imageio-streams.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=7fb566aa" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/io/imageio-streams.html"/>
+  <meta property="og:title" content="8.33. ImageIO streams"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../overview.html">1. Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../software_setup.html">2. Software Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware_setup.html">3. Hardware Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../openmvide_overview.html">4. OpenMV IDE Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">5. Python Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">6. Hardware Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">7. Vision Sensors</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">8. Image Processing</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">8.1. The Image object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">8.2. Coordinates and regions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">8.3. Pixel formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">8.4. Reading and writing pixels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">8.5. Regions and masks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/shapes-and-text.html">8.6. Drawing shapes and text</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/image-composition.html">8.7. Compositing images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/flood-fill-and-detection-glyphs.html">8.8. Flood fill and detection glyphs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">8.9. Arithmetic operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">8.10. Bitwise operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">8.11. Frame differencing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">8.12. Binary thresholding</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/linear-neighborhood.html">8.13. Linear and neighbourhood filters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/gaussian-and-edges.html">8.14. Gaussian smoothing and edges</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/morphology.html">8.15. Morphological operations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/custom-kernels.html">8.16. Custom convolution kernels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/standard-kernels.html">8.17. A catalogue of standard kernels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/histograms-and-statistics.html">8.18. Histograms and statistics</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/tonal-corrections.html">8.19. Tonal corrections</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/regression-and-similarity.html">8.20. Regression and similarity</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">8.21. Scale, flip, and crop</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">8.22. Lens and perspective correction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">8.23. Perspective correction</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">8.24. Polar transforms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">8.25. Finding blobs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">8.26. Finding lines and segments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">8.27. Finding circles and rectangles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">8.28. QR codes and AprilTags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">8.29. Barcodes and Data Matrix codes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">8.30. Template matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">8.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="saving-and-compression.html">8.32. Saving and compression</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">8.33. ImageIO streams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">8.34. Wrap up</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">9. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">10. Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">11. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">12. Networking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">13. Web Servers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">14. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">15. Host Protocol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">16. Production</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Libraries</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensors</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Language</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Internals</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">License</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#the-two-backing-stores">8.33.1. The two backing stores</a></li>
+<li><a class="reference internal" href="#recording">8.33.2. Recording</a></li>
+<li><a class="reference internal" href="#playback">8.33.3. Playback</a></li>
+<li><a class="reference internal" href="#navigation-and-inspection">8.33.4. Navigation and inspection</a></li>
+<li><a class="reference internal" href="#host-playable-recordings">8.33.5. Host-playable recordings</a></li>
+<li><a class="reference internal" href="#a-trigger-and-replay-pattern">8.33.6. A trigger-and-replay pattern</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d5c633e39248b685cb2f8645b46d40f78b689a41/docs/openmvcam/tutorial/image/io/imageio-streams.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Tutorial</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">8. </span>Image Processing</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">8.33. </span>ImageIO streams</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/io/imageio-streams.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/io/imageio-streams.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/io/imageio-streams.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/io/imageio-streams.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/io/imageio-streams.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/io/imageio-streams.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="imageio-streams">
+<h1><span class="section-number">8.33. </span>ImageIO streams<a class="headerlink" href="#imageio-streams" title="Link to this heading">¶</a></h1>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.save" title="image.Image.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a> and
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.to_jpeg" title="image.Image.to_jpeg"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_jpeg()</span></code></a> cover the
+<em>single-frame</em> I/O case: an application
+captures a frame, encodes it, and pushes
+it somewhere. A different class of
+application needs the <em>sequence</em> case:
+record many frames in a row at the
+natural capture rate, store them somewhere
+they can be retrieved later, and play them
+back at the right speed. A training-data
+collection script captures a few hundred
+example frames for an ML pipeline; a
+inspection-station log records every
+captured part for traceability; a
+development script replays a stored
+sequence to test a new algorithm against
+data that was previously captured live.</p>
+<p>The <a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO" title="image.ImageIO"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageIO</span></code></a>
+class is the image module’s recorder /
+player. A single stream holds a sequence
+of <code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code> frames – possibly of
+different sizes and pixel formats –
+together with the inter-frame interval
+of each one, so playback can re-create
+the original frame rate. Two backing
+stores are available: a file on the
+filesystem or a fixed-size buffer in RAM.</p>
+<section id="the-two-backing-stores">
+<h2><span class="section-number">8.33.1. </span>The two backing stores<a class="headerlink" href="#the-two-backing-stores" title="Link to this heading">¶</a></h2>
+<p>A <em>file stream</em> persists the recording
+across power cycles and is sized only by
+the storage backing it. It starts with
+a 16-byte magic header
+<code class="docutils literal notranslate"><span class="pre">OMV</span> <span class="pre">IMG</span> <span class="pre">STR</span> <span class="pre">Vx.y</span></code> followed by one
+chunk per frame; the current writer emits
+<code class="docutils literal notranslate"><span class="pre">V2.0</span></code> and the reader still accepts
+<code class="docutils literal notranslate"><span class="pre">V1.0</span></code> and <code class="docutils literal notranslate"><span class="pre">V1.1</span></code> files for backward
+compatibility. The file path is the
+constructor argument; the mode is the
+file-open mode (<code class="docutils literal notranslate"><span class="pre">'r'</span></code> to read an
+existing stream, <code class="docutils literal notranslate"><span class="pre">'w'</span></code> to truncate and
+write fresh).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># Recording to /sdcard/run.bin</span>
+</span><span data-line="2"><span class="n">stream</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">ImageIO</span><span class="p">(</span><span class="s2">&quot;/sdcard/run.bin&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+</span><span data-line="3"><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">120</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">img</span> <span class="o">=</span> <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</span><span data-line="5">    <span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">stream</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>A <em>memory stream</em> lives in a RAM buffer
+allocated at construction. The
+constructor takes a <code class="docutils literal notranslate"><span class="pre">(w,</span> <span class="pre">h,</span> <span class="pre">pixformat)</span></code>
+3-tuple instead of a path, and the
+<code class="docutils literal notranslate"><span class="pre">mode</span></code> argument becomes the
+<em>pre-allocated number of frame slots</em>.
+The buffer is sized exactly for that many
+frames at the supplied dimensions and is
+<em>not allowed to grow</em> once allocated –
+writing past the last slot raises
+<code class="docutils literal notranslate"><span class="pre">EOFError</span></code>, and writing a frame larger
+than the per-slot buffer raises
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code>. Memory streams are the
+right tool when the application needs to
+hand a <em>recording</em> to a downstream stage
+without going through the filesystem (a
+short ring buffer of recent frames for a
+trigger-and-replay pattern, for instance).</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># Pre-allocate space for 32 QVGA RGB565 frames in RAM</span>
+</span><span data-line="2"><span class="n">stream</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">ImageIO</span><span class="p">((</span><span class="mi">320</span><span class="p">,</span> <span class="mi">240</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">RGB565</span><span class="p">),</span> <span class="mi">32</span><span class="p">)</span>
+</span><span data-line="3"><span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">32</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">stream</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>For the compressed pixel formats
+(<a class="reference internal" href="../../../../library/omv.image.html#image.JPEG" title="image.JPEG"><code class="xref py py-data docutils literal notranslate"><span class="pre">image.JPEG</span></code></a>, <a class="reference internal" href="../../../../library/omv.image.html#image.PNG" title="image.PNG"><code class="xref py py-data docutils literal notranslate"><span class="pre">image.PNG</span></code></a>)
+the per-slot size is estimated at 2 bits
+per pixel; an encoded frame larger than
+the estimate raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> at
+write time, so an application that
+expects to store high-quality JPEGs has
+to either over-allocate the slot count or
+encode at a lower quality first.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.type" title="image.ImageIO.type"><code class="xref py py-meth docutils literal notranslate"><span class="pre">type()</span></code></a> returns
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.FILE_STREAM" title="image.ImageIO.FILE_STREAM"><code class="xref py py-data docutils literal notranslate"><span class="pre">image.ImageIO.FILE_STREAM</span></code></a> or
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.MEMORY_STREAM" title="image.ImageIO.MEMORY_STREAM"><code class="xref py py-data docutils literal notranslate"><span class="pre">image.ImageIO.MEMORY_STREAM</span></code></a> so
+that downstream code can adapt to
+whichever backing store it is given.</p>
+</section>
+<section id="recording">
+<h2><span class="section-number">8.33.2. </span>Recording<a class="headerlink" href="#recording" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.write" title="image.ImageIO.write"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write()</span></code></a> appends a
+captured <code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code> to a file stream
+(or stores it at the current slot of a
+memory stream) and advances the offset by
+one. The same call records the <em>inter-
+frame interval</em> since the last write, so
+the playback half can pause for the right
+amount of time between frames and the
+recording’s natural frame rate is
+preserved.</p>
+<p>Heterogeneous frames are allowed within a
+single file stream: a recording can mix
+RGB565 captures, grayscale crops, and
+JPEG-encoded thumbnails freely, and the
+reader will decode each at its original
+size and format. Memory streams are
+homogeneous (all slots share the
+constructor-supplied <code class="docutils literal notranslate"><span class="pre">(w,</span> <span class="pre">h,</span>
+<span class="pre">pixformat)</span></code>), so a memory recording is
+restricted to one frame configuration.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.write" title="image.ImageIO.write"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write()</span></code></a> returns the
+stream object so calls can chain.
+Writing at a non-end offset of a file
+stream truncates the rest of the file –
+useful for editing a stored sequence,
+risky if the next-write position was
+moved unintentionally by an earlier
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.seek" title="image.ImageIO.seek"><code class="xref py py-meth docutils literal notranslate"><span class="pre">seek()</span></code></a>.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.sync" title="image.ImageIO.sync"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sync()</span></code></a> flushes
+pending writes to disk for file streams
+(it is a no-op on memory streams) and
+should be called periodically when the
+recording is long-running, to avoid
+losing the tail of the recording if the
+cam reboots before the file is closed.
+The destructor closes the stream
+automatically when the <code class="xref py py-class docutils literal notranslate"><span class="pre">ImageIO</span></code>
+goes out of scope, but explicit
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.close" title="image.ImageIO.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> is the
+right discipline.</p>
+</section>
+<section id="playback">
+<h2><span class="section-number">8.33.3. </span>Playback<a class="headerlink" href="#playback" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.read" title="image.ImageIO.read"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read()</span></code></a> reads the
+frame at the current offset, advances
+the offset, and returns the new
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code>. The receiver remains in
+the frame buffer when <code class="docutils literal notranslate"><span class="pre">copy_to_fb=True</span></code>
+(the default) so the returned image is
+drawable through the IDE preview; with
+<code class="docutils literal notranslate"><span class="pre">copy_to_fb=False</span></code> the frame lands on
+the MicroPython heap.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># Loop a recorded stream at its natural frame rate</span>
+</span><span data-line="2"><span class="n">stream</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">ImageIO</span><span class="p">(</span><span class="s2">&quot;/sdcard/run.bin&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+</span><span data-line="3"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="4">    <span class="n">img</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span data-line="5">    <span class="c1"># img is now in the frame buffer; the IDE shows it</span>
+</span><span data-line="6">    <span class="c1"># and the script can run any analysis it likes</span>
+</span></pre></div>
+</div>
+<p>Two keywords control the playback
+behaviour. <code class="docutils literal notranslate"><span class="pre">loop=True</span></code> (the default
+for file streams) wraps the read pointer
+back to the start when the end of the
+recording is reached, so the call never
+returns <code class="docutils literal notranslate"><span class="pre">None</span></code>; <code class="docutils literal notranslate"><span class="pre">loop=False</span></code> returns
+<code class="docutils literal notranslate"><span class="pre">None</span></code> once the recording is exhausted
+and the caller’s loop terminates.
+<code class="docutils literal notranslate"><span class="pre">pause=True</span></code> (the default) blocks the
+call until the inter-frame interval
+recorded at write time has elapsed, so
+the playback frame rate matches the
+original capture frame rate;
+<code class="docutils literal notranslate"><span class="pre">pause=False</span></code> returns immediately,
+useful for analysis pipelines that want
+to chew through the recording as fast as
+possible without honouring the original
+timing.</p>
+<p>The same loop pattern works for memory
+streams except that <code class="docutils literal notranslate"><span class="pre">loop</span></code> is
+ignored – reading past the end of a
+memory stream raises <code class="docutils literal notranslate"><span class="pre">EOFError</span></code>. The
+expected pattern for a memory ring is to
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.seek" title="image.ImageIO.seek"><code class="xref py py-meth docutils literal notranslate"><span class="pre">seek()</span></code></a> back to zero
+explicitly when wrapping is wanted.</p>
+</section>
+<section id="navigation-and-inspection">
+<h2><span class="section-number">8.33.4. </span>Navigation and inspection<a class="headerlink" href="#navigation-and-inspection" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.seek" title="image.ImageIO.seek"><code class="xref py py-meth docutils literal notranslate"><span class="pre">seek()</span></code></a> moves the
+read/write pointer to a specific frame
+index. For memory streams the offset
+must be less than
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.count" title="image.ImageIO.count"><code class="xref py py-meth docutils literal notranslate"><span class="pre">count()</span></code></a>; for file
+streams the seek walks the file
+frame-by-frame from the start (the
+per-frame chunks are variable-sized, so
+random access is O(offset)). Seeks are
+the standard mechanism for jumping back
+to a known frame in a recording – a
+“play from time T” UI, a re-analysis
+pass over a specific event.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.count" title="image.ImageIO.count"><code class="xref py py-meth docutils literal notranslate"><span class="pre">count()</span></code></a> returns the
+number of frames currently stored;
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.offset" title="image.ImageIO.offset"><code class="xref py py-meth docutils literal notranslate"><span class="pre">offset()</span></code></a> returns
+the current read/write position;
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.size" title="image.ImageIO.size"><code class="xref py py-meth docutils literal notranslate"><span class="pre">size()</span></code></a> returns the
+total bytes the stream occupies (file
+size for file streams, full RAM buffer
+size for memory streams);
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.version" title="image.ImageIO.version"><code class="xref py py-meth docutils literal notranslate"><span class="pre">version()</span></code></a> returns
+the on-disk format version for file
+streams (<code class="docutils literal notranslate"><span class="pre">10</span></code> for <code class="docutils literal notranslate"><span class="pre">V1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">11</span></code> for
+<code class="docutils literal notranslate"><span class="pre">V1.1</span></code>, <code class="docutils literal notranslate"><span class="pre">20</span></code> for <code class="docutils literal notranslate"><span class="pre">V2.0</span></code>) or
+<code class="docutils literal notranslate"><span class="pre">None</span></code> for memory streams.
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.buffer_size" title="image.ImageIO.buffer_size"><code class="xref py py-meth docutils literal notranslate"><span class="pre">buffer_size()</span></code></a>
+returns the per-slot pixel buffer size
+for memory streams and <code class="docutils literal notranslate"><span class="pre">None</span></code> for file
+streams; combined with
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.count" title="image.ImageIO.count"><code class="xref py py-meth docutils literal notranslate"><span class="pre">count()</span></code></a> it gives
+the application enough information to
+decide whether a new frame configuration
+will fit.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.is_closed" title="image.ImageIO.is_closed"><code class="xref py py-meth docutils literal notranslate"><span class="pre">is_closed()</span></code></a> reports
+whether <a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.close" title="image.ImageIO.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> has
+been called – a closed stream raises
+<code class="docutils literal notranslate"><span class="pre">OSError(&quot;Stream</span> <span class="pre">closed&quot;)</span></code> on any
+further read, write, or seek.</p>
+</section>
+<section id="host-playable-recordings">
+<h2><span class="section-number">8.33.5. </span>Host-playable recordings<a class="headerlink" href="#host-playable-recordings" title="Link to this heading">¶</a></h2>
+<p>ImageIO streams are the right tool when
+the recording is going to be played back
+<em>on the cam</em> – they preserve every
+captured frame in its native pixel format,
+the inter-frame interval is recorded
+exactly, and a downstream script can step
+through them, seek, and re-analyse with
+no loss. They are not, however, the
+right tool when the recording has to be
+playable on a <em>host</em> – a workstation, a
+phone, a web player. A host expects a
+<em>standard</em> video container, not the OpenMV
+on-disk magic-header format.</p>
+<p>Two separate modules cover the
+host-playable case. The <a class="reference internal" href="../../../../library/omv.mjpeg.html#module-mjpeg" title="mjpeg: mjpeg recording"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mjpeg</span></code></a>
+module records Motion JPEG: a sequence
+of JPEG-compressed frames packed into a
+single AVI-style container that VLC,
+QuickTime, ffmpeg, and the standard web
+video tag all play directly. The
+<a class="reference internal" href="../../../../library/omv.gif.html#module-gif" title="gif: gif recording"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gif</span></code></a> module records an animated
+GIF: a sequence of uncompressed (or
+palette-compressed) frames with explicit
+per-frame delays, playable in any web
+browser or image viewer that handles
+animated GIFs.</p>
+<p>The <a class="reference internal" href="../../../../library/omv.mjpeg.html#module-mjpeg" title="mjpeg: mjpeg recording"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mjpeg</span></code></a> module is the natural
+choice for <em>long</em> recordings. JPEG
+compression keeps the file size
+manageable – comparable to
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.to_jpeg" title="image.Image.to_jpeg"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_jpeg()</span></code></a> at the
+configured quality, frame after frame –
+so an extended capture session stays
+within the SD card’s budget. The usage
+mirrors <a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO" title="image.ImageIO"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageIO</span></code></a>
+recording closely:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">mjpeg</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">m</span> <span class="o">=</span> <span class="n">mjpeg</span><span class="o">.</span><span class="n">Mjpeg</span><span class="p">(</span><span class="s2">&quot;/sdcard/run.mjpeg&quot;</span><span class="p">)</span>
+</span><span data-line="4"><span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">m</span><span class="o">.</span><span class="n">add_frame</span><span class="p">(</span><span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(),</span> <span class="n">quality</span><span class="o">=</span><span class="mi">85</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">m</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../../library/omv.mjpeg.html#mjpeg.Mjpeg" title="mjpeg.Mjpeg"><code class="xref py py-class docutils literal notranslate"><span class="pre">mjpeg.Mjpeg</span></code></a> accepts the same
+drawing-style positional and scale
+keywords other image methods take, so a
+recording can be scaled, cropped, or
+palette-mapped per frame on the way in.
+The constructor’s <code class="docutils literal notranslate"><span class="pre">width</span></code> and <code class="docutils literal notranslate"><span class="pre">height</span></code>
+arguments default to the main frame
+buffer’s dimensions and fix the output
+resolution; every appended frame is
+scaled (preserving aspect ratio) to fit.
+<a class="reference internal" href="../../../../library/omv.mjpeg.html#mjpeg.Mjpeg.sync" title="mjpeg.Mjpeg.sync"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sync()</span></code></a> flushes the file
+to disk during a long recording, and
+<a class="reference internal" href="../../../../library/omv.mjpeg.html#mjpeg.Mjpeg.close" title="mjpeg.Mjpeg.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> finalises the
+container – a Motion JPEG file that
+hasn’t been closed cleanly is not
+playable, so the discipline matters.</p>
+<p>The <a class="reference internal" href="../../../../library/omv.gif.html#module-gif" title="gif: gif recording"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gif</span></code></a> module is the natural
+choice for <em>short</em> recordings shared
+verbatim with a non-technical viewer –
+a few seconds of action captured for a
+demo, an animated illustration for
+documentation, an event clip embedded in
+a chat message. GIF frames are stored
+uncompressed (or palette-compressed at
+7-bit colour depth), which makes the
+files much larger per second than Motion
+JPEG and rules the format out for
+recordings longer than a few seconds, but
+the result drops directly into any
+browser:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">gif</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">g</span> <span class="o">=</span> <span class="n">gif</span><span class="o">.</span><span class="n">Gif</span><span class="p">(</span><span class="s2">&quot;/sdcard/clip.gif&quot;</span><span class="p">)</span>
+</span><span data-line="4"><span class="k">while</span> <span class="n">running</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">g</span><span class="o">.</span><span class="n">add_frame</span><span class="p">(</span><span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(),</span> <span class="n">delay</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">g</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">delay</span></code> argument on
+<a class="reference internal" href="../../../../library/omv.gif.html#gif.Gif.add_frame" title="gif.Gif.add_frame"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_frame()</span></code></a> is the
+per-frame display time in centi-seconds
+(<code class="docutils literal notranslate"><span class="pre">10</span></code> is 100 ms per frame, or 10 fps),
+which is the standard GIF playback
+control. The constructor’s <code class="docutils literal notranslate"><span class="pre">loop</span></code>
+keyword sets whether the resulting clip
+auto-loops in viewers (the default is
+<code class="docutils literal notranslate"><span class="pre">True</span></code>, which matches the conventional
+“animated GIF” expectation).</p>
+<p>The three recording paths cover the
+common cases between them: ImageIO for
+on-cam re-processing, Motion JPEG for
+long host-playable recordings, animated
+GIF for short host-playable clips. The
+choice between them comes down to <em>who
+plays the recording back</em>. A downstream
+stage running on the cam itself reads
+ImageIO; a host workstation or web
+viewer reads MJPEG or GIF.</p>
+</section>
+<section id="a-trigger-and-replay-pattern">
+<h2><span class="section-number">8.33.6. </span>A trigger-and-replay pattern<a class="headerlink" href="#a-trigger-and-replay-pattern" title="Link to this heading">¶</a></h2>
+<p>A useful pattern combines a memory
+stream with a trigger condition. The cam
+records continuously into a
+<code class="docutils literal notranslate"><span class="pre">count</span></code>-slot memory ring buffer,
+overwriting the oldest slot each time
+around. When a trigger condition fires
+(a blob enters the frame, a motion event
+exceeds threshold, a button is pressed)
+the application snapshots the contents of
+the ring – the most recent <code class="docutils literal notranslate"><span class="pre">count</span></code>
+frames – and writes them to a file
+stream on the SD card. The result is a
+<em>pre-trigger recording</em> that captures
+the seconds <em>before</em> the event the cam
+actually noticed, not just the seconds
+after, which is the classical
+limitation of a naive
+“capture-when-triggered” recorder.</p>
+<p>The implementation is straightforward
+once the stream classes are in hand: a
+fixed-size memory stream serves as the
+ring (with explicit
+<a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO.seek" title="image.ImageIO.seek"><code class="xref py py-meth docutils literal notranslate"><span class="pre">seek()</span></code></a> to zero when
+the offset reaches the slot count), the
+main loop captures into it on every
+iteration, and the trigger handler reads
+the memory stream out frame by frame and
+writes each into a file stream named
+after the timestamp of the trigger.</p>
+<p>With single-frame <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.save" title="image.Image.save"><code class="xref py py-meth docutils literal notranslate"><span class="pre">save()</span></code></a>
+and to-format methods on the previous
+page, <a class="reference internal" href="../../../../library/omv.image.ImageIO.html#image.ImageIO" title="image.ImageIO"><code class="xref py py-class docutils literal notranslate"><span class="pre">ImageIO</span></code></a>
+streams for native on-cam sequence
+recording and playback, and the
+<a class="reference internal" href="../../../../library/omv.mjpeg.html#module-mjpeg" title="mjpeg: mjpeg recording"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mjpeg</span></code></a> and <a class="reference internal" href="../../../../library/omv.gif.html#module-gif" title="gif: gif recording"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gif</span></code></a> modules for
+host-playable video, the camera’s I/O
+layer covers everything an application is
+likely to need to get image data on and
+off the cam.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="saving-and-compression.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">8.32. </span>Saving and compression</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../wrap-up.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">8.34. </span>Wrap up</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 07 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=3011ec97"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script></body>
+</html>

@@ -26,13 +26,13 @@ Two flavours
 ------------
 
 Whether the FFT call is exactly the desktop ``numpy``
-shape depends on how the cam's firmware was built:
+form depends on how the cam was built:
 
-* **On firmware with complex-number support** (``-c``
-  in :data:`ulab.__version__`), the FFT is the standard
-  shape. One 1-D real or complex array goes in; one 1-D
+* **On a cam with complex-number support** (``-c`` in
+  :data:`ulab.__version__`), the FFT is the standard
+  form. One 1-D real or complex array goes in; one 1-D
   *complex* array comes out.
-* **On firmware without complex-number support**, the
+* **On a cam without complex-number support**, the
   real and imaginary parts come back separately.
   :func:`~ulab.numpy.fft.fft` takes the real part as
   the first positional argument and an optional
@@ -89,11 +89,12 @@ pair of real arrays::
     real, imag       = np.fft.fft(y)
     re_back, im_back = np.fft.ifft(real, imag)
 
-A worked example: dominant frequency
-------------------------------------
+Finding the dominant frequency
+------------------------------
 
-A common shape is finding the largest peak in a buffer
-of samples (audio, vibration, modulated IR). The recipe:
+A common pattern is locating the largest peak in a
+buffer of samples -- audio, vibration, modulated IR.
+The recipe:
 
 #. Capture ``N`` samples, with ``N`` a power of two.
 #. Take the FFT.

@@ -65,25 +65,32 @@ alongside the rest of its code:
   has structure.
 
 * **Signal processing** -- FFT in the standard
-  one-array-in / one-array-out shape, or split real /
-  imag depending on the firmware;
+  one-array-in / one-array-out form, or split real /
+  imag depending on the build;
   :func:`~ulab.scipy.signal.sosfilt` for IIR
   filtering; :func:`~ulab.utils.spectrogram` for
   allocation-free magnitude spectra; the
   :func:`~ulab.utils.from_int32_buffer`-style helpers
   for wider-than-16-bit peripheral buffers.
 
-* **Numerical extras** -- :func:`~ulab.numpy.interp`,
-  :func:`~ulab.numpy.polyfit`,
-  :func:`~ulab.numpy.polyval`,
-  :func:`~ulab.numpy.trapz`,
-  :func:`~ulab.numpy.convolve`; scipy submodules for
-  numerical integration of a callable
-  (:mod:`scipy.integrate`), root finding and
-  minimisation (:mod:`scipy.optimize`), and special
-  functions (:mod:`scipy.special`); plus the
-  random-number generator
-  (:class:`~ulab.numpy.random.Generator`).
+* **Curves and integration** --
+  :func:`~ulab.numpy.interp` for linear interpolation
+  between sample points,
+  :func:`~ulab.numpy.polyfit` / :func:`~ulab.numpy.polyval`
+  for polynomial fitting and evaluation,
+  :func:`~ulab.numpy.convolve` for short FIR convolutions,
+  :func:`~ulab.numpy.trapz` for trapezoidal integration of
+  sampled data.
+
+* **Solvers and random numbers** --
+  :mod:`scipy.integrate` (``quad``, ``romberg``,
+  ``simpson``, ``tanhsinh``) for quadrature of a Python
+  callable; :mod:`scipy.optimize` (``bisect``, ``newton``,
+  ``fmin``) for one-dimensional root finding and
+  minimisation; :mod:`scipy.special` (``erf``, ``erfc``,
+  ``gamma``, ``gammaln``) for the standard statistical
+  functions; :class:`~ulab.numpy.random.Generator` for
+  pseudo-random sampling from common distributions.
 
 * **Images** -- the bridge between :class:`~image.Image`
   and :class:`~ulab.numpy.ndarray` for the rare cases
@@ -121,4 +128,4 @@ bridge, calibration matrices that come out of small
 linear-algebra solves, FFTs of buffered audio or
 vibration data -- :mod:`numpy` is the toolbox the rest
 of the camera leans on when an operation does not have
-a built-in shape.
+a built-in method.

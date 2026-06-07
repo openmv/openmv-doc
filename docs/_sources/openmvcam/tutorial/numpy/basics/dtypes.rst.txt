@@ -19,18 +19,17 @@ dtype          bytes    range
 =============  =======  ===============================
 ``uint8``      1        0 to 255
 ``int8``       1        -128 to 127
-``uint16``     2        0 to 65 535
-``int16``      2        -32 768 to 32 767
+``uint16``     2        0 to 65,535
+``int16``      2        -32,768 to 32,767
 ``float``      4 or 8   IEEE 754 (single or double)
 ``bool``       1        ``True`` / ``False``
-``complex``    8 or 16  optional, firmware-dependent
+``complex``    8 or 16  optional, build-dependent
 =============  =======  ===============================
 
-The ``float`` width depends on how the firmware was
+The ``float`` width depends on how the cam was
 built; ``complex`` is only available on cams whose
-firmware reports a ``-c`` suffix in
-:data:`ulab.__version__`. There is no ``int32`` or
-``int64``.
+:data:`ulab.__version__` carries a ``-c`` suffix.
+There is no ``int32`` or ``int64``.
 
 Pick the type that matches the hardware that produced the
 data. An 8-bit ADC sample wants ``uint8``; a 12-bit ADC
@@ -59,7 +58,7 @@ The dtype of an existing array
 :attr:`~ulab.numpy.ndarray.dtype` reads back the array's
 dtype as a :class:`ulab.dtype` instance. The single-
 character type code is what gets compared on
-firmware-conditional code paths::
+build-conditional code paths::
 
     a = np.array([1, 2, 3], dtype=np.uint8)
     print(a.dtype)            # dtype('uint8')

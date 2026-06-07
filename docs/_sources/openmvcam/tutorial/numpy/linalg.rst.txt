@@ -196,11 +196,11 @@ accurate than ``np.dot(np.linalg.inv(A), b)``:
       x = sp.linalg.cho_solve(L, b)
 
 Reach for these instead of inverting whenever the
-structure of ``A`` lets you -- they save elimination
+structure of ``A`` allows -- they save elimination
 work *and* the explicit inverse.
 
-A worked example: small linear system
--------------------------------------
+Solving a small linear system
+-----------------------------
 
 ::
 

@@ -143,7 +143,7 @@ overrides it::
 The Python function must take a single argument and
 return a single number.
 
-:func:`~ulab.numpy.vectorize` is mostly *syntactic*:
+:func:`~ulab.numpy.vectorize` is mostly *syntactic* --
 the wrapped Python function still has to run once per
 element, so most of the per-element interpreter cost
 that a true ufunc avoids is back. Expect a modest

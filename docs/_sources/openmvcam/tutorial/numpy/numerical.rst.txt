@@ -1,21 +1,20 @@
-Numerical extras
-================
+Curves and integration
+======================
 
-The pages so far covered the everyday surface --
-construction, indexing, math, broadcasting, reductions,
-linear algebra, FFT, filtering. This page catalogues
-the remaining numerical tools that did not fit one of
-those headings: interpolation, polynomial fitting,
-integration, convolution, root finding, optimisation,
-special functions, random numbers.
+The math pages covered operations that take an array in
+and produce an array (or scalar) out -- arithmetic,
+reductions, broadcasting. This page covers a different
+class of operations: ones that treat the array as a
+*sampled function* and ask questions about the function
+itself. Interpolating between samples, fitting a curve to
+them, integrating under them, convolving them with another
+buffer.
 
-Almost every function on this page accepts -- and most
-require -- :class:`~ulab.numpy.ndarray` inputs and
-returns either a float scalar or a float
-:class:`~ulab.numpy.ndarray`. The imports::
+All of these accept :class:`~ulab.numpy.ndarray` inputs
+and return either a float scalar or a float
+:class:`~ulab.numpy.ndarray`. The standard import::
 
     from ulab import numpy as np
-    from ulab import scipy as sp
 
 Interpolation
 -------------
@@ -72,6 +71,13 @@ input ``x`` can be a scalar (returns a float) or an
     p = np.polyfit(x, y, 2)
     fitted = np.polyval(p, x)
 
+The natural pairing is to call ``polyfit`` once at
+calibration time, store the coefficients, and call
+``polyval`` to evaluate the resulting curve every
+frame. The polynomial-evaluation step is a few floating-
+point operations per sample, which is cheap even on the
+smallest cams.
+
 Convolution
 -----------
 
@@ -88,9 +94,12 @@ that the desktop ``numpy`` offers::
     np.convolve(a, v)
     # array([0.5, 1.5, 2.5, 1.5])
 
-Useful for short FIR filters and smoothing kernels
-(box, triangle, gaussian) where setting up an SOS chain
-is overkill.
+Useful for short FIR filters and smoothing kernels (box,
+triangle, gaussian) where setting up an SOS chain is
+overkill. The cost is :math:`O(N \cdot M)` for two arrays
+of length ``N`` and ``M``, which is fine for short
+kernels but quickly becomes more expensive than an FFT
+convolution for long ones.
 
 Trapezoidal integration
 -----------------------
@@ -104,154 +113,16 @@ sampled function by the composite trapezoidal rule::
 
 Pass ``dx=`` when the sample spacing is uniform and only
 the step matters; pass ``x=`` when the samples are not
-evenly spaced. The right call for integrating already-
-captured sensor data, where the analytic form is not
-available.
+evenly spaced. The right call for integrating
+already-captured sensor data, where the analytic form is
+not available.
 
-Numerical integration of a callable
------------------------------------
+For sample data that has been *band-limited* (an audio
+buffer after an anti-aliasing filter, for instance), the
+trapezoidal rule converges as the square of the sample
+count, which means doubling the buffer length cuts the
+error by a factor of four.
 
-When the integrand is a Python function rather than a
-buffer of samples, :mod:`scipy.integrate` exposes four
-quadrature algorithms:
-
-* :func:`~ulab.scipy.integrate.quad(f, a, b, order=5, eps=...)`
-  -- adaptive Gauss-Kronrod. The right default for
-  smooth integrands. Returns ``(value, error)``.
-* :func:`~ulab.scipy.integrate.romberg(f, a, b, steps=100, eps=...)`
-  -- classical Romberg / Newton-Cotes. Returns a single
-  float. Deprecated upstream; included for compatibility.
-* :func:`~ulab.scipy.integrate.simpson(f, a, b, steps=100, eps=...)`
-  -- adaptive Simpson's rule. Returns a single float.
-* :func:`~ulab.scipy.integrate.tanhsinh(f, a, b, levels=6, eps=...)`
-  -- double-exponential quadrature. Use when the
-  integrand has endpoint singularities or an infinite
-  limit. Returns ``(value, error)``.
-
-The Gaussian integral as a worked example::
-
-    from math import exp, pi, sqrt
-    from ulab import numpy as np
-    from ulab import scipy as sp
-
-    f = lambda x: exp(-x * x)
-    value, err = sp.integrate.tanhsinh(f, -np.inf, np.inf)
-    print("approx:", value, "   exact:", sqrt(pi))
-
-Output::
-
-    approx: 1.7724538...   exact: 1.7724538...
-
-Numerical integration is most accurate on cams whose
-firmware uses double-precision floats. With single
-precision the routines still work, but the achievable
-tolerance is lower.
-
-Root finding and minimisation
------------------------------
-
-:mod:`scipy.optimize` covers three classic
-single-variable solvers. Each iteration calls back into
-the user-supplied Python function, so the speedup over a
-pure-Python solver is modest (roughly 2x); the
-convenience is in not having to write the solver.
-
-* :func:`~ulab.scipy.optimize.bisect(f, a, b, xtol=..., maxiter=...)`
-  -- find a root of ``f`` on ``[a, b]`` by halving the
-  interval. ``f(a)`` and ``f(b)`` must have opposite
-  signs::
-
-      def f(x):
-          return x * x - 1
-
-      sp.optimize.bisect(f, 0, 4)        # ~1.0
-
-* :func:`~ulab.scipy.optimize.newton(f, x0, tol=..., rtol=..., maxiter=...)`
-  -- find a root using secant / Newton-Raphson
-  iteration::
-
-      def f(x):
-          return x * x * x - 2.0
-
-      sp.optimize.newton(f, 3., tol=0.001, rtol=0.01)
-      # ~1.260
-
-* :func:`~ulab.scipy.optimize.fmin(f, x0, xatol=..., fatol=..., maxiter=...)`
-  -- find a local minimum using the downhill-simplex
-  (Nelder-Mead) method::
-
-      def f(x):
-          return (x - 1) ** 2 - 1
-
-      sp.optimize.fmin(f, 3.0)           # ~1.0
-
-Special functions
------------------
-
-:mod:`scipy.special` exposes a handful of statistical
-and probability functions that behave like universal
-functions -- they accept a scalar, an iterable, or an
-:class:`~ulab.numpy.ndarray` and return a float
-:class:`~ulab.numpy.ndarray`::
-
-    x = np.linspace(0, 4, num=8)
-
-    sp.special.erf(x)         # error function
-    sp.special.erfc(x)        # complementary error function
-    sp.special.gamma(x + 1)   # gamma function
-    sp.special.gammaln(x + 1) # log-gamma function
-
-The error function and its complement appear in the CDF
-of a Gaussian; the gamma functions show up in beta /
-chi-squared / student-t calculations.
-
-Random numbers
---------------
-
-:mod:`numpy.random` provides a
-:class:`~ulab.numpy.random.Generator` class that draws
-samples from common distributions. The generator is
-stateful: each call advances its internal state, so
-consecutive calls return independent samples::
-
-    from ulab import numpy as np
-
-    rng = np.random.Generator(seed=42)
-
-    rng.random(size=5)             # 5 uniform [0.0, 1.0) samples
-    rng.uniform(low=-1.0, high=1.0, size=10)
-    rng.normal(loc=0.0, scale=1.0, size=(2, 4))
-
-The output dtype is always ``float``. ``size=`` accepts
-an integer (1-D output) or a tuple (n-D output); when
-omitted, a single Python float is returned.
-
-The generator is suitable for simulation, dithering,
-synthetic test data, and any other application where
-cryptographic strength is not required. It is **not**
-suitable for keys or tokens.
-
-What is *not* covered here
---------------------------
-
-A handful of routines exposed by the reference -- the
-``.npy`` I/O helpers (:func:`~ulab.numpy.load`,
-:func:`~ulab.numpy.save`,
-:func:`~ulab.numpy.loadtxt`,
-:func:`~ulab.numpy.savetxt`),
-:func:`~ulab.numpy.set_printoptions`, the experimental
-:func:`~ulab.scipy.optimize.curve_fit` stub -- are
-straightforward extensions of patterns already shown on
-this page. See :doc:`/library/omv.ulab.numpy` and
-:doc:`/library/omv.ulab.scipy` for the complete
-argument-level reference.
-
-Firmware availability
----------------------
-
-Whether each submodule is actually present depends on
-how the firmware on the cam was built. Calling a
-function the firmware does not include raises
-:exc:`AttributeError`. ``dir(sp)``,
-``dir(sp.optimize)``, ``dir(np.random)`` and friends
-report what is available on the cam being targeted.
+When the integrand is not a buffer of samples but a
+Python function the application can evaluate at arbitrary
+points, a different family of solvers is the right call.

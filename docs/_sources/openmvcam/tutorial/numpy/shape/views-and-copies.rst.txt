@@ -44,8 +44,8 @@ the strides -- no data is moved::
     t = m.T                  # shape (3, 2), shares m's buffer
 
 A transposed view does not walk the data block
-contiguously; that is fine for the arithmetic and
-reductions that come later, but it means
+contiguously; that is fine for ordinary arithmetic
+and reductions, but it means
 :meth:`~ulab.numpy.ndarray.tobytes` raises on a
 transposed view -- the bytes are not in the order the
 view's shape suggests.
@@ -76,7 +76,7 @@ Iteration
 ---------
 
 Iterating a 1-D array yields scalars; iterating a
-higher-rank array yields ``(n-1)``-D *views*::
+higher-rank array yields ``(n-1)``-D views::
 
     m = np.array([[0, 1, 2], [3, 4, 5]], dtype=np.uint8)
     for row in m:

@@ -27,8 +27,8 @@ overflow rule covered on :doc:`basics/dtypes` applies
 -- cast to a wider type before arithmetic that might
 overflow.
 
-Use an ndarray when you can
----------------------------
+Prefer an ndarray to an iterable
+--------------------------------
 
 Most reductions and universal functions accept either an
 iterable or an :class:`~ulab.numpy.ndarray`::
@@ -90,7 +90,7 @@ can be written into an array that already exists::
         np.sin(x, out=y)
         # use y ...
 
-:py:meth:`image.Image.to_ndarray` accepts ``buffer=``
+:meth:`image.Image.to_ndarray` accepts ``buffer=``
 for the same reason; :func:`ulab.utils.spectrogram` and
 the :func:`~ulab.utils.from_int32_buffer`-style
 converters accept both ``out=`` and ``scratchpad=``.
@@ -155,7 +155,7 @@ buffer. The classic example is linear interpolation by
     b[::2]   = a
     b[1::2]  = a[:-1]
     b[1::2] += a[1:]
-    # divide by 2 if you want the average
+    # divide by 2 for the average
 
 The compound form ``b[1::2] = (a[:-1] + a[1:]) // 2``
 would allocate a temporary the size of ``a[:-1] + a[1:]``

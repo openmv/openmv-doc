@@ -19,7 +19,7 @@ together::
     np.where(a < 3, a, 0.0)
     # array([1.0, 2.0, 0.0, 0.0, 0.0])
 
-This is the right shape for an "if/else per element"
+This is the right tool for an "if/else per element"
 without writing a Python loop.
 
 :func:`~ulab.numpy.clip(a, lo, hi)` is shorthand for
@@ -61,7 +61,7 @@ Two reductions also produce indices:
       a[idx]                          # array([10, 20, 30, 40])
 
   ``argsort`` always returns ``uint16``; the array
-  being sorted must therefore have no more than 65 535
+  being sorted must therefore have no more than 65,535
   elements on the sorted axis.
 
 :func:`~ulab.numpy.bincount(x)` counts occurrences of each

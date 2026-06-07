@@ -4,13 +4,13 @@ Images and ndarrays
 This page closes the loop the section opened with. The
 :class:`~image.Image` class is the fast surface for
 camera-native pixel work: every method on it operates
-directly on the framebuffer in the camera's native
+directly on the frame buffer in the camera's native
 pixel format. :mod:`numpy` is the generic numerical
 surface for everything else. Two methods bridge them:
 
-* :py:meth:`image.Image.to_ndarray` -- view or copy the
+* :meth:`image.Image.to_ndarray` -- view or copy the
   pixels of an image as an :class:`~ulab.numpy.ndarray`.
-* The :py:class:`image.Image` constructor -- build a
+* The :class:`image.Image` constructor -- build a
   fresh image from an :class:`~ulab.numpy.ndarray`.
 
 Together they let an application snap a frame, hand it
@@ -21,10 +21,11 @@ back into the rest of the image library.
 Image to ndarray
 ----------------
 
-:py:meth:`image.Image.to_ndarray(dtype, *, buffer=None)`
-returns an :class:`~ulab.numpy.ndarray` whose data come
-from the image's pixel buffer. The output shape depends
-on the image format:
+:meth:`~image.Image.to_ndarray` returns an
+:class:`~ulab.numpy.ndarray` whose data come from the
+image's pixel buffer. The signature is
+``to_ndarray(dtype, *, buffer=None)``, and the output
+shape depends on the image format:
 
 * **GRAYSCALE** -- 2-D array, shape ``(height, width)``.
 * **RGB565** -- 3-D array, shape ``(height, width, 3)``,
@@ -72,7 +73,7 @@ ndarray to image
 
 Going the other way, pass the
 :class:`~ulab.numpy.ndarray` as the first argument to
-:py:class:`image.Image`::
+:class:`image.Image`::
 
     image.Image(arr, *, buffer=None, copy_to_fb=False)
 
@@ -90,7 +91,7 @@ clamped to the ``0..255`` range.
 ``buffer=`` lets the application supply a
 :class:`bytearray` it already allocated for the
 resulting image. ``copy_to_fb=True`` writes the result
-into the camera's framebuffer, which is the right
+into the camera's frame buffer, which is the right
 choice when the result should appear in the IDE
 preview.
 
@@ -128,7 +129,7 @@ depth, audio) in a single computation.
 It is **not** the right answer for high-throughput
 pixel processing the :class:`~image.Image` class
 already covers. The built-in methods operate directly
-on the framebuffer in the camera's native pixel format
+on the frame buffer in the camera's native pixel format
 and are much faster than the equivalent :mod:`numpy`
 expression. Reach for the bridge for the operations
 the image library does not already provide.

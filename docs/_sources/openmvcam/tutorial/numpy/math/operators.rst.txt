@@ -4,7 +4,7 @@ Operators
 The first kind of math :mod:`numpy` runs on an
 :class:`~ulab.numpy.ndarray` is the standard Python
 operators. Arithmetic, comparison, and bit-wise
-operators all work *element-wise*: each operator walks
+operators all work *element-wise* -- each operator walks
 the array (or both arrays) once from start to finish
 inside a single library call, much faster than the
 equivalent Python ``for`` loop.

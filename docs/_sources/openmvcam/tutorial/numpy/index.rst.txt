@@ -60,10 +60,11 @@ Python ``for`` loop.
    signals/filtering.rst
 
 .. toctree::
-   :caption: Numerical extras
+   :caption: Numerical tools
    :maxdepth: 1
 
    numerical.rst
+   solvers-and-random.rst
 
 .. toctree::
    :caption: Images

@@ -52,10 +52,10 @@ state of the next::
     y1, zf1 = sp.signal.sosfilt(sos, buffer1, zi=zf0)
     # ...
 
-This is the standard shape for a streaming filter on
-buffered data -- microphone input read 1024 samples at a
-time, ADC samples accumulated in DMA-driven chunks, IMU
-readings collected over a window.
+This is the standard pattern for a streaming filter on
+buffered data -- microphone input read 1024 samples at
+a time, ADC samples accumulated in DMA-driven chunks,
+IMU readings collected over a window.
 
 Spectrograms
 ------------
@@ -81,7 +81,7 @@ spectra are computed repeatedly::
     x        = np.linspace(0, 10, num=1024)
     spectrum = utils.spectrogram(x)
 
-The argument shape mirrors :func:`~ulab.numpy.fft.fft`:
+The argument form mirrors :func:`~ulab.numpy.fft.fft`:
 one 1-D real-or-complex array on complex-output builds,
 one or two real arrays (``real``, ``imag``) on split
 builds.
@@ -158,11 +158,11 @@ The functions accept the same allocation-saving knobs as
 * ``byteswap=True`` when the peripheral disagrees with
   the MCU on byte order.
 
-The combined shape -- one ``from_int32_buffer`` call
+The combined pattern -- one ``from_int32_buffer`` call
 straight into one ``spectrogram`` call, both with
 ``out=`` buffers from outside the loop -- is the right
-template for a streaming spectrum analyser running on a
-high-resolution microphone.
+template for a streaming spectrum analyser running on
+a high-resolution microphone.
 
 For the complete reference, see
 :doc:`/library/omv.ulab.scipy.signal` and the

@@ -42,8 +42,8 @@ reductions, broadcasting, slicing -- works directly from
 those five values plus the data pointer, with no
 per-element Python overhead.
 
-What you get from the design
-----------------------------
+What the design buys
+--------------------
 
 Three properties fall out of "packed block + small
 descriptor" and define how the rest of the section
@@ -62,7 +62,7 @@ operators all work this way; the universal functions
 **Reshape, transpose, and slicing are free.** None of
 the three actually moves the data. Each one returns a
 new descriptor pointing at the *same* data block. The
-result is called a *view*: a second window onto the same
+result is called a *view* -- a second window onto the same
 underlying buffer. Writing through a view writes to the
 source. See :doc:`../shape/views-and-copies`.
 
@@ -73,8 +73,8 @@ small set of rules that decide which short axis stretches
 to match the long one. The stretch is virtual; no data
 is duplicated. See :doc:`../math/broadcasting`.
 
-What you give up in exchange
-----------------------------
+What the design costs
+---------------------
 
 Two restrictions follow from the same design.
 
@@ -86,24 +86,21 @@ page covers the small set of types :mod:`numpy` supports
 and the rules that come out of fixing one.
 
 **Growing an array is not free.** A list keeps spare
-slots at the end and lets you ``.append`` cheaply. An
+slots at the end and supports ``.append`` cheaply. An
 :class:`~ulab.numpy.ndarray` is exactly the size it
 needs to be; appending would mean allocating a new,
 larger buffer and copying the old contents into it.
 There is no :meth:`append` method, on purpose. The right
-shape on the camera is to pre-allocate the destination
+pattern on the camera is to pre-allocate the destination
 at its final size and *fill* it; :doc:`../performance`
-covers the pattern.
+covers the technique.
 
-Where to look next
-------------------
-
-:doc:`making-arrays` is the constructor catalogue --
-every way to actually get an
-:class:`~ulab.numpy.ndarray` from a literal, a sensor
-buffer, or a generated sequence. :doc:`dtypes` covers
-the element-type choice that decides how much RAM each
-element costs. After those two,
-:doc:`../shape/shape-and-strides` opens the descriptor
-back up to explain how multi-dimensional indexing falls
-out of it.
+With a packed typed buffer for the data, a small
+descriptor for the metadata, and three behavioural
+guarantees (fast element-wise math, free reshape /
+transpose / slicing, and shapes that broadcast), the
+:class:`~ulab.numpy.ndarray` is the foundation the rest
+of the chapter rests on. How an array actually comes
+into existence -- from a literal, from a pre-filled
+allocation, from a peripheral buffer -- is the next
+practical question.

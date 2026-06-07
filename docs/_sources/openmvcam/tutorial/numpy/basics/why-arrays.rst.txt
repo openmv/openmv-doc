@@ -23,7 +23,7 @@ the numerical work an OpenMV application runs into:
   buffer, an IIR filter applied to a sensor's output, a
   spectrogram a classifier wants as input.
 
-All of these want the same shape: a buffer of numbers
+All of these want the same form: a buffer of numbers
 with one operation applied to every element. A Python
 ``for`` loop is the obvious way to write it::
 
@@ -40,7 +40,7 @@ costs add up to tens of milliseconds for what is
 fundamentally a quick operation.
 
 That overhead bites every time a script reaches a buffer.
-A QVGA grayscale frame is 76 800 pixels; an
+A QVGA grayscale frame is 76,800 pixels; an
 accelerometer at 100 Hz delivers a hundred three-axis
 samples a second; a microphone fills a 1024-sample
 buffer every 64 ms. A pure-Python ``for`` loop over any
@@ -82,12 +82,12 @@ elsewhere, with the list keeping a reference to it. A
 library function looking at a list would still have to
 unpack each element through that reference and check its
 type -- exactly the cost the loop pays. Lists are the
-wrong shape for fast array math.
+wrong fit for fast array math.
 
 Why bytearray is not enough either
 ----------------------------------
 
-A :class:`bytearray` is the right *shape* -- one
+A :class:`bytearray` is the right *form* -- one
 typed buffer, one byte per element, all in one
 contiguous block. It is what most byte-oriented
 peripheral APIs hand back. What it lacks is the *math*.
@@ -97,4 +97,6 @@ for ``bytearray + bytearray`` element by element.
 
 The data structure that combines a typed buffer with
 element-wise math is the :class:`~ulab.numpy.ndarray`.
-The next page opens the box.
+What is inside the box and how each field shapes the
+fast-path behaviour are the foundations the rest of
+this chapter rests on.
