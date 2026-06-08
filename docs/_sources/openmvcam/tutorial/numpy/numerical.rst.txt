@@ -10,16 +10,14 @@ itself. Interpolating between samples, fitting a curve to
 them, integrating under them, convolving them with another
 buffer.
 
-All of these accept :class:`~ulab.numpy.ndarray` inputs
+All of these accept :class:`~numpy.ndarray` inputs
 and return either a float scalar or a float
-:class:`~ulab.numpy.ndarray`. The standard import::
-
-    from ulab import numpy as np
+:class:`~numpy.ndarray`.
 
 Interpolation
 -------------
 
-:func:`~ulab.numpy.interp(x, xp, fp)` does
+:func:`~numpy.interp` does
 one-dimensional linear interpolation. ``xp`` is a
 monotonically increasing 1-D array of independent
 values; ``fp`` is the matching dependent values; ``x``
@@ -46,7 +44,7 @@ one pass over the inputs, no Python loop.
 Polynomial fitting and evaluation
 ---------------------------------
 
-:func:`~ulab.numpy.polyfit(x, y, deg)` fits a polynomial
+:func:`~numpy.polyfit` fits a polynomial
 of degree ``deg`` to the data points ``(x, y)`` by least
 squares and returns the coefficients (highest degree
 first)::
@@ -63,7 +61,7 @@ sampled buffer with no associated x-axis::
 
     np.polyfit(y, 2)
 
-:func:`~ulab.numpy.polyval(p, x)` evaluates the
+:func:`~numpy.polyval` evaluates the
 polynomial whose coefficients are ``p`` at ``x``. The
 input ``x`` can be a scalar (returns a float) or an
 ``ndarray`` (returns an ``ndarray``)::
@@ -74,18 +72,18 @@ input ``x`` can be a scalar (returns a float) or an
 The natural pairing is to call ``polyfit`` once at
 calibration time, store the coefficients, and call
 ``polyval`` to evaluate the resulting curve every
-frame. The polynomial-evaluation step is a few floating-
-point operations per sample, which is cheap even on the
+frame. The polynomial-evaluation step is a handful of
+float operations per sample, which is cheap even on the
 smallest cams.
 
 Convolution
 -----------
 
-:func:`~ulab.numpy.convolve(a, v)` returns the
+:func:`~numpy.convolve` returns the
 full-length discrete linear convolution of two 1-D
-arrays. Only ``'full'`` mode is implemented; the output
+arrays. Only ``full`` mode is implemented; the output
 length is ``len(a) + len(v) - 1``. Slice the result for
-the same effect as the ``'same'`` and ``'valid'`` modes
+the same effect as the ``same`` and ``valid`` modes
 that the desktop ``numpy`` offers::
 
     a = np.array([1.0, 2.0, 3.0])
@@ -96,15 +94,15 @@ that the desktop ``numpy`` offers::
 
 Useful for short FIR filters and smoothing kernels (box,
 triangle, gaussian) where setting up an SOS chain is
-overkill. The cost is :math:`O(N \cdot M)` for two arrays
-of length ``N`` and ``M``, which is fine for short
-kernels but quickly becomes more expensive than an FFT
-convolution for long ones.
+overkill. The runtime is proportional to the product of
+the two array lengths -- fine for short kernels but
+quickly becomes more expensive than an FFT convolution
+for long ones.
 
 Trapezoidal integration
 -----------------------
 
-:func:`~ulab.numpy.trapz(y, x=None, dx=1.0)` integrates a
+:func:`~numpy.trapz` integrates a
 sampled function by the composite trapezoidal rule::
 
     x = np.linspace(0, np.pi, num=128)

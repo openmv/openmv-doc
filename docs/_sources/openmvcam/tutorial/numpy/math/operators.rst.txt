@@ -2,7 +2,7 @@ Operators
 =========
 
 The first kind of math :mod:`numpy` runs on an
-:class:`~ulab.numpy.ndarray` is the standard Python
+:class:`~numpy.ndarray` is the standard Python
 operators. Arithmetic, comparison, and bit-wise
 operators all work *element-wise* -- each operator walks
 the array (or both arrays) once from start to finish
@@ -30,8 +30,8 @@ overflow; cast to a wider dtype before the operation when
 that matters.
 
 The matrix-multiplication operator ``@`` is **not**
-implemented. Use :func:`~ulab.numpy.dot` for matrix /
-vector products (see :doc:`../linalg`).
+implemented. Use :func:`~numpy.dot` for matrix /
+vector products.
 
 In-place forms
 ~~~~~~~~~~~~~~
@@ -45,8 +45,7 @@ allocating a temporary::
     b += 1               # no temporary
 
 On a microcontroller the second form is essentially
-mandatory for any hot loop; :doc:`../performance` covers
-the broader pattern.
+mandatory for any hot loop.
 
 Bitwise
 -------
@@ -66,8 +65,8 @@ array.
 
 The shift operators ``<<`` and ``>>`` are **not** wired
 up at the Python operator level. The function forms
-:func:`~ulab.numpy.left_shift` and
-:func:`~ulab.numpy.right_shift` work::
+:func:`~numpy.left_shift` and
+:func:`~numpy.right_shift` work::
 
     np.left_shift(a, 2)
     np.right_shift(b, 1)
@@ -76,7 +75,7 @@ Comparison
 ----------
 
 ``==``, ``!=``, ``<``, ``<=``, ``>``, ``>=`` all return a
-``bool`` :class:`~ulab.numpy.ndarray` of the broadcast
+``bool`` :class:`~numpy.ndarray` of the broadcast
 shape::
 
     a = np.array([1, 2, 3, 4, 5], dtype=np.uint8)
@@ -90,7 +89,7 @@ The boolean result is exactly what
 The side rule
 ~~~~~~~~~~~~~
 
-The :class:`~ulab.numpy.ndarray` **must** be on the
+The :class:`~numpy.ndarray` **must** be on the
 *left* of a relational operator when comparing to a
 scalar. ``a > 2`` works; ``2 < a`` raises :exc:`TypeError`.
 For the symmetric form, use the function names::
@@ -99,10 +98,6 @@ For the symmetric form, use the function names::
     np.less(5, a)           # 5 < a, element-wise
     np.equal(5, a)          # 5 == a, element-wise
     np.not_equal(5, a)      # 5 != a, element-wise
-
-The function form is also the right choice for portable
-code targeting environments where the in-line operators
-are not overloaded (CircuitPython, for example).
 
 Unary operators
 ---------------

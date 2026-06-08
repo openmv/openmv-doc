@@ -20,18 +20,19 @@ explicitly to one of the integer types::
 
     adc = np.array(adc_samples, dtype=np.uint16)
 
-The RAM saving is 4-8x. The math also runs faster
-because the integer code paths inside :mod:`numpy` are
-tighter than the generic float ones. The integer
-overflow rule covered on :doc:`basics/dtypes` applies
--- cast to a wider type before arithmetic that might
-overflow.
+The RAM saving is 2x for ``uint16`` and 4x for
+``uint8`` against the 4-byte ``float`` default. The
+math also runs faster because the integer code paths
+inside :mod:`numpy` are tighter than the generic float
+ones. The integer overflow rule covered on
+:doc:`basics/dtypes` applies -- cast to a wider type
+before arithmetic that might overflow.
 
 Prefer an ndarray to an iterable
 --------------------------------
 
 Most reductions and universal functions accept either an
-iterable or an :class:`~ulab.numpy.ndarray`::
+iterable or an :class:`~numpy.ndarray`::
 
     np.sum([1, 2, 3, 4, 5])               # works, but slow
     np.sum(np.array([1, 2, 3, 4, 5]))     # ~3x faster
@@ -39,33 +40,33 @@ iterable or an :class:`~ulab.numpy.ndarray`::
 The iterable form forces :mod:`numpy` to step through
 the input one Python object at a time, converting each
 to a number before it can use it. Against an
-:class:`~ulab.numpy.ndarray` the conversion is already
+:class:`~numpy.ndarray` the conversion is already
 done and the call runs straight through the packed
 buffer.
 
 When the same data is used more than once, build the
-:class:`~ulab.numpy.ndarray` once and pass it around.
+:class:`~numpy.ndarray` once and pass it around.
 When the data exists only as a Python list and is
 consumed once, the conversion cost can outweigh the
-speedup -- the :func:`~ulab.numpy.array` constructor
+speedup -- the :func:`~numpy.array` constructor
 itself has to walk the list and allocate.
 
 Prefer views to copies
 ----------------------
 
 Slicing, single-axis indexing of a higher-rank array,
-:meth:`~ulab.numpy.ndarray.reshape`,
-:meth:`~ulab.numpy.ndarray.transpose`, and
-:func:`~ulab.numpy.frombuffer` all return *views* that
+:meth:`~numpy.ndarray.reshape`,
+:meth:`~numpy.ndarray.transpose`, and
+:func:`~numpy.frombuffer` all return *views* that
 share data with the source. They are essentially free.
 
-:meth:`~ulab.numpy.ndarray.copy`,
-:meth:`~ulab.numpy.ndarray.flatten`, boolean indexing
+:meth:`~numpy.ndarray.copy`,
+:meth:`~numpy.ndarray.flatten`, boolean indexing
 (``a[mask]``), and any arithmetic expression allocate a
 *copy*. Reach for them only when an independent buffer
 is genuinely needed.
 
-When in doubt, :func:`~ulab.numpy.ndinfo` prints the
+When in doubt, :func:`~numpy.ndinfo` prints the
 location of the underlying buffer; two arrays that
 report the same address share their data. The
 complete view-vs-copy table is on
@@ -77,7 +78,7 @@ Allocate once, then write
 The single biggest performance pitfall on the camera is
 allocating fresh arrays inside a loop that runs many
 times a second. Each new
-:class:`~ulab.numpy.ndarray` asks the cam for RAM, and
+:class:`~numpy.ndarray` asks the cam for RAM, and
 frequent fresh allocations waste it.
 
 Most universal functions accept ``out=`` so the result
@@ -91,7 +92,7 @@ can be written into an array that already exists::
         # use y ...
 
 :meth:`image.Image.to_ndarray` accepts ``buffer=``
-for the same reason; :func:`ulab.utils.spectrogram` and
+for the same reason; :func:`~ulab.utils.spectrogram` and
 the :func:`~ulab.utils.from_int32_buffer`-style
 converters accept both ``out=`` and ``scratchpad=``.
 Allocate everything once and reuse it.
@@ -126,7 +127,7 @@ temporaries::
 Build the result, do not append to it
 -------------------------------------
 
-:class:`~ulab.numpy.ndarray` has no ``append`` -- on
+:class:`~numpy.ndarray` has no ``append`` -- on
 purpose. Growing an array would mean allocating a fresh,
 larger buffer and copying the old contents into it. On a
 microcontroller, pre-allocate the final size and *fill*
@@ -138,50 +139,53 @@ it::
 
 When ``N`` genuinely is not known in advance, write to a
 Python :class:`list` and convert once at the end with
-:func:`~ulab.numpy.array`.
+:func:`~numpy.array`.
 
 Slice assignment instead of new arrays
 --------------------------------------
 
-Many "build a new array from pieces" patterns can be
-expressed as slice assignments into a pre-allocated
-buffer. The classic example is linear interpolation by
-2::
+Many "build a new array from pieces of others" patterns
+can be expressed as slice assignments into a
+pre-allocated buffer instead of a fresh allocation each
+call.
 
-    # Originals at even indices; midpoints at odd indices.
-    a = np.array([0, 10, 2, 20, 4], dtype=np.uint8)
-    b = np.zeros(2 * len(a) - 1, dtype=np.uint8)
+A rolling window over a stream of samples -- the
+foundation of a moving-average filter -- is the
+canonical case. The buffer holds the last ``N``
+samples; every iteration drops the oldest and appends
+the newest. The obvious form rebuilds the buffer each
+iteration::
 
-    b[::2]   = a
-    b[1::2]  = a[:-1]
-    b[1::2] += a[1:]
-    # divide by 2 for the average
+    while True:
+        sample = read_sample()
+        buf = np.concatenate((buf[1:],              # new buffer every loop
+                              np.array([sample])))
+        avg = np.mean(buf)
 
-The compound form ``b[1::2] = (a[:-1] + a[1:]) // 2``
-would allocate a temporary the size of ``a[:-1] + a[1:]``
-plus another for the division. The four-line version
-above touches only views.
+That is a fresh allocation -- and a copy of ``N - 1``
+elements -- per sample. The slice-assignment form
+shifts in place::
 
-The same idea generalises to two dimensions, which
-makes it the right tool for upscaling small images --
-think 8x8 thermal sensors that need a human-friendly
-preview::
+    N   = 16
+    buf = np.zeros(N, dtype=np.float)               # allocate once
 
-    # ``a`` is 8x8; ``b`` is 15x15
-    b = np.zeros((15, 15), dtype=np.uint8)
+    while True:
+        sample   = read_sample()
+        buf[:-1] = buf[1:]                          # shift left by one
+        buf[-1]  = sample                           # append at the end
+        avg      = np.mean(buf)
 
-    b[::2, ::2]    = a
-    b[1::2, ::2]   = a[:-1, :]
-    b[1::2, ::2]  += a[1:, :]
-    b[1::2, ::2] //= 2
-    b[:, 1::2]     = b[:, :-1:2]
-    b[:, 1::2]    += b[:, 2::2]
-    b[:, 1::2]   //= 2
+``buf[:-1] = buf[1:]`` is the interesting line: two
+overlapping views into the same buffer, the right-hand
+slice read from one end and written to the other.
+:mod:`numpy` walks the underlying memory in the order
+that makes the in-place shift safe. No new array is
+ever allocated inside the loop.
 
 Watch out for boolean masks in streaming loops
 ----------------------------------------------
 
-Boolean indexing and :func:`~ulab.numpy.where` produce
+Boolean indexing and :func:`~numpy.where` produce
 a new array on each call -- the size of the result
 depends on the data, so no pre-allocated buffer can
 absorb the allocation. Repeated mask building in a

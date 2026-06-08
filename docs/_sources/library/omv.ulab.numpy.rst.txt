@@ -798,37 +798,29 @@ Constants
 .. data:: bool
    :type: int
 
-   `ulab.dtype` code for boolean arrays (stored as ``uint8``).
+   Dtype code for boolean arrays (stored as ``uint8``).
 
 .. data:: uint8
    :type: int
 
-   `ulab.dtype` code for unsigned 8-bit integer arrays.
+   Dtype code for unsigned 8-bit integer arrays.
 
 .. data:: int8
    :type: int
 
-   `ulab.dtype` code for signed 8-bit integer arrays.
+   Dtype code for signed 8-bit integer arrays.
 
 .. data:: uint16
    :type: int
 
-   `ulab.dtype` code for unsigned 16-bit integer arrays.
+   Dtype code for unsigned 16-bit integer arrays.
 
 .. data:: int16
    :type: int
 
-   `ulab.dtype` code for signed 16-bit integer arrays.
+   Dtype code for signed 16-bit integer arrays.
 
 .. data:: float
    :type: int
 
-   `ulab.dtype` code for floating-point arrays. Element width is either
-   32 bits or 64 bits depending on how MicroPython was built.
-
-.. data:: complex
-   :type: int
-
-   `ulab.dtype` code for complex arrays. Only available when the firmware
-   was built with ``ULAB_SUPPORTS_COMPLEX`` enabled. Complex elements
-   pack two ``float`` values (real, imaginary).
+   Dtype code for 32-bit floating-point arrays.

@@ -167,7 +167,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/d5c633e39248b685cb2f8645b46d40f78b689a41/docs/openmvcam/tutorial/numpy/basics/why-arrays.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/7e99da1005454a97790c6c32a591a6a7b6eaed15/docs/openmvcam/tutorial/numpy/basics/why-arrays.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -254,17 +254,18 @@ filters – already lives there.</p>
 <p>What the image library does <em>not</em> expose is the rest of
 the numerical work an OpenMV application runs into:</p>
 <ul class="simple">
-<li><p>sensor buffers that are not pixels – ADC samples, IMU
-axes, microphone audio,</p></li>
+<li><p>sensor buffers that are not pixels – ADC samples, axes
+from an <em>IMU</em> (inertial measurement unit), microphone
+audio,</p></li>
 <li><p>derived numbers from the image that no built-in method
 returns – a histogram column, a custom blend of two
 frames, a per-pixel transform the catalogue does not
 cover,</p></li>
 <li><p>small linear algebra – the calibration matrix that
 rectifies the lens, the rotation that fuses the IMU,</p></li>
-<li><p>signal-processing math – the FFT of a vibration
-buffer, an IIR filter applied to a sensor’s output, a
-spectrogram a classifier wants as input.</p></li>
+<li><p>signal-processing math – the frequency content of a
+vibration buffer, smoothing applied to a sensor’s
+output, a feature vector a classifier wants as input.</p></li>
 </ul>
 <p>All of these want the same form: a buffer of numbers
 with one operation applied to every element. A Python
@@ -287,7 +288,8 @@ accelerometer at 100 Hz delivers a hundred three-axis
 samples a second; a microphone fills a 1024-sample
 buffer every 64 ms. A pure-Python <code class="docutils literal notranslate"><span class="pre">for</span></code> loop over any
 of those turns a job that should take a few microseconds
-into one that takes tens of milliseconds.</p>
+into one that takes tens of milliseconds – and roughly
+ten times longer again on an image-sized buffer.</p>
 <section id="library-functions-are-faster-than-loops">
 <h2><span class="section-number">9.1.1. </span>Library functions are faster than loops<a class="headerlink" href="#library-functions-are-faster-than-loops" title="Link to this heading">¶</a></h2>
 <p>The fix is to express the operation as a single function
@@ -303,24 +305,22 @@ without the per-iteration interpreter cost. The same
 a Python loop takes tens of microseconds as a numpy
 call.</p>
 <p>This is the deal <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> offers across the board:
-sum, mean, sin, exp, matrix multiply, FFT, IIR filter –
-each one is a single library function that operates on a
-whole buffer at once. The trade is that the data has to
-live in numpy’s array type and the operation has to be
-expressed against that array, not against its elements
-one at a time.</p>
+sum, mean, sin, exp, matrix multiply, signal-processing
+primitives – each one is a single library function that
+operates on a whole buffer at once. The trade is that the
+data has to live in numpy’s array type and the operation
+has to be expressed against that array, not against its
+elements one at a time.</p>
 </section>
 <section id="why-a-list-will-not-do">
 <h2><span class="section-number">9.1.2. </span>Why a list will not do<a class="headerlink" href="#why-a-list-will-not-do" title="Link to this heading">¶</a></h2>
 <p>A Python <a class="reference internal" href="../../../../library/builtins.html#list" title="list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> cannot stand in. A list can hold
 any mix of objects – integers, floats, strings, other
-lists – so each element of a list of “1000 sensor
-samples” is actually a separate <code class="docutils literal notranslate"><span class="pre">int</span></code> object stored
-elsewhere, with the list keeping a reference to it. A
-library function looking at a list would still have to
-unpack each element through that reference and check its
-type – exactly the cost the loop pays. Lists are the
-wrong fit for fast array math.</p>
+lists – and a library function reading it still has to
+look at each slot to find out what is in it and pull the
+value out before any arithmetic happens. That per-slot
+overhead is exactly the cost the Python loop pays. Lists
+are the wrong fit for fast array math.</p>
 </section>
 <section id="why-bytearray-is-not-enough-either">
 <h2><span class="section-number">9.1.3. </span>Why bytearray is not enough either<a class="headerlink" href="#why-bytearray-is-not-enough-either" title="Link to this heading">¶</a></h2>
@@ -332,7 +332,7 @@ peripheral APIs hand back. What it lacks is the <em>math</em>.
 doubling each value, and there is no sensible meaning
 for <code class="docutils literal notranslate"><span class="pre">bytearray</span> <span class="pre">+</span> <span class="pre">bytearray</span></code> element by element.</p>
 <p>The data structure that combines a typed buffer with
-element-wise math is the <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code>.
+element-wise math is the <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>.
 What is inside the box and how each field shapes the
 fast-path behaviour are the foundations the rest of
 this chapter rests on.</p>
@@ -367,7 +367,7 @@ this chapter rests on.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 07 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

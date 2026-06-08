@@ -35,7 +35,7 @@ amount that grows with the square of the
 radial distance from the optical axis. A
 straight line in the scene that runs near the
 edge of the frame curves visibly in the
-captured image, and any classical CV
+captured image, and any classical MV
 algorithm that assumes straight lines stay
 straight -- AprilTag corner detection, edge
 following, line-following navigation -- gets

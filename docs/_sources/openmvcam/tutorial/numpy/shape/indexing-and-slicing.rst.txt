@@ -1,9 +1,7 @@
 Indexing and slicing
 ====================
 
-The previous page laid out the descriptor that turns
-the data block into a tensor. This page covers the four
-ways an application addresses elements of that tensor:
+An :class:`~numpy.ndarray` is addressed four ways:
 single indices, slices, boolean masks, and the
 assignment forms of each.
 
@@ -50,7 +48,7 @@ source::
     # array([99, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=uint8)
 
 When an independent buffer is needed,
-:meth:`~ulab.numpy.ndarray.copy` produces one explicitly.
+:meth:`~numpy.ndarray.copy` produces one explicitly.
 
 Slicing extends naturally to higher dimensions. Each
 axis takes its own slice::
@@ -83,19 +81,22 @@ currently works on 1-D arrays; higher-rank inputs raise
 
 Output::
 
-    array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=float64)
+    array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=float)
 
 The mask is an ordinary ``bool``
-:class:`~ulab.numpy.ndarray`, so any expression that
+:class:`~numpy.ndarray`, so any expression that
 yields one works::
 
     b = np.array([4, 4, 4, 3, 3, 3, 13, 13, 13], dtype=np.uint8)
     a = np.arange(9, dtype=np.uint8)
     print(a[a * a > np.sin(b) * 100.0])
 
-Boolean indexing returns a *copy* -- the size of the
-result depends on how many ``True`` entries the mask
-has, so the result cannot share the source's storage.
+Boolean indexing returns a *copy*. The selected
+elements lie at whatever positions the mask is
+``True`` -- not at a regular stride through the source
+-- so there is no descriptor a view could use to address
+them, and the result is materialised into its own
+buffer.
 
 Integer-array indexing
 ----------------------
@@ -114,7 +115,7 @@ the left of an assignment::
     a[[0, 2, 4]] = 0
     # array([0, 20, 0, 40, 0], dtype=uint8)
 
-:func:`~ulab.numpy.take` (covered on
+:func:`~numpy.take` (covered on
 :doc:`../math/selection`) is the function form of the
 same operation and accepts an ``out=`` keyword for
 allocation-free use in a streaming loop.

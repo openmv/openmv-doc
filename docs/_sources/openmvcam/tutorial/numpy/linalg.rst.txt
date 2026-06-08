@@ -13,42 +13,47 @@ The functions live in two modules. Matrix-product
 operations are at the :mod:`numpy` top level;
 decompositions and the matrix inverse are under
 :mod:`numpy.linalg`; the dedicated linear-system
-solvers are under :mod:`scipy.linalg`::
+solvers are under :mod:`scipy.linalg`. A 2-by-2 matrix
+multiply, for example::
 
     from ulab import numpy as np
-    from ulab import scipy as sp
 
-    np.dot(a, b)
-    np.linalg.inv(m)
-    sp.linalg.solve_triangular(L, b, lower=True)
+    A = np.array([[1, 2], [3, 4]], dtype=np.float)
+    B = np.array([[5, 6], [7, 8]], dtype=np.float)
+    np.dot(A, B)
+    # array([[19.0, 22.0],
+    #        [43.0, 50.0]])
 
 What is available
 -----------------
 
-* :func:`~ulab.numpy.dot` -- matrix or vector product.
-* :func:`~ulab.numpy.cross` -- 3-D vector cross product.
-* :func:`~ulab.numpy.trace` -- sum of the diagonal.
-* :func:`~ulab.numpy.linalg.inv` -- matrix inverse.
-* :func:`~ulab.numpy.linalg.det` -- determinant.
-* :func:`~ulab.numpy.linalg.cholesky` -- Cholesky
+* :func:`~numpy.dot` -- matrix or vector product.
+* :func:`~numpy.cross` -- 3-D vector cross product.
+* :func:`~numpy.trace` -- sum of the diagonal.
+* :func:`~numpy.linalg.inv` -- matrix inverse.
+* :func:`~numpy.linalg.det` -- determinant.
+* :func:`~numpy.linalg.cholesky` -- Cholesky
   decomposition (symmetric positive-definite input).
-* :func:`~ulab.numpy.linalg.eig` -- eigenvalues and
+* :func:`~numpy.linalg.eig` -- eigenvalues and
   eigenvectors of a real symmetric matrix.
-* :func:`~ulab.numpy.linalg.norm` -- 2-norm of a vector
+* :func:`~numpy.linalg.norm` -- 2-norm of a vector
   or matrix.
-* :func:`~ulab.numpy.linalg.qr` -- QR decomposition with
+* :func:`~numpy.linalg.qr` -- QR decomposition with
   ``mode='reduced'`` (default) or ``mode='complete'``.
-* :func:`~ulab.scipy.linalg.solve_triangular` -- solve
+* :func:`~scipy.linalg.solve_triangular` -- solve
   ``A @ x = b`` when ``A`` is triangular.
-* :func:`~ulab.scipy.linalg.cho_solve` -- solve
+* :func:`~scipy.linalg.cho_solve` -- solve
   ``A @ x = b`` given a Cholesky factor of ``A``.
 
 dot, cross, trace
 -----------------
 
-The matrix-product functions cover the work that ``@``
-would do on the desktop (``@`` is not implemented on
-``ndarray``)::
+:func:`~numpy.dot` is how matrix multiplication is
+written on the camera. The ``@`` operator that desktop
+``numpy`` provides for the same job is not implemented
+on :class:`~numpy.ndarray`, so every matrix-vector,
+matrix-matrix, and vector dot product goes through the
+:func:`~numpy.dot` call::
 
     a = np.array([1, 2, 3])
     b = np.array([4, 5, 6])
@@ -61,8 +66,10 @@ would do on the desktop (``@`` is not implemented on
     np.dot(m, m)             # matrix-matrix product
     np.trace(m)              # 1 + 5 + 9 = 15.0
 
-The result of :func:`~ulab.numpy.dot` is always of dtype
-``float``.
+The result of :func:`~numpy.dot` is always of dtype
+``float``. :func:`~numpy.cross` is the cross product
+of two 3-vectors, :func:`~numpy.trace` the sum of the
+main diagonal of a square matrix.
 
 inv and det
 -----------
@@ -77,7 +84,7 @@ inv and det
     print(np.linalg.det(m))
 
 The inverse is computed by Gauss-Jordan elimination, so
-:func:`~ulab.numpy.linalg.inv` raises :exc:`ValueError`
+:func:`~numpy.linalg.inv` raises :exc:`ValueError`
 when the matrix is singular (a diagonal entry becomes
 zero during elimination). The RAM cost is roughly twice
 the size of the input.
@@ -94,7 +101,7 @@ cholesky
 --------
 
 For a symmetric positive-definite matrix ``A``,
-:func:`~ulab.numpy.linalg.cholesky` returns a
+:func:`~numpy.linalg.cholesky` returns a
 lower-triangular ``L`` such that ``A = L @ L.T``::
 
     a = np.array([[25, 15, -5],
@@ -114,7 +121,7 @@ least-squares fit).
 eig
 ---
 
-:func:`~ulab.numpy.linalg.eig` works only on *real
+:func:`~numpy.linalg.eig` works only on *real
 symmetric* matrices. Non-symmetric matrices raise
 :exc:`ValueError`. It returns a 2-tuple
 ``(eigenvalues, eigenvectors)``::
@@ -128,9 +135,9 @@ symmetric* matrices. Non-symmetric matrices raise
 Notes:
 
 * The eigenvalues come back in no particular order.
-  Apply :func:`~ulab.numpy.sort` (and the same
+  Apply :func:`~numpy.sort` (and the same
   permutation to the eigenvectors via
-  :func:`~ulab.numpy.argsort`) when a sorted order
+  :func:`~numpy.argsort`) when a sorted order
   matters.
 * An eigenvector is unique only up to a non-zero scalar,
   so the *sign* of individual eigenvectors is not
@@ -154,7 +161,7 @@ single axis instead of over the whole array.
 qr
 --
 
-:func:`~ulab.numpy.linalg.qr` factors a rectangular
+:func:`~numpy.linalg.qr` factors a rectangular
 matrix ``A`` (shape ``(M, N)``) into an orthonormal
 ``Q`` and an upper-triangular ``R`` such that
 ``A == Q @ R``::
@@ -178,7 +185,7 @@ The two dedicated solvers under
 :mod:`ulab.scipy.linalg` are both faster and more
 accurate than ``np.dot(np.linalg.inv(A), b)``:
 
-* :func:`~ulab.scipy.linalg.solve_triangular(a, b, lower=False)`
+* :func:`~scipy.linalg.solve_triangular(a, b, lower=False)`
   -- solve ``a @ x = b`` assuming ``a`` is triangular::
 
       A = np.array([[3, 0, 0, 0],
@@ -188,7 +195,7 @@ accurate than ``np.dot(np.linalg.inv(A), b)``:
       b = np.array([4, 2, 4, 2])
       x = sp.linalg.solve_triangular(A, b, lower=True)
 
-* :func:`~ulab.scipy.linalg.cho_solve(L, b)` -- given a
+* :func:`~scipy.linalg.cho_solve(L, b)` -- given a
   Cholesky factor ``L``, solve ``A @ x = b`` where
   ``A = L @ L.T``::
 

@@ -5,7 +5,7 @@ The previous page introduced the neighbourhood
 as the unit of work and walked through filters
 that compute *statistical* values over it --
 the mean, the median, the mode. This page adds
-the two operations classical CV reaches for
+the two operations classical MV reaches for
 most often when the goal is either *clean*
 smoothing of brightness variations or *finding*
 the edges where brightness changes sharply.

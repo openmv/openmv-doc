@@ -1,13 +1,10 @@
 Shape and strides
 =================
 
-The data inside an :class:`~ulab.numpy.ndarray` is one
+The data inside an :class:`~numpy.ndarray` is one
 packed block of numbers. The descriptor in front of that
 block decides how that flat block is read out as a
-tensor. Understanding what the descriptor records is
-what makes the indexing, slicing, and view machinery on
-the following pages feel inevitable rather than
-arbitrary.
+tensor.
 
 What the descriptor records
 ---------------------------
@@ -23,7 +20,7 @@ tensor::
     a.size       # 6     - total number of elements
     a.strides    # (3, 1)- step pattern through the buffer
 
-The :func:`~ulab.numpy.ndinfo` helper prints all of them
+The :func:`~numpy.ndinfo` helper prints all of them
 plus the location of the underlying buffer in one call.
 Two arrays whose buffer locations match are sharing
 memory::
@@ -35,25 +32,6 @@ memory::
     # itemsize: 1
     # data pointer: 0x...
     # type: uint8
-
-Print truncation
-----------------
-
-Printing a large array shows only its first and last
-few elements, with ``...`` in the middle, so the IDE
-terminal does not fill with thousands of values::
-
-    >>> print(np.arange(1000, dtype=np.uint16))
-    array([0, 1, 2, ..., 997, 998, 999], dtype=uint16)
-
-:func:`~ulab.numpy.set_printoptions` overrides the
-thresholds when debugging needs the whole buffer::
-
-    np.set_printoptions(threshold=2000)  # print up to 2000 elements in full
-    np.set_printoptions(edgeitems=10)    # 10 items at each end, not 3
-
-:func:`~ulab.numpy.get_printoptions` reads the current
-settings back as a dict.
 
 Strides explained
 -----------------
@@ -75,12 +53,9 @@ the data block and reads ``itemsize`` bytes from there.
 The same formula extends to any number of dimensions.
 
 This layout -- rows stored end to end, with the last
-axis varying fastest along memory -- is
-called *row-major* or *C order*. Every array
-:mod:`numpy` allocates on the camera uses this layout;
-the Fortran-order option that desktop ``numpy`` offers
-appears only as the ``order='F'`` keyword on
-:meth:`~ulab.numpy.ndarray.flatten`.
+axis varying fastest along memory -- is called
+*row-major* order. Every array :mod:`numpy` allocates
+on the camera uses this layout.
 
 Row-major has consequences
 --------------------------
@@ -106,7 +81,7 @@ lay out a buffer, put the long axis last so operations
 along it stay in the inner loop.
 
 If the layout starts out wrong,
-:meth:`~ulab.numpy.ndarray.transpose` (or the ``.T``
+:meth:`~numpy.ndarray.transpose` (or the ``.T``
 shortcut) fixes it without copying the data -- it just
 swaps the strides::
 
@@ -125,17 +100,14 @@ strides. ``a[::2]`` doubles a stride. Each returns a
 *view* of the same underlying buffer.
 
 Anything that has to walk the data and write a new
-buffer is a copy. The detail of which is which is on
-:doc:`views-and-copies`; the rule for now is that
-descriptor edits are free and data walks are not.
+buffer is a copy. The rule for now is that descriptor
+edits are free and data walks are not.
 
 A note about ndim
 -----------------
 
 :mod:`numpy` on the camera is built with a maximum
-supported ``ndim`` of either 2 or 4, fixed when the cam
-was built. The suffix on :data:`ulab.__version__`
-(``-2D``, ``-4D``) reports which. Operations that
-would produce a higher-rank array raise
-:exc:`ValueError`. The vast majority of camera-side
-work is 1-D or 2-D, so the limit is rarely an issue.
+supported ``ndim`` of 4. Operations that would produce
+a higher-rank array raise :exc:`ValueError`. The vast
+majority of camera-side work is 1-D or 2-D, so the
+limit is rarely an issue.

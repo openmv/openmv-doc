@@ -1,17 +1,16 @@
 Images and ndarrays
 ===================
 
-This page closes the loop the section opened with. The
-:class:`~image.Image` class is the fast surface for
+The :class:`~image.Image` class is the fast surface for
 camera-native pixel work: every method on it operates
 directly on the frame buffer in the camera's native
 pixel format. :mod:`numpy` is the generic numerical
 surface for everything else. Two methods bridge them:
 
-* :meth:`image.Image.to_ndarray` -- view or copy the
-  pixels of an image as an :class:`~ulab.numpy.ndarray`.
+* :meth:`image.Image.to_ndarray` -- copy the pixels of
+  an image into an :class:`~numpy.ndarray`.
 * The :class:`image.Image` constructor -- build a
-  fresh image from an :class:`~ulab.numpy.ndarray`.
+  fresh image from an :class:`~numpy.ndarray`.
 
 Together they let an application snap a frame, hand it
 to :mod:`numpy` for a custom transform, then put the
@@ -21,11 +20,13 @@ back into the rest of the image library.
 Image to ndarray
 ----------------
 
-:meth:`~image.Image.to_ndarray` returns an
-:class:`~ulab.numpy.ndarray` whose data come from the
-image's pixel buffer. The signature is
-``to_ndarray(dtype, *, buffer=None)``, and the output
-shape depends on the image format:
+:meth:`~image.Image.to_ndarray` allocates a new
+:class:`~numpy.ndarray` and copies the image's pixel
+data into it (with the dtype mapping below). It is
+never a view onto the image's frame buffer -- the
+:mod:`numpy` array always owns its own bytes. The
+signature is ``to_ndarray(dtype, *, buffer=None)``, and
+the output shape depends on the image format:
 
 * **GRAYSCALE** -- 2-D array, shape ``(height, width)``.
 * **RGB565** -- 3-D array, shape ``(height, width, 3)``,
@@ -72,8 +73,10 @@ ndarray to image
 ----------------
 
 Going the other way, pass the
-:class:`~ulab.numpy.ndarray` as the first argument to
-:class:`image.Image`::
+:class:`~numpy.ndarray` as the first argument to
+:class:`image.Image`. The constructor allocates a new
+image buffer and copies the array's values into it,
+clamped and rounded to ``0..255``::
 
     image.Image(arr, *, buffer=None, copy_to_fb=False)
 
@@ -83,8 +86,8 @@ from the array's shape:
 * shape ``(h, w)``    -- ``GRAYSCALE`` image.
 * shape ``(h, w, 3)`` -- ``RGB565`` image.
 
-The :class:`~ulab.numpy.ndarray` must have dtype
-:class:`~ulab.numpy.float`; the constructor only
+The :class:`~numpy.ndarray` must have dtype
+:class:`~numpy.float`; the constructor only
 supports that case today. Values are rounded and
 clamped to the ``0..255`` range.
 
@@ -123,8 +126,8 @@ This bridge is the right answer when the application
 needs a *generic* numerical operation the built-in
 :mod:`image` methods do not provide -- custom filters,
 custom blends, unusual non-linearities -- or when pixel
-data has to be combined with non-image data (IMU, ToF
-depth, audio) in a single computation.
+data has to be combined with non-image data (IMU axes,
+audio samples) in a single computation.
 
 It is **not** the right answer for high-throughput
 pixel processing the :class:`~image.Image` class

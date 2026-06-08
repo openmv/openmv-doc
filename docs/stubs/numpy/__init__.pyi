@@ -2,34 +2,25 @@
 from typing import Any, Callable, overload
 
 bool: int
-"""ulab.dtype code for boolean arrays (stored as uint8)."""
-complex: int
-"""
-ulab.dtype code for complex arrays. Only available when the firmware
-was built with ULAB_SUPPORTS_COMPLEX enabled. Complex elements
-pack two float values (real, imaginary).
-"""
+"""Dtype code for boolean arrays (stored as uint8)."""
 e: float
 r"""Euler’s number e \approx 2.71828."""
 float: int
-"""
-ulab.dtype code for floating-point arrays. Element width is either
-32 bits or 64 bits depending on how MicroPython was built.
-"""
+"""Dtype code for 32-bit floating-point arrays."""
 inf: float
 """IEEE-754 floating-point positive infinity."""
 int16: int
-"""ulab.dtype code for signed 16-bit integer arrays."""
+"""Dtype code for signed 16-bit integer arrays."""
 int8: int
-"""ulab.dtype code for signed 8-bit integer arrays."""
+"""Dtype code for signed 8-bit integer arrays."""
 nan: float
 """IEEE-754 floating-point “not a number”."""
 pi: float
 r"""\pi \approx 3.14159."""
 uint16: int
-"""ulab.dtype code for unsigned 16-bit integer arrays."""
+"""Dtype code for unsigned 16-bit integer arrays."""
 uint8: int
-"""ulab.dtype code for unsigned 8-bit integer arrays."""
+"""Dtype code for unsigned 8-bit integer arrays."""
 
 def acos(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse cosine (arc cosine) of each element of x; result is in radians."""

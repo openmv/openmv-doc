@@ -1,7 +1,7 @@
 Dtypes
 ======
 
-The element type of an :class:`~ulab.numpy.ndarray` is its
+The element type of an :class:`~numpy.ndarray` is its
 *dtype*. The dtype decides three things at once: how many
 bytes each element occupies, how the bytes are
 interpreted, and what range of values the array can store.
@@ -21,21 +21,19 @@ dtype          bytes    range
 ``int8``       1        -128 to 127
 ``uint16``     2        0 to 65,535
 ``int16``      2        -32,768 to 32,767
-``float``      4 or 8   IEEE 754 (single or double)
+``float``      4        IEEE 754 single precision
 ``bool``       1        ``True`` / ``False``
-``complex``    8 or 16  optional, build-dependent
 =============  =======  ===============================
 
-The ``float`` width depends on how the cam was
-built; ``complex`` is only available on cams whose
-:data:`ulab.__version__` carries a ``-c`` suffix.
-There is no ``int32`` or ``int64``.
+There is no ``int32`` or ``int64``, and OpenMV's
+``ulab`` build does not enable the optional ``complex``
+dtype.
 
 Pick the type that matches the hardware that produced the
 data. An 8-bit ADC sample wants ``uint8``; a 12-bit ADC
 sample fits in ``uint16``; a luminance pixel from a
-grayscale camera fits in ``uint8`` -- saving four to eight
-times the RAM the default ``float`` would cost.
+grayscale camera fits in ``uint8`` -- saving four times
+the RAM the default ``float`` would cost.
 
 The default dtype
 -----------------
@@ -55,13 +53,23 @@ costs RAM. When performance matters, name the dtype.
 The dtype of an existing array
 ------------------------------
 
-:attr:`~ulab.numpy.ndarray.dtype` reads back the array's
-dtype as a :class:`ulab.dtype` instance. The single-
-character type code is what gets compared on
-build-conditional code paths::
+:attr:`~numpy.ndarray.dtype` reads back the array's
+dtype as the integer type code the array carries
+internally::
 
     a = np.array([1, 2, 3], dtype=np.uint8)
-    print(a.dtype)            # dtype('uint8')
+    print(a.dtype)            # 66 (the integer value of ``'B'``)
+
+The type-code integers match the constants exposed on
+the :mod:`numpy` module -- :data:`numpy.uint8`,
+:data:`numpy.int8`, :data:`numpy.uint16`,
+:data:`numpy.int16`, :data:`numpy.float`,
+:data:`numpy.bool` -- so comparing the dtype against
+the module constant is how a script branches on what
+an array holds::
+
+    if a.dtype == np.uint8:
+        ...  # uint8 branch
 
 Upcasting rules
 ---------------
@@ -80,11 +88,11 @@ left        right        result
 ``int8``    ``uint16``   ``uint16``
 ``uint16``  ``int16``    ``float``
 any         ``float``    ``float``
-any         ``complex``  ``complex``
 ==========  ===========  ===========
 
-The last two rules promote straight to ``float`` because
-:mod:`numpy` on the camera has no 32-bit integer dtype.
+The ``uint16`` / ``int16`` row promotes straight to
+``float`` because :mod:`numpy` on the camera has no
+32-bit integer dtype.
 
 When a binary operator has a Python scalar on one side,
 the scalar is converted to a single-element array of the

@@ -440,7 +440,7 @@ When *none* of the standard kernels does what
 the application wants, the next step is to
 hand-tune one. The combination of the rules
 above and the ``mul`` / ``add`` controls covers
-nearly every linear pass that a classical CV
+nearly every linear pass that a classical MV
 pipeline has ever wanted; from there it is a
 matter of trying weights, looking at the
 output, and iterating.

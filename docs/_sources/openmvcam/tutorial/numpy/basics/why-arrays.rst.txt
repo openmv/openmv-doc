@@ -11,17 +11,18 @@ filters -- already lives there.
 What the image library does *not* expose is the rest of
 the numerical work an OpenMV application runs into:
 
-* sensor buffers that are not pixels -- ADC samples, IMU
-  axes, microphone audio,
+* sensor buffers that are not pixels -- ADC samples, axes
+  from an *IMU* (inertial measurement unit), microphone
+  audio,
 * derived numbers from the image that no built-in method
   returns -- a histogram column, a custom blend of two
   frames, a per-pixel transform the catalogue does not
   cover,
 * small linear algebra -- the calibration matrix that
   rectifies the lens, the rotation that fuses the IMU,
-* signal-processing math -- the FFT of a vibration
-  buffer, an IIR filter applied to a sensor's output, a
-  spectrogram a classifier wants as input.
+* signal-processing math -- the frequency content of a
+  vibration buffer, smoothing applied to a sensor's
+  output, a feature vector a classifier wants as input.
 
 All of these want the same form: a buffer of numbers
 with one operation applied to every element. A Python
@@ -45,7 +46,8 @@ accelerometer at 100 Hz delivers a hundred three-axis
 samples a second; a microphone fills a 1024-sample
 buffer every 64 ms. A pure-Python ``for`` loop over any
 of those turns a job that should take a few microseconds
-into one that takes tens of milliseconds.
+into one that takes tens of milliseconds -- and roughly
+ten times longer again on an image-sized buffer.
 
 Library functions are faster than loops
 ---------------------------------------
@@ -64,25 +66,23 @@ a Python loop takes tens of microseconds as a numpy
 call.
 
 This is the deal :mod:`numpy` offers across the board:
-sum, mean, sin, exp, matrix multiply, FFT, IIR filter --
-each one is a single library function that operates on a
-whole buffer at once. The trade is that the data has to
-live in numpy's array type and the operation has to be
-expressed against that array, not against its elements
-one at a time.
+sum, mean, sin, exp, matrix multiply, signal-processing
+primitives -- each one is a single library function that
+operates on a whole buffer at once. The trade is that the
+data has to live in numpy's array type and the operation
+has to be expressed against that array, not against its
+elements one at a time.
 
 Why a list will not do
 ----------------------
 
 A Python :class:`list` cannot stand in. A list can hold
 any mix of objects -- integers, floats, strings, other
-lists -- so each element of a list of "1000 sensor
-samples" is actually a separate ``int`` object stored
-elsewhere, with the list keeping a reference to it. A
-library function looking at a list would still have to
-unpack each element through that reference and check its
-type -- exactly the cost the loop pays. Lists are the
-wrong fit for fast array math.
+lists -- and a library function reading it still has to
+look at each slot to find out what is in it and pull the
+value out before any arithmetic happens. That per-slot
+overhead is exactly the cost the Python loop pays. Lists
+are the wrong fit for fast array math.
 
 Why bytearray is not enough either
 ----------------------------------
@@ -96,7 +96,7 @@ doubling each value, and there is no sensible meaning
 for ``bytearray + bytearray`` element by element.
 
 The data structure that combines a typed buffer with
-element-wise math is the :class:`~ulab.numpy.ndarray`.
+element-wise math is the :class:`~numpy.ndarray`.
 What is inside the box and how each field shapes the
 fast-path behaviour are the foundations the rest of
 this chapter rests on.

@@ -195,6 +195,6 @@ operations, an absolute-difference workhorse,
 and the mask keyword for scoping, the
 pixel-arithmetic toolkit covers the
 brightness-and-channel combinations classical
-CV needs. The remaining arithmetic-like tools
+MV needs. The remaining arithmetic-like tools
 on the surface work bit by bit rather than
 value by value.

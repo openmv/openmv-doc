@@ -141,10 +141,9 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
-<li><a class="reference internal" href="#two-flavours">9.14.1. Two flavours</a></li>
-<li><a class="reference internal" href="#real-input-magnitude-output">9.14.2. Real input, magnitude output</a></li>
-<li><a class="reference internal" href="#inverse-transform">9.14.3. Inverse transform</a></li>
-<li><a class="reference internal" href="#finding-the-dominant-frequency">9.14.4. Finding the dominant frequency</a></li>
+<li><a class="reference internal" href="#real-input-magnitude-output">9.14.1. Real input, magnitude output</a></li>
+<li><a class="reference internal" href="#inverse-transform">9.14.2. Inverse transform</a></li>
+<li><a class="reference internal" href="#finding-the-dominant-frequency">9.14.3. Finding the dominant frequency</a></li>
 </ul>
 </div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
@@ -168,7 +167,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/d5c633e39248b685cb2f8645b46d40f78b689a41/docs/openmvcam/tutorial/numpy/signals/fft.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/7e99da1005454a97790c6c32a591a6a7b6eaed15/docs/openmvcam/tutorial/numpy/signals/fft.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -246,17 +245,22 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="fft">
 <h1><span class="section-number">9.14. </span>FFT<a class="headerlink" href="#fft" title="Link to this heading">¶</a></h1>
-<p>A Fourier transform decomposes a time-domain signal
-into its constituent frequencies. On a camera, the
-input is typically a buffer of equally spaced samples
-from a microphone, an accelerometer axis, a current
-sensor, or a vibration probe; the output is a spectrum
-the application then inspects for peaks, energy, or
-classifier features.</p>
+<p>A <em>Fourier transform</em> decomposes a time-domain signal
+into its constituent frequencies. The <em>fast Fourier
+transform</em> (<em>FFT</em>) is the standard algorithm for
+computing one efficiently – the reason this module
+exists, and the reason transforms long enough to be
+useful (1024 points, 4096 points) are tractable on a
+microcontroller in the first place.</p>
+<p>On a camera, the input is typically a buffer of
+equally spaced samples from a microphone, an
+accelerometer axis, a current sensor, or a vibration
+probe; the output is a spectrum the application then
+inspects for peaks, energy, or classifier features.</p>
 <p><a class="reference internal" href="../../../../library/omv.ulab.numpy.fft.html#module-numpy.fft" title="numpy.fft: Fast Fourier Transform routines"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy.fft</span></code></a> provides the one-dimensional discrete
 Fourier transform. The two functions are
-<code class="xref py py-func docutils literal notranslate"><span class="pre">fft()</span></code> (forward) and
-<code class="xref py py-func docutils literal notranslate"><span class="pre">ifft()</span></code> (inverse, normalised by
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.fft.html#numpy.fft.fft" title="numpy.fft.fft"><code class="xref py py-func docutils literal notranslate"><span class="pre">fft()</span></code></a> (forward) and
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.fft.html#numpy.fft.ifft" title="numpy.fft.ifft"><code class="xref py py-func docutils literal notranslate"><span class="pre">ifft()</span></code></a> (inverse, normalised by
 <code class="docutils literal notranslate"><span class="pre">N</span></code>).</p>
 <p>The transform length must be a power of two. Other
 lengths raise <a class="reference internal" href="../../../../library/builtins.html#ValueError" title="ValueError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a>. <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">=</span> <span class="pre">256</span></code> and
@@ -264,74 +268,37 @@ lengths raise <a class="reference internal" href="../../../../library/builtins.h
 frequency resolution at most embedded sample rates, short
 enough to fit in RAM and finish well inside one frame
 period.</p>
-<section id="two-flavours">
-<h2><span class="section-number">9.14.1. </span>Two flavours<a class="headerlink" href="#two-flavours" title="Link to this heading">¶</a></h2>
-<p>Whether the FFT call is exactly the desktop <code class="docutils literal notranslate"><span class="pre">numpy</span></code>
-form depends on how the cam was built:</p>
-<ul class="simple">
-<li><p><strong>On a cam with complex-number support</strong> (<code class="docutils literal notranslate"><span class="pre">-c</span></code> in
-<a class="reference internal" href="../../../../library/omv.ulab.html#ulab.__version__" title="ulab.__version__"><code class="xref py py-data docutils literal notranslate"><span class="pre">ulab.__version__</span></code></a>), the FFT is the standard
-form. One 1-D real or complex array goes in; one 1-D
-<em>complex</em> array comes out.</p></li>
-<li><p><strong>On a cam without complex-number support</strong>, the
-real and imaginary parts come back separately.
-<code class="xref py py-func docutils literal notranslate"><span class="pre">fft()</span></code> takes the real part as
-the first positional argument and an optional
-imaginary part as the second, and returns a 2-tuple
-<code class="docutils literal notranslate"><span class="pre">(real,</span> <span class="pre">imag)</span></code>.</p></li>
-</ul>
-<p>The cleanest probe at runtime is the return value of
-<code class="xref py py-func docutils literal notranslate"><span class="pre">fft()</span></code> itself:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">ulab</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)))</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-</span><span data-line="4">    <span class="c1"># split real/imag mode</span>
-</span><span data-line="5">    <span class="o">...</span>
-</span><span data-line="6"><span class="k">else</span><span class="p">:</span>
-</span><span data-line="7">    <span class="c1"># numpy-compatible (complex output) mode</span>
-</span><span data-line="8">    <span class="o">...</span>
-</span></pre></div>
-</div>
-</section>
+<p><a class="reference internal" href="../../../../library/omv.ulab.numpy.fft.html#numpy.fft.fft" title="numpy.fft.fft"><code class="xref py py-func docutils literal notranslate"><span class="pre">fft()</span></code></a> takes the real part of the input
+as its first positional argument and an optional
+imaginary part as its second, and returns a 2-tuple
+<code class="docutils literal notranslate"><span class="pre">(real,</span> <span class="pre">imag)</span></code> of real arrays.</p>
 <section id="real-input-magnitude-output">
-<h2><span class="section-number">9.14.2. </span>Real input, magnitude output<a class="headerlink" href="#real-input-magnitude-output" title="Link to this heading">¶</a></h2>
+<h2><span class="section-number">9.14.1. </span>Real input, magnitude output<a class="headerlink" href="#real-input-magnitude-output" title="Link to this heading">¶</a></h2>
 <p>When the application only feeds real input and only
-needs magnitude, the two flavours converge. On a
-complex-output build:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span data-line="2"><span class="n">magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">spectrum</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>On a split-output build:</p>
+needs the magnitude spectrum:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">real</span><span class="p">,</span> <span class="n">imag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span data-line="2"><span class="n">magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">real</span> <span class="o">*</span> <span class="n">real</span> <span class="o">+</span> <span class="n">imag</span> <span class="o">*</span> <span class="n">imag</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">magnitude</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">real</span> <span class="o">*</span> <span class="n">real</span> <span class="o">+</span> <span class="n">imag</span> <span class="o">*</span> <span class="n">imag</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>In both cases the result is a real
-<code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code> of the same length as the
-input. The <a class="reference internal" href="filtering.html"><span class="doc">Filtering and spectrograms</span></a> page covers
-<code class="xref py py-func docutils literal notranslate"><span class="pre">ulab.utils.spectrogram()</span></code>, a helper that does
-exactly this without the intermediate allocations –
-the right call inside a streaming loop.</p>
+<p>The result is a real <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> of the
+same length as the input. The
+<a class="reference internal" href="../../../../library/omv.ulab.utils.html#ulab.utils.spectrogram" title="ulab.utils.spectrogram"><code class="xref py py-func docutils literal notranslate"><span class="pre">spectrogram()</span></code></a> helper does exactly this
+without the intermediate allocations – the right call
+inside a streaming loop.</p>
 </section>
 <section id="inverse-transform">
-<h2><span class="section-number">9.14.3. </span>Inverse transform<a class="headerlink" href="#inverse-transform" title="Link to this heading">¶</a></h2>
-<p><code class="xref py py-func docutils literal notranslate"><span class="pre">ifft()</span></code> is normalised so
-<code class="docutils literal notranslate"><span class="pre">ifft(fft(x))</span> <span class="pre">==</span> <span class="pre">x</span></code> within floating-point error:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">y</span>       <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
-</span><span data-line="2"><span class="n">spectrum</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
-</span><span data-line="3"><span class="n">y_back</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">spectrum</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>On a split-output build, both calls take and return a
-pair of real arrays:</p>
+<h2><span class="section-number">9.14.2. </span>Inverse transform<a class="headerlink" href="#inverse-transform" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.ulab.numpy.fft.html#numpy.fft.ifft" title="numpy.fft.ifft"><code class="xref py py-func docutils literal notranslate"><span class="pre">ifft()</span></code></a> is normalised so the round trip
+returns the original input within floating-point
+error. Both calls take and return a pair of real
+arrays:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">real</span><span class="p">,</span> <span class="n">imag</span>       <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
 </span><span data-line="2"><span class="n">re_back</span><span class="p">,</span> <span class="n">im_back</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">real</span><span class="p">,</span> <span class="n">imag</span><span class="p">)</span>
 </span></pre></div>
 </div>
 </section>
 <section id="finding-the-dominant-frequency">
-<h2><span class="section-number">9.14.4. </span>Finding the dominant frequency<a class="headerlink" href="#finding-the-dominant-frequency" title="Link to this heading">¶</a></h2>
+<h2><span class="section-number">9.14.3. </span>Finding the dominant frequency<a class="headerlink" href="#finding-the-dominant-frequency" title="Link to this heading">¶</a></h2>
 <p>A common pattern is locating the largest peak in a
 buffer of samples – audio, vibration, modulated IR.
 The recipe:</p>
@@ -348,19 +315,16 @@ The recipe:</p>
 </span><span data-line="5">
 </span><span data-line="6"><span class="c1"># ... fill ``samples`` with N data points ...</span>
 </span><span data-line="7">
-</span><span data-line="8"><span class="c1"># split-output build:</span>
-</span><span data-line="9"><span class="n">real</span><span class="p">,</span> <span class="n">imag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
-</span><span data-line="10"><span class="n">spectrum</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">real</span> <span class="o">*</span> <span class="n">real</span> <span class="o">+</span> <span class="n">imag</span> <span class="o">*</span> <span class="n">imag</span><span class="p">)</span>
-</span><span data-line="11">
-</span><span data-line="12"><span class="n">half</span>      <span class="o">=</span> <span class="n">spectrum</span><span class="p">[:</span><span class="n">N</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>     <span class="c1"># only first half is meaningful</span>
-</span><span data-line="13"><span class="n">peak_bin</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">half</span><span class="p">)</span>
-</span><span data-line="14"><span class="n">peak_hz</span>   <span class="o">=</span> <span class="n">peak_bin</span> <span class="o">*</span> <span class="n">fs</span> <span class="o">/</span> <span class="n">N</span>
-</span><span data-line="15">
-</span><span data-line="16"><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;peak at&quot;</span><span class="p">,</span> <span class="n">peak_hz</span><span class="p">,</span> <span class="s2">&quot;Hz&quot;</span><span class="p">)</span>
+</span><span data-line="8"><span class="n">real</span><span class="p">,</span> <span class="n">imag</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+</span><span data-line="9"><span class="n">spectrum</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">real</span> <span class="o">*</span> <span class="n">real</span> <span class="o">+</span> <span class="n">imag</span> <span class="o">*</span> <span class="n">imag</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="n">half</span>      <span class="o">=</span> <span class="n">spectrum</span><span class="p">[:</span><span class="n">N</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>     <span class="c1"># only first half is meaningful</span>
+</span><span data-line="12"><span class="n">peak_bin</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">half</span><span class="p">)</span>
+</span><span data-line="13"><span class="n">peak_hz</span>   <span class="o">=</span> <span class="n">peak_bin</span> <span class="o">*</span> <span class="n">fs</span> <span class="o">/</span> <span class="n">N</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;peak at&quot;</span><span class="p">,</span> <span class="n">peak_hz</span><span class="p">,</span> <span class="s2">&quot;Hz&quot;</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>For complete argument detail, see
-<a class="reference internal" href="../../../../library/omv.ulab.numpy.fft.html"><span class="doc">numpy.fft — Fast Fourier Transform routines</span></a>.</p>
 </section>
 </section>
 
@@ -392,7 +356,7 @@ The recipe:</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 07 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

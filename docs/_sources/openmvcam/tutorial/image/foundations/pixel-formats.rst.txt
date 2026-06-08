@@ -42,7 +42,7 @@ the stages together.
 The grayscale workhorse
 -----------------------
 
-Most of classical computer vision comes down to
+Most of classical machine vision comes down to
 working with brightness values. Edge detection,
 template matching, AprilTag decoding, optical-flow
 estimation, the morphological operators, blob

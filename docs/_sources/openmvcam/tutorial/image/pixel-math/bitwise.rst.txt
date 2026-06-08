@@ -131,7 +131,7 @@ goal.
 With a complete set of bitwise combinators for
 binary images, and the arithmetic family for
 multi-bit formats, the pixel-math toolkit can
-combine images in every way classical CV needs
+combine images in every way classical MV needs
 them combined. What comes next is the most
 common *application* of that toolkit: detecting
 change between two frames.

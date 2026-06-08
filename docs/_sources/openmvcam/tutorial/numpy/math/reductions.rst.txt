@@ -7,15 +7,18 @@ reduction is a single library call against the whole
 array, much faster than the equivalent Python loop.
 :mod:`numpy` covers the everyday ones:
 
-* :func:`~ulab.numpy.sum`
-* :func:`~ulab.numpy.mean`
-* :func:`~ulab.numpy.std` -- standard deviation,
+* :func:`~numpy.sum` -- total of every element
+* :func:`~numpy.mean` -- arithmetic average (sum divided
+  by element count)
+* :func:`~numpy.std` -- standard deviation,
   ``ddof=`` adjusts the divisor (``N - ddof``)
-* :func:`~ulab.numpy.min` / :func:`~ulab.numpy.max`
-* :func:`~ulab.numpy.median`
-* :func:`~ulab.numpy.argmin` / :func:`~ulab.numpy.argmax`
+* :func:`~numpy.min` / :func:`~numpy.max` -- smallest
+  and largest element
+* :func:`~numpy.median` -- middle value when the
+  elements are sorted (50th percentile)
+* :func:`~numpy.argmin` / :func:`~numpy.argmax`
   -- the *index* of the minimum or maximum element
-* :func:`~ulab.numpy.all` / :func:`~ulab.numpy.any` --
+* :func:`~numpy.all` / :func:`~numpy.any` --
   truth-value reductions on boolean arrays
 
 Without the ``axis`` keyword
@@ -49,14 +52,34 @@ the input::
 
 The same shape rule applies to every reduction:
 ``axis=0`` collapses the first axis, ``axis=1`` collapses
-the second, and so on. The ``keepdims=True`` keyword
-keeps the contracted axis in place with length 1, which
-makes the result safe to broadcast back against the
-original.
+the second, and so on. Mean / standard deviation along a
+row, for example, are written ``np.mean(m, axis=1)`` and
+``np.std(m, axis=1)``. The result has the *other* axis's
+length.
 
-Mean / standard deviation along a row, for example, are
-written ``np.mean(m, axis=1)`` and ``np.std(m, axis=1)``.
-The result has the *other* axis's length.
+The ``keepdims=True`` keyword keeps the contracted axis
+in place with length 1 instead of dropping it. The
+distinction matters when the reduced result needs to
+broadcast back against the original: ``keepdims``
+preserves the rank, which keeps the broadcasting rules
+aligned axis-for-axis.
+
+Subtracting each row's mean from that row is the
+canonical use::
+
+    m = np.arange(12, dtype=np.float).reshape((3, 4))
+    row_means = np.mean(m, axis=1, keepdims=True)
+    # row_means has shape (3, 1)
+    centred = m - row_means
+    # (3, 4) - (3, 1) -> (3, 4), each row centred on its own mean
+
+Without ``keepdims``, ``np.mean(m, axis=1)`` returns a
+1-D result of shape ``(3,)``. Broadcasting
+``(3, 4) - (3,)`` lines ``(3,)`` up as ``(1, 3)`` after
+the rank prepend, which is incompatible with ``(3, 4)``:
+the last axes disagree (4 against 3) and neither is 1,
+so :mod:`numpy` raises :exc:`ValueError`.
+``keepdims=True`` is what keeps the subtraction valid.
 
 Layout matters
 --------------
@@ -80,8 +103,8 @@ Iterables as input
 
 Most reductions accept a Python iterable (a
 :class:`list`, a :class:`range`, a tuple) in place of
-an :class:`~ulab.numpy.ndarray`. The convenience costs
+an :class:`~numpy.ndarray`. The convenience costs
 a few microseconds for the implicit conversion -- which
 adds up fast in a loop. When the same data is reduced
 multiple times, build the
-:class:`~ulab.numpy.ndarray` once and pass it around.
+:class:`~numpy.ndarray` once and pass it around.

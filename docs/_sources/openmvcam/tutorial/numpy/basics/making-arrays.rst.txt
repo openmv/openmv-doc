@@ -2,7 +2,7 @@ Making arrays
 =============
 
 Every example on the rest of these pages starts with an
-:class:`~ulab.numpy.ndarray` already in hand. This page
+:class:`~numpy.ndarray` already in hand. This page
 is the catalogue of how that array comes to be. There
 are four families of constructor:
 
@@ -16,9 +16,8 @@ are four families of constructor:
   case.
 
 Every constructor takes a ``dtype=`` keyword and defaults
-to :class:`~ulab.numpy.float`. The :doc:`dtypes` page
-covers why almost every call to one of these on sensor
-data should override that default.
+to :class:`~numpy.float`. Sensor data almost always
+wants a smaller dtype than the default.
 
 Every example below starts with::
 
@@ -27,7 +26,7 @@ Every example below starts with::
 From a Python iterable
 ----------------------
 
-:func:`~ulab.numpy.array` builds an ``ndarray`` from any
+:func:`~numpy.array` builds an ``ndarray`` from any
 iterable of numbers::
 
     a = np.array([1, 2, 3, 4])
@@ -35,7 +34,7 @@ iterable of numbers::
 
 Output::
 
-    array([1.0, 2.0, 3.0, 4.0], dtype=float64)
+    array([1.0, 2.0, 3.0, 4.0], dtype=float)
 
 Nested iterables produce multi-dimensional arrays. The
 inner iterables must all have the same length, or
@@ -45,8 +44,8 @@ inner iterables must all have the same length, or
                   [4, 5, 6]], dtype=np.uint8)
 
 A pre-existing ``ndarray`` is also a valid input;
-:func:`~ulab.numpy.array` always copies. To avoid the copy
-when one is not needed, use :func:`~ulab.numpy.asarray`::
+:func:`~numpy.array` always copies. To avoid the copy
+when one is not needed, use :func:`~numpy.asarray`::
 
     b = np.asarray(a, dtype=np.float)   # same dtype -> no copy
 
@@ -56,19 +55,16 @@ Pre-filled at a given shape
 When the target shape is known but the contents are not
 yet, allocate the buffer up front and write into it later:
 
-* :func:`~ulab.numpy.zeros(shape, dtype=float)` -- filled
-  with zeros.
-* :func:`~ulab.numpy.ones(shape, dtype=float)` -- filled
-  with ones.
-* :func:`~ulab.numpy.full(shape, value, dtype=...)` --
-  filled with ``value``.
-* :func:`~ulab.numpy.empty(shape, dtype=...)` -- alias for
-  :func:`~ulab.numpy.zeros` (:mod:`ulab` does not leave the
-  buffer uninitialised).
-* :func:`~ulab.numpy.eye(N, M=None, k=0)` -- identity-like
-  ``N`` by ``M`` matrix with ones on the ``k``-th diagonal.
-* :func:`~ulab.numpy.diag(v, k=0)` -- a diagonal matrix
-  from a vector, or the diagonal of a matrix.
+* :func:`~numpy.zeros` -- filled with zeros.
+* :func:`~numpy.ones` -- filled with ones.
+* :func:`~numpy.full` -- filled with a given value.
+* :func:`~numpy.empty` -- alias for
+  :func:`~numpy.zeros` (:mod:`ulab` does not leave
+  the buffer uninitialised).
+* :func:`~numpy.eye` -- identity-like ``N``-by-``M``
+  matrix with ones on the ``k``-th diagonal.
+* :func:`~numpy.diag` -- a diagonal matrix from a
+  vector, or the diagonal of a matrix.
 
 ::
 
@@ -84,40 +80,56 @@ The ``shape`` argument is either a single integer (for a
 Generated as a sequence
 -----------------------
 
-* :func:`~ulab.numpy.arange(start, stop, step, dtype=...)`
-  -- evenly spaced values like the built-in
-  :func:`range`, but always returning an ``ndarray``::
+* :func:`~numpy.arange` -- evenly spaced values like
+  the built-in :func:`range`, but always returning an
+  ``ndarray``::
 
       np.arange(0, 10, 2)            # array([0, 2, 4, 6, 8])
 
-* :func:`~ulab.numpy.linspace(start, stop, num=50,
-  endpoint=True)` -- ``num`` evenly spaced points between
-  two limits, with ``endpoint=True`` including the upper
-  bound::
+* :func:`~numpy.linspace` -- ``num`` evenly spaced
+  points between two limits, with the upper bound
+  included when ``endpoint=True``::
 
       np.linspace(0, 1, num=11)      # 0.0, 0.1, ..., 1.0
 
-* :func:`~ulab.numpy.logspace(start, stop, num=50, base=10)`
-  -- geometrically spaced points. ``start`` and ``stop`` are
-  *exponents*, not endpoints; the result runs from
-  ``base ** start`` to ``base ** stop``::
+* :func:`~numpy.logspace` -- geometrically spaced
+  points. ``start`` and ``stop`` are *exponents*, not
+  endpoints; the result runs from ``base ** start`` to
+  ``base ** stop``::
 
       np.logspace(0, 3, num=4)       # 1.0, 10.0, 100.0, 1000.0
 
-* :func:`~ulab.numpy.meshgrid(x, y, indexing='xy')` --
-  two coordinate matrices from two 1-D inputs. Useful for
-  per-pixel transforms expressed as ``f(x, y)`` over the
-  pixel grid::
+* :func:`~numpy.meshgrid` -- builds two coordinate
+  matrices from two 1-D arrays so a per-pixel function
+  ``f(x, y)`` can be evaluated over a whole grid in one
+  vectorised call. Given an x-vector of length ``W`` and
+  a y-vector of length ``H``, ``meshgrid`` returns two
+  ``H``-by-``W`` matrices: ``X`` is the x-vector
+  repeated down every row, ``Y`` is the y-vector
+  repeated across every column, so ``X[i, j]`` is the
+  x-coordinate and ``Y[i, j]`` is the y-coordinate of
+  the cell at row ``i`` and column ``j``::
 
-      x = np.arange(4)
-      y = np.arange(3)
+      x = np.arange(4)            # [0, 1, 2, 3]
+      y = np.arange(3)            # [0, 1, 2]
       X, Y = np.meshgrid(x, y)
-      # X is the column index repeated; Y is the row index repeated.
+      # X = [[0, 1, 2, 3],
+      #      [0, 1, 2, 3],
+      #      [0, 1, 2, 3]]
+      # Y = [[0, 0, 0, 0],
+      #      [1, 1, 1, 1],
+      #      [2, 2, 2, 2]]
+
+  ``f(X, Y)`` then evaluates the function at every cell
+  of the grid in one expression. A distance-from-centre
+  map over a ``(H, W)`` frame, for example, is
+  ``np.sqrt((X - cx)**2 + (Y - cy)**2)`` against the
+  matrices :func:`~numpy.meshgrid` returned.
 
 Joining
 -------
 
-:func:`~ulab.numpy.concatenate` joins a tuple of arrays
+:func:`~numpy.concatenate` joins a tuple of arrays
 along an existing axis::
 
     a = np.array([[1, 2], [3, 4]], dtype=np.uint8)
@@ -126,19 +138,22 @@ along an existing axis::
     # array([[1, 2], [3, 4], [5, 6]], dtype=uint8)
 
 All inputs must share the same dtype and ``ndim``, and
-match on every axis other than the joining one. This is
-the right tool for accumulating short buffers into a
-longer one when the final length is known up front; for
-the streaming-append pattern see :doc:`../performance`.
+match on every axis other than the joining one.
+:func:`~numpy.concatenate` allocates a fresh array
+big enough to hold every input and copies the data in,
+so it is the right tool for one-shot joining of arrays
+that already exist; it is the wrong tool inside a
+streaming loop, where pre-allocating the destination
+once and writing into it through slice assignment is
+the pattern.
 
 Wrapping an existing buffer
 ---------------------------
 
 The most useful constructor on a camera is
-:func:`~ulab.numpy.frombuffer`. It re-interprets an
-existing ``bytes``-like buffer as a 1-D
-:class:`~ulab.numpy.ndarray` *without copying* a single
-byte::
+:func:`~numpy.frombuffer`. It re-interprets an existing
+bytes-like buffer as a 1-D :class:`~numpy.ndarray`
+*without copying* a single byte::
 
     buf = bytearray(8)
     audio = np.frombuffer(buf, dtype=np.int16)
@@ -155,25 +170,38 @@ buffer length.
 
 This is the right constructor whenever a peripheral hands
 the application a raw buffer -- ADC samples in a
-:class:`bytearray`, an audio frame from
-:class:`~machine.I2S`, a payload pulled from
+:class:`bytearray`, a payload pulled from
 :class:`~machine.SPI`. The bytes the peripheral wrote
 are the array.
 
-When the peripheral's byte order disagrees with the
-camera's, the :meth:`~ulab.numpy.ndarray.byteswap`
-method flips each multi-byte element.
-``a.byteswap()`` returns a new array;
-``a.byteswap(inplace=True)`` modifies the source in
-place.
+When a peripheral writes multi-byte values in a byte
+order the camera's CPU does not natively read,
+:meth:`~numpy.ndarray.byteswap` reverses the byte order
+of each element so the values read correctly. It
+returns a new array by default; passing ``inplace=True``
+modifies the source in place.
 
-:func:`~ulab.numpy.frombuffer` only handles the dtypes
+:func:`~numpy.frombuffer` only handles the dtypes
 :mod:`numpy` itself defines. For peripherals that
 produce 32-bit integer samples,
-:func:`~ulab.utils.from_int32_buffer` and friends
-convert to ``float`` in one pass; see
-:doc:`../signals/filtering`.
+:func:`~ulab.utils.from_int32_buffer` and friends convert to
+``float`` in one pass.
 
-For the complete argument-level reference of every
-constructor on this page, see
-:doc:`/library/omv.ulab.numpy`.
+Print truncation
+----------------
+
+Printing a large array shows only its first and last
+few elements, with ``...`` in the middle, so the IDE
+terminal does not fill with thousands of values::
+
+    >>> print(np.arange(1000, dtype=np.uint16))
+    array([0, 1, 2, ..., 997, 998, 999], dtype=uint16)
+
+:func:`~numpy.set_printoptions` overrides the
+thresholds when debugging needs the whole buffer::
+
+    np.set_printoptions(threshold=2000)  # print up to 2000 elements in full
+    np.set_printoptions(edgeitems=10)    # 10 items at each end, not 3
+
+:func:`~numpy.get_printoptions` reads the current
+settings back as a dict.

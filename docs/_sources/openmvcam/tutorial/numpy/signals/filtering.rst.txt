@@ -1,31 +1,31 @@
 Filtering and spectrograms
 ==========================
 
-The FFT page gave the application a way to inspect a
-buffer's frequency content. The rest of the
-signal-processing surface covers the adjacent jobs:
-smoothing or band-pass-filtering a stream of samples,
-computing magnitude spectra in a streaming loop
-without allocating, and re-interpreting raw peripheral
-buffers as float arrays:
+Filtering, smoothing, and magnitude spectra are the
+adjacent jobs to a raw FFT: smoothing or
+band-pass-filtering a stream of samples, computing
+magnitude spectra in a streaming loop without
+allocating, and re-interpreting raw peripheral
+buffers as float arrays. The available tools:
 
-* :func:`ulab.scipy.signal.sosfilt` -- IIR filter via
-  cascaded second-order sections.
-* :func:`ulab.utils.spectrogram` -- magnitude
+* :func:`~scipy.signal.sosfilt` -- digital filter
+  applied via cascaded second-order sections.
+* :func:`~ulab.utils.spectrogram` -- magnitude
   ``abs(fft(...))`` with no intermediate allocations.
-* :func:`ulab.utils.from_int16_buffer` and the other
+* :func:`~ulab.utils.from_int16_buffer` and the other
   :mod:`ulab.utils` ``from_*_buffer`` helpers -- pull a
   float array out of a buffer whose dtype the
-  built-in :func:`~ulab.numpy.frombuffer` does not
+  built-in :func:`~numpy.frombuffer` does not
   cover.
 
-IIR filtering with sosfilt
---------------------------
+Filtering with sosfilt
+----------------------
 
-:func:`~ulab.scipy.signal.sosfilt` applies cascaded
-*second-order sections* (SOS) -- the numerically robust
-way to apply an IIR filter. ``sos`` is a sequence of
-length-6 sections; ``x`` is the 1-D input::
+:func:`~scipy.signal.sosfilt` applies a digital
+*infinite impulse response* (IIR) filter as a cascade
+of *second-order sections* (SOS) -- a numerically
+robust form. ``sos`` is a sequence of length-6
+sections; ``x`` is the 1-D input::
 
     from ulab import numpy as np
     from ulab import scipy as sp
@@ -60,20 +60,15 @@ IMU readings collected over a window.
 Spectrograms
 ------------
 
-:func:`ulab.utils.spectrogram` computes the magnitude
+:func:`~ulab.utils.spectrogram` computes the magnitude
 of the Fourier transform. It is conceptually equivalent
-to
-
-* ``np.abs(np.fft.fft(signal))`` on a complex-output FFT
-  build, or
-* ``np.sqrt(real * real + imag * imag)`` on a
-  split-output build,
-
-but does it in one call -- without holding the
-intermediate ``real * real``, ``imag * imag``, the sum,
-or the output of :func:`~ulab.numpy.abs` in RAM at any
-point. That makes it the right tool in any loop where
-spectra are computed repeatedly::
+to ``np.sqrt(real * real + imag * imag)`` after a call
+to :func:`~numpy.fft.fft`, but folds the work into one
+call -- without holding the intermediate
+``real * real``, ``imag * imag``, the sum, or the
+explicit magnitude array in RAM at any point. That makes
+it the right tool in any loop where spectra are computed
+repeatedly::
 
     from ulab import numpy as np
     from ulab import utils
@@ -81,10 +76,9 @@ spectra are computed repeatedly::
     x        = np.linspace(0, 10, num=1024)
     spectrum = utils.spectrogram(x)
 
-The argument form mirrors :func:`~ulab.numpy.fft.fft`:
-one 1-D real-or-complex array on complex-output builds,
-one or two real arrays (``real``, ``imag``) on split
-builds.
+The argument form mirrors :func:`~numpy.fft.fft`: one
+real array, or a ``(real, imag)`` pair when the input
+has an imaginary part.
 
 Three keyword arguments help with allocation:
 
@@ -94,7 +88,7 @@ Three keyword arguments help with allocation:
 * ``out=None`` -- a 1-D float array to write the result
   into.
 * ``log=False`` -- when ``True``, take
-  :func:`~ulab.numpy.log` of the magnitude before
+  :func:`~numpy.log` of the magnitude before
   returning, folded into the same call.
 
 The streaming pattern is to allocate everything once
@@ -111,7 +105,7 @@ and never allocate again::
         signal = read_samples(N)
         utils.spectrogram(signal, out=out, scratchpad=scratch,
                           log=True)
-        # ``out`` now holds log-magnitudes; feed forward ...
+        # out now holds the log-magnitude spectrum for this window ...
 
 Compare to the obvious-but-wasteful version::
 
@@ -127,7 +121,7 @@ faster.
 Wider-than-16-bit peripheral buffers
 ------------------------------------
 
-:func:`~ulab.numpy.frombuffer` only handles the dtypes
+:func:`~numpy.frombuffer` only handles the dtypes
 :mod:`numpy` itself defines
 (``uint8`` / ``int8``, ``uint16`` / ``int16``,
 ``float``). When a peripheral produces 32-bit integer
@@ -140,8 +134,8 @@ conversion helpers:
 * :func:`~ulab.utils.from_int32_buffer`,
   :func:`~ulab.utils.from_uint32_buffer`
 
-Each takes a ``bytes``-like buffer and returns a float
-:class:`~ulab.numpy.ndarray`::
+Each takes a bytes-like buffer and returns a float
+:class:`~numpy.ndarray`::
 
     from ulab import utils
 
@@ -158,12 +152,9 @@ The functions accept the same allocation-saving knobs as
 * ``byteswap=True`` when the peripheral disagrees with
   the MCU on byte order.
 
-The combined pattern -- one ``from_int32_buffer`` call
-straight into one ``spectrogram`` call, both with
+The combined pattern -- one
+:func:`~ulab.utils.from_int32_buffer` call straight into
+one :func:`~ulab.utils.spectrogram` call, both with
 ``out=`` buffers from outside the loop -- is the right
 template for a streaming spectrum analyser running on
 a high-resolution microphone.
-
-For the complete reference, see
-:doc:`/library/omv.ulab.scipy.signal` and the
-:mod:`ulab.utils` documentation.

@@ -200,6 +200,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#asyncio-usage">Asyncio usage</a></li>
 <li><a class="reference internal" href="#class-csi-camera-sensor-interface">class CSI &#8211; Camera Sensor Interface</a><ul>
 <li><a class="reference internal" href="#csi.CSI"><code class="docutils literal notranslate"><span class="pre">CSI</span></code></a><ul>
 <li><a class="reference internal" href="#csi.CSI.reset"><code class="docutils literal notranslate">reset()</span></code></a></li>
@@ -394,7 +395,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/d5c633e39248b685cb2f8645b46d40f78b689a41/docs/library/omv.csi.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/7e99da1005454a97790c6c32a591a6a7b6eaed15/docs/library/omv.csi.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -498,6 +499,66 @@ hidden sensor). New code should use <a class="reference internal" href="#csi.CSI
 </span><span data-line="12">    <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
 </span></pre></div>
 </div>
+<section id="asyncio-usage">
+<h2>Asyncio usage<a class="headerlink" href="#asyncio-usage" title="Link to this heading">¶</a></h2>
+<p>The blocking <a class="reference internal" href="#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">CSI.snapshot()</span></code></a> loop above does not cooperate with
+the <a class="reference internal" href="asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> event loop – while <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> is waiting on the
+next frame, every other coroutine in the program is frozen. To let a
+capture loop coexist with other concurrent work (a UART client, a
+button watcher, a network task) wrap <a class="reference internal" href="#csi.CSI" title="csi.CSI"><code class="xref py py-class docutils literal notranslate"><span class="pre">CSI</span></code></a> in a small adapter
+that turns <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> into an <a class="reference external" href="https://docs.python.org/3/reference/expressions.html#await" title="(in Python v3.14)"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">await</span></code></a>-friendly coroutine
+by polling <a class="reference internal" href="#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">snapshot(blocking=False)</span></code></a> and
+yielding to the event loop between checks:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="3">
+</span><span data-line="4">
+</span><span data-line="5"><span class="k">class</span><span class="w"> </span><span class="nc">AsyncCSI</span><span class="p">:</span>
+</span><span data-line="6">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span data-line="7">        <span class="bp">self</span><span class="o">.</span><span class="n">_csi</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9">    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+</span><span data-line="10">        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_csi</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12">    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="13">        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="14">            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_csi</span><span class="o">.</span><span class="n">snapshot</span><span class="p">(</span><span class="n">blocking</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="15">            <span class="k">if</span> <span class="n">img</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="16">                <span class="k">return</span> <span class="n">img</span>
+</span><span data-line="17">            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> forwards every other attribute (<code class="docutils literal notranslate"><span class="pre">reset</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pixformat</span></code>, <code class="docutils literal notranslate"><span class="pre">framesize</span></code>, the sensor knobs) to the underlying
+<a class="reference internal" href="#csi.CSI" title="csi.CSI"><code class="xref py py-class docutils literal notranslate"><span class="pre">CSI</span></code></a> so the wrapper is a drop-in replacement. The first
+non-blocking call also starts the camera’s DMA capture if it was not
+already running, so no extra bootstrap is needed.</p>
+<p>A capture loop then fits into a larger asyncio program as just
+another coroutine:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">capture_loop</span><span class="p">(</span><span class="n">cam</span><span class="p">):</span>
+</span><span data-line="2">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="3">        <span class="n">img</span> <span class="o">=</span> <span class="k">await</span> <span class="n">cam</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</span><span data-line="4">        <span class="c1"># process img here</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="7">    <span class="n">cam</span> <span class="o">=</span> <span class="n">AsyncCSI</span><span class="p">()</span>
+</span><span data-line="8">    <span class="n">cam</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="9">    <span class="n">cam</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="10">    <span class="n">cam</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12">    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">some_other_task</span><span class="p">())</span>
+</span><span data-line="13">    <span class="k">await</span> <span class="n">capture_loop</span><span class="p">(</span><span class="n">cam</span><span class="p">)</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>The <a class="reference internal" href="#csi.CSI.framebuffers" title="csi.CSI.framebuffers"><code class="xref py py-meth docutils literal notranslate"><span class="pre">framebuffers</span></code></a> setting still matters in
+this shape – single-buffer mode makes <code class="docutils literal notranslate"><span class="pre">snapshot(blocking=False)</span></code>
+return <a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">None</span></code></a> until the next frame is captured, while double or
+triple buffering smooths that over so the wrapper usually finds a
+buffered frame waiting on the first poll. See the <em>AsyncCSI</em> capstone
+on the asyncio tutorial for the full walkthrough.</p>
+</section>
 <section id="class-csi-camera-sensor-interface">
 <h2>class CSI – Camera Sensor Interface<a class="headerlink" href="#class-csi-camera-sensor-interface" title="Link to this heading">¶</a></h2>
 <p>The <a class="reference internal" href="#csi.CSI" title="csi.CSI"><code class="xref any py py-class docutils literal notranslate"><span class="pre">CSI</span></code></a> class is used to control a camera sensor.</p>
@@ -1905,7 +1966,7 @@ unused.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 07 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

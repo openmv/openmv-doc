@@ -10,7 +10,7 @@ math that runs across a whole buffer at once, and
 per-pixel transforms the image library has not already
 built in.
 
-Enter the :class:`~ulab.numpy.ndarray`, a single class
+Enter the :class:`~numpy.ndarray`, a single class
 that holds a packed block of equally typed numbers.
 Everything else in ``numpy`` is a math function that
 operates on an ``ndarray``. Adding two arrays together,

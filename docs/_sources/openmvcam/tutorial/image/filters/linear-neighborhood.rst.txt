@@ -271,7 +271,7 @@ through edge-preserving bilateral, and the
 adaptive-threshold flags that turn the filters
 into local classifiers, the linear-neighborhood
 family covers the smoothing and
-locally-adaptive work classical CV pipelines
+locally-adaptive work classical MV pipelines
 need. The remaining filter family operates
 along the *same* neighbourhood pattern but
 with different statistics: the smoothing of a

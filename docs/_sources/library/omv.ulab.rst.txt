@@ -17,10 +17,6 @@ The `ndarray` class itself is exposed both at the top level (as
 ``ulab.ndarray``) and through the `numpy` submodule (as
 ``numpy.ndarray``); both refer to the same type.
 
-The optional ``user`` and ``utils`` submodules --- present only when the
-firmware was built with ``ULAB_HAS_USER_MODULE`` or
-``ULAB_HAS_UTILS_MODULE`` respectively --- are not documented here.
-
 Submodules
 ----------
 
@@ -29,31 +25,14 @@ Submodules
 
    omv.ulab.numpy.rst
    omv.ulab.scipy.rst
-
-Classes
--------
-
-.. class:: dtype(t: int | str | None = None)
-
-   Data-type descriptor for an `ndarray`. A ``dtype`` instance carries
-   one of the type codes ``'b'`` (bool), ``'B'`` (uint8), ``'b'``
-   (int8), ``'H'`` (uint16), ``'h'`` (int16), ``'f'`` / ``'d'`` (float)
-   or ``'D'`` (complex), and is what is returned by the
-   :attr:`ndarray.dtype` property.
-
-   The constructor accepts either a single-character type code, one of
-   the integer constants exposed by `numpy` (`numpy.uint8`,
-   `numpy.int8`, `numpy.uint16`, `numpy.int16`, `numpy.float`,
-   `numpy.bool`, and -- if the firmware was built with complex
-   support -- `numpy.complex`), or another `dtype` instance.
-
-   When the firmware is built with ``ULAB_HAS_DTYPE_OBJECT`` disabled,
-   :attr:`ndarray.dtype` returns the underlying type-code integer
-   directly instead of a ``dtype`` object, and this class is not
-   available.
+   omv.ulab.utils.rst
 
 The `ndarray` n-dimensional array class is documented under
-:doc:`omv.ulab.numpy`.
+:doc:`omv.ulab.numpy`. On the OpenMV build, :attr:`ndarray.dtype`
+returns the underlying type-code integer (the integer constants
+exposed at the :mod:`numpy` module level: `numpy.uint8`,
+`numpy.int8`, `numpy.uint16`, `numpy.int16`, `numpy.float`,
+`numpy.bool`).
 
 Constants
 ---------

@@ -142,9 +142,9 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#the-rules">9.10.1. The rules</a></li>
-<li><a class="reference internal" href="#worked-shapes">9.10.2. Worked shapes</a></li>
+<li><a class="reference internal" href="#examples">9.10.2. Examples</a></li>
 <li><a class="reference internal" href="#what-broadcasting-does-not-allocate">9.10.3. What broadcasting does <em>not</em> allocate</a></li>
-<li><a class="reference internal" href="#when-two-shapes-cannot-broadcast">9.10.4. When two shapes cannot broadcast</a></li>
+<li><a class="reference internal" href="#when-broadcasting-goes-wrong">9.10.4. When broadcasting goes wrong</a></li>
 </ul>
 </div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
@@ -168,7 +168,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/d5c633e39248b685cb2f8645b46d40f78b689a41/docs/openmvcam/tutorial/numpy/math/broadcasting.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/7e99da1005454a97790c6c32a591a6a7b6eaed15/docs/openmvcam/tutorial/numpy/math/broadcasting.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -254,50 +254,61 @@ are, how the smaller one is virtually stretched to match
 the larger.</p>
 <section id="the-rules">
 <h2><span class="section-number">9.10.1. </span>The rules<a class="headerlink" href="#the-rules" title="Link to this heading">¶</a></h2>
-<p>There are two:</p>
+<p>When the two operands have shapes <code class="docutils literal notranslate"><span class="pre">A</span></code> and <code class="docutils literal notranslate"><span class="pre">B</span></code>,
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> works through them in two steps.</p>
 <ol class="arabic simple">
-<li><p>If the two operands have different rank, virtually
-prepend size-1 axes to the lower-rank operand until
-both ranks match.</p></li>
-<li><p>Along each axis, the two sizes must be equal <em>or</em>
-one of them must be 1. A size-1 axis is virtually
-stretched to match the other side.</p></li>
+<li><p><strong>Match the ranks.</strong> If one operand has fewer axes
+than the other, <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> virtually pads the front
+of its shape with size-1 axes until both shapes have
+the same number of axes. A 1-D operand of shape
+<code class="docutils literal notranslate"><span class="pre">(3,)</span></code> paired with a 2-D operand of shape
+<code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">3)</span></code> becomes <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">3)</span></code> against <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">3)</span></code>.</p></li>
+<li><p><strong>Check each axis.</strong> Walking the now equal-length
+shapes axis by axis, each pair of sizes must satisfy
+one of two conditions: the sizes are equal, or one
+of them is 1. A size-1 axis is virtually stretched
+to the other side’s size for the operation. The pair
+<code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">3)</span></code> against <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">3)</span></code> is compatible because
+the first axis has a 1 (stretches to 2) and the
+second axis matches (3 == 3); the result has shape
+<code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">3)</span></code>.</p></li>
 </ol>
-<p>If neither rule applies, <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> raises
-<a class="reference internal" href="../../../../library/builtins.html#ValueError" title="ValueError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a>:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="ne">ValueError</span><span class="p">:</span> <span class="n">operands</span> <span class="n">could</span> <span class="ow">not</span> <span class="n">be</span> <span class="n">broadcast</span> <span class="n">together</span>
-</span></pre></div>
-</div>
+<p>If any axis pair satisfies neither condition, the
+shapes are incompatible and the operator raises
+<a class="reference internal" href="../../../../library/builtins.html#ValueError" title="ValueError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a>.</p>
 </section>
-<section id="worked-shapes">
-<h2><span class="section-number">9.10.2. </span>Worked shapes<a class="headerlink" href="#worked-shapes" title="Link to this heading">¶</a></h2>
-<p><strong>Scalar against any array.</strong> The scalar’s shape is
-effectively <code class="docutils literal notranslate"><span class="pre">(1,)</span></code>, which trivially broadcasts:</p>
+<section id="examples">
+<h2><span class="section-number">9.10.2. </span>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h2>
+<p><strong>Scalar against any array.</strong> The scalar acts like shape
+<code class="docutils literal notranslate"><span class="pre">(1,)</span></code> and stretches to anything:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
 </span><span data-line="2"><span class="n">a</span> <span class="o">+</span> <span class="mi">10</span>                 <span class="c1"># (2, 3) + scalar -&gt; (2, 3)</span>
 </span></pre></div>
 </div>
-<p><strong>1-D vector against a 2-D matrix.</strong> After rule 1 the
-vector is treated as a 1-row matrix, then rule 2
-stretches that row down each column:</p>
+<p><strong>1-D vector across a 2-D matrix.</strong> Rule 1 prepends a
+size-1 axis to make <code class="docutils literal notranslate"><span class="pre">(3,)</span></code> into <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">3)</span></code>; rule 2
+then stretches that row down each column of <code class="docutils literal notranslate"><span class="pre">a</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">row</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
 </span><span data-line="2"><span class="n">a</span> <span class="o">+</span> <span class="n">row</span>                <span class="c1"># (2, 3) + (3,) -&gt; (2, 3)</span>
 </span></pre></div>
 </div>
-<p><strong>Two 1-D arrays of equal length</strong> broadcast
-element-wise:</p>
+<p><strong>Two 1-D arrays of equal length</strong> add element-wise –
+no broadcasting needed:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p><strong>Column vector against a row vector</strong> produces an outer
-result – rule 2 stretches both inputs to a 2-D shape:</p>
+<p><strong>Column vector against a row vector</strong> produces a 2-D
+“outer” shape: <code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">1)</span></code> paired with <code class="docutils literal notranslate"><span class="pre">(3,)</span></code> becomes
+<code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">1)</span></code> against <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">3)</span></code> after the rank prepend,
+and rule 2 stretches each operand along its size-1
+axis:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>     <span class="c1"># column</span>
 </span><span data-line="2"><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>                      <span class="c1"># row</span>
 </span><span data-line="3"><span class="n">x</span> <span class="o">+</span> <span class="n">y</span>                                           <span class="c1"># (4, 3) matrix</span>
 </span></pre></div>
 </div>
-<p>These also work through two-argument ufuncs like
-<code class="xref py py-func docutils literal notranslate"><span class="pre">arctan2()</span></code>:</p>
+<p>The same shape rules apply to any two-argument ufunc,
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.arctan2" title="numpy.arctan2"><code class="xref py py-func docutils literal notranslate"><span class="pre">arctan2()</span></code></a> included:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
 </span><span data-line="2"><span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
 </span></pre></div>
@@ -313,28 +324,27 @@ array’s data is never replicated in memory.</p>
 memory. <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">row</span></code> allocates an output the shape of
 <code class="docutils literal notranslate"><span class="pre">a</span></code>, not the shape of <code class="docutils literal notranslate"><span class="pre">a</span></code> plus the shape of
 <code class="docutils literal notranslate"><span class="pre">row</span></code>. Long broadcasting chains can still produce
-large intermediates – the <a class="reference internal" href="../performance.html"><span class="doc">Performance</span></a> page
-covers how to keep those allocations down.</p>
+large intermediates.</p>
 </section>
-<section id="when-two-shapes-cannot-broadcast">
-<h2><span class="section-number">9.10.4. </span>When two shapes cannot broadcast<a class="headerlink" href="#when-two-shapes-cannot-broadcast" title="Link to this heading">¶</a></h2>
-<p>Mismatches that the rules cannot resolve raise
-<a class="reference internal" href="../../../../library/builtins.html#ValueError" title="ValueError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> at the call site. Two common shapes
-that fail:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">4)</span></code> against <code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">3)</span></code> – neither axis is size
-1, and the corresponding sizes disagree.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">(5,)</span></code> against <code class="docutils literal notranslate"><span class="pre">(5,</span> <span class="pre">1)</span></code> after the rank prepend
-gives <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">5)</span></code> against <code class="docutils literal notranslate"><span class="pre">(5,</span> <span class="pre">1)</span></code>, which broadcasts
-to <code class="docutils literal notranslate"><span class="pre">(5,</span> <span class="pre">5)</span></code>. If that is what the application meant,
-fine; if the intent was element-wise on length 5, one
-of the arrays needs reshaping first.</p></li>
-</ul>
-<p>When in doubt, print
-<code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code> on both sides and step
-through the rules above before reaching for
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">reshape()</span></code> or
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">transpose()</span></code>.</p>
+<section id="when-broadcasting-goes-wrong">
+<h2><span class="section-number">9.10.4. </span>When broadcasting goes wrong<a class="headerlink" href="#when-broadcasting-goes-wrong" title="Link to this heading">¶</a></h2>
+<p>The classic failure is two shapes where neither has a
+size-1 axis to stretch and the sizes disagree –
+<code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">4)</span></code> against <code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">3)</span></code>, for example. Rule 2
+cannot match a 3 against a 4, so <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> raises
+<a class="reference internal" href="../../../../library/builtins.html#ValueError" title="ValueError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a>.</p>
+<p>A subtler problem is a broadcast that succeeds, but
+not the way the application meant. <code class="docutils literal notranslate"><span class="pre">(5,)</span></code> against
+<code class="docutils literal notranslate"><span class="pre">(5,</span> <span class="pre">1)</span></code> is the canonical case: the rank prepend
+turns the <code class="docutils literal notranslate"><span class="pre">(5,)</span></code> into <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">5)</span></code>, which broadcasts
+against <code class="docutils literal notranslate"><span class="pre">(5,</span> <span class="pre">1)</span></code> to produce a <code class="docutils literal notranslate"><span class="pre">(5,</span> <span class="pre">5)</span></code> matrix –
+the outer combination of the two vectors, not the
+length-5 element-wise result the application probably
+wanted. When in doubt, print
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.ndarray.shape" title="numpy.ndarray.shape"><code class="xref py py-attr docutils literal notranslate"><span class="pre">shape</span></code></a> on both sides and step
+through the rules before reaching for
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.ndarray.reshape" title="numpy.ndarray.reshape"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reshape()</span></code></a> or
+<a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.ndarray.transpose" title="numpy.ndarray.transpose"><code class="xref py py-meth docutils literal notranslate"><span class="pre">transpose()</span></code></a>.</p>
 </section>
 </section>
 
@@ -366,7 +376,7 @@ through the rules above before reaching for
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 07 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 08 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

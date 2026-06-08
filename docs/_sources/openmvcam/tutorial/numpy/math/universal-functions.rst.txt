@@ -9,9 +9,9 @@ catalogue of the named ones that cover trig, exp / log,
 rounding, and a few others.
 
 Each ufunc accepts a scalar, a Python iterable, or an
-:class:`~ulab.numpy.ndarray`, and returns either a
+:class:`~numpy.ndarray`, and returns either a
 single float (when the input was scalar) or a float
-:class:`~ulab.numpy.ndarray`::
+:class:`~numpy.ndarray`::
 
     from ulab import numpy as np
 
@@ -28,24 +28,24 @@ The catalogue
 :mod:`numpy` exposes the math functions an embedded
 application reaches for most often:
 
-* **Trig** -- :func:`~ulab.numpy.sin`, :func:`~ulab.numpy.cos`,
-  :func:`~ulab.numpy.tan`, :func:`~ulab.numpy.asin`,
-  :func:`~ulab.numpy.acos`, :func:`~ulab.numpy.atan`,
-  :func:`~ulab.numpy.arctan2`,
-  :func:`~ulab.numpy.sinh`, :func:`~ulab.numpy.cosh`,
-  :func:`~ulab.numpy.tanh`, :func:`~ulab.numpy.asinh`,
-  :func:`~ulab.numpy.acosh`, :func:`~ulab.numpy.atanh`,
-  :func:`~ulab.numpy.sinc`.
+* **Trig** -- :func:`~numpy.sin`, :func:`~numpy.cos`,
+  :func:`~numpy.tan`, :func:`~numpy.asin`,
+  :func:`~numpy.acos`, :func:`~numpy.atan`,
+  :func:`~numpy.arctan2`,
+  :func:`~numpy.sinh`, :func:`~numpy.cosh`,
+  :func:`~numpy.tanh`, :func:`~numpy.asinh`,
+  :func:`~numpy.acosh`, :func:`~numpy.atanh`,
+  :func:`~numpy.sinc`.
 * **Angle conversion** --
-  :func:`~ulab.numpy.degrees`,
-  :func:`~ulab.numpy.radians`.
+  :func:`~numpy.degrees`,
+  :func:`~numpy.radians`.
 * **Exponentials and logs** --
-  :func:`~ulab.numpy.exp`, :func:`~ulab.numpy.expm1`,
-  :func:`~ulab.numpy.log`, :func:`~ulab.numpy.log10`,
-  :func:`~ulab.numpy.log2`, :func:`~ulab.numpy.sqrt`.
+  :func:`~numpy.exp`, :func:`~numpy.expm1`,
+  :func:`~numpy.log`, :func:`~numpy.log10`,
+  :func:`~numpy.log2`, :func:`~numpy.sqrt`.
 * **Rounding** --
-  :func:`~ulab.numpy.ceil`, :func:`~ulab.numpy.floor`,
-  :func:`~ulab.numpy.around`.
+  :func:`~numpy.ceil`, :func:`~numpy.floor`,
+  :func:`~numpy.around`.
 
 Each function processes the whole array in one library
 call. The speedup over a Python list comprehension that
@@ -77,7 +77,7 @@ streaming signal-processing loop allocation-free.
 Two-argument ufuncs
 -------------------
 
-:func:`~ulab.numpy.arctan2` is the only true
+:func:`~numpy.arctan2` is the only true
 two-argument ufunc in the list above -- it returns the
 quadrant-aware arctangent of ``y / x`` and broadcasts the
 two operands::
@@ -98,8 +98,8 @@ expression. A few patterns that come up on the camera:
     gamma = 0.5
     out = 255.0 * (frame / 255.0) ** gamma
 
-**A simple low-pass IIR** (``alpha`` close to ``1.0``
-means slow update)::
+**A simple low-pass smoother** (``alpha`` close to
+``1.0`` means slow update)::
 
     alpha = 0.95
     filtered = alpha * filtered + (1.0 - alpha) * sample
@@ -112,17 +112,13 @@ means slow update)::
 
     spectrum = 20.0 * np.log10(np.abs(real) + 1e-12)
 
-In a loop, rewrite each expression to use ``out=`` and
-in-place operators so no temporary is allocated per
-iteration. :doc:`../performance` covers the rewrite.
-
 np.vectorize
 ------------
 
 A regular Python function can be promoted to a
-ufunc-shaped one by :func:`~ulab.numpy.vectorize`. The
+ufunc-shaped one by :func:`~numpy.vectorize`. The
 resulting callable accepts scalars, iterables, or
-:class:`~ulab.numpy.ndarray`\ s::
+:class:`~numpy.ndarray` values::
 
     def f(x):
         return x * x
@@ -143,7 +139,7 @@ overrides it::
 The Python function must take a single argument and
 return a single number.
 
-:func:`~ulab.numpy.vectorize` is mostly *syntactic* --
+:func:`~numpy.vectorize` is mostly *syntactic* --
 the wrapped Python function still has to run once per
 element, so most of the per-element interpreter cost
 that a true ufunc avoids is back. Expect a modest

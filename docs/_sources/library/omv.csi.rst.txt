@@ -39,6 +39,68 @@ Example usage::
     while(True):
         csi0.snapshot()
 
+Asyncio usage
+-------------
+
+The blocking :meth:`CSI.snapshot` loop above does not cooperate with
+the :mod:`asyncio` event loop -- while ``snapshot`` is waiting on the
+next frame, every other coroutine in the program is frozen. To let a
+capture loop coexist with other concurrent work (a UART client, a
+button watcher, a network task) wrap :class:`CSI` in a small adapter
+that turns ``snapshot`` into an :keyword:`await`-friendly coroutine
+by polling :meth:`snapshot(blocking=False) <CSI.snapshot>` and
+yielding to the event loop between checks::
+
+    import asyncio
+    import csi
+
+
+    class AsyncCSI:
+        def __init__(self, *args, **kwargs):
+            self._csi = csi.CSI(*args, **kwargs)
+
+        def __getattr__(self, name):
+            return getattr(self._csi, name)
+
+        async def snapshot(self):
+            while True:
+                img = self._csi.snapshot(blocking=False)
+                if img is not None:
+                    return img
+                await asyncio.sleep_ms(0)
+
+``__getattr__`` forwards every other attribute (``reset``,
+``pixformat``, ``framesize``, the sensor knobs) to the underlying
+:class:`CSI` so the wrapper is a drop-in replacement. The first
+non-blocking call also starts the camera's DMA capture if it was not
+already running, so no extra bootstrap is needed.
+
+A capture loop then fits into a larger asyncio program as just
+another coroutine::
+
+    async def capture_loop(cam):
+        while True:
+            img = await cam.snapshot()
+            # process img here
+
+    async def main():
+        cam = AsyncCSI()
+        cam.reset()
+        cam.pixformat(csi.RGB565)
+        cam.framesize(csi.QVGA)
+
+        asyncio.create_task(some_other_task())
+        await capture_loop(cam)
+
+    asyncio.run(main())
+
+The :meth:`framebuffers <CSI.framebuffers>` setting still matters in
+this shape -- single-buffer mode makes ``snapshot(blocking=False)``
+return :data:`None` until the next frame is captured, while double or
+triple buffering smooths that over so the wrapper usually finds a
+buffered frame waiting on the first poll. See the *AsyncCSI* capstone
+on the asyncio tutorial for the full walkthrough.
+
 
 class CSI -- Camera Sensor Interface
 ------------------------------------
