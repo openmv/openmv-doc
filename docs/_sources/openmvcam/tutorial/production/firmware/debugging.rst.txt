@@ -250,18 +250,74 @@ Reaching the Windows host from WSL depends on the WSL networking mode:
    boards (N6 / RT1062 / AE3). Use ``"request": "launch"`` to reset,
    flash the ELF, and start fresh at ``runToEntryPoint``.
 
-The ``make debug`` shortcut
----------------------------
+Command-line debugging with gdbrunner
+-------------------------------------
 
-If the J-Link is on the same machine as the build, the repository has
-a shortcut that starts a GDB server with the right device automatically::
+Setting up a GDB session against an embedded target by hand is a
+five-step dance: start the J-Link / ST-Link / OpenOCD GDB server in
+one window with the right device, port, and interface flags; wait
+for it to print *Waiting for GDB connection*; run
+``arm-none-eabi-gdb`` in a second window; type ``target remote
+localhost:<port>``; point gdb at the ELF. When the gdb session ends,
+remember to kill the server window. `gdbrunner
+<https://github.com/openmv/gdbrunner>`__ is a small CLI that collapses
+all of that into one foreground command::
+
+    pip install gdbrunner
+
+    gdbrunner jlink --device STM32H743VI build/OPENMV4/bin/firmware.elf
+    gdbrunner stlink build/OPENMV4/bin/firmware.elf
+    gdbrunner qemu --machine mps2-an500 build/OPENMV4/bin/firmware.elf
+
+The first positional argument picks the server backend (``jlink``,
+``stlink``, ``qemu``); the rest are forwarded to that backend, with
+defaults that work for the OpenMV cams. ``gdbrunner --help`` lists
+the full per-backend flag list; each backend's argument table is
+JSON-driven (``src/gdbrunner/backends.json``), so adding a new server
+is a config edit rather than code.
+
+The firmware repository's ``make debug`` target is a thin wrapper
+around gdbrunner that fills in the current ``TARGET``'s J-Link
+arguments automatically::
 
     make -j$(nproc) TARGET=<TARGET> DEBUG=1 debug
 
-This runs the SDK's ``gdbrunner`` with the board's J-Link arguments
-against ``build/<TARGET>/bin/firmware.elf``. It is convenient for
-command-line gdb; for source-level stepping, the VS Code Cortex-Debug
-setup above is what you want.
+This is the fastest way to drop into command-line gdb on whichever
+board ``TARGET`` selects.
+
+What gdbrunner does for command-line work:
+
+* **One process, clean lifecycle.** Server starts, gdb attaches when
+  the port is open, server is terminated cleanly when gdb exits. No
+  orphan ``JLinkGDBServer`` surviving the session, no two terminals
+  to manage.
+* **STM32CubeProgrammer auto-discovery.** The ``stlink`` backend
+  searches the usual install locations (``~/STM32CubeProgrammer/``,
+  ``/opt/st/``, the STM32CubeIDE plugin tree) for
+  ``ST-LINK_gdbserver``, so the long ``--cube-prog`` path doesn't
+  have to be typed every time.
+* **Per-project gdbinit honoured.** A ``.gdbinit`` in the current
+  directory is loaded with ``-ix`` -- overriding the user-wide
+  ``~/.gdbinit`` -- so per-project gdb scripting (pretty-printers,
+  board-specific macros, breakpoint sets) drops in by being present
+  in the working directory.
+* **Dry run.** ``--dryrun`` prints the server command without
+  running it, useful for adapting the invocation to a wrapper
+  script, copying it into an IDE launcher config, or just checking
+  what arguments gdbrunner is composing.
+* **Server output visible.** ``--show-output`` keeps the server's
+  stdout / stderr visible. The default suppresses it (so gdb's UI
+  stays clean); flip the flag when the server itself is what's
+  misbehaving.
+* **QEMU backend.** ``qemu-system-arm`` running ``mps2-an500`` /
+  ``mps3-an547`` debugs the same ELF without a board plugged in --
+  code paths that don't touch cam-specific peripherals are
+  steppable on a flight.
+
+For source-level stepping with breakpoint gutters and a peripheral
+register view, the VS Code Cortex-Debug setup above is the better
+tool; gdbrunner is the right one for everything that lives at the
+command line.
 
 Using the debugger
 ------------------
@@ -336,8 +392,8 @@ RT1062, or AE3 -- use J-Link for those.
 Debugging pitfalls
 ------------------
 
-* **Everything is ``<optimized out>``** -- you built ``DEBUG=0``.
-  Rebuild with ``DEBUG=1``.
+* **Optimized-out variables.** Everything shows ``<optimized out>``
+  -- you built ``DEBUG=0``. Rebuild with ``DEBUG=1``.
 * **"GDB executable not found"** -- the SDK ``gcc/bin`` is not on
   ``PATH``; set ``armToolchainPath`` / ``gdbPath``.
 * **"Cannot connect" / wrong memory map** -- wrong or missing

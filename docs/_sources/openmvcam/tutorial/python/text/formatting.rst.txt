@@ -192,14 +192,14 @@ type letter. The full shape is ``%[flags][width][.precision]type``:
   number of digits after the decimal point. ``%.2f`` gives two
   decimal places. For strings, the maximum number of characters
   to take (``%.5s`` truncates to five).
-* **flag ``-``** -- left-align inside the field. ``%-10d`` puts
-  the digits on the left side with trailing spaces.
-* **flag ``0``** -- pad with leading zeros instead of spaces (for
-  numeric types). ``%05d`` zero-pads to five digits.
-* **flag ``+``** -- always show the sign on numbers, including a
-  ``+`` for positives.
-* **flag ``#``** -- alternate form. For ``%x`` this prefixes the
-  output with ``0x``; for ``%o`` it prefixes ``0o``.
+* **Left-align** -- the ``-`` flag puts the field on the left.
+  ``%-10d`` puts the digits on the left side with trailing spaces.
+* **Zero pad** -- the ``0`` flag pads with leading zeros instead
+  of spaces (for numeric types). ``%05d`` zero-pads to five digits.
+* **Sign** -- the ``+`` flag always shows the sign on numbers,
+  including a ``+`` for positives.
+* **Alternate form** -- the ``#`` flag. For ``%x`` this prefixes
+  the output with ``0x``; for ``%o`` it prefixes ``0o``.
 
 Flags, width, and precision can be combined:
 

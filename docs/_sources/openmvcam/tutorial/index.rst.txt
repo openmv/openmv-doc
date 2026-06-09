@@ -44,4 +44,6 @@ something covered earlier, it links back.
    bluetooth/index.rst
    protocol/index.rst
 
+   tools/index.rst
+
    production/index.rst

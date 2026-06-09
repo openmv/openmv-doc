@@ -126,6 +126,7 @@ Built into the firmware on every OpenMV camera board.
    omv.crc.rst
    omv.ml.rst
    omv.ulab.rst
+   omv.protocol.rst
    logging.rst
    senml.rst
 
@@ -136,7 +137,6 @@ networking, and utilities):
    :maxdepth: 1
 
    aioble.rst
-   omv.protocol.rst
    omv.rpc.rst
    omv.rtsp.rst
    omv.mqtt.rst
