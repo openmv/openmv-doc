@@ -1,0 +1,85 @@
+.. _changelog_ide_v4_2_4:
+
+v4.2.4
+======
+
+v4.2.4 streamlines the camera handshake with a single ``get_state()`` command,
+speeds up live framebuffer display by moving the JPEG focus-metric computation
+off the broadcast path, and adds raw uncompressed-frame display under the
+compressed pixformat path. This release stays on the Qt Creator 10.0.1 base and
+bundles OpenMV firmware 4.5.9. The bundled April-Tags examples were rewritten
+for the new firmware AprilTag API; user scripts written against the old API may
+need updating.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **Single get_state() handshake** drains and queries the camera's print and
+  frame buffers with one command on firmware that supports it, replacing
+  separate ``getTxBuffer``/``frameSizeDump`` polling.
+- **Faster live framebuffer display** moves the expensive JPEG focus-metric
+  computation out of the framebuffer broadcast path and into the histogram
+  update.
+- **Raw uncompressed frames** (binary, grayscale8, and RGB565) can now be
+  received and displayed under the compressed pixformat path, in addition to
+  JPEG.
+- **Bundled firmware 4.5.9** for all supported boards, including refreshed UVC
+  binaries.
+
+New features
+------------
+
+- The framebuffer viewer can now receive and display raw uncompressed frames
+  (binary, grayscale8, and RGB565) sent under the compressed pixformat path, in
+  addition to JPEG. Binary row stride is 4-byte aligned.
+  (`cba5f5dda <https://github.com/openmv/qt-creator/commit/cba5f5dda>`__)
+
+Other changes and improvements
+------------------------------
+
+- The IDE now drains and queries the camera's print and frame buffers using a
+  single new ``get_state()`` command on firmware that supports it, instead of
+  separate ``getTxBuffer``/``frameSizeDump`` polling, making
+  connect/disconnect/start handshakes more efficient. A version-gated branch
+  calls ``getState()`` and emits a new ``getStateDone()`` signal on frame-size
+  and tx-buffer completion.
+  (`ce137a7b6 <https://github.com/openmv/qt-creator/commit/ce137a7b6>`__,
+  `0cf969bfd <https://github.com/openmv/qt-creator/commit/0cf969bfd>`__)
+- Live framebuffer display is faster because the JPEG focus-metric computation
+  was moved out of ``broadcastUpdate()`` into the histogram update, where it now
+  runs on a pixmap downscaled to 160px wide. ``QCustomPlot`` replots now use
+  queued replotting.
+  (`9dbcd8875 <https://github.com/openmv/qt-creator/commit/9dbcd8875>`__)
+- The bundled April-Tags and related examples (``find_apriltags``, pixy
+  emulation, ``modbus_apriltag``, and ``apriltag_tracking``) were updated to the
+  new firmware AprilTag API using property accessors and simplified, and the
+  Bluetooth BLE temperature example
+  (``examples/10-Bluetooth/ble_temperature.py``) was removed.
+  (`42a646b63 <https://github.com/openmv/qt-creator/commit/42a646b63>`__)
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 10.0.1.
+- **Bundled OpenMV firmware:** updated 4.5.8 -> 4.5.9 for all supported boards,
+  including ``OPENMV2``/``3``/``4``/``4P``/``PT``, ``OPENMV_RT1060``, and
+  ``ARDUINO_GIGA``/``NICLA_VISION``/``PORTENTA_H7``/``NANO_RP2040_CONNECT``/``NANO_33_BLE_SENSE``,
+  with refreshed UVC binaries.
+  (`42a646b63 <https://github.com/openmv/qt-creator/commit/42a646b63>`__)
+- **OpenMV IDE version:** bumped 4.2.1 -> 4.2.4.
+
+Breaking changes
+----------------
+
+The bundled April-Tags examples were rewritten for the new firmware AprilTag
+API: tag accessors are now properties (``tag.rect``, ``tag.cx``, ``tag.cy``,
+``tag.rotation``, ``tag.id``, ``tag.name``) instead of method calls. The
+bundled ``find_apriltags.py`` example now demonstrates only the ``TAG36H11``
+family; its multi-family selection code
+(``TAG16H5``/``TAG25H7``/``TAG25H9``/``TAG36H10``/``ARTOOLKIT``) and
+``family_name()`` helper were removed. User scripts written against the old
+method-call AprilTag API may need updating to match firmware 4.5.9.

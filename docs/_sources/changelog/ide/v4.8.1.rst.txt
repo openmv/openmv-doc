@@ -1,0 +1,215 @@
+.. _changelog_ide_v4_8_1:
+
+v4.8.1
+======
+
+v4.8.1 is built on Qt Creator 14.0.2 and centers on a new high-reliability
+OpenMV V2 camera protocol, a built-in Code Profiler, and a save workflow that
+keeps the camera mounted instead of ejecting it. Bundled firmware and the full
+example set are updated to 4.8.1. There are no scripting API breaks, but the
+save-no-longer-ejects behavior is a user-visible workflow change.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **OpenMV Protocol V2** is a new high-reliability camera stack
+  (``OMVCamera``/``OMVTransport``/``OMVDebug``) with CRC32, sequencing,
+  ACK/NAK, retransmission, events, and fragmentation. It is auto-negotiated at
+  connect time and drives reset, boot, streaming, script execution, and stats.
+- **Code Profiler** is a new window (``Window`` > ``Show Code Profiler``) that
+  polls per-function profiling records from the camera and shows calls,
+  min/max/total/average microseconds (μs), average cycles, percentage, and
+  event counters in a sortable table.
+- **Save in place** no longer ejects the camera drive; the IDE now writes
+  ``main.py`` and flushes the volume to disk so the device stays mounted.
+- **Multi-sensor detection** reports every camera on a board, shown in the
+  status bar as ``Sensors: X, Y`` with the main sensor listed first.
+- **Dynamic Frame Reading** recomputes the best-fit raw streaming resolution
+  per pixel format and reconfigures the stream automatically.
+- **Bundled firmware and examples** are updated to 4.8.1 across all boards,
+  adding new GenX320 event-camera, TensorFlow ML, Alif OLED, and LCD/Touch-LCD
+  shield examples.
+
+New features
+------------
+
+- Added the **OpenMV V2 communication protocol**: a full transport and
+  transaction layer with CRC32, sequencing, ACK/NAK, retransmission, events,
+  and fragmentation, plus an ``OMVCamera`` class auto-negotiated on connect and
+  integrated into the serial driver
+  (`2fde9eb3f <https://github.com/openmv/qt-creator/commit/2fde9eb3f>`__,
+  `fff1bf2ba <https://github.com/openmv/qt-creator/commit/fff1bf2ba>`__,
+  `8c41fcfad <https://github.com/openmv/qt-creator/commit/8c41fcfad>`__,
+  `7fc7ed4bc <https://github.com/openmv/qt-creator/commit/7fc7ed4bc>`__,
+  `84c3956af <https://github.com/openmv/qt-creator/commit/84c3956af>`__,
+  `669039adf <https://github.com/openmv/qt-creator/commit/669039adf>`__,
+  `a49259852 <https://github.com/openmv/qt-creator/commit/a49259852>`__,
+  `07af1922a <https://github.com/openmv/qt-creator/commit/07af1922a>`__,
+  `85f0c7c87 <https://github.com/openmv/qt-creator/commit/85f0c7c87>`__,
+  `5070cc213 <https://github.com/openmv/qt-creator/commit/5070cc213>`__,
+  `e314459cc <https://github.com/openmv/qt-creator/commit/e314459cc>`__,
+  `e0367ca95 <https://github.com/openmv/qt-creator/commit/e0367ca95>`__,
+  `0da2f79d0 <https://github.com/openmv/qt-creator/commit/0da2f79d0>`__,
+  `2b6fc9866 <https://github.com/openmv/qt-creator/commit/2b6fc9866>`__,
+  `534ecffbe <https://github.com/openmv/qt-creator/commit/534ecffbe>`__).
+- Added the **Code Profiler** window (``Window`` > ``Show Code Profiler``),
+  which polls per-function profiling records and displays calls,
+  min/max/total/average microseconds (μs), average cycles, percentage, and
+  event counters, resolving addresses to symbols via a bundled ELFIO ELF parser
+  (`019d3cd2c <https://github.com/openmv/qt-creator/commit/019d3cd2c>`__,
+  `57cd9e1cc <https://github.com/openmv/qt-creator/commit/57cd9e1cc>`__).
+- Added a **Debug Protocol Settings** dialog showing live System Info, Host
+  Stats, and Device Stats refreshed every second, exposing per-channel polling
+  rates plus combined vs split polling controls
+  (`5220a6125 <https://github.com/openmv/qt-creator/commit/5220a6125>`__,
+  `0da2f79d0 <https://github.com/openmv/qt-creator/commit/0da2f79d0>`__).
+- Added **multi-sensor detection**: a board with more than one camera reports
+  all of them in the status bar as ``Sensors: X, Y``, main sensor first
+  (`cebc79ce7 <https://github.com/openmv/qt-creator/commit/cebc79ce7>`__).
+- Added **Dynamic Frame Reading** (default on), which recomputes the best-fit
+  raw streaming resolution per pixel format (``BINARY``, ``GRAY``, ``RGB565``,
+  ``ARGB8``, ``JPEG``, ``PNG``) and reconfigures the stream
+  (`75c073bdb <https://github.com/openmv/qt-creator/commit/75c073bdb>`__,
+  `0da2f79d0 <https://github.com/openmv/qt-creator/commit/0da2f79d0>`__).
+- Added framebuffer decoding for ``BINARY`` (1-bpp mono) and ``ARGB8`` (32-bit
+  alpha) raw pixel formats so those image types now render in the viewer
+  (`dabb82062 <https://github.com/openmv/qt-creator/commit/dabb82062>`__).
+- On Windows, **Connect** now scans for USB devices flagged with a problem by
+  the OS and warns with a list of the bad devices that may block connection
+  (`1a5beb081 <https://github.com/openmv/qt-creator/commit/1a5beb081>`__,
+  `1b59cd78e <https://github.com/openmv/qt-creator/commit/1b59cd78e>`__).
+- Added a status-bar **registration indicator**: a green ``Registered`` or
+  coral ``Unregistered`` button for the connected camera, clickable to register
+  the board
+  (`a8c98a4b9 <https://github.com/openmv/qt-creator/commit/a8c98a4b9>`__).
+- The framebuffer viewer can now display a centered text message sent from the
+  running script via a new ``FB_MESSAGE`` escape code instead of an image
+  (`530048201 <https://github.com/openmv/qt-creator/commit/530048201>`__).
+- Added new model-zoo entries: ST FastDepth depth-estimation models (224/256/320),
+  an ST head-landmarks pose model, palm-detection and hand-landmarks hand
+  models, and a BlazeFace front face-detection model
+  (`551668410 <https://github.com/openmv/qt-creator/commit/551668410>`__,
+  `4d64556d4 <https://github.com/openmv/qt-creator/commit/4d64556d4>`__,
+  `fadd6c4ed <https://github.com/openmv/qt-creator/commit/fadd6c4ed>`__,
+  `b8277bb88 <https://github.com/openmv/qt-creator/commit/b8277bb88>`__,
+  `a8c98a4b9 <https://github.com/openmv/qt-creator/commit/a8c98a4b9>`__).
+- Added a factory-build-only self-test script (camera, IMU, ToF, WiFi) that is
+  bundled and auto-opened on launch in the factory IDE variant
+  (`0db7fbbb0 <https://github.com/openmv/qt-creator/commit/0db7fbbb0>`__); the
+  RT1060/RT1062 LAN portion of the test is currently disabled
+  (`48370d022 <https://github.com/openmv/qt-creator/commit/48370d022>`__).
+
+Other changes and improvements
+------------------------------
+
+- **Save in place**: saving a script no longer ejects the camera drive; the
+  IDE writes ``main.py`` and flushes the volume to disk (``FlushFileBuffers``
+  on Windows, ``syncfs`` on Linux, ``sync_volume_np``/``F_FULLFSYNC`` on macOS)
+  so the device stays mounted
+  (`1614c572f <https://github.com/openmv/qt-creator/commit/1614c572f>`__,
+  `6928b51ea <https://github.com/openmv/qt-creator/commit/6928b51ea>`__,
+  `35ed53967 <https://github.com/openmv/qt-creator/commit/35ed53967>`__).
+- Toolbar actions clicked while the camera is busy (disable framebuffer, JPEG
+  compress, save script, configure settings) are now queued and run
+  automatically when the device is free instead of showing a Busy error dialog
+  (`f4315f0a4 <https://github.com/openmv/qt-creator/commit/f4315f0a4>`__).
+- The framebuffer viewer now defaults to fit-in-view so the image auto-scales
+  to the window on startup, and the serial terminal output pane is now shown by
+  default at startup
+  (`f3ce4dc75 <https://github.com/openmv/qt-creator/commit/f3ce4dc75>`__).
+- Compiled model files with the ``.lite`` extension are now recognized
+  everywhere: model-zoo browser filtering and display, firmware ROMFS
+  alignment, and the Vela/STEdge AI compilers now emit ``.lite`` output
+  (`f3ce4dc75 <https://github.com/openmv/qt-creator/commit/f3ce4dc75>`__).
+- The STEdge AI (N6) model compile dialog now parses and reports NPU RAM and
+  hyperRAM usage percentages and copies the relocated network output to a file
+  matching the model's extension
+  (`f3ce4dc75 <https://github.com/openmv/qt-creator/commit/f3ce4dc75>`__).
+- The model-zoo browser now shows the file Size column and stretches the name
+  column to fit, instead of hiding size
+  (`f3ce4dc75 <https://github.com/openmv/qt-creator/commit/f3ce4dc75>`__).
+- The new-script template was updated to the new ``csi`` module API and
+  defaults to VGA framesize, and the bundled Hello World example was switched
+  from QVGA to VGA framesize
+  (`f3ce4dc75 <https://github.com/openmv/qt-creator/commit/f3ce4dc75>`__).
+- The **Convert Video** dialog was rewritten to use the shared loader dialog
+  with colored output, success/failure messages, an OK-to-close button, and a
+  clear error when FFMPEG is unavailable on the platform
+  (`f56efc7be <https://github.com/openmv/qt-creator/commit/f56efc7be>`__).
+- The framebuffer viewer now shows a blinking warning when a ``JPEG``/``PNG``
+  image is too big to buffer and send, via a new ``FB_BUFFER_ERROR`` escape
+  code
+  (`fda826126 <https://github.com/openmv/qt-creator/commit/fda826126>`__).
+- DFU bootloader entry now forces the bootloader to stay resident on
+  V2-protocol firmware, with version detection that falls back to a plain reset
+  on older bootloaders (<1.0.2) that could get stuck when forced
+  (`975857221 <https://github.com/openmv/qt-creator/commit/975857221>`__).
+- Renamed and reorganized ST object-detection model folders (``st_yolo_lc_v1``
+  to ``yolo_lc``, ``tiny_yolo_v2`` to ``yolo_v2``, ``yolov8n`` person models to
+  plain size-named files) and removed the large ``tiny_yolo_v2`` int8 variants
+  (`34240cc3c <https://github.com/openmv/qt-creator/commit/34240cc3c>`__).
+- Set the Python language-server line-length limit to 120 columns for flake8
+  and pycodestyle so long lines are no longer flagged at the default 79
+  (`dabb82062 <https://github.com/openmv/qt-creator/commit/dabb82062>`__).
+- Reduced the bundled machine-learning model set by moving the Qualcomm model
+  collection and ``google/mobilenet_v1`` into ``models_unused`` to shrink the
+  installer
+  (`c44ddba20 <https://github.com/openmv/qt-creator/commit/c44ddba20>`__).
+
+Bug fixes
+---------
+
+- Firmware-download and resource-update progress dialogs were made crash-safe
+  using ``QPointer`` guards so they no longer use a deleted dialog if it closes
+  mid-download
+  (`f3ce4dc75 <https://github.com/openmv/qt-creator/commit/f3ce4dc75>`__).
+- Drive scanning now keeps rescanning until the camera's USB drive is found and
+  clears stale drive entries on disconnect, removing the previous one-shot
+  timer hack
+  (`a31d41b4e <https://github.com/openmv/qt-creator/commit/a31d41b4e>`__).
+- Several connection and serial fixes: hidden sensors (e.g. ``SoftCSI``) no
+  longer clutter the displayed sensor type, a Windows serial keep-alive timer
+  prevents USB stalls, Start no longer restarts an already-running script, and
+  the camera channel is disconnected cleanly on port close
+  (`a8e467be6 <https://github.com/openmv/qt-creator/commit/a8e467be6>`__).
+- The profiler view restored its per-column PMU event-counter selection
+  (checkable event menus) and saved counter/header state that had been
+  temporarily disabled
+  (`40c679e90 <https://github.com/openmv/qt-creator/commit/40c679e90>`__).
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 14.0.2.
+- **Bundled firmware:** updated from 4.7.0 to 4.8.1, rebuilding firmware for
+  OPENMV2/3/4/4P/PT, OPENMV_N6, OPENMV_AE3, and OPENMV_RT1060
+  (`2657818ca <https://github.com/openmv/qt-creator/commit/2657818ca>`__).
+- Fixed the protocol-version handshake on macOS for RT1062 and AE3 boards by
+  splitting the multi-command USB transfer into ``USBDBG_LEN``-sized pieces
+  those boards can handle
+  (`6b9d5f842 <https://github.com/openmv/qt-creator/commit/6b9d5f842>`__).
+- Reworked the bundled Windows driver package: added per-board signed
+  ``.cat``/``.inf`` driver files (AE3, H7, H7Plus, M4, M7, N6, Pico/PT, RT1062)
+  and moved the CDC serial drivers into a new ``openmvcdc`` folder with a
+  dpinst-based auto-installer
+  (`439557829 <https://github.com/openmv/qt-creator/commit/439557829>`__,
+  `ba3b01bfb <https://github.com/openmv/qt-creator/commit/ba3b01bfb>`__).
+- Added support for older MT9V032 camera sensor revisions by registering sensor
+  IDs ``0x1311`` and ``0x1312`` (alongside existing ``0x1313``) as ``MT9V0X2``
+  (`eaaa624e3 <https://github.com/openmv/qt-creator/commit/eaaa624e3>`__).
+
+Breaking changes
+----------------
+
+This release has no scripting API breaks, but there are two user-visible
+workflow changes:
+
+- Saving a script no longer ejects or unmounts the camera's USB drive. The IDE
+  now flushes the volume buffers in place, so the device stays mounted after a
+  save.
+- Bundled bootloaders are now shipped as ``.bin`` only; the per-board ``.dfu``
+  firmware and bootloader files were removed.

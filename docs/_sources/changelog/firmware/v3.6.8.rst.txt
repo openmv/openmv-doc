@@ -1,0 +1,118 @@
+.. _changelog_v3_6_8:
+
+v3.6.8
+======
+
+v3.6.8 adds the **OpenMV Cam Pure Thermal** board, makes ``tf`` inference
+roughly **4× faster** by moving TensorFlow onto CMSIS-NN, expands the desktop
+:mod:`rpc` library with UART / Kvaser CAN / I2C / SPI interfaces, and enables the
+**SD card on the Arduino Portenta H7**. SD-card partition handling and
+``import sensor`` on sensor-less boards changed — read the breaking changes
+below.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **OpenMV Cam Pure Thermal** — new board support.
+- **~4× faster TensorFlow** — ``tf`` inference now runs on CMSIS-NN.
+- :mod:`rpc` library — added UART, Kvaser CAN, and I2C/SPI master/slave
+  interfaces.
+- **Portenta H7 SD card** — SD card support enabled, with PLL1/HSE/ADC clock
+  fixes.
+- **Breaking:** SD-card boot now auto-detects the partition, and
+  ``import sensor`` now raises when no image sensor is present — see the
+  breaking changes.
+
+New features
+------------
+
+- :mod:`rpc` — added UART, Kvaser CAN, and I2C/SPI master/slave interfaces to
+  the desktop RPC library (``rpc_uart_master`` / ``rpc_uart_slave``,
+  ``rpc_kvarser_can_master`` / ``rpc_kvarser_can_slave``, and I2C/SPI
+  master/slave).
+- **Sensor-less boards** — the firmware now supports boards without an image
+  sensor (enabling the Pure Thermal board).
+- **JPEG geometry** — added a JPEG read-settings struct (``jpg_w`` / ``jpg_h``
+  / ``jpg_size``) for reading JPEG geometry.
+
+Other changes and improvements
+------------------------------
+
+- TensorFlow was switched to CMSIS-NN for roughly 4× faster ``tf`` inference
+  (per-board imlib config adjusted); the :mod:`ulab` example uses
+  ``ulab.numerical.mean`` / ``std``; the deep-sleep example now calls
+  ``sensor.sleep(True)`` before the OV7725 regulator-bypass register write.
+
+Bug fixes
+---------
+
+Camera and imaging:
+
+- Fixed loading JPEG images from disk (JPEG geometry was rejected as an
+  unsupported format), made :func:`sensor.reset` perform a hard reset so the
+  sensor recovers after a regulator shutdown, corrected the FLIR Lepton SPI
+  alternate-function / clock config on OpenMV 4 / 4 Plus, and fixed the FSYNC
+  pin assignment on OpenMV 4 / 4 Plus.
+
+Connectivity and system:
+
+- Fixed the timed :class:`pyb.DAC` write on the H7, made WINC1500
+  ``WLAN.start_ap()`` not require a key for OPEN security, fixed sharing the
+  I2C bus between the camera and user peripherals on the Portenta, and made
+  the self-test SWD framebuffer marker per-board so it no longer clobbers the
+  framebuffer ``bpp`` on boards without it.
+
+Hardware and board support
+--------------------------
+
+- **OpenMV Cam Pure Thermal** — new board.
+- **Arduino Portenta H7** — SD card enabled, with PLL1 (400 MHz/40 MHz,
+  USB/RNG on HSI48), HSE (25 MHz), and ADC clock-source fixes.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v3.6.7 and v3.6.8. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Both breaking changes are *behavior* changes (same API, different results) —
+re-check affected scripts. Each commit hash links to its diff on GitHub.
+
+.. _v3_6_8_sdpart:
+
+SD-card partition auto-detection *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+SD-card boot now auto-detects the partition instead of always mounting
+partition 1. Cards that relied on the old fixed-partition-1 behavior may now
+mount a different filesystem; re-check multi-partition SD cards and the
+expected mount.
+
+*Commits:* `1f7f003b8 <https://github.com/openmv/openmv/commit/1f7f003b8>`__
+
+.. _v3_6_8_sensorimport:
+
+``import sensor`` raises on sensor-less boards *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To support boards without an image sensor, the :mod:`sensor` module's
+initialization check now runs on import, so ``import sensor`` raises a
+``RuntimeError`` when no image sensor is detected (instead of failing later).
+On a thermal-only board, guard ``import sensor`` with ``try`` / ``except`` or
+avoid importing it.
+
+*Commits:* `17b444ad1 <https://github.com/openmv/openmv/commit/17b444ad1>`__
+
+.. _v3_6_8_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Re-check multi-partition SD cards against the new partition auto-detection
+(:ref:`the SD-card change <v3_6_8_sdpart>`) and guard ``import sensor`` on
+sensor-less / thermal-only boards (:ref:`the sensor-import change
+<v3_6_8_sensorimport>`). All other scripts run unchanged.

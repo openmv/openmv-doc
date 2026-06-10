@@ -1,0 +1,192 @@
+.. _changelog_v3_7_0:
+
+v3.7.0
+======
+
+v3.7.0 is a big release. It adds the :mod:`audio` module (Portenta H7 PDM
+microphone) with a new non-blocking callback API, the ``micro_speech``
+TensorFlow speech-recognition module, a brand-new parallel-RGB **LCD**
+controller (with HDMI output and FT5X06 touch), an ``image.flush()`` method
+with pixel-format constants, and a rewritten ``image.draw_image()`` scaling
+pipeline. Several legacy helper libraries and image methods were removed and
+the ``yuv_to_*`` math changed — read the breaking changes below.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- :mod:`audio` module — Portenta H7 onboard PDM microphone capture with a
+  non-blocking ``start_streaming(callback)`` API.
+- ``micro_speech`` — a TensorFlow micro-speech recognition module.
+- **New LCD controller** — parallel RGB display support, HDMI output (TFP410),
+  and FT5X06 touch.
+- ``image.draw_image()`` — rewritten with a full scaling/alpha/palette
+  pipeline (``x_scale`` / ``y_scale`` / ``hint`` / ``color_palette`` …).
+- ``image.flush()`` plus pixel-format constants
+  (``image.BINARY`` / ``GRAYSCALE`` / ``RGB565`` / ``YUV422`` / ``BAYER`` /
+  ``JPEG``).
+- **Breaking:** legacy math helper libraries and several image methods were
+  removed, ``draw_image()`` / LCD APIs were reworked, and ``yuv_to_*`` no
+  longer subtracts 128 — see the breaking changes.
+
+New features
+------------
+
+- :mod:`audio` — a new Portenta H7 :mod:`audio` module for PDM-microphone
+  capture: :func:`audio.init`, non-blocking ``audio.start_streaming(callback)``,
+  and :func:`audio.stop_streaming` (frequency is specified in Hz).
+- ``micro_speech`` — a new module with a ``MicroSpeech`` class,
+  ``audio_callback()``, and ``micro_speech()`` for TensorFlow speech
+  recognition; ``listen()`` uses a running-window average and accepts a
+  ``filter`` keyword to restrict results to a label list.
+- **LCD** — a new LCD controller with parallel RGB display support,
+  ``LCD_NONE`` / ``LCD_SHIELD`` / ``LCD_DISPLAY`` types, many framesize
+  constants, ``triple_buffer`` / ``framesize`` / ``refresh`` / ``bgr`` /
+  ``deinit``, an expanded :mod:`display`, HDMI output via the TFP410, and
+  FT5X06 touch-screen support.
+- ``image.flush()`` — added an ``image.flush()`` method and pixel-format
+  constants (``image.BINARY`` / ``GRAYSCALE`` / ``RGB565`` / ``YUV422`` /
+  ``BAYER`` / ``JPEG``).
+- ``image.draw_image()`` — rewritten with a new scaling pipeline:
+  ``x_scale`` / ``y_scale`` / ``x_size`` / ``y_size``, ``rgb_channel``,
+  ``alpha``, ``color_palette``, ``alpha_palette``, and ``hint``, plus
+  ``image.AREA`` / ``BILINEAR`` / ``BICUBIC`` / ``CENTER`` /
+  ``EXTRACT_RGB_CHANNEL_FIRST`` / ``APPLY_COLOR_PALETTE_FIRST`` constants and
+  new alpha-blending / color-table / scaling examples.
+- ``ImageReader.next_frame()`` gained a ``pause`` keyword to disable the
+  real-time playback delay.
+- Added Portenta audio examples (``audio_fft.py``, ``micro_speech.py``) and an
+  ExtInt wake-from-stop example.
+
+Other changes and improvements
+------------------------------
+
+- The built-in examples were reorganized under ``scripts/examples/Arduino/``;
+  the framebuffer now updates instantly after loading/creating images with
+  ``copy_to_fb=True`` (no manual flush needed); the Portenta heap was reduced
+  slightly to fit more static driver state.
+
+Bug fixes
+---------
+
+Camera and imaging:
+
+- Fixed swapped red/blue (RGB565 byte order) in captured images, DMA2D draw
+  rounding to match other draw code, ``fb_alloc`` corruption in recursive
+  allocations (``find_blobs()``), and gated ``top_hat()`` / ``black_hat()``
+  behind both binary and math ops being enabled.
+
+Display and audio:
+
+- Fixed the LCD shield output and the Portenta 1-channel mono audio mode.
+
+Portenta:
+
+- Worked around an Ethernet/SDRAM issue (drive ``rst_eth`` high) and fixed the
+  SDRAM timing configuration.
+
+Hardware and board support
+--------------------------
+
+- **Arduino Portenta H7** — onboard PDM microphone (SAI / PDM2PCM) audio
+  capture.
+- **LCD** — new parallel-RGB display controller (LTDC enabled in the H7
+  build), HDMI output via the TFP410, and FT5X06 touch-screen LCD support.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v3.6.9 and v3.7.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v3_7_0_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v3_7_0_mathlibs:
+
+Legacy math helper libraries removed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``mtx``, ``rv``, ``ulinalg``, ``umatrix``, and ``vec`` helper libraries
+were removed from ``scripts/libraries`` in favor of :mod:`ulab`. Scripts that
+``import`` any of these will fail and must be ported to :mod:`ulab`.
+
+*Commits:* `1f7da9272 <https://github.com/openmv/openmv/commit/1f7da9272>`__
+
+.. _v3_7_0_imgmethods:
+
+``remove_shadows()`` / ``chrominvar()`` / ``illuminvar()`` removed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``image.remove_shadows()``, ``image.chrominvar()``, and
+``image.illuminvar()`` were deleted with no replacement. Scripts calling these
+methods must remove the calls.
+
+*Commits:* `3173c2bb3 <https://github.com/openmv/openmv/commit/3173c2bb3>`__
+
+.. _v3_7_0_drawimage:
+
+``image.draw_image()`` signature reworked *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``image.draw_image()`` was rewritten on top of a new scaling pipeline. The old
+positional ``alpha`` / single ``scale`` arguments and prior positional
+ordering no longer apply; use the new keyword form (``x_scale=`` / ``y_scale=``
+or ``x_size=`` / ``y_size=``, ``alpha=``, ``color_palette=``, ``hint=`` …).
+
+*Commits:* `3439f8824 <https://github.com/openmv/openmv/commit/3439f8824>`__
+
+.. _v3_7_0_lcd:
+
+LCD module rewrite *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``lcd`` module was rewritten for the new display controller.
+``lcd.init()`` now takes a display ``type`` (``LCD_NONE`` / ``LCD_SHIELD`` /
+``LCD_DISPLAY``) and new keyword arguments, and the constant / API surface was
+substantially reorganized. Old shield-only scripts mostly still work, but the
+defaults and behavior changed — review LCD scripts against the new
+``type`` / ``framesize`` API.
+
+*Commits:* `185538207 <https://github.com/openmv/openmv/commit/185538207>`__
+
+.. _v3_7_0_yuv:
+
+``yuv_to_*`` no longer subtracts 128 *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`image.yuv_to_binary` / ``yuv_to_grayscale()`` / ``yuv_to_rgb()`` /
+``yuv_to_lab()`` now treat the Y tuple element as an unsigned 0–255 value
+instead of subtracting 128. Callers must pass Y without the previous −128 bias
+to get the same colors as before.
+
+*Commits:* `dcf141192 <https://github.com/openmv/openmv/commit/dcf141192>`__
+
+.. _v3_7_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v3.7.0 the typical work is:
+
+#. Port ``mtx`` / ``rv`` / ``ulinalg`` / ``umatrix`` / ``vec`` usage to
+   :mod:`ulab` (:ref:`the math-library removal <v3_7_0_mathlibs>`).
+#. Remove ``image.remove_shadows()`` / ``chrominvar()`` / ``illuminvar()``
+   calls (:ref:`the removed image methods <v3_7_0_imgmethods>`).
+#. Update ``image.draw_image()`` calls to the new keyword signature
+   (:ref:`the draw_image rework <v3_7_0_drawimage>`).
+#. Review LCD scripts against the new ``lcd`` ``type`` / ``framesize`` API
+   (:ref:`the LCD rewrite <v3_7_0_lcd>`).
+#. Drop the −128 bias when passing Y to ``yuv_to_*``
+   (:ref:`the yuv_to_* change <v3_7_0_yuv>`).
+
+All other scripts run unchanged.

@@ -1,0 +1,89 @@
+.. _changelog_v4_3_1:
+
+v4.3.1
+======
+
+v4.3.1 adds VL53L5CX multi-zone time-of-flight support, improved CAN FD, an
+auto-closing ``ImageIO`` finalizer, and a broad set of camera, USB, and
+soft-reboot reliability fixes.
+
+.. contents:: On this page
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **VL53L5CX** multi-zone time-of-flight sensor support (Python module +
+  examples).
+- **Improved CAN FD** support on STM32.
+- ``ImageIO`` auto-close — streams now close themselves when garbage
+  collected.
+- **Breaking:** stdout is now buffered — see the breaking change.
+
+New features
+------------
+
+- **VL53L5CX** — new VL53L5CX multi-zone ToF sensor Python module, ST driver,
+  and ToF example scripts.
+- ``ImageIO`` finalizer — an ``ImageIO`` stream is now closed
+  automatically when the object is garbage collected.
+- **CAN FD** — improved CAN FD support on STM32.
+- **Multi-device I2C buses** — the camera bus scan can return multiple
+  devices, and the FIR thermal sensors support buses shared with other
+  devices; the RP2 port gained I2C general-call support.
+
+Bug fixes
+---------
+
+Image processing:
+
+- Fixed a ``quad_segment_maxima`` memory leak (AprilTag/quad detection), the
+  SIMD YCbCr→RGB color conversion, black lines on the first frame, and LCD
+  cache usage on the OpenMV Pure Thermal.
+
+Camera and sensors:
+
+- Fixed MLX9064x frame-read synchronization, VSYNC EXTI handling on the
+  Portenta H7 / STM32, and the Arduino Nicla Vision power-supply mode and
+  HSE clock value.
+
+System and USB:
+
+- Fixed the USB High-Speed endpoint descriptor offset, module de-init on the
+  ``main.py`` → IDE transition, soft-reboot cleanup (``mp_deinit()`` and CDC
+  buffer reset), the nRF ``sys.path`` initialization, and the RP2 I2C
+  fast-mode-plus frequency.
+
+Hardware and board support
+--------------------------
+
+- **VL53L5CX** multi-zone ToF sensor.
+- **OpenMV Cam H7** — larger frame line buffer (handles wider images).
+- **Arduino Nicla Vision** — power-supply and clock fixes.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v4.3.0 and v4.3.1.
+
+The only breaking change is a *behavior* change (same API, different timing).
+
+.. _v4_3_1_stdio:
+
+Buffered stdout *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Standard output is now buffered. ``print()`` output may not appear on the
+host/IDE immediately — it is flushed on a newline or when the buffer fills.
+Scripts that depended on character-by-character unbuffered output should add
+an explicit flush (or print a newline) where immediate output is required.
+
+*Commit:* `8cddada54 <https://github.com/openmv/openmv/commit/8cddada54>`__
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Only output timing is affected: add an explicit flush where you rely on
+immediate ``print()`` output (:ref:`the buffered-stdout change <v4_3_1_stdio>`).
+All other scripts run unchanged.
