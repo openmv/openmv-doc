@@ -15,22 +15,22 @@ breaking changes for user projects.
 Highlights
 ----------
 
-- **macOS crash hardening:** eliminated an intermittent silent
+- **macOS crash hardening** — eliminated an intermittent silent
   ``NSRangeException`` abort caused by updating tree/list/combo selections
   before a panel or popup was fully built or mid-async-refresh, across the
   outline combo, call/type hierarchy, completion and locator popups, project
   tree, and more.
-- **Serialized external tools:** the loader progress dialog is now
+- **Serialized external tools** — the loader progress dialog is now
   application-modal and suspends all device polling, so running dfu-util,
   bossac, picotool, and the other tools can no longer be re-entered by the
   camera stream or auto-reconnect.
-- **Reliable firmware updates:** auto-reconnect can no longer hijack a
+- **Reliable firmware updates** — auto-reconnect can no longer hijack a
   firmware update mid-flash, which previously dropped the real continuation
   and popped a spurious DFU dialog.
-- **Hello World safety:** connecting a board no longer occasionally overwrites
-  a Hello World program you have typed into, by comparing against a pristine
-  snapshot instead of the unreliable modified flag.
-- **Clearer DFU errors:** the "no matching interface" error now names the
+- **Hello World safety** — connecting a board no longer occasionally
+  overwrites a Hello World program you have typed into, by comparing against a
+  pristine snapshot instead of the unreliable modified flag.
+- **Clearer DFU errors** — the "no matching interface" error now names the
   detected board and the firmware file names it accepts instead of dumping a
   raw VID/PID.
 
@@ -123,13 +123,22 @@ Bug fixes
   so a stale persisted default no longer silently disables the Python language
   server (completion and call hints)
   (`1d5069a52 <https://github.com/openmv/qt-creator/commit/1d5069a52>`__).
-- Fixed dialog settings (model zoo; the loader dialogs for dfu-util, imx,
-  bossac, alif, picotool, and ST Cube Programmer; and the mpy-cross, vela, and
-  ST Edge AI compiler options) being saved and read at the wrong settings
-  location, which had been losing saved geometry and state
+- Hardened OpenMV settings I/O against re-entrancy: ``beginGroup`` /
+  ``endGroup`` on the shared global settings object (which spawn modal dialogs
+  and run nested event loops) are replaced with full key paths, so a
+  re-entrant settings access during a modal dialog can no longer misfile keys
+  under the wrong group. On-disk paths are byte-identical, so existing users'
+  settings are preserved exactly
   (`91e78a9e3 <https://github.com/openmv/qt-creator/commit/91e78a9e3>`__,
-  `258448bdf <https://github.com/openmv/qt-creator/commit/258448bdf>`__,
   `f4bb9f48c <https://github.com/openmv/qt-creator/commit/f4bb9f48c>`__).
+- Fixed a regression where several dialogs and helpers that receive the shared
+  settings object did bare-key I/O at the settings root instead of under
+  ``OpenMV/``, losing the model zoo's window geometry, splitter, and expanded
+  state and the six loader dialogs' state (dfu-util, imx, bossac, alif,
+  picotool, and ST Cube Programmer) along with the mpy-cross, vela, and ST
+  Edge AI compiler options; the group is now baked into each key so the
+  correct path is used
+  (`258448bdf <https://github.com/openmv/qt-creator/commit/258448bdf>`__).
 
 Platform and tool support
 -------------------------
