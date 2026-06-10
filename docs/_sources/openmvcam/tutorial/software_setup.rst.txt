@@ -2,7 +2,10 @@ Software Setup
 ==============
 
 Before you can start using your OpenMV Cam you'll need to download and install
-`OpenMV IDE <https://openmv.io/pages/download/>`_.
+`OpenMV IDE <https://openmv.io/pages/download/>`_. This page covers getting it
+installed and running on each platform; the IDE itself -- the editor, the frame
+buffer viewer, the camera tools -- has its own :doc:`chapter
+<tools/ide/index>`.
 
 Windows
 -------

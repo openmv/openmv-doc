@@ -28,7 +28,6 @@ earlier, it links back.
    overview.rst
    software_setup.rst
    hardware_setup.rst
-   openmvide_overview.rst
 
    python/index.rst
    hardware/index.rst
