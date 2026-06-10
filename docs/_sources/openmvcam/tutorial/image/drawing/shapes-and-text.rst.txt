@@ -48,7 +48,7 @@ annotation actually needs:
 Every one of these modifies the source image in
 place and returns the same image for chaining,
 following the operating-method convention
-Foundations established.
+established earlier.
 
 .. figure:: ../figures/drawing-primitives.svg
    :alt: A grid of small panels showing each of
@@ -162,18 +162,8 @@ canvas, draw the new annotations, hand the
 result to the display -- rather than overlaying
 on top of the captured frame. It is also the
 cheapest way to prepare a scratch image for use
-as a mask buffer: an :data:`~image.BINARY`
-image freshly allocated by the constructor is
-already zero, but a buffer that has been reused
-between frames may not be.
+as a mask buffer.
 
-With eight geometric primitives, a text
-primitive, and a way to reset the canvas to
-zero, application code can put any annotation
-it needs onto an image. What remains for
-drawing is what to do when the annotation is
-not a geometric shape or a piece of text but
-*another image* -- a small icon, a logo, a
-reference frame that needs to be composed onto
-the current one -- something that has its own
-pixels rather than a geometric description.
+A freshly allocated image is already zero from
+the constructor, so ``clear()`` matters
+specifically for buffers reused between frames.

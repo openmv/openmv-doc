@@ -14,12 +14,12 @@ and networking pieces an application reaches for when it
 grows up, and finally the practical work of taking a working
 prototype to a shipped product.
 
-The sections are written to be readable in order for a new
-user, but each super-section is also self-contained -- a
-reader who already knows Python can skip the Python
-Overview, and a reader who has shipped before can skip
-straight to *Production*. Where one section builds on
-something covered earlier, it links back.
+The chapters are written to be readable in order for a new
+user, but each one is also self-contained -- a reader who
+already knows Python can skip the Python Overview, and a
+reader who has shipped before can skip straight to
+*Production*. Where one chapter builds on something covered
+earlier, it links back.
 
 .. toctree::
    :numbered:

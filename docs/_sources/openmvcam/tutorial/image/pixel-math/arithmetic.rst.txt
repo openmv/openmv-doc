@@ -140,9 +140,7 @@ detection. A reference frame stored at startup
 and a fresh capture, run through ``difference``,
 produce an image whose non-zero pixels mark
 every position where something in the scene
-moved or changed brightness. Frame
-differencing walks the whole pipeline
-end to end.
+moved or changed brightness.
 
 Scoping with mask
 -----------------
@@ -168,9 +166,9 @@ In place, and preserving inputs
 -------------------------------
 
 The arithmetic methods all follow the operating
-convention Foundations established: each
-modifies the source image in place and returns
-the same image for chaining. The source's
+convention established earlier: each modifies
+the source image in place and returns the same
+image for chaining. The source's
 pixels are gone after the call -- replaced with
 the result of the operation against whatever
 was passed as the second operand.
@@ -195,6 +193,6 @@ operations, an absolute-difference workhorse,
 and the mask keyword for scoping, the
 pixel-arithmetic toolkit covers the
 brightness-and-channel combinations classical
-MV needs. The remaining arithmetic-like tools
-on the surface work bit by bit rather than
-value by value.
+machine vision needs. The remaining
+arithmetic-like tools on the surface work bit by
+bit rather than value by value.

@@ -16,14 +16,20 @@ device is out the door*.
    firmware/index.rst
 
 .. toctree::
-   :caption: Shipping the application
+   :caption: Going to production
    :maxdepth: 1
 
-   freezing-scripts.rst
-   romfs-image.rst
+   shipping/index.rst
+   hardening/index.rst
 
 .. toctree::
    :caption: Advanced material
    :maxdepth: 1
 
    tls/index.rst
+
+.. toctree::
+   :caption: Wrap up
+   :maxdepth: 1
+
+   wrap-up.rst

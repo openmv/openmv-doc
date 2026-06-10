@@ -78,15 +78,6 @@ classification the algorithms perform. RGB565 is
 the default colour format on the cam, and the one
 the colour-aware methods on the surface expect.
 
-The colour-tracking pipeline that does most of the
-field work -- thresholding pixels into the LAB
-colour space and finding connected regions of
-pixels that match -- is built around RGB565 input.
-The conversion from packed RGB565 into LAB happens
-inside the algorithm; application code provides
-the LAB threshold ranges and lets the algorithm do
-the rest.
-
 Rendering an annotated frame -- drawing detection
 boxes, writing diagnostic text, getting the frame
 onto a screen or out to a remote viewer -- also
@@ -129,6 +120,17 @@ saves the RAM that would otherwise be tied up
 holding finished frames for the lifetime of the
 application.
 
+.. note::
+
+   The image module's only operations on Bayer
+   pixels directly are
+   :meth:`~image.Image.get_pixel`,
+   :meth:`~image.Image.set_pixel`, and the
+   JPEG-encoding path that feeds the IDE preview
+   or a remote viewer. Drawing, analysis, and
+   filtering all require converting to grayscale,
+   RGB565, or binary first.
+
 YUV422 for pipelines that want both
 -----------------------------------
 
@@ -153,6 +155,17 @@ the simpler choice for colour and grayscale is
 the simpler choice for brightness-only work --
 YUV422's value comes from being good at both at
 the same time.
+
+.. note::
+
+   The image module operates on YUV422 in a more
+   limited way than on grayscale, RGB565, or
+   binary -- direct Y-channel reads for grayscale
+   work and the JPEG-encoding path that feeds the
+   IDE preview or a remote viewer. Colour-aware
+   methods expect RGB565; YUV422 frames need an
+   explicit conversion before colour analysis or
+   drawing.
 
 Binary, masks, and thresholded output
 -------------------------------------
@@ -266,9 +279,8 @@ palette that runs from black through dark reds
 and oranges to white. Both are *visualisation*
 tools rather than measurement ones; the point is
 to make a single-channel image whose raw values
-would otherwise be invisible to the eye -- a
-thermal frame, a depth map, an arbitrary
-single-channel heatmap -- readable at a glance.
+would otherwise be invisible to the eye readable
+at a glance.
 
 Buffer size
 -----------
@@ -286,10 +298,3 @@ byte budgets uses ``size()`` for the former case;
 code that streams compressed frames out of the
 cam reads it after each compression to know how
 many bytes the stream actually contains.
-
-With each format matched to the kinds of work it
-supports, the conversion methods that bridge
-between them, and the byte-buffer size available
-through ``size()``, an application has the
-information it needs to pick the format the
-pipeline is about to build will run on.

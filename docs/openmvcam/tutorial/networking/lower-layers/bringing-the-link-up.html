@@ -145,7 +145,8 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#the-network-module">12.4.1. The <code class="xref py py-mod docutils literal notranslate"><span class="pre">network</span></code> module</a></li>
 <li><a class="reference internal" href="#the-wi-fi-flow">12.4.2. The Wi-Fi flow</a></li>
 <li><a class="reference internal" href="#what-can-go-wrong">12.4.3. What can go wrong</a></li>
-<li><a class="reference internal" href="#ethernet-when-present">12.4.4. Ethernet, when present</a></li>
+<li><a class="reference internal" href="#staying-connected">12.4.4. Staying connected</a></li>
+<li><a class="reference internal" href="#ethernet-when-present">12.4.5. Ethernet, when present</a></li>
 </ul>
 </div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
@@ -169,7 +170,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/ec2f915caa8aef44ac1b814eae04a1f68fbe4f14/docs/openmvcam/tutorial/networking/lower-layers/bringing-the-link-up.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/74ac628dd91386833ba6e529c833b4f1ec711e6b/docs/openmvcam/tutorial/networking/lower-layers/bringing-the-link-up.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -336,8 +337,76 @@ See <a class="reference internal" href="../../../../library/network.WLAN.html"><
 surface.</p></li>
 </ul>
 </section>
+<section id="staying-connected">
+<h2><span class="section-number">12.4.4. </span>Staying connected<a class="headerlink" href="#staying-connected" title="Link to this heading">¶</a></h2>
+<p>Bringing the link up is half the problem. Staying
+connected is the other half – access points reboot,
+the cam roams out of range, DHCP leases expire, the
+radio firmware occasionally gets stuck. A cam that is
+going to live on the network for months has to notice
+that and recover on its own.</p>
+<p>The detection pattern is to call
+<a class="reference internal" href="../../../../library/network.WLAN.html#network.WLAN.isconnected" title="network.WLAN.isconnected"><code class="xref py py-meth docutils literal notranslate"><span class="pre">isconnected()</span></code></a> once per main-loop
+iteration and react when it returns <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">False</span></code></a>.
+<code class="docutils literal notranslate"><span class="pre">isconnected()</span></code> can lie briefly when a connection has
+dropped without the radio having noticed yet – a
+socket send that fails when the link “should” be up is
+the application’s other evidence of a drop.
+<a class="reference internal" href="../../../../library/network.WLAN.html#network.WLAN.status" title="network.WLAN.status"><code class="xref py py-meth docutils literal notranslate"><span class="pre">status()</span></code></a> is the more authoritative
+source when the two disagree.</p>
+<p>The reconnect pattern is <a class="reference internal" href="../../../../library/network.WLAN.html#network.WLAN.disconnect" title="network.WLAN.disconnect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">disconnect()</span></code></a>
+followed by <a class="reference internal" href="../../../../library/network.WLAN.html#network.WLAN.connect" title="network.WLAN.connect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">connect()</span></code></a> with the same
+credentials, with the wait wrapped in a timeout as on
+the initial connection. Back off between attempts –
+one second, two, four, doubling up to a minute or so
+– so a long outage does not hammer the AP and does
+not burn the radio’s power budget on spin loops:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">network</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">_BACKOFF_S</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">def</span><span class="w"> </span><span class="nf">reconnect</span><span class="p">(</span><span class="n">wlan</span><span class="p">,</span> <span class="n">ssid</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+</span><span data-line="7">    <span class="k">for</span> <span class="n">delay</span> <span class="ow">in</span> <span class="n">_BACKOFF_S</span><span class="p">:</span>
+</span><span data-line="8">        <span class="n">wlan</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</span><span data-line="9">        <span class="n">wlan</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">ssid</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+</span><span data-line="10">        <span class="n">deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">ticks_add</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">ticks_ms</span><span class="p">(),</span> <span class="mi">10_000</span><span class="p">)</span>
+</span><span data-line="11">        <span class="k">while</span> <span class="ow">not</span> <span class="n">wlan</span><span class="o">.</span><span class="n">isconnected</span><span class="p">():</span>
+</span><span data-line="12">            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">ticks_diff</span><span class="p">(</span><span class="n">deadline</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">ticks_ms</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="13">                <span class="k">break</span>
+</span><span data-line="14">            <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span data-line="15">        <span class="k">if</span> <span class="n">wlan</span><span class="o">.</span><span class="n">isconnected</span><span class="p">():</span>
+</span><span data-line="16">            <span class="k">return</span> <span class="kc">True</span>
+</span><span data-line="17">        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
+</span><span data-line="18">    <span class="k">return</span> <span class="kc">False</span>
+</span></pre></div>
+</div>
+<p>When that helper keeps returning <a class="reference external" href="https://docs.python.org/3/library/constants.html#False" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">False</span></code></a>, the
+radio firmware itself may be wedged. The last resort is
+power-cycling the radio:
+<a class="reference internal" href="../../../../library/network.WLAN.html#network.WLAN.active" title="network.WLAN.active"><code class="xref py py-meth docutils literal notranslate"><span class="pre">active(False)</span></code></a>, a brief
+pause, <a class="reference internal" href="../../../../library/network.WLAN.html#network.WLAN.active" title="network.WLAN.active"><code class="xref py py-meth docutils literal notranslate"><span class="pre">active(True)</span></code></a>,
+reconnect from scratch. This brings the radio firmware
+back to a known state at the cost of an extra few
+seconds of downtime:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">radio_power_cycle</span><span class="p">(</span><span class="n">wlan</span><span class="p">,</span> <span class="n">ssid</span><span class="p">,</span> <span class="n">password</span><span class="p">):</span>
+</span><span data-line="2">    <span class="n">wlan</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="3">    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="4">    <span class="n">wlan</span><span class="o">.</span><span class="n">active</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="5">    <span class="k">return</span> <span class="n">reconnect</span><span class="p">(</span><span class="n">wlan</span><span class="p">,</span> <span class="n">ssid</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>A cam that has been off-network for minutes is a real
+failure that the application has to see. The recovery
+code should surface that state – mark the network as
+unhealthy in a flag the main loop checks, and let the
+application skip the network sends it would have made
+while the flag is clear – so a long outage does not
+stall the application waiting on sockets that will
+never write.</p>
+</section>
 <section id="ethernet-when-present">
-<h2><span class="section-number">12.4.4. </span>Ethernet, when present<a class="headerlink" href="#ethernet-when-present" title="Link to this heading">¶</a></h2>
+<h2><span class="section-number">12.4.5. </span>Ethernet, when present<a class="headerlink" href="#ethernet-when-present" title="Link to this heading">¶</a></h2>
 <p>Boards with built-in Ethernet expose the same pattern
 without the <code class="docutils literal notranslate"><span class="pre">connect</span></code> step. The <a class="reference internal" href="../../../../library/network.LAN.html#network.LAN" title="network.LAN"><code class="xref py py-class docutils literal notranslate"><span class="pre">LAN</span></code></a>
 interface is brought up with
@@ -390,7 +459,7 @@ configuration knobs that did not fit here, see
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

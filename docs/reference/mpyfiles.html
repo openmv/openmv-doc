@@ -117,6 +117,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#the-mpy-cross-compiler">The mpy-cross compiler</a></li>
 <li><a class="reference internal" href="#versioning-and-compatibility-of-mpy-files">Versioning and compatibility of .mpy files</a></li>
 <li><a class="reference internal" href="#binary-encoding-of-mpy-files">Binary encoding of .mpy files</a><ul>
 <li><a class="reference internal" href="#the-header">The header</a></li>
@@ -148,7 +149,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/ec2f915caa8aef44ac1b814eae04a1f68fbe4f14/docs/reference/mpyfiles.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/74ac628dd91386833ba6e529c833b4f1ec711e6b/docs/reference/mpyfiles.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -235,6 +236,70 @@ over <code class="docutils literal notranslate"><span class="pre">foo.mpy</span>
 Python source files (.py files) via the <code class="docutils literal notranslate"><span class="pre">mpy-cross</span></code> program.  For some architectures
 an .mpy file can also contain native machine code, which can be generated in
 a variety of ways, most notably from C source code.</p>
+<section id="the-mpy-cross-compiler">
+<span id="mpy-cross-tool"></span><h2>The mpy-cross compiler<a class="headerlink" href="#the-mpy-cross-compiler" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">mpy-cross</span></code> is the cross-compiler that turns a <code class="docutils literal notranslate"><span class="pre">.py</span></code> source file
+into a <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> binary container ready to import on the cam. It is
+part of the MicroPython source tree (the same one used to build the
+cam’s firmware) and is also published as a pip package for host-side
+use without a full firmware checkout:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">$<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>mpy-cross
+</span></pre></div>
+</div>
+<p>Or via <a class="reference external" href="https://pypa.github.io/pipx/">pipx</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">$<span class="w"> </span>pipx<span class="w"> </span>install<span class="w"> </span>mpy-cross
+</span></pre></div>
+</div>
+<p>Once installed, invoke it on a single source file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">$<span class="w"> </span>mpy-cross<span class="w"> </span>foo.py
+</span></pre></div>
+</div>
+<p>This produces <code class="docutils literal notranslate"><span class="pre">foo.mpy</span></code> in the current directory, ready to copy
+onto the cam’s filesystem alongside other modules or to feed into a
+ROMFS image.</p>
+<p>The most useful command-line options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">&lt;path&gt;</span></code> – output path for the generated <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> (defaults
+to the input filename with the extension replaced; <code class="docutils literal notranslate"><span class="pre">-o</span> <span class="pre">-</span></code> writes
+to stdout).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-O&lt;n&gt;</span></code> – optimisation level <code class="docutils literal notranslate"><span class="pre">0</span></code> to <code class="docutils literal notranslate"><span class="pre">3</span></code>. The default
+<code class="docutils literal notranslate"><span class="pre">0</span></code> preserves assertions and full source locations; <code class="docutils literal notranslate"><span class="pre">3</span></code>
+strips assertions and docstrings and rewrites <code class="docutils literal notranslate"><span class="pre">if</span> <span class="pre">__debug__</span></code>
+blocks. The level controls the same <code class="docutils literal notranslate"><span class="pre">micropython.opt_level</span></code>
+surface the runtime exposes.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-march=&lt;arch&gt;</span></code> – target native architecture for <code class="docutils literal notranslate"><span class="pre">&#64;native</span></code>
+and <code class="docutils literal notranslate"><span class="pre">&#64;viper</span></code> decorated functions. Required when the source uses
+those decorators. The value must match the cam’s MCU class: pick
+it from the list <code class="docutils literal notranslate"><span class="pre">mpy-cross</span> <span class="pre">--help</span></code> prints, or read it off the
+cam at runtime with <code class="docutils literal notranslate"><span class="pre">sys.implementation._mpy</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">&lt;path&gt;</span></code> – source path string embedded in the <code class="docutils literal notranslate"><span class="pre">.mpy</span></code>’s
+debug info. Useful when the on-disk path differs from the import
+path the file should show under in tracebacks.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-X</span> <span class="pre">emit=bytecode|native|viper</span></code> – choose the default emitter
+for the whole module (a per-function alternative to <code class="docutils literal notranslate"><span class="pre">&#64;native</span></code> /
+<code class="docutils literal notranslate"><span class="pre">&#64;viper</span></code> decorators).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--version</span></code> – prints the <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> format version this binary
+emits. That number must match the version the cam’s runtime
+supports (see the release table below) or the import will raise
+<code class="docutils literal notranslate"><span class="pre">ValueError('incompatible</span> <span class="pre">.mpy</span> <span class="pre">file')</span></code>.</p></li>
+</ul>
+<p>Run <code class="docutils literal notranslate"><span class="pre">mpy-cross</span> <span class="pre">--help</span></code> for the full flag list.</p>
+<p>The pip package also exposes a small Python module API so build
+scripts can drive the compiler in-process instead of forking a
+subprocess by hand:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">mpy_cross</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">mpy_cross</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;foo.py&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;build/foo.mpy&#39;</span><span class="p">,</span> <span class="n">opt</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+</span><span data-line="4">                  <span class="n">march</span><span class="o">=</span><span class="n">mpy_cross</span><span class="o">.</span><span class="n">NATIVE_ARCH_ARMV7EMSP</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">mpy_cross.compile</span></code>, <code class="docutils literal notranslate"><span class="pre">mpy_cross.run</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">mpy_cross.mpy_version</span></code> are the three entry points;
+<code class="docutils literal notranslate"><span class="pre">mpy_cross.CrossCompileError</span></code> carries the compiler’s stderr when
+something goes wrong. The architecture constants
+(<code class="docutils literal notranslate"><span class="pre">NATIVE_ARCH_ARMV7EMSP</span></code>, <code class="docutils literal notranslate"><span class="pre">NATIVE_ARCH_ARMV7EMDP</span></code>, etc.) match
+the strings the <code class="docutils literal notranslate"><span class="pre">-march</span></code> flag accepts.</p>
+</section>
 <section id="versioning-and-compatibility-of-mpy-files">
 <h2>Versioning and compatibility of .mpy files<a class="headerlink" href="#versioning-and-compatibility-of-mpy-files" title="Link to this heading">¶</a></h2>
 <p>A given .mpy file may or may not be compatible with a given MicroPython system.
@@ -573,7 +638,7 @@ following the code comes a vuint counting the number of sub-raw-code elements.</
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 09 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

@@ -146,7 +146,7 @@ Power pins
 
 .. tip::
 
-   Use the :doc:`battery life estimator <../tutorial/production/battery-life>` to
+   Use the :doc:`battery life estimator <../tutorial/tools/battery-life-estimator>` to
    model how long the RT1062 will run on a battery for a given
    active / deep-sleep duty cycle.
 

@@ -20,7 +20,7 @@ Highlights
 
 .. tip::
 
-   Use the :doc:`battery life estimator <../tutorial/production/battery-life>` to
+   Use the :doc:`battery life estimator <../tutorial/tools/battery-life-estimator>` to
    model how long an OpenMV Cam powered through this shield will run
    on a given battery for a given active / deep-sleep duty cycle.
 

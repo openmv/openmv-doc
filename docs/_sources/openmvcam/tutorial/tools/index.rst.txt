@@ -20,6 +20,7 @@ it, or help size the system around it.
 
    openmv-py/index.rst
    arduino-rpc/index.rst
+   micropython-tools.rst
 
 .. toctree::
    :caption: Calculators

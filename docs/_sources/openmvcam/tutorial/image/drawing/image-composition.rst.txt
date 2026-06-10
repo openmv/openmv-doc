@@ -8,9 +8,9 @@ annotations an algorithm needs to make visible,
 but not all of them. Sometimes the annotation is
 itself an image: a captured reference frame to
 display side by side with the current one, a
-small icon or logo overlaid in a corner of the
-preview, a previously stored template visualised
-on top of a live frame for calibration. The
+thumbnail of a previous capture shown in a corner
+of the preview, a previously stored template
+visualised on top of a live frame for calibration. The
 mechanism for drawing one image onto another is
 a single method -- :meth:`~image.Image.draw_image`
 -- with enough parameters to handle the position,
@@ -26,11 +26,11 @@ it at:
 
 ::
 
-    icon = image.Image("/sdcard/logo.bmp")
-    img.draw_image(icon, x=10, y=10)
+    reference = image.Image("/sdcard/reference.bmp")
+    img.draw_image(reference, x=10, y=10)
 
 The destination is ``img``; the source is
-``icon``; the source's top-left pixel lands at
+``reference``; the source's top-left pixel lands at
 ``(10, 10)`` of ``img``, and the rest of the
 source's pixels follow to the right and downward
 from there. Pixels of the destination that the
@@ -56,7 +56,7 @@ composing it:
 
 ::
 
-    img.draw_image("/sdcard/logo.bmp", x=10, y=10)
+    img.draw_image("/sdcard/reference.bmp", x=10, y=10)
 
 That looks like a convenience -- one line
 instead of two -- and it is, but the difference
@@ -77,20 +77,21 @@ Scaling
 When the source and the destination are
 different sizes -- a low-resolution capture
 being composed onto a higher-resolution canvas,
-or a logo that needs to be sized to a particular
-fraction of the frame -- two scale parameters
-take care of resizing the source as it is drawn:
+or a thumbnail that needs to be sized to a
+particular fraction of the frame -- two scale
+parameters take care of resizing the source as
+it is drawn:
 
 ::
 
-    img.draw_image(icon, x=10, y=10, x_scale=2.0, y_scale=2.0)
+    img.draw_image(reference, x=10, y=10, x_scale=2.0, y_scale=2.0)
 
 ``x_scale`` and ``y_scale`` are independent
 floats; passing both at the same value scales
 uniformly, and passing different values
 stretches or shrinks the source along one axis.
 The scaling happens at draw time; the source
-``icon`` is not modified.
+``reference`` is not modified.
 
 A bitmask of *hint* flags decides how the
 scaling actually interpolates between pixels.
@@ -123,13 +124,16 @@ intermediate values mix the two proportionally:
 
     img.draw_image(overlay, x=0, y=0, alpha=128)
 
-A separate ``alpha_palette`` argument takes a
-:data:`~image.GRAYSCALE` image whose values are
-used as *per-pixel* alpha. That is the right
-form when the overlay has a non-uniform
-transparency -- an icon with soft anti-aliased
-edges, say, or a heatmap whose alpha varies
-with its intensity.
+A separate ``alpha_palette`` argument is the
+module's only per-pixel alpha mechanism. It takes
+a :data:`~image.GRAYSCALE` image whose values are
+used as alpha at the matching position in the
+source -- a heatmap whose alpha varies with its
+intensity, for example. The alpha has to be
+supplied as that separate grayscale argument; a
+source image that carries its own alpha channel
+(a PNG with transparency, say) does not bring it
+through automatically.
 
 Source ROI and palette
 ----------------------
@@ -156,36 +160,3 @@ the scaling, the alpha, the destination-side
 ``mask`` argument, and the destination-side
 ``roi`` parameter that scopes the *write* to a
 rectangle of the destination.
-
-Aliases that signal intent
---------------------------
-
-``draw_image`` has four aliases that do exactly
-the same thing under different names:
-
-* :meth:`~image.Image.blend`
-* :meth:`~image.Image.replace`
-* :meth:`~image.Image.assign`
-* :meth:`~image.Image.set`
-
-They exist because what the code is *doing*
-frames how the code reads. A call to ``blend``
-suggests the writer means an alpha-mixed
-overlay; a call to ``replace`` suggests a full
-substitution of the destination's pixels;
-``assign`` and ``set`` suggest the destination
-is being initialised from the source. The
-behaviour is identical, but the name picked at
-the call site tells the next reader of the code
-what the intent was without making them inspect
-the argument list.
-
-With geometric primitives for known geometry,
-the text primitive for labels, and image
-composition for overlays, application code has
-a complete set of ways to write *into* an
-image. What remains is the small handful of
-methods that mark the image based on what is
-*already there* -- a flood fill grown from a
-seed pixel, glyphs that visualise the structure
-of a detection result.

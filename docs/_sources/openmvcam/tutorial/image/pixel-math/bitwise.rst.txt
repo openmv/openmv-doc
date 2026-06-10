@@ -6,12 +6,9 @@ work on pixel *values* -- the integer
 brightnesses or the packed colour words.
 *Bitwise* operations work one level lower, on
 the individual bits inside those values. For
-grayscale and colour images the distinction is
-mostly academic; bitwise maths on brightness
-values rarely lines up with anything visually
-meaningful. For *binary* images, though, where
-each pixel is just one bit, the bitwise
-operations are the natural arithmetic.
+*binary* images, where each pixel is just one
+bit, the bitwise operations are the natural
+arithmetic.
 
 The bitwise family
 ------------------
@@ -29,12 +26,10 @@ of two-input bitwise operations:
 
 Each operates per-bit on every byte of both
 images' buffers. On a binary image, where each
-byte holds eight pixels, that means the
-operation runs on eight pixels at a time per
-byte processed. On a grayscale or colour image
-it runs on every bit of every channel, with the
-result usually having no useful interpretation
-as an image.
+byte holds eight pixels, the operation runs on
+eight pixels per byte processed. On a grayscale
+or colour image it runs on every bit of every
+channel.
 
 .. figure:: ../figures/bitwise-truth-table.svg
    :alt: Three truth tables for the AND, OR,
@@ -106,32 +101,13 @@ separate :meth:`~image.Image.invert`.
 Bitwise on non-binary images
 ----------------------------
 
-On grayscale and colour images, the bitwise
-operations still run -- the bits exist whether
-or not their meaning is obvious -- but the
-results almost never line up with what the
-application meant. AND-ing two grayscale
-images zeros every bit that is not on in both
-sources, and the resulting value is whatever
-shared bits happen to remain. That has
-specific uses -- forcing the low bits of a
-value to zero before quantising, masking off
-the alpha bits of a packed pixel, that kind of
-trick -- but for combining two grayscale
-frames into a single output frame, the
-arithmetic operations on the previous page
-are almost always what the application
-actually wants.
-
-Use bitwise operations on binary images by
-default; reach for them on multi-bit formats
-only when bytewise control is the explicit
-goal.
-
-With a complete set of bitwise combinators for
-binary images, and the arithmetic family for
-multi-bit formats, the pixel-math toolkit can
-combine images in every way classical MV needs
-them combined. What comes next is the most
-common *application* of that toolkit: detecting
-change between two frames.
+The bitwise operations also run on grayscale and
+colour images. They are most useful there when
+the image holds binary-like content -- a
+grayscale frame whose pixels are all ``0`` or
+``255``, an RGB565 frame with only fully-black
+and fully-white pixels -- where AND, OR, and
+XOR give the same combinations they would on a
+true binary image. For images that span the
+full range of values, the arithmetic operations
+on the previous page are usually a better fit.

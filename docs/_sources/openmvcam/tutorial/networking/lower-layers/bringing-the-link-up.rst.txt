@@ -94,6 +94,77 @@ A few practical failure modes show up at this step.
   See :doc:`/library/network.WLAN` for the full
   surface.
 
+Staying connected
+-----------------
+
+Bringing the link up is half the problem. Staying
+connected is the other half -- access points reboot,
+the cam roams out of range, DHCP leases expire, the
+radio firmware occasionally gets stuck. A cam that is
+going to live on the network for months has to notice
+that and recover on its own.
+
+The detection pattern is to call
+:meth:`~network.WLAN.isconnected` once per main-loop
+iteration and react when it returns :data:`False`.
+``isconnected()`` can lie briefly when a connection has
+dropped without the radio having noticed yet -- a
+socket send that fails when the link "should" be up is
+the application's other evidence of a drop.
+:meth:`~network.WLAN.status` is the more authoritative
+source when the two disagree.
+
+The reconnect pattern is :meth:`~network.WLAN.disconnect`
+followed by :meth:`~network.WLAN.connect` with the same
+credentials, with the wait wrapped in a timeout as on
+the initial connection. Back off between attempts --
+one second, two, four, doubling up to a minute or so
+-- so a long outage does not hammer the AP and does
+not burn the radio's power budget on spin loops::
+
+    import network
+    import time
+
+    _BACKOFF_S = (1, 2, 4, 8, 16, 32, 60)
+
+    def reconnect(wlan, ssid, password):
+        for delay in _BACKOFF_S:
+            wlan.disconnect()
+            wlan.connect(ssid, password)
+            deadline = time.ticks_add(time.ticks_ms(), 10_000)
+            while not wlan.isconnected():
+                if time.ticks_diff(deadline, time.ticks_ms()) < 0:
+                    break
+                time.sleep_ms(100)
+            if wlan.isconnected():
+                return True
+            time.sleep(delay)
+        return False
+
+When that helper keeps returning :data:`False`, the
+radio firmware itself may be wedged. The last resort is
+power-cycling the radio:
+:meth:`active(False) <network.WLAN.active>`, a brief
+pause, :meth:`active(True) <network.WLAN.active>`,
+reconnect from scratch. This brings the radio firmware
+back to a known state at the cost of an extra few
+seconds of downtime::
+
+    def radio_power_cycle(wlan, ssid, password):
+        wlan.active(False)
+        time.sleep(1)
+        wlan.active(True)
+        return reconnect(wlan, ssid, password)
+
+A cam that has been off-network for minutes is a real
+failure that the application has to see. The recovery
+code should surface that state -- mark the network as
+unhealthy in a flag the main loop checks, and let the
+application skip the network sends it would have made
+while the flag is clear -- so a long outage does not
+stall the application waiting on sockets that will
+never write.
+
 Ethernet, when present
 ----------------------
 

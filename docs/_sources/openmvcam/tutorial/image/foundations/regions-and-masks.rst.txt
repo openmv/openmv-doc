@@ -195,11 +195,3 @@ whether the source's pixels will survive intact,
 whether a separate result image will be allocated,
 and whether the return value is the source itself
 or something else.
-
-With ROIs for axis-aligned scoping, masks for
-arbitrary patterns, and the three method families
-explaining how each call will treat the source,
-application code has the full set of levers it
-needs to direct an image operation at exactly the
-pixels it cares about and to predict where the
-results will end up.

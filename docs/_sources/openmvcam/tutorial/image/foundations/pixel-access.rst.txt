@@ -112,8 +112,8 @@ reads the pixel at linear index ``i``,
 returns is the *raw stored value* for the format,
 not the unpacked tuple :meth:`~image.Image.get_pixel`
 returns by default. That distinction matters
-because the format chosen earlier in Foundations
-decides what the raw value looks like:
+because the format chosen earlier decides what the
+raw value looks like:
 
 * Grayscale and Bayer pixels come back as 8-bit
   integers.
@@ -142,30 +142,6 @@ order, yielding the raw values one pixel at a
 time, and ``len(img)`` is the pixel count for
 uncompressed formats or the byte count for
 compressed streams.
-
-The bytes-like view
--------------------
-
-The bytes-like view of the buffer introduced
-earlier in Foundations is a third route to the
-same memory. The view is what makes
-``uart.write(img)`` and ``hashlib.sha256(img)``
-work without an explicit copy step -- the
-receiving API sees a flat byte sequence, in
-row-major order, without going through any
-per-pixel accessor.
-
-The same view is available read-write through
-:meth:`~image.Image.bytearray` when bytewise
-control over the underlying memory is the actual
-goal. Writes through that view skip the
-format-aware checks that ``set_pixel`` and the
-index form perform -- nothing stops a write of
-``0xFFFF`` into a single byte position of an
-RGB565 buffer even though that overflows a 16-bit
-pixel -- so the bytearray view is reserved for
-cases where bytewise control is exactly the
-point.
 
 Why per-pixel Python is the slow path
 -------------------------------------

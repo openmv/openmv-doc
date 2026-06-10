@@ -45,8 +45,10 @@ two bytes per pixel holding red, green, and blue
 fields packed into a 16-bit word. A Bayer image
 carries one byte per pixel, but each pixel is sampled
 through one of three colour filters chosen by its
-position in the mosaic. Vision Sensors enumerated the
-whole catalogue; what matters here is that exactly
+position in the mosaic.
+:doc:`Vision Sensors </openmvcam/tutorial/vision/formats/pixel-formats>`
+enumerated the whole catalogue; what matters here is that
+exactly
 one of those formats is set on every ``Image``, and
 the choice drives the bytes-per-pixel arithmetic and
 the meaning of any single byte in the buffer.
@@ -138,8 +140,8 @@ ndarray -- a two-axis ``(h, w)`` shape becomes a
 grayscale image, a three-axis ``(h, w, 3)`` shape
 becomes RGB565 -- with the float values scaled from
 ``0.0`` -- ``255.0`` into the integer pixel range. A
-neural-network heatmap, an FFT magnitude, anything
-produced by :mod:`ml` or :mod:`ulab` becomes
+neural-network heatmap, a numerical array of any kind,
+anything produced by :mod:`ml` or :mod:`ulab` becomes
 something the drawing and inspection side of the
 image module can use.
 
@@ -168,6 +170,7 @@ the image to bytes" step:
 
     import csi
     import hashlib
+
     csi0 = csi.CSI()
     csi0.reset()
     csi0.pixformat(csi.RGB565)
@@ -205,8 +208,10 @@ data on the heap would crowd everything else off it.
 
 The way out is that image buffers mostly do not live
 on the Python heap. They live in the dedicated
-region of RAM Vision Sensors introduced as the
-*frame buffer* -- the same memory the camera DMA
+region of RAM
+:doc:`Vision Sensors </openmvcam/tutorial/vision/csi/framebuffers>`
+introduced as the *frame buffer* -- the same memory the
+camera DMA
 writes captured frames into and the IDE preview
 reads finished frames out of. Most operations on an
 ``Image`` modify their source in place: the

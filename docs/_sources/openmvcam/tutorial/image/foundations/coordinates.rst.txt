@@ -2,15 +2,15 @@ Coordinates and regions
 =======================
 
 Image processing acts on pixels, and to act on a
-pixel an algorithm has to name it. To act on a
-rectangle of them, the same thing -- the rectangle
-has to be named in a way the algorithm and the
-application code both read the same. The convention
-the image module uses for naming positions and
-rectangles is straightforward, with one detail that
-catches readers used to mathematical convention
-rather than computer-graphics convention, and that
-is worth being explicit about up front.
+pixel an algorithm has to address it by coordinate.
+To act on a rectangle of them, the same thing -- the
+rectangle has to be described in a way the algorithm
+and the application code agree on. The convention
+the image module uses for coordinates and rectangles
+is straightforward, with one detail that catches
+readers used to mathematical convention rather than
+computer-graphics convention, and that is worth being
+explicit about up front.
 
 The pixel grid
 --------------
@@ -187,24 +187,29 @@ at what angle around it."
    ``(x, y)`` from the top-left origin, *polar*
    ``(r, theta)`` from a chosen centre.
 
-Why bother switching? Because of an identity worth
-explaining. In *polar* coordinates, rotating the
-image about the chosen centre is the same operation
-as *translating* its pixels along the angle axis --
-a rotated copy of the image is the original shifted
-sideways in *polar* form. If the distance axis uses
-a logarithmic scale -- the *log-polar* variant; the
-angle axis stays linear in both cases -- *scaling*
-the image about the chosen centre is the same
-operation as *translating* its pixels along the
-distance axis. So an algorithm that has to be
-robust to rotated or zoomed-in versions of a known
-pattern can do its searching in *polar* space,
-where rotations and scale changes turn into
-ordinary translations. Translations are much
-cheaper to search for than rotations and scales,
-and the *polar* re-projection is what makes the
-substitution available.
+Why bother switching? Because of two identities that
+turn hard searches into easy ones.
+
+In *polar* coordinates, rotating the image about the
+chosen centre is the same operation as *translating*
+its pixels along the angle axis -- the *x* direction
+in the re-projected image. A rotated copy is the
+original shifted left or right in *polar* form.
+
+In the *log-polar* variant -- the distance axis uses a
+logarithmic scale, the angle axis stays linear --
+*scaling* the image about the chosen centre is the
+same operation as *translating* its pixels along the
+distance axis -- the *y* direction. A scaled copy is
+the original shifted up or down in *log-polar* form.
+
+So an algorithm that has to recognise a known pattern
+under rotation or scale can do its searching in
+*polar* space, where both transformations turn into
+ordinary translations. Translations are much cheaper
+to search for than rotations and scales, and the
+*polar* re-projection is what makes the substitution
+available.
 
 *Polar* coordinates do not replace *Cartesian* for
 storing pixels; the bytes always live on the

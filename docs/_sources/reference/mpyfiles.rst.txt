@@ -18,6 +18,81 @@ Python source files (.py files) via the ``mpy-cross`` program.  For some archite
 an .mpy file can also contain native machine code, which can be generated in
 a variety of ways, most notably from C source code.
 
+.. _mpy_cross_tool:
+
+The mpy-cross compiler
+----------------------
+
+``mpy-cross`` is the cross-compiler that turns a ``.py`` source file
+into a ``.mpy`` binary container ready to import on the cam. It is
+part of the MicroPython source tree (the same one used to build the
+cam's firmware) and is also published as a pip package for host-side
+use without a full firmware checkout:
+
+.. code-block:: bash
+
+    $ pip install --user mpy-cross
+
+Or via `pipx <https://pypa.github.io/pipx/>`_:
+
+.. code-block:: bash
+
+    $ pipx install mpy-cross
+
+Once installed, invoke it on a single source file:
+
+.. code-block:: bash
+
+    $ mpy-cross foo.py
+
+This produces ``foo.mpy`` in the current directory, ready to copy
+onto the cam's filesystem alongside other modules or to feed into a
+ROMFS image.
+
+The most useful command-line options:
+
+* ``-o <path>`` -- output path for the generated ``.mpy`` (defaults
+  to the input filename with the extension replaced; ``-o -`` writes
+  to stdout).
+* ``-O<n>`` -- optimisation level ``0`` to ``3``. The default
+  ``0`` preserves assertions and full source locations; ``3``
+  strips assertions and docstrings and rewrites ``if __debug__``
+  blocks. The level controls the same ``micropython.opt_level``
+  surface the runtime exposes.
+* ``-march=<arch>`` -- target native architecture for ``@native``
+  and ``@viper`` decorated functions. Required when the source uses
+  those decorators. The value must match the cam's MCU class: pick
+  it from the list ``mpy-cross --help`` prints, or read it off the
+  cam at runtime with ``sys.implementation._mpy``.
+* ``-s <path>`` -- source path string embedded in the ``.mpy``'s
+  debug info. Useful when the on-disk path differs from the import
+  path the file should show under in tracebacks.
+* ``-X emit=bytecode|native|viper`` -- choose the default emitter
+  for the whole module (a per-function alternative to ``@native`` /
+  ``@viper`` decorators).
+* ``--version`` -- prints the ``.mpy`` format version this binary
+  emits. That number must match the version the cam's runtime
+  supports (see the release table below) or the import will raise
+  ``ValueError('incompatible .mpy file')``.
+
+Run ``mpy-cross --help`` for the full flag list.
+
+The pip package also exposes a small Python module API so build
+scripts can drive the compiler in-process instead of forking a
+subprocess by hand::
+
+    import mpy_cross
+
+    mpy_cross.compile('foo.py', dest='build/foo.mpy', opt=3,
+                      march=mpy_cross.NATIVE_ARCH_ARMV7EMSP)
+
+``mpy_cross.compile``, ``mpy_cross.run``, and
+``mpy_cross.mpy_version`` are the three entry points;
+``mpy_cross.CrossCompileError`` carries the compiler's stderr when
+something goes wrong. The architecture constants
+(``NATIVE_ARCH_ARMV7EMSP``, ``NATIVE_ARCH_ARMV7EMDP``, etc.) match
+the strings the ``-march`` flag accepts.
+
 Versioning and compatibility of .mpy files
 ------------------------------------------
 
