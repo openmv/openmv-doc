@@ -4,7 +4,7 @@ OpenMV IDE Changelog
 ====================
 
 Every OpenMV IDE release brings new features and improvements. Here's what's
-new in each one — new editor, debugger, and tooling features, bug fixes, and
+new in each one — new editor, camera, and tooling features, bug fixes, and
 platform support, plus any workflow changes and how they affect you. Releases
 are grouped by major version, newest first. Click a version to expand its
 releases.

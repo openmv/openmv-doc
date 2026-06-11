@@ -1,12 +1,11 @@
 Operations: keys, expiry, and troubleshooting
 =============================================
 
-The pages above cover how to *get* and *use*
-certificates. The pieces that span every deployed
-device come next: protecting the private key once it is
-on the camera, planning for the day the certificate
-expires, and the short list of error modes that show up
-in practice.
+Three pieces of certificate work span every deployed
+device: protecting the private key once it is on the
+camera, planning for the day the certificate expires,
+and the short list of error modes that show up in
+practice.
 
 Protecting the private key
 --------------------------
@@ -66,8 +65,7 @@ passes, a :data:`ssl.CERT_REQUIRED` peer rejects the
 connection -- so expiry is a real, scheduled outage,
 not a theoretical risk. The camera's clock must also
 be correct for the validity check to be evaluated
-honestly (set it with :func:`ntptime.settime`, as
-shown on :doc:`prerequisites`).
+honestly.
 
 * **Self-signed.** You picked the lifetime with
   ``-days``. When it lapses you must regenerate the
@@ -96,30 +94,24 @@ writable filesystem plus a remote-update path, or
 running the camera as a *client* that trusts a CA you
 rotate centrally). If a certificate must live in
 ROMFS, schedule firmware updates around its lifetime.
-In all cases keep the clock synchronised with
-:func:`ntptime.settime` so the validity check is
-accurate.
 
 Troubleshooting
 ---------------
 
-* **The clock must be set.** If the camera's clock is
-  wrong (for example not yet set after power-up) the
-  certificate validity check fails -- call
-  :func:`ntptime.settime` first, as shown on
-  :doc:`prerequisites`.
+* **The clock must be set.** A camera that has not set
+  its clock since power-up fails the certificate
+  validity check -- call :func:`ntptime.settime`
+  first.
 * **Host name must match.** When the client passes
   ``server_hostname`` it must match the certificate's
   ``subjectAltName`` (or ``CN`` on older stacks), or
   verification fails.
 * **Wrong format.** A PEM file copied to the camera
-  will not load -- convert to DER as shown on
-  :doc:`self-signed`.
+  will not load -- convert to DER first.
 * **Certificate expired.** A connection that worked
   before and now fails with :exc:`OSError` may simply
   have an expired certificate -- check the validity
-  dates and regenerate/redeploy as needed (see
-  `Certificate expiry and rotation`_ above).
+  dates and regenerate/redeploy as needed.
 * **Ed25519 keys fail.** Use ECDSA P-256/P-384 or RSA,
   not Ed25519.
 * **Errors are** :exc:`OSError`. MicroPython does not

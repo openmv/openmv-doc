@@ -72,9 +72,8 @@ of the peer's own certificate:
    for ISRG Root X1 is `isrgrootx1.pem
    <https://letsencrypt.org/certs/isrgrootx1.pem>`__
    (they also offer it pre-encoded as `isrgrootx1.der
-   <https://letsencrypt.org/certs/isrgrootx1.der>`__,
-   which lets you skip the DER conversion in the next
-   step). Other CAs publish theirs on a similar "root
+   <https://letsencrypt.org/certs/isrgrootx1.der>`__).
+   Other CAs publish theirs on a similar "root
    certificates" / "repository" page; the canonical
    public set is the `Mozilla CA program (CCADB)
    <https://www.ccadb.org/>`__. Confirm you fetched the
@@ -169,4 +168,4 @@ Which certificate you trust is a trade-off:
    :class:`ssl.SSLContext` per anchor. And because that
    certificate will itself eventually expire or be
    rotated by the CA, treat it like any other
-   certificate on the device -- see :doc:`operations`.
+   certificate on the device.

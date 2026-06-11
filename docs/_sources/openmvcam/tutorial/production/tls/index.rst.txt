@@ -15,16 +15,6 @@ verify a remote server, how to protect the private key,
 and how certificate expiry and rotation affect a
 deployed device.
 
-.. note::
-
-   Self-signed certificates are appropriate for
-   development, testing, and closed deployments where
-   you control both ends of the connection. For a
-   service that arbitrary clients (browsers, phones,
-   third parties) must trust without extra configuration
-   you need a certificate signed by a public
-   Certificate Authority; see :doc:`ca-signed`.
-
 .. toctree::
    :maxdepth: 1
 

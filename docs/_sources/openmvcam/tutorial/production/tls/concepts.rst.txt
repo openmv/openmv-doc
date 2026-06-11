@@ -68,9 +68,10 @@ File format: use DER
 The mbedTLS build used by the OpenMV Cam does not
 include PEM parsing, so the camera reads certificates
 and keys only in **DER** form (the binary encoding).
-OpenSSL produces PEM (base64 text) by default, so every
-file you copy to the camera must be converted to DER
-first (covered on :doc:`self-signed`). You will need:
+Most tools emit the **PEM** form (base64 text) by
+default, so every file headed for the camera gets
+converted to DER first -- each recipe in this section
+ends with that conversion step. You will need:
 
 * A **private key** -- kept secret, used by whichever
   side presents a certificate.

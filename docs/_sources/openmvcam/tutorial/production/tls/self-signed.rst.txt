@@ -1,12 +1,14 @@
 Self-signed certificates
 ========================
 
-The fastest way to get TLS working between two devices
-you control. Both ends trust a single certificate that
-you generate yourself; the public CA flow on
-:doc:`ca-signed` is only needed when third-party clients
-have to connect *without* being told to trust a custom
-certificate.
+A *self-signed* certificate is the fastest way to get
+TLS working between two devices you control: both ends
+trust a single certificate that you generate yourself.
+It covers every deployment where you configure both
+sides of the connection -- a public Certificate
+Authority enters the picture only when third-party
+clients have to connect *without* being told to trust a
+custom certificate.
 
 Creating a self-signed certificate
 ----------------------------------
@@ -65,7 +67,7 @@ RSA-2048 -- maximum compatibility::
 
 Certificate lifetime is set by ``-days``; certificates
 expire and must be regenerated and redeployed before
-then -- see :doc:`operations`.
+then.
 
 Converting to DER
 -----------------
@@ -91,23 +93,16 @@ filesystem. MicroPython can also mount a read-only
 there are loaded exactly like any other file -- e.g.
 ``ctx.load_cert_chain("/rom/server.der",
 "/rom/server.key.der")``. A ROMFS image is prepared on
-your development machine (for example with
-``mpremote romfs``) and is read-only at runtime, so the
+your development machine and is read-only at runtime, so the
 certificate cannot be altered on the device -- useful
 for locking down a production unit. Note that a private
 key stored in ROMFS is still readable by code running
 on the camera; ROMFS protects against *modification*,
 not *extraction*. A ROMFS-resident certificate can only
-be replaced by rebuilding and reflashing the image, so
-weigh that against the rotation discussion on
-:doc:`operations`.
+be replaced by rebuilding and reflashing the image.
 
 Using the certificate
 ---------------------
-
-The clock setup from :doc:`prerequisites` has to happen
-before any of these examples; the validity check fails
-otherwise.
 
 A complete **client** that sets the clock, opens a
 socket, verifies a self-signed server, and exchanges

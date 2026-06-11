@@ -28,8 +28,8 @@ on the camera):
 
 #. **Get a domain name.** Public CAs certify a DNS name
    you control (e.g. ``cam.example.com``); they will
-   not issue for a bare IP address or a made-up name
-   like ``openmv``.
+   not issue for a bare IP address or a local-only name
+   like ``mycam``.
 
 #. **Generate a key and a CSR.** One OpenSSL command
    produces the private key and the matching CSR. Use
@@ -127,8 +127,9 @@ on the camera):
    root is pointless -- a client only trusts roots it
    already has). A normal server presents this entire
    fullchain so any client can walk it. The camera
-   cannot: it loads and presents a single certificate,
-   which is the reason for the limitation noted below.
+   cannot: it loads and presents **one** certificate --
+   the leaf -- and cannot also send the intermediate
+   certificate(s) the CA gave you.
 
    File names you will actually see: an ACME tool such
    as ``certbot`` writes ``privkey.pem`` (your key),
@@ -147,15 +148,10 @@ on the camera):
    because they already trust the CA -- no client-side
    configuration is needed.
 
-There is one embedded limitation to be aware of
-regarding the chain from step 4. The camera loads and
-presents **one** certificate -- the leaf. It cannot
-also send the intermediate certificate(s) the CA gave
-you.
-
 .. tip::
 
-   In practice:
+   In practice, the camera presenting only the leaf
+   (and never the intermediates) plays out like this:
 
    * Clients that already have the CA's intermediate
      cached -- mainstream browsers and HTTPS libraries
