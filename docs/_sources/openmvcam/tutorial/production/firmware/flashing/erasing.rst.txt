@@ -50,10 +50,7 @@ the filesystem header so the camera reformats on the next boot) with
 
 The **OpenMV AE3** has a single writable FAT filesystem shared by
 both Cortex-M55 cores, erased once via ``-a 5``. There is no
-separate per-core filesystem erase; to replace a core's *read-only
-ROMFS* instead, re-flash that core's ROMFS image (``-a 6`` for the
-HP core / ``romfs0``, ``-a 3`` for the HE core / ``romfs1`` -- see
-:doc:`openmv-ae3`).
+separate per-core filesystem erase.
 
 OpenMV Cam RT1062
 -----------------

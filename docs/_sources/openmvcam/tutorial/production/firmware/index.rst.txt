@@ -1,7 +1,7 @@
 .. _firmware_development:
 
-Building, flashing, and debugging the firmware
-==============================================
+Firmware development
+====================
 
 These pages are for **firmware developers** -- people who want to change
 the C code that runs on the OpenMV Cam, not just write MicroPython scripts.

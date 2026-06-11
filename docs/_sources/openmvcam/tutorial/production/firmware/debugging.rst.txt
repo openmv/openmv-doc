@@ -33,10 +33,11 @@ The hardware: J-Link over SWD
 
 Connect a Segger J-Link to the camera's **SWD** pins (SWDIO, SWCLK, GND,
 and target VCC for reference; the camera is powered over USB as usual).
-A J-Link EDU / Base / Pro all work. The SWD pads / header location
-differs per camera -- check that board's pinout diagram and schematic in
-the OpenMV hardware documentation for which pins to wire (some boards
-expose SWD on the I/O header, others on dedicated test pads). Install
+A J-Link EDU / Base / Pro all work. Where the debug pins surface
+differs per camera -- many boards have a dedicated JTAG/SWD connector,
+others expose SWD on the I/O header or on test pads -- so check that
+board's pinout diagram and schematic in the OpenMV hardware
+documentation for which pins to wire. Install
 the **J-Link Software and Documentation Pack** from `segger.com
 <https://www.segger.com/downloads/jlink/>`__ on the machine the probe is
 physically plugged into. Keep it reasonably current -- older J-Link
@@ -52,12 +53,15 @@ right flash loader and memory map:
    * - Camera (``TARGET``)
      - MCU
      - J-Link ``device``
-   * - ``OPENMV4`` / ``OPENMV4P`` / ``OPENMVPT``
-     - STM32H743
-     - ``STM32H743VI``
+   * - ``OPENMV2``
+     - STM32F427
+     - ``STM32F427VG``
    * - ``OPENMV3``
      - STM32F765
      - ``STM32F765VI``
+   * - ``OPENMV4`` / ``OPENMV4P`` / ``OPENMVPT``
+     - STM32H743
+     - ``STM32H743VI``
    * - ``OPENMV_N6``
      - STM32N657
      - ``STM32N657L0``
@@ -70,15 +74,6 @@ right flash loader and memory map:
    * - ``ARDUINO_PORTENTA_H7`` / ``ARDUINO_GIGA`` / ``ARDUINO_NICLA_VISION``
      - STM32H747
      - ``STM32H747XI``
-
-.. note::
-
-   The STM32N6, MIMXRT1062, and Alif AE3 boot from **external** flash. A
-   J-Link *flash-load* of those needs the correct external loader,
-   which is less straightforward; it is usually easier to **attach** to
-   the already-running firmware (``"request": "attach"`` below) than to
-   have the debugger program flash. The STM32H7 cameras (H7 / H7 Plus /
-   Pure Thermal) have internal flash and ``launch`` works directly.
 
 VS Code Cortex-Debug setup
 --------------------------
@@ -150,28 +145,25 @@ the ``..._CM55_HP_View.svd`` for the AE3 HP core).
 Windows: the WSL ↔ Windows J-Link bridge
 ----------------------------------------
 
-WSL 2 cannot see the J-Link's USB device directly, so the split is: the
-**J-Link GDB server runs on Windows** (where the probe is plugged in)
-and **VS Code + gdb run in WSL** and connect to it over TCP.
+WSL 2 cannot see the J-Link's USB device directly, so the split is:
+**Windows serves the probe** (where it is plugged in) and **VS Code +
+gdb run in WSL** and reach it over TCP.
 
 #. **On Windows**, install the Segger J-Link pack and plug the J-Link
    into a Windows USB port.
 
-#. **On Windows**, start the J-Link GDB server, using your board's
-   device name from the table above::
-
-       "C:\Program Files\SEGGER\JLink\JLinkGDBServerCL.exe" -select USB -device STM32H743VI -endian little -if SWD -speed 4000 -port 2331
-
-   Allow it through the Windows firewall when prompted (inbound TCP
-   2331). The server window **displays the IP address** it is listening
-   on -- note it.
+#. **On Windows**, start the **J-Link Remote Server** (it ships with
+   the J-Link pack): launch it with the J-Link attached and click
+   **OK**. Allow it through the Windows firewall when prompted. The
+   window shows the **IP address** it is serving the probe on -- note
+   it.
 
 #. **In WSL**, build ``DEBUG=1`` and make sure ``arm-none-eabi-gdb`` is
    reachable (set ``armToolchainPath`` as above).
 
-#. **In WSL VS Code**, use a ``launch.json`` that connects to the
-   already-running server instead of starting one. Either keep
-   ``servertype: "jlink"`` and add ``serverpath`` + ``ipAddress``::
+#. **In WSL VS Code**, keep ``servertype: "jlink"`` -- the GDB server
+   runs in WSL and reaches the probe through the Remote Server -- and
+   add ``serverpath`` + ``ipAddress``::
 
        {
          "name": "OpenMV J-Link (Windows host)",
@@ -188,39 +180,8 @@ and **VS Code + gdb run in WSL** and connect to it over TCP.
          "armToolchainPath": "${env:HOME}/openmv-sdk-1.6.0/gcc/bin"
        }
 
-   Set ``ipAddress`` to whatever the Windows J-Link server window
-   shows. Or use the cleaner ``external`` form, which starts no server
-   and just points gdb at the bridge::
-
-       {
-         "name": "OpenMV J-Link (external)",
-         "type": "cortex-debug",
-         "request": "attach",
-         "cwd": "${workspaceFolder}",
-         "executable": "${workspaceFolder}/build/OPENMV4/bin/firmware.elf",
-         "servertype": "external",
-         "gdbTarget": "host.docker.internal:2331",
-         "armToolchainPath": "${env:HOME}/openmv-sdk-1.6.0/gcc/bin",
-         "gdbPath": "${env:HOME}/openmv-sdk-1.6.0/gcc/bin/arm-none-eabi-gdb"
-       }
-
-   Point the config at the Windows host (see below) on the port the
-   server uses (``2331`` by default). Windows Firewall must allow
-   inbound TCP on that port for ``JLinkGDBServerCL.exe``.
-
-Reaching the Windows host from WSL depends on the WSL networking mode:
-
-* **NAT mode (the default).** The Windows host is the WSL virtual
-  network's gateway. Get its address in WSL with ``ip route show
-  default`` and use that as the ``ipAddress`` / ``gdbTarget`` host; the
-  LAN IP the J-Link server window prints also works if both ends share
-  a network. ``host.docker.internal`` resolves to the Windows host
-  **only if Docker Desktop's WSL integration is installed** -- do not
-  rely on it otherwise.
-* **Mirrored mode** (``networkingMode=mirrored`` in
-  ``%UserProfile%\.wslconfig`` on recent Windows builds). WSL shares
-  the Windows network stack, so the J-Link server is reachable as plain
-  ``localhost`` and no IP discovery is needed.
+   Set ``ipAddress`` to the address the Remote Server window shows.
+   That is the whole bridge.
 
 .. tip::
 
@@ -246,28 +207,38 @@ Reaching the Windows host from WSL depends on the WSL networking mode:
 
    Use ``"request": "attach"`` to debug the firmware *as it is already
    running* without resetting or reflashing it -- ideal for catching a
-   hang in the field, and the reliable choice for the external-flash
-   boards (N6 / RT1062 / AE3). Use ``"request": "launch"`` to reset,
-   flash the ELF, and start fresh at ``runToEntryPoint``.
+   hang in the field. Use ``"request": "launch"`` to reset, flash the
+   ELF, and start fresh at ``runToEntryPoint``.
 
 Command-line debugging with gdbrunner
 -------------------------------------
 
 Setting up a GDB session against an embedded target by hand is a
-five-step dance: start the J-Link / ST-Link / OpenOCD GDB server in
+five-step dance: start the J-Link / ST-Link GDB server in
 one window with the right device, port, and interface flags; wait
 for it to print *Waiting for GDB connection*; run
 ``arm-none-eabi-gdb`` in a second window; type ``target remote
 localhost:<port>``; point gdb at the ELF. When the gdb session ends,
 remember to kill the server window. `gdbrunner
 <https://github.com/openmv/gdbrunner>`__ is a small CLI that collapses
-all of that into one foreground command::
+all of that into one foreground command. It ships in the OpenMV SDK's
+Python environment, so there is nothing to install; the usual entry
+point is the firmware repository's ``make debug`` target::
 
-    pip install gdbrunner
+    make -j$(nproc) TARGET=<TARGET> DEBUG=1 debug
+
+This runs gdbrunner with the debugger arguments from the board's
+configuration -- the J-Link device name and, where needed, the
+ST-Link external flash loader -- with the SDK's ``arm-none-eabi-gdb``
+already on ``PATH``. The default backend is J-Link; ``make
+DEBUGGER=STLINK debug`` works with an ST-Link probe instead.
+
+gdbrunner can also be invoked directly (outside the SDK, ``pip
+install gdbrunner``)::
 
     gdbrunner jlink --device STM32H743VI build/OPENMV4/bin/firmware.elf
     gdbrunner stlink build/OPENMV4/bin/firmware.elf
-    gdbrunner qemu --machine mps2-an500 build/OPENMV4/bin/firmware.elf
+    gdbrunner qemu --machine mps2-an500 build/MPS2_AN500/bin/firmware.elf
 
 The first positional argument picks the server backend (``jlink``,
 ``stlink``, ``qemu``); the rest are forwarded to that backend, with
@@ -275,15 +246,6 @@ defaults that work for the OpenMV cams. ``gdbrunner --help`` lists
 the full per-backend flag list; each backend's argument table is
 JSON-driven (``src/gdbrunner/backends.json``), so adding a new server
 is a config edit rather than code.
-
-The firmware repository's ``make debug`` target is a thin wrapper
-around gdbrunner that fills in the current ``TARGET``'s J-Link
-arguments automatically::
-
-    make -j$(nproc) TARGET=<TARGET> DEBUG=1 debug
-
-This is the fastest way to drop into command-line gdb on whichever
-board ``TARGET`` selects.
 
 What gdbrunner does for command-line work:
 
@@ -293,14 +255,17 @@ What gdbrunner does for command-line work:
   to manage.
 * **STM32CubeProgrammer auto-discovery.** The ``stlink`` backend
   searches the usual install locations (``~/STM32CubeProgrammer/``,
-  ``/opt/st/``, the STM32CubeIDE plugin tree) for
-  ``ST-LINK_gdbserver``, so the long ``--cube-prog`` path doesn't
-  have to be typed every time.
+  ``/opt/st/``, the STM32CubeIDE plugin tree) for the
+  STM32CubeProgrammer tools, so the long ``--cube-prog`` path doesn't
+  have to be typed every time. The SDK bundles its own copy at
+  ``~/openmv-sdk-<version>/stcubeprog/bin`` -- point ``--cube-prog``
+  there if no system install exists.
 * **Per-project gdbinit honoured.** A ``.gdbinit`` in the current
   directory is loaded with ``-ix`` -- overriding the user-wide
   ``~/.gdbinit`` -- so per-project gdb scripting (pretty-printers,
   board-specific macros, breakpoint sets) drops in by being present
-  in the working directory.
+  in the working directory. ``make debug`` runs from the repository
+  root, so a ``.gdbinit`` there applies.
 * **Dry run.** ``--dryrun`` prints the server command without
   running it, useful for adapting the invocation to a wrapper
   script, copying it into an IDE launcher config, or just checking
@@ -309,10 +274,13 @@ What gdbrunner does for command-line work:
   stdout / stderr visible. The default suppresses it (so gdb's UI
   stays clean); flip the flag when the server itself is what's
   misbehaving.
-* **QEMU backend.** ``qemu-system-arm`` running ``mps2-an500`` /
-  ``mps3-an547`` debugs the same ELF without a board plugged in --
-  code paths that don't touch cam-specific peripherals are
-  steppable on a flight.
+* **QEMU backend.** ``qemu-system-arm`` debugs a firmware build with
+  no board plugged in. The ``MPS2_AN500`` target selects this backend
+  in its board configuration, so ``make TARGET=MPS2_AN500 DEBUG=1
+  debug`` builds for QEMU's ``mps2-an500`` machine and steps the
+  platform-independent code -- everything that doesn't touch
+  cam-specific peripherals -- on a flight. (``qemu-system-arm`` is a
+  host install, not part of the SDK.)
 
 For source-level stepping with breakpoint gutters and a peripheral
 register view, the VS Code Cortex-Debug setup above is the better
@@ -361,33 +329,10 @@ Once a session is running (the processor halted at ``main``):
   This is the right tool when a breakpoint would change the timing you
   are trying to observe.
 
-* **Disconnecting** -- *Stop* on a ``launch`` / ``jlink`` session halts
-  the target; *Disconnect* on an ``attach`` / ``external`` session
-  leaves the camera running. Power-cycle the camera to return it to
-  normal operation afterwards.
-
-OpenOCD alternative (ST-Link)
------------------------------
-
-If you have an ST-Link instead of a J-Link, the STM32 cameras can be
-debugged with OpenOCD. The firmware repository ships OpenOCD configs
-under ``lib/micropython/ports/stm32/boards/``:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 38 62
-
-   * - OpenOCD config
-     - Cameras
-   * - ``openocd_stm32h7_dual_bank.cfg``
-     - STM32H7 -- OpenMV Cam H7, H7 Plus, Pure Thermal; Arduino
-       Portenta H7, Giga, Nicla Vision
-   * - ``openocd_stm32f7.cfg``
-     - STM32F7 -- OpenMV Cam M7
-
-Use ``servertype: "openocd"`` with ``configFiles`` pointing at the
-appropriate ``.cfg``. There are no in-repo OpenOCD configs for the N6,
-RT1062, or AE3 -- use J-Link for those.
+* **Disconnecting** -- *Stop* on a ``launch`` session halts the
+  target; *Disconnect* on an ``attach`` session leaves the camera
+  running. Power-cycle the camera to return it to normal operation
+  afterwards.
 
 Debugging pitfalls
 ------------------
@@ -400,9 +345,6 @@ Debugging pitfalls
   ``device`` name; use the exact string from the table.
 * **Breakpoints silently not hit** -- too many hardware breakpoints on
   flash-resident code; reduce them.
-* **N6 / RT1062 / AE3 won't flash from the debugger** -- they boot
-  from external flash; use ``"request": "attach"`` against running
-  firmware instead of ``launch``.
 * **Source paths don't match (Docker-built ELF)** -- build with the
   Docker ``build-firmware-dev`` target (same absolute path inside and
   outside the container) or set gdb ``set substitute-path``.

@@ -12,9 +12,10 @@ Otherwise run ``dfu-util`` with ``sudo``.
 
 These cameras use the ``openmv_dfu`` bootloader and are flashed *by DFU
 alt setting* (``-a N``), not by absolute address -- the bootloader maps
-each alt to the correct flash region. ``-w`` makes ``dfu-util`` wait
-for the device to appear; ``--reset`` on the final transfer reboots
-the camera into the new firmware.
+each alt to the correct flash region. To enter the bootloader, just
+plug the camera in: it listens briefly at power-up, and ``-w`` makes
+``dfu-util`` wait for it to appear. ``--reset`` on the final transfer
+reboots the camera into the new firmware.
 
 .. list-table::
    :header-rows: 1
@@ -60,3 +61,11 @@ Flash the OpenMV Cam H7, firmware then ROMFS::
 
     dfu-util -w -d ,37C5:9204 -a 2 -D build/OPENMV4/bin/firmware.bin
     dfu-util -w -d ,37C5:9204 -a 3 --reset -D build/OPENMV4/bin/romfs0.img
+
+.. seealso::
+
+   To wipe the camera's internal FAT filesystem -- the fix when a bad
+   ``main.py`` or a corrupted filesystem stops the camera from booting
+   -- see :doc:`erasing`.
+
+   To restore the camera's bootloader itself, see :doc:`../recovery`.

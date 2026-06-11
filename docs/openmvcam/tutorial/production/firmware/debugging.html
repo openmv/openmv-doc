@@ -9,7 +9,7 @@
   </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=5229389b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0f97248f" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -97,7 +97,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">14. Host Protocol</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">15. Tools</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html">16. Production</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="index.html">16.1. Building, flashing, and debugging the firmware</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">16.1. Firmware development</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="setup.html">16.1.1.1. Setting up the development environment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="building.html">16.1.1.2. Building the firmware</a></li>
 <li class="toctree-l4"><a class="reference internal" href="flashing/index.html">16.1.1.3. Flashing the firmware</a></li>
@@ -140,8 +140,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#windows-the-wsl-windows-j-link-bridge">16.1.1.4.5. Windows: the WSL &#8596; Windows J-Link bridge</a></li>
 <li><a class="reference internal" href="#command-line-debugging-with-gdbrunner">16.1.1.4.6. Command-line debugging with gdbrunner</a></li>
 <li><a class="reference internal" href="#using-the-debugger">16.1.1.4.7. Using the debugger</a></li>
-<li><a class="reference internal" href="#openocd-alternative-st-link">16.1.1.4.8. OpenOCD alternative (ST-Link)</a></li>
-<li><a class="reference internal" href="#debugging-pitfalls">16.1.1.4.9. Debugging pitfalls</a></li>
+<li><a class="reference internal" href="#debugging-pitfalls">16.1.1.4.8. Debugging pitfalls</a></li>
 </ul>
 </div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
@@ -165,7 +164,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/61b9fe9a9d33b7f39f3743d897e891a9881061fe/docs/openmvcam/tutorial/production/firmware/debugging.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/3bb45d6df6f923277ff0036342b47ac8b1a4cf0c/docs/openmvcam/tutorial/production/firmware/debugging.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -190,7 +189,7 @@ data-aria-dark="Switch to auto color mode">
         <span>/</span>
         <meta itemprop="position" content="3" />
       </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">16.1. </span>Building, flashing, and debugging the firmware</span></a>
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">16.1. </span>Firmware development</span></a>
         <span>/</span>
         <meta itemprop="position" content="4" />
       </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
@@ -274,10 +273,11 @@ the high-performance core.)</p>
 <h2><span class="section-number">16.1.1.4.2. </span>The hardware: J-Link over SWD<a class="headerlink" href="#the-hardware-j-link-over-swd" title="Link to this heading">¶</a></h2>
 <p>Connect a Segger J-Link to the camera’s <strong>SWD</strong> pins (SWDIO, SWCLK, GND,
 and target VCC for reference; the camera is powered over USB as usual).
-A J-Link EDU / Base / Pro all work. The SWD pads / header location
-differs per camera – check that board’s pinout diagram and schematic in
-the OpenMV hardware documentation for which pins to wire (some boards
-expose SWD on the I/O header, others on dedicated test pads). Install
+A J-Link EDU / Base / Pro all work. Where the debug pins surface
+differs per camera – many boards have a dedicated JTAG/SWD connector,
+others expose SWD on the I/O header or on test pads – so check that
+board’s pinout diagram and schematic in the OpenMV hardware
+documentation for which pins to wire. Install
 the <strong>J-Link Software and Documentation Pack</strong> from <a class="reference external" href="https://www.segger.com/downloads/jlink/">segger.com</a> on the machine the probe is
 physically plugged into. Keep it reasonably current – older J-Link
 software will not know the newer device names (STM32N6, MIMXRT, Alif).</p>
@@ -297,41 +297,36 @@ right flash loader and memory map:</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV4</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMV4P</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMVPT</span></code></p></td>
-<td><p>STM32H743</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">STM32H743VI</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV2</span></code></p></td>
+<td><p>STM32F427</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32F427VG</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV3</span></code></p></td>
 <td><p>STM32F765</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">STM32F765VI</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_N6</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV4</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMV4P</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMVPT</span></code></p></td>
+<td><p>STM32H743</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32H743VI</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_N6</span></code></p></td>
 <td><p>STM32N657</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">STM32N657L0</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_RT1060</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_RT1060</span></code></p></td>
 <td><p>MIMXRT1062</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">MIMXRT1062xxx6A</span></code></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_AE3</span></code></p></td>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_AE3</span></code></p></td>
 <td><p>Alif Ensemble (M55-HP)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">AE302F80F55D5_HP</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ARDUINO_PORTENTA_H7</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_GIGA</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_NICLA_VISION</span></code></p></td>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ARDUINO_PORTENTA_H7</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_GIGA</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_NICLA_VISION</span></code></p></td>
 <td><p>STM32H747</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">STM32H747XI</span></code></p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The STM32N6, MIMXRT1062, and Alif AE3 boot from <strong>external</strong> flash. A
-J-Link <em>flash-load</em> of those needs the correct external loader,
-which is less straightforward; it is usually easier to <strong>attach</strong> to
-the already-running firmware (<code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;attach&quot;</span></code> below) than to
-have the debugger program flash. The STM32H7 cameras (H7 / H7 Plus /
-Pure Thermal) have internal flash and <code class="docutils literal notranslate"><span class="pre">launch</span></code> works directly.</p>
 </div>
 </section>
 <section id="vs-code-cortex-debug-setup">
@@ -399,26 +394,22 @@ the <code class="docutils literal notranslate"><span class="pre">..._CM55_HP_Vie
 </section>
 <section id="windows-the-wsl-windows-j-link-bridge">
 <span id="firmware-debugging-wsl"></span><h2><span class="section-number">16.1.1.4.5. </span>Windows: the WSL ↔ Windows J-Link bridge<a class="headerlink" href="#windows-the-wsl-windows-j-link-bridge" title="Link to this heading">¶</a></h2>
-<p>WSL 2 cannot see the J-Link’s USB device directly, so the split is: the
-<strong>J-Link GDB server runs on Windows</strong> (where the probe is plugged in)
-and <strong>VS Code + gdb run in WSL</strong> and connect to it over TCP.</p>
+<p>WSL 2 cannot see the J-Link’s USB device directly, so the split is:
+<strong>Windows serves the probe</strong> (where it is plugged in) and <strong>VS Code +
+gdb run in WSL</strong> and reach it over TCP.</p>
 <ol class="arabic">
 <li><p><strong>On Windows</strong>, install the Segger J-Link pack and plug the J-Link
 into a Windows USB port.</p></li>
-<li><p><strong>On Windows</strong>, start the J-Link GDB server, using your board’s
-device name from the table above:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="s2">&quot;C:\Program Files\SEGGER\JLink\JLinkGDBServerCL.exe&quot;</span> <span class="o">-</span><span class="n">select</span> <span class="n">USB</span> <span class="o">-</span><span class="n">device</span> <span class="n">STM32H743VI</span> <span class="o">-</span><span class="n">endian</span> <span class="n">little</span> <span class="o">-</span><span class="k">if</span> <span class="n">SWD</span> <span class="o">-</span><span class="n">speed</span> <span class="mi">4000</span> <span class="o">-</span><span class="n">port</span> <span class="mi">2331</span>
-</span></pre></div>
-</div>
-<p>Allow it through the Windows firewall when prompted (inbound TCP
-2331). The server window <strong>displays the IP address</strong> it is listening
-on – note it.</p>
-</li>
+<li><p><strong>On Windows</strong>, start the <strong>J-Link Remote Server</strong> (it ships with
+the J-Link pack): launch it with the J-Link attached and click
+<strong>OK</strong>. Allow it through the Windows firewall when prompted. The
+window shows the <strong>IP address</strong> it is serving the probe on – note
+it.</p></li>
 <li><p><strong>In WSL</strong>, build <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> and make sure <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> is
 reachable (set <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code> as above).</p></li>
-<li><p><strong>In WSL VS Code</strong>, use a <code class="docutils literal notranslate"><span class="pre">launch.json</span></code> that connects to the
-already-running server instead of starting one. Either keep
-<code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> and add <code class="docutils literal notranslate"><span class="pre">serverpath</span></code> + <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code>:</p>
+<li><p><strong>In WSL VS Code</strong>, keep <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> – the GDB server
+runs in WSL and reaches the probe through the Remote Server – and
+add <code class="docutils literal notranslate"><span class="pre">serverpath</span></code> + <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
 </span><span data-line="2">  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;OpenMV J-Link (Windows host)&quot;</span><span class="p">,</span>
 </span><span data-line="3">  <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cortex-debug&quot;</span><span class="p">,</span>
@@ -435,41 +426,10 @@ already-running server instead of starting one. Either keep
 </span><span data-line="14"><span class="p">}</span>
 </span></pre></div>
 </div>
-<p>Set <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code> to whatever the Windows J-Link server window
-shows. Or use the cleaner <code class="docutils literal notranslate"><span class="pre">external</span></code> form, which starts no server
-and just points gdb at the bridge:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
-</span><span data-line="2">  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;OpenMV J-Link (external)&quot;</span><span class="p">,</span>
-</span><span data-line="3">  <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cortex-debug&quot;</span><span class="p">,</span>
-</span><span data-line="4">  <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="s2">&quot;attach&quot;</span><span class="p">,</span>
-</span><span data-line="5">  <span class="s2">&quot;cwd&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span data-line="6">  <span class="s2">&quot;executable&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">/build/OPENMV4/bin/firmware.elf&quot;</span><span class="p">,</span>
-</span><span data-line="7">  <span class="s2">&quot;servertype&quot;</span><span class="p">:</span> <span class="s2">&quot;external&quot;</span><span class="p">,</span>
-</span><span data-line="8">  <span class="s2">&quot;gdbTarget&quot;</span><span class="p">:</span> <span class="s2">&quot;host.docker.internal:2331&quot;</span><span class="p">,</span>
-</span><span data-line="9">  <span class="s2">&quot;armToolchainPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin&quot;</span><span class="p">,</span>
-</span><span data-line="10">  <span class="s2">&quot;gdbPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin/arm-none-eabi-gdb&quot;</span>
-</span><span data-line="11"><span class="p">}</span>
-</span></pre></div>
-</div>
-<p>Point the config at the Windows host (see below) on the port the
-server uses (<code class="docutils literal notranslate"><span class="pre">2331</span></code> by default). Windows Firewall must allow
-inbound TCP on that port for <code class="docutils literal notranslate"><span class="pre">JLinkGDBServerCL.exe</span></code>.</p>
+<p>Set <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code> to the address the Remote Server window shows.
+That is the whole bridge.</p>
 </li>
 </ol>
-<p>Reaching the Windows host from WSL depends on the WSL networking mode:</p>
-<ul class="simple">
-<li><p><strong>NAT mode (the default).</strong> The Windows host is the WSL virtual
-network’s gateway. Get its address in WSL with <code class="docutils literal notranslate"><span class="pre">ip</span> <span class="pre">route</span> <span class="pre">show</span>
-<span class="pre">default</span></code> and use that as the <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code> / <code class="docutils literal notranslate"><span class="pre">gdbTarget</span></code> host; the
-LAN IP the J-Link server window prints also works if both ends share
-a network. <code class="docutils literal notranslate"><span class="pre">host.docker.internal</span></code> resolves to the Windows host
-<strong>only if Docker Desktop’s WSL integration is installed</strong> – do not
-rely on it otherwise.</p></li>
-<li><p><strong>Mirrored mode</strong> (<code class="docutils literal notranslate"><span class="pre">networkingMode=mirrored</span></code> in
-<code class="docutils literal notranslate"><span class="pre">%UserProfile%\.wslconfig</span></code> on recent Windows builds). WSL shares
-the Windows network stack, so the J-Link server is reachable as plain
-<code class="docutils literal notranslate"><span class="pre">localhost</span></code> and no IP discovery is needed.</p></li>
-</ul>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p><strong>Alternative to the GDB-server bridge: usbipd-win.</strong> Instead of
@@ -493,26 +453,35 @@ usbipd-win is more convenient for routine development.</p>
 <p class="admonition-title">Tip</p>
 <p>Use <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;attach&quot;</span></code> to debug the firmware <em>as it is already
 running</em> without resetting or reflashing it – ideal for catching a
-hang in the field, and the reliable choice for the external-flash
-boards (N6 / RT1062 / AE3). Use <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;launch&quot;</span></code> to reset,
-flash the ELF, and start fresh at <code class="docutils literal notranslate"><span class="pre">runToEntryPoint</span></code>.</p>
+hang in the field. Use <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;launch&quot;</span></code> to reset, flash the
+ELF, and start fresh at <code class="docutils literal notranslate"><span class="pre">runToEntryPoint</span></code>.</p>
 </div>
 </section>
 <section id="command-line-debugging-with-gdbrunner">
 <h2><span class="section-number">16.1.1.4.6. </span>Command-line debugging with gdbrunner<a class="headerlink" href="#command-line-debugging-with-gdbrunner" title="Link to this heading">¶</a></h2>
 <p>Setting up a GDB session against an embedded target by hand is a
-five-step dance: start the J-Link / ST-Link / OpenOCD GDB server in
+five-step dance: start the J-Link / ST-Link GDB server in
 one window with the right device, port, and interface flags; wait
 for it to print <em>Waiting for GDB connection</em>; run
 <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> in a second window; type <code class="docutils literal notranslate"><span class="pre">target</span> <span class="pre">remote</span>
 <span class="pre">localhost:&lt;port&gt;</span></code>; point gdb at the ELF. When the gdb session ends,
 remember to kill the server window. <a class="reference external" href="https://github.com/openmv/gdbrunner">gdbrunner</a> is a small CLI that collapses
-all of that into one foreground command:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">pip</span> <span class="n">install</span> <span class="n">gdbrunner</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">gdbrunner</span> <span class="n">jlink</span> <span class="o">--</span><span class="n">device</span> <span class="n">STM32H743VI</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
-</span><span data-line="4"><span class="n">gdbrunner</span> <span class="n">stlink</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
-</span><span data-line="5"><span class="n">gdbrunner</span> <span class="n">qemu</span> <span class="o">--</span><span class="n">machine</span> <span class="n">mps2</span><span class="o">-</span><span class="n">an500</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+all of that into one foreground command. It ships in the OpenMV SDK’s
+Python environment, so there is nothing to install; the usual entry
+point is the firmware repository’s <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> target:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">make -j$(nproc) TARGET=&lt;TARGET&gt; DEBUG=1 debug
+</span></pre></div>
+</div>
+<p>This runs gdbrunner with the debugger arguments from the board’s
+configuration – the J-Link device name and, where needed, the
+ST-Link external flash loader – with the SDK’s <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code>
+already on <code class="docutils literal notranslate"><span class="pre">PATH</span></code>. The default backend is J-Link; <code class="docutils literal notranslate"><span class="pre">make</span>
+<span class="pre">DEBUGGER=STLINK</span> <span class="pre">debug</span></code> works with an ST-Link probe instead.</p>
+<p>gdbrunner can also be invoked directly (outside the SDK, <code class="docutils literal notranslate"><span class="pre">pip</span>
+<span class="pre">install</span> <span class="pre">gdbrunner</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">gdbrunner</span> <span class="n">jlink</span> <span class="o">--</span><span class="n">device</span> <span class="n">STM32H743VI</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span><span data-line="2"><span class="n">gdbrunner</span> <span class="n">stlink</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span><span data-line="3"><span class="n">gdbrunner</span> <span class="n">qemu</span> <span class="o">--</span><span class="n">machine</span> <span class="n">mps2</span><span class="o">-</span><span class="n">an500</span> <span class="n">build</span><span class="o">/</span><span class="n">MPS2_AN500</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
 </span></pre></div>
 </div>
 <p>The first positional argument picks the server backend (<code class="docutils literal notranslate"><span class="pre">jlink</span></code>,
@@ -521,14 +490,6 @@ defaults that work for the OpenMV cams. <code class="docutils literal notranslat
 the full per-backend flag list; each backend’s argument table is
 JSON-driven (<code class="docutils literal notranslate"><span class="pre">src/gdbrunner/backends.json</span></code>), so adding a new server
 is a config edit rather than code.</p>
-<p>The firmware repository’s <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> target is a thin wrapper
-around gdbrunner that fills in the current <code class="docutils literal notranslate"><span class="pre">TARGET</span></code>’s J-Link
-arguments automatically:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">make -j$(nproc) TARGET=&lt;TARGET&gt; DEBUG=1 debug
-</span></pre></div>
-</div>
-<p>This is the fastest way to drop into command-line gdb on whichever
-board <code class="docutils literal notranslate"><span class="pre">TARGET</span></code> selects.</p>
 <p>What gdbrunner does for command-line work:</p>
 <ul class="simple">
 <li><p><strong>One process, clean lifecycle.</strong> Server starts, gdb attaches when
@@ -537,14 +498,17 @@ orphan <code class="docutils literal notranslate"><span class="pre">JLinkGDBServ
 to manage.</p></li>
 <li><p><strong>STM32CubeProgrammer auto-discovery.</strong> The <code class="docutils literal notranslate"><span class="pre">stlink</span></code> backend
 searches the usual install locations (<code class="docutils literal notranslate"><span class="pre">~/STM32CubeProgrammer/</span></code>,
-<code class="docutils literal notranslate"><span class="pre">/opt/st/</span></code>, the STM32CubeIDE plugin tree) for
-<code class="docutils literal notranslate"><span class="pre">ST-LINK_gdbserver</span></code>, so the long <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code> path doesn’t
-have to be typed every time.</p></li>
+<code class="docutils literal notranslate"><span class="pre">/opt/st/</span></code>, the STM32CubeIDE plugin tree) for the
+STM32CubeProgrammer tools, so the long <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code> path doesn’t
+have to be typed every time. The SDK bundles its own copy at
+<code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/stcubeprog/bin</span></code> – point <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code>
+there if no system install exists.</p></li>
 <li><p><strong>Per-project gdbinit honoured.</strong> A <code class="docutils literal notranslate"><span class="pre">.gdbinit</span></code> in the current
 directory is loaded with <code class="docutils literal notranslate"><span class="pre">-ix</span></code> – overriding the user-wide
 <code class="docutils literal notranslate"><span class="pre">~/.gdbinit</span></code> – so per-project gdb scripting (pretty-printers,
 board-specific macros, breakpoint sets) drops in by being present
-in the working directory.</p></li>
+in the working directory. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> runs from the repository
+root, so a <code class="docutils literal notranslate"><span class="pre">.gdbinit</span></code> there applies.</p></li>
 <li><p><strong>Dry run.</strong> <code class="docutils literal notranslate"><span class="pre">--dryrun</span></code> prints the server command without
 running it, useful for adapting the invocation to a wrapper
 script, copying it into an IDE launcher config, or just checking
@@ -553,10 +517,13 @@ what arguments gdbrunner is composing.</p></li>
 stdout / stderr visible. The default suppresses it (so gdb’s UI
 stays clean); flip the flag when the server itself is what’s
 misbehaving.</p></li>
-<li><p><strong>QEMU backend.</strong> <code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> running <code class="docutils literal notranslate"><span class="pre">mps2-an500</span></code> /
-<code class="docutils literal notranslate"><span class="pre">mps3-an547</span></code> debugs the same ELF without a board plugged in –
-code paths that don’t touch cam-specific peripherals are
-steppable on a flight.</p></li>
+<li><p><strong>QEMU backend.</strong> <code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> debugs a firmware build with
+no board plugged in. The <code class="docutils literal notranslate"><span class="pre">MPS2_AN500</span></code> target selects this backend
+in its board configuration, so <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">TARGET=MPS2_AN500</span> <span class="pre">DEBUG=1</span>
+<span class="pre">debug</span></code> builds for QEMU’s <code class="docutils literal notranslate"><span class="pre">mps2-an500</span></code> machine and steps the
+platform-independent code – everything that doesn’t touch
+cam-specific peripherals – on a flight. (<code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> is a
+host install, not part of the SDK.)</p></li>
 </ul>
 <p>For source-level stepping with breakpoint gutters and a peripheral
 register view, the VS Code Cortex-Debug setup above is the better
@@ -597,45 +564,14 @@ the target runs. Build with <code class="docutils literal notranslate"><span cla
 <code class="docutils literal notranslate"><span class="pre">rttConfig</span></code> (RTT) or <code class="docutils literal notranslate"><span class="pre">swoConfig</span></code> (SWO, needs the core clock).
 This is the right tool when a breakpoint would change the timing you
 are trying to observe.</p></li>
-<li><p><strong>Disconnecting</strong> – <em>Stop</em> on a <code class="docutils literal notranslate"><span class="pre">launch</span></code> / <code class="docutils literal notranslate"><span class="pre">jlink</span></code> session halts
-the target; <em>Disconnect</em> on an <code class="docutils literal notranslate"><span class="pre">attach</span></code> / <code class="docutils literal notranslate"><span class="pre">external</span></code> session
-leaves the camera running. Power-cycle the camera to return it to
-normal operation afterwards.</p></li>
+<li><p><strong>Disconnecting</strong> – <em>Stop</em> on a <code class="docutils literal notranslate"><span class="pre">launch</span></code> session halts the
+target; <em>Disconnect</em> on an <code class="docutils literal notranslate"><span class="pre">attach</span></code> session leaves the camera
+running. Power-cycle the camera to return it to normal operation
+afterwards.</p></li>
 </ul>
 </section>
-<section id="openocd-alternative-st-link">
-<h2><span class="section-number">16.1.1.4.8. </span>OpenOCD alternative (ST-Link)<a class="headerlink" href="#openocd-alternative-st-link" title="Link to this heading">¶</a></h2>
-<p>If you have an ST-Link instead of a J-Link, the STM32 cameras can be
-debugged with OpenOCD. The firmware repository ships OpenOCD configs
-under <code class="docutils literal notranslate"><span class="pre">lib/micropython/ports/stm32/boards/</span></code>:</p>
-<div class="table-wrapper colwidths-given docutils container">
-<table class="docutils align-default">
-<colgroup>
-<col style="width: 38.0%" />
-<col style="width: 62.0%" />
-</colgroup>
-<thead>
-<tr class="row-odd"><th class="head"><p>OpenOCD config</p></th>
-<th class="head"><p>Cameras</p></th>
-</tr>
-</thead>
-<tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">openocd_stm32h7_dual_bank.cfg</span></code></p></td>
-<td><p>STM32H7 – OpenMV Cam H7, H7 Plus, Pure Thermal; Arduino
-Portenta H7, Giga, Nicla Vision</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">openocd_stm32f7.cfg</span></code></p></td>
-<td><p>STM32F7 – OpenMV Cam M7</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<p>Use <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;openocd&quot;</span></code> with <code class="docutils literal notranslate"><span class="pre">configFiles</span></code> pointing at the
-appropriate <code class="docutils literal notranslate"><span class="pre">.cfg</span></code>. There are no in-repo OpenOCD configs for the N6,
-RT1062, or AE3 – use J-Link for those.</p>
-</section>
 <section id="debugging-pitfalls">
-<h2><span class="section-number">16.1.1.4.9. </span>Debugging pitfalls<a class="headerlink" href="#debugging-pitfalls" title="Link to this heading">¶</a></h2>
+<h2><span class="section-number">16.1.1.4.8. </span>Debugging pitfalls<a class="headerlink" href="#debugging-pitfalls" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>Optimized-out variables.</strong> Everything shows <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code>
 – you built <code class="docutils literal notranslate"><span class="pre">DEBUG=0</span></code>. Rebuild with <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code>.</p></li>
@@ -645,9 +581,6 @@ RT1062, or AE3 – use J-Link for those.</p>
 <code class="docutils literal notranslate"><span class="pre">device</span></code> name; use the exact string from the table.</p></li>
 <li><p><strong>Breakpoints silently not hit</strong> – too many hardware breakpoints on
 flash-resident code; reduce them.</p></li>
-<li><p><strong>N6 / RT1062 / AE3 won’t flash from the debugger</strong> – they boot
-from external flash; use <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;attach&quot;</span></code> against running
-firmware instead of <code class="docutils literal notranslate"><span class="pre">launch</span></code>.</p></li>
 <li><p><strong>Source paths don’t match (Docker-built ELF)</strong> – build with the
 Docker <code class="docutils literal notranslate"><span class="pre">build-firmware-dev</span></code> target (same absolute path inside and
 outside the container) or set gdb <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">substitute-path</span></code>.</p></li>

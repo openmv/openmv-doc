@@ -9,7 +9,7 @@
   </script><link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=e1a1ceaf" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/shibuya.css?v=9454f7d5" />
     <link media="print" rel="stylesheet" type="text/css" href="../../../../../_static/print.css?v=20ff2c19" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=5229389b" />
+    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=0f97248f" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -97,7 +97,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l2"><a class="reference internal" href="../../../protocol/index.html">14. Host Protocol</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../../tools/index.html">15. Tools</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html">16. Production</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="../index.html">16.1. Building, flashing, and debugging the firmware</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">16.1. Firmware development</a><ul class="current">
 <li class="toctree-l4"><a class="reference internal" href="../setup.html">16.1.1.1. Setting up the development environment</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../building.html">16.1.1.2. Building the firmware</a></li>
 <li class="toctree-l4 current"><a class="reference internal" href="index.html">16.1.1.3. Flashing the firmware</a></li>
@@ -132,7 +132,10 @@ data-aria-dark="Switch to auto color mode">
     <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
       <i class="i-lucide close"></i>
     </button>
-    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#initializing-the-everspin-mram">16.1.1.3.5.2.1. Initializing the Everspin MRAM</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
   <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
     <iconify-icon icon="simple-icons:github"></iconify-icon>
@@ -154,7 +157,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/61b9fe9a9d33b7f39f3743d897e891a9881061fe/docs/openmvcam/tutorial/production/firmware/flashing/openmv-ae3.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/3bb45d6df6f923277ff0036342b47ac8b1a4cf0c/docs/openmvcam/tutorial/production/firmware/flashing/openmv-ae3.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -179,7 +182,7 @@ data-aria-dark="Switch to auto color mode">
         <span>/</span>
         <meta itemprop="position" content="3" />
       </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">16.1. </span>Building, flashing, and debugging the firmware</span></a>
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">16.1. </span>Firmware development</span></a>
         <span>/</span>
         <meta itemprop="position" content="4" />
       </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
@@ -243,64 +246,31 @@ data-aria-dark="Switch to auto color mode">
 <p>The OpenMV AE3 uses the <code class="docutils literal notranslate"><span class="pre">openmv_dfu</span></code> bootloader (application VID:PID
 <code class="docutils literal notranslate"><span class="pre">37C5:16E3</span></code>, DFU VID:PID <code class="docutils literal notranslate"><span class="pre">37C5:96E3</span></code>), but it is a <strong>dual-core</strong>
 device: an Alif Ensemble with a high-performance (HP) and a
-high-efficiency (HE) Cortex-M55 core. Each core runs its own firmware
-image and has its own read-only ROMFS, so a full flash is four images,
-plus a fifth DFU alt that erases the shared internal FAT filesystem.
-The complete DFU alt-setting map:</p>
+high-efficiency (HE) Cortex-M55 core. To enter the bootloader, just
+plug the camera in: it listens briefly at power-up, and <code class="docutils literal notranslate"><span class="pre">-w</span></code> makes
+<code class="docutils literal notranslate"><span class="pre">dfu-util</span></code> wait for it to appear. Each core runs its own firmware
+image and has its own read-only ROMFS, so a full flash is four images:</p>
 <div class="table-wrapper colwidths-given docutils container">
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 8.0%" />
-<col style="width: 22.0%" />
-<col style="width: 12.0%" />
-<col style="width: 26.0%" />
-<col style="width: 16.0%" />
-<col style="width: 16.0%" />
+<col style="width: 20.0%" />
+<col style="width: 40.0%" />
+<col style="width: 40.0%" />
 </colgroup>
 <thead>
-<tr class="row-odd"><th class="head"><p>Alt</p></th>
-<th class="head"><p>Purpose</p></th>
-<th class="head"><p>Core</p></th>
-<th class="head"><p>Image file</p></th>
-<th class="head"><p>Size (hex)</p></th>
-<th class="head"><p>Size (bytes)</p></th>
+<tr class="row-odd"><th class="head"><p>Core</p></th>
+<th class="head"><p>Firmware command</p></th>
+<th class="head"><p>ROMFS command</p></th>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">1</span></code></p></td>
-<td><p>Firmware</p></td>
-<td><p>M55-HP</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">firmware_M55_HP.bin</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">0x300000</span></code></p></td>
-<td><p>3,145,728</p></td>
+<tr class="row-even"><td><p>M55-HP</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">1</span> <span class="pre">-D</span> <span class="pre">firmware_M55_HP.bin</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">6</span> <span class="pre">-D</span> <span class="pre">romfs0.img</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">2</span></code></p></td>
-<td><p>Firmware</p></td>
-<td><p>M55-HE</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">firmware_M55_HE.bin</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">0x15E000</span></code></p></td>
-<td><p>1,433,600</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">3</span></code></p></td>
-<td><p>ROMFS</p></td>
-<td><p>M55-HE</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">romfs1.img</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">0x100000</span></code></p></td>
-<td><p>1,048,576</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">5</span></code></p></td>
-<td><p>Erase internal FAT filesystem</p></td>
-<td><p>shared</p></td>
-<td><p><em>(4 KB of zeros)</em></p></td>
-<td><p>–</p></td>
-<td><p>–</p></td>
-</tr>
-<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">6</span></code></p></td>
-<td><p>ROMFS</p></td>
-<td><p>M55-HP</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">romfs0.img</span></code></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">0x1800000</span></code></p></td>
-<td><p>25,165,824</p></td>
+<tr class="row-odd"><td><p>M55-HE</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">2</span> <span class="pre">-D</span> <span class="pre">firmware_M55_HE.bin</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">3</span> <span class="pre">-D</span> <span class="pre">romfs1.img</span></code></p></td>
 </tr>
 </tbody>
 </table>
@@ -316,10 +286,40 @@ final transfer:</p>
 <p>To replace just one core’s firmware, flash only that core’s alt
 (<code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">1</span></code> for HP, <code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">2</span></code> for HE); to replace one core’s ROMFS, flash
 that core’s ROMFS alt (<code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">6</span></code> for HP / <code class="docutils literal notranslate"><span class="pre">romfs0</span></code>, <code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">3</span></code> for HE /
-<code class="docutils literal notranslate"><span class="pre">romfs1</span></code>). The writable internal FAT filesystem is shared by both
-cores and is wiped once via <code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">5</span></code> (see <a class="reference internal" href="erasing.html"><span class="doc">Erasing the internal filesystem</span></a>). The AE3’s
-bootloader is restored by a different procedure – see
-<a class="reference internal" href="../recovery.html"><span class="doc">Restoring the bootloader</span></a>.</p>
+<code class="docutils literal notranslate"><span class="pre">romfs1</span></code>).</p>
+<section id="initializing-the-everspin-mram">
+<h2><span class="section-number">16.1.1.3.5.2.1. </span>Initializing the Everspin MRAM<a class="headerlink" href="#initializing-the-everspin-mram" title="Link to this heading">¶</a></h2>
+<p>Special builds of the OpenMV AE3 replace the standard external flash
+– which holds the internal FAT filesystem and the HP core’s ROMFS –
+with an Everspin MRAM chip. This section applies to those builds
+only. An Everspin part that has never been initialized, or whose
+configuration registers have been corrupted, does not respond to
+writes, so DFU transfers to those alts fail until the chip is
+re-initialized.</p>
+<p>The bootloader exposes this as one more DFU alt: downloading a key
+file to <code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">7</span></code> triggers the initialization sequence (a JESD reset,
+configuration-register initialization, lock removal, and two full
+chip-erase passes). The download itself stores nothing – the
+partition checks that the file starts with the expected 16-byte key
+and runs the sequence, at most once per bootloader session.</p>
+<p>Generate the key file with <code class="docutils literal notranslate"><span class="pre">tools/flash_recovery_key.py</span></code> from the
+firmware repository (it writes a 4 KB <code class="docutils literal notranslate"><span class="pre">key.bin</span></code>), then download
+it:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">python</span> <span class="n">tools</span><span class="o">/</span><span class="n">flash_recovery_key</span><span class="o">.</span><span class="n">py</span>
+</span><span data-line="2"><span class="n">dfu</span><span class="o">-</span><span class="n">util</span> <span class="o">-</span><span class="n">w</span> <span class="o">-</span><span class="n">d</span> <span class="p">,</span><span class="mi">37</span><span class="n">C5</span><span class="p">:</span><span class="mf">96E3</span> <span class="o">-</span><span class="n">a</span> <span class="mi">7</span> <span class="o">-</span><span class="n">D</span> <span class="n">key</span><span class="o">.</span><span class="n">bin</span>
+</span></pre></div>
+</div>
+<p>The chip is blank afterwards: re-flash the HP core’s ROMFS (<code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">6</span>
+<span class="pre">-D</span> <span class="pre">romfs0.img</span></code>), and the internal FAT filesystem reformats itself on
+the next boot.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>To wipe the camera’s internal FAT filesystem – the fix when a bad
+<code class="docutils literal notranslate"><span class="pre">main.py</span></code> or a corrupted filesystem stops the camera from booting
+– see <a class="reference internal" href="erasing.html"><span class="doc">Erasing the internal filesystem</span></a>.</p>
+<p>To restore the camera’s bootloader itself, see <a class="reference internal" href="../recovery.html"><span class="doc">Restoring the bootloader</span></a>.</p>
+</div>
+</section>
 </section>
 
         </article><button class="back-to-top" type="button">

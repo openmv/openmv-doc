@@ -13,7 +13,12 @@ The bootloader lives in a separate flash region from the firmware and
 filesystem, and every OpenMV-branded camera has a hardware path back, so
 a camera is difficult to render permanently unrecoverable. The Arduino
 boards are the only exception -- their bootloaders are fixed and not
-user-restorable (see the warning in :doc:`flashing/index`).
+user-restorable.
+
+OpenMV IDE automates all of these recovery procedures, prompting you
+through the hardware steps (jumpers, switches, buttons) along the way.
+The sections below document what it does for each camera family, for
+when you want to run the recovery yourself.
 
 STM32 cameras (BOOT--RST jumper)
 --------------------------------
@@ -25,25 +30,28 @@ For the STM32 OpenMV cameras (M4, M7, H7, H7 Plus, Pure Thermal):
 #. Reconnect. The camera now enumerates as the ST system DFU device
    (``0483:df11``), independent of the damaged firmware.
 #. Reflash the bootloader only -- OpenMV IDE *Load Custom Firmware* with
-   ``bootloader.dfu``, or::
+   ``bootloader.bin``, or::
 
        dfu-util -w -d ,0483:df11 -a 0 -s 0x08000000 -D bootloader.bin
-
-   Flash ``bootloader.dfu`` / ``bootloader.bin``, not a combined
-   ``openmv.dfu`` -- the combined image also erases the filesystem.
 #. Remove the jumper and reconnect.
 #. Flash the firmware normally (see :doc:`flashing/index`).
 
-OpenMV Cam N6
--------------
+OpenMV Cam N6 (BOOT--VCC jumper)
+--------------------------------
 
-The N6 is recovered with STM32CubeProgrammer (included in the OpenMV
-SDK) using a flash-layout descriptor that rewrites the first-stage
-bootloader, the external-flash loader, and the bootloader::
+#. Disconnect the camera.
+#. Connect a jumper wire between the **BOOT** and **VCC** pins.
+#. Reconnect. The camera now enumerates as the ST system DFU device
+   (``0483:df11``), independent of the damaged bootloader.
+#. Reflash with STM32CubeProgrammer (included in the OpenMV SDK),
+   using the flash-layout descriptor shipped alongside
+   ``bootloader.bin`` -- it rewrites the first-stage bootloader, the
+   external-flash loader, and the bootloader::
 
-    STM32_Programmer_CLI -c port=USB1 -d OPENMV_N6/FlashLayout.tsv
+       STM32_Programmer_CLI -c port=USB1 -d OPENMV_N6/FlashLayout.tsv
 
-OpenMV IDE performs this automatically when it detects a damaged N6.
+#. Remove the jumper and reconnect.
+#. Flash the firmware normally (see :doc:`flashing/index`).
 
 OpenMV Cam RT1062
 -----------------
@@ -51,8 +59,7 @@ OpenMV Cam RT1062
 Recreating the RT1062 secure bootloader requires entering the chip's
 ROM serial-download (SDP) mode with a jumper, staging a RAM
 flashloader, then rewriting the flash configuration block, the SBL, and
-the firmware. This is involved and OpenMV IDE automates it; using the
-IDE is strongly recommended. The manual sequence:
+the firmware. The manual sequence:
 
 #. Disconnect the camera, jumper the **SBL** and **3.3V** pins, and
    reconnect. The chip enumerates in SDP ROM mode
@@ -99,20 +106,17 @@ The AE3's secure bootloader is **not** restored over USB DFU. It is
 rewritten into the chip's MRAM with **Alif Semiconductor's SE Tools**
 (bundled with OpenMV IDE) over a serial ISP connection. This is an
 interactive, recovery-only procedure -- not a routine flashing method
--- and is error-prone by hand; **use OpenMV IDE**, which drives the
-SE Tools and prompts you through the hardware steps. The detail below
-documents what it does.
+-- and it is error-prone by hand; of everything on this page, it is
+the one to leave to OpenMV IDE.
 
 **Connection.** The SE Tools talk to the AE3 over its debug adapter's
 serial ISP port -- an FTDI ``0403:6015`` or a CH340 ``1A86:55D3``
 interface, together with a J-Link. Recovery requires putting the device
-in **hard-maintenance mode**: set the on-board hard-maintenance switch
-and press the user button when prompted.
+in **recovery mode**: enable the on-board recovery switch.
 
-**SE Tools.** OpenMV IDE bundles these Alif executables (with the
-config files ``isp_config_data.cfg`` -- the serial-port settings -- and
-``global-cfg.db`` -- the device part/revision and the
-``MRAM-BURNER {Interface: isp, Jtag-adapter: J-Link}`` settings):
+**SE Tools.** OpenMV IDE bundles these Alif executables. They share
+two config files -- ``isp_config_data.cfg`` and ``global-cfg.db`` --
+created by ``maintenance`` on first connection:
 
 .. list-table::
    :header-rows: 1
@@ -122,7 +126,7 @@ config files ``isp_config_data.cfg`` -- the serial-port settings -- and
      - Purpose
    * - ``maintenance``
      - Query the Secure Enclave (``maintenance -opt sesbanner`` reads
-       its version) and place the device in hard-maintenance mode.
+       its version) and place the device in recovery mode.
    * - ``updateSystemPackage``
      - Update the Secure Enclave system package when it is older than
        the version the firmware requires.
@@ -132,30 +136,11 @@ config files ``isp_config_data.cfg`` -- the serial-port settings -- and
    * - ``app-write-mram``
      - Write image(s) to MRAM -- the step that restores the bootloader.
 
-**MRAM write targets** (the ``app-write-mram`` step):
+**Procedure:**
 
-.. list-table::
-   :header-rows: 1
-   :widths: 40 30 30
-
-   * - Image
-     - MRAM address
-     - Tool argument
-   * - ``bootloader.bin``
-     - ``0x80000000``
-     - ``-i "bootloader.bin 0x80000000``
-   * - ``firmware_pad.toc``
-     - ``0x8057E000``
-     - ``firmware_pad.toc 0x8057E000"``
-
-**Procedure** (as OpenMV IDE performs it):
-
-#. Connect the AE3's serial ISP adapter (FTDI / CH340) and the J-Link;
-   the SE Tools write ``isp_config_data.cfg`` and ``global-cfg.db``.
-#. ``maintenance -opt sesbanner`` reads the Secure Enclave version. If
-   the device is in recovery or hard-maintenance is required, set the
-   hard-maintenance switch and press the user button when prompted.
-#. ``maintenance`` queries the boot state.
+#. Connect to the AE3 with ``maintenance``; it prompts for the serial
+   port and the device type, creating ``isp_config_data.cfg`` and
+   ``global-cfg.db`` for the other tools.
 #. If the Secure Enclave system package is out of date,
    ``updateSystemPackage`` updates it; power-cycle when prompted.
 #. ``app-write-mram -i "bootloader.bin 0x80000000 firmware_pad.toc
@@ -163,5 +148,13 @@ config files ``isp_config_data.cfg`` -- the serial-port settings -- and
 #. The AE3 re-enumerates as the ``37C5:96E3`` DFU device. Run the
    normal four-image flash from :doc:`flashing/openmv-ae3` to
    load the application.
-#. Power-cycle the camera and turn the hard-maintenance switch back
+#. Power-cycle the camera and turn the recovery switch back
    off.
+
+.. note::
+
+   OpenMV IDE handles much more than this happy path -- a corrupted
+   Secure Enclave firmware, a bad bootloader, and the other failure
+   states each need their own recovery steps, and a lot can go wrong
+   along the way. If the manual steps above don't bring the camera
+   back, use OpenMV IDE to recover it.

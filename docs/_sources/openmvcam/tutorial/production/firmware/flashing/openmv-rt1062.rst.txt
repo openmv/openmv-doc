@@ -5,16 +5,13 @@ The OpenMV Cam RT1062 is the only camera **without** a USB DFU
 bootloader. It boots from external flash through an on-flash secure
 bootloader (SBL) that presents the NXP MCU-bootloader USB interface.
 Flashing uses the NXP **SPSDK** tools ``blhost`` and ``sdphost``, which
-the OpenMV SDK and OpenMV IDE bundle and invoke as ``python -m
-spsdk.apps.blhost`` / ``python -m spsdk.apps.sdphost``. Because the
-commands and addresses are intricate, *Load Custom Firmware* in OpenMV
-IDE is the preferred method for the RT1062; the sequence below is for
-automation or for understanding what the IDE does.
+the OpenMV SDK bundles and invokes as ``python -m spsdk.apps.blhost``
+/ ``python -m spsdk.apps.sdphost``.
 
-For a normal firmware update the SBL is already present, so no jumper
-is needed -- a reset leaves the camera enumerated as the SBL device
-(``blhost`` VID:PID ``0x15A2:0x0073``). The firmware-only sequence
-is::
+To enter the bootloader, reset or replug the camera: the SBL is
+already present, so no jumper is needed, and it enumerates as the SBL
+device (``blhost`` VID:PID ``0x15A2:0x0073``). The firmware-only
+sequence is::
 
     blhost -u 0x15A2,0x0073 -t 120000 -- flash-erase-region 0x60040000 <firmware_size>
     blhost -u 0x15A2,0x0073 -- write-memory 0x60040000 firmware.bin
@@ -63,5 +60,11 @@ The SBL and firmware sizes shown are the region span to the next
 region's base address (the start addresses are fixed; the actual
 image is smaller).
 
-Recreating the SBL itself (a damaged RT1062) is a longer, jumper-based
-procedure -- see :doc:`../recovery`.
+
+.. seealso::
+
+   To wipe the camera's internal FAT filesystem -- the fix when a bad
+   ``main.py`` or a corrupted filesystem stops the camera from booting
+   -- see :doc:`erasing`.
+
+   To restore the camera's bootloader itself, see :doc:`../recovery`.

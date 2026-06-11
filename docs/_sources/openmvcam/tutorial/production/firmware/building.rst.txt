@@ -8,8 +8,8 @@ Compiling
 ---------
 
 First build **mpy-cross**, the host tool that compiles the frozen ``.py``
-modules into bytecode (do this once, and again whenever you switch boards
-or update MicroPython)::
+modules into bytecode (do this once, and again whenever you update
+MicroPython)::
 
     make -j$(nproc) -C lib/micropython/mpy-cross
 
@@ -44,11 +44,6 @@ and their silicon:
      - Port
      - Core
    * - OpenMV Cam M4
-     - ``OPENMV1``
-     - STM32F407
-     - stm32
-     - Cortex-M4
-   * - OpenMV Cam M4 (V2)
      - ``OPENMV2``
      - STM32F427
      - stm32
@@ -134,18 +129,18 @@ Everything for a board lands in ``build/<TARGET>/bin/``. For
        Firmware* and by ``dfu-util``
    * - ``firmware.elf``
      - Firmware with debug symbols -- the file you point the debugger at
-   * - ``firmware.dfu``
-     - Firmware as a DFU image
-   * - ``bootloader.bin`` / ``.elf`` / ``.dfu``
+   * - ``bootloader.bin`` / ``.elf``
      - The bootloader (only on boards with a bootloader enabled)
-   * - ``openmv.bin`` / ``openmv.dfu``
+   * - ``openmv.bin``
      - Combined bootloader + firmware image
    * - ``romfs<n>.img``
      - Read-only ROM filesystem image flashed alongside the firmware
 
 The Alif AE3 is dual-core, so it produces ``firmware_M55_HP.elf`` /
 ``firmware_M55_HP.bin`` (the high-performance core) and a separate
-``firmware_M55_HE.*`` (the high-efficiency core) plus a TOC image.
+``firmware_M55_HE.elf`` / ``firmware_M55_HE.bin`` (the high-efficiency
+core) plus a table-of-contents (TOC) image that tells the boot ROM
+where each core's image lives.
 
 Cleaning and rebuilding
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,8 +151,8 @@ board's build::
     make TARGET=<TARGET> clean
 
 There is no ``distclean``; ``clean`` always needs a ``TARGET``.
-``mpy-cross`` is shared across boards -- if you switch targets or update
-MicroPython, rebuild it too::
+``mpy-cross`` is shared across boards -- if you update MicroPython,
+rebuild it too::
 
     make -C lib/micropython/mpy-cross clean
     make -j$(nproc) -C lib/micropython/mpy-cross
@@ -172,7 +167,7 @@ Building in Docker (no host toolchain)
 If you would rather not install anything on the host (or you are on a
 platform without a native build), use the Docker path::
 
-    git clone https://github.com/openmv/openmv.git --depth=50
+    git clone --recursive https://github.com/openmv/openmv.git
     cd openmv/docker
     make TARGET=<TARGET>
 
@@ -235,11 +230,6 @@ The variables a firmware developer will use:
      - ``STACK_PROTECTOR=1`` adds ``-fstack-protector-all`` -- stack
        canaries that trap stack-buffer overflows. Useful when chasing
        memory corruption.
-   * - ``FB_ALLOC_STATS``
-     - ``0``
-     - ``FB_ALLOC_STATS=1`` instruments the frame-buffer allocator so you
-       can see vision-buffer allocation behavior. Useful for
-       out-of-memory debugging in the image pipeline.
    * - ``DEBUGGER``
      - ``JLINK``
      - Which debugger the ``make debug`` / ``make deploy`` targets use.

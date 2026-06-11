@@ -9,11 +9,11 @@ pinned SDK extracted.
 VS Code
 -------
 
-You can build the firmware from any editor -- the build is just ``make`` --
-but **Visual Studio Code** is recommended because the on-hardware debugger
-(covered on :doc:`debugging`) uses the VS Code **Cortex-Debug** extension.
-Installing VS Code first means the rest of these pages are ready to debug,
-not just build.
+Any editor works for firmware development -- the build is just ``make``,
+and the on-hardware debugger runs from the command line too. **Visual
+Studio Code** is simply the easiest path: the :doc:`debugging` setup
+plugs into its **Cortex-Debug** extension, so with VS Code installed the
+rest of these pages work out of the box, building and debugging alike.
 
 Installing VS Code
 ~~~~~~~~~~~~~~~~~~
@@ -21,7 +21,7 @@ Installing VS Code
 * **Windows** -- download the installer from `code.visualstudio.com
   <https://code.visualstudio.com>`__ and run it. Install VS Code on
   **Windows**, not inside WSL; it integrates with WSL through the *WSL*
-  extension (below), running its UI on Windows while the compiler, files,
+  extension, running its UI on Windows while the compiler, files,
   and debugger live in Linux.
 * **macOS** -- download the ``.zip`` from `code.visualstudio.com
   <https://code.visualstudio.com>`__, unzip it, and drag *Visual Studio
@@ -98,8 +98,7 @@ Linux / WSL prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The SDK provides the compiler, so only a handful of host packages are
-needed (this is also exactly what continuous integration installs on
-Ubuntu)::
+needed::
 
     sudo apt-get update
     sudo apt-get install git build-essential
@@ -168,7 +167,7 @@ The SDK bundles everything the build and debugger need, all added to
    * - ARM GNU toolchain (``arm-none-eabi-gcc`` 14.3)
      - Compiler, linker, ``arm-none-eabi-gdb`` for debugging
    * - LLVM/clang
-     - Used for selected objects on some ports (e.g. Alif)
+     - Used for selected objects on some ports
    * - CMake, GNU Make
      - Build orchestration for vendor libraries
    * - Python (relocatable)
@@ -179,8 +178,9 @@ The SDK bundles everything the build and debugger need, all added to
      - Neural-network compiler for the STM32N6 NPU
    * - ``dfu-util``
      - USB DFU flashing
-   * - ``gdbrunner`` + ``JLinkGDBServer``
-     - The ``make debug`` target's GDB server launcher
+   * - ``gdbrunner``
+     - The ``make debug`` target's GDB server launcher (the Segger
+       J-Link software it drives is a separate install)
 
 .. warning::
 

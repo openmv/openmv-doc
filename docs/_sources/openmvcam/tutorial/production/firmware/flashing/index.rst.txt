@@ -16,7 +16,7 @@ Windows, handles entering the bootloader, and selects the correct command
 for the connected camera. It is the recommended way to flash a custom
 build.
 
-#. Connect the camera over USB (you do not need to click *Connect*).
+#. Plug the camera into USB (you do not need to click *Connect*).
 
 #. **Tools -> Load Custom Firmware**.
 
@@ -24,8 +24,7 @@ build.
    ``build/<TARGET>/bin/firmware.bin``.
 
 #. Optionally tick **Erase internal file system** to wipe the camera's
-   internal FAT filesystem (not an SD card) -- useful when a bad
-   ``main.py`` or corrupted FS prevents normal boot.
+   internal FAT filesystem (see :doc:`erasing` for when and why).
 
 #. Optionally tick **Reset ROMFS file system** to reflash the default
    ROMFS (disabled if you selected a ``.img`` directly).
@@ -61,7 +60,7 @@ Administrator**:
    * - Driver installer
      - USB devices it binds
    * - ``openmv\openmv.cmd``
-     - OpenMV and AE3 DFU devices, and the RT1062 SPSDK interfaces
+     - OpenMV DFU devices, and the RT1062 SPSDK interfaces
        (``0x1FC9:0x0135`` SDP ROM and ``0x15A2:0x0073`` flashloader)
    * - ``arduino\arduino.cmd``
      - Arduino DFU devices (``2341:03xx``)
@@ -74,7 +73,7 @@ Administrator**:
 Alternatively, bind WinUSB to the specific VID:PID with Zadig or
 ``pnputil``. No command-line flashing on Windows works without this.
 Linux and macOS need no driver installation (Linux requires only the
-udev rules noted on the per-camera pages).
+udev rules).
 
 Flashing over SWD (``make deploy``)
 -----------------------------------
@@ -98,20 +97,21 @@ Entering bootloader / DFU mode
 Flashing requires the camera to be in its bootloader / DFU mode. There
 are three ways in:
 
-* **Software reset (normal).** OpenMV IDE (or a ``mpremote`` / serial
-  reset) tells running firmware to reboot into the bootloader. This is
-  automatic during *Load Custom Firmware* and is all you normally need.
-* **BOOT--RST jumper (recovery).** If the firmware is too damaged to
-  accept a software reset, disconnect the camera, jumper the **BOOT**
-  and **RST** pins, and reconnect; it enumerates as the ST system DFU
-  device. This is the recovery path, covered in detail on
-  :doc:`../recovery`.
-* **Arduino touch-reset.** Arduino boards enter DFU via a 1200-baud
-  touch / double-tap reset; OpenMV IDE handles this automatically for
-  those targets.
+* **On plug-in (any camera).** Every camera runs its bootloader for a
+  short window when it powers up, before the firmware starts -- plug
+  the camera into USB and the bootloader is briefly listening.
+* **From the IDE (any camera).** With the camera plugged in, **Tools ->
+  Force enter OpenMV Cam bootloader** reboots it into bootloader mode.
+* **Arduino reset button.** On Arduino boards, double-click the reset
+  button to enter bootloader mode.
 
 Command-line flashing by camera family
 --------------------------------------
+
+The pages below show what OpenMV IDE does under the hood for each
+camera family, for when you want to run the flashing yourself -- in
+scripts, in CI, or on a production line. For everyday flashing we
+recommend OpenMV IDE.
 
 .. toctree::
    :maxdepth: 1
