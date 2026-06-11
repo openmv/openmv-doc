@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -158,7 +158,6 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#hough-circles">7.27.1. Hough circles</a></li>
 <li><a class="reference internal" href="#rectangles">7.27.2. Rectangles</a></li>
 <li><a class="reference internal" href="#when-the-detector-misfires">7.27.3. When the detector misfires</a></li>
-<li><a class="reference internal" href="#legacy-object-detectors">7.27.4. Legacy object detectors</a></li>
 </ul>
 </div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
@@ -182,7 +181,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/finding/circles-and-rectangles.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/finding/circles-and-rectangles.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -402,18 +401,32 @@ carries the axis-aligned bounding box –
 expects – <em>and</em> the four detected corners
 as <code class="docutils literal notranslate"><span class="pre">corners</span></code>. The bounding box is what
 the application uses for rough position and
-size; the corners describe the true shape
-of the projective quadrilateral. When the
+size; the corners describe the projective
+quadrilateral itself. When the
 camera is viewing a flat target from an
 angle and the application needs to undo
 the keystone – read text on a label,
 sample colour from a flat patch – the
 corners feed directly into
 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.rotation_corr" title="image.Image.rotation_corr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rotation_corr()</span></code></a> with the
-<code class="docutils literal notranslate"><span class="pre">corners=</span></code> keyword (see Lens and
-perspective correction), and the output is
-the rectified rectangle ready for whatever
-analysis comes next.</p>
+<code class="docutils literal notranslate"><span class="pre">corners=</span></code> keyword (see <a class="reference internal" href="../transforms/lens-and-perspective.html"><span class="doc">lens and
+perspective correction</span></a>), and
+the output is the rectified rectangle ready
+for whatever analysis comes next.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Because the detector is tuned for what the
+AprilTag pipeline needs – quadrilaterals
+with strong, high-contrast borders, like a
+black tag outline on white paper – it is
+not a find-every-rectangle pass.
+Rectangles with soft contrast, textured
+edges, or busy surroundings can go
+undetected entirely. How well it works is
+situation dependent: test it against the
+real targets early, before building a
+pipeline around it.</p>
+</div>
 </section>
 <section id="when-the-detector-misfires">
 <h2><span class="section-number">7.27.3. </span>When the detector misfires<a class="headerlink" href="#when-the-detector-misfires" title="Link to this heading">¶</a></h2>
@@ -440,51 +453,6 @@ the contrast the detector needs. (The
 contrast must exist <em>somewhere</em> in the
 image; histogram equalisation can only
 amplify what is already there.)</p>
-</section>
-<section id="legacy-object-detectors">
-<h2><span class="section-number">7.27.4. </span>Legacy object detectors<a class="headerlink" href="#legacy-object-detectors" title="Link to this heading">¶</a></h2>
-<p>A handful of older object detectors live in
-the image module alongside the geometric
-ones. They predate the embedded
-machine-learning support and rarely fit
-contemporary applications; they remain
-documented for legacy scripts.</p>
-<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_features" title="image.Image.find_features"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_features()</span></code></a> runs a
-Viola-Jones Haar cascade over the frame and
-returns a list of bounding rectangles. The
-built-in cascades, loaded via
-<a class="reference internal" href="../../../../library/omv.image.html#image.HaarCascade" title="image.HaarCascade"><code class="xref py py-class docutils literal notranslate"><span class="pre">image.HaarCascade</span></code></a>, are
-<code class="docutils literal notranslate"><span class="pre">&quot;frontalface&quot;</span></code> (frontal-face detection)
-and <code class="docutils literal notranslate"><span class="pre">&quot;eye&quot;</span></code> (eye detection); custom
-cascades can be loaded from binary files on
-disk. The detector is fast and works well
-in controlled lighting, but its accuracy
-falls short of even a small modern CNN.
-For new face- or object-detection work, the
-embedded ML pipeline (see the Machine
-Learning chapter) is the right tool.
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_eye" title="image.Image.find_eye"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_eye()</span></code></a> (a fixed
-pupil-finder) and
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_hog" title="image.Image.find_hog"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_hog()</span></code></a> (a HOG-feature
-exporter) fall in the same category: usable,
-but narrow in scope and superseded for new
-work by the ML path.</p>
-<p>With <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_blobs" title="image.Image.find_blobs"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_blobs()</span></code></a> for
-connected coloured regions,
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_lines" title="image.Image.find_lines"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_lines()</span></code></a> and
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_line_segments" title="image.Image.find_line_segments"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_line_segments()</span></code></a>
-for oriented edges, and
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_circles" title="image.Image.find_circles"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_circles()</span></code></a> and
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_rects" title="image.Image.find_rects"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_rects()</span></code></a> for curved
-and quadrilateral targets, the geometric-
-detection toolkit covers the classical
-features a script looks for in a captured
-frame. Some other features the camera
-needs to recognise are not geometric at
-all but <em>symbolic</em> – printed codes that
-encode arbitrary payloads behind a known
-visual structure – and the decoders for
-those come next.</p>
 </section>
 </section>
 
@@ -516,7 +484,7 @@ those come next.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

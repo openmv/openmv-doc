@@ -55,7 +55,7 @@ blobs to the returned list, and each blob's
 ``code`` property identifies which threshold
 it matched.
 
-The :class:`Image.draw_rectangle` and
+The :meth:`~image.Image.draw_rectangle` and
 :meth:`~image.Image.draw_cross` calls above
 annotate the captured frame for the IDE
 preview. The blob result already carries
@@ -294,48 +294,38 @@ populated as the ``x_hist_bins`` and
 Extra geometric helpers
 -----------------------
 
-A handful of geometric measures don't make
-sense to compute on every blob (they cost
-more than the basic detection does), so they
-live as module-level functions that take a
-blob and return the requested measurement.
-An application calls them only on the blobs
-it has already decided to act on:
+A handful of further geometric measures live
+as module-level functions that take a blob
+and return the requested measurement:
 
-* :func:`image.get_solidity(blob)` returns the
+* :func:`image.get_solidity` returns the
   blob's *solidity* -- pixels divided by the
   area of the convex hull. A solid filled
   region is close to ``1.0``; a blob with
   concavities (a horseshoe, a hand with
   fingers spread) drops well below.
-* :func:`image.get_convexity(blob)` returns
+* :func:`image.get_convexity` returns
   the *convexity* -- the convex-hull perimeter
   divided by the blob's perimeter. A perfectly
   convex blob is ``1.0``; jagged or notched
   blobs are lower.
-* :func:`image.get_major_axis_line(blob)` and
-  :func:`image.get_minor_axis_line(blob)`
+* :func:`image.get_major_axis_line` and
+  :func:`image.get_minor_axis_line`
   return :class:`Line <image.line>` objects
   along the major and minor axes of the blob,
   derived from the rotated minimum-area
   rectangle.
-* :func:`image.get_enclosing_circle(blob)`
+* :func:`image.get_enclosing_circle`
   returns a :class:`Circle <image.circle>`
   that encloses the blob -- useful when a
   downstream stage wants a circle to draw or
   test against.
-* :func:`image.get_enclosed_ellipse(blob)`
+* :func:`image.get_enclosed_ellipse`
   returns the 5-tuple
   ``(cx, cy, rx, ry, rotation)`` for an
   ellipse inscribed in the blob's minimum-area
   rectangle. The values feed directly into
   :meth:`~image.Image.draw_ellipse`.
-
-These helpers cover the geometric questions
-that aren't quite worth running on every
-detection but are needed often enough that
-re-implementing them in Python every time
-would be wasteful.
 
 Auto-learning a threshold
 -------------------------
@@ -349,39 +339,34 @@ patterns reduce that work.
 The first is *interactive selection in the
 IDE*: capture a frame, drag a rectangle
 around an example of the target colour, and
-let the IDE's threshold-editor tool report
-the LAB bounds it sees. Those bounds drop
-into the script as the
+let the IDE's :doc:`threshold editor
+</openmvcam/tutorial/tools/ide/threshold-editor>`
+report the LAB bounds it sees. Those bounds
+drop into the script as the
 :meth:`~image.Image.find_blobs` thresholds
 and the detector is ready.
 
 The second is programmatic auto-learn: a
 calibration routine running on the camera
 captures a frame, takes a histogram of a
-known patch where the target is, and feeds
-the result through
-:meth:`~image.Image.get_threshold` -- the
-Otsu-method threshold finder. The threshold
-comes back as a two-tuple suitable for a
-single-channel image; an RGB version of the
-same routine runs the histogram and threshold
-on each LAB channel independently and
-combines the three two-tuples into the
-six-tuple :meth:`~image.Image.find_blobs`
-expects.
+known patch where the target is
+(:meth:`~image.Image.get_histogram` with
+``roi=``), and reads the patch's value range
+off the histogram with
+:meth:`~image.histogram.get_percentile`. The
+5th percentile sets each channel's low bound
+and the 95th its high bound, ignoring stray
+outlier pixels at both ends. On an RGB565
+image one percentile call reports all three
+LAB channels at once, so the two calls
+produce the six numbers
+:meth:`~image.Image.find_blobs` expects:
 
-With :meth:`~image.Image.find_blobs` carrying
-LAB-thresholded connected regions out of the
-mask into a list of blob result objects, the
-module-level helpers extending each blob with
-geometric properties on demand, and the
-calibration paths supplying the thresholds
-themselves, an application has the
-vocabulary it needs to track coloured
-targets, count regions, and feed the
-positions back into whatever pipeline asked
-for them. Blobs do not, however, cover every
-form a detection comes in. Some features the
-camera looks for are not connected regions of
-colour at all but oriented straight edges, and
-the right detector for those is the next one.
+::
+
+    h = img.get_histogram(roi=patch)
+    lo = h.get_percentile(0.05)
+    hi = h.get_percentile(0.95)
+    threshold = (lo.l_value, hi.l_value,
+                 lo.a_value, hi.a_value,
+                 lo.b_value, hi.b_value)

@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -183,7 +183,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/transforms/scale-flip-crop.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/transforms/scale-flip-crop.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -287,13 +287,13 @@ pick a sub-rectangle out of the source.</p></li>
 with the expectation that the application is
 going to resize the result.</p></li>
 </ul>
-<p>The three are aliases on the underlying
-mechanism. The name picked at the call site
-signals intent without changing what the method
-does, the same way <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.blend" title="image.Image.blend"><code class="xref py py-meth docutils literal notranslate"><span class="pre">blend()</span></code></a>
-and <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.replace" title="image.Image.replace"><code class="xref py py-meth docutils literal notranslate"><span class="pre">replace()</span></code></a> aliases work
-for <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_image" title="image.Image.draw_image"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_image()</span></code></a> in the
-drawing subsection.</p>
+<p>The three share the same arguments and the
+same transform machinery; the difference is
+where the result lands by default.
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.copy" title="image.Image.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a> produces a new
+image, while <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.crop" title="image.Image.crop"><code class="xref py py-meth docutils literal notranslate"><span class="pre">crop()</span></code></a> and
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.scale" title="image.Image.scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">scale()</span></code></a> modify the source
+in place.</p>
 <section id="the-shared-arguments">
 <h2><span class="section-number">7.21.1. </span>The shared arguments<a class="headerlink" href="#the-shared-arguments" title="Link to this heading">¶</a></h2>
 <p>A single call combines whatever combination of
@@ -361,13 +361,19 @@ computation for live frames the IDE will only
 display.</p>
 <p><code class="docutils literal notranslate"><span class="pre">image.AREA</span></code> averages every input pixel that
 falls inside the output pixel’s footprint –
-the right algorithm for <em>downscaling</em>, where
-nearest-neighbour would alias and bilinear
-would just blur. The default scaling
-algorithm without any hint is
-nearest-neighbour, which is the cheapest and
-the right answer when the source is already
-at the destination’s pixel resolution.</p>
+the right algorithm for <em>downscaling</em>.
+Bilinear and bicubic are interpolators: they
+estimate a value <em>between</em> source pixels,
+which is what upscaling needs, but when
+downscaling each output pixel covers many
+source pixels and an interpolator reads only
+the few nearest ones – the detail it skips
+comes back as aliasing. <code class="docutils literal notranslate"><span class="pre">image.AREA</span></code> folds
+every covered pixel into the average instead.</p>
+<p>The default scaling algorithm without any hint
+is nearest-neighbour, which is the cheapest
+and the right answer when the source is
+already at the destination’s pixel resolution.</p>
 </section>
 <section id="orientation-flips-and-rotations">
 <h2><span class="section-number">7.21.3. </span>Orientation: flips and rotations<a class="headerlink" href="#orientation-flips-and-rotations" title="Link to this heading">¶</a></h2>
@@ -398,12 +404,6 @@ shortcuts:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">ROTATE_90</span><span class="p">,</span> <span class="n">copy_to_fb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p>For arbitrary-angle rotations – 17 degrees,
-say, rather than one of the four cardinal
-positions – the operation is no longer a
-combination of flips and transposes and needs
-the more general 3D rotation correction the
-Lens and perspective correction page covers.</p>
 </section>
 <section id="aspect-handling">
 <h2><span class="section-number">7.21.4. </span>Aspect handling<a class="headerlink" href="#aspect-handling" title="Link to this heading">¶</a></h2>
@@ -440,10 +440,10 @@ specify one of the three explicitly.</p>
 </section>
 <section id="when-to-reach-for-which">
 <h2><span class="section-number">7.21.5. </span>When to reach for which<a class="headerlink" href="#when-to-reach-for-which" title="Link to this heading">¶</a></h2>
-<p>Most resizes use <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.copy" title="image.Image.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a>
-with an <code class="docutils literal notranslate"><span class="pre">x_scale</span></code> / <code class="docutils literal notranslate"><span class="pre">y_scale</span></code> pair and a
-<code class="docutils literal notranslate"><span class="pre">BILINEAR</span></code> hint:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span> <span class="n">copy_to_fb</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<p>Most resizes use <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.scale" title="image.Image.scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">scale()</span></code></a>
+with an <code class="docutils literal notranslate"><span class="pre">x_scale</span></code> / <code class="docutils literal notranslate"><span class="pre">y_scale</span></code> pair and an
+interpolation hint:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">x_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">AREA</span><span class="p">)</span>
 </span></pre></div>
 </div>
 <p>Most rotations use the same call with
@@ -453,26 +453,25 @@ a non-default <code class="docutils literal notranslate"><span class="pre">roi</
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">roi</span><span class="o">=</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">150</span><span class="p">))</span>
 </span></pre></div>
 </div>
-<p>For an in-place transform where the result
-should overwrite the source image,
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.scale" title="image.Image.scale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">scale()</span></code></a> is the
-intent-signalling name (<code class="docutils literal notranslate"><span class="pre">copy</span></code>, <code class="docutils literal notranslate"><span class="pre">crop</span></code>,
-and <code class="docutils literal notranslate"><span class="pre">scale</span></code> all do the same thing). The
-result-placement keyword arguments work the
-same way they do on every other method:
-<code class="docutils literal notranslate"><span class="pre">copy=True</span></code> for a separate heap buffer,
-<code class="docutils literal notranslate"><span class="pre">copy_to_fb=True</span></code> to land in the frame
-buffer.</p>
-<p>With axis-independent scaling, the
-interpolation choice between nearest,
-bilinear, bicubic, and area averaging, the
-six-way flip/transpose/rotate combinatorics,
-and the three aspect-handling modes, the
-basic geometric transforms cover the
-operations that keep the image <em>rectangular</em>.
-The remaining transforms reshape the image
-in ways that a rectangle-to-rectangle mapping
-cannot.</p>
+<p>When the source has to survive the operation
+– capturing a reference frame, taking a
+thumbnail of a frame that is about to be
+processed destructively –
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.copy" title="image.Image.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a> produces the result
+as a new image and leaves the source
+untouched:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">thumbnail</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x_scale</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">hint</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">AREA</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>That default is the real difference behind
+the three names: <code class="docutils literal notranslate"><span class="pre">scale</span></code> and <code class="docutils literal notranslate"><span class="pre">crop</span></code>
+transform in place, <code class="docutils literal notranslate"><span class="pre">copy</span></code> allocates. The
+result-placement keywords bridge the gap:
+<code class="docutils literal notranslate"><span class="pre">copy=True</span></code> on <code class="docutils literal notranslate"><span class="pre">scale</span></code> or <code class="docutils literal notranslate"><span class="pre">crop</span></code>
+allocates the result as a separate heap
+buffer instead of overwriting the source, and
+<code class="docutils literal notranslate"><span class="pre">copy_to_fb=True</span></code> on any of the three lands
+it in the frame buffer for the IDE preview.</p>
 </section>
 </section>
 
@@ -504,7 +503,7 @@ cannot.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

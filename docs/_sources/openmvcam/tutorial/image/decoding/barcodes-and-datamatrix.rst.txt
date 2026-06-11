@@ -1,20 +1,22 @@
 Barcodes and Data Matrix codes
 ==============================
 
-QR codes and AprilTags are recent
-inventions, born in the era of dense
-two-dimensional symbols and cheap
-smartphone cameras. The codes printed on
-the side of a cereal box, the wrist band a
-hospital patient wears, the maker mark
-laser-etched onto a circuit board predate
-all of that. They are *one-dimensional*
-*barcodes* and small high-density
-*Data Matrix* codes, and the image module
-has dedicated decoders for both. The
-applications they fit are the industrial,
-retail, and inventory ones the consumer
-2D codes never quite covered.
+Two more code families round out the
+camera's decoders. *One-dimensional
+barcodes* -- the stripes on the side of a
+cereal box, a hospital wrist band, a
+shipping label -- are the oldest
+machine-readable symbols still in everyday
+use. *Data Matrix* codes are
+two-dimensional like QR codes, but denser
+at the same payload size and aimed at
+industrial marking -- the maker mark
+laser-etched onto a circuit board rather
+than the poster on a wall. The image module
+has a dedicated decoder for each, covering
+the industrial, retail, and inventory
+applications the consumer 2D codes never
+quite reached.
 
 1D barcodes
 -----------
@@ -71,9 +73,7 @@ libraries and blood banks),
 :data:`image.CODE39`, :data:`image.CODE93`,
 and :data:`image.CODE128` (variable-length
 alphanumeric symbologies for arbitrary
-text). The high-density two-row symbology
-:data:`image.PDF417` decodes too, and the
-shelf-edge family
+text). The shelf-edge family
 :data:`image.DATABAR` (RSS-14) and
 :data:`image.DATABAR_EXP` (RSS-Expanded)
 round out the list.
@@ -248,15 +248,3 @@ adds, so applications that do this
 typically narrow each pass with an
 appropriate ``roi`` rather than searching
 the full frame for every kind of code.
-
-With 1D barcodes, Data Matrix codes, QR
-codes, and AprilTags, the camera reads
-the four families of printed and etched
-symbols an application is likely to
-encounter. The remaining detectors do not
-decode symbols at all but instead measure
-similarity: how closely two patches of
-the same captured frame, or two frames at
-different times, line up with each other.
-That is the work of the matching methods,
-and they come next.

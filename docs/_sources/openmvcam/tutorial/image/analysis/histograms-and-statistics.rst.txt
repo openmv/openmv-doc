@@ -1,23 +1,21 @@
 Histograms and statistics
 =========================
 
-The sections so far have all *operated* on
-images: filtering them, thresholding them,
-combining them with other images. The remaining
-family of operations does something different.
-It *measures* the image -- summarises the
-distribution of pixel values, returns the
-mean and median brightness, finds the optimal
-cutoff between dark and bright pixels, reports
-the spread of the colour channels. Those
-measurements feed back into the operating side
-in two ways: as inputs to the algorithm that
-decides what threshold to use, what gain to set,
-what the scene's tonal profile looks like; and as
-diagnostic signals -- "is the scene bright
-enough?" -- that the application can act on
-without making a decision about any particular
-pixel.
+Alongside the operations that change an
+image's pixels, the :class:`Image` class
+carries a family of methods that *measure*
+them -- summarise the distribution of pixel
+values, return the mean and median brightness,
+find the optimal cutoff between dark and
+bright pixels, report the spread of the colour
+channels. The measurements feed applications
+in two ways: as inputs to the code that
+decides what threshold to use, what gain to
+set, what the scene's tonal profile looks
+like; and as diagnostic signals -- "is the
+scene bright enough?" -- that an application
+can act on without making a decision about any
+particular pixel.
 
 The starting point for almost every measurement
 is the *histogram*.
@@ -171,8 +169,8 @@ Percentiles and CDF lookups
 ---------------------------
 
 The :class:`histogram` object exposes a
-``get_percentile`` method that turns a
-fraction into a pixel value -- the value
+:meth:`~image.histogram.get_percentile` method
+that turns a fraction into a pixel value -- the value
 below which the requested fraction of pixels
 lies. ``h.get_percentile(0.5)`` is the
 median; ``h.get_percentile(0.05)`` and
@@ -268,14 +266,3 @@ call to produce an image whose only purpose
 is to be measured. For a continuously
 running motion-detection script, the saving
 adds up.
-
-With histograms describing distributions,
-statistics summarising them, percentiles for
-robust range estimates, and Otsu's method
-for the optimal binary split, the
-measurement side of the toolkit is ready.
-The remaining tonal work is about *acting*
-on what the measurements say -- adjusting the
-image's contrast, brightness, or colour to
-correct for what the histogram revealed
-about it.

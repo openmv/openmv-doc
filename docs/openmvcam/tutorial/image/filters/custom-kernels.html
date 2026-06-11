@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -157,7 +157,7 @@ data-aria-dark="Switch to auto color mode">
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#the-morph-method">7.16.1. The morph method</a></li>
 <li><a class="reference internal" href="#the-kernel-layout">7.16.2. The kernel layout</a></li>
-<li><a class="reference internal" href="#scaling-and-offsetting-the-output">7.16.3. Scaling and offsetting the output</a></li>
+<li><a class="reference internal" href="#offsetting-the-output">7.16.3. Offsetting the output</a></li>
 <li><a class="reference internal" href="#larger-kernels">7.16.4. Larger kernels</a></li>
 <li><a class="reference internal" href="#when-to-reach-for-morph">7.16.5. When to reach for morph</a></li>
 </ul>
@@ -183,7 +183,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/filters/custom-kernels.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/filters/custom-kernels.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -397,41 +397,23 @@ degrees:</p>
 regardless of direction, typically run both
 Sobels and combine the responses.</p>
 </section>
-<section id="scaling-and-offsetting-the-output">
-<h2><span class="section-number">7.16.3. </span>Scaling and offsetting the output<a class="headerlink" href="#scaling-and-offsetting-the-output" title="Link to this heading">¶</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">mul</span></code> and <code class="docutils literal notranslate"><span class="pre">add</span></code> parameters apply to
-the kernel’s sum-of-products before it is
-written to the output. They are how an
-application turns a kernel response that does
-not naturally fit into <code class="docutils literal notranslate"><span class="pre">0</span></code> – <code class="docutils literal notranslate"><span class="pre">255</span></code> into
-something the rest of the pipeline can
-consume.</p>
-<p>A few general patterns:</p>
-<ul class="simple">
-<li><p>For a kernel whose entries sum to a positive
-number (an averaging kernel), the
-auto-division by the kernel sum already
-normalises the output. Leave both <code class="docutils literal notranslate"><span class="pre">mul</span></code>
-and <code class="docutils literal notranslate"><span class="pre">add</span></code> at their defaults – the
-brightness of a flat patch comes through
-unchanged.</p></li>
-<li><p>For a kernel whose entries sum to zero (an
-edge-response kernel), the auto-division
-collapses to dividing by one, so <code class="docutils literal notranslate"><span class="pre">mul</span></code> is
-what brings the raw sum-of-products back
-into range. Setting <code class="docutils literal notranslate"><span class="pre">add=128</span></code> then shifts
-the signed response to be centred at
-mid-grey, which makes the result visible
-(and signed) when displayed.</p></li>
-<li><p>For a kernel that produces an output
-centred at zero by design (an emboss kernel,
-for instance), <code class="docutils literal notranslate"><span class="pre">add=128</span></code> is the standard
-way to recentre it.</p></li>
-</ul>
-<p>Which combination of <code class="docutils literal notranslate"><span class="pre">mul</span></code> and <code class="docutils literal notranslate"><span class="pre">add</span></code> is
-right depends on the kernel; the Standard
-kernels catalogue lists the settings each
-common kernel expects.</p>
+<section id="offsetting-the-output">
+<h2><span class="section-number">7.16.3. </span>Offsetting the output<a class="headerlink" href="#offsetting-the-output" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">add</span></code> is the other half of the scaling
+story. A zero-sum kernel’s response is
+<em>signed</em> – positive on one side of an edge,
+negative on the other – and the negative half
+clips to zero when written into an unsigned
+pixel. <code class="docutils literal notranslate"><span class="pre">add=128</span></code> shifts the response to be
+centred at mid-grey, so negative responses
+survive as values below <code class="docutils literal notranslate"><span class="pre">128</span></code> and positive
+ones land above it: an edge response or an
+emboss becomes visible in both directions, at
+the cost of half the range in each.</p>
+<p>Which combination of <code class="docutils literal notranslate"><span class="pre">mul</span></code> and <code class="docutils literal notranslate"><span class="pre">add</span></code> a
+kernel expects is part of the kernel’s design;
+the <a class="reference internal" href="standard-kernels.html"><span class="doc">standard kernel catalogue</span></a> lists the right settings
+for each common kernel.</p>
 </section>
 <section id="larger-kernels">
 <h2><span class="section-number">7.16.4. </span>Larger kernels<a class="headerlink" href="#larger-kernels" title="Link to this heading">¶</a></h2>
@@ -455,8 +437,8 @@ broader feature detection, less sensitivity to
 single-pixel noise. The cost grows as the
 square of the radius – a 5-by-5 does roughly
 2.8 times the per-pixel work of a 3-by-3, a
-7-by-7 about 5.4 times – which is a real
-penalty on the smaller cams.</p>
+7-by-7 about 5.4 times – and that multiplier
+comes straight out of the frame rate.</p>
 <p>The practical pattern is to stay at <code class="docutils literal notranslate"><span class="pre">size=1</span></code>
 for the standard catalogue and reach for
 larger sizes only when the algorithm needs
@@ -489,11 +471,6 @@ arbitrary kernels is available; the price is
 that the application is responsible for
 choosing the kernel values that produce the
 result it wants.</p>
-<p>With <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.morph" title="image.Image.morph"><code class="xref py py-meth docutils literal notranslate"><span class="pre">morph()</span></code></a> understood as
-a mechanism, the question is <em>which</em> kernels
-are worth knowing about. The Standard kernels
-catalogue collects the ones an application
-reaches for most often.</p>
 </section>
 </section>
 
@@ -525,7 +502,7 @@ reaches for most often.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

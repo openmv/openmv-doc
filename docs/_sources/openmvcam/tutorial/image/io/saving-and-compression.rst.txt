@@ -66,19 +66,19 @@ would defeat the point of saving the
 existing compressed bytes.
 
 ``quality`` is the JPEG compression
-quality in ``0 -- 100`` and is only
+quality from ``0`` to ``100`` and is only
 meaningful when the output is JPEG (the
 keyword is ignored for the lossless
 formats). The default of ``50`` is the
 right balance for *most* applications;
-``70 -- 85`` is the band for higher
-visual quality, ``30 -- 50`` is the
+``70`` to ``85`` is the band for higher
+visual quality, ``30`` to ``50`` is the
 right range for small thumbnails and
 bandwidth-constrained transmission, and
-``90+`` is reserved for cases where the
-image will be inspected manually or run
-through a downstream algorithm sensitive
-to compression artefacts.
+``90`` and up is reserved for cases where
+the image will be inspected manually or
+run through a downstream algorithm
+sensitive to compression artefacts.
 
 The receiver image is returned so the
 call chains:
@@ -195,30 +195,30 @@ wireless module at modest speeds.
 
 JPEG at ``quality=50`` typically
 compresses a photographic captured
-frame by 10 -- 20x: that 614 KB
-640-by-480 frame becomes a 30 -- 60 KB
+frame by 10x to 20x: that 614 KB
+640-by-480 frame becomes a 30 to 60 KB
 encoded byte stream. At ``quality=85``
-the compression drops to 5 -- 10x
-(60 -- 120 KB for the same frame). At
+the compression drops to 5x to 10x
+(60 to 120 KB for the same frame). At
 ``quality=10`` -- artefact-laden but
 still recognisable -- the compression
-reaches 30 -- 50x (12 -- 20 KB).
+reaches 30x to 50x (12 to 20 KB).
 
 Those numbers determine what is
 practical to *do* with the saved
-frames. An SD card writing at 10 MB/s
-sustains 30 frames per second of
-``quality=50`` JPEG-encoded 480p
-content with room to spare; saving the
-same content uncompressed at the same
-rate requires roughly 18 MB/s and
-quickly outruns even a fast card. A
-USB host pulling JPEG-encoded frames
-over CDC at 1 MB/s receives 30 -- 50
-KB frames at 20 -- 30 frames per
-second; pulling raw frames at the same
-rate it gets one or two frames a
-second.
+frames. An SD card path sustaining
+10 MB/s handles 30 frames per second of
+``quality=50`` JPEG-encoded VGA content
+with room to spare (about 1 to 2 MB/s);
+saving the same content uncompressed
+requires over 18 MB/s, past what the
+cam's filesystem path sustains to the
+card. A USB host pulling JPEG-encoded
+frames over CDC at 1 MB/s receives 30
+to 60 KB frames at roughly 15 to 30
+frames per second; pulling raw frames
+at the same rate it gets one or two
+frames a second.
 
 In short: the compression methods are
 not just a convenience for saving. They
@@ -230,17 +230,3 @@ quality 50 for general logging, 80 for
 quality work, PNG for line-art capture
 -- is part of the routine work of any
 non-trivial cam application.
-
-With :meth:`~image.Image.save` putting
-captured frames onto the filesystem and
-:meth:`~image.Image.to_jpeg` /
-:meth:`~image.Image.to_png` producing
-encoded byte streams in RAM, the camera
-can hand its captures off to anything
-downstream. Some applications need more
-than single-frame I/O, though: they
-need to record a *sequence* of frames
-at the natural capture rate and play
-them back later, the way a video
-recorder does. The recording-and-
-playback path is covered next.

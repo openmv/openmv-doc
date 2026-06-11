@@ -154,43 +154,26 @@ Applications that want to detect *any* edge,
 regardless of direction, typically run both
 Sobels and combine the responses.
 
-Scaling and offsetting the output
----------------------------------
+Offsetting the output
+---------------------
 
-The ``mul`` and ``add`` parameters apply to
-the kernel's sum-of-products before it is
-written to the output. They are how an
-application turns a kernel response that does
-not naturally fit into ``0`` -- ``255`` into
-something the rest of the pipeline can
-consume.
+``add`` is the other half of the scaling
+story. A zero-sum kernel's response is
+*signed* -- positive on one side of an edge,
+negative on the other -- and the negative half
+clips to zero when written into an unsigned
+pixel. ``add=128`` shifts the response to be
+centred at mid-grey, so negative responses
+survive as values below ``128`` and positive
+ones land above it: an edge response or an
+emboss becomes visible in both directions, at
+the cost of half the range in each.
 
-A few general patterns:
-
-* For a kernel whose entries sum to a positive
-  number (an averaging kernel), the
-  auto-division by the kernel sum already
-  normalises the output. Leave both ``mul``
-  and ``add`` at their defaults -- the
-  brightness of a flat patch comes through
-  unchanged.
-* For a kernel whose entries sum to zero (an
-  edge-response kernel), the auto-division
-  collapses to dividing by one, so ``mul`` is
-  what brings the raw sum-of-products back
-  into range. Setting ``add=128`` then shifts
-  the signed response to be centred at
-  mid-grey, which makes the result visible
-  (and signed) when displayed.
-* For a kernel that produces an output
-  centred at zero by design (an emboss kernel,
-  for instance), ``add=128`` is the standard
-  way to recentre it.
-
-Which combination of ``mul`` and ``add`` is
-right depends on the kernel; the Standard
-kernels catalogue lists the settings each
-common kernel expects.
+Which combination of ``mul`` and ``add`` a
+kernel expects is part of the kernel's design;
+the :doc:`standard kernel catalogue
+<standard-kernels>` lists the right settings
+for each common kernel.
 
 Larger kernels
 --------------
@@ -216,8 +199,8 @@ broader feature detection, less sensitivity to
 single-pixel noise. The cost grows as the
 square of the radius -- a 5-by-5 does roughly
 2.8 times the per-pixel work of a 3-by-3, a
-7-by-7 about 5.4 times -- which is a real
-penalty on the smaller cams.
+7-by-7 about 5.4 times -- and that multiplier
+comes straight out of the frame rate.
 
 The practical pattern is to stay at ``size=1``
 for the standard catalogue and reach for
@@ -252,9 +235,3 @@ arbitrary kernels is available; the price is
 that the application is responsible for
 choosing the kernel values that produce the
 result it wants.
-
-With :meth:`~image.Image.morph` understood as
-a mechanism, the question is *which* kernels
-are worth knowing about. The Standard kernels
-catalogue collects the ones an application
-reaches for most often.

@@ -1,26 +1,22 @@
 A catalogue of standard kernels
 ===============================
 
-The previous page introduced the
-:meth:`~image.Image.morph` method as the way to
-run an arbitrary 3-by-3 (or larger) kernel
-across an image. The natural follow-up is which
-kernels are *worth* running. Classical image
-processing has accumulated a fair-sized
-catalogue of weight patterns that come up over
-and over -- edge detectors, sharpeners,
-embosses, smoothers, motion-blurs. Each is
-short, each does one thing, and most are
-straightforward to read once the basic logic
-of the weights makes sense.
+Classical image processing has accumulated a
+fair-sized catalogue of kernel weight patterns
+that come up over and over -- edge detectors,
+sharpeners, embosses, smoothers, motion blurs
+-- and every one of them runs through
+:meth:`~image.Image.morph`. Each is short, each
+does one thing, and most are straightforward to
+read once the basic logic of the weights makes
+sense.
 
-This page is that catalogue. The kernels are
-all 3-by-3 unless noted, so they all use
-``size=1`` in the call. The structure of each
-kernel's weights is described alongside it,
-since reading the weights is what builds the
-intuition for why one kernel emboss and
-another sharpens.
+The kernels below are all 3-by-3 unless noted,
+so they all use ``size=1`` in the call. Each
+kernel's weight structure is described
+alongside it, since reading the weights is what
+builds the intuition for why one kernel
+embosses and another sharpens.
 
 The identity kernel
 -------------------
@@ -45,15 +41,15 @@ useful baseline for understanding every other
 kernel: any non-identity kernel is the identity
 plus some modification.
 
-A kernel where the centre weight is large and
-the surrounding weights are small but negative
-*subtracts* the surround from the centre. A
-kernel with no centre weight and a structured
-pattern in the surrounds produces a response
-based purely on neighbour-to-neighbour
-relationships. Reading any kernel as "identity
-plus something" is the fastest way to predict
-what it does.
+A kernel whose centre weight is large with
+small negative weights around it *subtracts*
+the surround from the centre. A kernel with a
+zero centre weight ignores the pixel itself and
+responds only to differences among its
+neighbours. Reading a kernel this way -- what
+the centre weight does to the pixel, what the
+surrounding weights add or take away -- is the
+fastest way to predict its effect.
 
 Edge detection
 --------------
@@ -68,9 +64,8 @@ zero output, because every positive weight is
 exactly cancelled by an equal-magnitude
 negative weight.
 
-**Sobel-x** was introduced on the previous page
-and is the canonical example. It detects
-*vertical* edges (left/right brightness
+**Sobel-x** is the canonical example. It
+detects *vertical* edges (left/right brightness
 transitions):
 
 ::
@@ -109,11 +104,14 @@ operator that drops those extra magnitudes:
                   0,  0,  0,
                   1,  1,  1]
 
-Prewitt is faster (slightly smaller arithmetic)
-and produces sharper edge responses, at the
-cost of being more sensitive to single-pixel
-noise. On a clean image with strong edges, it
-is a perfectly serviceable substitute for Sobel.
+Prewitt weighs every row equally, so its
+response is a touch sharper than Sobel's, at
+the cost of being more sensitive to
+single-pixel noise (the cost of running the
+kernel is identical -- the convolution does the
+same work whatever the weights are). On a clean
+image with strong edges, it is a perfectly
+serviceable substitute for Sobel.
 
 **Scharr** goes the other direction. Its weights
 are larger and tuned for accurate detection of
@@ -175,7 +173,10 @@ The 4-connected version produces cleaner output
 on horizontal and vertical edges; the
 8-connected one is more isotropic -- it
 responds equally well in every direction --
-but produces slightly noisier output.
+but produces slightly noisier output. The
+8-connected kernel also circulates under the
+name *outline*, after its use for visualising
+edges.
 
 Sharpening
 ----------
@@ -224,19 +225,19 @@ sensor noise.
 
 Strong sharpening kernels are essentially
 :meth:`~image.Image.gaussian` with
-``unsharp=True``, just expressed directly as
-a kernel rather than as the unsharp-mask
-operation on the previous page. The pixel-level
-behaviour is the same; the choice is between
-the convenience of the named method and the
-fine control of a hand-tuned kernel.
+``unsharp=True``, just expressed directly as a
+kernel rather than through the unsharp-mask
+flag. The pixel-level behaviour is the same;
+the choice is between the convenience of the
+named method and the fine control of a
+hand-tuned kernel.
 
 Emboss
 ------
 
-An *emboss* kernel produces the lighting-from-
-the-side effect found in classical image
-editors. The output looks like the image was
+An *emboss* kernel produces the
+lit-from-the-side effect found in classical
+image editors. The output looks like the image was
 extruded into a relief and then lit from one
 corner:
 
@@ -300,14 +301,17 @@ exactly what :meth:`~image.Image.mean` computes:
     img.morph(1, box_blur)
 
 The kernel sums to ``9``, so the auto-division
-by the kernel sum (introduced on the previous
-page) turns the sum-of-products into a true
-average over the nine neighbourhood pixels.
-There is no reason to prefer this over
-:meth:`~image.Image.mean` when both produce the
-same output; the box blur is in the catalogue
-because it is the right baseline for
-understanding every other smoothing kernel.
+by the kernel sum turns the sum-of-products
+into a true average over the nine
+neighbourhood pixels. In practice
+:meth:`~image.Image.mean` is the better way to
+run this kernel -- it produces the same output
+faster, through a path optimised for computing
+the mean and nothing else, where ``morph`` runs
+the general convolution machinery. The box blur
+is in the catalogue because it is the right
+baseline for understanding every other
+smoothing kernel.
 
 A 3-by-3 approximation of the **Gaussian**
 weights the centre and the cardinal
@@ -388,29 +392,6 @@ motion artefacts (run the algorithm on a
 motion-blurred input and check that it still
 produces the right answer).
 
-Outline
--------
-
-An *outline* kernel highlights edges -- much
-like a Laplacian -- but is sometimes preferred
-because it produces a thicker, more visually
-prominent edge response:
-
-::
-
-    outline = [-1, -1, -1,
-               -1,  8, -1,
-               -1, -1, -1]
-
-    img.morph(1, outline)
-
-This is identical to the 8-connected Laplacian.
-The two names exist because the same kernel is
-used for two slightly different purposes -- the
-Laplacian when an application is treating the
-output as a gradient signal, the outline when
-the goal is visualising edges for human eyes.
-
 Reading kernels at a glance
 ---------------------------
 
@@ -440,15 +421,7 @@ When *none* of the standard kernels does what
 the application wants, the next step is to
 hand-tune one. The combination of the rules
 above and the ``mul`` / ``add`` controls covers
-nearly every linear pass that a classical MV
-pipeline has ever wanted; from there it is a
-matter of trying weights, looking at the
-output, and iterating.
-
-With the morph mechanism understood from the
-previous page and this catalogue of standard
-kernels in hand, custom convolution covers the
-linear filtering work that the built-in methods
-do not -- and the bulk of the work that
-classical image processing has spent decades
-finding useful patterns for.
+nearly every linear pass that a classical
+machine vision pipeline has ever wanted; from
+there it is a matter of trying weights, looking
+at the output, and iterating.

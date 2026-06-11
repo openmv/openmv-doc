@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -181,7 +181,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/filters/morphology.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/filters/morphology.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -259,17 +259,17 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="morphological-operations">
 <h1><span class="section-number">7.15. </span>Morphological operations<a class="headerlink" href="#morphological-operations" title="Link to this heading">¶</a></h1>
-<p>The neighbourhood filters on the previous pages
-worked on continuous brightness values. The
-<em>morphological</em> family works on binary images
-instead. Each operation walks the same kind of
-sliding neighbourhood, but the question it asks
-at every position is yes/no: is <em>every</em> pixel
-in the neighbourhood on, is <em>any</em> pixel in the
-neighbourhood on, what does the on/off pattern
-look like? The answers shape the binary mask in
-ways that are not possible to produce with
-brightness filters at all.</p>
+<p><em>Morphological</em> operations work on binary
+images – the masks that come out of
+thresholding and edge detection. Each operation
+walks the same kind of sliding neighbourhood
+the smoothing filters use, but the question it
+asks at every position is yes/no: is <em>every</em>
+pixel in the neighbourhood on, is <em>any</em> pixel
+in the neighbourhood on, what does the on/off
+pattern look like? The answers grow regions,
+shrink them, and recut their boundaries in ways
+an averaging filter cannot.</p>
 <p>Morphology is what comes between an <em>initial</em>
 binary mask – the output of thresholding,
 edge detection, or some other classifier – and
@@ -301,7 +301,7 @@ foreground pixels (which have no foreground
 neighbours) disappear entirely, and small
 connections between larger regions get cut.</p>
 <figure class="align-default" id="id1">
-<img alt="A noisy binary foreground region in the leftmost panel, with isolated pixels scattered around it and small holes inside it. Four panels to the right show the result of applying dilate, erode, open, and close to the input. Dilate grows the region and closes the small holes; erode shrinks the region and removes the isolated noise pixels; open removes the noise without significantly changing the region's shape; close fills the holes without significantly changing the region's outer boundary." src="../../../../_images/morphology-walkthrough.svg" />
+<img alt="A binary input region in the leftmost panel: a solid square with a one-pixel hole in its middle and three isolated noise pixels around it. Four panels to the right show the result of applying dilate, erode, open, and close to that input. Dilate grows the region, fills the hole, and grows each noise pixel into a block; erode shrinks the region, grows the hole, and removes the noise; open removes the noise while reproducing the region and its hole exactly; close fills the hole while reproducing the region's outline and the noise pixels exactly." src="../../../../_images/morphology-walkthrough.svg" />
 <figcaption>
 <p><span class="caption-text">The four classical morphological operations
 applied to a noisy binary region. Erode
@@ -376,21 +376,26 @@ get them back.</p>
 <h2><span class="section-number">7.15.3. </span>Threshold mode<a class="headerlink" href="#threshold-mode" title="Link to this heading">¶</a></h2>
 <p>The four basic morphological operations all
 accept an integer <code class="docutils literal notranslate"><span class="pre">threshold</span></code> keyword that
-changes the on/off test at each position.
-Without <code class="docutils literal notranslate"><span class="pre">threshold</span></code>, the operation behaves
-the way the descriptions above said:
+softens the on/off test at each position.
+Without it, the operations behave the way the
+descriptions above said:
 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.erode" title="image.Image.erode"><code class="xref py py-meth docutils literal notranslate"><span class="pre">erode()</span></code></a> requires <em>every</em>
 neighbour to be on, <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.dilate" title="image.Image.dilate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">dilate()</span></code></a>
-requires <em>at least one</em>. With a numeric
-<code class="docutils literal notranslate"><span class="pre">threshold</span></code>, the rule becomes “at least
-<code class="docutils literal notranslate"><span class="pre">threshold</span></code> neighbours must be on” – which
-turns the operation into a softer version of
-itself. An erode with <code class="docutils literal notranslate"><span class="pre">threshold=4</span></code> requires
-four foreground neighbours instead of all nine
-(in a 3-by-3 window), so it does not erode as
-aggressively. A dilate with <code class="docutils literal notranslate"><span class="pre">threshold=2</span></code>
-requires two foreground neighbours instead of
-one, so it grows less aggressively.</p>
+requires <em>at least one</em>. With <code class="docutils literal notranslate"><span class="pre">threshold</span></code>
+set, each operation tolerates that many
+neighbours voting the other way. For erode,
+<code class="docutils literal notranslate"><span class="pre">threshold</span></code> is the number of <em>background</em>
+neighbours a pixel may have and still survive:
+<code class="docutils literal notranslate"><span class="pre">threshold=4</span></code> keeps any pixel with at least
+four of its eight neighbours on (in a 3-by-3
+window the centre pixel has eight neighbours),
+so it does not erode as aggressively. For
+dilate, <code class="docutils literal notranslate"><span class="pre">threshold</span></code> is the number of
+<em>foreground</em> neighbours a background pixel must
+have more of before it turns on:
+<code class="docutils literal notranslate"><span class="pre">threshold=2</span></code> requires at least three
+foreground neighbours instead of one, so it
+grows less aggressively.</p>
 <p>The threshold form is useful for tuning the
 aggressiveness of a morphological pass without
 changing the size of its window, which would
@@ -399,17 +404,6 @@ on. Most applications stick with the default
 behaviour; the threshold form is there for the
 cases where the default is just slightly too
 much or too little.</p>
-<p>With four classical operations for the cleanup
-patterns that come up over and over, the
-top-hat and black-hat for extracting the
-features the cleanup <em>removes</em>, and the
-neighbour-count threshold for fine-tuning,
-morphology gives an application the cleanup
-tools every binary-image pipeline relies on.
-The remaining filter family steps further out
-in scope: filters whose neighbourhood
-<em>weighting</em> is given by the application as a
-custom matrix.</p>
 </section>
 </section>
 
@@ -441,7 +435,7 @@ custom matrix.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

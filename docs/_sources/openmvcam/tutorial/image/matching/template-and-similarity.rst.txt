@@ -63,14 +63,14 @@ loaded from disk: a colour template is
 converted with the same method, the result
 is what the matcher expects.
 
-``threshold`` is a float in ``0.0 -- 1.0``.
-``1.0`` is a perfect pixel-for-pixel match
-(which never happens with real captured
-images); ``0.0`` accepts anything; values
-between ``0.6`` and ``0.8`` cover the
-common case where the template was captured
-under similar lighting and the scene has
-not changed dramatically. Raise the
+``threshold`` is a float from ``0.0`` to
+``1.0``. A value of ``1.0`` demands a
+perfect pixel-for-pixel match (which never
+happens with real captured images), ``0.0``
+accepts anything, and values between ``0.6``
+and ``0.8`` cover the common case where the
+template was captured under similar lighting
+and the scene has not changed dramatically. Raise the
 threshold to suppress false positives;
 lower it to accept noisier matches at the
 cost of more spurious hits.
@@ -142,13 +142,7 @@ with :meth:`~image.Image.rotation_corr` or
 the polar transform (Geometric transforms)
 to remove the offending rotation before
 the match runs; the matched template still
-has to match the corrected geometry. For
-applications that need genuine scale- and
-rotation-invariant matching, the
-phase-correlation method and the
-keypoint-matching paths -- both covered
-under Displacement and keypoints -- are the
-right tools.
+has to match the corrected geometry.
 
 A useful idiom for QA-inspection pipelines
 pairs the template matcher with the
@@ -167,13 +161,3 @@ steps run every frame, the threshold on
 matched bounding box drawn back into the
 frame is the IDE preview the operator
 watches.
-
-With :meth:`~image.Image.find_template`
-locating a known patch inside a captured
-frame, the camera can ask *where is this
-reference*. A subtler matching problem
-sits next to it: not locating a known
-patch but estimating *how much the entire
-frame has shifted* between two captures.
-That is the work of the displacement and
-keypoint-matching methods.

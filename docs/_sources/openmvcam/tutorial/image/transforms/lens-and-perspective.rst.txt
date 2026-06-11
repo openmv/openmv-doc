@@ -1,11 +1,7 @@
 Lens and perspective correction
 ===============================
 
-The previous page covered the transforms that
-keep the source image rectangular:
-*scaling*, *flipping*, *transposing*,
-*cropping*. Two more
-classes of geometric correction reshape the
+Two classes of geometric correction warp the
 image in ways that a rectangle-to-rectangle
 mapping cannot. *Lens correction* undoes the
 radial distortion a real wide-angle lens
@@ -17,17 +13,16 @@ happens when the lens is not pointed
 perpendicular to the scene -- the trapezoidal
 warp that turns a known rectangle in the world
 into a non-rectangular blob in the image.
-
-Vision Sensors covered the optical *causes*
-of both. This page is about the operations
-that undo them after the capture is done.
+Both corrections undo, after the capture is
+done, effects that are optical in origin.
 
 Radial lens distortion
 ----------------------
 
-Vision Sensors' real-lens-effects section
-described the *barrel* distortion that
-inexpensive wide-angle lenses introduce.
+The :doc:`real lens effects
+</openmvcam/tutorial/vision/optics/real-lens-effects>`
+material describes the *barrel* distortion
+that inexpensive wide-angle lenses introduce.
 Pixels near the centre of the frame are
 roughly where the pinhole model predicts;
 pixels near the edges are bowed outward by an
@@ -35,11 +30,11 @@ amount that grows with the square of the
 radial distance from the optical axis. A
 straight line in the scene that runs near the
 edge of the frame curves visibly in the
-captured image, and any classical MV
-algorithm that assumes straight lines stay
-straight -- AprilTag corner detection, edge
-following, line-following navigation -- gets
-the wrong answer near the corners.
+captured image, and any classical machine
+vision algorithm that assumes straight lines
+stay straight -- AprilTag corner detection,
+edge following, line-following navigation --
+gets the wrong answer near the corners.
 
 :meth:`~image.Image.lens_corr` undoes the
 distortion. The method runs the inverse
@@ -102,12 +97,13 @@ bottom edge.
 The fix is to apply a *3D rotation* to the
 captured frame that virtually re-orients the
 sensor plane to be parallel to the scene
-plane. The math is the same homography
-that AprilTag detection uses to recover a
-tag's pose from its four corners, run in
-reverse: given a rotation, the operation
-maps every output pixel back to the input
-position the rotation would have come from.
+plane. The math is the same perspective
+mapping that AprilTag detection uses to
+recover a tag's pose from its four corners,
+run in reverse: given a rotation, the
+operation maps every output pixel back to the
+input position the rotation would have come
+from.
 
 :meth:`~image.Image.rotation_corr` runs that
 correction:
@@ -188,16 +184,3 @@ identifiable rectangle is visible in the
 scene and the rotation has to be
 hand-tuned from external knowledge (a
 calibrated mounting angle, for instance).
-
-With :meth:`~image.Image.lens_corr` for
-radial fisheye distortion and
-:meth:`~image.Image.rotation_corr` for 3D
-perspective rotations (and the four-corner
-form for rectifying a known rectangle), the
-two canned correction methods cover the
-common cases. The more general *projective*
-form -- a hand-supplied 3-by-3 matrix that
-describes an arbitrary affine or perspective
-warp -- gets its own page, since the
-mathematics and the use cases stand on their
-own.

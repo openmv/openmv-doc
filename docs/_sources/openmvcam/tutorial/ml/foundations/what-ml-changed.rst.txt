@@ -1,11 +1,11 @@
 What ML changed
 ===============
 
-The image chapter flagged a handful of methods as *legacy* --
+The image module carries a handful of *legacy* detection methods --
 :meth:`~image.Image.find_features` for Haar-cascade face detection,
 :meth:`~image.Image.find_eye` for the fixed pupil finder,
-:meth:`~image.Image.find_hog` for HOG features, the
-:meth:`~image.Image.find_keypoints` / ORB and
+:meth:`~image.Image.find_hog` for gradient-direction summaries, the
+:meth:`~image.Image.find_keypoints` and
 :meth:`~image.Image.find_lbp` paths for arbitrary keypoints. All of
 them still work; all of them have been superseded by the
 machine-learning pipeline.
@@ -27,9 +27,8 @@ summary of an eye region, that the dominant edge direction in each
 cell of a grid was a good summary of a standing person's outline,
 that the bright-or-dark pattern around each pixel was a good summary
 of local texture. Each of those choices was a hand-written algorithm
--- written, debugged, and published. The legacy methods the image
-chapter listed were all summaries of this kind that had become
-standard tools:
+-- written, debugged, and published. The legacy methods above were
+all summaries of this kind that had become standard tools:
 
 * :meth:`~image.Image.find_features` summarises a window of the
   image by adding up the brightness inside several rectangles and

@@ -93,10 +93,9 @@ and blue. The thresholds are L (lightness), A
 against the pixel's value in that channel.
 
 The reason for going through LAB rather than
-thresholding RGB directly is a property of the
-LAB colour space that Vision Sensors' colour
-material covers in detail: *LAB separates
-lightness from chroma*. Two pixels that show
+thresholding RGB directly is the property the
+LAB colour space was designed around: *LAB
+separates lightness from chroma*. Two pixels that show
 the same colour but at different brightnesses
 end up at different L values but at roughly the
 same A and B values. That separation lets the
@@ -123,6 +122,18 @@ missing components default to maximum range
 ``(l_lo, l_hi)`` tuple in an RGB565 threshold
 list therefore thresholds only on lightness and
 matches every colour.
+
+.. note::
+
+   A truly wide-open L range has a catch at the
+   bottom end. As lightness falls toward zero
+   every colour converges on black, with the A
+   and B values collapsing toward zero and
+   becoming dominated by noise -- so dark
+   pixels can drift into the A and B ranges and
+   get tracked as the target colour. If black
+   regions of the scene light up as matches,
+   raise ``l_lo`` until they drop out.
 
 Flags
 -----
@@ -167,16 +178,3 @@ the source needs to be preserved and the output
 should be a freshly allocated :data:`~image.BINARY`
 image. The ``copy=True`` form is also accepted
 for a same-format result on a new buffer.
-
-With a list of thresholds, a colour-aware tuple
-form that survives lighting changes, three
-flags for the standard variations, and the usual
-mask and ROI for scoping, ``binary`` covers
-*global* thresholding -- one set of ranges
-applied uniformly across the whole image. The
-binary output is the natural input to
-morphological cleanup, the natural argument for
-the ``mask=`` keyword on later operations, and
-the natural starting point for any pipeline
-stage that wants to find connected regions of
-matching pixels.

@@ -3,120 +3,163 @@ Perspective correction
 
 .. warning::
 
-   **The arbitrary 3-by-3 ``transform``
-   matrix discussed on this page is only
-   supported on the OpenMV Cam N6.** The
-   keyword is silently ignored on every other
-   board. Applications that need to run on
-   anything other than the N6 must use the
-   canned correction methods on the previous
-   page -- :meth:`~image.Image.lens_corr` and
-   :meth:`~image.Image.rotation_corr` (with
-   its ``corners=`` form) -- or pre-compute
-   the corrected image off-board. The rest of
-   this page is N6-specific.
+   The arbitrary 3-by-3 ``transform`` matrix
+   is **only supported on the OpenMV Cam N6**
+   -- the keyword is silently ignored on every
+   other board. Applications that need to run
+   anywhere else must use the canned
+   :meth:`~image.Image.rotation_corr` method
+   (with its ``corners=`` form) or pre-compute
+   the corrected image off-board.
 
-The previous page covered two specific
-correction methods --
-:meth:`~image.Image.lens_corr` for radial
-fisheye, :meth:`~image.Image.rotation_corr`
-for 3D rotations -- each of which packages a
-particular form of warp behind a small set
-of parameters. Those methods run on every
-supported board. Some applications need a
-warp that does not fit either of those
-forms: an arbitrary projective remap from
-one quadrilateral to another, a calibrated
-correction for a known mounting that has
-already been worked out off-line, a
-homography supplied by some upstream
-algorithm. For those, the
+The canned :meth:`~image.Image.rotation_corr`
+method packages a particular family of
+perspective warps behind a small set of
+parameters, and runs on every supported
+board. Some applications need a warp that
+does not fit that form: an arbitrary
+projective remap from one quadrilateral to
+another, a calibrated correction for a known
+mounting that has already been worked out
+off-line, a warp matrix handed over
+ready-made by some upstream algorithm. For those,
+:meth:`~image.Image.draw_image` -- along with
 :meth:`~image.Image.copy`,
 :meth:`~image.Image.crop`, and
-:meth:`~image.Image.scale` methods accept a
+:meth:`~image.Image.scale` -- accepts a
 ``transform`` keyword that takes a hand-built
-3-by-3 matrix describing the warp directly
--- but only when the cam doing the work is
-an N6.
-
-This page is about that matrix -- what it
-represents, how to construct one, and the
-N6 GPU that runs it.
+3-by-3 matrix describing the warp directly.
 
 Affine and projective transformations
 -------------------------------------
 
-A *projective* transformation is the most
-general geometric warp that takes straight
-lines to straight lines. Every transformation
-the previous pages have covered -- scaling,
-flipping, transposing, rotating, lens
-correction, the rotation correction with
-four corners -- is a special case of a
-projective transformation. The general form
-maps input pixel coordinates ``(x, y)`` to
-output coordinates ``(x', y')`` through a
-3-by-3 matrix:
+Geometric warps are expressed in *homogeneous
+coordinates*: the pixel position ``(x, y)``
+with a ``1`` appended, multiplied by a 3-by-3
+matrix.
+
+The *affine* form is the place to start. Its
+bottom row is fixed at :math:`(0, 0, 1)`:
 
 .. math::
 
-   \begin{bmatrix} x' w' \\ y' w' \\ w' \end{bmatrix}
-   = \begin{bmatrix} a & b & c \\ d & e & f \\ g & h & 1 \end{bmatrix}
+   \begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix}
+   = \begin{bmatrix} a & b & c \\ d & e & f \\ 0 & 0 & 1 \end{bmatrix}
      \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}
 
-The output ``(x', y')`` is recovered as
-``(x' w' / w', y' w' / w')`` -- the division
-by ``w'`` is what makes the transformation
-*projective* rather than merely affine. When
-``g`` and ``h`` are both zero, ``w'`` stays
-at one and the division does nothing; the
-transformation collapses to the simpler
-*affine* form that includes scaling,
-rotation, shearing, and translation but not
-the foreshortening of a perspective warp.
-When ``g`` or ``h`` is non-zero, ``w'``
+Written out, each output coordinate is a
+linear combination of the input coordinates
+plus a constant:
+
+.. math::
+
+   x' = a x + b y + c, \qquad
+   y' = d x + e y + f
+
+which covers scaling, rotation, shearing, and
+translation in any combination -- and under
+all of them, parallel lines stay parallel.
+
+The *projective* (perspective) form frees the
+bottom row:
+
+.. math::
+
+   \begin{bmatrix} x'' \\ y'' \\ w' \end{bmatrix}
+   = \begin{bmatrix} a & b & c \\ d & e & f \\ g & h & 1 \end{bmatrix}
+     \begin{bmatrix} x \\ y \\ 1 \end{bmatrix},
+   \qquad
+   (x', y') = \left( \frac{x''}{w'}, \; \frac{y''}{w'} \right)
+
+Written out:
+
+.. math::
+
+   x' = \frac{a x + b y + c}{g x + h y + 1}, \qquad
+   y' = \frac{d x + e y + f}{g x + h y + 1}
+
+The division by :math:`w' = g x + h y + 1` is
+what makes the transformation projective
+rather than merely affine. When :math:`g` and :math:`h` are both
+zero, :math:`w'` stays at one and the
+division does nothing -- the affine form
+again. When either is non-zero, :math:`w'`
 varies with the input position and pixels at
 different positions get foreshortened by
-different amounts -- which is what produces
-the keystone effect of looking at a flat
-plane from an oblique angle.
+different amounts, which no longer keeps
+parallel lines parallel -- it is exactly the
+keystone effect of looking at a flat plane
+from an oblique angle. A projective
+transformation is the most general geometric
+warp that takes straight lines to straight
+lines; scaling, flipping, transposing,
+rotating, and the four-corner rotation
+correction are all special cases of one.
 
-A handful of named cases drop out of the
-matrix form:
+The named transformations drop out of the
+affine form directly. The identity
+transformation is the identity matrix, and:
 
-* The identity transformation is the
-  identity matrix.
-* A translation by ``(tx, ty)`` sets
-  ``c = tx`` and ``f = ty`` with the rest
-  of the matrix at identity.
-* A scaling by ``(sx, sy)`` sets
-  ``a = sx`` and ``e = sy``.
-* A rotation by angle ``theta`` sets
-  ``a = cos(theta)``, ``b = -sin(theta)``,
-  ``d = sin(theta)``, ``e = cos(theta)``.
-* A 2D affine transformation -- the
-  composition of any of the above without
-  perspective foreshortening -- has
-  ``g = 0`` and ``h = 0``.
-* A perspective transformation has
-  non-zero ``g`` or ``h``.
+.. math::
 
-For most hand-built transforms an
-application starts with one of these as a
-base, multiplies in further matrices for
-each additional operation, and ends with a
-single 3-by-3 matrix that describes the
-composite warp.
+   \underbrace{\begin{bmatrix}
+   1 & 0 & t_x \\ 0 & 1 & t_y \\ 0 & 0 & 1
+   \end{bmatrix}}_{\text{translate by } (t_x, \; t_y)}
+   \qquad
+   \underbrace{\begin{bmatrix}
+   s_x & 0 & 0 \\ 0 & s_y & 0 \\ 0 & 0 & 1
+   \end{bmatrix}}_{\text{scale by } (s_x, \; s_y)}
+   \qquad
+   \underbrace{\begin{bmatrix}
+   \cos\theta & -\sin\theta & 0 \\
+   \sin\theta & \cos\theta & 0 \\
+   0 & 0 & 1
+   \end{bmatrix}}_{\text{rotate by } \theta}
+
+For most hand-built transforms an application
+starts with one of these as a base and
+multiplies in further matrices for each
+additional operation, ending with a single
+3-by-3 matrix that describes the composite
+warp. Matrices apply right to left:
+:math:`M = T R S` runs the scale first, then
+the rotation, then the translation. The
+composite everyone needs eventually is
+rotation about the image centre -- a bare
+rotation matrix spins the image about the
+pixel origin at the top-left corner, so the
+centred version moves the centre
+:math:`(c_x, c_y)` to the origin, rotates,
+and moves it back:
+
+.. math::
+
+   M =
+   \underbrace{\begin{bmatrix}
+   1 & 0 & c_x \\ 0 & 1 & c_y \\ 0 & 0 & 1
+   \end{bmatrix}}_{\text{move centre back}}
+   \underbrace{\begin{bmatrix}
+   \cos\theta & -\sin\theta & 0 \\
+   \sin\theta & \cos\theta & 0 \\
+   0 & 0 & 1
+   \end{bmatrix}}_{\text{rotate}}
+   \underbrace{\begin{bmatrix}
+   1 & 0 & -c_x \\ 0 & 1 & -c_y \\ 0 & 0 & 1
+   \end{bmatrix}}_{\text{move centre to origin}}
 
 The transform keyword
 ---------------------
 
-:meth:`~image.Image.copy`,
-:meth:`~image.Image.crop`, and
-:meth:`~image.Image.scale` all accept the
-matrix through a ``transform`` keyword. The
-matrix is supplied as a 3-by-3
-:class:`ulab.numpy.ndarray`:
+The matrix goes in through a ``transform``
+keyword, supplied as a 3-by-3
+:class:`ulab.numpy.ndarray <numpy.ndarray>`. The method to
+reach for is :meth:`~image.Image.draw_image`,
+which warps the source through the matrix as
+it draws it onto a destination -- the result
+lands in a buffer the application controls,
+and the warp composes with everything else on
+the call: the scaling, the alpha blending,
+the masking.
 
 ::
 
@@ -126,103 +169,14 @@ matrix is supplied as a 3-by-3
                   [0.0,  1.2, -15.0],
                   [0.0,  0.0,   1.0]])
 
-    img.copy(transform=M, copy_to_fb=True)
+    canvas.draw_image(img, transform=M)
 
-The example above scales the image by 1.2 in
-each direction and shifts the result left
-and up by 20 and 15 pixels respectively --
-an affine warp built directly from the
-matrix entries described above.
-
-A projective warp that brings a known
-quadrilateral in the source onto a
-rectangular output is the textbook
-*perspective correction* problem, and the
-matrix that solves it is the *homography*
-that maps the four source corners to the
-four corners of the desired output
-rectangle. The math for computing such a
-matrix from four point correspondences is
-standard; libraries on the host side that
-do machine vision off-board frequently
-expose a routine for it, and the matrix
-that routine returns is exactly what the
-``transform`` keyword expects.
-
-Where the transform runs
-------------------------
-
-The board the application is targeting
-decides where the per-pixel resampling
-happens. On the OpenMV Cam N6, the
-``transform`` keyword runs on the on-board
-GPU, which is substantially faster than a
-CPU pass at full resolution -- often the
-difference between a real-time pipeline and
-one that drops frames. On every other
-supported board the keyword is ignored, and
-the application has to fall back to the
-canned correction methods on the previous
-page (or pre-compute the corrected image
-off-board).
-
-That asymmetry is worth being explicit about
-when targeting code for multiple boards.
-A pipeline that works at full speed on the
-N6 because the GPU is doing the warp may
-not run at the same speed elsewhere. Test
-plans that need to confirm a perspective
-correction works should run on the slowest
-target board the script is expected to
-support; performance numbers measured on
-the N6 do not generalise.
-
-When to use the canned forms instead
-------------------------------------
-
-The hand-built matrix is the most flexible
-of the perspective tools, but flexibility is
-not always what the application needs. The
-canned methods on the previous page solve
-specific problems with less ceremony:
-
-* If the problem is *radial* lens distortion
-  -- the fisheye bow of a wide-angle lens --
-  :meth:`~image.Image.lens_corr` does the
-  job in one parameter (``strength``). No
-  matrix construction needed.
-* If the problem is *3D rotation* with known
-  angles -- a calibrated mounting tilt, an
-  off-level installation --
-  :meth:`~image.Image.rotation_corr` takes
-  the angles directly.
-* If the problem is rectifying a *known
-  rectangle* whose four corners can be
-  located in the source --
-  :meth:`~image.Image.rotation_corr` with
-  the ``corners=`` keyword takes the four
-  points directly and constructs the warp.
-
-The ``transform`` keyword is the right
-answer when none of those forms fit:
-when the warp comes from an off-line
-calibration, when the matrix is the output
-of a host-side algorithm whose result has
-to be reproduced exactly on the cam, when
-multiple warps need to be composed into
-one operation before being applied. The
-matrix is also the natural language for
-expressing those cases, even if a series
-of named-method calls could produce a
-visually similar result with more
-arithmetic.
-
-With the four canned correction methods on
-the previous page for the common cases and
-the ``transform`` matrix for everything
-else, the perspective-correction toolkit
-covers what classical image processing
-applies to undo the optical reality of a
-real lens, a real sensor, and a real
-mounting angle. The remaining transform
-moves *out* of the Cartesian grid entirely.
+The example warps ``img`` onto ``canvas``
+scaled by 1.2 in each direction and shifted
+left and up by 20 and 15 pixels respectively
+-- an affine warp built directly from the
+matrix entries described above. The same
+keyword on :meth:`~image.Image.copy`,
+:meth:`~image.Image.crop`, and
+:meth:`~image.Image.scale` applies the warp
+to the image itself.

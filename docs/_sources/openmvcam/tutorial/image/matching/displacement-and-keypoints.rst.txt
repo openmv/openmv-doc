@@ -1,5 +1,5 @@
-Displacement and keypoint matching
-==================================
+Displacement matching
+=====================
 
 Template matching answers *where is this
 patch inside the frame*; similarity
@@ -8,22 +8,9 @@ images overall*. A different question
 sits between them: *the two frames show
 the same scene, but the camera (or the
 scene) moved between them -- by how
-much?*
-
-The answer to *how much* takes a couple
-of forms depending on what kind of motion
-is involved. A pure pixel-level shift
-between two whole-frame images is the
-*displacement* problem, and the image
-module solves it with a single
-phase-correlation method. A more general
-match, where some recognisable features
-moved together while others stayed put
-or moved differently, is the *keypoint*
-problem -- harder, more expensive, and
-the area where the image module's
-classical methods now sit firmly behind
-machine-learning alternatives.
+much?* That is the *displacement* problem,
+and the image module solves it with a
+single phase-correlation method.
 
 Phase-correlation displacement
 ------------------------------
@@ -32,9 +19,9 @@ Phase-correlation displacement
 estimates the rigid alignment between two
 same-sized images using *phase
 correlation* -- a frequency-domain method
-that runs an FFT on each image,
-cross-correlates their phases, and
-locates the peak in the result. The peak
+that runs a fast Fourier transform (FFT) on
+each image, cross-correlates their phases,
+and locates the peak in the result. The peak
 position is the translation that aligns
 the two images:
 
@@ -50,8 +37,8 @@ The returned
 carries ``x_translation`` and
 ``y_translation`` -- the pixel shift in
 each axis -- plus ``response``, a
-confidence score in ``0.0 -- 1.0`` where
-``1.0`` is a perfect peak. Filtering out
+confidence score from ``0.0`` to ``1.0``
+where ``1.0`` is a perfect peak. Filtering out
 detections below ``response > 0.3``
 discards spurious results in which the
 phase correlation never found a clean
@@ -62,36 +49,37 @@ and 1.0 respectively in the default mode;
 they take real values only when
 ``logpolar=True`` (see below).
 
-The method has *two practical
-constraints* that the application has to
-respect. The first is *power-of-2
-dimensions*. Phase correlation runs an
-FFT on each image, and the FFT is
-fastest -- and on the cam, only fully
-supported -- at power-of-two sizes:
-32-by-32, 64-by-64, 128-by-128. The
-:data:`sensor.B64X64`,
-:data:`sensor.B128X128`, and similar
-framesize constants exist exactly for
-this method: configure the sensor to one
-of them, capture, and the displacement
-matcher runs cleanly. Applications that
-want to estimate displacement on a
-larger captured frame typically take a
-power-of-2 crop of the relevant region
-and run the matcher on that.
+The method carries two practical
+constraints. The first is *power-of-two
+dimensions*: the FFT at the heart of
+phase correlation is fastest -- and on
+the camera, only fully supported -- at
+sizes like 32-by-32, 64-by-64, and
+128-by-128. The cleanest setup is to
+capture at one of those sizes directly,
+by passing the resolution to
+:meth:`~csi.CSI.framesize` as a tuple:
 
-The second constraint is *same-size
-inputs*. ``roi`` and ``template_roi``
-must produce identical width and height;
-otherwise the matcher refuses the call.
-When the two images come from the same
-sensor at the same configuration the
-constraint is automatic; when they
-come from different sources (a captured
-frame and a loaded reference, for
-instance) the application crops each to
-matching power-of-2 patches first.
+::
+
+    csi0.framesize((64, 64))
+
+An application that needs displacement
+from a larger frame instead crops a
+power-of-two patch out of the region it
+cares about and runs the matcher on
+that.
+
+The second is *same-size inputs*:
+``roi`` and ``template_roi`` must select
+identical widths and heights, or the
+matcher refuses the call. Two captures
+from the same camera at the same
+configuration satisfy this
+automatically; a captured frame compared
+against a loaded reference needs both
+cropped to matching power-of-two patches
+first.
 
 Rotation and scale via log-polar
 --------------------------------
@@ -200,70 +188,3 @@ captures, useful for:
 Each of those applications takes the
 same form: capture, displace, accumulate
 into a running estimate, capture again.
-
-Legacy keypoint matchers
-------------------------
-
-The image module also exposes a classical
-*keypoint*-based matcher that predates
-the embedded machine-learning support.
-The pipeline is the three-method sequence
-:meth:`~image.Image.find_keypoints`,
-:meth:`~image.Image.find_lbp`, and
-:func:`image.match_descriptor`.
-:meth:`~image.Image.find_keypoints` runs
-ORB (Oriented FAST and Rotated BRIEF)
-corner detection over a region and
-returns an opaque keypoint *descriptor*;
-:meth:`~image.Image.find_lbp` runs the
-LBP (local binary patterns) alternative
-and returns a different descriptor.
-Either descriptor can be saved with
-:func:`image.save_descriptor` and loaded
-with :func:`image.load_descriptor` so
-the calibration step can run once
-off-line. :func:`image.match_descriptor`
-compares two descriptors and returns the
-matched-keypoint cluster as a
-:class:`kptmatch <image.kptmatch>` with
-``x``, ``y``, ``w``, ``h``, ``cx``,
-``cy``, ``rect``, ``count``, ``theta``,
-and the per-keypoint ``match`` list.
-
-In practice the keypoint matchers are
-*usable but narrow*. ORB and LBP both
-struggle on the small low-resolution
-images a cam typically captures, the
-descriptors are not robust against
-significant rotation or scale changes
-without tuning, and a modern CNN-based
-feature matcher running through the
-embedded ML pipeline does the same job
-with substantially better accuracy. New
-applications that need feature-matching
-should reach for the Machine Learning
-chapter's methods rather than these. The
-ORB and LBP paths remain documented for
-legacy scripts and for applications
-where the cam's compute budget cannot
-accommodate an ML model.
-
-With :meth:`~image.Image.find_template`
-for the *where-is-this-patch* case,
-:meth:`~image.Image.get_similarity` for
-the *how-alike-are-these* case,
-:meth:`~image.Image.find_displacement`
-for the *how-much-did-the-frame-move*
-case, and the keypoint matchers for the
-legacy *match-these-features* case, the
-matching toolkit covers what the image
-module does for comparing images. The
-detectors return result objects; the
-matchers return alignments and scores;
-the camera still has to *do* something
-with all of them. The final piece is
-getting the image data on and off the
-cam -- saving captures to disk,
-compressing for network transfer,
-streaming over a connection. That is
-the work of the I/O methods.

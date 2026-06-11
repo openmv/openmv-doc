@@ -12,9 +12,10 @@ natural capture rate, store them somewhere
 they can be retrieved later, and play them
 back at the right speed. A training-data
 collection script captures a few hundred
-example frames for an ML pipeline; a
-inspection-station log records every
-captured part for traceability; a
+example frames for a machine-learning
+pipeline; an inspection-station log
+records every captured part for
+traceability; a
 development script replays a stored
 sequence to test a new algorithm against
 data that was previously captured live.
@@ -105,8 +106,9 @@ Recording
 captured :class:`Image` to a file stream
 (or stores it at the current slot of a
 memory stream) and advances the offset by
-one. The same call records the *inter-
-frame interval* since the last write, so
+one. The same call records the
+*inter-frame interval* since the last
+write, so
 the playback half can pause for the right
 amount of time between frames and the
 recording's natural frame rate is
@@ -205,11 +207,13 @@ must be less than
 streams the seek walks the file
 frame-by-frame from the start (the
 per-frame chunks are variable-sized, so
-random access is O(offset)). Seeks are
-the standard mechanism for jumping back
-to a known frame in a recording -- a
-"play from time T" UI, a re-analysis
-pass over a specific event.
+the cost of a seek grows with how far
+into the recording the target frame
+sits). Seeks are the standard mechanism
+for jumping back to a known frame in a
+recording -- a "play from time T" user
+interface, a re-analysis pass over a
+specific event.
 
 :meth:`~image.ImageIO.count` returns the
 number of frames currently stored;
@@ -386,14 +390,3 @@ iteration, and the trigger handler reads
 the memory stream out frame by frame and
 writes each into a file stream named
 after the timestamp of the trigger.
-
-With single-frame :meth:`~image.Image.save`
-and to-format methods on the previous
-page, :class:`ImageIO <image.ImageIO>`
-streams for native on-cam sequence
-recording and playback, and the
-:mod:`mjpeg` and :mod:`gif` modules for
-host-playable video, the camera's I/O
-layer covers everything an application is
-likely to need to get image data on and
-off the cam.

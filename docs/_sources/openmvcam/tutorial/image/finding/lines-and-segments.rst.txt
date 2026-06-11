@@ -73,20 +73,23 @@ lines, each extended across the full image:
     lines = img.find_lines(threshold=1500, theta_margin=25, rho_margin=25)
 
     for l in lines:
-        img.draw_line(l.line(), color=(255, 0, 0))
+        img.draw_line(l, color=(255, 0, 0))
 
 The ``threshold`` is the minimum vote total
 for a line to be accepted. The vote total
 adds up the Sobel edge magnitudes of every
 contributing pixel, so larger ``threshold``
 values demand longer or stronger edges to
-pass. A threshold of ``1000`` works for a
-modest line in a clear image; targets with
-weak contrast or short lines may need to
-drop to ``500`` or below; busy scenes may
-need ``2000`` or more to suppress
-false-positive lines through clusters of
-edge noise.
+pass -- which makes the right value depend on
+the image resolution (a longer line at a
+higher resolution accumulates more votes) as
+well as the scene, so it has to be tuned for
+the particular application. As rough starting
+points to tune from: ``1000`` for a modest
+line in a clear image, ``500`` or below for
+weak contrast or short lines, ``2000`` or
+more for busy scenes where false-positive
+lines form through clusters of edge noise.
 
 ``theta_margin`` and ``rho_margin`` control
 *merging* of nearby maxima. A single
@@ -114,14 +117,17 @@ restricts the search to a region of the
 frame, which both narrows the lines returned
 and reduces work.
 
-Each returned line is drawable directly. The
-:meth:`image.line.line` accessor returns the
-``(x1, y1, x2, y2)`` 4-tuple that
-:meth:`~image.Image.draw_line` expects.
-``l.theta`` is the angle in degrees, which
-classifies the line as horizontal, vertical,
-or diagonal in one comparison.
-``l.magnitude`` is the vote total, which
+Each returned line is drawable directly: the
+:class:`Line <image.line>` object passes
+straight into :meth:`~image.Image.draw_line`,
+which reads the ``(x1, y1, x2, y2)`` endpoint
+fields off the front of it.
+:attr:`l.theta <image.line.theta>` is the
+angle in degrees, which classifies the line
+as horizontal, vertical, or diagonal in one
+comparison.
+:attr:`l.magnitude <image.line.magnitude>`
+is the vote total, which
 sorts the returned lines from strongest to
 weakest.
 
@@ -143,7 +149,7 @@ are inside the frame:
     segments = img.find_line_segments(merge_distance=5, max_theta_difference=10)
 
     for s in segments:
-        img.draw_line(s.line(), color=(0, 255, 0))
+        img.draw_line(s, color=(0, 255, 0))
 
 The segment detector traces along oriented
 edge pixels directly, rather than voting in
@@ -219,13 +225,3 @@ the right contrast before searching --
 green where the luminance channel alone is
 flat -- and hand that channel image to the
 line detector.
-
-With infinite lines for the unbounded case
-and segments for the bounded case, the image
-module covers oriented straight edges as
-thoroughly as :meth:`~image.Image.find_blobs`
-covers connected coloured regions. Some
-other geometric features the camera looks
-for are not straight at all, and the
-remaining detectors handle the curved and
-quadrilateral cases.

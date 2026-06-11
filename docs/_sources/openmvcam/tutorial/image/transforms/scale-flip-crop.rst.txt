@@ -28,13 +28,13 @@ arguments and most of their behaviour:
   with the expectation that the application is
   going to resize the result.
 
-The three are aliases on the underlying
-mechanism. The name picked at the call site
-signals intent without changing what the method
-does, the same way :meth:`~image.Image.blend`
-and :meth:`~image.Image.replace` aliases work
-for :meth:`~image.Image.draw_image` in the
-drawing subsection.
+The three share the same arguments and the
+same transform machinery; the difference is
+where the result lands by default.
+:meth:`~image.Image.copy` produces a new
+image, while :meth:`~image.Image.crop` and
+:meth:`~image.Image.scale` modify the source
+in place.
 
 The shared arguments
 --------------------
@@ -114,13 +114,20 @@ display.
 
 ``image.AREA`` averages every input pixel that
 falls inside the output pixel's footprint --
-the right algorithm for *downscaling*, where
-nearest-neighbour would alias and bilinear
-would just blur. The default scaling
-algorithm without any hint is
-nearest-neighbour, which is the cheapest and
-the right answer when the source is already
-at the destination's pixel resolution.
+the right algorithm for *downscaling*.
+Bilinear and bicubic are interpolators: they
+estimate a value *between* source pixels,
+which is what upscaling needs, but when
+downscaling each output pixel covers many
+source pixels and an interpolator reads only
+the few nearest ones -- the detail it skips
+comes back as aliasing. ``image.AREA`` folds
+every covered pixel into the average instead.
+
+The default scaling algorithm without any hint
+is nearest-neighbour, which is the cheapest
+and the right answer when the source is
+already at the destination's pixel resolution.
 
 Orientation: flips and rotations
 --------------------------------
@@ -153,13 +160,6 @@ In code:
 ::
 
     img.copy(hint=image.ROTATE_90, copy_to_fb=True)
-
-For arbitrary-angle rotations -- 17 degrees,
-say, rather than one of the four cardinal
-positions -- the operation is no longer a
-combination of flips and transposes and needs
-the more general 3D rotation correction the
-Lens and perspective correction page covers.
 
 Aspect handling
 ---------------
@@ -202,13 +202,13 @@ specify one of the three explicitly.
 When to reach for which
 -----------------------
 
-Most resizes use :meth:`~image.Image.copy`
-with an ``x_scale`` / ``y_scale`` pair and a
-``BILINEAR`` hint:
+Most resizes use :meth:`~image.Image.scale`
+with an ``x_scale`` / ``y_scale`` pair and an
+interpolation hint:
 
 ::
 
-    img.copy(x_scale=0.5, y_scale=0.5, hint=image.BILINEAR, copy_to_fb=True)
+    img.scale(x_scale=0.5, y_scale=0.5, hint=image.AREA)
 
 Most rotations use the same call with
 ``hint=image.ROTATE_90`` or similar.
@@ -220,24 +220,25 @@ a non-default ``roi``:
 
     img.crop(roi=(40, 30, 200, 150))
 
-For an in-place transform where the result
-should overwrite the source image,
-:meth:`~image.Image.scale` is the
-intent-signalling name (``copy``, ``crop``,
-and ``scale`` all do the same thing). The
-result-placement keyword arguments work the
-same way they do on every other method:
-``copy=True`` for a separate heap buffer,
-``copy_to_fb=True`` to land in the frame
-buffer.
+When the source has to survive the operation
+-- capturing a reference frame, taking a
+thumbnail of a frame that is about to be
+processed destructively --
+:meth:`~image.Image.copy` produces the result
+as a new image and leaves the source
+untouched:
 
-With axis-independent scaling, the
-interpolation choice between nearest,
-bilinear, bicubic, and area averaging, the
-six-way flip/transpose/rotate combinatorics,
-and the three aspect-handling modes, the
-basic geometric transforms cover the
-operations that keep the image *rectangular*.
-The remaining transforms reshape the image
-in ways that a rectangle-to-rectangle mapping
-cannot.
+::
+
+    thumbnail = img.copy(x_scale=0.25, y_scale=0.25, hint=image.AREA)
+
+That default is the real difference behind
+the three names: ``scale`` and ``crop``
+transform in place, ``copy`` allocates. The
+result-placement keywords bridge the gap:
+``copy=True`` on ``scale`` or ``crop``
+allocates the result as a separate heap
+buffer instead of overwriting the source, and
+``copy_to_fb=True`` on any of the three lands
+it in the frame buffer for the IDE preview.
+

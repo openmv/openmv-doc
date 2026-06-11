@@ -1,12 +1,11 @@
 Regression and similarity
 =========================
 
-Two measurements on the :class:`Image`
-surface do not fit the histogram / statistics
-framing of the previous pages, but come up
-often enough to deserve a dedicated section.
-Linear regression of thresholded pixels gives
-an application a *line* it can act on -- the
+Two more measurements on the :class:`Image`
+class summarise the image as something other
+than a distribution of pixel values. Linear
+regression of thresholded pixels gives an
+application a *line* it can act on -- the
 classical input to a line-following robot.
 Similarity measurement gives an application a
 single number describing how alike two images
@@ -197,12 +196,3 @@ reference image. It is the cheap way to
 build a tracker that searches a parameter
 space and reports which transform of the
 reference best matches the current frame.
-
-With linear regression for line extraction
-and SSIM for image comparison, the
-measurement side of the toolkit is complete.
-What follows turns to geometric work --
-scaling, flipping, cropping, correcting
-lens distortion, and re-projecting into
-the polar coordinate system the Foundations
-introduced.

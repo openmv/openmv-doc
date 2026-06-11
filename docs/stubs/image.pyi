@@ -157,7 +157,11 @@ Smooth rainbow colour wheel. The default OpenMV palette for thermal
 imagery.
 """
 PDF417: int
-"""PDF417 2D stacked barcode."""
+"""
+PDF417 2D stacked barcode. The constant exists for completeness,
+but the barcode decoder does not currently implement PDF417 –
+Image.find_barcodes() will not return detections of this type.
+"""
 PNG: int
 """
 Compressed PNG buffer. Pixel-level operations require

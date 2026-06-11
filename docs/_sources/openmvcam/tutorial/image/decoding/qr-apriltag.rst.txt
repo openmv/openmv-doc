@@ -53,8 +53,7 @@ objects:
 The detector takes a single optional ``roi``
 to restrict the search. It needs grayscale
 input -- a colour frame is converted
-internally before decoding -- and it works
-on every supported board except the M4.
+internally before decoding.
 
 Each detection carries the bounding box
 (``x``, ``y``, ``w``, ``h``, ``rect``), the
@@ -153,12 +152,25 @@ families are :data:`image.TAG16H5`,
 :data:`image.TAGCUSTOM48H12`,
 :data:`image.TAGSTANDARD41H12`, and
 :data:`image.TAGSTANDARD52H13`. Each family
-trades off ID count against
-error-correction strength: ``TAG16H5`` has
-30 IDs and 0 bit errors tolerated;
-``TAG25H9`` has 35 IDs and 3 bit errors;
+trades off ID count against robustness. The
+``H`` number in the name is the minimum
+*Hamming distance* between any two codes in
+the family -- how many bits must flip before
+one valid code turns into another --
+``TAG16H5`` has 30 IDs at distance 5,
+``TAG25H9`` has 35 IDs at distance 9, and
 ``TAG36H11`` (the default and the most
-common) has 587 IDs and 4 bit errors.
+common) has 587 IDs at distance 11. The
+detector corrects up to two bit errors no
+matter the family, so the distance decides
+how risky that correction is: a random
+pattern in a noisy frame only has to land
+within two bits of a valid code to decode as
+a false detection, and the higher-distance
+families spread their codes so much more
+sparsely that such collisions become rare --
+the reason ``TAG36H11`` is the recommended
+choice.
 Detection time scales with the number of
 enabled families, so an application enables
 only what it actually prints. The bitmask
@@ -282,13 +294,3 @@ The two detectors run independently on the
 same frame and the application correlates
 their bounding boxes to match each tag to
 its companion code.
-
-With QR codes for arbitrary payloads and
-AprilTags for IDs and pose, the cam can
-read the two most common 2D codes the
-camera will ever see. Older code families
-the camera also handles -- the 1D barcodes
-printed on consumer goods and the
-high-density Data Matrix codes printed on
-industrial parts -- have their own
-detectors, and those come next.

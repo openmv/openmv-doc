@@ -78,19 +78,21 @@ numeric-array library, not an
 image-processing one.
 
 The next chapter covers exactly that.
-The :mod:`ulab.numpy` module supplied
-with MicroPython on the cam is a subset
-of NumPy that operates on the same
-memory the image module does: an
-:class:`Image` can be handed to a
-:mod:`ulab.numpy` routine as the
-backing array, and a
-:mod:`ulab.numpy` result can be
-rendered back through
-:meth:`~image.Image.to_bitmap` or
-:meth:`~image.Image.to_rgb565` for
-display. The two modules compose --
-each does what the other does not, and
+The :mod:`ulab.numpy <numpy>` module
+supplied with MicroPython on the cam is a
+subset of NumPy, and two bridges connect
+it to
+the image module:
+:meth:`~image.Image.to_ndarray` copies a
+frame's pixels into an
+:class:`~numpy.ndarray` for numerical
+work, and the :class:`~image.Image`
+constructor accepts an
+:class:`~numpy.ndarray` to build a new
+image from the result, ready to display,
+save, or feed back into the image
+library. The two modules compose -- each
+does what the other does not, and
 together they cover the numeric and
 imaging work an embedded-vision
 application needs.

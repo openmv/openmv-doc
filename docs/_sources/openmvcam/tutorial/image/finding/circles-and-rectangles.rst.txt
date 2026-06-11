@@ -157,18 +157,33 @@ carries the axis-aligned bounding box --
 expects -- *and* the four detected corners
 as ``corners``. The bounding box is what
 the application uses for rough position and
-size; the corners describe the true shape
-of the projective quadrilateral. When the
+size; the corners describe the projective
+quadrilateral itself. When the
 camera is viewing a flat target from an
 angle and the application needs to undo
 the keystone -- read text on a label,
 sample colour from a flat patch -- the
 corners feed directly into
 :meth:`~image.Image.rotation_corr` with the
-``corners=`` keyword (see Lens and
-perspective correction), and the output is
-the rectified rectangle ready for whatever
-analysis comes next.
+``corners=`` keyword (see :doc:`lens and
+perspective correction
+<../transforms/lens-and-perspective>`), and
+the output is the rectified rectangle ready
+for whatever analysis comes next.
+
+.. warning::
+
+   Because the detector is tuned for what the
+   AprilTag pipeline needs -- quadrilaterals
+   with strong, high-contrast borders, like a
+   black tag outline on white paper -- it is
+   not a find-every-rectangle pass.
+   Rectangles with soft contrast, textured
+   edges, or busy surroundings can go
+   undetected entirely. How well it works is
+   situation dependent: test it against the
+   real targets early, before building a
+   pipeline around it.
 
 When the detector misfires
 --------------------------
@@ -197,51 +212,3 @@ the contrast the detector needs. (The
 contrast must exist *somewhere* in the
 image; histogram equalisation can only
 amplify what is already there.)
-
-Legacy object detectors
------------------------
-
-A handful of older object detectors live in
-the image module alongside the geometric
-ones. They predate the embedded
-machine-learning support and rarely fit
-contemporary applications; they remain
-documented for legacy scripts.
-
-:meth:`~image.Image.find_features` runs a
-Viola-Jones Haar cascade over the frame and
-returns a list of bounding rectangles. The
-built-in cascades, loaded via
-:class:`image.HaarCascade`, are
-``"frontalface"`` (frontal-face detection)
-and ``"eye"`` (eye detection); custom
-cascades can be loaded from binary files on
-disk. The detector is fast and works well
-in controlled lighting, but its accuracy
-falls short of even a small modern CNN.
-For new face- or object-detection work, the
-embedded ML pipeline (see the Machine
-Learning chapter) is the right tool.
-:meth:`~image.Image.find_eye` (a fixed
-pupil-finder) and
-:meth:`~image.Image.find_hog` (a HOG-feature
-exporter) fall in the same category: usable,
-but narrow in scope and superseded for new
-work by the ML path.
-
-With :meth:`~image.Image.find_blobs` for
-connected coloured regions,
-:meth:`~image.Image.find_lines` and
-:meth:`~image.Image.find_line_segments`
-for oriented edges, and
-:meth:`~image.Image.find_circles` and
-:meth:`~image.Image.find_rects` for curved
-and quadrilateral targets, the geometric-
-detection toolkit covers the classical
-features a script looks for in a captured
-frame. Some other features the camera
-needs to recognise are not geometric at
-all but *symbolic* -- printed codes that
-encode arbitrary payloads behind a known
-visual structure -- and the decoders for
-those come next.

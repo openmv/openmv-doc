@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -183,7 +183,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/filters/gaussian-and-edges.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/filters/gaussian-and-edges.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -261,32 +261,34 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="gaussian-smoothing-and-edges">
 <h1><span class="section-number">7.14. </span>Gaussian smoothing and edges<a class="headerlink" href="#gaussian-smoothing-and-edges" title="Link to this heading">¶</a></h1>
-<p>The previous page introduced the neighbourhood
-as the unit of work and walked through filters
-that compute <em>statistical</em> values over it –
-the mean, the median, the mode. This page adds
-the two operations classical MV reaches for
-most often when the goal is either <em>clean</em>
-smoothing of brightness variations or <em>finding</em>
-the edges where brightness changes sharply.</p>
+<p>Two jobs dominate what neighbourhood windows
+get used for in classical machine vision:
+smoothing pixel-to-pixel variation cleanly, and
+finding the edges where the image changes
+sharply. The Gaussian filter is the standard
+tool for the first, the Laplacian-based
+detectors the standard tool for the second –
+and the two compose, because every edge
+detector works better on a lightly smoothed
+input.</p>
 <section id="the-gaussian-filter">
 <h2><span class="section-number">7.14.1. </span>The Gaussian filter<a class="headerlink" href="#the-gaussian-filter" title="Link to this heading">¶</a></h2>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.gaussian" title="image.Image.gaussian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gaussian()</span></code></a> is the
-edge-aware cousin of <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>.
-Like <code class="docutils literal notranslate"><span class="pre">mean</span></code>, it computes a weighted average
-over each pixel’s neighbourhood; unlike
-<code class="docutils literal notranslate"><span class="pre">mean</span></code>, the weights are not uniform. Pixels
+centre-weighted cousin of
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>. Both compute an
+average over each pixel’s neighbourhood, but
+the Gaussian’s weights are not uniform: pixels
 nearer the centre of the neighbourhood count
 <em>more</em>, pixels at the edge of the neighbourhood
 count <em>less</em>, with the weights following the
-familiar bell shape that gives the filter its
+familiar bell curve that gives the filter its
 name.</p>
 <p>The bell-shaped weighting is what makes a
 Gaussian filter smoother than a box average.
 Mean filtering can produce visible artefacts at
 the edges of objects – a hard cut-off in the
 weighting introduces small ringing patterns at
-sharp brightness changes. The Gaussian’s
+sharp transitions. The Gaussian’s
 smoothly-falling weights avoid that ringing and
 produce a result that looks closer to what
 “blurred” should look like. The cost is more
@@ -331,13 +333,12 @@ sensor noise.</p>
 <h2><span class="section-number">7.14.3. </span>The Laplacian filter<a class="headerlink" href="#the-laplacian-filter" title="Link to this heading">¶</a></h2>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.laplacian" title="image.Image.laplacian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">laplacian()</span></code></a> runs a discrete
 approximation of the <em>second spatial derivative</em>
-of the image’s brightness. The output is large
-where brightness is changing <em>quickly</em>, near
-zero where brightness is constant or changing
-linearly. The natural reading of the result is
-an edge response: pixels where the brightness
-is changing rapidly light up, pixels in smooth
-interiors stay dark.</p>
+of the image. The output is large where pixel
+values change <em>quickly</em>, near zero where they
+are constant or changing linearly. The natural
+reading of the result is an edge response:
+pixels where the image changes rapidly light
+up, pixels in smooth interiors stay dark.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">laplacian</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># 3x3 Laplacian -- edge response</span>
 </span></pre></div>
 </div>
@@ -360,10 +361,11 @@ needing a more expensive contrast metric.</p>
 <h2><span class="section-number">7.14.4. </span>The find_edges method<a class="headerlink" href="#the-find-edges-method" title="Link to this heading">¶</a></h2>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_edges" title="image.Image.find_edges"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_edges()</span></code></a> runs a complete
 edge-detection pipeline rather than just an
-edge-response filter. The result is a binary
-image whose non-zero pixels mark the positions
-where the input has the kind of brightness
-change that should count as an edge.</p>
+edge-response filter. It works on grayscale
+images, and the result is a binary image whose
+non-zero pixels mark the positions where the
+input has the kind of brightness change that
+should count as an edge.</p>
 <p>The method takes an <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> parameter
 that picks between two algorithms:</p>
 <p><a class="reference internal" href="../../../../library/omv.image.html#image.EDGE_SIMPLE" title="image.EDGE_SIMPLE"><code class="xref py py-data docutils literal notranslate"><span class="pre">EDGE_SIMPLE</span></code></a> runs a
@@ -381,8 +383,8 @@ algorithm. It computes the brightness
 gradient, suppresses every non-maximum
 response along the gradient direction (so each
 edge is one pixel wide), and applies a
-hysteresis threshold (so an edge that is bright
-in one place gets traced even where it is dim
+hysteresis threshold (so an edge that is strong
+in one place gets traced even where it fades
 between). The result is a clean, thin,
 connected set of edge pixels of the kind every
 classical edge-based algorithm wants.</p>
@@ -410,13 +412,13 @@ its hysteresis is not actually needed.</p>
 </section>
 <section id="adaptive-thresholding-on-the-gaussian">
 <h2><span class="section-number">7.14.5. </span>Adaptive thresholding on the Gaussian<a class="headerlink" href="#adaptive-thresholding-on-the-gaussian" title="Link to this heading">¶</a></h2>
-<p>Like the statistical filters on the previous
-page, <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.gaussian" title="image.Image.gaussian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gaussian()</span></code></a> accepts
-the <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> / <code class="docutils literal notranslate"><span class="pre">offset=N</span></code> keyword
-pair for adaptive thresholding. The behaviour
-is the same as with <code class="docutils literal notranslate"><span class="pre">mean</span></code>: the Gaussian
-statistic at each position becomes the local
-cutoff, and the source pixel is compared
+<p>Like the <a class="reference internal" href="linear-neighborhood.html"><span class="doc">statistical filters</span></a>,
+<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.gaussian" title="image.Image.gaussian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gaussian()</span></code></a> accepts the
+<code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> / <code class="docutils literal notranslate"><span class="pre">offset=N</span></code> keyword pair
+for adaptive thresholding. The behaviour is the
+same as with <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>: the
+Gaussian statistic at each position becomes the
+local cutoff, and the source pixel is compared
 against the statistic plus the offset to
 produce a binary result.</p>
 <p>The Gaussian variant is usually the cleanest
@@ -425,17 +427,6 @@ is reasonably noise-free. The weighted average
 gives a smoother cutoff than the mean filter
 produces, with fewer artefacts at sharp
 illumination transitions.</p>
-<p>With Gaussian smoothing for pre-processing,
-the Laplacian for cheap edge response, and
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_edges" title="image.Image.find_edges"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_edges()</span></code></a> for the full
-edge-extraction pipeline, the gradient-based
-filters cover what an application needs to
-extract <em>edges</em> and <em>high-frequency content</em>
-from a frame. The remaining family of filters
-operates on <em>binary</em> images rather than on
-brightness values, and is what most
-edge-extraction pipelines reach for to clean
-up their output before passing it on.</p>
 </section>
 </section>
 
@@ -467,7 +458,7 @@ up their output before passing it on.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

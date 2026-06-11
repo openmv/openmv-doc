@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -181,7 +181,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/transforms/lens-and-perspective.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/transforms/lens-and-perspective.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -259,11 +259,7 @@ data-aria-dark="Switch to auto color mode">
 </div><article class="yue" role="main">
           <section id="lens-and-perspective-correction">
 <h1><span class="section-number">7.22. </span>Lens and perspective correction<a class="headerlink" href="#lens-and-perspective-correction" title="Link to this heading">¶</a></h1>
-<p>The previous page covered the transforms that
-keep the source image rectangular:
-<em>scaling</em>, <em>flipping</em>, <em>transposing</em>,
-<em>cropping</em>. Two more
-classes of geometric correction reshape the
+<p>Two classes of geometric correction warp the
 image in ways that a rectangle-to-rectangle
 mapping cannot. <em>Lens correction</em> undoes the
 radial distortion a real wide-angle lens
@@ -274,15 +270,14 @@ correction</em> undoes the keystone effect that
 happens when the lens is not pointed
 perpendicular to the scene – the trapezoidal
 warp that turns a known rectangle in the world
-into a non-rectangular blob in the image.</p>
-<p>Vision Sensors covered the optical <em>causes</em>
-of both. This page is about the operations
-that undo them after the capture is done.</p>
+into a non-rectangular blob in the image.
+Both corrections undo, after the capture is
+done, effects that are optical in origin.</p>
 <section id="radial-lens-distortion">
 <h2><span class="section-number">7.22.1. </span>Radial lens distortion<a class="headerlink" href="#radial-lens-distortion" title="Link to this heading">¶</a></h2>
-<p>Vision Sensors’ real-lens-effects section
-described the <em>barrel</em> distortion that
-inexpensive wide-angle lenses introduce.
+<p>The <a class="reference internal" href="../../vision/optics/real-lens-effects.html"><span class="doc">real lens effects</span></a>
+material describes the <em>barrel</em> distortion
+that inexpensive wide-angle lenses introduce.
 Pixels near the centre of the frame are
 roughly where the pinhole model predicts;
 pixels near the edges are bowed outward by an
@@ -290,11 +285,11 @@ amount that grows with the square of the
 radial distance from the optical axis. A
 straight line in the scene that runs near the
 edge of the frame curves visibly in the
-captured image, and any classical MV
-algorithm that assumes straight lines stay
-straight – AprilTag corner detection, edge
-following, line-following navigation – gets
-the wrong answer near the corners.</p>
+captured image, and any classical machine
+vision algorithm that assumes straight lines
+stay straight – AprilTag corner detection,
+edge following, line-following navigation –
+gets the wrong answer near the corners.</p>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.lens_corr" title="image.Image.lens_corr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lens_corr()</span></code></a> undoes the
 distortion. The method runs the inverse
 mapping: every output pixel is sampled from
@@ -350,12 +345,13 @@ bottom edge.</p>
 <p>The fix is to apply a <em>3D rotation</em> to the
 captured frame that virtually re-orients the
 sensor plane to be parallel to the scene
-plane. The math is the same homography
-that AprilTag detection uses to recover a
-tag’s pose from its four corners, run in
-reverse: given a rotation, the operation
-maps every output pixel back to the input
-position the rotation would have come from.</p>
+plane. The math is the same perspective
+mapping that AprilTag detection uses to
+recover a tag’s pose from its four corners,
+run in reverse: given a rotation, the
+operation maps every output pixel back to the
+input position the rotation would have come
+from.</p>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.rotation_corr" title="image.Image.rotation_corr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rotation_corr()</span></code></a> runs that
 correction:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">rotation_corr</span><span class="p">(</span><span class="n">x_rotation</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">y_rotation</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">z_rotation</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
@@ -427,18 +423,6 @@ identifiable rectangle is visible in the
 scene and the rotation has to be
 hand-tuned from external knowledge (a
 calibrated mounting angle, for instance).</p>
-<p>With <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.lens_corr" title="image.Image.lens_corr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">lens_corr()</span></code></a> for
-radial fisheye distortion and
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.rotation_corr" title="image.Image.rotation_corr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rotation_corr()</span></code></a> for 3D
-perspective rotations (and the four-corner
-form for rectifying a known rectangle), the
-two canned correction methods cover the
-common cases. The more general <em>projective</em>
-form – a hand-supplied 3-by-3 matrix that
-describes an arbitrary affine or perspective
-warp – gets its own page, since the
-mathematics and the use cases stand on their
-own.</p>
 </section>
 </section>
 
@@ -470,7 +454,7 @@ own.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

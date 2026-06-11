@@ -1,27 +1,29 @@
 Gaussian smoothing and edges
 ============================
 
-The previous page introduced the neighbourhood
-as the unit of work and walked through filters
-that compute *statistical* values over it --
-the mean, the median, the mode. This page adds
-the two operations classical MV reaches for
-most often when the goal is either *clean*
-smoothing of brightness variations or *finding*
-the edges where brightness changes sharply.
+Two jobs dominate what neighbourhood windows
+get used for in classical machine vision:
+smoothing pixel-to-pixel variation cleanly, and
+finding the edges where the image changes
+sharply. The Gaussian filter is the standard
+tool for the first, the Laplacian-based
+detectors the standard tool for the second --
+and the two compose, because every edge
+detector works better on a lightly smoothed
+input.
 
 The Gaussian filter
 -------------------
 
 :meth:`~image.Image.gaussian` is the
-edge-aware cousin of :meth:`~image.Image.mean`.
-Like ``mean``, it computes a weighted average
-over each pixel's neighbourhood; unlike
-``mean``, the weights are not uniform. Pixels
+centre-weighted cousin of
+:meth:`~image.Image.mean`. Both compute an
+average over each pixel's neighbourhood, but
+the Gaussian's weights are not uniform: pixels
 nearer the centre of the neighbourhood count
 *more*, pixels at the edge of the neighbourhood
 count *less*, with the weights following the
-familiar bell shape that gives the filter its
+familiar bell curve that gives the filter its
 name.
 
 The bell-shaped weighting is what makes a
@@ -29,7 +31,7 @@ Gaussian filter smoother than a box average.
 Mean filtering can produce visible artefacts at
 the edges of objects -- a hard cut-off in the
 weighting introduces small ringing patterns at
-sharp brightness changes. The Gaussian's
+sharp transitions. The Gaussian's
 smoothly-falling weights avoid that ringing and
 produce a result that looks closer to what
 "blurred" should look like. The cost is more
@@ -80,13 +82,12 @@ The Laplacian filter
 
 :meth:`~image.Image.laplacian` runs a discrete
 approximation of the *second spatial derivative*
-of the image's brightness. The output is large
-where brightness is changing *quickly*, near
-zero where brightness is constant or changing
-linearly. The natural reading of the result is
-an edge response: pixels where the brightness
-is changing rapidly light up, pixels in smooth
-interiors stay dark.
+of the image. The output is large where pixel
+values change *quickly*, near zero where they
+are constant or changing linearly. The natural
+reading of the result is an edge response:
+pixels where the image changes rapidly light
+up, pixels in smooth interiors stay dark.
 
 ::
 
@@ -113,10 +114,11 @@ The find_edges method
 
 :meth:`~image.Image.find_edges` runs a complete
 edge-detection pipeline rather than just an
-edge-response filter. The result is a binary
-image whose non-zero pixels mark the positions
-where the input has the kind of brightness
-change that should count as an edge.
+edge-response filter. It works on grayscale
+images, and the result is a binary image whose
+non-zero pixels mark the positions where the
+input has the kind of brightness change that
+should count as an edge.
 
 The method takes an ``edge_type`` parameter
 that picks between two algorithms:
@@ -137,8 +139,8 @@ algorithm. It computes the brightness
 gradient, suppresses every non-maximum
 response along the gradient direction (so each
 edge is one pixel wide), and applies a
-hysteresis threshold (so an edge that is bright
-in one place gets traced even where it is dim
+hysteresis threshold (so an edge that is strong
+in one place gets traced even where it fades
 between). The result is a clean, thin,
 connected set of edge pixels of the kind every
 classical edge-based algorithm wants.
@@ -170,13 +172,14 @@ its hysteresis is not actually needed.
 Adaptive thresholding on the Gaussian
 -------------------------------------
 
-Like the statistical filters on the previous
-page, :meth:`~image.Image.gaussian` accepts
-the ``threshold=True`` / ``offset=N`` keyword
-pair for adaptive thresholding. The behaviour
-is the same as with ``mean``: the Gaussian
-statistic at each position becomes the local
-cutoff, and the source pixel is compared
+Like the :doc:`statistical filters
+<linear-neighborhood>`,
+:meth:`~image.Image.gaussian` accepts the
+``threshold=True`` / ``offset=N`` keyword pair
+for adaptive thresholding. The behaviour is the
+same as with :meth:`~image.Image.mean`: the
+Gaussian statistic at each position becomes the
+local cutoff, and the source pixel is compared
 against the statistic plus the offset to
 produce a binary result.
 
@@ -186,15 +189,3 @@ is reasonably noise-free. The weighted average
 gives a smoother cutoff than the mean filter
 produces, with fewer artefacts at sharp
 illumination transitions.
-
-With Gaussian smoothing for pre-processing,
-the Laplacian for cheap edge response, and
-:meth:`~image.Image.find_edges` for the full
-edge-extraction pipeline, the gradient-based
-filters cover what an application needs to
-extract *edges* and *high-frequency content*
-from a frame. The remaining family of filters
-operates on *binary* images rather than on
-brightness values, and is what most
-edge-extraction pipelines reach for to clean
-up their output before passing it on.

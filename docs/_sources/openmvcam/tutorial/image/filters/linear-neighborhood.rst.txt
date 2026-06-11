@@ -69,11 +69,12 @@ The mean filter
 
 :meth:`~image.Image.mean` replaces each pixel
 with the *arithmetic average* of its
-neighbourhood. The result smooths brightness
-variations over the size of the window, which
-makes it the cheapest way to suppress
-sensor-noise speckle: high-frequency variations
-average out, low-frequency content survives.
+neighbourhood. The result smooths
+pixel-to-pixel variation over the size of the
+window, which makes it the cheapest way to
+suppress sensor-noise speckle: high-frequency
+variation averages out, low-frequency content
+survives.
 
 The trade-off is that edges and other sharp
 features get averaged too. A bright edge that
@@ -117,8 +118,9 @@ A ``percentile`` parameter (default ``0.5``)
 moves the chosen value off the strict median.
 ``percentile=0.0`` returns the minimum of the
 neighbourhood, ``percentile=1.0`` the maximum;
-intermediate values blend toward one or the
-other. That gives ``median`` the ability to
+intermediate values pick proportionally between
+them in the sorted window. That gives ``median``
+the ability to
 emphasise dark or bright parts of the
 neighbourhood without losing the
 outlier-robustness of the order statistic.
@@ -128,9 +130,9 @@ common* value in the neighbourhood. Useful when
 the noise model is "most pixels are right, a
 few have been corrupted to varying degrees,"
 where the right answer is whichever value
-appears most often -- which the median may
-miss if the corruption spread the wrong
-direction.
+appears most often -- which the median can
+miss when the corrupted values pile up on one
+side of the sorted window.
 
 :meth:`~image.Image.midpoint` returns a
 weighted *combination of the minimum and the
@@ -138,8 +140,8 @@ maximum* of the neighbourhood -- ``bias=0.5``
 gives the midpoint between them, ``bias=0.0``
 gives the minimum, ``bias=1.0`` gives the
 maximum. Less commonly used than the others
-but worth knowing about for filters that need
-to extract specifically dark or bright
+but worth knowing about when the goal is
+specifically to extract dark or bright
 features.
 
 Bilateral, the edge-preserving version
@@ -149,21 +151,21 @@ Bilateral, the edge-preserving version
 neighbourhood filter most worth understanding
 well. It produces the smoothing effect of
 :meth:`~image.Image.mean`, but with an extra
-constraint: pixels in the neighbourhood that
-are very *different* from the centre pixel get
-*excluded* from the average. The result smooths
-the inside of every region of similar
-brightness without bleeding across the edges
-that separate them, which is exactly what most
-applications actually want.
+constraint: the more a neighbourhood pixel
+*differs* from the centre pixel, the less it
+counts in the average. The result smooths the
+inside of every uniform region without bleeding
+across the edges that separate them, which is
+exactly what most applications actually want.
 
 Two parameters control how aggressively the
-filter excludes pixels:
+filter discounts pixels:
 
-* ``color_sigma`` decides how *brightness
+* ``color_sigma`` decides how *colour
   difference* affects the weighting. Smaller
   values mean the filter is stricter about
-  excluding pixels that differ from the centre.
+  discounting pixels that differ from the
+  centre.
 * ``space_sigma`` decides how *spatial distance*
   affects the weighting. Smaller values give
   more weight to pixels close to the centre.
@@ -185,10 +187,9 @@ application needs.
 Adaptive thresholding
 ---------------------
 
-The mean, median, mode, midpoint, and gaussian
-filters all carry the same pair of keyword
-arguments that turn their output into a binary
-threshold:
+The mean, median, mode, and midpoint filters
+all carry the same pair of keyword arguments
+that turn their output into a binary threshold:
 
 * ``threshold=True`` switches the filter into
   thresholding mode.
@@ -211,10 +212,10 @@ The result is a binary image whose cutoff
 frame. Bright regions get a high cutoff, dim
 regions get a low cutoff, and a foreground
 pixel that is locally brighter than its
-neighbours matches at both positions -- which
-is exactly the behaviour a single global
-threshold could not produce on an unevenly-lit
-image.
+neighbours matches whether it sits in a bright
+region or a dim one -- which is exactly the
+behaviour a single global threshold could not
+produce on an unevenly-lit image.
 
 ::
 
@@ -259,21 +260,7 @@ going to do with the binary output.
 The filter family runs the adaptive threshold,
 so picking the *right* filter matters:
 :meth:`~image.Image.mean` for the cheapest
-adaptive threshold, :meth:`~image.Image.gaussian`
-for a smoother weighted average,
-:meth:`~image.Image.median` when the input has
-salt-and-pepper noise the filter should reject
-before computing the local cutoff.
-
-With size as the neighbourhood radius, a
-catalogue of statistics from arithmetic mean
-through edge-preserving bilateral, and the
-adaptive-threshold flags that turn the filters
-into local classifiers, the linear-neighborhood
-family covers the smoothing and
-locally-adaptive work classical MV pipelines
-need. The remaining filter family operates
-along the *same* neighbourhood pattern but
-with different statistics: the smoothing of a
-true Gaussian average, and the edge response
-of a Laplacian operator.
+adaptive threshold, :meth:`~image.Image.median`
+when the input has salt-and-pepper noise the
+filter should reject before computing the local
+cutoff.

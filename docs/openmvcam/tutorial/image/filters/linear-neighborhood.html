@@ -118,7 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">7.28. QR codes and AprilTags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">7.29. Barcodes and Data Matrix codes</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">7.30. Template matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement and keypoint matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">7.31. Displacement matching</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">7.32. Saving and compression</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">7.33. ImageIO streams</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.34. Wrap up</a></li>
@@ -183,7 +183,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/98e8f6ce6d1648b279f492037dee23d82a4b6ee6/docs/openmvcam/tutorial/image/filters/linear-neighborhood.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/a9d28e547485540eab9bc28776993a911d94e562/docs/openmvcam/tutorial/image/filters/linear-neighborhood.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -315,11 +315,12 @@ the feature the application is trying to suppress.</p>
 <h2><span class="section-number">7.13.2. </span>The mean filter<a class="headerlink" href="#the-mean-filter" title="Link to this heading">¶</a></h2>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> replaces each pixel
 with the <em>arithmetic average</em> of its
-neighbourhood. The result smooths brightness
-variations over the size of the window, which
-makes it the cheapest way to suppress
-sensor-noise speckle: high-frequency variations
-average out, low-frequency content survives.</p>
+neighbourhood. The result smooths
+pixel-to-pixel variation over the size of the
+window, which makes it the cheapest way to
+suppress sensor-noise speckle: high-frequency
+variation averages out, low-frequency content
+survives.</p>
 <p>The trade-off is that edges and other sharp
 features get averaged too. A bright edge that
 was one pixel wide before the filter is two or
@@ -358,8 +359,9 @@ matters for downstream maths.</p>
 moves the chosen value off the strict median.
 <code class="docutils literal notranslate"><span class="pre">percentile=0.0</span></code> returns the minimum of the
 neighbourhood, <code class="docutils literal notranslate"><span class="pre">percentile=1.0</span></code> the maximum;
-intermediate values blend toward one or the
-other. That gives <code class="docutils literal notranslate"><span class="pre">median</span></code> the ability to
+intermediate values pick proportionally between
+them in the sorted window. That gives <code class="docutils literal notranslate"><span class="pre">median</span></code>
+the ability to
 emphasise dark or bright parts of the
 neighbourhood without losing the
 outlier-robustness of the order statistic.</p>
@@ -368,17 +370,17 @@ common</em> value in the neighbourhood. Useful when
 the noise model is “most pixels are right, a
 few have been corrupted to varying degrees,”
 where the right answer is whichever value
-appears most often – which the median may
-miss if the corruption spread the wrong
-direction.</p>
+appears most often – which the median can
+miss when the corrupted values pile up on one
+side of the sorted window.</p>
 <p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.midpoint" title="image.Image.midpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">midpoint()</span></code></a> returns a
 weighted <em>combination of the minimum and the
 maximum</em> of the neighbourhood – <code class="docutils literal notranslate"><span class="pre">bias=0.5</span></code>
 gives the midpoint between them, <code class="docutils literal notranslate"><span class="pre">bias=0.0</span></code>
 gives the minimum, <code class="docutils literal notranslate"><span class="pre">bias=1.0</span></code> gives the
 maximum. Less commonly used than the others
-but worth knowing about for filters that need
-to extract specifically dark or bright
+but worth knowing about when the goal is
+specifically to extract dark or bright
 features.</p>
 </section>
 <section id="bilateral-the-edge-preserving-version">
@@ -387,20 +389,20 @@ features.</p>
 neighbourhood filter most worth understanding
 well. It produces the smoothing effect of
 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>, but with an extra
-constraint: pixels in the neighbourhood that
-are very <em>different</em> from the centre pixel get
-<em>excluded</em> from the average. The result smooths
-the inside of every region of similar
-brightness without bleeding across the edges
-that separate them, which is exactly what most
-applications actually want.</p>
+constraint: the more a neighbourhood pixel
+<em>differs</em> from the centre pixel, the less it
+counts in the average. The result smooths the
+inside of every uniform region without bleeding
+across the edges that separate them, which is
+exactly what most applications actually want.</p>
 <p>Two parameters control how aggressively the
-filter excludes pixels:</p>
+filter discounts pixels:</p>
 <ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">color_sigma</span></code> decides how <em>brightness
+<li><p><code class="docutils literal notranslate"><span class="pre">color_sigma</span></code> decides how <em>colour
 difference</em> affects the weighting. Smaller
 values mean the filter is stricter about
-excluding pixels that differ from the centre.</p></li>
+discounting pixels that differ from the
+centre.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">space_sigma</span></code> decides how <em>spatial distance</em>
 affects the weighting. Smaller values give
 more weight to pixels close to the centre.</p></li>
@@ -420,10 +422,9 @@ application needs.</p>
 </section>
 <section id="adaptive-thresholding">
 <h2><span class="section-number">7.13.5. </span>Adaptive thresholding<a class="headerlink" href="#adaptive-thresholding" title="Link to this heading">¶</a></h2>
-<p>The mean, median, mode, midpoint, and gaussian
-filters all carry the same pair of keyword
-arguments that turn their output into a binary
-threshold:</p>
+<p>The mean, median, mode, and midpoint filters
+all carry the same pair of keyword arguments
+that turn their output into a binary threshold:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> switches the filter into
 thresholding mode.</p></li>
@@ -445,10 +446,10 @@ source is greater, zero otherwise.</p>
 frame. Bright regions get a high cutoff, dim
 regions get a low cutoff, and a foreground
 pixel that is locally brighter than its
-neighbours matches at both positions – which
-is exactly the behaviour a single global
-threshold could not produce on an unevenly-lit
-image.</p>
+neighbours matches whether it sits in a bright
+region or a dim one – which is exactly the
+behaviour a single global threshold could not
+produce on an unevenly-lit image.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </span></pre></div>
 </div>
@@ -478,23 +479,10 @@ the whole frame.</span><a class="headerlink" href="#id2" title="Link to this ima
 <p>The filter family runs the adaptive threshold,
 so picking the <em>right</em> filter matters:
 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> for the cheapest
-adaptive threshold, <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.gaussian" title="image.Image.gaussian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gaussian()</span></code></a>
-for a smoother weighted average,
-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a> when the input has
-salt-and-pepper noise the filter should reject
-before computing the local cutoff.</p>
-<p>With size as the neighbourhood radius, a
-catalogue of statistics from arithmetic mean
-through edge-preserving bilateral, and the
-adaptive-threshold flags that turn the filters
-into local classifiers, the linear-neighborhood
-family covers the smoothing and
-locally-adaptive work classical MV pipelines
-need. The remaining filter family operates
-along the <em>same</em> neighbourhood pattern but
-with different statistics: the smoothing of a
-true Gaussian average, and the edge response
-of a Laplacian operator.</p>
+adaptive threshold, <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a>
+when the input has salt-and-pepper noise the
+filter should reject before computing the local
+cutoff.</p>
 </section>
 </section>
 
@@ -526,7 +514,7 @@ of a Laplacian operator.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 10 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

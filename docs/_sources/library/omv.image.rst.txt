@@ -735,7 +735,9 @@ returned by :meth:`Image.find_barcodes`.
 .. data:: PDF417
    :type: int
 
-   PDF417 2D stacked barcode.
+   PDF417 2D stacked barcode. The constant exists for completeness,
+   but the barcode decoder does not currently implement PDF417 --
+   `Image.find_barcodes()` will not return detections of this type.
 
 .. data:: CODE93
    :type: int

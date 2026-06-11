@@ -1,17 +1,17 @@
 Morphological operations
 ========================
 
-The neighbourhood filters on the previous pages
-worked on continuous brightness values. The
-*morphological* family works on binary images
-instead. Each operation walks the same kind of
-sliding neighbourhood, but the question it asks
-at every position is yes/no: is *every* pixel
-in the neighbourhood on, is *any* pixel in the
-neighbourhood on, what does the on/off pattern
-look like? The answers shape the binary mask in
-ways that are not possible to produce with
-brightness filters at all.
+*Morphological* operations work on binary
+images -- the masks that come out of
+thresholding and edge detection. Each operation
+walks the same kind of sliding neighbourhood
+the smoothing filters use, but the question it
+asks at every position is yes/no: is *every*
+pixel in the neighbourhood on, is *any* pixel
+in the neighbourhood on, what does the on/off
+pattern look like? The answers grow regions,
+shrink them, and recut their boundaries in ways
+an averaging filter cannot.
 
 Morphology is what comes between an *initial*
 binary mask -- the output of thresholding,
@@ -49,20 +49,21 @@ neighbours) disappear entirely, and small
 connections between larger regions get cut.
 
 .. figure:: ../figures/morphology-walkthrough.svg
-   :alt: A noisy binary foreground region in
-         the leftmost panel, with isolated
-         pixels scattered around it and small
-         holes inside it. Four panels to the
-         right show the result of applying
-         dilate, erode, open, and close to the
-         input. Dilate grows the region and
-         closes the small holes; erode shrinks
-         the region and removes the isolated
-         noise pixels; open removes the noise
-         without significantly changing the
-         region's shape; close fills the holes
-         without significantly changing the
-         region's outer boundary.
+   :alt: A binary input region in the leftmost
+         panel: a solid square with a one-pixel
+         hole in its middle and three isolated
+         noise pixels around it. Four panels to
+         the right show the result of applying
+         dilate, erode, open, and close to that
+         input. Dilate grows the region, fills
+         the hole, and grows each noise pixel
+         into a block; erode shrinks the region,
+         grows the hole, and removes the noise;
+         open removes the noise while
+         reproducing the region and its hole
+         exactly; close fills the hole while
+         reproducing the region's outline and
+         the noise pixels exactly.
 
    The four classical morphological operations
    applied to a noisy binary region. Erode
@@ -144,21 +145,26 @@ Threshold mode
 
 The four basic morphological operations all
 accept an integer ``threshold`` keyword that
-changes the on/off test at each position.
-Without ``threshold``, the operation behaves
-the way the descriptions above said:
+softens the on/off test at each position.
+Without it, the operations behave the way the
+descriptions above said:
 :meth:`~image.Image.erode` requires *every*
 neighbour to be on, :meth:`~image.Image.dilate`
-requires *at least one*. With a numeric
-``threshold``, the rule becomes "at least
-``threshold`` neighbours must be on" -- which
-turns the operation into a softer version of
-itself. An erode with ``threshold=4`` requires
-four foreground neighbours instead of all nine
-(in a 3-by-3 window), so it does not erode as
-aggressively. A dilate with ``threshold=2``
-requires two foreground neighbours instead of
-one, so it grows less aggressively.
+requires *at least one*. With ``threshold``
+set, each operation tolerates that many
+neighbours voting the other way. For erode,
+``threshold`` is the number of *background*
+neighbours a pixel may have and still survive:
+``threshold=4`` keeps any pixel with at least
+four of its eight neighbours on (in a 3-by-3
+window the centre pixel has eight neighbours),
+so it does not erode as aggressively. For
+dilate, ``threshold`` is the number of
+*foreground* neighbours a background pixel must
+have more of before it turns on:
+``threshold=2`` requires at least three
+foreground neighbours instead of one, so it
+grows less aggressively.
 
 The threshold form is useful for tuning the
 aggressiveness of a morphological pass without
@@ -168,15 +174,3 @@ on. Most applications stick with the default
 behaviour; the threshold form is there for the
 cases where the default is just slightly too
 much or too little.
-
-With four classical operations for the cleanup
-patterns that come up over and over, the
-top-hat and black-hat for extracting the
-features the cleanup *removes*, and the
-neighbour-count threshold for fine-tuning,
-morphology gives an application the cleanup
-tools every binary-image pipeline relies on.
-The remaining filter family steps further out
-in scope: filters whose neighbourhood
-*weighting* is given by the application as a
-custom matrix.

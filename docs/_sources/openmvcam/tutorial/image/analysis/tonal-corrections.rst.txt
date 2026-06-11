@@ -1,24 +1,24 @@
 Tonal corrections
 =================
 
-The previous page introduced the histogram as
-the *description* of how brightness is
-distributed in an image. This page is about the
-operations that *change* that distribution --
-the corrections an application applies when the
-captured image is too dark, too bright, too
-flat, or skewed toward the wrong colour.
+Tonal corrections change how brightness and
+colour are distributed in a captured image --
+the fixes an application applies when a frame
+is too dark, too bright, too flat, or skewed
+toward the wrong colour.
 
 The corrections belong to two families:
 brightness-and-contrast adjustments that
-reshape the distribution of brightness, and
-colour adjustments that change which colour
-each pixel reads as. Both have analogues in
-the sensor's ISP that Vision Sensors covered;
-this page is about applying them to an
-already-captured :class:`Image`, after the
-fact, when the post-capture state needs more
-correction than the ISP already provided.
+redistribute brightness, and colour
+adjustments that change which colour each
+pixel reads as. Both have analogues in the
+sensor's :doc:`ISP
+</openmvcam/tutorial/vision/color/isp-pipeline>`,
+which corrects each frame on its way in; the
+methods here apply to an already-captured
+:class:`Image`, after the fact, for the cases
+where the frame needs more correction than the
+ISP provided.
 
 Histogram equalisation
 ----------------------
@@ -41,7 +41,7 @@ equalisation:
     img.histeq()
 
 The mechanic is direct. The cumulative
-distribution function of the source's
+distribution function (CDF) of the source's
 histogram is computed; each input pixel value
 is mapped to its position in the CDF, scaled
 to the output range. Where pixels were
@@ -238,36 +238,9 @@ Combined with a per-channel offset, the
 3-by-4 form lets the application also
 re-zero each channel.
 
-Vision Sensors covers the *why* of colour
-correction matrices in detail. The
-post-capture form on the :class:`Image` is
-just the same operation, applied after the
-fact.
-
-Where this leaves the application
----------------------------------
-
-With histogram equalisation and CLAHE for
-data-driven contrast adjustment, gamma /
-contrast / brightness for parameter-driven
-tone curves, auto white balance for the
-common colour correction, and the colour
-correction matrix for the more general case,
-the tonal toolkit covers the corrections that
-classical image processing applies *after*
-the capture is already done. Some of them
-overlap with what the ISP already did during
-capture, and the right place to make the
-correction depends on whether the captured
-frame is what needs the help or whether the
-capture itself needs to be different. When
-the answer is the latter, Vision Sensors'
-material is where the ISP-side knobs live;
-when the answer is the former, this page is
-where the post-capture knobs are.
-
-The remaining measurement-side operations are
-the ones that do not fit the histogram /
-statistics framing: linear regression of
-thresholded pixels, and image-to-image
-similarity comparison.
+The :doc:`ISP pipeline
+</openmvcam/tutorial/vision/color/isp-pipeline>`
+material covers the *why* of colour correction
+matrices. The post-capture form on the
+:class:`Image` is just the same operation,
+applied after the fact.

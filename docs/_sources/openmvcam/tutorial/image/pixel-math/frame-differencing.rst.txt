@@ -1,26 +1,19 @@
 Frame differencing
 ==================
 
-The two previous pages introduced operations
-that combine pixels at the same position from
-two different images. The single most common
-*application* of those operations -- the one
-that shows up in every motion-triggered cam,
-every camera-based intrusion alert, every "save
-a video when something happens" script -- is
-frame differencing: comparing the current
-frame against a stored reference frame to find
-the parts of the scene that have changed.
-
-This page walks the pipeline end to end, then
-notes a couple of variations that share the
-same arithmetic.
+Frame differencing compares each new frame
+against a stored reference frame to find the
+parts of the scene that have changed. It is the
+workhorse of camera applications that watch for
+something happening -- motion-triggered
+capture, intrusion alerts, "save a video when
+something moves" -- and it is built entirely
+from the pixel-wise operations covered earlier:
+an absolute difference, a threshold, and a
+region search, run on every frame.
 
 The basic pipeline
 ------------------
-
-The recipe has four stages, and reading them in
-order makes the role of each clear.
 
 The first stage is to *acquire a reference*. At
 some point near startup -- ideally when the
@@ -64,24 +57,21 @@ image. The raw difference always contains some
 noise: small brightness variations from sensor
 shot noise, gradient changes from lighting
 drift, sub-pixel jitter from slight camera
-motion. A threshold pass keeps only the
+motion. A threshold pass --
+:meth:`~image.Image.binary` with a threshold
+set above that noise floor -- keeps only the
 changes large enough to count as real motion
 and discards the rest, producing a binary
 image whose non-zero pixels are the
-actually-changed positions. Thresholding has a
-section of its own; for the *frame-differencing*
-recipe what matters is that its output is a
-binary mask of changed pixels.
+actually-changed positions.
 
 The fourth stage extracts *connected regions*
 of that binary mask -- groups of adjacent
-non-zero pixels that form contiguous patches
--- and returns a list of motion regions that
-the rest of the application can act on. Like
-thresholding, region detection has a section
-of its own; what matters here is that the
-binary output of stage three feeds it
-directly.
+non-zero pixels that form contiguous patches.
+:meth:`~image.Image.find_blobs` does that in
+one call, returning a list of motion regions,
+each with a bounding box and a pixel count,
+that the rest of the application can act on.
 
 .. figure:: ../figures/frame-diff-pipeline.svg
    :alt: A horizontal pipeline diagram. The
@@ -158,10 +148,6 @@ brightness everywhere the scene was the same
 in both captures, and non-zero brightness
 only where the light source actually lit up.
 
-The structure of the pipeline is the same as
-*frame differencing*; only the meaning of the
-reference is different.
-
 Choosing difference or sub
 --------------------------
 
@@ -186,12 +172,3 @@ than the reference (which would be sensor
 noise around the unlit value)
 clips to zero rather than reporting a spurious
 "the light was on" signal.
-
-With a reference frame, an absolute or signed
-difference, a threshold pass, and a
-connected-region step, the pipeline produces
-a clean list of "things that changed since
-the reference frame was taken." That single
-pattern is behind a substantial fraction of
-every motion-triggered cam application in
-the field.
