@@ -95,8 +95,8 @@ def main():
         print(f"Error: {args.pyi_dir} not found", file=sys.stderr)
         return 1
 
-    objects, sigs = genpyi.run_sphinx(args.docs_dir)
-    modules, skipped = genpyi.build_modules(objects, sigs)
+    objects, sigs, module_docs = genpyi.run_sphinx(args.docs_dir)
+    modules, skipped = genpyi.build_modules(objects, sigs, module_docs)
 
     skipped_fqns = {s.split(" ", 1)[0] for s in skipped}
     collision_classes = {s.split(" ", 1)[0] for s in skipped if "shadowed" in s}
