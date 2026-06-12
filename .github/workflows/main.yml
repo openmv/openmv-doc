@@ -76,13 +76,21 @@ jobs:
         branch: master
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Stage docs with stubs for the IDE push
+      if: startsWith(github.ref, 'refs/tags/v')
+      # Local copy so build/html itself (uploaded artifacts, docs/ sync, and
+      # the OpenMV Studio resources flow) is not modified.
+      run: |
+        cp -r micropython/docs/build/html micropython/docs/build/html-with-stubs
+        cp -r micropython/docs/build/stubs micropython/docs/build/html-with-stubs/stubs
+
     - name: Pushes to another repository
       if: startsWith(github.ref, 'refs/tags/v')
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
       with:
-        source-directory: 'micropython/docs/build/html'
+        source-directory: 'micropython/docs/build/html-with-stubs'
         destination-github-username: 'openmv'
         destination-repository-name: 'qt-creator'
         target-branch: openmv-qtc-14.0.2
