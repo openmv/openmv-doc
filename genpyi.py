@@ -31,6 +31,42 @@ from sphinx.application import Sphinx
 # Sphinx build
 # ---------------------------------------------------------------------------
 
+def render_list(node):
+    """Render a bullet/enumerated list as tight '- item' lines, with an
+    item's continuation lines indented under it."""
+    items = []
+    for li in node.children:
+        if not isinstance(li, docutils_nodes.list_item):
+            continue
+        lines = [l.strip() for l in li.astext().strip().split("\n") if l.strip()]
+        if lines:
+            items.append("- " + lines[0] + "".join("\n  " + l for l in lines[1:]))
+    return "\n".join(items)
+
+
+def render_body_part(node):
+    """Render one documentation body node as docstring text."""
+    if isinstance(node, (docutils_nodes.bullet_list,
+                         docutils_nodes.enumerated_list)):
+        return render_list(node)
+    if isinstance(node, docutils_nodes.block_quote):
+        # An indented block; render its children individually so nested
+        # lists and code keep their structure.
+        parts = [render_body_part(child) for child in node.children]
+        return "\n\n".join(p for p in parts if p)
+    if isinstance(node, docutils_nodes.literal_block):
+        # Keep example code, indented so it reads as a code block.
+        code = node.astext().rstrip()
+        return "\n".join("    " + line for line in code.split("\n")) if code else ""
+    text = node.astext().strip()
+    # Drop paragraphs holding unresolved substitution references (e.g.
+    # |see_cpython_module|) -- the minimal conf.py used for this build does
+    # not define the docs' substitutions.
+    if text.startswith("|"):
+        return ""
+    return text
+
+
 def run_sphinx(docs_dir):
     """Copy RST files, run Sphinx, return (domain objects, signatures)."""
     tmp = tempfile.mkdtemp()
@@ -84,12 +120,18 @@ def run_sphinx(docs_dir):
                 if isinstance(child, addnodes.desc_content):
                     parts = []
                     for sub in child.children:
-                        if isinstance(sub, addnodes.desc):
+                        # Stop at the first nested object OR subsection: a
+                        # section like "Methods" holds the members' own
+                        # directives, whose text must not be absorbed into
+                        # this object's docstring.
+                        if isinstance(sub, (addnodes.desc, docutils_nodes.section)):
                             break
-                        text = sub.astext().strip()
+                        text = render_body_part(sub)
                         if text:
                             parts.append(text)
-                    doc = "\n".join(parts).strip()
+                    # Blank lines between the body's paragraphs, matching the
+                    # rendered documentation's layout.
+                    doc = "\n\n".join(parts).strip()
                     break
 
             # Group all signatures in this directive by their fqn (stacked
@@ -137,12 +179,13 @@ def run_sphinx(docs_dir):
         for child in section.children:
             if isinstance(child, (addnodes.desc, docutils_nodes.section)):
                 break
-            if isinstance(child, docutils_nodes.paragraph):
-                text = child.astext().strip()
-                # Drop paragraphs holding unresolved substitution references
-                # (e.g. |see_cpython_module|) -- the minimal conf.py used for
-                # this build does not define the docs' substitutions.
-                if text and not text.startswith("|"):
+            if isinstance(child, (docutils_nodes.paragraph,
+                                  docutils_nodes.bullet_list,
+                                  docutils_nodes.enumerated_list,
+                                  docutils_nodes.block_quote,
+                                  docutils_nodes.literal_block)):
+                text = render_body_part(child)
+                if text:
                     parts.append(text)
         if parts:
             module_docs[mod_name] = "\n\n".join(parts)
@@ -452,8 +495,9 @@ def format_docstring(doc, indent=0):
         return [f"{prefix}{q}{body}\"\"\""]
     result = [f"{prefix}{q}"]
     for line in lines:
-        stripped = line.strip()
-        result.append(f"{prefix}{stripped}" if stripped else "")
+        # Preserve leading whitespace (indented example code); only trailing
+        # whitespace is dropped.
+        result.append(f"{prefix}{line.rstrip()}" if line.strip() else "")
     # The last non-empty content line must not end with a backslash.
     for idx in range(len(result) - 1, 0, -1):
         if result[idx].strip():
