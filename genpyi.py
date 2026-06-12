@@ -102,14 +102,39 @@ def run_sphinx(docs_dir):
         if entry.objtype == "module":
             module_docnames[name] = entry.docname
 
+    # Prune ".. only::" subtrees whose condition does not hold for this build
+    # (e.g. port_pyboard content like pyb.LED.intensity, which the rendered
+    # documentation excludes). The unresolved doctrees from get_doctree()
+    # still carry that content; the html build filters it during resolve.
+    # Objects defined only inside pruned subtrees are dropped from the domain
+    # object set too, so they are not reported as missing later.
+    def prune_only_nodes(doctree):
+        pruned_fqns = set()
+        for only_node in list(doctree.findall(addnodes.only)):
+            try:
+                keep = app.tags.eval_condition(only_node["expr"])
+            except Exception:
+                keep = False
+            if keep:
+                continue
+            for sig_node in only_node.findall(addnodes.desc_signature):
+                module = sig_node.get("module", "")
+                fullname = sig_node.get("fullname", "")
+                if fullname:
+                    pruned_fqns.add(f"{module}.{fullname}" if module else fullname)
+            only_node.parent.remove(only_node)
+        return pruned_fqns
+
     # Walk doctrees for signatures and docstrings. A single directive can
     # carry multiple stacked signatures (overloaded callables / constructors),
     # so each fqn maps to a *list* of raw signatures.
     sigs = {}  # fullname -> (objtype, [raw signatures], docstring)
+    all_pruned = set()
     for docname in sorted(app.env.found_docs):
         if docname == "index":
             continue
         doctree = app.env.get_doctree(docname)
+        all_pruned |= prune_only_nodes(doctree)
         for node in doctree.findall(addnodes.desc):
             objtype = node.get("objtype", "")
             # Extract this node's own docstring only -- stop at the first
@@ -172,6 +197,7 @@ def run_sphinx(docs_dir):
         if docname not in app.env.found_docs:
             continue
         doctree = app.env.get_doctree(docname)
+        prune_only_nodes(doctree)
         section = next(doctree.findall(docutils_nodes.section), None)
         if section is None:
             continue
@@ -189,6 +215,11 @@ def run_sphinx(docs_dir):
                     parts.append(text)
         if parts:
             module_docs[mod_name] = "\n\n".join(parts)
+
+    # Drop objects that only existed inside pruned ".. only::" subtrees.
+    for fqn in all_pruned:
+        if fqn not in sigs:
+            objects.pop(fqn, None)
 
     shutil.rmtree(tmp)
     return objects, sigs, module_docs
