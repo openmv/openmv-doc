@@ -170,6 +170,11 @@ def main():
 
     for f in sorted(args.pyi_dir.rglob("*.pyi")):
         rel = f.relative_to(args.pyi_dir)
+        # "name-stubs" PEP 561 packages are verbatim copies of "name" made
+        # for stdlib-name precedence; skip them rather than parse them as a
+        # bogus "name-stubs" module.
+        if any(part.endswith("-stubs") for part in rel.parts):
+            continue
         mod = (".".join(rel.parent.parts) if f.name == "__init__.pyi"
                else ".".join(rel.with_suffix("").parts))
         try:

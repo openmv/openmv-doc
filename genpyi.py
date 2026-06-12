@@ -814,6 +814,26 @@ def main():
 
         emit_pyi(name, mod, out_path, all_mod_names)
 
+    # PEP 561 stub-only packages: for modules whose names collide with the
+    # CPython standard library (time, os, struct, ...), type checkers and
+    # language servers prefer their bundled typeshed stubs over a plain
+    # name.pyi on the search path - so MicroPython-specific members like
+    # time.ticks_ms() would not resolve. A "name-stubs" package takes
+    # precedence over typeshed, restoring the documented API. "builtins" is
+    # excluded: replacing the real builtins stubs would break inference of
+    # int/str/object themselves.
+    stdlib_names = getattr(sys, "stdlib_module_names", frozenset())
+    for entry in sorted(pyi_dir.iterdir()):
+        base = entry.name[:-4] if entry.suffix == ".pyi" else entry.name
+        if (base not in stdlib_names) or (base == "builtins"):
+            continue
+        alias = pyi_dir / (base + "-stubs")
+        if entry.is_dir():
+            shutil.copytree(entry, alias)
+        else:
+            alias.mkdir()
+            shutil.copy(entry, alias / "__init__.pyi")
+
     nf = sum(len(m["functions"]) for m in modules.values())
     nc = sum(len(m["classes"]) for m in modules.values())
     nm = sum(
