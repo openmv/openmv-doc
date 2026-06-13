@@ -16,7 +16,8 @@ no clicks:
 
 * ``-auto_connect`` -- connect to the camera on
   startup, and keep reconnecting whenever one appears
-  (the Auto Reconnect option, forced on).
+  -- the same behavior as Tools → Auto Reconnect to
+  OpenMV Cam, forced on.
 * ``-auto_update <release|development|path>`` -- on
   connect, install the bundled release firmware, the
   latest development firmware, or a specific firmware
@@ -32,9 +33,9 @@ no clicks:
 * ``-full_screen`` -- start with the main window full
   screen.
 * ``-serial_number_filter <serial>`` -- only connect to
-  the camera with the given USB serial number; with
-  several cameras attached, each IDE instance can be
-  pinned to one unit.
+  the camera with the given USB serial number, so with
+  several cameras attached you can pin each IDE
+  instance to one unit.
 
 So ``openmvide -auto_connect -auto_run -full_screen``
 turns a PC and a camera into an appliance: power on,

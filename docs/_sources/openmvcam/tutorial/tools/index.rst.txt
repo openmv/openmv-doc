@@ -23,6 +23,13 @@ it, or help size the system around it.
    micropython-tools.rst
 
 .. toctree::
+   :caption: Model training services
+   :maxdepth: 1
+
+   edge-impulse.rst
+   roboflow/index.rst
+
+.. toctree::
    :caption: Calculators
    :maxdepth: 1
 

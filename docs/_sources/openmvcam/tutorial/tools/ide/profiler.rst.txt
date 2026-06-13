@@ -16,14 +16,13 @@ stays disabled otherwise. Building such a firmware is
 part of the custom-build workflow covered in
 :doc:`../../production/firmware/building`.
 
-.. admonition:: Screenshot needed
+.. figure:: figures/profiler.png
+   :alt: The Code Profiler window: the function table populated with call counts, timing columns, percentages, and two hardware event counter columns, with the Flat/Tree and Inclusive/Exclusive controls on top and the totals line at the bottom
 
-   ``figures/profiler.png`` -- the Code Profiler window
-   connected to a profiling firmware build while a
-   script runs: the function table populated with
-   names, calls, and timing columns, the Flat/Tree and
-   Inclusive/Exclusive controls visible, and the totals
-   line at the bottom. Capture the whole window.
+   The profiler watching a script run: per-function
+   calls, timing, and percentage of total time, with
+   two hardware event counters in the rightmost
+   columns and the totals line underneath.
 
 The window is a sortable table of functions with their
 call counts, minimum, maximum, total, and average
@@ -43,13 +42,13 @@ function for the time spent in everything it called,
 while *Exclusive* counts only the function's own body
 -- inclusive finds the expensive subsystem, exclusive
 finds the expensive loop. *Reset* zeroes the counters,
-which is how one stage of a pipeline gets measured in
+which is how you measure one stage of a pipeline in
 isolation: reset, let it run, read.
 
 The profiler can also display hardware event counters
 -- cache misses, branch mispredictions, and the other
 events the processor can count -- alongside the timing
-columns, selected from the same window on firmware
+columns; select them in the same window on firmware
 built with the support.
 
 .. seealso::

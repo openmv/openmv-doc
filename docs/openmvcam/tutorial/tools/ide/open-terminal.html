@@ -123,7 +123,9 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../openmv-py/index.html">15.3. OpenMV Python package</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../arduino-rpc/index.html">15.4. OpenMV Arduino RPC Library</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../micropython-tools.html">15.5. MicroPython tools</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../battery-life-estimator.html">15.6. Battery Life Estimator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../edge-impulse.html">15.6. Edge Impulse</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../roboflow/index.html">15.7. Roboflow</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../battery-life-estimator.html">15.8. Battery Life Estimator</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../production/index.html">16. Production</a></li>
@@ -148,7 +150,10 @@ data-aria-dark="Switch to auto color mode">
     <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
       <i class="i-lucide close"></i>
     </button>
-    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#streaming-frames-in-band">15.1.10.1. Streaming frames in-band</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
   data-type="github" data-user="openmv" data-repo="micropython-doc">
   <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
     <iconify-icon icon="simple-icons:github"></iconify-icon>
@@ -170,7 +175,7 @@ data-aria-dark="Switch to auto color mode">
     </span>
   </span>
 </a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/3bb45d6df6f923277ff0036342b47ac8b1a4cf0c/docs/openmvcam/tutorial/tools/ide/open-terminal.rst">Edit this page</a>
+  <a href="https://github.com/openmv/micropython-doc/blob/b5de2fae3c2b505375a1f3d1c9903b0a60a82020/docs/openmvcam/tutorial/tools/ide/open-terminal.rst">Edit this page</a>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
   <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
@@ -256,19 +261,21 @@ data-aria-dark="Switch to auto color mode">
 windows – each one a miniature OpenMV IDE session in
 its own window, with a frame buffer viewer, a
 histogram, and an interactive terminal, connected over
-a transport of its choosing. The main window’s
-connection is unaffected, so a standalone terminal is
-how a second camera gets watched while the first stays
-connected, and how a camera on the far side of a
-network gets debugged at all.</p>
-<div class="admonition-screenshot-needed admonition">
-<p class="admonition-title">Screenshot needed</p>
-<p><code class="docutils literal notranslate"><span class="pre">figures/open-terminal.png</span></code> – a standalone
-terminal window connected to a cam: frame buffer
-showing an image at top, histogram below it,
-terminal text area at the bottom with a REPL prompt
-visible. Capture the whole window.</p>
-</div>
+a transport of your choosing. The main window’s
+connection is unaffected, so a standalone terminal lets
+you watch a second camera while the first stays
+connected, or debug a camera on the far side of a
+network.</p>
+<figure class="align-default" id="id1">
+<img alt="A standalone terminal window: interactive terminal on the left with its toolbar, frame buffer and histogram on the right" src="../../../../_images/open-terminal.png" />
+<figcaption>
+<p><span class="caption-text">A standalone terminal window over a serial port:
+the interactive terminal on the left with its run /
+stop / reset toolbar, the frame buffer and histogram
+on the right – they light up when the camera
+streams frames in-band.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
 <p>New Terminal asks for one of three transports:</p>
 <ul class="simple">
 <li><p><em>Serial port</em> – any serial port at any baud rate
@@ -276,17 +283,21 @@ visible. Capture the whole window.</p>
 port, a camera wired up over a USB-to-UART bridge, a
 Bluetooth serial link (which shows up as an ordinary
 serial port), or any non-OpenMV serial device that
-needs a terminal.</p></li>
+needs a terminal. On a USB port the baud rate does
+not limit the speed – data always moves at the USB
+link’s speed – but on a camera’s USB port avoid
+921,600 and 12,000,000, which switch the camera from
+the REPL into the IDE’s debug protocol.</p></li>
 <li><p><em>TCP</em> – connect to a server at a chosen host and
 port, or listen as one on a chosen port.</p></li>
 <li><p><em>UDP</em> – the same pair of roles, over UDP.</p></li>
 </ul>
-<p>The last ten configurations are remembered and listed
-in the Open Terminal submenu for one-click reopening
-later; Clear Menu forgets them.</p>
+<p>The IDE remembers the last ten configurations and lists
+them in the Open Terminal submenu for one-click
+reopening; Clear Menu forgets them.</p>
 <p>Unlike the main window’s output-only pane, a standalone
-terminal is fully interactive: it is a REPL. Typing at
-the prompt executes Python on the connected camera
+terminal is fully interactive: it is a REPL. Type at
+the prompt and Python executes on the connected camera
 line by line, with history and tab completion provided
 by MicroPython itself. The toolbar adds one-click
 equivalents of the common control sequences – run the
@@ -295,14 +306,89 @@ soft reset – and the same clear, save, and wrap
 controls as the main terminal pane.</p>
 <p>The frame buffer above the terminal is live too. When
 the connected camera streams compressed frames in-band
-– which is what a camera script does when it prints
-frames through the IDE’s debug protocol over a network
-socket – the terminal decodes and displays them, and
-the Record and Zoom buttons work exactly as they do in
-the main window. That combination is the IDE’s
-network-debugging story: a camera that exposes its
-REPL over Wi-Fi gets a full editor-run-preview loop
-with no USB cable involved.</p>
+– embedded in the same stream as its print output –
+the terminal decodes and displays them, and the Record
+and Zoom buttons work exactly as they do in the main
+window. That combination is the IDE’s network-debugging
+story: a camera that exposes its REPL over Wi-Fi gets
+the full edit-run-preview loop with no USB cable
+involved.</p>
+<section id="streaming-frames-in-band">
+<h2><span class="section-number">15.1.10.1. </span>Streaming frames in-band<a class="headerlink" href="#streaming-frames-in-band" title="Link to this heading">¶</a></h2>
+<p>The encoding the terminal understands is simple: a
+<code class="docutils literal notranslate"><span class="pre">0xFE</span></code> byte opens a frame, a second <code class="docutils literal notranslate"><span class="pre">0xFE</span></code> closes
+it, and every payload byte between them has its top
+bit set and carries six bits of the compressed image
+– three image bytes become four payload bytes. Plain
+text never uses those byte values, so frames and
+<code class="docutils literal notranslate"><span class="pre">print()</span></code> output share the stream without colliding:
+the terminal shows the text and displays the frames.</p>
+<p>The script below captures, converts each frame to
+JPEG, and prints it in that form. The bit-packing runs
+through <a class="reference internal" href="../../../../library/omv.ulab.html#module-ulab" title="ulab: numpy-compatible array library"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ulab</span></code></a> (which has no shift operators, so
+the shifts are written as multiplies and divides), and
+is fast enough to keep up with the camera:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">csi</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">ulab</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">csi0</span> <span class="o">=</span> <span class="n">csi</span><span class="o">.</span><span class="n">CSI</span><span class="p">()</span>
+</span><span data-line="7"><span class="n">csi0</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span data-line="8"><span class="n">csi0</span><span class="o">.</span><span class="n">pixformat</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">RGB565</span><span class="p">)</span>
+</span><span data-line="9"><span class="n">csi0</span><span class="o">.</span><span class="n">framesize</span><span class="p">(</span><span class="n">csi</span><span class="o">.</span><span class="n">QVGA</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="n">clock</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+</span><span data-line="12">
+</span><span data-line="13">
+</span><span data-line="14"><span class="k">def</span><span class="w"> </span><span class="nf">encode_for_ide</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+</span><span data-line="15">    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span data-line="16">    <span class="n">n3</span> <span class="o">=</span> <span class="n">n</span> <span class="o">-</span> <span class="p">(</span><span class="n">n</span> <span class="o">%</span> <span class="mi">3</span><span class="p">)</span>
+</span><span data-line="17">    <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">n3</span> <span class="o">//</span> <span class="mi">3</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+</span><span data-line="18">    <span class="n">out</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(((</span><span class="n">n</span> <span class="o">*</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span> <span class="o">//</span> <span class="mi">6</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span>
+</span><span data-line="19">    <span class="n">out</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xFE</span>
+</span><span data-line="20">    <span class="n">out</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xFE</span>
+</span><span data-line="21">    <span class="k">if</span> <span class="n">n3</span><span class="p">:</span>
+</span><span data-line="22">        <span class="n">src</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+</span><span data-line="23">        <span class="n">dst</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+</span><span data-line="24">        <span class="n">b0</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n3</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+</span><span data-line="25">        <span class="n">b1</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">n3</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+</span><span data-line="26">        <span class="n">b2</span> <span class="o">=</span> <span class="n">src</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="n">n3</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+</span><span data-line="27">        <span class="n">dst</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">b0</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span> <span class="o">|</span> <span class="mh">0x80</span>
+</span><span data-line="28">        <span class="n">dst</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="n">m</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">b0</span> <span class="o">//</span> <span class="mi">64</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">b1</span> <span class="o">&amp;</span> <span class="mh">0x0F</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="mh">0x80</span>
+</span><span data-line="29">        <span class="n">dst</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="n">m</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">b1</span> <span class="o">//</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">b2</span> <span class="o">&amp;</span> <span class="mh">0x03</span><span class="p">)</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="mh">0x80</span>
+</span><span data-line="30">        <span class="n">dst</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="n">m</span> <span class="o">+</span> <span class="mi">4</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">b2</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)</span> <span class="o">|</span> <span class="mh">0x80</span>
+</span><span data-line="31">    <span class="k">if</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+</span><span data-line="32">        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]</span> <span class="o">|</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span>
+</span><span data-line="33">        <span class="n">out</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span> <span class="o">|</span> <span class="p">(</span><span class="n">x</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span>
+</span><span data-line="34">        <span class="n">out</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span> <span class="o">|</span> <span class="p">((</span><span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span>
+</span><span data-line="35">        <span class="n">out</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span> <span class="o">|</span> <span class="p">((</span><span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span>
+</span><span data-line="36">    <span class="k">elif</span> <span class="n">n</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="37">        <span class="n">out</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span> <span class="o">|</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0x3F</span><span class="p">)</span>
+</span><span data-line="38">        <span class="n">out</span><span class="p">[</span><span class="n">m</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x80</span> <span class="o">|</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">)</span>
+</span><span data-line="39">    <span class="k">return</span> <span class="n">out</span>
+</span><span data-line="40">
+</span><span data-line="41">
+</span><span data-line="42"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="43">    <span class="n">clock</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+</span><span data-line="44">    <span class="n">img</span> <span class="o">=</span> <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span><span class="o">.</span><span class="n">to_jpeg</span><span class="p">(</span><span class="n">quality</span><span class="o">=</span><span class="mi">80</span><span class="p">)</span>
+</span><span data-line="45">    <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">encode_for_ide</span><span class="p">(</span><span class="n">img</span><span class="o">.</span><span class="n">bytearray</span><span class="p">()))</span>
+</span><span data-line="46">    <span class="nb">print</span><span class="p">(</span><span class="n">clock</span><span class="o">.</span><span class="n">fps</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>This works in a standalone terminal because REPL
+printing waits: the camera blocks until the terminal
+has taken the data, so every byte of the frame
+arrives, and a JPEG moves quickly over a USB
+full-speed or high-speed link. The same script works
+unchanged over a TCP terminal,
+which is the network-debugging path above. The one
+place it does not work is the IDE’s main debug
+connection, whose output channel resets itself on
+overflow instead of waiting – there the frame buffer
+viewer already shows the camera’s frames natively, so
+nothing is missed.</p>
+</section>
 </section>
 
         </article><button class="back-to-top" type="button">
@@ -333,7 +419,7 @@ with no USB cable involved.</p>
     <div class="sy-foot-reserved md:flex justify-between items-center">
       <div class="sy-foot-copyright">
   <p class="omv-build-stamp">
-    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 11 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 13 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
   </p>
   <p>
     Made with

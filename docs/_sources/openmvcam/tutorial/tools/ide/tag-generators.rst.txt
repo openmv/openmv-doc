@@ -25,16 +25,16 @@ one family for a project and generate only the IDs the
 project needs -- detection is configured per family,
 and fewer valid IDs means fewer false positives.
 
-Choosing a family opens a dialog asking for the range
-of tag IDs to generate and whether to print the family
-name and ID under each tag (on by default, and worth
-keeping -- a floor scattered with anonymous tags is
+Choose a family and a dialog asks for the range of tag
+IDs to generate and whether to print the family name
+and ID under each tag (on by default, and worth keeping
+-- a floor scattered with anonymous tags is
 unidentifiable). The generator then writes one
-printable image per tag into a chosen folder -- a
-US-Letter page with the label on, a square image
-without it. Print them at whatever physical size the
-application's detection distance requires, on matte
-paper if glare is a concern.
+printable image per tag into a folder of your choice --
+a US-Letter page with the label on, a square image
+without it. Print them at whatever physical size your
+detection distance requires, on matte paper if glare is
+a concern.
 
 For the other symbologies the camera reads -- QR codes,
 Data Matrix codes, and linear barcodes -- the Machine

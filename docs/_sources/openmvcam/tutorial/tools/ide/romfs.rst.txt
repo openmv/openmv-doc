@@ -19,33 +19,32 @@ buttons to add files, create folders, delete and
 extract entries, and pull a model straight in from the
 :doc:`model zoo <model-zoo>`. A usage readout tracks
 how much of the board's ROMFS partition the contents
-occupy. Nothing touches the camera until *Commit*,
-which asks whether to write the result back to the
-camera or save it to a ``.img`` file on disk.
+occupy. Nothing touches the camera until you press
+*Commit*, which asks whether to write the result back
+to the camera or save it to a ``.img`` file on disk.
 
-Two conversions happen automatically as files are
-added. A ``.py`` script is cross-compiled to ``.mpy``
-bytecode for the target board, and a model file is
-converted for the board's NPU accelerator when it has
-one and the model needs it. What lands in ROMFS is
-always the form the camera executes directly.
+Two conversions happen automatically as you add files.
+A ``.py`` script is cross-compiled to ``.mpy`` bytecode
+for the target board, and a model file is converted for
+the board's NPU accelerator when it has one and the
+model needs it. What lands in ROMFS is always the form
+the camera executes directly.
 
-.. admonition:: Screenshot needed
+.. figure:: figures/romfs-editor.png
+   :alt: The Edit ROMFS dialog: a file tree of model and label files, the usage readout, and the Commit, Model Zoo, Add File, New Folder, Delete, and Extract File buttons
 
-   ``figures/romfs-editor.png`` -- the Edit ROMFS
-   dialog showing a file tree with a model file and a
-   folder in it, the Model Zoo / Add File / New Folder
-   / Delete / Extract File / Commit buttons, and the
-   size-usage readout. Capture the whole dialog.
+   The Edit ROMFS dialog showing a board's default
+   contents -- its machine-learning models -- with the
+   usage readout at the bottom right.
 
-Open ROMFS File runs the same editor against a
-``.img`` image file on disk instead of a connected
-camera, and New ROMFS File starts it empty -- either
-way, the path to preparing a ROMFS image offline, for
-flashing in production or shipping alongside a custom
-firmware build. Reset ROMFS on
-OpenMV Cam restores the connected camera's ROMFS to the
-board's defaults, undoing all edits.
+Open ROMFS File runs the same editor against a ``.img``
+image file on disk instead of a connected camera, and
+New ROMFS File starts it empty -- either way, the path
+to preparing a ROMFS image offline, for flashing in
+production or shipping alongside a custom firmware
+build. Reset ROMFS on OpenMV Cam restores the connected
+camera's ROMFS to the board's defaults, undoing all
+edits.
 
 .. seealso::
 

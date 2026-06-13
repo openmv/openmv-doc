@@ -1,36 +1,36 @@
 OpenMV IDE
 ==========
 
-OpenMV IDE is the desktop application built around one
-workflow: edit a MicroPython script, run it on a
-connected camera, and watch the frame buffer and serial
-output stream back live while it executes. It is built
-on the Qt Creator editor core, with everything that is
-not that workflow stripped away -- no project wizards,
-no build configurations, no compiler setup. A script
-and a camera are the whole model.
+OpenMV IDE is the desktop application for working with
+your OpenMV Cam. Everything in it serves one loop: edit
+a MicroPython script, run it on the camera, and watch
+the frame buffer and serial output stream back live
+while it executes. The IDE is built on the Qt Creator
+editor core, and the whole application is shaped
+around that loop -- a script needs no project files,
+build configurations, or compiler setup. You write a
+script and run it on a camera; that is the whole
+model.
 
 The main window has four working regions. The *editor*
-fills the left side and holds the open scripts, with
-the *serial terminal* below it carrying everything the
+fills the left side and holds your open scripts, with
+the *serial terminal* below it showing everything the
 script prints. The *frame buffer viewer* sits at the
 top right and shows what the camera last captured, and
 the *histogram* below it plots the pixel statistics of
 whatever the frame buffer shows. A column of toolbar
 buttons down the far left edge holds the file, edit,
 connect, and run controls, and a status bar along the
-bottom edge reports the connected camera's vital
-signs. Every pane can be collapsed when the script
-needs the room.
+bottom edge reports what the connected camera is doing.
+You can collapse any pane when the script needs the
+room.
 
-.. admonition:: Screenshot needed
+.. figure:: figures/main-window.gif
+   :width: 100%
+   :alt: The OpenMV IDE main window with a camera connected and a script running: the script in the editor on the left, the frame buffer on the right tracking a person in live video
 
-   ``figures/main-window.png`` -- the full main window
-   with a camera connected and a script running: editor
-   with a script visible, frame buffer showing a live
-   image, histogram populated, serial terminal showing
-   FPS prints, status bar populated at bottom right.
-   Default theme, default pane layout.
+   The main window with a script running: edit on the
+   left, watch on the right.
 
 Keyboard shortcuts in this chapter are written for
 Windows and Linux; on macOS substitute ``Cmd`` for

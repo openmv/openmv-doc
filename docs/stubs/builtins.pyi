@@ -279,6 +279,7 @@ class KeyboardInterrupt(Exception):
     """
     Raised when the user interrupts program execution, usually by pressing
     Ctrl+C on the REPL.
+
     See also in the context of soft_bricking.
     """
     ...
@@ -313,6 +314,7 @@ class SystemExit(Exception):
     """
     Raised by sys.exit() to request interpreter termination.  Unlike
     most exceptions, it does not produce a traceback when uncaught.
+
     On the OpenMV Cam, an unhandled SystemExit currently causes a
     soft_reset of MicroPython.
     """
@@ -884,6 +886,7 @@ class int:
         """
         In MicroPython, byteorder parameter must be positional (this is
         compatible with CPython).
+
         The optional signed kwarg from CPython is not supported.
         MicroPython currently converts negative integers as signed,
         and positive as unsigned. (Details.)
@@ -946,6 +949,7 @@ class list:
         Sort the items of the list in place. key and reverse are
         keyword-only. key, if given, is a function applied to each element to
         produce the comparison value; reverse sorts in descending order.
+
         Unlike CPython, the MicroPython list sort is not stable.
         """
         ...

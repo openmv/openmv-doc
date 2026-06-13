@@ -11,15 +11,12 @@ adjustment: drag sliders, watch which pixels light up,
 copy the tuple out when the target is solid white and
 everything else is black.
 
-.. admonition:: Screenshot needed
+.. figure:: figures/threshold-editor.png
+   :alt: The Threshold Editor tuning a LAB threshold: source image on the left, binary preview on the right with the target white, the six LAB sliders below, and the threshold tuple in the output field
 
-   ``figures/threshold-editor.png`` -- the Threshold
-   Editor dialog tuning a LAB threshold on a colourful
-   scene: source image on the left, binary preview on
-   the right with the target object white, the six LAB
-   min/max sliders below, and the resulting threshold
-   tuple visible in the output field. Capture the whole
-   dialog.
+   The threshold editor mid-tune: the binary preview
+   on the right shows what the threshold tuple at the
+   bottom currently tracks.
 
 The editor opens against either the live frame buffer
 or an image file from disk. It shows the source image
@@ -29,7 +26,7 @@ tracks -- with a min and max slider per channel
 underneath. Choose grayscale or LAB with the selector,
 drag the sliders until the binary preview isolates the
 target, and copy the threshold tuple from the output
-field into the script. An *Invert* checkbox flips the
+field into your script. An *Invert* checkbox flips the
 selection, and *Reset Sliders* starts over from
 wide-open.
 
@@ -49,7 +46,7 @@ Select an existing threshold tuple in a script --
 ``(30, 100, 15, 127, 15, 127)`` or a grayscale pair --
 right-click it, and choose the threshold-editor entry
 from the context menu. The editor opens preloaded with
-those values and, on OK, writes the adjusted numbers
-back over the selection (Cancel discards them).
-Retuning a deployed script for new lighting is a
-thirty-second job done this way.
+those values and, when you click OK, writes the
+adjusted numbers back over the selection (Cancel
+discards them). Retuning a deployed script for new
+lighting is a quick job done this way.

@@ -21,15 +21,6 @@ the images it will actually see. Open Dataset reopens
 an existing dataset folder later, and Close Dataset
 puts the window back to normal.
 
-.. admonition:: Screenshot needed
-
-   ``figures/dataset-editor.png`` -- the main window
-   with a dataset open: the dataset pane on the left
-   showing two or three class folders with a few
-   captured images, the image preview below it, and the
-   capture script in the editor. Crop to show the
-   dataset pane and part of the editor.
-
 Capturing
 ---------
 

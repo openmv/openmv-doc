@@ -19,10 +19,11 @@ finds the matching image file saved next to the
 descriptor -- and draws every keypoint on the image.
 Select the outliers with the mouse and remove them with
 the delete key; checkboxes toggle the visibility of
-each detection octave to work through the scales one at
-a time. Saving writes the trimmed descriptor back,
-first copying the previous descriptor and image to
-``.bak`` files (an earlier ``.bak`` is replaced).
+each detection octave so you can work through the
+scales one at a time. Save, and the trimmed descriptor
+is written back -- the previous descriptor and image
+are copied to ``.bak`` files first (an earlier ``.bak``
+is replaced).
 
 *Merge Files* combines several descriptor files into
 one. Capture descriptors of the same object from a few
