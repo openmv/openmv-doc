@@ -17,6 +17,7 @@ part of the custom-build workflow covered in
 :doc:`../../production/firmware/building`.
 
 .. figure:: figures/profiler.png
+   :class: framed
    :alt: The Code Profiler window: the function table populated with call counts, timing columns, percentages, and two hardware event counter columns, with the Flat/Tree and Inclusive/Exclusive controls on top and the totals line at the bottom
 
    The profiler watching a script run: per-function

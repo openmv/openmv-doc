@@ -12,6 +12,7 @@ copy the tuple out when the target is solid white and
 everything else is black.
 
 .. figure:: figures/threshold-editor.png
+   :class: framed
    :alt: The Threshold Editor tuning a LAB threshold: source image on the left, binary preview on the right with the target white, the six LAB sliders below, and the threshold tuple in the output field
 
    The threshold editor mid-tune: the binary preview

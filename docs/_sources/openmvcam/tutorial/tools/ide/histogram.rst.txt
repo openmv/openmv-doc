@@ -11,6 +11,7 @@ come up constantly in machine vision work: what colour
 and how does it separate from the background.
 
 .. figure:: figures/histogram.png
+   :class: framed
    :alt: The histogram pane in RGB, with one plot per channel, the statistics under each, and the readout line with the resolution and focus number on top
 
    The histogram in RGB: one plot per channel with its

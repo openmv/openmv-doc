@@ -12,6 +12,7 @@ connected, or debug a camera on the far side of a
 network.
 
 .. figure:: figures/open-terminal.png
+   :class: framed
    :alt: A standalone terminal window: interactive terminal on the left with its toolbar, frame buffer and histogram on the right
 
    A standalone terminal window over a serial port:

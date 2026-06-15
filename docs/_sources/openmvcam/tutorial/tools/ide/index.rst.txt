@@ -27,6 +27,7 @@ room.
 
 .. figure:: figures/main-window.gif
    :width: 100%
+   :class: framed
    :alt: The OpenMV IDE main window with a camera connected and a script running: the script in the editor on the left, the frame buffer on the right tracking a person in live video
 
    The main window with a script running: edit on the

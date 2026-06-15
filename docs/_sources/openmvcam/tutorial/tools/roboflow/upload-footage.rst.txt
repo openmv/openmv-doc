@@ -23,6 +23,7 @@ second or two is a reasonable starting point -- a half-minute clip
 becomes a few hundred varied images.
 
 .. figure:: figures/sample.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's "How often should we sample this video?" dialog with a frame-rate slider and an image-count readout
 

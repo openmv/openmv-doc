@@ -15,6 +15,7 @@ the project and version -- the int8 format the camera's TFLite
 engine runs.
 
 .. figure:: figures/deploy.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's "Deploy to 3rd Party Platforms" dialog with the OpenMV tab selected and a Download Files button
 

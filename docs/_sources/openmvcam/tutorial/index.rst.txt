@@ -25,9 +25,7 @@ earlier, it links back.
    :numbered:
    :maxdepth: 1
 
-   overview.rst
-   software_setup.rst
-   hardware_setup.rst
+   quickstart.rst
 
    python/index.rst
    hardware/index.rst

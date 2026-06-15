@@ -18,6 +18,7 @@ images, and adjust each class's confidence threshold until the boxes
 land where they should.
 
 .. figure:: figures/auto-label.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's Auto Label page: text-prompted classes with confidence sliders on the left, and a preview image with a person and a stuffed raccoon toy detected and masked
 

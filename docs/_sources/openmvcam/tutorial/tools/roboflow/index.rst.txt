@@ -3,7 +3,7 @@ Roboflow
 
 .. raw:: html
 
-   <video width="100%" autoplay loop muted playsinline
+   <video class="framed" width="100%" autoplay loop muted playsinline
           poster="https://cdn.prod.website-files.com/5f6bc60e665f54545a1e52a5/699f8314ce713d3da88c4be2_hero-homepage-2026-1440x810-cover.avif"
           style="border-radius: 8px; margin-bottom: 1.5rem; display: block;"
           aria-label="A Roboflow object detector labelling parts on an inspection line">

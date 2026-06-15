@@ -11,6 +11,7 @@ the file tree, and tick the filter to narrow the list
 to models that fit your board.
 
 .. figure:: figures/model-zoo.png
+   :class: framed
    :alt: The Model Zoo browser: the model tree on the left with a model selected, its description page on the right, and the filter-by-board-type checkbox at the bottom
 
    The Model Zoo browser with a model selected and its

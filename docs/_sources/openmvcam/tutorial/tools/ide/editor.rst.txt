@@ -52,6 +52,7 @@ and syntax errors before the script ever runs -- a
 whole class of typo crashes never reaches the camera.
 
 .. figure:: figures/editor-completion.png
+   :class: framed
    :alt: The editor's completion popup open after typing a dot, listing the image methods with their call signatures
 
    Type a dot and the completion list opens -- every

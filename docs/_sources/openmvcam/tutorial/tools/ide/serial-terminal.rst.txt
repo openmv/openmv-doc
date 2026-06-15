@@ -11,6 +11,7 @@ the bottom status bar; like the other panes, you can
 drag it larger or collapse it entirely.
 
 .. figure:: figures/serial-terminal.png
+   :class: framed
    :alt: The serial terminal showing a script's FPS prints, the traceback that ended it, and the camera's banner
 
    The serial terminal: the script's prints, the

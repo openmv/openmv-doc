@@ -12,6 +12,7 @@ polls the camera for the latest frame over USB and
 displays each one as it arrives.
 
 .. figure:: figures/frame-buffer.png
+   :class: framed
    :alt: The frame buffer pane showing a live image with a selection rectangle over one object, the Record, Zoom, Disable, and JPG Mode buttons in the title bar, and the histogram below computing from the selection
 
    The frame buffer with a region selected: the

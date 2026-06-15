@@ -22,6 +22,7 @@ snapshot of the images plus two transforms applied on the way in:
   hand-captured dataset much further.
 
 .. figure:: figures/augmentation.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's saturation augmentation settings, previewing the original image alongside reduced and increased saturation versions
 
@@ -42,6 +43,7 @@ Next, pick the model architecture. Roboflow offers several, each
 with a size selector trading accuracy against speed.
 
 .. figure:: figures/architecture.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's Select Architecture page with Roboflow RF-DETR, YOLO26, Roboflow 3.0, and YOLOv11 options, each with a model-size dropdown
 
@@ -64,6 +66,7 @@ The version page then shows the training graphs and the accuracy
 metrics: mAP, precision, and recall.
 
 .. figure:: figures/metrics.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's trained-model version page showing the metrics panel with mAP, precision, recall, and F1, above the Deploy Your Model section
 

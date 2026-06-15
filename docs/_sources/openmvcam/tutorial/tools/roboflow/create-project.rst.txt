@@ -6,6 +6,7 @@ A project bundles a dataset, the models trained on it, and their
 deployment targets.
 
 .. figure:: figures/create.jpg
+   :class: framed
    :width: 100%
    :alt: Roboflow's "Let's create your project" page: project name field, visibility and license options, and the project-type list with Object Detection selected
 

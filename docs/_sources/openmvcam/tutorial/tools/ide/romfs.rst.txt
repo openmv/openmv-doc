@@ -31,6 +31,7 @@ model needs it. What lands in ROMFS is always the form
 the camera executes directly.
 
 .. figure:: figures/romfs-editor.png
+   :class: framed
    :alt: The Edit ROMFS dialog: a file tree of model and label files, the usage readout, and the Commit, Model Zoo, Add File, New Folder, Delete, and Extract File buttons
 
    The Edit ROMFS dialog showing a board's default
