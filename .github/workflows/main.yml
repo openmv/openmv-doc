@@ -38,18 +38,17 @@ jobs:
 
     - name: Build translations
       working-directory: micropython/docs
-      # Each translated language is a full build emitted into its own
-      # subdirectory (build/html/<lang>/), matching the URL patterns in
-      # conf.py's html_context["languages"] switcher. Sphinx compiles the
-      # committed .po catalogs to .mo automatically (gettext_auto_build).
-      # The "Sync built docs" step below then deploys these subdirs along
-      # with the English root.
+      # Build every committed translation (one per locale/<lang>/ directory)
+      # into its own build/html/<lang>/ subdir, matching the URL patterns in
+      # conf.py's html_context["languages"] switcher. Builds run in parallel
+      # across the runner's cores -- each gets its own doctrees dir so they
+      # don't contend. The language set is derived from locale/, so adding a
+      # new translation needs no change here. Sphinx compiles the committed
+      # .po catalogs to .mo automatically (gettext_auto_build); the "Sync
+      # built docs" step deploys these subdirs alongside the English root.
       run: |
-        for lang in zh_CN zh_TW de ja es ru fr ko it pt_BR nl ro hr cs pl fi sv hu tr he ar; do
-          echo "::group::$lang"
-          python -m sphinx -b html -D language="$lang" -d "build/doctrees-$lang" . "build/html/$lang"
-          echo "::endgroup::"
-        done
+        ls -d locale/*/ | xargs -n1 basename | xargs -P "$(nproc)" -I {} \
+          python -m sphinx -q -b html -D language={} -d "build/doctrees-{}" . "build/html/{}"
 
     - name: Generate Python stubs
       run: |
