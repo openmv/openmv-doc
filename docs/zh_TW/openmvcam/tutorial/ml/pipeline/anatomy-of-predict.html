@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>7.6. predict 剖析 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="7.7. 正規化" href="normalization.html" /><link rel="prev" title="7.5. ROMFS" href="../ml-module/romfs.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html"/>
+  <meta property="og:title" content="7.6. predict 剖析"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">7. &#27231;&#22120;&#23416;&#32722;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-a-neural-network.html">7.1. &#20160;&#40636;&#26159;&#31070;&#32147;&#32178;&#36335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-ml-changed.html">7.2. &#27231;&#22120;&#23416;&#32722;&#25913;&#35722;&#20102;&#20160;&#40636;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/hello-blazeface.html">7.3. Hello BlazeFace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/loading-a-model.html">7.4. &#36617;&#20837;&#27169;&#22411;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/romfs.html">7.5. ROMFS</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">7.6. predict &#21078;&#26512;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="normalization.html">7.7. &#27491;&#35215;&#21270;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tensor-io.html">7.8. &#24373;&#37327; I/O</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/tflm.html">7.9. TensorFlow Lite for Microcontrollers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/cmsis-nn.html">7.10. CMSIS-NN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/npus.html">7.11. NPU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../postprocessing/postprocessors.html">7.12. &#24460;&#34389;&#29702;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../postprocessing/non-max-suppression.html">7.13. &#38750;&#26997;&#22823;&#20540;&#25233;&#21046;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../postprocessing/yolov8-walkthrough.html">7.14. YOLOv8 &#36880;&#27493;&#35299;&#35498;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../postprocessing/writing-your-own.html">7.15. &#33258;&#34892;&#25776;&#23531;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.16. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#pre-process">7.6.1. &#21069;&#34389;&#29702;</a></li>
+<li><a class="reference internal" href="#engine-dispatch">7.6.2. &#24341;&#25806;&#27966;&#36865;</a></li>
+<li><a class="reference internal" href="#post-process">7.6.3. &#24460;&#34389;&#29702;</a></li>
+<li><a class="reference internal" href="#what-the-script-controls">7.6.4. &#25351;&#20196;&#30908;&#25152;&#25511;&#21046;&#30340;&#37096;&#20998;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">7. </span>機器學習</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">7.6. </span>predict 剖析</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/pipeline/anatomy-of-predict.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="anatomy-of-predict">
+<h1><span class="section-number">7.6. </span>predict 剖析<a class="headerlink" href="#anatomy-of-predict" title="連結到這個標頭">¶</a></h1>
+<p><a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.predict" title="ml.Model.predict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Model.predict(inputs,</span> <span class="pre">*,</span> <span class="pre">callback=None)</span></code></a> 是已載入的模型物件實際執行工作的地方。在輸入進入與結果輸出之間，會依序執行三個階段：<em>前處理</em>、<em>引擎派送</em>、<em>後處理</em>。三者之中有兩者接受指令碼直接控制的參數；中間的引擎則由相機決定。</p>
+<figure class="align-default" id="id1">
+<img alt="由左至右五個相連方框的水平流程。最左邊是「影像輸入」；一個箭頭指向 副標題為「正規化」的「前處理」；一個箭頭指向 副標題為「TFLM / STAI」的「引擎」；一個箭頭指向 副標題為「postprocess=」的「後處理」；最後一個 箭頭指向「結果」。中間三個階段下方各帶有一個 標記 -- 「前處理」下方為「使用者可控制」、 「引擎」下方為「自動」、「後處理」下方為「使用者可控制」。" src="../../../../_images/predict-pipeline.svg" />
+<figcaption>
+<p><span class="caption-text"><a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.predict" title="ml.Model.predict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict()</span></code></a> 的三個階段。前處理與後處理接受指令碼控制的參數；中間的引擎由相機固定。</span><a class="headerlink" href="#id1" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+<section id="pre-process">
+<h2><span class="section-number">7.6.1. </span>前處理<a class="headerlink" href="#pre-process" title="連結到這個標頭">¶</a></h2>
+<p>前處理階段會將每個輸入轉換為網路所預期的密集張量。最常見的輸入是以 RGB565 擷取的 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image" title="image.Image"><code class="xref py py-class docutils literal notranslate"><span class="pre">image.Image</span></code></a>。此階段會將其裁切並調整大小至網路的 <a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.input_shape" title="ml.Model.input_shape"><code class="xref py py-attr docutils literal notranslate"><span class="pre">input_shape</span></code></a>、從 RGB565 轉換為網路訓練時所採用的通道格式（大多數視覺網路為 RGB888）、套用各通道的縮放與偏移，並 -- 當網路預期整數輸入時 -- 在同一道流程中量化為模型的 <a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.input_dtype" title="ml.Model.input_dtype"><code class="xref py py-attr docutils literal notranslate"><span class="pre">input_dtype</span></code></a>。針對浮點輸入訓練的網路會跳過量化步驟，直接接收縮放與偏移後的結果。</p>
+<p>預設的 <a class="reference internal" href="../../../../library/omv.ml.preprocessing.html#ml.preprocessing.Normalization" title="ml.preprocessing.Normalization"><code class="xref py py-class docutils literal notranslate"><span class="pre">ml.preprocessing.Normalization</span></code></a> 會讀取模型的輸入 dtype 並自動執行正確的轉換。手動調校的 <code class="xref py py-class docutils literal notranslate"><span class="pre">Normalization</span></code> 會覆寫縮放、平均值與標準差，以用於針對自訂通道統計量訓練的模型（衍生自 ImageNet 的平均值與標準差是常見的情況）。一個普通的可呼叫物件則會完全覆寫此階段 -- 當輸入根本不是影像，或應用程式本身已產生密集張量時很有用。</p>
+</section>
+<section id="engine-dispatch">
+<h2><span class="section-number">7.6.2. </span>引擎派送<a class="headerlink" href="#engine-dispatch" title="連結到這個標頭">¶</a></h2>
+<p>引擎階段會執行網路。它派送到哪個引擎由相機固定：H7 與 RT1062 執行 <em>TFLM</em>（TensorFlow Lite for Microcontrollers 直譯器，在存在 ARM 最佳化 <em>CMSIS-NN</em> 核心之處派送它們）；AE3 執行相同的 TFLM 直譯器搭配其 Cortex-M55 後備方案，並由 <em>Ethos-U</em> NPU 處理離線 Vela 編譯器標記給加速器的任何運算子；N6 執行 <em>STAI</em>，即 ST 為 N6 專用 NPU 所打造的執行階段。</p>
+<p>指令碼不會挑選引擎。相機隨附的引擎會執行相機所載入的每個模型。</p>
+</section>
+<section id="post-process">
+<h2><span class="section-number">7.6.3. </span>後處理<a class="headerlink" href="#post-process" title="連結到這個標頭">¶</a></h2>
+<p>後處理階段會將網路的原始輸出張量轉換回可用的結果。預設行為是將每個輸出張量還原量化（dequantize）為浮點數（或對於具有浮點輸出的網路則原樣傳遞），並將它們以 <code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code> 物件列表的形式回傳。大多數應用程式會註冊一個<em>後處理器</em> -- 一個了解網路輸出佈局的可呼叫物件 -- 來將張量解碼為應用程式所依據的結果形式：邊界框列表、關鍵點列表、類別列表。</p>
+<p>指令碼以兩種方式控制此階段。建構子上的 <code class="docutils literal notranslate"><span class="pre">postprocess=</span></code> 關鍵字會註冊一個在每次呼叫時都執行的後處理器。<a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.predict" title="ml.Model.predict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict()</span></code></a> 上的 <code class="docutils literal notranslate"><span class="pre">callback=</span></code> 關鍵字則僅就單次呼叫覆寫已註冊的後處理器 -- 在無需重新載入模型的情況下於數個解碼器之間切換時很有用。任一形式都會接收 <code class="docutils literal notranslate"><span class="pre">(model,</span> <span class="pre">inputs,</span> <span class="pre">outputs)</span></code> 並回傳應用程式所預期的任何內容。</p>
+</section>
+<section id="what-the-script-controls">
+<h2><span class="section-number">7.6.4. </span>指令碼所控制的部分<a class="headerlink" href="#what-the-script-controls" title="連結到這個標頭">¶</a></h2>
+<p>前處理與後處理是指令碼的兩個操作把手。預設的前處理器能處理大多數視覺模型；針對特定網路族系的正確後處理器則從 <a class="reference internal" href="../../../../library/omv.ml.postprocessing.html#module-ml.postprocessing" title="ml.postprocessing: ML Postprocessing"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ml.postprocessing</span></code></a> 下的型錄中挑選。中間的引擎由建置決定，且無論指令碼要求什麼，它都以相同方式執行。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../ml-module/romfs.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">7.5. </span>ROMFS</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="normalization.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">7.7. </span>正規化</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

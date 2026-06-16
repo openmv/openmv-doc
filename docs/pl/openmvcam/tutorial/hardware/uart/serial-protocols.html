@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="pl" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3.20. Protokoły szeregowe, ramkowanie i sumy CRC - OpenMV MicroPython 1.28 - dokumentacja</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Indeks" href="../../../../genindex.html" /><link rel="search" title="Szukaj" href="../../../../search.html" /><link rel="next" title="3.21. Podstawy SPI" href="../spi/spi-basics.html" /><link rel="prev" title="3.19. UART w kodzie" href="uart-code.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/hardware/uart/serial-protocols.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/hardware/uart/serial-protocols.html"/>
+  <meta property="og:title" content="3.20. Protokoły szeregowe, ramkowanie i sumy CRC"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Szukaj" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/hardware/uart/serial-protocols.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/hardware/uart/serial-protocols.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/hardware/uart/serial-protocols.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/hardware/uart/serial-protocols.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/hardware/uart/serial-protocols.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/hardware/uart/serial-protocols.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/hardware/uart/serial-protocols.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/hardware/uart/serial-protocols.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/hardware/uart/serial-protocols.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/hardware/uart/serial-protocols.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/hardware/uart/serial-protocols.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/hardware/uart/serial-protocols.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/hardware/uart/serial-protocols.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/hardware/uart/serial-protocols.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/hardware/uart/serial-protocols.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/hardware/uart/serial-protocols.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/hardware/uart/serial-protocols.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/hardware/uart/serial-protocols.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/hardware/uart/serial-protocols.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/hardware/uart/serial-protocols.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Samouczek</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Szybki start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Przegl&#261;d Pythona</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">3. Sterowanie sprz&#281;tem</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">3.1. Mikrokontrolery</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">3.2. Pomiar czasu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">3.3. Liczniki wirtualne</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">3.4. Piny i urz&#261;dzenia peryferyjne</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">3.5. Klasa LED</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">3.6. Podstawy elektroniki</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">3.7. Wyj&#347;cie GPIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">3.8. Konwersja poziom&#243;w napi&#281;&#263;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">3.9. Prze&#322;&#261;czniki i rezystory podci&#261;gaj&#261;ce</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">3.10. Wej&#347;cie GPIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">3.11. Eliminacja drga&#324; styk&#243;w</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">3.12. Odczyt sygna&#322;&#243;w analogowych za pomoc&#261; ADC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">3.13. Generowanie sygna&#322;u analogowego za pomoc&#261; PWM i filtru RC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/led-dimming.html">3.14. &#346;ciemnianie diody LED za pomoc&#261; PWM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/dc-motors.html">3.15. Sterowanie silnikiem DC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/servos.html">3.16. Sterowanie serwomechanizmem</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pulse-io/pulse-io.html">3.17. Strumienie bit&#243;w i pomiar impuls&#243;w</a></li>
+<li class="toctree-l3"><a class="reference internal" href="uart-basics.html">3.18. Podstawy UART</a></li>
+<li class="toctree-l3"><a class="reference internal" href="uart-code.html">3.19. UART w kodzie</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">3.20. Protoko&#322;y szeregowe, ramkowanie i sumy CRC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">3.21. Podstawy SPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">3.22. SPI w kodzie</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-basics.html">3.23. Podstawy I2C</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-code.html">3.24. I2C w kodzie</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-basics.html">3.25. Podstawy magistrali CAN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-code.html">3.26. Magistrala CAN w kodzie</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">3.27. Licznik czasu watchdog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">3.28. Zegar czasu rzeczywistego</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">3.29. Tryby niskiego poboru mocy i u&#347;pienia</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">3.30. Podsumowanie</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Sensory wizyjne</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Przetwarzanie obrazu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Uczenie maszynowe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. Sieci</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Serwery WWW</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Protok&#243;&#322; hosta</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Narz&#281;dzia</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produkcja</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Biblioteki</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">P&#322;ytki</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Nak&#322;adki</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensory</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">J&#281;zyk</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Wewn&#281;trzne mechanizmy</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Dziennik zmian</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licencja</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#packet-framing">3.20.1. Ramkowanie pakiet&#243;w</a></li>
+<li><a class="reference internal" href="#crcs">3.20.2. Sumy CRC</a><ul>
+<li><a class="reference internal" href="#why-two-crcs">3.20.2.1. Dlaczego dwa CRC</a></li>
+<li><a class="reference internal" href="#helpers">3.20.2.2. Funkcje pomocnicze</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#a-state-machine-receiver">3.20.3. Odbiornik jako maszyna stan&#243;w</a></li>
+<li><a class="reference internal" href="#beyond-the-baseline">3.20.4. Poza poziomem podstawowym</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/hardware/uart/serial-protocols.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Samouczek OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">3. </span>Sterowanie sprzętem</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">3.20. </span>Protokoły szeregowe, ramkowanie i sumy CRC</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="serial-protocols-framing-and-crcs">
+<h1><span class="section-number">3.20. </span>Protokoły szeregowe, ramkowanie i sumy CRC<a class="headerlink" href="#serial-protocols-framing-and-crcs" title="Link to this heading">¶</a></h1>
+<p><a class="reference internal" href="uart-code.html"><span class="doc">UART w kodzie</span></a> przenosił bajty między dwoma końcami łącza. Samo w sobie to nie wystarczy, aby zbudować niezawodne połączenie. Trzy problemy ujawniają się w chwili, gdy po drugiej stronie przewodu znajduje się rzeczywiste urządzenie:</p>
+<ul class="simple">
+<li><p><strong>Gdzie zaczyna się i kończy wiadomość?</strong> Bajty docierają w postaci strumienia bez wbudowanego ogranicznika. Jeśli odbiornik pominie pierwszy bajt (został włączony po nadajniku; krótkie zakłócenie elektryczne na linii), każdy kolejny bajt jest przesunięty o jeden, dopóki odbiornik nie znajdzie nowego punktu resynchronizacji.</p></li>
+<li><p><strong>Jak długa jest każda wiadomość?</strong> 32-bajtowy odczyt sensora i 4-bajtowa odpowiedź o statusie wyglądają identycznie na poziomie bajtów. Odbiornik potrzebuje sposobu, aby wiedzieć, ile bajtów należy do bieżącej wiadomości.</p></li>
+<li><p><strong>Czy bajty dotarły nienaruszone?</strong> Szumy mogą odwracać pojedyncze bity. Bez kontroli odbiornik beztrosko podejmie działania na uszkodzonych danych.</p></li>
+</ul>
+<p>Standardową odpowiedzią na wszystkie trzy problemy jest opakowanie danych w ramkę pakietu: znana sekwencja bajtów na początku, pole długości, sam ładunek oraz suma kontrolna na końcu.</p>
+<section id="packet-framing">
+<h2><span class="section-number">3.20.1. </span>Ramkowanie pakietów<a class="headerlink" href="#packet-framing" title="Link to this heading">¶</a></h2>
+<p>Typowy format ramkowania:</p>
+<figure class="align-default" id="id1">
+<img alt="Sześć pól narysowanych w kolejności: dwubajtowy HEADER oznaczony 0xAA 0x55, jednobajtowe pole CMD wybierające, które polecenie niesie ten pakiet, dwubajtowe pole LEN podające rozmiar ładunku, jednobajtowe pole HCRC obejmujące HEADER plus CMD plus LEN, ładunek PAYLOAD o zmiennej długości LEN bajtów, którego format zależy od CMD, oraz czterobajtowe pole DCRC obejmujące ładunek." src="../../../../_images/packet-frame.svg" />
+<figcaption>
+<p><span class="caption-text">Ramkowany pakiet z osobnymi sumami CRC nagłówka i danych: nagłówek (bajty magiczne), polecenie, długość, CRC nagłówka, ładunek, CRC danych.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Każde pole wykonuje jedno zadanie:</p>
+<ul class="simple">
+<li><p><strong>Nagłówek (bajty magiczne).</strong> Stała, nietypowa sekwencja bajtów – często dwa bajty, jak <code class="docutils literal notranslate"><span class="pre">0xAA</span> <span class="pre">0x55</span></code> – której odbiornik szuka w napływającym strumieniu. Gdy znajdzie tę sekwencję, wie, że rozpoczyna się nowy pakiet, i może odrzucić wszelkie śmieci, które pojawiły się wcześniej.</p></li>
+<li><p><strong>Polecenie.</strong> Pojedynczy bajt, który mówi, <em>czym</em> jest pakiet. Różne wartości poleceń używają różnych formatów ładunku – jedno polecenie może oznaczać „ustaw kąt serwa” z dwoma bajtami ładunku, inne może oznaczać „odczytaj sensor” bez ładunku, a jeszcze inne „zapisz komunikat w dzienniku” z łańcuchem znaków. Odbiornik rozdziela działanie na podstawie bajtu polecenia, aby wiedzieć, jak interpretować resztę pakietu.</p></li>
+<li><p><strong>Długość.</strong> Dwa bajty podające rozmiar ładunku w bajtach (tutaj w porządku little-endian), pozwalające na ładunki o rozmiarze do około 64 KiB. Odbiornik odczytuje dokładnie tyle bajtów, gdy CRC nagłówka zostanie zweryfikowany.</p></li>
+<li><p><strong>CRC nagłówka.</strong> Jednobajtowa suma kontrolna obejmująca pola HEADER, CMD i LEN. Odbiornik sprawdza ją przed odczytaniem jakiegokolwiek ładunku, dzięki czemu uszkodzone pole LEN zostaje wykryte już po kilku bajtach (zobacz poniższą sekcję o CRC, aby dowiedzieć się, dlaczego to ważne).</p></li>
+<li><p><strong>Ładunek.</strong> Dane aplikacji specyficzne dla danego polecenia, o długości dokładnie LEN bajtów. Format jest określany przez bajt polecenia: rekord o stałej szerokości pól spakowany za pomocą <a class="reference internal" href="../../../../library/struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a>, łańcuch znaków, surowa pamięć – cokolwiek obie strony uzgodnią dla danego polecenia.</p></li>
+<li><p><strong>CRC danych.</strong> Czterobajtowy CRC obejmujący bajty ładunku. Odbiornik ponownie oblicza go z właśnie odczytanych bajtów i odrzuca pakiet, jeśli wartości się nie zgadzają.</p></li>
+</ul>
+</section>
+<section id="crcs">
+<h2><span class="section-number">3.20.2. </span>Sumy CRC<a class="headerlink" href="#crcs" title="Link to this heading">¶</a></h2>
+<p>Najprostszą „sumą kontrolną” jest suma wszystkich bajtów, modulo 256 lub 65536. Wykrywa większość przekłamań pojedynczego bitu, ale pomija wiele błędów wielobitowych i ignoruje kolejność bajtów.</p>
+<p><em>Cykliczny kod nadmiarowy</em> (CRC) to standardowe ulepszenie. Traktuje wejście jako jedną długą liczbę binarną i dzieli je (w specjalny sposób) przez ustalony <em>wielomian</em>; resztą z tego dzielenia jest CRC. Różne wielomiany wykrywają różne klasy błędów; popularne wielomiany 8-, 16- i 32-bitowe wykrywają każdą serię błędów krótszą niż ich szerokość oraz dużą część dłuższych serii.</p>
+<section id="why-two-crcs">
+<h3><span class="section-number">3.20.2.1. </span>Dlaczego dwa CRC<a class="headerlink" href="#why-two-crcs" title="Link to this heading">¶</a></h3>
+<p>Diagram pakietu powyżej niesie <em>dwie</em> osobne sumy CRC – jedną obejmującą nagłówek (HEADER, CMD, LEN) i drugą obejmującą ładunek. Tego właśnie potrzebuje solidne ramkowanie, ze względu na to, jak pojedynczy końcowy CRC zawodzi, gdy samo pole LEN ulegnie uszkodzeniu podczas transmisji:</p>
+<ul class="simple">
+<li><p>Odbiornik działa na podstawie uszkodzonego pola LEN i odczytuje z linii tyle bajtów – prawdopodobnie znacznie więcej, niż zamierzał nadajnik.</p></li>
+<li><p>Dopiero końcowy CRC ostatecznie informuje odbiornik, że coś poszło nie tak, i to dopiero po pochłonięciu wszystkich tych bajtów.</p></li>
+<li><p>Podczas gdy parser tkwi w oczekiwaniu na niewłaściwą liczbę bajtów, prawdziwe pakiety nadchodzące za uszkodzonym zostają wchłonięte jako ładunek, a odbiornik traci kilka pakietów zamiast tylko jednego.</p></li>
+</ul>
+<p>Podział CRC rozwiązuje ten problem:</p>
+<ul class="simple">
+<li><p><strong>CRC nagłówka</strong> obejmuje HEADER, CMD i LEN. Odbiornik sprawdza go przed odczytaniem jakiegokolwiek ładunku, więc uszkodzone pole LEN zostaje wykryte po kilku bajtach, a parser natychmiast się resynchronizuje, eliminując tylko ten jeden błędny pakiet.</p></li>
+<li><p><strong>CRC danych</strong> obejmuje ładunek. Gdy CRC nagłówka przejdzie pomyślnie, odbiornik wie, że może zaufać polu LEN, odczytuje dokładnie tyle bajtów ładunku i weryfikuje je względem CRC danych.</p></li>
+</ul>
+<p>Typowy rozmiar – i taki, jakiego używa ta strona – to jeden bajt na CRC nagłówka (CRC-8 w zupełności wystarcza dla pięciobajtowego nagłówka) oraz cztery bajty na CRC danych (CRC-32 obejmuje wiele kilobajtów ładunku przy znikomo niskim współczynniku kolizji).</p>
+</section>
+<section id="helpers">
+<h3><span class="section-number">3.20.2.2. </span>Funkcje pomocnicze<a class="headerlink" href="#helpers" title="Link to this heading">¶</a></h3>
+<p>MicroPython dostarcza <a class="reference internal" href="../../../../library/binascii.html#binascii.crc32" title="binascii.crc32"><code class="xref py py-func docutils literal notranslate"><span class="pre">binascii.crc32()</span></code></a> bezpośrednio dla czterobajtowego CRC. W przypadku jednobajtowego CRC nagłówka mała funkcja pomocnicza wykorzystująca wielomian używany przez urządzenia 1-wire firmy Maxim (<code class="docutils literal notranslate"><span class="pre">0x8C</span></code> w postaci odbitej) jest na tyle krótka, że można ją napisać w jednej linii:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">crc8</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">crc</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="3">    <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="4">        <span class="n">crc</span> <span class="o">^=</span> <span class="n">byte</span>
+</span><span data-line="5">        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+</span><span data-line="6">            <span class="n">crc</span> <span class="o">=</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">^</span> <span class="mh">0x8C</span> <span class="k">if</span> <span class="n">crc</span> <span class="o">&amp;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+</span><span data-line="7">    <span class="k">return</span> <span class="n">crc</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+</span></pre></div>
+</div>
+<p>Kompletny enkoder łączy oba CRC w jednej funkcji:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">encode_packet</span><span class="p">(</span><span class="n">cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">header</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xAA\x55</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">cmd</span><span class="p">])</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+</span><span data-line="6">    <span class="n">hcrc</span>   <span class="o">=</span> <span class="n">crc8</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+</span><span data-line="7">    <span class="n">dcrc</span>   <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span><span data-line="8">    <span class="k">return</span> <span class="n">header</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">hcrc</span><span class="p">])</span> <span class="o">+</span> <span class="n">payload</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">dcrc</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Funkcja odwrotna odzyskuje polecenie i ładunek z kompletnego pakietu lub zwraca <code class="docutils literal notranslate"><span class="pre">None</span></code>, jeśli którakolwiek z kontroli CRC zawiedzie:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">decode_packet</span><span class="p">(</span><span class="n">packet</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+</span><span data-line="2">    <span class="c1"># Layout: HEADER(2) + CMD(1) + LEN(2) + HCRC(1) + PAYLOAD(LEN) + DCRC(4)</span>
+</span><span data-line="3">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="ow">or</span> <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xAA\x55</span><span class="s2">&quot;</span><span class="p">:</span>
+</span><span data-line="4">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="5">
+</span><span data-line="6">    <span class="n">header</span> <span class="o">=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+</span><span data-line="7">    <span class="k">if</span> <span class="n">crc8</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">!=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span>
+</span><span data-line="8">        <span class="k">return</span> <span class="kc">None</span>                       <span class="c1"># header CRC mismatch</span>
+</span><span data-line="9">
+</span><span data-line="10">    <span class="n">cmd</span>    <span class="o">=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</span><span data-line="11">    <span class="n">length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="n">packet</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="12">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">6</span> <span class="o">+</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">4</span><span class="p">:</span>
+</span><span data-line="13">        <span class="k">return</span> <span class="kc">None</span>                       <span class="c1"># truncated or oversized</span>
+</span><span data-line="14">
+</span><span data-line="15">    <span class="n">payload</span>       <span class="o">=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">6</span> <span class="o">+</span> <span class="n">length</span><span class="p">]</span>
+</span><span data-line="16">    <span class="n">received_dcrc</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">packet</span><span class="p">[</span><span class="mi">6</span> <span class="o">+</span> <span class="n">length</span><span class="p">:])[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="17">    <span class="k">if</span> <span class="n">binascii</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">!=</span> <span class="n">received_dcrc</span><span class="p">:</span>
+</span><span data-line="18">        <span class="k">return</span> <span class="kc">None</span>                       <span class="c1"># data CRC mismatch</span>
+</span><span data-line="19">
+</span><span data-line="20">    <span class="k">return</span> <span class="n">cmd</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>W praktyce odbiornik nie otrzymuje całego pakietu naraz – bajty docierają pojedynczo przez UART, a nadajnika, który robi pauzę w środku pakietu (lub zaszumionej linii, która gubi bajt), nie można po prostu odczytać przez <code class="docutils literal notranslate"><span class="pre">read()</span></code> do bufora o właściwym rozmiarze. Następna sekcja uruchamia tę samą logikę dekodowania bajt po bajcie jako maszynę stanów.</p>
+</section>
+</section>
+<section id="a-state-machine-receiver">
+<h2><span class="section-number">3.20.3. </span>Odbiornik jako maszyna stanów<a class="headerlink" href="#a-state-machine-receiver" title="Link to this heading">¶</a></h2>
+<p>Odbiornik nie może po prostu wywołać <code class="docutils literal notranslate"><span class="pre">uart.read(N)</span></code> dla pewnego stałego <code class="docutils literal notranslate"><span class="pre">N</span></code> – nie wie, ile bajtów będzie miał następny pakiet, a wszelkie śmieci na linii zaburzają wyrównanie. Rozwiązaniem jest mała maszyna stanów, która pochłania bajty pojedynczo i reaguje w zależności od tego, w którym miejscu pakietu się znajduje. Główna pętla odpytuje <a class="reference internal" href="../../../../library/machine.UART.html#machine.UART.any" title="machine.UART.any"><code class="xref py py-meth docutils literal notranslate"><span class="pre">any()</span></code></a>, aby sprawdzić, ile bajtów jest zbuforowanych, opróżnia je w jednym wywołaniu <a class="reference internal" href="../../../../library/machine.UART.html#machine.UART.read" title="machine.UART.read"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read()</span></code></a> i przekazuje każdy bajt przez maszynę stanów:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">UART</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">HEADER</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xAA\x55</span><span class="s2">&quot;</span>
+</span><span data-line="7"><span class="n">HEADER_LEN</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">HEADER</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="c1"># States, in the order the receiver walks through them per packet.</span>
+</span><span data-line="10"><span class="n">HUNT_FOR_HEADER</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="11"><span class="n">READ_COMMAND</span>    <span class="o">=</span> <span class="mi">1</span>
+</span><span data-line="12"><span class="n">READ_LENGTH</span>     <span class="o">=</span> <span class="mi">2</span>
+</span><span data-line="13"><span class="n">READ_HEADER_CRC</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span data-line="14"><span class="n">READ_PAYLOAD</span>    <span class="o">=</span> <span class="mi">4</span>
+</span><span data-line="15"><span class="n">READ_DATA_CRC</span>   <span class="o">=</span> <span class="mi">5</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="n">uart</span> <span class="o">=</span> <span class="n">UART</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="c1"># Receiver state plus partial-field buffers.</span>
+</span><span data-line="20"><span class="n">state</span>        <span class="o">=</span> <span class="n">HUNT_FOR_HEADER</span>
+</span><span data-line="21"><span class="n">matched</span>      <span class="o">=</span> <span class="mi">0</span>              <span class="c1"># bytes of HEADER matched so far</span>
+</span><span data-line="22"><span class="n">cmd</span>          <span class="o">=</span> <span class="mi">0</span>              <span class="c1"># CMD captured in READ_COMMAND</span>
+</span><span data-line="23"><span class="n">length_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>    <span class="c1"># raw LEN bytes (kept for the header CRC)</span>
+</span><span data-line="24"><span class="n">length</span>       <span class="o">=</span> <span class="mi">0</span>              <span class="c1"># unpacked LEN</span>
+</span><span data-line="25"><span class="n">payload</span>      <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>    <span class="c1"># payload bytes accumulated in READ_PAYLOAD</span>
+</span><span data-line="26"><span class="n">crc_bytes</span>    <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>    <span class="c1"># DCRC bytes accumulated in READ_DATA_CRC</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="k">def</span><span class="w"> </span><span class="nf">handle_packet</span><span class="p">(</span><span class="n">cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="29">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cmd&quot;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;payload&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+</span><span data-line="30">
+</span><span data-line="31"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="32">    <span class="c1"># Drain whatever bytes have arrived since the last poll. Idle</span>
+</span><span data-line="33">    <span class="c1"># briefly when the line is quiet so the loop is not a busy spin.</span>
+</span><span data-line="34">    <span class="n">n</span> <span class="o">=</span> <span class="n">uart</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+</span><span data-line="35">    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span>
+</span><span data-line="36">        <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="37">        <span class="k">continue</span>
+</span><span data-line="38">
+</span><span data-line="39">    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">uart</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span data-line="40">        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">HUNT_FOR_HEADER</span><span class="p">:</span>
+</span><span data-line="41">            <span class="c1"># Walk the magic bytes. On a mismatch, back off by one</span>
+</span><span data-line="42">            <span class="c1"># so a stray HEADER[0] in the noise still counts as a</span>
+</span><span data-line="43">            <span class="c1"># possible start.</span>
+</span><span data-line="44">            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">HEADER</span><span class="p">[</span><span class="n">matched</span><span class="p">]:</span>
+</span><span data-line="45">                <span class="n">matched</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span data-line="46">                <span class="k">if</span> <span class="n">matched</span> <span class="o">==</span> <span class="n">HEADER_LEN</span><span class="p">:</span>
+</span><span data-line="47">                    <span class="n">state</span> <span class="o">=</span> <span class="n">READ_COMMAND</span>
+</span><span data-line="48">                    <span class="n">matched</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="49">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="50">                <span class="n">matched</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">HEADER</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+</span><span data-line="51">
+</span><span data-line="52">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_COMMAND</span><span class="p">:</span>
+</span><span data-line="53">            <span class="n">cmd</span> <span class="o">=</span> <span class="n">b</span>
+</span><span data-line="54">            <span class="n">length_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+</span><span data-line="55">            <span class="n">state</span> <span class="o">=</span> <span class="n">READ_LENGTH</span>
+</span><span data-line="56">
+</span><span data-line="57">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_LENGTH</span><span class="p">:</span>
+</span><span data-line="58">            <span class="c1"># LEN is two bytes little-endian.</span>
+</span><span data-line="59">            <span class="n">length_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="60">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">length_bytes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+</span><span data-line="61">                <span class="n">length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="n">length_bytes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="62">                <span class="n">state</span> <span class="o">=</span> <span class="n">READ_HEADER_CRC</span>
+</span><span data-line="63">
+</span><span data-line="64">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_HEADER_CRC</span><span class="p">:</span>
+</span><span data-line="65">            <span class="c1"># Verify the CRC over HEADER + CMD + LEN before</span>
+</span><span data-line="66">            <span class="c1"># committing to read LEN payload bytes. A mismatch</span>
+</span><span data-line="67">            <span class="c1"># aborts here, after just five header bytes -- the</span>
+</span><span data-line="68">            <span class="c1"># next valid header re-syncs quickly.</span>
+</span><span data-line="69">            <span class="n">expected</span> <span class="o">=</span> <span class="n">crc8</span><span class="p">(</span><span class="n">HEADER</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">cmd</span><span class="p">])</span> <span class="o">+</span> <span class="n">length_bytes</span><span class="p">)</span>
+</span><span data-line="70">            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">expected</span><span class="p">:</span>
+</span><span data-line="71">                <span class="n">payload</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+</span><span data-line="72">                <span class="n">state</span> <span class="o">=</span> <span class="n">READ_PAYLOAD</span>
+</span><span data-line="73">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="74">                <span class="n">state</span> <span class="o">=</span> <span class="n">HUNT_FOR_HEADER</span>
+</span><span data-line="75">
+</span><span data-line="76">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_PAYLOAD</span><span class="p">:</span>
+</span><span data-line="77">            <span class="n">payload</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="78">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">==</span> <span class="n">length</span><span class="p">:</span>
+</span><span data-line="79">                <span class="n">crc_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+</span><span data-line="80">                <span class="n">state</span> <span class="o">=</span> <span class="n">READ_DATA_CRC</span>
+</span><span data-line="81">
+</span><span data-line="82">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_DATA_CRC</span><span class="p">:</span>
+</span><span data-line="83">            <span class="c1"># Verify the CRC over the payload and either deliver</span>
+</span><span data-line="84">            <span class="c1"># the packet or drop it. Either way, go back to</span>
+</span><span data-line="85">            <span class="c1"># looking for the next header.</span>
+</span><span data-line="86">            <span class="n">crc_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="87">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">crc_bytes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+</span><span data-line="88">                <span class="n">expected</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span><span data-line="89">                <span class="n">received</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">crc_bytes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="90">                <span class="k">if</span> <span class="n">expected</span> <span class="o">==</span> <span class="n">received</span><span class="p">:</span>
+</span><span data-line="91">                    <span class="n">handle_packet</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+</span><span data-line="92">                <span class="n">state</span> <span class="o">=</span> <span class="n">HUNT_FOR_HEADER</span>
+</span></pre></div>
+</div>
+<p>Każdy bajt przesuwa maszynę stanów o jeden krok lub powoduje powrót do <code class="docutils literal notranslate"><span class="pre">HUNT_FOR_HEADER</span></code> po kompletnym pakiecie, błędnym CRC nagłówka albo błędnym CRC danych. Śmieci na linii, które nie pasują do nagłówka, są po cichu odrzucane; następny prawidłowy nagłówek ponownie synchronizuje odbiornik. Kluczowa właściwość bezpieczeństwa wynika z CRC nagłówka: jeśli pole LEN jest uszkodzone, parser wychwyci to po sprawdzeniu CRC nagłówka (kilka bajtów), a nie po zobowiązaniu się do odczytania szalenie błędnej liczby bajtów ładunku.</p>
+</section>
+<section id="beyond-the-baseline">
+<h2><span class="section-number">3.20.4. </span>Poza poziomem podstawowym<a class="headerlink" href="#beyond-the-baseline" title="Link to this heading">¶</a></h2>
+<p>Powyższe ramkowanie to <em>minimum</em>, jakiego potrzebuje łącze szeregowe, aby odzyskać sprawność po szumach na linii: magiczny nagłówek, długość, polecenie i dwie sumy CRC. Wykrywa uszkodzenia i resynchronizuje się po przekłamanych bajtach, ale rezygnuje z uszkodzonych pakietów, zamiast je przepuścić, i pozostawia nadajnik bez wiedzy o tym, co odbiornik faktycznie usłyszał.</p>
+<p>Rzeczywiste protokoły szeregowe nadbudowują funkcje ponad ten poziom podstawowy. Nie każde łącze wbudowane potrzebuje ich wszystkich – wybierz to, czego naprawdę wymaga aplikacja:</p>
+<ul class="simple">
+<li><p><strong>Numery sekwencyjne.</strong> Mały licznik, który zwiększa się przy każdym wysłaniu. Odbiornik wykrywa luki (pakiet został utracony), duplikaty (nadajnik retransmitował, ale odbiornik już zaakceptował pierwszą kopię) oraz – tam, gdzie kanał może zmieniać kolejność – przybycia poza kolejnością.</p></li>
+<li><p><strong>Potwierdzenia.</strong> Dedykowany pakiet ACK (lub dołączony bit w odpowiedzi), który odbiornik odsyła, aby potwierdzić każdy pakiet. Bez potwierdzeń ACK nadajnik nie ma sposobu, aby wiedzieć, że jego dane dotarły.</p></li>
+<li><p><strong>Potwierdzenia negatywne.</strong> NACK wysyłany, gdy odbiornik wykryje błąd CRC lub lukę w sekwencji. Nadajnik natychmiast retransmituje, zamiast czekać na upływ czasu oczekiwania na ACK.</p></li>
+<li><p><strong>Retransmisja.</strong> Nadajnik przechowuje każdy niepotwierdzony pakiet w małej kolejce i wysyła go ponownie po upływie czasu oczekiwania (lub po otrzymaniu NACK). Limit prób oraz pewne opóźnienie między próbami zapobiegają temu, aby trwale uszkodzone łącze zapętlało się w nieskończoność.</p></li>
+<li><p><strong>Okna przesuwne.</strong> Dopuszczenie kilku pakietów w locie przed wymaganiem ACK utrzymuje wysoką przepustowość na łączach, gdzie czas obiegu jest długi w porównaniu z czasem wysyłania pojedynczego pakietu. Kosztem jest większy stan po stronie nadajnika – jedno miejsce na każdy pakiet w locie.</p></li>
+<li><p><strong>Kontrola przepływu.</strong> Sygnał od odbiornika nakazujący nadajnikowi zwolnić lub wstrzymać się, gdy jego bufor się zapełnia. Implementacje są różne – jawne bajty XON / XOFF, mechanizmy oparte na kredytach, gdzie odbiornik udziela licencji na N kolejnych pakietów naraz, albo sprzętowe linie RTS / CTS na samym przewodzie. Bez kontroli przepływu szybki nadajnik w końcu przeciąża wolny odbiornik i pakiety są gubione.</p></li>
+<li><p><strong>Wersja protokołu.</strong> Pole wersji umieszczone na początku pakietu pozwala formatowi ewoluować. Każda strona może podczas uruchamiania wynegocjować najwyższą wersję obsługiwaną przez obie, albo odrzucać pakiety od niezgodnych partnerów.</p></li>
+<li><p><strong>Fragmentacja i ponowne składanie.</strong> Dwubajtowe pole LEN ogranicza pakiet do 64 KiB; wiadomości większe niż to są dzielone na wiele pakietów i ponownie składane po drugiej stronie. Metadane fragmentacji (indeks fragmentu, łączna liczba lub flaga „więcej fragmentów”) znajdują się wewnątrz ładunku.</p></li>
+<li><p><strong>Sygnały podtrzymania (heartbeat).</strong> Mały okresowy pakiet, który mówi „wciąż tu jestem”. Druga strona zauważa, gdy sygnały podtrzymania ustają, i ponawia połączenie (lub zgłasza głośną awarię), zamiast cicho zawisnąć.</p></li>
+<li><p><strong>Kanały.</strong> Identyfikator kanału lub strumienia w nagłówku, dzięki czemu jedno fizyczne łącze niesie kilka logicznych strumieni – kanał sterowania, kanał telemetrii, kanał dziennika – rozróżnianych wyłącznie na podstawie tego pola.</p></li>
+<li><p><strong>Uwierzytelnianie.</strong> Krótki znacznik obliczony na podstawie ładunku i tajnej wartości, którą znają tylko uprawniony nadajnik i odbiornik. Odbiornik ponownie oblicza znacznik z otrzymanych bajtów i odrzuca pakiet, jeśli oba się nie zgadzają. Wychwytuje to zarówno manipulację (atakujący zmodyfikował bajty), jak i – jeśli numer sekwencyjny lub znacznik czasu jest częścią tego, co obejmuje znacznik – atak typu replay, w którym atakujący nagrywa prawdziwy pakiet z linii i wysyła go później ponownie, aby odbiornik zadziałał na nim dwukrotnie.</p></li>
+<li><p><strong>Szyfrowanie.</strong> Mieszanie bajtów ładunku za pomocą współdzielonego tajnego klucza, tak aby każdy odczytujący linię bez tego klucza widział jedynie szum. Zwykle łączone z opisanym powyżej znacznikiem uwierzytelniania – bez niego atakujący może podsyłać śmieci, które przypadkiem przejdą kontrolę CRC, a odbiornik marnuje cykle, próbując odszyfrować bezsens.</p></li>
+</ul>
+<p>Typowy „dobry” protokół dla sprzętu przemysłowego ostatecznie obejmuje ramkowanie, podwójny CRC, numery sekwencyjne, ACK / NACK z retransmisją oraz sygnały podtrzymania. Warte uwagi przykłady ze świata rzeczywistego: <em>MAVLink</em> (telemetria dronów, z numerami sekwencyjnymi, identyfikatorami systemu / komponentu oraz opcjonalnymi podpisami pakietów), <em>Modbus</em> (przemysłowe sterowniki PLC, z kodami funkcji i CRC) oraz <em>NMEA 0183</em> (protokół ASCII, którym posługuje się każdy konsumencki odbiornik GPS – wiadomości oparte na liniach z sumą kontrolną po ograniczniku w postaci gwiazdki).</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="uart-code.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">3.19. </span>UART w kodzie</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../spi/spi-basics.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">3.21. </span>Podstawy SPI</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=f1abf7f8"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=2827c288"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

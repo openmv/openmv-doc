@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.8. 漫水填充與偵測圖示 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="5.9. 算術運算" href="../pixel-math/arithmetic.html" /><link rel="prev" title="5.7. 合成影像" href="image-composition.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html"/>
+  <meta property="og:title" content="5.8. 漫水填充與偵測圖示"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">5. &#24433;&#20687;&#34389;&#29702;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">5.1. Image &#29289;&#20214;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">5.2. &#24231;&#27161;&#33287;&#21312;&#22495;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">5.3. &#20687;&#32032;&#26684;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">5.4. &#35712;&#21462;&#33287;&#23531;&#20837;&#20687;&#32032;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">5.5. &#21312;&#22495;&#33287;&#36974;&#32617;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shapes-and-text.html">5.6. &#32362;&#35069;&#24418;&#29376;&#33287;&#25991;&#23383;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="image-composition.html">5.7. &#21512;&#25104;&#24433;&#20687;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.8. &#28459;&#27700;&#22635;&#20805;&#33287;&#20597;&#28204;&#22294;&#31034;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">5.9. &#31639;&#34899;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">5.10. &#20301;&#20803;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">5.11. &#24433;&#26684;&#24046;&#20998;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">5.12. &#20108;&#20540;&#38334;&#20540;&#34389;&#29702;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/linear-neighborhood.html">5.13. &#32218;&#24615;&#33287;&#37168;&#22495;&#28670;&#27874;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/gaussian-and-edges.html">5.14. &#39640;&#26031;&#24179;&#28369;&#21270;&#33287;&#37002;&#32227;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/morphology.html">5.15. &#24418;&#24907;&#23416;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/custom-kernels.html">5.16. &#33258;&#35330;&#21367;&#31309;&#26680;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/standard-kernels.html">5.17. &#27161;&#28310;&#21367;&#31309;&#26680;&#30446;&#37636;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/histograms-and-statistics.html">5.18. &#30452;&#26041;&#22294;&#33287;&#32113;&#35336;&#37327;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/tonal-corrections.html">5.19. &#33394;&#35519;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/regression-and-similarity.html">5.20. &#36852;&#27512;&#33287;&#30456;&#20284;&#24230;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">5.21. &#32302;&#25918;&#12289;&#32763;&#36681;&#33287;&#35009;&#20999;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">5.22. &#37857;&#38957;&#33287;&#36879;&#35222;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">5.23. &#36879;&#35222;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">5.24. &#26997;&#24231;&#27161;&#36681;&#25563;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">5.25. &#23563;&#25214;&#33394;&#22602;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">5.26. &#23563;&#25214;&#30452;&#32218;&#33287;&#32218;&#27573;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">5.27. &#23563;&#25214;&#22291;&#24418;&#33287;&#30697;&#24418;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">5.28. QR code &#33287; AprilTag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">5.29. &#26781;&#30908;&#33287; Data Matrix &#30908;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">5.30. &#31684;&#26412;&#27604;&#23565;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">5.31. &#20301;&#31227;&#27604;&#23565;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">5.32. &#20786;&#23384;&#33287;&#22739;&#32302;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">5.33. ImageIO &#20018;&#27969;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.34. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#flood-fill">5.8.1. &#28459;&#27700;&#22635;&#20805;</a></li>
+<li><a class="reference internal" href="#drawing-detection-results">5.8.2. &#32362;&#35069;&#20597;&#28204;&#32080;&#26524;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">5. </span>影像處理</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">5.8. </span>漫水填充與偵測圖示</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/drawing/flood-fill-and-detection-glyphs.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="flood-fill-and-detection-glyphs">
+<h1><span class="section-number">5.8. </span>漫水填充與偵測圖示<a class="headerlink" href="#flood-fill-and-detection-glyphs" title="連結到這個標頭">¶</a></h1>
+<p>本節開頭的幾何基元會在應用程式已知的位置上做標記。影像合成則把一張影像疊到另一張之上。最後一小組繪圖方法做的是不同的事：它所做的標記，其形態取決於影像中<em>已經存在</em>的內容，或某個先前演算法在影像中<em>找到</em>的東西。</p>
+<section id="flood-fill">
+<h2><span class="section-number">5.8.1. </span>漫水填充<a class="headerlink" href="#flood-fill" title="連結到這個標頭">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.flood_fill" title="image.Image.flood_fill"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flood_fill()</span></code></a> 從單一像素——即<em>種子</em>——出發向外擴展，將每個與種子足夠相似、且透過一連串其他相似像素與其相連的像素都塗上顏色。結果是一個填充區域，其邊界由影像本身決定，而非由傳入呼叫的任何參數決定。</p>
+<p>最簡單的形式接受種子座標與要填充的色彩：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">flood_fill</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">160</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>兩個閾值參數控制填充擴展的積極程度。<code class="docutils literal notranslate"><span class="pre">seed_threshold</span></code>（從 <code class="docutils literal notranslate"><span class="pre">0.0</span></code> 到 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 的正規化分數）設定一個像素與<em>原始種子</em>值相差多少仍可被納入。<code class="docutils literal notranslate"><span class="pre">floating_threshold</span></code> 則設定它與每個<em>已納入</em>鄰居相差多少仍可納入。這兩個閾值協同運作：寬鬆的 <code class="docutils literal notranslate"><span class="pre">floating_threshold</span></code> 讓填充得以沿著影像中的漸層延伸，而緊湊的 <code class="docutils literal notranslate"><span class="pre">seed_threshold</span></code> 則即使沿著該漸層也能避免填充偏離種子值太遠。</p>
+<p>幾個旗標可進一步精修結果：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">invert=True</span></code> 會塗繪每個<em>不</em>匹配的像素——即匹配區域的補集——而非匹配像素本身。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clear_background=True</span></code> 會將填充區域以外的每個像素歸零。這在僅將填充區域擷取為遮罩時很有用。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mask</span></code> 關鍵字具有其一貫的意義：遮罩中關閉的像素會被保持不動，無論填充原本是否會觸及它們。</p></li>
+</ul>
+<p>漫水填充在兩種模式下最為實用。第一種是<em>視覺化</em>某個區域偵測器找到的內容，做法是用一種獨特色彩填充偵測到的區域，使其在影格其餘部分中突顯出來。第二種是<em>擷取</em>區域本身，做法是把 <code class="docutils literal notranslate"><span class="pre">clear_background=True</span></code> 與區域內已知的種子結合，再把所得影像當作後續操作的遮罩來讀取。</p>
+</section>
+<section id="drawing-detection-results">
+<h2><span class="section-number">5.8.2. </span>繪製偵測結果<a class="headerlink" href="#drawing-detection-results" title="連結到這個標頭">¶</a></h2>
+<p>影像處理演算法常會回傳同時帶有位置與某些附加結構的<em>結果物件</em>：帶有方向的關鍵點、質心與其邊界框不同的人臉偵測、具有四個角點的 AprilTag。要把這些妥善地繪製出來——用一個能捕捉其結構、而不只是邊界框的圖示——是個常見到足以讓模組為其提供兩個輔助方法的模式。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_keypoints" title="image.Image.draw_keypoints"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_keypoints()</span></code></a> 接受特徵擷取器回傳的關鍵點描述子，或是一份單純的 <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">rotation)</span></code> 三元組清單，並在每個點上繪製一個小圖示。該圖示同時呈現位置與方向：點周圍的一個圓圈，加上一條由中心向外延伸、指示旋轉的線段。這種單次呼叫的視覺化是最簡便的方法，可用來健全性檢查某個關鍵點擷取器是否回傳了應用程式所預期的方向。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_detection" title="image.Image.draw_detection"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_detection()</span></code></a> 接受一個六元組 <code class="docutils literal notranslate"><span class="pre">(rx,</span> <span class="pre">ry,</span> <span class="pre">rw,</span> <span class="pre">rh,</span> <span class="pre">cx,</span> <span class="pre">cy)</span></code>——即邊界矩形加上一個另行回報的質心——並一次繪製兩者：邊界框周圍的一個矩形、質心處的一個十字，以及（可選）矩形角落的一個文字標籤。此形式符合神經網路偵測或範本追蹤器通常回報的內容，在這些情境中，質心是比邊界框中心更精確的位置。</p>
+<p>這兩個圖示方法都是本節開頭幾何基元之上的便利層。應用程式隨時都能直接呼叫 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_rectangle" title="image.Image.draw_rectangle"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_rectangle()</span></code></a>、<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_circle" title="image.Image.draw_circle"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_circle()</span></code></a>、<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_cross" title="image.Image.draw_cross"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_cross()</span></code></a> 與 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_string" title="image.Image.draw_string"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_string()</span></code></a> 來重現相同的視覺化；圖示方法只是為這些反覆出現的模式省去了瑣碎的記帳工作。</p>
+<p>有了用於已知幾何的幾何基元、用於疊加的影像合成、用於影像衍生區域的漫水填充，以及用於標準視覺化模式的偵測圖示，這套繪圖工具組便已完整。應用程式要讓演算法輸出可見所需的一切，在介面上都有對應的方法可以做到。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="image-composition.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">5.7. </span>合成影像</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../pixel-math/arithmetic.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">5.9. </span>算術運算</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

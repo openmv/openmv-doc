@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="fr" data-accent-color="blue" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>6.19. Performances - Documentation OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Recherche" href="../../../search.html" /><link rel="next" title="6.20. Récapitulatif" href="wrap-up.html" /><link rel="prev" title="6.18. Images et ndarrays" href="images.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/numpy/performance.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/numpy/performance.html"/>
+  <meta property="og:title" content="6.19. Performances"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/numpy/performance.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      <img class="light-logo" src="../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../index.html">Home</a></li><li class="link"><a href="../index.html">Tutorial</a></li><li class="link"><a href="../../../library/index.html">Libraries</a></li><li class="link"><a href="../../quickref.html">Boards</a></li><li class="link"><a href="../../shields.html">Shields</a></li><li class="link"><a href="../../sensors.html">Sensors</a></li><li class="link"><a href="../../../reference/index.html">Language</a></li><li class="link"><a href="../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Recherche" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Traductions</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/numpy/performance.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/numpy/performance.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/numpy/performance.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/numpy/performance.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/numpy/performance.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/numpy/performance.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/numpy/performance.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/numpy/performance.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/numpy/performance.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/numpy/performance.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/numpy/performance.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/numpy/performance.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/numpy/performance.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/numpy/performance.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/numpy/performance.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/numpy/performance.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/numpy/performance.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/numpy/performance.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/numpy/performance.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/numpy/performance.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Passer en mode clair"
+data-aria-light="Passer en mode sombre"
+data-aria-dark="Passer en mode automatique">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutoriel</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart.html">1. D&#233;marrage rapide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python/index.html">2. Aper&#231;u de Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware/index.html">3. Contr&#244;le du mat&#233;riel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../vision/index.html">4. Capteurs de vision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">5. Traitement d&#8217;image</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">6. NumPy</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="basics/why-arrays.html">6.1. Pourquoi des tableaux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/the-ndarray.html">6.2. Le ndarray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/making-arrays.html">6.3. Cr&#233;er des tableaux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/dtypes.html">6.4. Dtypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/shape-and-strides.html">6.5. Forme et pas (strides)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/indexing-and-slicing.html">6.6. Indexation et tranchage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/views-and-copies.html">6.7. Vues et copies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/operators.html">6.8. Op&#233;rateurs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/universal-functions.html">6.9. Fonctions universelles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/broadcasting.html">6.10. Diffusion (broadcasting)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/reductions.html">6.11. R&#233;ductions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/selection.html">6.12. S&#233;lection et r&#233;organisation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linalg.html">6.13. Alg&#232;bre lin&#233;aire</a></li>
+<li class="toctree-l3"><a class="reference internal" href="signals/fft.html">6.14. FFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="signals/filtering.html">6.15. Filtrage et spectrogrammes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="numerical.html">6.16. Courbes et int&#233;gration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solvers-and-random.html">6.17. Solveurs et nombres al&#233;atoires</a></li>
+<li class="toctree-l3"><a class="reference internal" href="images.html">6.18. Images et ndarrays</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">6.19. Performances</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wrap-up.html">6.20. R&#233;capitulatif</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">7. Apprentissage automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networking/index.html">9. R&#233;seau</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../webservers/index.html">10. Serveurs web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../protocol/index.html">12. Protocole h&#244;te</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">13. Outils</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../production/index.html">14. Production</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../library/index.html">Biblioth&#232;ques</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../quickref.html">Cartes</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../sensors.html">Capteurs</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../reference/index.html">Langage</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../develop/index.html">Composants internes</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../changelog/index.html">Journal des modifications</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../license.html">Licence</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Sur cette page</h3><ul>
+<li><a class="reference internal" href="#pick-a-reasonable-dtype">6.19.1. Choisir un dtype raisonnable</a></li>
+<li><a class="reference internal" href="#prefer-an-ndarray-to-an-iterable">6.19.2. Pr&#233;f&#233;rer un ndarray &#224; un it&#233;rable</a></li>
+<li><a class="reference internal" href="#prefer-views-to-copies">6.19.3. Pr&#233;f&#233;rer les vues aux copies</a></li>
+<li><a class="reference internal" href="#allocate-once-then-write">6.19.4. Allouer une fois, puis &#233;crire</a></li>
+<li><a class="reference internal" href="#use-in-place-operators">6.19.5. Utiliser les op&#233;rateurs en place</a></li>
+<li><a class="reference internal" href="#build-the-result-do-not-append-to-it">6.19.6. Construire le r&#233;sultat, ne pas y faire d&#8217;ajouts</a></li>
+<li><a class="reference internal" href="#slice-assignment-instead-of-new-arrays">6.19.7. Affectation par tranche au lieu de nouveaux tableaux</a></li>
+<li><a class="reference internal" href="#watch-out-for-boolean-masks-in-streaming-loops">6.19.8. Attention aux masques bool&#233;ens dans les boucles de streaming</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/numpy/performance.rst">Modifier cette page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">Tutoriel de l’OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">6. </span>NumPy</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">6.19. </span>Performances</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copier la page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Plus d’actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copier la page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Afficher le code source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Ouvrir dans ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Ouvrir dans Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Ouvrir dans Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="performance">
+<h1><span class="section-number">6.19. </span>Performances<a class="headerlink" href="#performance" title="Lien vers cette rubrique">¶</a></h1>
+<p>Les choix de conception qui rendent <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> rapide sur la caméra – appels de bibliothèque sur des tableaux entiers, tampons typés compacts, vues qui partagent leurs données avec leur source – exposent aussi un ensemble d’habitudes qu’il est utile de connaître. La page <a class="reference internal" href="shape/shape-and-strides.html"><span class="doc">Forme et pas (strides)</span></a> a déjà traité la règle de disposition du dernier axe ; cette page recense les habitudes d’allocation et de dtype qui comptent le plus dans une boucle de streaming.</p>
+<section id="pick-a-reasonable-dtype">
+<h2><span class="section-number">6.19.1. </span>Choisir un dtype raisonnable<a class="headerlink" href="#pick-a-reasonable-dtype" title="Lien vers cette rubrique">¶</a></h2>
+<p>Le dtype par défaut de chaque constructeur est <code class="docutils literal notranslate"><span class="pre">float</span></code>. Pour des données qui sont naturellement sur 8 bits ou 16 bits – échantillons ADC, pixels d’image, lectures de capteur – passez explicitement <code class="docutils literal notranslate"><span class="pre">dtype=</span></code> à l’un des types entiers</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">adc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adc_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>L’économie de RAM est de 2x pour <code class="docutils literal notranslate"><span class="pre">uint16</span></code> et de 4x pour <code class="docutils literal notranslate"><span class="pre">uint8</span></code> par rapport au <code class="docutils literal notranslate"><span class="pre">float</span></code> par défaut sur 4 octets. Les calculs sont aussi plus rapides car les chemins de code entiers de <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> sont plus serrés que les chemins génériques en flottant. La règle de dépassement entier décrite sur <a class="reference internal" href="basics/dtypes.html"><span class="doc">Dtypes</span></a> s’applique – convertissez vers un type plus large avant une opération arithmétique susceptible de déborder.</p>
+</section>
+<section id="prefer-an-ndarray-to-an-iterable">
+<h2><span class="section-number">6.19.2. </span>Préférer un ndarray à un itérable<a class="headerlink" href="#prefer-an-ndarray-to-an-iterable" title="Lien vers cette rubrique">¶</a></h2>
+<p>La plupart des réductions et des fonctions universelles acceptent soit un itérable, soit un <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>               <span class="c1"># works, but slow</span>
+</span><span data-line="2"><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]))</span>     <span class="c1"># ~3x faster</span>
+</span></pre></div>
+</div>
+<p>La forme itérable oblige <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> à parcourir l’entrée un objet Python à la fois, en convertissant chacun en nombre avant de pouvoir l’utiliser. Sur un <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a>, la conversion est déjà faite et l’appel s’exécute directement à travers le tampon compact.</p>
+<p>Lorsque les mêmes données sont utilisées plus d’une fois, construisez le <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> une seule fois et faites-le circuler. Lorsque les données n’existent que sous forme de liste Python et ne sont consommées qu’une fois, le coût de conversion peut l’emporter sur le gain de vitesse – le constructeur <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.array" title="numpy.array"><code class="xref py py-func docutils literal notranslate"><span class="pre">array()</span></code></a> lui-même doit parcourir la liste et allouer.</p>
+</section>
+<section id="prefer-views-to-copies">
+<h2><span class="section-number">6.19.3. </span>Préférer les vues aux copies<a class="headerlink" href="#prefer-views-to-copies" title="Lien vers cette rubrique">¶</a></h2>
+<p>Le tranchage, l’indexation sur un seul axe d’un tableau de rang supérieur, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.reshape" title="numpy.ndarray.reshape"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reshape()</span></code></a>, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.transpose" title="numpy.ndarray.transpose"><code class="xref py py-meth docutils literal notranslate"><span class="pre">transpose()</span></code></a> et <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.frombuffer" title="numpy.frombuffer"><code class="xref py py-func docutils literal notranslate"><span class="pre">frombuffer()</span></code></a> renvoient tous des <em>vues</em> qui partagent leurs données avec la source. Elles sont essentiellement gratuites.</p>
+<p><a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.copy" title="numpy.ndarray.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a>, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.flatten" title="numpy.ndarray.flatten"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flatten()</span></code></a>, l’indexation booléenne (<code class="docutils literal notranslate"><span class="pre">a[mask]</span></code>) et toute expression arithmétique allouent une <em>copie</em>. N’y recourez que lorsqu’un tampon indépendant est réellement nécessaire.</p>
+<p>En cas de doute, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndinfo" title="numpy.ndinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">ndinfo()</span></code></a> affiche l’emplacement du tampon sous-jacent ; deux tableaux qui rapportent la même adresse partagent leurs données. Le tableau complet vue/copie se trouve sur <a class="reference internal" href="shape/views-and-copies.html"><span class="doc">Vues et copies</span></a>.</p>
+</section>
+<section id="allocate-once-then-write">
+<h2><span class="section-number">6.19.4. </span>Allouer une fois, puis écrire<a class="headerlink" href="#allocate-once-then-write" title="Lien vers cette rubrique">¶</a></h2>
+<p>Le plus gros piège de performance sur la caméra est l’allocation de nouveaux tableaux à l’intérieur d’une boucle qui s’exécute plusieurs fois par seconde. Chaque nouveau <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> demande de la RAM à la caméra, et de fréquentes nouvelles allocations la gaspillent.</p>
+<p>La plupart des fonctions universelles acceptent <code class="docutils literal notranslate"><span class="pre">out=</span></code> afin que le résultat puisse être écrit dans un tableau déjà existant</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>        <span class="c1"># allocate once</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+</span><span data-line="6">    <span class="c1"># use y ...</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../library/omv.image.Image.html#image.Image.to_ndarray" title="image.Image.to_ndarray"><code class="xref py py-meth docutils literal notranslate"><span class="pre">image.Image.to_ndarray()</span></code></a> accepte <code class="docutils literal notranslate"><span class="pre">buffer=</span></code> pour la même raison ; <a class="reference internal" href="../../../library/omv.ulab.utils.html#ulab.utils.spectrogram" title="ulab.utils.spectrogram"><code class="xref py py-func docutils literal notranslate"><span class="pre">spectrogram()</span></code></a> et les convertisseurs de type <a class="reference internal" href="../../../library/omv.ulab.utils.html#ulab.utils.from_int32_buffer" title="ulab.utils.from_int32_buffer"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_int32_buffer()</span></code></a> acceptent à la fois <code class="docutils literal notranslate"><span class="pre">out=</span></code> et <code class="docutils literal notranslate"><span class="pre">scratchpad=</span></code>. Allouez tout une fois et réutilisez-le.</p>
+</section>
+<section id="use-in-place-operators">
+<h2><span class="section-number">6.19.5. </span>Utiliser les opérateurs en place<a class="headerlink" href="#use-in-place-operators" title="Lien vers cette rubrique">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">b</span> <span class="pre">+</span> <span class="pre">1</span></code> alloue un temporaire de la taille de <code class="docutils literal notranslate"><span class="pre">b</span></code>, copie, puis réaffecte. <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">+=</span> <span class="pre">1</span></code> modifie <code class="docutils literal notranslate"><span class="pre">b</span></code> directement</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># makes a temporary</span>
+</span><span data-line="2"><span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="c1"># no temporary</span>
+</span><span data-line="5"><span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+<p>La même idée s’applique aux expressions composées. <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span> <span class="pre">*</span> <span class="pre">c</span></code> alloue un temporaire pour <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">*</span> <span class="pre">c</span></code>. Décomposer l’expression en sous-affectations simples écrivant dans un tampon pré-alloué élimine les temporaires</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># one temporary for (a + b), another for the ``* 2``</span>
+</span><span data-line="2"><span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="c1"># zero temporaries</span>
+</span><span data-line="5"><span class="n">out</span><span class="p">[:]</span>  <span class="o">=</span> <span class="n">a</span>
+</span><span data-line="6"><span class="n">out</span>    <span class="o">+=</span> <span class="n">b</span>
+</span><span data-line="7"><span class="n">out</span>    <span class="o">*=</span> <span class="mi">2</span>
+</span></pre></div>
+</div>
+</section>
+<section id="build-the-result-do-not-append-to-it">
+<h2><span class="section-number">6.19.6. </span>Construire le résultat, ne pas y faire d’ajouts<a class="headerlink" href="#build-the-result-do-not-append-to-it" title="Lien vers cette rubrique">¶</a></h2>
+<p><a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> n’a pas de <code class="docutils literal notranslate"><span class="pre">append</span></code> – volontairement. Agrandir un tableau impliquerait d’allouer un nouveau tampon plus grand et d’y copier l’ancien contenu. Sur un microcontrôleur, pré-allouez la taille finale et <em>remplissez</em>-la</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+</span><span data-line="3">    <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">some_calculation</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Lorsque <code class="docutils literal notranslate"><span class="pre">N</span></code> n’est réellement pas connu à l’avance, écrivez dans une <a class="reference internal" href="../../../library/builtins.html#list" title="list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> Python et convertissez une fois à la fin avec <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.array" title="numpy.array"><code class="xref py py-func docutils literal notranslate"><span class="pre">array()</span></code></a>.</p>
+</section>
+<section id="slice-assignment-instead-of-new-arrays">
+<h2><span class="section-number">6.19.7. </span>Affectation par tranche au lieu de nouveaux tableaux<a class="headerlink" href="#slice-assignment-instead-of-new-arrays" title="Lien vers cette rubrique">¶</a></h2>
+<p>De nombreux schémas du type « construire un nouveau tableau à partir de morceaux d’autres tableaux » peuvent s’exprimer sous forme d’affectations par tranche dans un tampon pré-alloué plutôt que par une nouvelle allocation à chaque appel.</p>
+<p>Une fenêtre glissante sur un flux d’échantillons – le fondement d’un filtre à moyenne glissante – en est le cas canonique. Le tampon contient les <code class="docutils literal notranslate"><span class="pre">N</span></code> derniers échantillons ; à chaque itération, on supprime le plus ancien et on ajoute le plus récent. La forme évidente reconstruit le tampon à chaque itération</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">sample</span> <span class="o">=</span> <span class="n">read_sample</span><span class="p">()</span>
+</span><span data-line="3">    <span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>              <span class="c1"># new buffer every loop</span>
+</span><span data-line="4">                          <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sample</span><span class="p">])))</span>
+</span><span data-line="5">    <span class="n">avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Cela représente une nouvelle allocation – et une copie de <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">-</span> <span class="pre">1</span></code> éléments – par échantillon. La forme par affectation de tranche décale en place</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">N</span>   <span class="o">=</span> <span class="mi">16</span>
+</span><span data-line="2"><span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>               <span class="c1"># allocate once</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">sample</span>   <span class="o">=</span> <span class="n">read_sample</span><span class="p">()</span>
+</span><span data-line="6">    <span class="n">buf</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>                          <span class="c1"># shift left by one</span>
+</span><span data-line="7">    <span class="n">buf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="o">=</span> <span class="n">sample</span>                           <span class="c1"># append at the end</span>
+</span><span data-line="8">    <span class="n">avg</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">buf[:-1]</span> <span class="pre">=</span> <span class="pre">buf[1:]</span></code> est la ligne intéressante : deux vues qui se chevauchent dans le même tampon, la tranche de droite lue depuis une extrémité et écrite à l’autre. <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> parcourt la mémoire sous-jacente dans l’ordre qui rend le décalage en place sûr. Aucun nouveau tableau n’est jamais alloué à l’intérieur de la boucle.</p>
+</section>
+<section id="watch-out-for-boolean-masks-in-streaming-loops">
+<h2><span class="section-number">6.19.8. </span>Attention aux masques booléens dans les boucles de streaming<a class="headerlink" href="#watch-out-for-boolean-masks-in-streaming-loops" title="Lien vers cette rubrique">¶</a></h2>
+<p>L’indexation booléenne et <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.where" title="numpy.where"><code class="xref py py-func docutils literal notranslate"><span class="pre">where()</span></code></a> produisent un nouveau tableau à chaque appel – la taille du résultat dépend des données, donc aucun tampon pré-alloué ne peut absorber l’allocation. La construction répétée de masques dans une boucle de streaming remplit la RAM de tableaux jetables. Un <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code> périodique récupère l’espace</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">mask</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+</span><span data-line="5">    <span class="n">_</span>    <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="6">    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="7">        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>La même mise en garde s’applique aux expressions booléennes composées comme <code class="docutils literal notranslate"><span class="pre">(a</span> <span class="pre">&gt;</span> <span class="pre">lo)</span> <span class="pre">&amp;</span> <span class="pre">(a</span> <span class="pre">&lt;</span> <span class="pre">hi)</span></code> – chaque opérateur alloue un nouveau tableau de booléens. Lorsqu’un masque est réutilisé, construisez-le une fois et conservez-le</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">mask</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+</span><span data-line="2"><span class="n">foo</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="3"><span class="n">bar</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Retour au sommet</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="images.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Précédent</span><div class="title"><span class="section-number">6.18. </span>Images et ndarrays</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="wrap-up.html">
+      <div class="page-info">
+        <span>Suivant</span>
+        <div class="title"><span class="section-number">6.20. </span>Récapitulatif</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=b89d0095"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

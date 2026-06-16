@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>7.13. 비최대 억제(Non-max suppression) - OpenMV MicroPython 1.28 문서</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="색인" href="../../../../genindex.html" /><link rel="search" title="검색" href="../../../../search.html" /><link rel="next" title="7.14. YOLOv8 둘러보기" href="yolov8-walkthrough.html" /><link rel="prev" title="7.12. 후처리기(Post-processors)" href="postprocessors.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html"/>
+  <meta property="og:title" content="7.13. 비최대 억제(Non-max suppression)"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="검색" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">번역</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/ml/postprocessing/non-max-suppression.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="라이트 모드로 전환"
+data-aria-light="다크 모드로 전환"
+data-aria-dark="색상 모드로 전환">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">토론</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#53916;&#53664;&#47532;&#50620;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#48736;&#47480; &#49884;&#51089;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#44060;&#50836;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#54616;&#46300;&#50920;&#50612; &#51228;&#50612;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#48708;&#51204; &#49468;&#49436;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#51060;&#48120;&#51648; &#52376;&#47532;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">7. &#47672;&#49888;&#47084;&#45789;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-a-neural-network.html">7.1. &#49888;&#44221;&#47581;&#51060;&#46976; &#47924;&#50631;&#51064;&#44032;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-ml-changed.html">7.2. &#47672;&#49888;&#47084;&#45789;&#51060; &#48148;&#44988; &#44163;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/hello-blazeface.html">7.3. Hello BlazeFace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/loading-a-model.html">7.4. &#47784;&#45944; &#47196;&#46300;&#54616;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/romfs.html">7.5. ROMFS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/anatomy-of-predict.html">7.6. predict&#51032; &#54644;&#48512;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/normalization.html">7.7. &#51221;&#44508;&#54868;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/tensor-io.html">7.8. &#53584;&#49436; I/O</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/tflm.html">7.9. TensorFlow Lite for Microcontrollers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/cmsis-nn.html">7.10. CMSIS-NN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/npus.html">7.11. NPU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="postprocessors.html">7.12. &#54980;&#52376;&#47532;&#44592;(Post-processors)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">7.13. &#48708;&#52572;&#45824; &#50613;&#51228;(Non-max suppression)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="yolov8-walkthrough.html">7.14. YOLOv8 &#46168;&#47084;&#48372;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing-your-own.html">7.15. &#51649;&#51217; &#51089;&#49457;&#54616;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.16. &#47560;&#47924;&#47532;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#45348;&#53944;&#50892;&#53433;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. &#50937; &#49436;&#48260;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#54840;&#49828;&#53944; &#54532;&#47196;&#53664;&#53084;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#46020;&#44396;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#54532;&#47196;&#45909;&#49496;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#46972;&#51060;&#48652;&#47084;&#47532;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#48372;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#49892;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#49468;&#49436;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#50616;&#50612;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#45236;&#48512; &#44396;&#51312;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#48320;&#44221; &#47196;&#44536;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#46972;&#51060;&#49440;&#49828;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>이 페이지에서</h3><ul>
+<li><a class="reference internal" href="#soft-nms">7.13.1. Soft-NMS</a></li>
+<li><a class="reference internal" href="#building-one-directly">7.13.2. &#51649;&#51217; &#49373;&#49457;&#54616;&#44592;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst">이 페이지 편집</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 튜토리얼</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">7. </span>머신러닝</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">7.13. </span>비최대 억제(Non-max suppression)</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>페이지 복사</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="추가 작업"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>페이지 복사</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>소스 보기</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT 에서 열기</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude 에서 열기</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/non-max-suppression.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity 에서 열기</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="non-max-suppression">
+<h1><span class="section-number">7.13. </span>비최대 억제(Non-max suppression)<a class="headerlink" href="#non-max-suppression" title="Link to this heading">¶</a></h1>
+<p>검출 신경망은 일반적으로 동일한 실제 객체 주위에 여러 개의 겹치는 후보 상자를 생성합니다. 객체 근처의 각 앵커가 비슷한 점수로 반응하고, 후처리기는 그 모두를 보게 됩니다. <em>비최대 억제</em>(<em>NMS</em>)는 그 군집을 하나의 상자로 만드는 단계입니다.</p>
+<p>알고리즘은 간단합니다. 후보 상자를 점수순으로 정렬하고, 가장 높은 점수의 상자를 선택한 다음, 선택한 임계값을 초과하여 그것과 겹치는 다른 모든 상자를 억제하고, 남은 것들 중에서 다음으로 높은 것을 선택하여 이를 반복합니다. 겹침 정도를 나타내는 지표는 <em>교집합 대 합집합 비율</em>(<em>IoU</em>)로, 두 상자의 공유 면적을 합쳐진 면적으로 나눈 값이며 <code class="docutils literal notranslate"><span class="pre">0</span></code>(겹침 없음)에서 <code class="docutils literal notranslate"><span class="pre">1</span></code>(완전히 동일한 상자) 사이의 값입니다. 모든 기본 제공 후처리기의 <code class="docutils literal notranslate"><span class="pre">nms_threshold</span></code> 생성자 인자는 그 이상이면 상자가 이미 유지된 상자의 중복으로 취급되는 기준값입니다.</p>
+<figure class="align-default" id="id1">
+<img alt="왼쪽에는 단일 대상 주위에 세 개의 겹치는 경계 상자가 있으며 각각 0.92, 0.83, 0.71의 점수로 표시되어 있습니다. 화살표가 오른쪽을 가리키며, 그곳에는 점수 0.92를 가진 하나의 상자만 남아 있습니다. 점수가 낮은 두 상자는 그것과의 교집합 대 합집합 비율이 임계값을 초과하기 때문에 점수가 더 높은 상자에 의해 억제되었습니다." src="../../../../_images/nms-overlap.svg" />
+<figcaption>
+<p><span class="caption-text">NMS는 겹치는 검출의 군집을 점수가 가장 높은 하나로 축소합니다.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<section id="soft-nms">
+<h2><span class="section-number">7.13.1. </span>Soft-NMS<a class="headerlink" href="#soft-nms" title="Link to this heading">¶</a></h2>
+<p>기본 제공되는 <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS" title="ml.utils.NMS"><code class="xref py py-class docutils literal notranslate"><span class="pre">ml.utils.NMS</span></code></a> 클래스는 <em>Soft-NMS</em>를 구현합니다. 이는 겹치는 상자를 곧바로 제거하는 대신 겹침 정도에 따라 점수를 감소시키는 개선된 방식입니다. 낮아진 점수가 임계값 아래로 떨어지면 상자는 제거되고, 그렇지 않으면 감소된 점수로 살아남아 다음 라운드에서 경쟁합니다.</p>
+<p><code class="docutils literal notranslate"><span class="pre">nms_sigma</span></code> 매개변수는 감소가 얼마나 공격적인지를 제어합니다. <code class="docutils literal notranslate"><span class="pre">nms_sigma</span></code>가 작으면(기본값인 <code class="docutils literal notranslate"><span class="pre">0.1</span></code>) 감소가 가파릅니다. 많이 겹치는 상자는 점수가 거의 0으로 떨어지며 Soft-NMS는 고전적인 NMS로 환원됩니다. <code class="docutils literal notranslate"><span class="pre">nms_sigma</span></code>가 크면 감소가 완만해지고 서로 다른 객체의 겹치는 상자가 더 자주 살아남습니다. 이는 같은 클래스의 실제 객체가 실제로 겹칠 때(얼굴이 많은 군중, 손바닥이 모인 무리) 중요합니다.</p>
+<p><code class="docutils literal notranslate"><span class="pre">nms_sigma</span></code>를 <code class="docutils literal notranslate"><span class="pre">&lt;=</span> <span class="pre">0</span></code>으로 설정하면 감소가 완전히 비활성화됩니다. 겹치는 상자는 원래 점수 그대로 통과하며, 점수 임계값만이 그것들을 걸러냅니다.</p>
+</section>
+<section id="building-one-directly">
+<h2><span class="section-number">7.13.2. </span>직접 생성하기<a class="headerlink" href="#building-one-directly" title="Link to this heading">¶</a></h2>
+<p>모든 기본 제공 후처리기는 추론마다 새로운 <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS" title="ml.utils.NMS"><code class="xref py py-class docutils literal notranslate"><span class="pre">NMS</span></code></a>를 생성하고, 각 후보를 그것에 추가한 다음, 마지막에 <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS.get_bounding_boxes" title="ml.utils.NMS.get_bounding_boxes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_bounding_boxes()</span></code></a>를 호출합니다. 사용자 정의 후처리기도 동일한 패턴을 따릅니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">ml.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">NMS</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">iw</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+</span><span data-line="4"><span class="n">ih</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">nms</span> <span class="o">=</span> <span class="n">NMS</span><span class="p">(</span><span class="n">iw</span><span class="p">,</span> <span class="n">ih</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">roi</span><span class="p">)</span>
+</span><span data-line="7"><span class="k">for</span> <span class="n">box</span><span class="p">,</span> <span class="n">score</span><span class="p">,</span> <span class="n">class_idx</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+</span><span data-line="8">    <span class="n">nms</span><span class="o">.</span><span class="n">add_bounding_box</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">xmin</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">ymin</span><span class="p">,</span>
+</span><span data-line="9">                         <span class="n">box</span><span class="o">.</span><span class="n">xmax</span><span class="p">,</span> <span class="n">box</span><span class="o">.</span><span class="n">ymax</span><span class="p">,</span>
+</span><span data-line="10">                         <span class="n">score</span><span class="p">,</span> <span class="n">class_idx</span><span class="p">)</span>
+</span><span data-line="11"><span class="n">result</span> <span class="o">=</span> <span class="n">nms</span><span class="o">.</span><span class="n">get_bounding_boxes</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="n">nms_threshold</span><span class="p">,</span>
+</span><span data-line="12">                                <span class="n">sigma</span><span class="o">=</span><span class="n">nms_sigma</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>생성자는 신경망의 입력 너비와 높이를 픽셀 단위로, 그리고 모델이 실행된 원본 이미지의 ROI를 받습니다. <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS.add_bounding_box" title="ml.utils.NMS.add_bounding_box"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_bounding_box()</span></code></a>는 그 신경망 입력 픽셀 공간의 상자 좌표를 받고, <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS.get_bounding_boxes" title="ml.utils.NMS.get_bounding_boxes"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_bounding_boxes()</span></code></a>는 ROI를 사용하여 살아남은 것들을 이미지 좌표로 다시 매핑합니다. 이 재매핑은 <a class="reference internal" href="../pipeline/normalization.html"><span class="doc">정규화 스트레치</span></a>를 자동으로 고려하며(예측기가 본 것과 동일한 ROI를 사용하여 상자를 다시 투영함), 따라서 반환된 상자는 캡처된 프레임에 그릴 준비가 되어 있습니다.</p>
+<p>반환 형태는 클래스별 리스트의 리스트로, <code class="docutils literal notranslate"><span class="pre">add_bounding_box</span></code>에 전달된 <code class="docutils literal notranslate"><span class="pre">label_index</span></code>로 색인됩니다. 비어 있는 클래스 리스트도 색인이 모델의 클래스 색인과 일치하도록 보존됩니다. <code class="docutils literal notranslate"><span class="pre">enumerate(result)</span></code>는 클래스를 해당 검출과 함께 순회합니다.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>맨 위로</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="postprocessors.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>이전</span><div class="title"><span class="section-number">7.12. </span>후처리기(Post-processors)</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="yolov8-walkthrough.html">
+      <div class="page-info">
+        <span>다음</span>
+        <div class="title"><span class="section-number">7.14. </span>YOLOv8 둘러보기</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=e74a095f"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=afa94a99"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

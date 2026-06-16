@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-accent-color="blue" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>8. Asyncio - OpenMV MicroPython 1.28 文档</title><link rel="shortcut icon" href="../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../genindex.html" /><link rel="search" title="搜索" href="../../../search.html" /><link rel="next" title="8.1. 协作式并发" href="basics/cooperative-concurrency.html" /><link rel="prev" title="7.16. 总结" href="../ml/wrap-up.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/asyncio/" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/asyncio/"/>
+  <meta property="og:title" content="8. Asyncio"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/asyncio/" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/asyncio/" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      <img class="light-logo" src="../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../index.html">Home</a></li><li class="link"><a href="../index.html">Tutorial</a></li><li class="link"><a href="../../../library/index.html">Libraries</a></li><li class="link"><a href="../../quickref.html">Boards</a></li><li class="link"><a href="../../shields.html">Shields</a></li><li class="link"><a href="../../sensors.html">Sensors</a></li><li class="link"><a href="../../../reference/index.html">Language</a></li><li class="link"><a href="../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜索" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻译</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/asyncio/">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/asyncio/">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/asyncio/">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/asyncio/">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/asyncio/">日本語</a></li><li><a href="/es/openmvcam/tutorial/asyncio/">Español</a></li><li><a href="/ru/openmvcam/tutorial/asyncio/">Русский</a></li><li><a href="/fr/openmvcam/tutorial/asyncio/">Français</a></li><li><a href="/ko/openmvcam/tutorial/asyncio/">한국어</a></li><li><a href="/it/openmvcam/tutorial/asyncio/">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/asyncio/">Português</a></li><li><a href="/nl/openmvcam/tutorial/asyncio/">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/asyncio/">Română</a></li><li><a href="/hr/openmvcam/tutorial/asyncio/">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/asyncio/">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/asyncio/">Polski</a></li><li><a href="/fi/openmvcam/tutorial/asyncio/">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/asyncio/">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/asyncio/">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/asyncio/">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切换到亮色模式"
+data-aria-light="切换到暗色模式"
+data-aria-dark="切换到自动模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">讨论</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">&#25945;&#31243;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart.html">1. &#24555;&#36895;&#20837;&#38376;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python/index.html">2. Python &#27010;&#36848;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware/index.html">3. &#30828;&#20214;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../vision/index.html">4. &#35270;&#35273;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">5. &#22270;&#20687;&#22788;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">7. &#26426;&#22120;&#23398;&#20064;</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">8. Asyncio</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="basics/cooperative-concurrency.html">8.1. &#21327;&#20316;&#24335;&#24182;&#21457;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/coroutines-and-tasks.html">8.2. &#21327;&#31243;&#19982;&#20219;&#21153;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/the-event-loop.html">8.3. &#20107;&#20214;&#24490;&#29615;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coordination/gather.html">8.4. Gather</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coordination/timeouts-and-cancellation.html">8.5. &#36229;&#26102;&#19982;&#21462;&#28040;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coordination/exceptions.html">8.6. &#24322;&#24120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="primitives/events.html">8.7. &#20107;&#20214;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="primitives/locks.html">8.8. &#38145;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="primitives/threadsafe-flag.html">8.9. ThreadSafeFlag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="custom/awaitable-classes.html">8.10. &#21487;&#31561;&#24453;&#31867;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="custom/async-iterators.html">8.11. &#24322;&#27493;&#36845;&#20195;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="custom/async-context-managers.html">8.12. &#24322;&#27493;&#19978;&#19979;&#25991;&#31649;&#29702;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="loop/loop-control.html">8.13. &#24490;&#29615;&#25511;&#21046;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="capstone/snapshot-loop.html">8.14. AsyncCSI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pitfalls.html">8.15. &#38519;&#38449;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wrap-up.html">8.16. &#23567;&#32467;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../networking/index.html">9. &#32593;&#32476;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../webservers/index.html">10. Web &#26381;&#21153;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../bluetooth/index.html">11. &#34013;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../protocol/index.html">12. &#20027;&#26426;&#21327;&#35758;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../production/index.html">14. &#29983;&#20135;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../library/index.html">&#24211;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../quickref.html">&#24320;&#21457;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../shields.html">&#25193;&#23637;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../sensors.html">&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../reference/index.html">&#35821;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../develop/index.html">&#20869;&#37096;&#23454;&#29616;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../changelog/index.html">&#26356;&#26032;&#26085;&#24535;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../license.html">&#35768;&#21487;&#35777;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/asyncio/index.rst">编辑此页面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV Cam 教程</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">8. </span>Asyncio</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/asyncio/index.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>复制页面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/asyncio/index.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>复制页面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/asyncio/index.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>查看源代码</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/asyncio/index.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中打开</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/asyncio/index.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中打开</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/asyncio/index.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中打开</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="asyncio">
+<h1><span class="section-number">8. </span>Asyncio<a class="headerlink" href="#asyncio" title="链接到此标题。">¶</a></h1>
+<p>到目前为止，本教程中的每个脚本都是 <em>顺序执行</em> 的——一次只运行一行，而一个必须等待的调用（一次传感器读取、一次网络往返、一次快照）会阻塞脚本直到它完成。当只有一件事要做时，这种方式没有问题。但一旦应用程序需要同时做几件事——既运行一个快照循环，<em>又</em> 响应一条串口命令，<em>同时还</em> 通过网络上传帧——顺序执行的脚本就行不通了。第一个慢调用会让其他所有事情都无法继续推进。</p>
+<p><a class="reference internal" href="../../../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> 模块就是 MicroPython 给出的答案。它允许应用程序将多个任务描述为各自独立的 <em>协程</em>，并在单个线程上 <em>协作式地</em> 并发运行它们——当前正在运行的协程在必须等待时，会将控制权交还给调度器。一个快照循环、一个 UART 读取器和一个网络客户端可以全部存在于同一个脚本中，且其中某一个的慢速部分不再会冻结其他部分。</p>
+<p>接下来的页面将介绍 <code class="docutils literal notranslate"><span class="pre">async</span></code>/<code class="docutils literal notranslate"><span class="pre">await</span></code> 关键字和 <a class="reference internal" href="../../../library/asyncio.html#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 生命周期、通过 <a class="reference internal" href="../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">gather()</span></code></a> 和 <a class="reference internal" href="../../../library/asyncio.html#asyncio.wait_for" title="asyncio.wait_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">wait_for()</span></code></a> 进行的协调、取消与异常传播、三种内置同步原语（<a class="reference internal" href="../../../library/asyncio.html#asyncio.Event" title="asyncio.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">Event</span></code></a>、<a class="reference internal" href="../../../library/asyncio.html#asyncio.Lock" title="asyncio.Lock"><code class="xref py py-class docutils literal notranslate"><span class="pre">Lock</span></code></a>、<a class="reference internal" href="../../../library/asyncio.html#asyncio.ThreadSafeFlag" title="asyncio.ThreadSafeFlag"><code class="xref py py-class docutils literal notranslate"><span class="pre">ThreadSafeFlag</span></code></a>）、用于将应用程序类接入 asyncio 惯用法的语言钩子、一个让 <a class="reference internal" href="../../../library/omv.csi.html#csi.CSI.snapshot" title="csi.CSI.snapshot"><code class="xref py py-meth docutils literal notranslate"><span class="pre">snapshot()</span></code></a> 能作为协程运行的小型 <a class="reference internal" href="../../../library/omv.csi.html#csi.CSI" title="csi.CSI"><code class="xref py py-class docutils literal notranslate"><span class="pre">CSI</span></code></a> 包装器，以及协作式调度所伴随的常见陷阱。</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">概念</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="basics/cooperative-concurrency.html">8.1. 协作式并发</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics/coroutines-and-tasks.html">8.2. 协程与任务</a></li>
+<li class="toctree-l1"><a class="reference internal" href="basics/the-event-loop.html">8.3. 事件循环</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">协调</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="coordination/gather.html">8.4. Gather</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coordination/timeouts-and-cancellation.html">8.5. 超时与取消</a></li>
+<li class="toctree-l1"><a class="reference internal" href="coordination/exceptions.html">8.6. 异常</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">同步原语</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="primitives/events.html">8.7. 事件</a></li>
+<li class="toctree-l1"><a class="reference internal" href="primitives/locks.html">8.8. 锁</a></li>
+<li class="toctree-l1"><a class="reference internal" href="primitives/threadsafe-flag.html">8.9. ThreadSafeFlag</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">自定义异步对象</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="custom/awaitable-classes.html">8.10. 可等待类</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom/async-iterators.html">8.11. 异步迭代器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="custom/async-context-managers.html">8.12. 异步上下文管理器</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">循环控制</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="loop/loop-control.html">8.13. 循环控制</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">帧捕获</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="capstone/snapshot-loop.html">8.14. AsyncCSI</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">陷阱</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pitfalls.html">8.15. 陷阱</a></li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">总结</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="wrap-up.html">8.16. 小结</a></li>
+</ul>
+</div>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到顶部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../ml/wrap-up.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一章</span><div class="title"><span class="section-number">7.16. </span>总结</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="basics/cooperative-concurrency.html">
+      <div class="page-info">
+        <span>下一章</span>
+        <div class="title"><span class="section-number">8.1. </span>协作式并发</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=6c58574e"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=540d3cec"></script>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.18. 直方圖與統計量 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="5.19. 色調校正" href="tonal-corrections.html" /><link rel="prev" title="5.17. 標準卷積核目錄" href="../filters/standard-kernels.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/analysis/histograms-and-statistics.html"/>
+  <meta property="og:title" content="5.18. 直方圖與統計量"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/image/analysis/histograms-and-statistics.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/image/analysis/histograms-and-statistics.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">5. &#24433;&#20687;&#34389;&#29702;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">5.1. Image &#29289;&#20214;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">5.2. &#24231;&#27161;&#33287;&#21312;&#22495;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">5.3. &#20687;&#32032;&#26684;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">5.4. &#35712;&#21462;&#33287;&#23531;&#20837;&#20687;&#32032;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">5.5. &#21312;&#22495;&#33287;&#36974;&#32617;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/shapes-and-text.html">5.6. &#32362;&#35069;&#24418;&#29376;&#33287;&#25991;&#23383;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/image-composition.html">5.7. &#21512;&#25104;&#24433;&#20687;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/flood-fill-and-detection-glyphs.html">5.8. &#28459;&#27700;&#22635;&#20805;&#33287;&#20597;&#28204;&#22294;&#31034;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">5.9. &#31639;&#34899;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">5.10. &#20301;&#20803;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">5.11. &#24433;&#26684;&#24046;&#20998;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">5.12. &#20108;&#20540;&#38334;&#20540;&#34389;&#29702;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/linear-neighborhood.html">5.13. &#32218;&#24615;&#33287;&#37168;&#22495;&#28670;&#27874;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/gaussian-and-edges.html">5.14. &#39640;&#26031;&#24179;&#28369;&#21270;&#33287;&#37002;&#32227;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/morphology.html">5.15. &#24418;&#24907;&#23416;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/custom-kernels.html">5.16. &#33258;&#35330;&#21367;&#31309;&#26680;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/standard-kernels.html">5.17. &#27161;&#28310;&#21367;&#31309;&#26680;&#30446;&#37636;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.18. &#30452;&#26041;&#22294;&#33287;&#32113;&#35336;&#37327;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tonal-corrections.html">5.19. &#33394;&#35519;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="regression-and-similarity.html">5.20. &#36852;&#27512;&#33287;&#30456;&#20284;&#24230;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">5.21. &#32302;&#25918;&#12289;&#32763;&#36681;&#33287;&#35009;&#20999;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">5.22. &#37857;&#38957;&#33287;&#36879;&#35222;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">5.23. &#36879;&#35222;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">5.24. &#26997;&#24231;&#27161;&#36681;&#25563;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">5.25. &#23563;&#25214;&#33394;&#22602;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">5.26. &#23563;&#25214;&#30452;&#32218;&#33287;&#32218;&#27573;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">5.27. &#23563;&#25214;&#22291;&#24418;&#33287;&#30697;&#24418;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">5.28. QR code &#33287; AprilTag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">5.29. &#26781;&#30908;&#33287; Data Matrix &#30908;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">5.30. &#31684;&#26412;&#27604;&#23565;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">5.31. &#20301;&#31227;&#27604;&#23565;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">5.32. &#20786;&#23384;&#33287;&#22739;&#32302;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">5.33. ImageIO &#20018;&#27969;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.34. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#the-histogram">5.18.1. &#30452;&#26041;&#22294;</a></li>
+<li><a class="reference internal" href="#bins-and-the-bin-count">5.18.2. &#31665;&#33287;&#31665;&#25976;</a></li>
+<li><a class="reference internal" href="#statistics">5.18.3. &#32113;&#35336;&#37327;</a></li>
+<li><a class="reference internal" href="#percentiles-and-cdf-lookups">5.18.4. &#30334;&#20998;&#20301;&#25976;&#33287; CDF &#26597;&#35426;</a></li>
+<li><a class="reference internal" href="#otsu-s-method">5.18.5. Otsu &#27861;</a></li>
+<li><a class="reference internal" href="#computing-on-a-difference-image">5.18.6. &#22312;&#24046;&#30064;&#24433;&#20687;&#19978;&#36914;&#34892;&#35336;&#31639;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">5. </span>影像處理</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">5.18. </span>直方圖與統計量</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/analysis/histograms-and-statistics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="histograms-and-statistics">
+<h1><span class="section-number">5.18. </span>直方圖與統計量<a class="headerlink" href="#histograms-and-statistics" title="連結到這個標頭">¶</a></h1>
+<p>除了會改變影像像素的運算之外，<code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code> 類別還提供一系列用來「測量」像素的方法 —— 概括像素值的分布、回傳平均與中位數亮度、找出暗像素與亮像素之間的最佳分界點、回報各色彩通道的離散程度。這些測量結果以兩種方式供應用程式使用：一是作為決策程式碼的輸入，用來決定要採用什麼閾值、設定什麼增益、場景的色調輪廓看起來如何；二是作為診斷訊號 —— 「場景夠亮嗎？」 —— 讓應用程式能據以動作，而不必針對任何特定像素做出判斷。</p>
+<p>幾乎每一項測量的起點都是「直方圖」。</p>
+<section id="the-histogram">
+<h2><span class="section-number">5.18.1. </span>直方圖<a class="headerlink" href="#the-histogram" title="連結到這個標頭">¶</a></h2>
+<p>影像的直方圖就是統計有多少像素具有每個可能的亮度值。對於灰階影像，這是一份以 <code class="docutils literal notranslate"><span class="pre">0</span></code> 到 <code class="docutils literal notranslate"><span class="pre">255</span></code> 的值作為索引的計數清單；對於彩色影像，則是三份這樣的清單 —— 每個通道一份。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_histogram" title="image.Image.get_histogram"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_histogram()</span></code></a> 會計算出一個直方圖：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">h</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_histogram</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>回傳的物件是一個 <code class="xref py py-class docutils literal notranslate"><span class="pre">histogram</span></code> 結果，會公開各通道的箱（bin）計數清單，以及幾項在其上的高階查詢。箱計數經過「正規化」，使其總和為 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> —— 直方圖描述的是分布的輪廓，而非絕對的像素數量，這使得不同尺寸影像之間的測量結果可以相互比較。</p>
+<p>對灰階影像而言，直方圖有一個箱通道，可透過 <code class="docutils literal notranslate"><span class="pre">h.bins()</span></code> （或等效的 <code class="docutils literal notranslate"><span class="pre">h[0]</span></code>）取得。對 RGB565 影像而言，直方圖是在二值化閾值頁面所介紹的 <em>LAB</em> 色彩空間中計算的，可透過 <code class="docutils literal notranslate"><span class="pre">h.l_bins()</span></code>、<code class="docutils literal notranslate"><span class="pre">h.a_bins()</span></code>、<code class="docutils literal notranslate"><span class="pre">h.b_bins()</span></code> （或 <code class="docutils literal notranslate"><span class="pre">h[0]</span></code>、<code class="docutils literal notranslate"><span class="pre">h[1]</span></code>、<code class="docutils literal notranslate"><span class="pre">h[2]</span></code>）取得三個箱通道。LAB 與閾值及追蹤方法所採用的色彩空間相同；直方圖在色彩於哪個空間中被測量這一點上，與閾值是一致的。</p>
+</section>
+<section id="bins-and-the-bin-count">
+<h2><span class="section-number">5.18.2. </span>箱與箱數<a class="headerlink" href="#bins-and-the-bin-count" title="連結到這個標頭">¶</a></h2>
+<p>預設的直方圖每個可能的像素值各有一個箱 —— 對 8 位元通道而言即為 <code class="docutils literal notranslate"><span class="pre">256</span></code> 個箱。有時這比應用程式所需的解析度還要精細。一個只在意分布大致輪廓的分類器，採用較少的箱數 —— <code class="docutils literal notranslate"><span class="pre">32</span></code> 個甚至 <code class="docutils literal notranslate"><span class="pre">8</span></code> 個箱 —— 可能更合用，這樣既執行得更快，又能在面對雜訊時產生更乾淨的結果。<code class="docutils literal notranslate"><span class="pre">bins</span></code> 關鍵字（以及色彩專用的各通道 <code class="docutils literal notranslate"><span class="pre">l_bins</span></code>、<code class="docutils literal notranslate"><span class="pre">a_bins</span></code>、<code class="docutils literal notranslate"><span class="pre">b_bins</span></code>）可設定箱數：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">h</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_histogram</span><span class="p">(</span><span class="n">bins</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>ROI 與閾值的範圍限定方式，與其他每一種測量方法都相同。傳入 <code class="docutils literal notranslate"><span class="pre">roi</span></code> 可將直方圖侷限在某個矩形範圍的像素內；傳入 <code class="docutils literal notranslate"><span class="pre">thresholds</span></code> 清單則只納入符合那些範圍的像素。閾值形式正是讓「只計算符合像素的直方圖」成為單次呼叫操作的關鍵 —— 當應用程式想要刻畫某個已偵測區域的紋理特性，又不必自行逐一走訪像素時，這是常見的模式。</p>
+<figure class="align-default" id="id1">
+<img alt="一個以一排長條繪製的灰階直方圖，橫跨 0 到 255 的亮度範圍。此分布有兩個峰 —— 一個較小的暗峰與一個較大的亮峰 —— 中間以明顯的谷分隔。圖上疊加了三條垂直線：位於谷中的 Otsu 閾值、偏向較大亮峰的平均值，以及更靠右、累積像素數達到一半之處的中位數。" src="../../../../_images/histogram-with-overlays.svg" />
+<figcaption>
+<p><span class="caption-text">一個疊加了三項摘要測量的灰階直方圖：Otsu 閾值（最能將暗、亮兩群分開的分界點）、平均值，以及中位數。每一項測量對同一個分布所表達的意義各不相同。</span><a class="headerlink" href="#id1" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="statistics">
+<h2><span class="section-number">5.18.3. </span>統計量<a class="headerlink" href="#statistics" title="連結到這個標頭">¶</a></h2>
+<p>直方圖描述的是每個值出現的頻繁程度；「統計量」則是由它推導出的數值摘要。<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_statistics" title="image.Image.get_statistics"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_statistics()</span></code></a> 回傳的 <code class="xref py py-class docutils literal notranslate"><span class="pre">statistics</span></code> 物件帶有一組標準的統計量：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">mean</span></code> —— 像素值的算術平均。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">median</span></code> —— 有一半像素低於此值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code> —— 最常見的單一值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stdev</span></code> —— 標準差，用以衡量環繞平均值的離散程度。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min</span></code> 與 <code class="docutils literal notranslate"><span class="pre">max</span></code> —— 影像中存在的最亮與最暗像素值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lq</span></code> 與 <code class="docutils literal notranslate"><span class="pre">uq</span></code> —— 下四分位數與上四分位數的分界值。</p></li>
+</ul>
+<p>對 RGB565 影像而言，各通道形式（<code class="docutils literal notranslate"><span class="pre">l_mean</span></code>、<code class="docutils literal notranslate"><span class="pre">a_median</span></code>、<code class="docutils literal notranslate"><span class="pre">b_mode</span></code> 等等）會逐一通道提供相同的測量結果。</p>
+<p>這些數字大多會在特定情境下用到。<code class="docutils literal notranslate"><span class="pre">mean</span></code> 與 <code class="docutils literal notranslate"><span class="pre">stdev</span></code> 合在一起可提供雜訊估計：本應均勻的場景其 stdev 很小，而雜訊較大的感測器會使同一場景的 stdev 變大。<code class="docutils literal notranslate"><span class="pre">min</span></code> 與 <code class="docutils literal notranslate"><span class="pre">max</span></code> 給出影像的「對比」：兩者越接近，場景越平淡；兩者相差越大，演算法可運用的動態範圍就越大。當分布有離群值時，<code class="docutils literal notranslate"><span class="pre">median</span></code> 是穩健的中心（少數幾個極亮的像素不會像拉動平均值那樣拉動中位數）。<code class="docutils literal notranslate"><span class="pre">mode</span></code> 是最常見的單一值，對於背景占據大多數像素的影像，可用來找出其背景亮度。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_statistics" title="image.Image.get_statistics"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_statistics()</span></code></a> 會在內部執行一次直方圖計算，然後加以概括；傳入與先前所計算直方圖相同的 <code class="docutils literal notranslate"><span class="pre">thresholds</span></code> 與 <code class="docutils literal notranslate"><span class="pre">roi</span></code> 引數，便會針對同一組像素產生統計量。</p>
+</section>
+<section id="percentiles-and-cdf-lookups">
+<h2><span class="section-number">5.18.4. </span>百分位數與 CDF 查詢<a class="headerlink" href="#percentiles-and-cdf-lookups" title="連結到這個標頭">¶</a></h2>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">histogram</span></code> 物件公開了一個 <a class="reference internal" href="../../../../library/omv.image.Histogram.html#image.histogram.get_percentile" title="image.histogram.get_percentile"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_percentile()</span></code></a> 方法，可將一個比例轉換成像素值 —— 即所要求比例的像素低於此值。<code class="docutils literal notranslate"><span class="pre">h.get_percentile(0.5)</span></code> 即為中位數；<code class="docutils literal notranslate"><span class="pre">h.get_percentile(0.05)</span></code> 與 <code class="docutils literal notranslate"><span class="pre">h.get_percentile(0.95)</span></code> 合在一起，可給出一組忽略最低與最高 5% 離群值的穩健最小／最大值。</p>
+<p>當應用程式想要刻畫像素值的「範圍」，又不希望讓少數零星的過亮或過暗像素扭曲結果時，便會使用這種形式。由第 5 與第 95 百分位數得到的穩健最小／最大值，也是對比拉伸（contrast-stretching）運算的天然輸入 —— 也就是色調校正頁面所涵蓋的逐像素重新映射。</p>
+</section>
+<section id="otsu-s-method">
+<h2><span class="section-number">5.18.5. </span>Otsu 法<a class="headerlink" href="#otsu-s-method" title="連結到這個標頭">¶</a></h2>
+<p>直方圖還能回答另一個值得單獨提出的問題：給定一張像素分裂為「暗」群與「亮」群的影像，兩者之間的分界點在哪裡？閾值頁面已經以其結果為這個機制命名 —— 一個應用程式可交給 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.binary" title="image.Image.binary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">binary()</span></code></a> 使用的單一全域閾值 —— 但把「如何求得」這部分留待後述。求法即為 <em>Otsu 法</em>，它就存在於直方圖之上。</p>
+<p>其直覺如下：具有清晰前景與背景的影像，其亮度直方圖中會有「兩」個群，中間隔著一個谷。適合進行閾值化的位置就在谷底 —— 也就是兩群分離得最開的那個值。Otsu 法會搜尋每一個可能的分界點，並選出群內變異數最小的那一個（這等同於說群間變異數最大），其結果便是針對該特定影像分布的最佳二值分割。</p>
+<p><code class="xref py py-class docutils literal notranslate"><span class="pre">histogram</span></code> 物件透過 <code class="docutils literal notranslate"><span class="pre">get_threshold</span></code> 公開 Otsu 法：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">h</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">get_histogram</span><span class="p">()</span>
+</span><span data-line="2"><span class="n">t</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">get_threshold</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>回傳的 <code class="xref py py-class docutils literal notranslate"><span class="pre">threshold</span></code> 物件具有 <code class="docutils literal notranslate"><span class="pre">value</span></code> （灰階用）或 <code class="docutils literal notranslate"><span class="pre">l_value</span></code> / <code class="docutils literal notranslate"><span class="pre">a_value</span></code> / <code class="docutils literal notranslate"><span class="pre">b_value</span></code> （彩色用）屬性，攜帶所選出的分界值。將此結果直接回饋給 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.binary" title="image.Image.binary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">binary()</span></code></a>，便可得到一個由影像本身決定分界值的自我調校全域閾值：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">binary</span><span class="p">([(</span><span class="n">t</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="mi">255</span><span class="p">)])</span>
+</span></pre></div>
+</div>
+<p>這種模式並未解決以濾波器為基礎的自適應閾值所解決的不均勻照明問題；它所解決的是當全域閾值化本就是正確做法時，「我該以什麼值來切分？」這個問題。對於前景／背景區分明確的場景而言，Otsu 所選出的值通常與人眼所選的值相差不到幾個單位。</p>
+</section>
+<section id="computing-on-a-difference-image">
+<h2><span class="section-number">5.18.6. </span>在差異影像上進行計算<a class="headerlink" href="#computing-on-a-difference-image" title="連結到這個標頭">¶</a></h2>
+<p>關於 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_histogram" title="image.Image.get_histogram"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_histogram()</span></code></a> 與 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_statistics" title="image.Image.get_statistics"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_statistics()</span></code></a> 有一個實用的細節：兩者都接受一個 <code class="docutils literal notranslate"><span class="pre">difference</span></code> 關鍵字，可傳入另一張 <code class="xref py py-class docutils literal notranslate"><span class="pre">Image</span></code>，並計算來源影像與該影像之間逐像素差異的直方圖（或統計量），「而不」配置一張獨立的差異影像。這是用來詢問「自參考影格以來場景變化了多少？」的省成本做法，無需付出明確呼叫 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.difference" title="image.Image.difference"><code class="xref py py-meth docutils literal notranslate"><span class="pre">difference()</span></code></a> 以產生一張其唯一用途就是被測量的影像之代價。對於持續運行的動態偵測指令碼而言，這樣的節省會逐漸累積。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../filters/standard-kernels.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">5.17. </span>標準卷積核目錄</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="tonal-corrections.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">5.19. </span>色調校正</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.13. 線性與鄰域濾波器 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="5.14. 高斯平滑化與邊緣" href="gaussian-and-edges.html" /><link rel="prev" title="5.12. 二值閾值處理" href="../thresholding/binary-method.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/filters/linear-neighborhood.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/filters/linear-neighborhood.html"/>
+  <meta property="og:title" content="5.13. 線性與鄰域濾波器"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/image/filters/linear-neighborhood.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/image/filters/linear-neighborhood.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/image/filters/linear-neighborhood.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/image/filters/linear-neighborhood.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/image/filters/linear-neighborhood.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/image/filters/linear-neighborhood.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/image/filters/linear-neighborhood.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/image/filters/linear-neighborhood.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/image/filters/linear-neighborhood.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/image/filters/linear-neighborhood.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/image/filters/linear-neighborhood.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/image/filters/linear-neighborhood.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/image/filters/linear-neighborhood.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/image/filters/linear-neighborhood.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/image/filters/linear-neighborhood.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/image/filters/linear-neighborhood.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/image/filters/linear-neighborhood.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/image/filters/linear-neighborhood.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/image/filters/linear-neighborhood.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/image/filters/linear-neighborhood.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">5. &#24433;&#20687;&#34389;&#29702;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">5.1. Image &#29289;&#20214;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">5.2. &#24231;&#27161;&#33287;&#21312;&#22495;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">5.3. &#20687;&#32032;&#26684;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">5.4. &#35712;&#21462;&#33287;&#23531;&#20837;&#20687;&#32032;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">5.5. &#21312;&#22495;&#33287;&#36974;&#32617;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/shapes-and-text.html">5.6. &#32362;&#35069;&#24418;&#29376;&#33287;&#25991;&#23383;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/image-composition.html">5.7. &#21512;&#25104;&#24433;&#20687;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/flood-fill-and-detection-glyphs.html">5.8. &#28459;&#27700;&#22635;&#20805;&#33287;&#20597;&#28204;&#22294;&#31034;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">5.9. &#31639;&#34899;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">5.10. &#20301;&#20803;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">5.11. &#24433;&#26684;&#24046;&#20998;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">5.12. &#20108;&#20540;&#38334;&#20540;&#34389;&#29702;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.13. &#32218;&#24615;&#33287;&#37168;&#22495;&#28670;&#27874;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gaussian-and-edges.html">5.14. &#39640;&#26031;&#24179;&#28369;&#21270;&#33287;&#37002;&#32227;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="morphology.html">5.15. &#24418;&#24907;&#23416;&#36939;&#31639;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="custom-kernels.html">5.16. &#33258;&#35330;&#21367;&#31309;&#26680;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standard-kernels.html">5.17. &#27161;&#28310;&#21367;&#31309;&#26680;&#30446;&#37636;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/histograms-and-statistics.html">5.18. &#30452;&#26041;&#22294;&#33287;&#32113;&#35336;&#37327;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/tonal-corrections.html">5.19. &#33394;&#35519;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/regression-and-similarity.html">5.20. &#36852;&#27512;&#33287;&#30456;&#20284;&#24230;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">5.21. &#32302;&#25918;&#12289;&#32763;&#36681;&#33287;&#35009;&#20999;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">5.22. &#37857;&#38957;&#33287;&#36879;&#35222;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">5.23. &#36879;&#35222;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">5.24. &#26997;&#24231;&#27161;&#36681;&#25563;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">5.25. &#23563;&#25214;&#33394;&#22602;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">5.26. &#23563;&#25214;&#30452;&#32218;&#33287;&#32218;&#27573;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">5.27. &#23563;&#25214;&#22291;&#24418;&#33287;&#30697;&#24418;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">5.28. QR code &#33287; AprilTag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">5.29. &#26781;&#30908;&#33287; Data Matrix &#30908;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">5.30. &#31684;&#26412;&#27604;&#23565;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">5.31. &#20301;&#31227;&#27604;&#23565;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">5.32. &#20786;&#23384;&#33287;&#22739;&#32302;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">5.33. ImageIO &#20018;&#27969;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.34. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#the-kernel-size">5.13.1. &#26680;&#24515;&#22823;&#23567;</a></li>
+<li><a class="reference internal" href="#the-mean-filter">5.13.2. &#22343;&#20540;&#28670;&#27874;&#22120;</a></li>
+<li><a class="reference internal" href="#median-mode-midpoint">5.13.3. &#20013;&#20301;&#25976;&#12289;&#30526;&#25976;&#12289;&#20013;&#40670;</a></li>
+<li><a class="reference internal" href="#bilateral-the-edge-preserving-version">5.13.4. &#38617;&#37002;&#28670;&#27874;&#22120;&#65306;&#20445;&#30041;&#37002;&#32227;&#30340;&#29256;&#26412;</a></li>
+<li><a class="reference internal" href="#adaptive-thresholding">5.13.5. &#33258;&#36969;&#25033;&#38334;&#20540;&#21270;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/image/filters/linear-neighborhood.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">5. </span>影像處理</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">5.13. </span>線性與鄰域濾波器</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="linear-and-neighbourhood-filters">
+<h1><span class="section-number">5.13. </span>線性與鄰域濾波器<a class="headerlink" href="#linear-and-neighbourhood-filters" title="連結到這個標頭">¶</a></h1>
+<p>本章稍早的像素運算將兩張影像逐點結合在一起。<em>濾波器</em> 則以不同的方式做類似的工作：它根據對應位置周圍一小塊 <em>鄰域</em> 的輸入像素，計算出每個輸出像素的值。<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> 處的輸出是以 <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> 為中心的小方框內輸入像素的某種統計量，例如平均值、中位數或最常出現的值。</p>
+<p>這種觀念上的小小轉變——從一次處理一個像素，轉為一次處理一整個像素視窗——正是讓一整族實用運算得以運作的關鍵。在小視窗上取簡單平均可平滑掉感測器雜訊。在相同視窗上取中位數則能去除單一像素的斑點，而不像取平均那樣大幅軟化邊緣。雙邊平均不會跨越強烈對比邊界進行平滑，因此能在清理物體內部紋理的同時保留物體的邊緣。鄰域是運算的單位；統計量的選擇則決定了濾波器的功能。</p>
+<section id="the-kernel-size">
+<h2><span class="section-number">5.13.1. </span>核心大小<a class="headerlink" href="#the-kernel-size" title="連結到這個標頭">¶</a></h2>
+<p>每個鄰域濾波器都接受一個 <code class="docutils literal notranslate"><span class="pre">size</span></code> 參數，用來設定視窗的 <em>半徑</em>（以像素為單位）。視窗本身為正方形，每邊涵蓋 <code class="docutils literal notranslate"><span class="pre">(2</span> <span class="pre">*</span> <span class="pre">size</span> <span class="pre">+</span> <span class="pre">1)</span></code> 個像素——因此 <code class="docutils literal notranslate"><span class="pre">size=1</span></code> 代表 3×3 的鄰域，<code class="docutils literal notranslate"><span class="pre">size=2</span></code> 代表 5×5，<code class="docutils literal notranslate"><span class="pre">size=3</span></code> 代表 7×7，依此類推。</p>
+<figure class="align-default" id="id1">
+<img alt="一個小型影像格網，其中以高亮標示出 一個 3×3 的子格網，代表濾波器的鄰域。 一個箭頭顯示鄰域向右滑動一個像素。 第二個箭頭顯示它在一列結束時向下滑動 到下一列。每個位置的輸出像素繪製於 鄰域下方，並附一小段說明，指出輸出是 輸入鄰域的某種統計量。" src="../../../../_images/convolution-kernel.svg" />
+<figcaption>
+<p><span class="caption-text">鄰域一次一個像素地滑過整張影像，從左上到右下。每個輸出像素都是將濾波器的統計量套用到以其為中心的輸入鄰域所得到的結果。</span><a class="headerlink" href="#id1" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+<p>較大的 size 代表較大的鄰域，也就代表更平滑（或更強烈）的濾波。成本隨視窗面積增長，因此 <code class="docutils literal notranslate"><span class="pre">size=3</span></code> 濾波器每個像素的工作量約為 <code class="docutils literal notranslate"><span class="pre">size=1</span></code> 濾波器的九倍。大多數清理工作的實用預設值是 <code class="docutils literal notranslate"><span class="pre">size=1</span></code> 或 <code class="docutils literal notranslate"><span class="pre">size=2</span></code>；只有在小鄰域不足以抑制應用程式想抑制的特徵時，才需要動用較大的 size。</p>
+</section>
+<section id="the-mean-filter">
+<h2><span class="section-number">5.13.2. </span>均值濾波器<a class="headerlink" href="#the-mean-filter" title="連結到這個標頭">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> 將每個像素替換為其鄰域的 <em>算術平均值</em>。其結果會在視窗大小範圍內平滑掉像素之間的變化，這使它成為抑制感測器雜訊斑點最便宜的方法：高頻變化被平均掉，低頻內容則得以保留。</p>
+<p>代價是邊緣與其他銳利特徵也會一併被平均。在濾波前寬度為一像素的明亮邊緣，經過 <code class="docutils literal notranslate"><span class="pre">size=1</span></code> 的均值濾波後會變成兩到三像素寬，並在兩側出現亮度漸減的斜坡。對於紋理稀少的影像（乾淨的牆面、彩色標記筆的內部）做純粹的降噪時，這樣的取捨是可以接受的。但對於邊緣很重要的繁雜場景，下列其中一種濾波器通常更為合適。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>        <span class="c1"># 3x3 box average -- fast, gentle smoothing</span>
+</span><span data-line="2"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>        <span class="c1"># 5x5 box average -- stronger, slower</span>
+</span></pre></div>
+</div>
+</section>
+<section id="median-mode-midpoint">
+<h2><span class="section-number">5.13.3. </span>中位數、眾數、中點<a class="headerlink" href="#median-mode-midpoint" title="連結到這個標頭">¶</a></h2>
+<p>另外三種統計鄰域濾波器以更能抵抗離群值的統計量，取代了簡單的算術平均。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a> 回傳鄰域的 <em>中位數</em>——也就是視窗像素排序後位於中間的那個值。視窗中單一極亮或極暗的像素無法拉動中位數；它只會成為被捨棄的極端值之一。實際效果是中位數濾波能去除單一像素斑點與椒鹽雜訊，而不像 <code class="docutils literal notranslate"><span class="pre">mean</span></code> 那樣軟化邊緣。代價是每個像素需要更多運算——對視窗排序比取平均慢——而且其結果並非嚴格意義上的平均值，這在後續的數學運算中有時會造成影響。</p>
+<p><code class="docutils literal notranslate"><span class="pre">percentile</span></code> 參數（預設為 <code class="docutils literal notranslate"><span class="pre">0.5</span></code>）可將所選值偏離嚴格的中位數。<code class="docutils literal notranslate"><span class="pre">percentile=0.0</span></code> 回傳鄰域的最小值，<code class="docutils literal notranslate"><span class="pre">percentile=1.0</span></code> 回傳最大值；中間值則在排序後的視窗中按比例選取兩者之間的值。這讓 <code class="docutils literal notranslate"><span class="pre">median</span></code> 能在不失去順序統計量抗離群值能力的前提下，強調鄰域中較暗或較亮的部分。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mode" title="image.Image.mode"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mode()</span></code></a> 回傳鄰域中 <em>最常出現</em> 的值。當雜訊模型為「大多數像素是正確的，少數被不同程度地破壞」時很有用，此時正確答案就是出現最頻繁的那個值——而當被破壞的值堆積在排序視窗的某一側時，中位數可能會錯過它。</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.midpoint" title="image.Image.midpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">midpoint()</span></code></a> 回傳鄰域 <em>最小值與最大值的加權組合</em>——<code class="docutils literal notranslate"><span class="pre">bias=0.5</span></code> 給出兩者之間的中點，<code class="docutils literal notranslate"><span class="pre">bias=0.0</span></code> 給出最小值，<code class="docutils literal notranslate"><span class="pre">bias=1.0</span></code> 給出最大值。它不如其他濾波器常用，但當目標明確是要擷取較暗或較亮的特徵時，值得了解。</p>
+</section>
+<section id="bilateral-the-edge-preserving-version">
+<h2><span class="section-number">5.13.4. </span>雙邊濾波器：保留邊緣的版本<a class="headerlink" href="#bilateral-the-edge-preserving-version" title="連結到這個標頭">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.bilateral" title="image.Image.bilateral"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bilateral()</span></code></a> 是最值得徹底理解的鄰域濾波器。它能產生 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> 的平滑效果，但多了一個限制：鄰域像素與中心像素 <em>差異</em> 愈大，它在平均中所佔的權重就愈小。其結果能平滑每個均勻區域的內部，而不會跨越分隔這些區域的邊緣產生暈染，這正是大多數應用程式真正想要的效果。</p>
+<p>有兩個參數控制濾波器折減像素權重的強度：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">color_sigma</span></code> 決定 <em>色彩差異</em> 如何影響權重。值愈小，濾波器對折減與中心差異較大像素的權重就愈嚴格。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">space_sigma</span></code> 決定 <em>空間距離</em> 如何影響權重。值愈小，靠近中心的像素獲得的權重就愈大。</p></li>
+</ul>
+<p>預設值（<code class="docutils literal notranslate"><span class="pre">color_sigma=0.1</span></code>、<code class="docutils literal notranslate"><span class="pre">space_sigma=1.0</span></code>）是合理的起點；調整它們通常只需在一個樣本影格上執行濾波器，並反覆調整到邊緣清晰、內部乾淨為止。</p>
+<p>雙邊濾波器比 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a> 更耗費資源，更遠比 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> 昂貴，因此 <em>只</em> 在應用程式確實需要保留邊緣的行為時，才值得動用它。</p>
+</section>
+<section id="adaptive-thresholding">
+<h2><span class="section-number">5.13.5. </span>自適應閾值化<a class="headerlink" href="#adaptive-thresholding" title="連結到這個標頭">¶</a></h2>
+<p>均值、中位數、眾數與中點濾波器都帶有同一對關鍵字引數，可將其輸出轉變為二值閾值：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> 將濾波器切換為閾值化模式。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">offset=N</span></code> 在比較之前，將區域分界值偏移 <code class="docutils literal notranslate"><span class="pre">N</span></code> 個單位。</p></li>
+</ul>
+<p>其機制直接建立在濾波器的一般行為之上。沒有 <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> 時，濾波器會在鄰域上計算統計量，並將該統計量寫入輸出像素。有 <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> 時，濾波器會計算相同的統計量，然後將相同位置的 <em>來源</em> 像素與該統計量加上偏移量進行比較，若來源較大則寫入該格式的最大值，否則寫入零。</p>
+<p>其結果是一張二值影像，其分界值會 <em>隨著整個影格中區域亮度的變化而移動</em>。明亮區域得到較高的分界值，昏暗區域得到較低的分界值，而一個在區域上比鄰近像素更亮的前景像素，無論位於明亮區域或昏暗區域都能匹配——這正是單一全域閾值在光照不均的影像上無法產生的行為。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">offset</span></code> 參數正是應用程式控制測試 <em>嚴格程度</em> 的地方。較小的正偏移量要求來源像素必須明顯比鄰近像素更亮才算匹配，這能以漏掉微弱前景為代價來抑制感測器雜訊造成的誤判。較小的負偏移量則能捕捉到微弱前景，但代價是讓部分雜訊通過。如何取捨取決於管線的其餘部分將如何處理這份二值輸出。</p>
+<figure class="align-default" id="id2">
+<img alt="一排三個影像面板。第一個是一張帶有 亮度漸層的輸入灰階影格，前景標記以 均勻的暗度散佈其上。第二個面板顯示 套用全域閾值的結果：明亮側的前景被 正確分類，但整個暗側都被判讀為前景， 因為頁面與前景都低於分界值。第三個 面板顯示對相同輸入套用自適應閾值的 結果：整張影格的前景都被正確分類。" src="../../../../_images/adaptive-threshold.svg" />
+<figcaption>
+<p><span class="caption-text">在不均勻的光照下，單一全域閾值無法描述每個位置的前景。以 <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> 執行的鄰域濾波器會產生一個隨區域亮度移動的分界值，並在整張影格上正確地將前景分類。</span><a class="headerlink" href="#id2" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+<p>整個濾波器族都能執行自適應閾值，因此挑選 <em>正確</em> 的濾波器很重要：<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> 提供最便宜的自適應閾值；當輸入帶有應在計算區域分界值前先剔除的椒鹽雜訊時，則使用 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a>。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../thresholding/binary-method.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">5.12. </span>二值閾值處理</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="gaussian-and-edges.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">5.14. </span>高斯平滑化與邊緣</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

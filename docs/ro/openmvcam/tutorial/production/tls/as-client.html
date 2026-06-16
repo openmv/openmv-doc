@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ro" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>14.4.5. Verificarea unui server public (camera ca client) - OpenMV MicroPython 1.28 documentație</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Căutare" href="../../../../search.html" /><link rel="next" title="14.4.6. Operațiuni: chei, expirare și depanare" href="operations.html" /><link rel="prev" title="14.4.4. Certificate semnate de CA (de încredere publică)" href="ca-signed.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/production/tls/as-client.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/production/tls/as-client.html"/>
+  <meta property="og:title" content="14.4.5. Verificarea unui server public (camera ca client)"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/production/tls/as-client.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/production/tls/as-client.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Căutare" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/production/tls/as-client.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/production/tls/as-client.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/production/tls/as-client.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/production/tls/as-client.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/production/tls/as-client.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/production/tls/as-client.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/production/tls/as-client.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/production/tls/as-client.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/production/tls/as-client.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/production/tls/as-client.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/production/tls/as-client.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/production/tls/as-client.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/production/tls/as-client.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/production/tls/as-client.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/production/tls/as-client.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/production/tls/as-client.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/production/tls/as-client.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/production/tls/as-client.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/production/tls/as-client.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/production/tls/as-client.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Pornire rapid&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Prezentare general&#259; Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Controlul hardware-ului</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Senzori de viziune</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Procesarea imaginilor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#206;nv&#259;&#539;area automat&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. Re&#539;elistic&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Servere web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Protocolul de gazd&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Instrumente</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">14. Produc&#539;ie</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../firmware/index.html">14.1. Dezvoltarea firmware-ului</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../shipping/index.html">14.2. Livrarea aplica&#539;iei</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hardening/index.html">14.3. Consolidare pentru produc&#539;ie</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">14.4. Lucrul cu certificate TLS</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="concepts.html">14.4.1. Concepte: &#238;ncredere, chei &#537;i formatul fi&#537;ierelor</a></li>
+<li class="toctree-l4"><a class="reference internal" href="prerequisites.html">14.4.2. Cerin&#539;e preliminare: OpenSSL &#537;i ceasul</a></li>
+<li class="toctree-l4"><a class="reference internal" href="self-signed.html">14.4.3. Certificate auto-semnate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="ca-signed.html">14.4.4. Certificate semnate de CA (de &#238;ncredere public&#259;)</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">14.4.5. Verificarea unui server public (camera ca client)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="operations.html">14.4.6. Opera&#539;iuni: chei, expirare &#537;i depanare</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">14.5. Recapitulare</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Biblioteci</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Pl&#259;ci</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shield-uri</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Senzori</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Limbaj</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Componente interne</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Istoric modific&#259;ri</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licen&#539;&#259;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/production/tls/as-client.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Tutorial OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">14. </span>Producție</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">14.4. </span>Lucrul cu certificate TLS</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="4" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">14.4.5. </span>Verificarea unui server public (camera ca client)</strong>
+        <meta itemprop="position" content="5" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/production/tls/as-client.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/production/tls/as-client.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/production/tls/as-client.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/tls/as-client.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/tls/as-client.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/tls/as-client.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="verifying-a-public-server-camera-as-client">
+<h1><span class="section-number">14.4.5. </span>Verificarea unui server public (camera ca client)<a class="headerlink" href="#verifying-a-public-server-camera-as-client" title="Link to this heading">¶</a></h1>
+<p>Tot ce s-a spus pe pagina anterioară despre un client care „are deja rădăcina” este valabil pentru browsere, telefoane și PC-uri – <strong>nu</strong> este valabil pentru cameră. Modulul <a class="reference internal" href="../../../../library/ssl.html#module-ssl" title="ssl: TLS/SSL wrapper for socket objects"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ssl</span></code></a> din MicroPython nu include niciun magazin de încredere încorporat: o cameră proaspăt programată nu are încredere în nicio autoritate de certificare (CA), iar valoarea implicită (<a class="reference external" href="https://docs.python.org/3/library/ssl.html#ssl.CERT_NONE" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">ssl.CERT_NONE</span></code></a>) nu verifică nimic și este complet expusă la un atac de tip man-in-the-middle. Așadar, atunci când camera este <em>clientul</em> care se conectează către un server TLS public (un API HTTPS, un broker MQTT, …) și vrei ca aceasta să verifice cu adevărat acel server, trebuie să furnizezi tu însuți ancora de încredere.</p>
+<p>Mecanismul este identic cu cel din exemplul de client autosemnat de pe <a class="reference internal" href="self-signed.html"><span class="doc">Certificate auto-semnate</span></a>; singura diferență este că fișierul pe care îl încarci este un certificat CA real în loc de certificatul propriu al partenerului:</p>
+<ol class="arabic">
+<li><p><strong>Obține certificatul CA care ancorează lanțul serverului.</strong> „Ancorează” înseamnă certificatul aflat la (sau aproape de) vârful lanțului serverului pe care îl alegi ca punct de plecare al încrederii. Un server TLS își trimite certificatul de tip leaf și de obicei intermediarul (intermediarii); nu își trimite niciodată rădăcina. Trebuie să obții tu însuți acea ancoră de încredere, <em>independent de server</em> – a avea pur și simplu încredere în orice îți oferă un server ar anula întregul scop al verificării.</p>
+<p>Mai întâi află ce CA a emis de fapt certificatul serverului. De exemplu, pentru <code class="docutils literal notranslate"><span class="pre">openmv.io</span></code></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">openssl</span> <span class="n">s_client</span> <span class="o">-</span><span class="n">connect</span> <span class="n">openmv</span><span class="o">.</span><span class="n">io</span><span class="p">:</span><span class="mi">443</span> <span class="o">-</span><span class="n">showcerts</span> <span class="o">&lt;</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span>
+</span></pre></div>
+</div>
+<p>Blocul <code class="docutils literal notranslate"><span class="pre">Certificate</span> <span class="pre">chain</span></code> listează fiecare certificat cu subiectul său (<code class="docutils literal notranslate"><span class="pre">s:</span></code>) și emitentul (<code class="docutils literal notranslate"><span class="pre">i:</span></code>); versiunile mai noi de OpenSSL afișează și liniile <code class="docutils literal notranslate"><span class="pre">a:</span></code> (tipul cheii) și <code class="docutils literal notranslate"><span class="pre">v:</span></code> (valabilitatea), pe care le poți ignora aici:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">Certificate</span> <span class="n">chain</span>
+</span><span data-line="2"> <span class="mi">0</span> <span class="n">s</span><span class="p">:</span><span class="n">CN</span><span class="o">=</span><span class="n">openmv</span><span class="o">.</span><span class="n">io</span>
+</span><span data-line="3">   <span class="n">i</span><span class="p">:</span><span class="n">C</span><span class="o">=</span><span class="n">US</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="n">Let</span><span class="s1">&#39;s Encrypt, CN=E8</span>
+</span><span data-line="4"> <span class="mi">1</span> <span class="n">s</span><span class="p">:</span><span class="n">C</span><span class="o">=</span><span class="n">US</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="n">Let</span><span class="s1">&#39;s Encrypt, CN=E8</span>
+</span><span data-line="5">   <span class="n">i</span><span class="p">:</span><span class="n">C</span><span class="o">=</span><span class="n">US</span><span class="p">,</span> <span class="n">O</span><span class="o">=</span><span class="n">Internet</span> <span class="n">Security</span> <span class="n">Research</span> <span class="n">Group</span><span class="p">,</span> <span class="n">CN</span><span class="o">=</span><span class="n">ISRG</span> <span class="n">Root</span> <span class="n">X1</span>
+</span></pre></div>
+</div>
+<p>Intrarea 0 este leaf-ul (<code class="docutils literal notranslate"><span class="pre">openmv.io</span></code>), emis de intermediarul <code class="docutils literal notranslate"><span class="pre">E8</span></code>. Intrarea 1 este acel intermediar, emis de rădăcina <code class="docutils literal notranslate"><span class="pre">ISRG</span> <span class="pre">Root</span> <span class="pre">X1</span></code>. Emitentul (<code class="docutils literal notranslate"><span class="pre">i:</span></code>) al intrării de cel mai sus identifică rădăcina – aici <code class="docutils literal notranslate"><span class="pre">ISRG</span> <span class="pre">Root</span> <span class="pre">X1</span></code>. (Intermediarul este <code class="docutils literal notranslate"><span class="pre">E8</span></code> și nu <code class="docutils literal notranslate"><span class="pre">R10</span></code> / <code class="docutils literal notranslate"><span class="pre">R11</span></code> pe care poate le-ai văzut în altă parte, deoarece <code class="docutils literal notranslate"><span class="pre">openmv.io</span></code> folosește un certificat ECDSA; Let’s Encrypt semnează leaf-urile ECDSA cu intermediarii săi din seria <code class="docutils literal notranslate"><span class="pre">E</span></code> și leaf-urile RSA cu cei din seria <code class="docutils literal notranslate"><span class="pre">R</span></code>. Ambele se leagă în lanț până la <code class="docutils literal notranslate"><span class="pre">ISRG</span> <span class="pre">Root</span> <span class="pre">X1</span></code>.)</p>
+<p>OpenSSL afișează și liniile <code class="docutils literal notranslate"><span class="pre">depth=</span></code> și poate raporta rădăcina cu <code class="docutils literal notranslate"><span class="pre">Verification:</span> <span class="pre">OK</span></code>. Asta se întâmplă doar pentru că <em>PC-ul tău</em> are deja încredere în <code class="docutils literal notranslate"><span class="pre">ISRG</span> <span class="pre">Root</span> <span class="pre">X1</span></code> – serverul <strong>nu</strong> a trimis-o (un server nu își trimite niciodată rădăcina), iar camera, neavând niciun magazin de încredere, nu o va avea nici ea. Exact de aceea trebuie să o furnizezi.</p>
+<p>Descarcă <em>acea</em> rădăcină din rădăcinile publicate chiar de CA. Let’s Encrypt le catalogează pe toate ale sale pe <a class="reference external" href="https://letsencrypt.org/certs/">pagina cu certificate Let’s Encrypt</a>; fișierul direct pentru ISRG Root X1 este <a class="reference external" href="https://letsencrypt.org/certs/isrgrootx1.pem">isrgrootx1.pem</a> (îl oferă și preconvertit ca <a class="reference external" href="https://letsencrypt.org/certs/isrgrootx1.der">isrgrootx1.der</a>). Alte CA-uri își publică rădăcinile pe o pagină similară de tip „root certificates” / „repository”; setul public canonic este <a class="reference external" href="https://www.ccadb.org/">programul Mozilla CA (CCADB)</a>. Confirmă că ai descărcat fișierul corect comparând amprenta sa cu valoarea publicată de CA (adaugă <code class="docutils literal notranslate"><span class="pre">-inform</span> <span class="pre">DER</span></code> dacă ai descărcat fișierul <code class="docutils literal notranslate"><span class="pre">.der</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">openssl</span> <span class="n">x509</span> <span class="o">-</span><span class="ow">in</span> <span class="n">isrgrootx1</span><span class="o">.</span><span class="n">pem</span> <span class="o">-</span><span class="n">noout</span> <span class="o">-</span><span class="n">subject</span> <span class="o">-</span><span class="n">fingerprint</span> <span class="o">-</span><span class="n">sha256</span>
+</span></pre></div>
+</div>
+<p>Dacă preferi să nu urmărești o rădăcină, poți în schimb să copiezi <strong>intermediarul</strong> direct din ieșirea <code class="docutils literal notranslate"><span class="pre">-showcerts</span></code> (al doilea bloc <code class="docutils literal notranslate"><span class="pre">-----BEGIN</span> <span class="pre">CERTIFICATE-----</span></code>), să ai încredere în el și să accepți că trebuie să-l reîmprospătezi de fiecare dată când CA-ul rotește intermediarul – mult mai des decât rădăcina (vezi compromisul de mai jos).</p>
+</li>
+<li><p><strong>Convertește-l în DER</strong>, exact ca înainte:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">openssl</span> <span class="n">x509</span> <span class="o">-</span><span class="ow">in</span> <span class="n">isrgrootx1</span><span class="o">.</span><span class="n">pem</span> <span class="o">-</span><span class="n">outform</span> <span class="n">DER</span> <span class="o">-</span><span class="n">out</span> <span class="n">ca</span><span class="o">.</span><span class="n">der</span>
+</span></pre></div>
+</div>
+</li>
+<li><p><strong>Copiază</strong> <code class="docutils literal notranslate"><span class="pre">ca.der</span></code> pe cameră (sistemul de fișiere sau ROMFS) și încarcă-l ca ancoră de încredere:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">ntptime</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">ntptime</span><span class="o">.</span><span class="n">settime</span><span class="p">()</span>                  <span class="c1"># validity check needs the clock</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">addr</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="s2">&quot;api.example.com&quot;</span><span class="p">,</span> <span class="mi">443</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="8"><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">()</span>
+</span><span data-line="9"><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="n">ctx</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_TLS_CLIENT</span><span class="p">)</span>
+</span><span data-line="12"><span class="n">ctx</span><span class="o">.</span><span class="n">verify_mode</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">CERT_REQUIRED</span>
+</span><span data-line="13"><span class="n">ctx</span><span class="o">.</span><span class="n">load_verify_locations</span><span class="p">(</span><span class="n">cafile</span><span class="o">=</span><span class="s2">&quot;ca.der&quot;</span><span class="p">)</span>
+</span><span data-line="14"><span class="n">ssock</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">server_hostname</span><span class="o">=</span><span class="s2">&quot;api.example.com&quot;</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">server_hostname</span></code> este obligatoriu aici: acesta determină SNI și este numele verificat față de <code class="docutils literal notranslate"><span class="pre">subjectAltName</span></code> din certificatul serverului.</p>
+</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Sfat</p>
+<p><strong>Scurtătură pentru cazul obișnuit.</strong> Let’s Encrypt este cel mai folosit CA public, iar în prezent atât certificatele sale RSA cât și cele ECDSA se leagă în lanț până la ISRG Root X1 (așa cum arată exemplul <code class="docutils literal notranslate"><span class="pre">openmv.io</span></code> de mai sus). Dacă serverele cu care vorbește camera ta folosesc Let’s Encrypt, poți sări complet peste inspecție: pune doar <a class="reference external" href="https://letsencrypt.org/certs/isrgrootx1.der">isrgrootx1.der</a> pe cameră și fă <code class="docutils literal notranslate"><span class="pre">load_verify_locations</span></code> pe el.</p>
+<p>Acest lucru <strong>nu</strong> face TLS să funcționeze către <em>orice</em> site. Un server al cărui certificat provine de la un alt CA (DigiCert, Google Trust Services, Amazon, Sectigo, …) tot va eșua la verificare și, deoarece camera are încredere într-un singur certificat DER per <a class="reference internal" href="../../../../library/ssl.html#ssl.SSLContext" title="ssl.SSLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ssl.SSLContext</span></code></a>, nu poți grupa toate rădăcinile așa cum face un browser. În caz de îndoială, identifică CA-ul real al serverului așa cum s-a arătat mai sus și ai încredere în acea rădăcină.</p>
+</div>
+<p>Ce certificat alegi să consideri de încredere este un compromis:</p>
+<ul class="simple">
+<li><p><strong>Rădăcina</strong> (recomandat). Are durată lungă de viață – adesea zeci de ani – așa că <code class="docutils literal notranslate"><span class="pre">ca.der</span></code> se schimbă rar. Necesită ca serverul să-și trimită intermediarul, pentru ca mbedTLS să poată construi calea leaf → intermediar → rădăcina ta de încredere; practic orice server public configurat corect face acest lucru.</p></li>
+<li><p><strong>Intermediarul.</strong> Funcționează de asemenea și continuă să funcționeze chiar dacă un server omite intermediarul, dar intermediarii sunt rotiți mult mai des decât rădăcinile, așa că va trebui să reîmprospătezi <code class="docutils literal notranslate"><span class="pre">ca.der</span></code> mai frecvent.</p></li>
+<li><p><strong>Leaf-ul însuși</strong> (certificate pinning). Cea mai strictă variantă, dar leaf-ul se schimbă la fiecare reînnoire – aproximativ la fiecare 90 de zile pentru Let’s Encrypt – așa că aceasta are sens doar atunci când controlezi și serverul și poți împinge noul pin către fiecare cameră în mod sincronizat. Exact asta face exemplul de client autosemnat.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Notă</p>
+<p><a class="reference internal" href="../../../../library/ssl.html#ssl.SSLContext.load_verify_locations" title="ssl.SSLContext.load_verify_locations"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ssl.SSLContext.load_verify_locations()</span></code></a> acceptă un singur certificat CA codificat în DER, așa că la un moment dat camera are încredere în exact o singură ancoră. Pentru a ajunge la servere aflate sub CA-uri diferite, folosește câte un <a class="reference internal" href="../../../../library/ssl.html#ssl.SSLContext" title="ssl.SSLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ssl.SSLContext</span></code></a> separat pentru fiecare ancoră. Și pentru că acel certificat va expira el însuși la un moment dat sau va fi rotit de CA, tratează-l ca pe orice alt certificat de pe dispozitiv.</p>
+</div>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="ca-signed.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">14.4.4. </span>Certificate semnate de CA (de încredere publică)</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="operations.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">14.4.6. </span>Operațiuni: chei, expirare și depanare</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=c8a2d540"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=055b6fdf"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

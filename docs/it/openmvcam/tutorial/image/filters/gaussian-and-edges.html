@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="it" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.14. Smussamento gaussiano e bordi - Documentazione OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Indice" href="../../../../genindex.html" /><link rel="search" title="Cerca" href="../../../../search.html" /><link rel="next" title="5.15. Operazioni morfologiche" href="morphology.html" /><link rel="prev" title="5.13. Filtri lineari e di vicinato" href="linear-neighborhood.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/filters/gaussian-and-edges.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/filters/gaussian-and-edges.html"/>
+  <meta property="og:title" content="5.14. Smussamento gaussiano e bordi"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/image/filters/gaussian-and-edges.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Cerca" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/image/filters/gaussian-and-edges.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/image/filters/gaussian-and-edges.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/image/filters/gaussian-and-edges.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/image/filters/gaussian-and-edges.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/image/filters/gaussian-and-edges.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/image/filters/gaussian-and-edges.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Guida rapida</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Panoramica di Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Controllo dell&#8217;hardware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Sensori di visione</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">5. Elaborazione delle immagini</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">5.1. L&#8217;oggetto Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">5.2. Coordinate e regioni</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">5.3. Formati dei pixel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">5.4. Lettura e scrittura dei pixel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">5.5. Regioni e maschere</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/shapes-and-text.html">5.6. Disegnare forme e testo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/image-composition.html">5.7. Composizione di immagini</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/flood-fill-and-detection-glyphs.html">5.8. Flood fill e glifi di rilevamento</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">5.9. Operazioni aritmetiche</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">5.10. Operazioni bitwise</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">5.11. Differenza tra frame</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">5.12. Sogliatura binaria</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linear-neighborhood.html">5.13. Filtri lineari e di vicinato</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.14. Smussamento gaussiano e bordi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="morphology.html">5.15. Operazioni morfologiche</a></li>
+<li class="toctree-l3"><a class="reference internal" href="custom-kernels.html">5.16. Kernel di convoluzione personalizzati</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standard-kernels.html">5.17. Un catalogo di kernel standard</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/histograms-and-statistics.html">5.18. Istogrammi e statistiche</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/tonal-corrections.html">5.19. Correzioni tonali</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/regression-and-similarity.html">5.20. Regressione e similarit&#224;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">5.21. Ridimensionamento, ribaltamento e ritaglio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">5.22. Correzione dell&#8217;obiettivo e della prospettiva</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">5.23. Correzione della prospettiva</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">5.24. Trasformazioni polari</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">5.25. Ricerca dei blob</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">5.26. Trovare linee e segmenti</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">5.27. Trovare cerchi e rettangoli</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">5.28. Codici QR e AprilTag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">5.29. Codici a barre e Data Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">5.30. Template matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">5.31. Corrispondenza per spostamento</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">5.32. Salvataggio e compressione</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">5.33. Stream ImageIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.34. Riepilogo</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. Networking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Protocollo host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Strumenti</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produzione</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Librerie</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Schede</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shield</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensori</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Linguaggio</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Aspetti interni</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licenza</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#the-gaussian-filter">5.14.1. Il filtro gaussiano</a></li>
+<li><a class="reference internal" href="#unsharp-masking">5.14.2. Maschera di contrasto (unsharp masking)</a></li>
+<li><a class="reference internal" href="#the-laplacian-filter">5.14.3. Il filtro laplaciano</a></li>
+<li><a class="reference internal" href="#the-find-edges-method">5.14.4. Il metodo find_edges</a></li>
+<li><a class="reference internal" href="#adaptive-thresholding-on-the-gaussian">5.14.5. Soglia adattiva sul gaussiano</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/image/filters/gaussian-and-edges.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Tutorial di OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">5. </span>Elaborazione delle immagini</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">5.14. </span>Smussamento gaussiano e bordi</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/gaussian-and-edges.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/gaussian-and-edges.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/gaussian-and-edges.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/gaussian-and-edges.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/gaussian-and-edges.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/gaussian-and-edges.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="gaussian-smoothing-and-edges">
+<h1><span class="section-number">5.14. </span>Smussamento gaussiano e bordi<a class="headerlink" href="#gaussian-smoothing-and-edges" title="Link to this heading">¶</a></h1>
+<p>Due compiti dominano l’uso delle finestre di vicinato nella visione artificiale classica: smussare in modo pulito le variazioni da pixel a pixel e trovare i bordi dove l’immagine cambia bruscamente. Il filtro gaussiano è lo strumento standard per il primo, i rilevatori basati sul laplaciano lo strumento standard per il secondo, e i due si compongono, perché ogni rilevatore di bordi funziona meglio su un ingresso leggermente smussato.</p>
+<section id="the-gaussian-filter">
+<h2><span class="section-number">5.14.1. </span>Il filtro gaussiano<a class="headerlink" href="#the-gaussian-filter" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.gaussian" title="image.Image.gaussian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gaussian()</span></code></a> è il cugino pesato verso il centro di <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>. Entrambi calcolano una media sul vicinato di ciascun pixel, ma i pesi del gaussiano non sono uniformi: i pixel più vicini al centro del vicinato contano <em>di più</em>, i pixel al bordo del vicinato contano <em>di meno</em>, con i pesi che seguono la familiare curva a campana che dà al filtro il suo nome.</p>
+<p>La pesatura a forma di campana è ciò che rende un filtro gaussiano più morbido di una media a riquadro. Il filtraggio a media può produrre artefatti visibili ai bordi degli oggetti: un taglio netto nella pesatura introduce piccoli pattern di ringing in corrispondenza di transizioni brusche. I pesi del gaussiano, che decrescono in modo regolare, evitano quel ringing e producono un risultato più simile a ciò che una «sfocatura» dovrebbe apparire. Il costo è una maggiore computazione per pixel rispetto al filtro a media, ma non in modo drammatico: il costo per pixel è comunque molto inferiore a quello del filtro bilaterale.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>    <span class="c1"># 3x3 Gaussian -- a clean light blur</span>
+</span><span data-line="2"><span class="n">img</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>    <span class="c1"># 5x5 Gaussian -- stronger smoothing</span>
+</span></pre></div>
+</div>
+<p>Lo smussamento gaussiano è il <em>primo stadio</em> standard di quasi tutte le pipeline di rilevamento dei bordi. I rilevatori di bordi più sotto amplificano tutti il contenuto ad alta frequenza, incluso il rumore del sensore che l’algoritmo in realtà non vuole rilevare. Eseguire prima un leggero gaussiano sopprime quel rumore senza ammorbidire troppo i bordi reali, lasciando al rilevatore di bordi il compito di trovare bordi <em>reali</em> anziché disturbi.</p>
+</section>
+<section id="unsharp-masking">
+<h2><span class="section-number">5.14.2. </span>Maschera di contrasto (unsharp masking)<a class="headerlink" href="#unsharp-masking" title="Link to this heading">¶</a></h2>
+<p>Una copia sfocata in modo gaussiano di un’immagine è la materia prima che la tecnica della <em>maschera di contrasto</em> (unsharp mask) utilizza per la nitidezza classica. Impostare <code class="docutils literal notranslate"><span class="pre">unsharp=True</span></code> sul filtro lo commuta da «produci l’immagine sfocata» a «sottrai l’immagine sfocata dall’originale e aggiungi nuovamente la differenza all’originale»: l’effetto è che i bordi ad alta frequenza vengono amplificati rispetto agli interni regolari.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">unsharp</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>I parametri opzionali <code class="docutils literal notranslate"><span class="pre">mul</span></code> e <code class="docutils literal notranslate"><span class="pre">add</span></code> scalano l’intensità del risultato dell’unsharp; i valori predefiniti (<code class="docutils literal notranslate"><span class="pre">mul=1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">add=0.0</span></code>) producono una nitidezza moderata che non esagera il rumore del sensore.</p>
+</section>
+<section id="the-laplacian-filter">
+<h2><span class="section-number">5.14.3. </span>Il filtro laplaciano<a class="headerlink" href="#the-laplacian-filter" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.laplacian" title="image.Image.laplacian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">laplacian()</span></code></a> esegue un’approssimazione discreta della <em>derivata seconda spaziale</em> dell’immagine. L’uscita è grande dove i valori dei pixel cambiano <em>rapidamente</em>, prossima a zero dove sono costanti o variano linearmente. La lettura naturale del risultato è una risposta ai bordi: i pixel dove l’immagine cambia rapidamente si illuminano, i pixel negli interni regolari restano scuri.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">laplacian</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># 3x3 Laplacian -- edge response</span>
+</span></pre></div>
+</div>
+<p>Sono disponibili gli stessi parametri di <code class="docutils literal notranslate"><span class="pre">gaussian</span></code>. <code class="docutils literal notranslate"><span class="pre">sharpen=True</span></code> produce un’immagine resa più nitida (il laplaciano <em>aggiunto</em> nuovamente all’originale anziché restituito da solo). <code class="docutils literal notranslate"><span class="pre">mul</span></code> e <code class="docutils literal notranslate"><span class="pre">add</span></code> scalano la risposta.</p>
+<p>Un uso pratico oltre al rilevamento dei bordi è la <em>misura della messa a fuoco</em>. La risposta laplaciana mediata su una regione fornisce una misura approssimativa di quanto contenuto ad alta frequenza la regione contiene; su un frame ben a fuoco quella media è alta, su un frame sfocato cala. Confrontare la risposta laplaciana tra i frame è il modo economico per chiedersi «l’obiettivo è a fuoco?» senza bisogno di una metrica di contrasto più costosa.</p>
+</section>
+<section id="the-find-edges-method">
+<h2><span class="section-number">5.14.4. </span>Il metodo find_edges<a class="headerlink" href="#the-find-edges-method" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_edges" title="image.Image.find_edges"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_edges()</span></code></a> esegue una pipeline completa di rilevamento dei bordi anziché un semplice filtro di risposta ai bordi. Funziona su immagini in scala di grigi, e il risultato è un’immagine binaria i cui pixel diversi da zero segnano le posizioni in cui l’ingresso presenta il tipo di variazione di luminosità che dovrebbe contare come bordo.</p>
+<p>Il metodo accetta un parametro <code class="docutils literal notranslate"><span class="pre">edge_type</span></code> che seleziona tra due algoritmi:</p>
+<p><a class="reference internal" href="../../../../library/omv.image.html#image.EDGE_SIMPLE" title="image.EDGE_SIMPLE"><code class="xref py py-data docutils literal notranslate"><span class="pre">EDGE_SIMPLE</span></code></a> esegue un filtro passa-alto, applica una soglia e restituisce il risultato. Veloce, ma l’uscita include ogni variazione di luminosità al di sopra della soglia, incluso rumore e texture di cui l’applicazione probabilmente non si cura. Ragionevole per immagini pulite e per i casi in cui il rumore verrà ripulito da un successivo passaggio morfologico.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.html#image.EDGE_CANNY" title="image.EDGE_CANNY"><code class="xref py py-data docutils literal notranslate"><span class="pre">EDGE_CANNY</span></code></a> esegue il rilevatore di bordi <em>Canny</em>, il classico algoritmo multistadio. Calcola il gradiente di luminosità, sopprime ogni risposta non massima lungo la direzione del gradiente (così ogni bordo è largo un pixel) e applica una soglia con isteresi (così un bordo che è forte in un punto viene tracciato anche dove sbiadisce nel mezzo). Il risultato è un insieme pulito, sottile e connesso di pixel di bordo del tipo che ogni algoritmo classico basato sui bordi desidera.</p>
+<p>Il parametro <code class="docutils literal notranslate"><span class="pre">threshold</span></code> è una tupla a due elementi <code class="docutils literal notranslate"><span class="pre">(low,</span> <span class="pre">high)</span></code>. Per <a class="reference internal" href="../../../../library/omv.image.html#image.EDGE_CANNY" title="image.EDGE_CANNY"><code class="xref py py-data docutils literal notranslate"><span class="pre">EDGE_CANNY</span></code></a>, il valore <em>high</em> è il taglio al di sopra del quale un pixel è sicuramente un bordo, e il valore <em>low</em> è il taglio al di sopra del quale un pixel è un bordo solo se è connesso a uno sicuro. Per <a class="reference internal" href="../../../../library/omv.image.html#image.EDGE_SIMPLE" title="image.EDGE_SIMPLE"><code class="xref py py-data docutils literal notranslate"><span class="pre">EDGE_SIMPLE</span></code></a>, conta solo il valore <em>high</em>; è l’unico taglio al di sopra del quale un pixel conta come bordo. Il valore predefinito <code class="docutils literal notranslate"><span class="pre">(100,</span> <span class="pre">200)</span></code> è un punto di partenza che vale la pena regolare per la scena specifica.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">gaussian</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>                                   <span class="c1"># pre-smooth</span>
+</span><span data-line="2"><span class="n">img</span><span class="o">.</span><span class="n">find_edges</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">EDGE_CANNY</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>Il rilevatore Canny è la scelta migliore per quasi tutte le applicazioni in cui i bordi contano. Il più veloce <a class="reference internal" href="../../../../library/omv.image.html#image.EDGE_SIMPLE" title="image.EDGE_SIMPLE"><code class="xref py py-data docutils literal notranslate"><span class="pre">EDGE_SIMPLE</span></code></a> vale la pena ricordarlo per i casi in cui il costo di Canny è un problema e la reiezione del rumore della sua isteresi non è effettivamente necessaria.</p>
+</section>
+<section id="adaptive-thresholding-on-the-gaussian">
+<h2><span class="section-number">5.14.5. </span>Soglia adattiva sul gaussiano<a class="headerlink" href="#adaptive-thresholding-on-the-gaussian" title="Link to this heading">¶</a></h2>
+<p>Come i <a class="reference internal" href="linear-neighborhood.html"><span class="doc">filtri statistici</span></a>, <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.gaussian" title="image.Image.gaussian"><code class="xref py py-meth docutils literal notranslate"><span class="pre">gaussian()</span></code></a> accetta la coppia di parametri <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> / <code class="docutils literal notranslate"><span class="pre">offset=N</span></code> per la soglia adattiva. Il comportamento è lo stesso di <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>: la statistica gaussiana in ciascuna posizione diventa il taglio locale, e il pixel sorgente viene confrontato con la statistica più l’offset per produrre un risultato binario.</p>
+<p>La variante gaussiana è di solito la scelta più pulita per la soglia adattiva quando l’ingresso è ragionevolmente privo di rumore. La media pesata fornisce un taglio più regolare di quello prodotto dal filtro a media, con meno artefatti in corrispondenza di transizioni brusche dell’illuminazione.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="linear-neighborhood.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">5.13. </span>Filtri lineari e di vicinato</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="morphology.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">5.15. </span>Operazioni morfologiche</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=56ef32c7"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=45930005"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

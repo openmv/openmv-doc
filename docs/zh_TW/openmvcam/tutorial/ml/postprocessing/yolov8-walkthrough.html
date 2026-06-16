@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>7.14. YOLOv8 逐步解說 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="7.15. 自行撰寫" href="writing-your-own.html" /><link rel="prev" title="7.13. 非極大值抑制" href="non-max-suppression.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html"/>
+  <meta property="og:title" content="7.14. YOLOv8 逐步解說"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">7. &#27231;&#22120;&#23416;&#32722;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-a-neural-network.html">7.1. &#20160;&#40636;&#26159;&#31070;&#32147;&#32178;&#36335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-ml-changed.html">7.2. &#27231;&#22120;&#23416;&#32722;&#25913;&#35722;&#20102;&#20160;&#40636;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/hello-blazeface.html">7.3. Hello BlazeFace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/loading-a-model.html">7.4. &#36617;&#20837;&#27169;&#22411;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/romfs.html">7.5. ROMFS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/anatomy-of-predict.html">7.6. predict &#21078;&#26512;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/normalization.html">7.7. &#27491;&#35215;&#21270;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/tensor-io.html">7.8. &#24373;&#37327; I/O</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/tflm.html">7.9. TensorFlow Lite for Microcontrollers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/cmsis-nn.html">7.10. CMSIS-NN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/npus.html">7.11. NPU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="postprocessors.html">7.12. &#24460;&#34389;&#29702;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-max-suppression.html">7.13. &#38750;&#26997;&#22823;&#20540;&#25233;&#21046;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">7.14. YOLOv8 &#36880;&#27493;&#35299;&#35498;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing-your-own.html">7.15. &#33258;&#34892;&#25776;&#23531;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.16. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#the-starting-tensor">7.14.1. &#36215;&#22987;&#24373;&#37327;</a></li>
+<li><a class="reference internal" href="#thresholding-before-dequantizing">7.14.2. &#22312;&#21435;&#37327;&#21270;&#20043;&#21069;&#20808;&#36914;&#34892;&#38334;&#20540;&#36942;&#28670;</a></li>
+<li><a class="reference internal" href="#dequantizing-the-survivors">7.14.3. &#21435;&#37327;&#21270;&#23384;&#27963;&#32773;</a></li>
+<li><a class="reference internal" href="#reading-the-geometry">7.14.4. &#35712;&#21462;&#24190;&#20309;&#36039;&#35338;</a></li>
+<li><a class="reference internal" href="#non-max-suppression">7.14.5. &#38750;&#26997;&#22823;&#20540;&#25233;&#21046;</a></li>
+<li><a class="reference internal" href="#what-the-script-gets-back">7.14.6. &#25351;&#20196;&#30908;&#21462;&#22238;&#20160;&#40636;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">7. </span>機器學習</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">7.14. </span>YOLOv8 逐步解說</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="yolov8-walkthrough">
+<h1><span class="section-number">7.14. </span>YOLOv8 逐步解說<a class="headerlink" href="#yolov8-walkthrough" title="連結到這個標頭">¶</a></h1>
+<p>YOLOv8 後處理器夠小，足以從輸入張量一路逐步走到回傳清單。讀過它一遍，就能看出目錄中其餘每個後處理器都在做什麼：以低成本對量化分數進行閾值過濾、取出存活者、去量化、解碼幾何資訊、推送給 NMS、回傳各類別清單。</p>
+<section id="the-starting-tensor">
+<h2><span class="section-number">7.14.1. </span>起始張量<a class="headerlink" href="#the-starting-tensor" title="連結到這個標頭">¶</a></h2>
+<p>YOLOv8 模型輸出單一個輸出張量，其形狀為 <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">C,</span> <span class="pre">A)</span></code> ── 一個影格、<code class="docutils literal notranslate"><span class="pre">C</span></code> 個通道、<code class="docutils literal notranslate"><span class="pre">A</span></code> 個錨點預測。前四個通道是框幾何資訊 ── <code class="docutils literal notranslate"><span class="pre">cx</span></code>、<code class="docutils literal notranslate"><span class="pre">cy</span></code>、<code class="docutils literal notranslate"><span class="pre">w</span></code>、<code class="docutils literal notranslate"><span class="pre">h</span></code> ── 已正規化為網路輸入維度的 <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>。其餘的 <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">-</span> <span class="pre">4</span></code> 個通道是各類別分數，對於已訓練的模型而言同樣落在 <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>。每個錨點是沿著通道向下的一欄。</p>
+<figure class="align-default" id="id1">
+<img alt="一個側放的網格：各列標註為 cx、cy、w、h、score_0、score_1、……、score_(N-1)；各欄標註為 anchor 0 到 anchor A-1。其中一欄被框出，以顯示單一錨點的預測就是沿著通道向下的一欄。" src="../../../../_images/yolov8-tensor.svg" />
+<figcaption>
+<p><span class="caption-text">一個 YOLOv8 錨點就是沿著通道向下的一欄：四個框數值與 <code class="docutils literal notranslate"><span class="pre">N</span></code> 個類別分數。</span><a class="headerlink" href="#id1" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+<p>隨附的 <code class="docutils literal notranslate"><span class="pre">yolov8n_192.tflite</span></code> 是一個單類別的人員偵測器，因此 <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">=</span> <span class="pre">5</span></code> 而 <code class="docutils literal notranslate"><span class="pre">A</span></code> 達數千之譜；一個在完整 80 類別 COCO 集上訓練的自訂模型則在相同的 <code class="docutils literal notranslate"><span class="pre">A</span></code> 之下具有 <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">=</span> <span class="pre">84</span></code>。下方的解碼過程對任何類別數量都成立。</p>
+</section>
+<section id="thresholding-before-dequantizing">
+<h2><span class="section-number">7.14.2. </span>在去量化之前先進行閾值過濾<a class="headerlink" href="#thresholding-before-dequantizing" title="連結到這個標頭">¶</a></h2>
+<p>先做低成本的步驟。輸出張量採模型的量化整數 dtype，而對每個數值都去量化會觸及一個具有數千筆項目之張量的每一個元素 ── 其中多數都低於分數閾值，最終會被捨棄。後處理器改為將閾值量化一次，並在原始量化空間中進行比較:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">ml.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quantize</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">dequantize</span><span class="p">,</span> <span class="n">NMS</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">ulab</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">oh</span><span class="p">,</span> <span class="n">ow</span><span class="p">,</span> <span class="n">oc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="5"><span class="n">scale</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">output_scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="6"><span class="n">t</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="n">column_outputs</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">oh</span> <span class="o">*</span> <span class="n">ow</span><span class="p">,</span> <span class="n">oc</span><span class="p">))</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="n">score_block</span> <span class="o">=</span> <span class="n">column_outputs</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="p">:]</span>
+</span><span data-line="11"><span class="n">score_indices</span> <span class="o">=</span> <span class="n">threshold</span><span class="p">(</span><span class="n">score_block</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span>
+</span><span data-line="12">                          <span class="n">find_max</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="13">                          <span class="n">find_max_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="14"><span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">score_indices</span><span class="p">):</span>
+</span><span data-line="15">    <span class="k">return</span> <span class="p">()</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">column_outputs</span></code> 是被重塑為 <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A)</span></code> 的張量，使通道為列、錨點為欄。<code class="docutils literal notranslate"><span class="pre">score_block</span></code> 是類別分數子張量 ── 即從第 <code class="docutils literal notranslate"><span class="pre">4</span></code> 列往下的所有內容。<a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.threshold" title="ml.utils.threshold"><code class="xref py py-func docutils literal notranslate"><span class="pre">ml.utils.threshold()</span></code></a> 沿軸 <code class="docutils literal notranslate"><span class="pre">0</span></code> 對該區塊進行縮減（<code class="docutils literal notranslate"><span class="pre">find_max=True</span></code>、<code class="docutils literal notranslate"><span class="pre">find_max_axis=0</span></code>）以得到每個錨點的最大分數，接著回傳其最大值通過量化閾值之錨點的索引。整個張量從未被去量化；只在量化整數空間中做了一次每欄的最大值縮減。</p>
+<p>若沒有任何錨點通過，後處理器會回傳空元組，<a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.predict" title="ml.Model.predict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict()</span></code></a> 會將其詮釋為無偵測結果。</p>
+<p>這段程式碼中有兩個決定，造就了一個可執行的後處理器與一個慢到無法使用之後處理器之間的差異。第一個是透過 <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> 來驅動運算：輸出張量有數千個元素，在純 Python 中逐一迭代每次推論要花上數秒，而透過 <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> 向量化的相同運算只需幾毫秒便能跑完。第二個是在閾值過濾<em>之後</em>而非之前才去量化。先去量化會配置一個大小為量化張量四倍的浮點張量，並在捨棄掉幾乎全部元素之前先走訪每一個元素；而只對存活的欄去量化則至多只觸及少數幾個數值，同時省下完整轉換原本會耗掉的時間與 RAM。</p>
+</section>
+<section id="dequantizing-the-survivors">
+<h2><span class="section-number">7.14.3. </span>去量化存活者<a class="headerlink" href="#dequantizing-the-survivors" title="連結到這個標頭">¶</a></h2>
+<p>只有存活的錨點需要解碼其幾何資訊。<a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.take" title="numpy.take"><code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.take()</span></code></a> 把那些欄抽取出來，再由單一個 <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.dequantize" title="ml.utils.dequantize"><code class="xref py py-func docutils literal notranslate"><span class="pre">ml.utils.dequantize()</span></code></a> 呼叫將它們轉換為浮點數:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">bb</span> <span class="o">=</span> <span class="n">dequantize</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+</span><span data-line="2">                <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">column_outputs</span><span class="p">,</span> <span class="n">score_indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">bb</span></code> 此時為 <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">K)</span></code>，其中 <code class="docutils literal notranslate"><span class="pre">K</span></code> 是存活錨點的數量 ── 即便 <code class="docutils literal notranslate"><span class="pre">A</span></code> 原本達數千，這通常也只是少數幾個。</p>
+</section>
+<section id="reading-the-geometry">
+<h2><span class="section-number">7.14.4. </span>讀取幾何資訊<a class="headerlink" href="#reading-the-geometry" title="連結到這個標頭">¶</a></h2>
+<p>四個框通道與各類別分數會被直接抽取出來:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">bb_scores</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="p">:],</span>    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">bb_classes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">x_center</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+</span><span data-line="5"><span class="n">y_center</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+</span><span data-line="6"><span class="n">w_half</span>   <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="mf">0.5</span>
+</span><span data-line="7"><span class="n">h_half</span>   <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="mf">0.5</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">bb_scores</span></code> 是每個存活錨點的最佳類別分數；<code class="docutils literal notranslate"><span class="pre">bb_classes</span></code> 是給出該分數的類別索引。框幾何資訊仍是網路輸入維度的正規化 <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> 形式，因此下一步會將其縮放為像素:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">ib</span><span class="p">,</span> <span class="n">ih</span><span class="p">,</span> <span class="n">iw</span><span class="p">,</span> <span class="n">ic</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="2"><span class="n">xmin</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_center</span> <span class="o">-</span> <span class="n">w_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">iw</span>
+</span><span data-line="3"><span class="n">ymin</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_center</span> <span class="o">-</span> <span class="n">h_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">ih</span>
+</span><span data-line="4"><span class="n">xmax</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_center</span> <span class="o">+</span> <span class="n">w_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">iw</span>
+</span><span data-line="5"><span class="n">ymax</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_center</span> <span class="o">+</span> <span class="n">h_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">ih</span>
+</span></pre></div>
+</div>
+<p>經過這一步後，框便處於網路輸入像素空間 ── 也就是 <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS" title="ml.utils.NMS"><code class="xref py py-class docutils literal notranslate"><span class="pre">NMS</span></code></a> 在輸入端所預期的座標空間。</p>
+</section>
+<section id="non-max-suppression">
+<h2><span class="section-number">7.14.5. </span>非極大值抑制<a class="headerlink" href="#non-max-suppression" title="連結到這個標頭">¶</a></h2>
+<p>存活者會經過 NMS，並以各類別清單的形式回傳:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">nms</span> <span class="o">=</span> <span class="n">NMS</span><span class="p">(</span><span class="n">iw</span><span class="p">,</span> <span class="n">ih</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">roi</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bb</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+</span><span data-line="3">    <span class="n">nms</span><span class="o">.</span><span class="n">add_bounding_box</span><span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ymin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+</span><span data-line="4">                         <span class="n">xmax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ymax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+</span><span data-line="5">                         <span class="n">bb_scores</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">bb_classes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</span><span data-line="6"><span class="k">return</span> <span class="n">nms</span><span class="o">.</span><span class="n">get_bounding_boxes</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nms_threshold</span><span class="p">,</span>
+</span><span data-line="7">                              <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nms_sigma</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS" title="ml.utils.NMS"><code class="xref py py-class docutils literal notranslate"><span class="pre">NMS</span></code></a> 會讀取 <code class="docutils literal notranslate"><span class="pre">inputs[0].roi</span></code>，使回傳的框處於原始影像的座標空間，而非網路的座標空間 ── 應用程式可直接將它們繪製到擷取的影格上，無需進一步重新映射。</p>
+</section>
+<section id="what-the-script-gets-back">
+<h2><span class="section-number">7.14.6. </span>指令碼取回什麼<a class="headerlink" href="#what-the-script-gets-back" title="連結到這個標頭">¶</a></h2>
+<p>回傳值是一份以類別為索引、由各類別清單組成的清單。一個三類別的範例可能看起來像這樣:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">[</span>
+</span><span data-line="2">    <span class="p">[((</span><span class="mi">23</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">142</span><span class="p">),</span> <span class="mf">0.92</span><span class="p">),</span> <span class="p">((</span><span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">88</span><span class="p">,</span> <span class="mi">130</span><span class="p">),</span> <span class="mf">0.71</span><span class="p">)],</span>
+</span><span data-line="3">    <span class="p">[],</span>
+</span><span data-line="4">    <span class="p">[((</span><span class="mi">310</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">55</span><span class="p">,</span> <span class="mi">70</span><span class="p">),</span> <span class="mf">0.85</span><span class="p">)],</span>
+</span><span data-line="5"><span class="p">]</span>
+</span></pre></div>
+</div>
+<p>每一筆項目都是一個 <code class="docutils literal notranslate"><span class="pre">((x,</span> <span class="pre">y,</span> <span class="pre">w,</span> <span class="pre">h),</span> <span class="pre">score)</span></code> 元組：<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> 是邊界框在原始影像像素座標中的左上角，<code class="docutils literal notranslate"><span class="pre">w</span></code> 與 <code class="docutils literal notranslate"><span class="pre">h</span></code> 是其以像素計的寬度與高度，而 <code class="docutils literal notranslate"><span class="pre">score</span></code> 是網路對該偵測所賦予的信心度。因此 <code class="docutils literal notranslate"><span class="pre">((180,</span> <span class="pre">60,</span> <span class="pre">88,</span> <span class="pre">130),</span> <span class="pre">0.71)</span></code> 可解讀為一個左上角位於像素 <code class="docutils literal notranslate"><span class="pre">(180,</span> <span class="pre">60)</span></code>、向右延伸 88 像素、向下延伸 130 像素，並以 <code class="docutils literal notranslate"><span class="pre">0.71</span></code> 的信心度回報的框。</p>
+<p>外層清單顯示類別 <code class="docutils literal notranslate"><span class="pre">0</span></code> 有兩個存活的框、類別 <code class="docutils literal notranslate"><span class="pre">1</span></code> 沒有任何框、類別 <code class="docutils literal notranslate"><span class="pre">2</span></code> 有一個框。類別 <code class="docutils literal notranslate"><span class="pre">1</span></code> 的空清單會原位保留，使外層索引始終與類別索引相符。對於隨附的人員偵測器，外層清單只有單一個元素，其內層清單包含存活的人員框。對於一個 80 類別的模型，它有 80 個內層清單，在任一給定影格上多數為空，非空的項目則保存著有觸發之類別的框。應用程式以 <code class="docutils literal notranslate"><span class="pre">enumerate(boxes)</span></code> 讀取結果，以便同時走訪類別索引與框清單 ── 這正是整個目錄中偵測後處理器所一致採用的結構。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="non-max-suppression.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">7.13. </span>非極大值抑制</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="writing-your-own.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">7.15. </span>自行撰寫</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

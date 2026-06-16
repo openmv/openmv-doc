@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>12.5. 可靠性——序列、ACK 与重传 - OpenMV MicroPython 1.28 文档</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜索" href="../../../../search.html" /><link rel="next" title="12.6. 命名通道" href="../channels/named-channels.html" /><link rel="prev" title="12.4. 握手与能力协商" href="handshake.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/protocol/framing/reliability.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/protocol/framing/reliability.html"/>
+  <meta property="og:title" content="12.5. 可靠性——序列、ACK 与重传"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/protocol/framing/reliability.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/protocol/framing/reliability.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜索" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻译</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/protocol/framing/reliability.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/protocol/framing/reliability.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/protocol/framing/reliability.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/protocol/framing/reliability.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/protocol/framing/reliability.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/protocol/framing/reliability.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/protocol/framing/reliability.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/protocol/framing/reliability.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/protocol/framing/reliability.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/protocol/framing/reliability.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/protocol/framing/reliability.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/protocol/framing/reliability.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/protocol/framing/reliability.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/protocol/framing/reliability.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/protocol/framing/reliability.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/protocol/framing/reliability.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/protocol/framing/reliability.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/protocol/framing/reliability.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/protocol/framing/reliability.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/protocol/framing/reliability.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切换到亮色模式"
+data-aria-light="切换到暗色模式"
+data-aria-dark="切换到自动模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">讨论</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#31243;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38376;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#36848;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#20214;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35270;&#35273;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#22270;&#20687;&#22788;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#26426;&#22120;&#23398;&#20064;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32593;&#32476;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#26381;&#21153;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34013;&#29273;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">12. &#20027;&#26426;&#21327;&#35758;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../concepts/why-a-protocol.html">12.1. &#20026;&#20160;&#20040;&#38656;&#35201;&#19968;&#20010;&#21327;&#35758;&#24211;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/the-four-layers.html">12.2. &#22235;&#20010;&#23618;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="packet-format.html">12.3. &#25968;&#25454;&#21253;&#26684;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="handshake.html">12.4. &#25569;&#25163;&#19982;&#33021;&#21147;&#21327;&#21830;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">12.5. &#21487;&#38752;&#24615;&#8212;&#8212;&#24207;&#21015;&#12289;ACK &#19982;&#37325;&#20256;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../channels/named-channels.html">12.6. &#21629;&#21517;&#36890;&#36947;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../channels/channel-callbacks.html">12.7. &#36890;&#36947;&#22238;&#35843;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../streaming/streaming-frames.html">12.8. &#27969;&#24335;&#20256;&#36755;&#24103;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../streaming/bidirectional.html">12.9. &#21452;&#21521;&#27969;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">12.10. &#24635;&#32467;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#29983;&#20135;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#24211;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#24320;&#21457;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25193;&#23637;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35821;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20869;&#37096;&#23454;&#29616;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#26356;&#26032;&#26085;&#24535;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#35768;&#21487;&#35777;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>该页内容</h3><ul>
+<li><a class="reference internal" href="#sequence-numbers">12.5.1. &#24207;&#21015;&#21495;</a></li>
+<li><a class="reference internal" href="#ack-and-nak">12.5.2. ACK &#19982; NAK</a></li>
+<li><a class="reference internal" href="#retransmit-timing">12.5.3. &#37325;&#20256;&#35745;&#26102;</a></li>
+<li><a class="reference internal" href="#configuring-reliability">12.5.4. &#37197;&#32622;&#21487;&#38752;&#24615;</a></li>
+<li><a class="reference internal" href="#the-status-codes">12.5.5. &#29366;&#24577;&#30721;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/protocol/framing/reliability.rst">编辑此页面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教程</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">12. </span>主机协议</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">12.5. </span>可靠性——序列、ACK 与重传</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/reliability.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>复制页面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/reliability.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>复制页面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/reliability.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>查看源代码</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/reliability.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中打开</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/reliability.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中打开</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/reliability.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中打开</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="reliability-sequences-acks-retransmits">
+<h1><span class="section-number">12.5. </span>可靠性——序列、ACK 与重传<a class="headerlink" href="#reliability-sequences-acks-retransmits" title="链接到此标题。">¶</a></h1>
+<p>成帧层通过其 CRC 检测数据损坏。可靠性层把“检测到损坏”转化为“应用程序永远不会看到损坏的数据”，方法是在数据包未能完整到达时协商重传。</p>
+<section id="sequence-numbers">
+<h2><span class="section-number">12.5.1. </span>序列号<a class="headerlink" href="#sequence-numbers" title="链接到此标题。">¶</a></h2>
+<p>每个数据包头都携带一个一字节的序列号，每个传输方向各自独立。发送方在发送前递增该计数器；接收方检查每个收到的数据包的序列号是否为前一个加一（对 256 取模）。</p>
+<p>接收方收到的内容除了一个干净的有序数据包之外，还可能是以下三种情况：</p>
+<ul class="simple">
+<li><p>序列号符合预期，且 CRC 有效。该数据包被向上递交给下一层。</p></li>
+<li><p>序列号符合预期，但 CRC 错误。接收方丢弃该数据包，并（如果协商启用了 ACK）发送一个 NAK 请求重传。</p></li>
+<li><p>序列号比预期高一，且 CRC 有效。接收方知道前一个数据包丢失了；它发送一个引用所缺序列号的 NAK，并暂存这个新数据包。</p></li>
+</ul>
+<p>重复的情况（原始数据包最终送达后，重传的数据包才到达）通过与预期计数器比对来处理：如果序列号<em>落后于</em>预期值，则该数据包是重复的，接收方在发送一个发送方显然第一次没收到的 ACK 后将其丢弃。</p>
+</section>
+<section id="ack-and-nak">
+<h2><span class="section-number">12.5.2. </span>ACK 与 NAK<a class="headerlink" href="#ack-and-nak" title="链接到此标题。">¶</a></h2>
+<p>数据包头中的两个标志位承载可靠性流量本身：</p>
+<ul class="simple">
+<li><p>在发出的数据包上设置 <code class="docutils literal notranslate"><span class="pre">ACK_REQ</span></code> 表示“我想收到一个确认回复”。数据包通常会设置此位；状态心跳和一次性事件则可能不设置。</p></li>
+<li><p>在数据包上设置 <code class="docutils literal notranslate"><span class="pre">ACK</span></code> 表示“此数据包是对包头中序列号的确认”。它本身不携带任何有效负载。</p></li>
+<li><p>设置 <code class="docutils literal notranslate"><span class="pre">NAK</span></code> 表示“此数据包拒绝某个先前的数据包”——通常是因为 CRC 错误或序列号出现缺口。包头会向发送方指明需要重传哪个序列号。</p></li>
+</ul>
+<p>发送方运行一个停止-等待循环：它发送一个需要确认的数据包，然后等待匹配的 ACK（或 NAK）后才发送下一个。这种单包在途模型使发送方的状态保持有界——在最小的摄像头上仅需几百字节——并且与该协议作为两个端点之间控制通道（而非吞吐量优化管道）的角色相匹配。收到 NAK 时，发送方重传同一数据包并设置 <code class="docutils literal notranslate"><span class="pre">RTX</span></code> 标志，以便接收方知道这是一次重试。</p>
+</section>
+<section id="retransmit-timing">
+<h2><span class="section-number">12.5.3. </span>重传计时<a class="headerlink" href="#retransmit-timing" title="链接到此标题。">¶</a></h2>
+<p>如果在<em>重传超时</em>时间内 ACK 和 NAK 都没有到达，发送方会自行重传在途的数据包。该超时默认为 <code class="docutils literal notranslate"><span class="pre">500</span> <span class="pre">ms</span></code>，并在每次连续重试时翻倍（1 s、2 s、……）。在配置的重试次数——默认为三次——之后，发送方放弃并向应用程序报告一个传输错误。</p>
+<p>超时翻倍是标准的<em>指数退避</em>模式。较短的首次超时能快速捕获丢失的数据包；翻倍则意味着一个忙碌了几百毫秒的主机不会触发一阵加重负载的重复数据包风暴。</p>
+</section>
+<section id="configuring-reliability">
+<h2><span class="section-number">12.5.4. </span>配置可靠性<a class="headerlink" href="#configuring-reliability" title="链接到此标题。">¶</a></h2>
+<p>在双方同意的情况下，当应用程序能够承受数据丢失时，两端都可以关闭可靠性层的部分功能：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">protocol.init(ack=False)</span></code> 禁用逐包 ACK。发送方发出后即不再理会；接收方递交收到的任何内容。适用于陈旧样本可接受的流式传感器数据。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">protocol.init(seq=False)</span></code> 关闭序列号跟踪，这也意味着关闭 ACK。仅在完全可靠的传输上有用。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">protocol.init(crc=False)</span></code> 关闭 CRC 验证，但保留成帧的其余部分。仅当传输本身足够稳健、不会发生 CRC 错误时才值得这样做。</p></li>
+</ul>
+<p>默认设置——全部启用——对于任何主机到摄像头的调试会话都是正确的起点。一旦应用程序进入生产环境，权衡取舍就会变得取决于其数据和传输的具体情况。</p>
+</section>
+<section id="the-status-codes">
+<h2><span class="section-number">12.5.5. </span>状态码<a class="headerlink" href="#the-status-codes" title="链接到此标题。">¶</a></h2>
+<p>当传输错误确实向上传播到应用程序代码时，它会以状态码的形式到达。协议库定义了十种：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SUCCESS</span></code>——操作完成。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FAILED</span></code>——命令因未指明的原因而失败。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INVALID</span></code>——接收方拒绝了该命令或其某个参数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TIMEOUT</span></code>——重试计时器超时。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BUSY</span></code>——摄像头忙（通常是通道被锁定）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CHECKSUM</span></code>——包头或有效负载的 CRC 不匹配。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SEQUENCE</span></code>——序列号失序，超出了该层所能恢复的范围。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">OVERFLOW</span></code>——有效负载超过了协商的最大值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FRAGMENT</span></code>——一条多片段消息到达时缺少了部分片段。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UNKNOWN</span></code>——针对真正意外情况的防御性兜底。</p></li>
+</ul>
+<p>调用 <code class="xref py py-meth docutils literal notranslate"><span class="pre">channel_read()</span></code> 的主机代码会将这些视为 Python 异常；选择使用自定义错误处理的摄像头端应用程序代码则将它们视为后端回调的返回值。大多数摄像头应用根本不需要查看状态码——库会处理重试，只有真正无法恢复的故障（例如传输本身已消失）才会到达应用程序。</p>
+<p>有成帧来检测损坏、有可靠性来从中恢复，线路级的工作就完成了。应用程序代码看到的是经过成帧、有序、完整的数据包；其中的字节可以自由表示上层通道希望它们表示的任何含义。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到顶部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="handshake.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一章</span><div class="title"><span class="section-number">12.4. </span>握手与能力协商</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../channels/named-channels.html">
+      <div class="page-info">
+        <span>下一章</span>
+        <div class="title"><span class="section-number">12.6. </span>命名通道</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=6c58574e"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=540d3cec"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

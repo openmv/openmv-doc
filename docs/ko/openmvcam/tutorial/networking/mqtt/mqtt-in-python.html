@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>9.19. Python에서의 MQTT - OpenMV MicroPython 1.28 문서</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="색인" href="../../../../genindex.html" /><link rel="search" title="검색" href="../../../../search.html" /><link rel="next" title="9.20. 마무리" href="../wrap-up.html" /><link rel="prev" title="9.18. MQTT, 바이트 단위로 살펴보기" href="protocol-on-the-wire.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html"/>
+  <meta property="og:title" content="9.19. Python에서의 MQTT"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="검색" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">번역</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="라이트 모드로 전환"
+data-aria-light="다크 모드로 전환"
+data-aria-dark="색상 모드로 전환">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">토론</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#53916;&#53664;&#47532;&#50620;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#48736;&#47480; &#49884;&#51089;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#44060;&#50836;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#54616;&#46300;&#50920;&#50612; &#51228;&#50612;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#48708;&#51204; &#49468;&#49436;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#51060;&#48120;&#51648; &#52376;&#47532;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#47672;&#49888;&#47084;&#45789;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">9. &#45348;&#53944;&#50892;&#53433;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-networks.html">9.1. &#50780; &#45348;&#53944;&#50892;&#53356;&#51064;&#44032;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-protocols.html">9.2. &#44228;&#52789;&#54868;&#46108; &#54532;&#47196;&#53664;&#53084;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/physical-and-link.html">9.3. &#52992;&#51060;&#48660;&#44284; &#54532;&#47112;&#51076;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/bringing-the-link-up.html">9.4. &#47553;&#53356; &#50732;&#47532;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/ip-addresses.html">9.5. IP &#51452;&#49548;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/packets-and-routing.html">9.6. &#54056;&#53431;&#44284; &#46972;&#50864;&#54021;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/private-networks.html">9.7. &#49324;&#49444; &#45348;&#53944;&#50892;&#53356;&#50752; NAT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/ports.html">9.8. &#54252;&#53944;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/udp.html">9.9. UDP &#8211; &#54056;&#53431;&#51012; &#48372;&#45236;&#44256; &#51096; &#46104;&#44592;&#47484; &#48148;&#46972;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/tcp.html">9.10. TCP &#8211; &#49888;&#47280;&#49457; &#51080;&#45716; &#48148;&#51060;&#53944; &#49828;&#53944;&#47548;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/socket-objects.html">9.11. &#49548;&#53011; &#44061;&#52404;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/udp-sockets.html">9.12. UDP &#49548;&#53011;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/tcp-sockets.html">9.13. TCP &#49548;&#53011;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/async-sockets.html">9.14. asyncio&#47484; &#51060;&#50857;&#54620; &#49548;&#53011;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/dns.html">9.15. &#51060;&#47492;&#44284; DNS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/ntp.html">9.16. &#49884;&#44036;&#44284; NTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../encrypted-sockets.html">9.17. &#50516;&#54840;&#54868;&#46108; &#49548;&#53011;&#44284; TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="protocol-on-the-wire.html">9.18. MQTT, &#48148;&#51060;&#53944; &#45800;&#50948;&#47196; &#49332;&#54196;&#48372;&#44592;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">9.19. Python&#50640;&#49436;&#51032; MQTT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">9.20. &#47560;&#47924;&#47532;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. &#50937; &#49436;&#48260;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#54840;&#49828;&#53944; &#54532;&#47196;&#53664;&#53084;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#46020;&#44396;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#54532;&#47196;&#45909;&#49496;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#46972;&#51060;&#48652;&#47084;&#47532;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#48372;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#49892;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#49468;&#49436;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#50616;&#50612;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#45236;&#48512; &#44396;&#51312;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#48320;&#44221; &#47196;&#44536;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#46972;&#51060;&#49440;&#49828;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>이 페이지에서</h3><ul>
+<li><a class="reference internal" href="#a-publisher-in-fifteen-lines">9.19.1. &#50676;&#45796;&#49455; &#51460;&#51676;&#47532; &#48156;&#54665;&#51088;</a></li>
+<li><a class="reference internal" href="#connecting-over-tls">9.19.2. TLS&#47484; &#53685;&#54620; &#50672;&#44208;</a></li>
+<li><a class="reference internal" href="#subscribing-and-receiving">9.19.3. &#44396;&#46021;&#44284; &#49688;&#49888;</a></li>
+<li><a class="reference internal" href="#reconnecting-cleanly">9.19.4. &#44628;&#45140;&#54616;&#44172; &#51116;&#50672;&#44208;&#54616;&#44592;</a></li>
+<li><a class="reference internal" href="#the-last-will-hook">9.19.5. &#46972;&#49828;&#53944; &#50956; &#54981;</a></li>
+<li><a class="reference internal" href="#when-to-pick-mqtt-over-http">9.19.6. HTTP &#45824;&#49888; MQTT&#47484; &#49440;&#53469;&#54644;&#50556; &#54624; &#46412;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst">이 페이지 편집</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 튜토리얼</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">9. </span>네트워킹</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">9.19. </span>Python에서의 MQTT</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>페이지 복사</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="추가 작업"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>페이지 복사</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>소스 보기</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT 에서 열기</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude 에서 열기</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity 에서 열기</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="mqtt-in-python">
+<h1><span class="section-number">9.19. </span>Python에서의 MQTT<a class="headerlink" href="#mqtt-in-python" title="Link to this heading">¶</a></h1>
+<p>네트워크 기능이 있는 모든 OpenMV 카메라에 기본 포함된 <a class="reference internal" href="../../../../library/omv.mqtt.html#module-mqtt" title="mqtt: simple MQTT v3.1.1 client"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mqtt</span></code></a> 모듈은 MQTT 와이어 프로토콜을 하나의 클래스 <a class="reference internal" href="../../../../library/omv.mqtt.html#mqtt.MQTTClient" title="mqtt.MQTTClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">mqtt.MQTTClient</span></code></a>로 감쌉니다. 이 클래스는 TCP 소켓을 열고, CONNECT 핸드셰이크를 수행하며, 바이트 수준의 패킷을 묶고 풀고, PINGREQ 킵얼라이브를 처리하고, 들어오는 PUBLISH 메시지를 콜백으로 디스패치합니다. 애플리케이션 코드는 <code class="xref py py-meth docutils literal notranslate"><span class="pre">connect()</span></code>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">publish()</span></code>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">subscribe()</span></code>, 그리고 <code class="xref py py-meth docutils literal notranslate"><span class="pre">wait_msg()</span></code> / <code class="xref py py-meth docutils literal notranslate"><span class="pre">check_msg()</span></code>를 호출합니다.</p>
+<section id="a-publisher-in-fifteen-lines">
+<h2><span class="section-number">9.19.1. </span>열다섯 줄짜리 발행자<a class="headerlink" href="#a-publisher-in-fifteen-lines" title="Link to this heading">¶</a></h2>
+<p>가장 작으면서도 유용한 프로그램은 단 한 번의 발행입니다. 연결하고, 메시지 하나를 발행하고, 연결을 끊습니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">mqtt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MQTTClient</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="4">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;test.mosquitto.org&#39;</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">port</span><span class="o">=</span><span class="mi">1883</span><span class="p">,</span>
+</span><span data-line="7"><span class="p">)</span>
+</span><span data-line="8"><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="9"><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;yard-cam/motion&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;detected at 14:02&#39;</span><span class="p">,</span> <span class="n">qos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="10"><span class="n">client</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">test.mosquitto.org</span></code>는 Eclipse Mosquitto 프로젝트가 운영하는 공개 테스트 브로커입니다. 자격 증명 없이 포트 1883에서 일반 TCP 연결을 받습니다. 진지한 용도로는 사용하지 마십시오. 프라이버시 보장이 전혀 없고, 토픽 네임스페이스가 인터넷상의 다른 모든 테스터와 공유됩니다.</p>
+<p><code class="docutils literal notranslate"><span class="pre">client_id</span></code>는 브로커 연결마다 고유해야 합니다. 브로커가 이를 사용해 세션을 추적하기 때문입니다. 토픽과 메시지 페이로드는 바이트입니다. 더 편리하다면 <a class="reference internal" href="../../../../library/builtins.html#str" title="str"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>를 전달해도 되며, 클라이언트가 이를 UTF-8로 인코딩합니다.</p>
+</section>
+<section id="connecting-over-tls">
+<h2><span class="section-number">9.19.2. </span>TLS를 통한 연결<a class="headerlink" href="#connecting-over-tls" title="Link to this heading">¶</a></h2>
+<p>간단한 실험 단계를 넘어선 거의 모든 경우, TLS를 통한 MQTT는 인자 하나만 더 붙이면 됩니다. <code class="docutils literal notranslate"><span class="pre">ssl_params</span></code> 딕셔너리는 <code class="xref py py-func docutils literal notranslate"><span class="pre">ssl.wrap_socket()</span></code>으로 전달되므로, 거기서 동작하는 것은 무엇이든 여기서도 동작합니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="4">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;broker.example.com&#39;</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">port</span><span class="o">=</span><span class="mi">8883</span><span class="p">,</span>                          <span class="c1"># TLS-MQTT default port</span>
+</span><span data-line="7">    <span class="n">ssl_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;server_hostname&#39;</span><span class="p">:</span> <span class="s1">&#39;broker.example.com&#39;</span><span class="p">},</span>
+</span><span data-line="8">    <span class="n">user</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="9">    <span class="n">password</span><span class="o">=</span><span class="n">load_token</span><span class="p">(),</span>
+</span><span data-line="10"><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>포트 <code class="docutils literal notranslate"><span class="pre">8883</span></code>은 IANA가 예약한 TLS-MQTT 포트입니다. <code class="docutils literal notranslate"><span class="pre">server_hostname</span></code>은 SNI를 켜서 공유 IP 뒤에 있는 브로커가 올바른 인증서로 라우팅할 수 있게 해 줍니다. HTTPS가 쓰는 것과 같은 메커니즘입니다. <code class="docutils literal notranslate"><span class="pre">user</span></code> / <code class="docutils literal notranslate"><span class="pre">password</span></code>는 CONNECT 패킷의 사용자 이름/비밀번호 필드에 매핑되며, 그 자격 증명이 특정 토픽에 대한 발행 또는 구독 권한을 부여할지는 브로커가 결정합니다.</p>
+</section>
+<section id="subscribing-and-receiving">
+<h2><span class="section-number">9.19.3. </span>구독과 수신<a class="headerlink" href="#subscribing-and-receiving" title="Link to this heading">¶</a></h2>
+<p>메시지를 받으려면 클라이언트는 콜백을 제공하고 <code class="xref py py-meth docutils literal notranslate"><span class="pre">subscribe()</span></code>를 호출합니다. 콜백은 두 개의 바이트 인자, 즉 토픽과 페이로드를 받습니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="2">    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;received on&#39;</span><span class="p">,</span> <span class="n">topic</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="5">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;dashboard&#39;</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;test.mosquitto.org&#39;</span><span class="p">,</span>
+</span><span data-line="7">    <span class="n">port</span><span class="o">=</span><span class="mi">1883</span><span class="p">,</span>
+</span><span data-line="8">    <span class="n">callback</span><span class="o">=</span><span class="n">on_message</span><span class="p">,</span>
+</span><span data-line="9"><span class="p">)</span>
+</span><span data-line="10"><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="11"><span class="n">client</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;yard-cam/motion&#39;</span><span class="p">,</span> <span class="n">qos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="12"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="13">    <span class="n">client</span><span class="o">.</span><span class="n">wait_msg</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p><code class="xref py py-meth docutils literal notranslate"><span class="pre">wait_msg()</span></code>는 하나의 MQTT 패킷이 도착할 때까지 블록되고, 이를 파싱한 뒤, 그것이 구독한 토픽에 대한 PUBLISH였다면 콜백을 호출하고 반환합니다. 구독 콜백은 그 호출 안에서 실행됩니다. 백그라운드 스레드는 없습니다.</p>
+<p>다른 작업을 계속해야 하는 대화형 카메라 루프의 경우, <code class="xref py py-meth docutils literal notranslate"><span class="pre">check_msg()</span></code>가 같은 로직을 논블로킹 형태로 제공합니다. 이는 50 ms 타임아웃으로 <a class="reference internal" href="../../../../library/select.html#select.select" title="select.select"><code class="xref py py-func docutils literal notranslate"><span class="pre">select.select()</span></code></a>를 사용하며, 대기 중인 것이 없으면 즉시 반환합니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">client</span><span class="o">.</span><span class="n">check_msg</span><span class="p">()</span>
+</span><span data-line="3">    <span class="n">run_frame</span><span class="p">()</span>                  <span class="c1"># capture + processing</span>
+</span><span data-line="4">    <span class="n">check_motion_threshold</span><span class="p">()</span>
+</span></pre></div>
+</div>
+</section>
+<section id="reconnecting-cleanly">
+<h2><span class="section-number">9.19.4. </span>깔끔하게 재연결하기<a class="headerlink" href="#reconnecting-cleanly" title="Link to this heading">¶</a></h2>
+<p>장시간 실행되는 MQTT 클라이언트는 연결 끊김을 반드시 처리해야 합니다. Wi-Fi 연결 끊김, 브로커 재시작, NAT 타임아웃, 또는 단순히 트래픽 없이 keepalive를 초과하는 경우 모두 소켓이 종료됩니다. 번들로 제공되는 클라이언트는 끊김을 감지한 호출에서 <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a>(또는 브로커의 반환 코드를 담은 일반 예외)를 발생시키며, 표준 패턴은 재시도 루프입니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">def</span><span class="w"> </span><span class="nf">keep_publishing</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">get_message</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="6">            <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="7">            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="8">                <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">get_message</span><span class="p">())</span>
+</span><span data-line="9">                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span data-line="10">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="11">            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;connection lost, reconnecting in 5s&#39;</span><span class="p">)</span>
+</span><span data-line="12">            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>클라이언트가 연결 시 <code class="docutils literal notranslate"><span class="pre">clean_session=False</span></code>를 전달하지 않는 한 구독은 재연결을 거쳐 유지되지 <em>않습니다</em>. 따라서 내부의 <code class="docutils literal notranslate"><span class="pre">connect</span></code>는 발행 루프로 들어가기 전에 모든 <code class="xref py py-meth docutils literal notranslate"><span class="pre">subscribe()</span></code> 호출도 다시 발행해야 합니다.</p>
+</section>
+<section id="the-last-will-hook">
+<h2><span class="section-number">9.19.5. </span>라스트 윌 훅<a class="headerlink" href="#the-last-will-hook" title="Link to this heading">¶</a></h2>
+<p>상태를 보고하는 카메라는 연결이 예기치 않게 끊겼을 때 브로커가 카메라를 대신해 어떤 메시지를 보낼지 브로커에게 알려야 합니다. 윌은 <code class="xref py py-meth docutils literal notranslate"><span class="pre">connect()</span></code> <em>이전에</em> 설정하십시오:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="2">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="3">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;broker.example.com&#39;</span><span class="p">,</span>
+</span><span data-line="4">    <span class="n">port</span><span class="o">=</span><span class="mi">8883</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">ssl_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;server_hostname&#39;</span><span class="p">:</span> <span class="s1">&#39;broker.example.com&#39;</span><span class="p">},</span>
+</span><span data-line="6"><span class="p">)</span>
+</span><span data-line="7"><span class="n">client</span><span class="o">.</span><span class="n">set_last_will</span><span class="p">(</span>
+</span><span data-line="8">    <span class="sa">b</span><span class="s1">&#39;yard-cam/status&#39;</span><span class="p">,</span>
+</span><span data-line="9">    <span class="sa">b</span><span class="s1">&#39;offline&#39;</span><span class="p">,</span>
+</span><span data-line="10">    <span class="n">retain</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="11">    <span class="n">qos</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="12"><span class="p">)</span>
+</span><span data-line="13"><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="14"><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;yard-cam/status&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;online&#39;</span><span class="p">,</span> <span class="n">retain</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>이제 <code class="docutils literal notranslate"><span class="pre">yard-cam/status</span></code>를 구독하는 모든 대시보드는 카메라가 연결되는 순간 <code class="docutils literal notranslate"><span class="pre">online</span></code>을, 브로커가 카메라의 끊김을 감지할 때마다 <code class="docutils literal notranslate"><span class="pre">offline</span></code>을 보게 됩니다. 보존된 <code class="docutils literal notranslate"><span class="pre">offline</span></code> 메시지는 브로커에 유지되므로, 10분 뒤에 연결하는 대시보드도 여전히 올바른 현재 상태를 보게 됩니다.</p>
+</section>
+<section id="when-to-pick-mqtt-over-http">
+<h2><span class="section-number">9.19.6. </span>HTTP 대신 MQTT를 선택해야 할 때<a class="headerlink" href="#when-to-pick-mqtt-over-http" title="Link to this heading">¶</a></h2>
+<p>웹서버 챕터에서는 카메라가 HTTP 서버로 동작하는 경우와, 클라우드 업로드 페이지에서는 고정된 URL로 JPEG를 게시하는 HTTP 클라이언트로 동작하는 경우를 다룹니다. 둘 다 각자의 쓰임새가 있습니다. 대신 MQTT를 꺼내 들기에 적절한 때는 다음과 같습니다:</p>
+<ul class="simple">
+<li><p>같은 데이터를 여러 리스너(대시보드, 알림 서비스, 레코더)에게 보내야 하는데, 카메라가 그 목록을 미리 알지 못하는 경우.</p></li>
+<li><p>카메라를 재시작하지 않고도 리스너가 들어왔다 나갔다 할 수 있어야 하는 경우.</p></li>
+<li><p>카메라가 <em>구독</em>을 하고 싶은 경우, 즉 컨트롤러로부터 명령을 받고 싶은 경우. 이는 HTTP 클라이언트로는 롱 폴링이나 콜백 URL로 푸시하는 서버 없이는 할 수 없습니다.</p></li>
+<li><p>연결이 긴 유휴 기간 동안 저렴하게 유지되어야 하는 경우.</p></li>
+</ul>
+<p>HTTP를 그대로 쓰기에 적절한 때는 다음과 같습니다. 카메라 하나, 서버 하나, 그리고 단일 MQTT 토픽에 담기에는 너무 큰 본문을 가진 고정된 요청/응답 패턴인 경우입니다(MQTT를 통한 JPEG 프레임 전송은 동작하기는 하지만 브로커에게 무례한 일입니다. HTTP POST가 자연스러운 선택입니다).</p>
+<p>교차 링크: 웹서버 챕터의 클라우드 업로드 페이지는 “카메라 → 클라우드 아카이브”의 HTTP 버전을 보여 줍니다. 같은 문제의 MQTT 버전은 카메라를 아카이브의 URL로부터 분리된 상태로 유지하고, 두 번째 소비자(예를 들어 휴대폰 알림 앱)가 같은 스트림을 끌어다 쓸 수 있게 해 줍니다.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>맨 위로</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="protocol-on-the-wire.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>이전</span><div class="title"><span class="section-number">9.18. </span>MQTT, 바이트 단위로 살펴보기</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../wrap-up.html">
+      <div class="page-info">
+        <span>다음</span>
+        <div class="title"><span class="section-number">9.20. </span>마무리</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=e74a095f"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=afa94a99"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

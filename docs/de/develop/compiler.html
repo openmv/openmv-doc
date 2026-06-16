@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="de" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Der Compiler - OpenMV MicroPython 1.28 Dokumentation</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="Stichwortverzeichnis" href="../genindex.html" /><link rel="search" title="Suche" href="../search.html" /><link rel="next" title="Speicherverwaltung" href="memorymgt.html" /><link rel="prev" title="Tests schreiben" href="writingtests.html" />
+      <link rel="canonical" href="https://docs.openmv.io/develop/compiler.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/develop/compiler.html"/>
+  <meta property="og:title" content="Der Compiler"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/develop/compiler.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/develop/compiler.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/develop/compiler.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/develop/compiler.html" />
+    <link rel="alternate" hreflang="es" href="/es/develop/compiler.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/develop/compiler.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/develop/compiler.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/develop/compiler.html" />
+    <link rel="alternate" hreflang="it" href="/it/develop/compiler.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/develop/compiler.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/develop/compiler.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/develop/compiler.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/develop/compiler.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/develop/compiler.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/develop/compiler.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/develop/compiler.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/develop/compiler.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/develop/compiler.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/develop/compiler.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">Home</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">Tutorial</a></li><li class="link"><a href="../library/index.html">Libraries</a></li><li class="link"><a href="../openmvcam/quickref.html">Boards</a></li><li class="link"><a href="../openmvcam/shields.html">Shields</a></li><li class="link"><a href="../openmvcam/sensors.html">Sensors</a></li><li class="link"><a href="../reference/index.html">Language</a></li><li class="link"><a href="../genrst/index.html">CPython</a></li><li class="link"><a href="index.html">Internals</a></li><li class="link"><a href="../changelog/index.html">Changelog</a></li><li class="link"><a href="../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Suche" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Übersetzungen</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/develop/compiler.html">English</a></li><li><a href="/zh_CN/develop/compiler.html">简体中文</a></li><li><a href="/zh_TW/develop/compiler.html">繁體中文</a></li><li><a href="/de/develop/compiler.html">Deutsch</a></li><li><a href="/ja/develop/compiler.html">日本語</a></li><li><a href="/es/develop/compiler.html">Español</a></li><li><a href="/ru/develop/compiler.html">Русский</a></li><li><a href="/fr/develop/compiler.html">Français</a></li><li><a href="/ko/develop/compiler.html">한국어</a></li><li><a href="/it/develop/compiler.html">Italiano</a></li><li><a href="/pt_BR/develop/compiler.html">Português</a></li><li><a href="/nl/develop/compiler.html">Nederlands</a></li><li><a href="/ro/develop/compiler.html">Română</a></li><li><a href="/hr/develop/compiler.html">Hrvatski</a></li><li><a href="/cs/develop/compiler.html">Čeština</a></li><li><a href="/pl/develop/compiler.html">Polski</a></li><li><a href="/fi/develop/compiler.html">Suomi</a></li><li><a href="/sv/develop/compiler.html">Svenska</a></li><li><a href="/hu/develop/compiler.html">Magyar</a></li><li><a href="/tr/develop/compiler.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="In den Hellmodus wechseln"
+data-aria-light="In den Dunkelmodus wechseln"
+data-aria-dark="In den automatischen wechseln">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Diskussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">Bibliotheken</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">Sensoren</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../reference/index.html">Sprache</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Interna</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">Erste Schritte</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writingtests.html">Tests schreiben</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Der Compiler</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memorymgt.html">Speicherverwaltung</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library.html">Ein Modul implementieren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizations.html">Optimierungen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qstr.html">String-Interning in MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maps.html">Maps und Dictionaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="publiccapi.html">Die &#246;ffentliche C-API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extendingmicropython.html">MicroPython in C erweitern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting.html">Portierung von MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="support_tiers.html">MicroPython-Support-Stufen</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">Lizenz</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Auf dieser Seite</h3><ul>
+<li><a class="reference internal" href="#adding-a-grammar-rule">Eine Grammatikregel hinzuf&#252;gen</a></li>
+<li><a class="reference internal" href="#adding-a-lexical-token">Ein lexikalisches Token hinzuf&#252;gen</a></li>
+<li><a class="reference internal" href="#parsing">Parsen</a></li>
+<li><a class="reference internal" href="#compiler-passes">Compiler-Durchl&#228;ufe</a><ul>
+<li><a class="reference internal" href="#first-pass">Erster Durchlauf</a></li>
+<li><a class="reference internal" href="#second-and-third-passes">Zweiter und dritter Durchlauf</a></li>
+<li><a class="reference internal" href="#fourth-pass">Vierter Durchlauf</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#emitting-bytecode">Bytecode emittieren</a></li>
+<li><a class="reference internal" href="#emitting-native-code">Nativen Code emittieren</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/develop/compiler.rst">Diese Seite bearbeiten</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV-MicroPython-Interna</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Der Compiler</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/develop/compiler.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Seite kopieren</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Weitere Aktionen"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/develop/compiler.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Seite kopieren</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/develop/compiler.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Quelltext anzeigen</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/develop/compiler.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>In ChatGPT öffnen</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/develop/compiler.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>In Claude öffnen</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/develop/compiler.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>In Perplexity öffnen</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="the-compiler">
+<span id="compiler"></span><h1>Der Compiler<a class="headerlink" href="#the-compiler" title="Link to this heading">¶</a></h1>
+<p>Der Kompilierungsprozess in MicroPython umfasst die folgenden Schritte:</p>
+<ul class="simple">
+<li><p>Der Lexer wandelt den Textstrom, aus dem ein MicroPython-Programm besteht, in Tokens um.</p></li>
+<li><p>Der Parser wandelt die Tokens anschließend in eine abstrakte Syntax (Parse-Baum) um.</p></li>
+<li><p>Anschließend wird auf Basis des Parse-Baums Bytecode oder nativer Code erzeugt.</p></li>
+</ul>
+<p>Für die Zwecke dieser Erörterung fügen wir ein einfaches Sprachmerkmal <code class="docutils literal notranslate"><span class="pre">add1</span></code> hinzu, das in Python wie folgt verwendet werden kann:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">&gt;&gt;&gt;<span class="w"> </span>add1<span class="w"> </span><span class="m">3</span>
+</span><span data-line="2"><span class="m">4</span>
+</span><span data-line="3">&gt;&gt;&gt;
+</span></pre></div>
+</div>
+<p>Die <code class="docutils literal notranslate"><span class="pre">add1</span></code>-Anweisung nimmt eine Ganzzahl als Argument entgegen und addiert <code class="docutils literal notranslate"><span class="pre">1</span></code> dazu.</p>
+<section id="adding-a-grammar-rule">
+<h2>Eine Grammatikregel hinzufügen<a class="headerlink" href="#adding-a-grammar-rule" title="Link to this heading">¶</a></h2>
+<p>Die Grammatik von MicroPython basiert auf der <a class="reference external" href="https://docs.python.org/3.5/reference/grammar.html">CPython-Grammatik</a> und ist in <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/grammar.h">py/grammar.h</a> definiert. Diese Grammatik wird zum Parsen von MicroPython-Quelldateien verwendet.</p>
+<p>Es gibt zwei Makros, die Sie zum Definieren einer Grammatikregel kennen müssen: <code class="docutils literal notranslate"><span class="pre">DEF_RULE</span></code> und <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code>. <code class="docutils literal notranslate"><span class="pre">DEF_RULE</span></code> ermöglicht es Ihnen, eine Regel mit einer zugehörigen Compile-Funktion zu definieren, während <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code> keine Compile-Funktion (NC) besitzt.</p>
+<p>Eine einfache Grammatikdefinition mit einer Compile-Funktion für unsere neue <code class="docutils literal notranslate"><span class="pre">add1</span></code>-Anweisung sieht wie folgt aus:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">DEF_RULE</span><span class="p">(</span><span class="n">add1_stmt</span><span class="p">,</span><span class="w"> </span><span class="n">c</span><span class="p">(</span><span class="n">add1_stmt</span><span class="p">),</span><span class="w"> </span><span class="n">and</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">tok</span><span class="p">(</span><span class="n">KW_ADD1</span><span class="p">),</span><span class="w"> </span><span class="n">rule</span><span class="p">(</span><span class="n">testlist</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>Das zweite Argument <code class="docutils literal notranslate"><span class="pre">c(add1_stmt)</span></code> ist die zugehörige Compile-Funktion, die in <code class="docutils literal notranslate"><span class="pre">py/compile.c</span></code> implementiert werden sollte, um diese Regel in ausführbaren Code umzuwandeln.</p>
+<p>Das dritte erforderliche Argument kann <code class="docutils literal notranslate"><span class="pre">or</span></code> oder <code class="docutils literal notranslate"><span class="pre">and</span></code> sein. Es gibt die Anzahl der mit einer Anweisung verknüpften Knoten an. In diesem Fall ähnelt unsere <code class="docutils literal notranslate"><span class="pre">add1</span></code>-Anweisung beispielsweise dem ADD1-Befehl in Assemblersprache. Sie nimmt ein numerisches Argument entgegen. Daher sind mit der <code class="docutils literal notranslate"><span class="pre">add1_stmt</span></code> zwei Knoten verknüpft. Ein Knoten steht für die Anweisung selbst, also das Literal <code class="docutils literal notranslate"><span class="pre">add1</span></code>, das <code class="docutils literal notranslate"><span class="pre">KW_ADD1</span></code> entspricht, und der andere für ihr Argument, eine <code class="docutils literal notranslate"><span class="pre">testlist</span></code>-Regel, die die Ausdrucksregel der obersten Ebene ist.</p>
+<div class="admonition note">
+<p class="admonition-title">Bemerkung</p>
+<p>Die <code class="docutils literal notranslate"><span class="pre">add1</span></code>-Regel ist hier nur ein Beispiel und nicht Teil der Standardgrammatik von MicroPython.</p>
+</div>
+<p>Das vierte Argument in diesem Beispiel ist das mit der Regel verknüpfte Token, <code class="docutils literal notranslate"><span class="pre">KW_ADD1</span></code>. Dieses Token sollte im Lexer durch Bearbeiten von <code class="docutils literal notranslate"><span class="pre">py/lexer.h</span></code> definiert werden.</p>
+<p>Dieselbe Regel ohne Compile-Funktion zu definieren, gelingt durch Verwendung des Makros <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code> und Weglassen des Compile-Funktionsarguments:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">DEF_RULE_NC</span><span class="p">(</span><span class="n">add1_stmt</span><span class="p">,</span><span class="w"> </span><span class="n">and</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span><span class="w"> </span><span class="n">tok</span><span class="p">(</span><span class="n">KW_ADD1</span><span class="p">),</span><span class="w"> </span><span class="n">rule</span><span class="p">(</span><span class="n">testlist</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>Die übrigen Argumente behalten dieselbe Bedeutung. Eine Regel ohne Compile-Funktion muss explizit von allen Regeln behandelt werden, die diese Regel als Knoten enthalten können. Solche NC-Regeln werden üblicherweise verwendet, um Teilbereiche einer komplizierten Grammatikstruktur auszudrücken, die sich nicht in einer einzigen Regel ausdrücken lassen.</p>
+<div class="admonition note">
+<p class="admonition-title">Bemerkung</p>
+<p>Die Makros <code class="docutils literal notranslate"><span class="pre">DEF_RULE</span></code> und <code class="docutils literal notranslate"><span class="pre">DEF_RULE_NC</span></code> nehmen weitere Argumente entgegen. Für ein tiefergehendes Verständnis der unterstützten Parameter siehe <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/grammar.h">py/grammar.h</a>.</p>
+</div>
+</section>
+<section id="adding-a-lexical-token">
+<h2>Ein lexikalisches Token hinzufügen<a class="headerlink" href="#adding-a-lexical-token" title="Link to this heading">¶</a></h2>
+<p>Jede in der Grammatik definierte Regel sollte ein zugehöriges Token besitzen, das in <code class="docutils literal notranslate"><span class="pre">py/lexer.h</span></code> definiert ist. Fügen Sie dieses Token hinzu, indem Sie das Enum <code class="docutils literal notranslate"><span class="pre">_mp_token_kind_t</span></code> bearbeiten:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">typedef</span><span class="w"> </span><span class="k">enum</span><span class="w"> </span><span class="n">_mp_token_kind_t</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">    </span><span class="p">...</span>
+</span><span data-line="3"><span class="w">    </span><span class="n">MP_TOKEN_KW_OR</span><span class="p">,</span>
+</span><span data-line="4"><span class="w">    </span><span class="n">MP_TOKEN_KW_PASS</span><span class="p">,</span>
+</span><span data-line="5"><span class="w">    </span><span class="n">MP_TOKEN_KW_RAISE</span><span class="p">,</span>
+</span><span data-line="6"><span class="w">    </span><span class="n">MP_TOKEN_KW_RETURN</span><span class="p">,</span>
+</span><span data-line="7"><span class="w">    </span><span class="n">MP_TOKEN_KW_TRY</span><span class="p">,</span>
+</span><span data-line="8"><span class="w">    </span><span class="n">MP_TOKEN_KW_WHILE</span><span class="p">,</span>
+</span><span data-line="9"><span class="w">    </span><span class="n">MP_TOKEN_KW_WITH</span><span class="p">,</span>
+</span><span data-line="10"><span class="w">    </span><span class="n">MP_TOKEN_KW_YIELD</span><span class="p">,</span>
+</span><span data-line="11"><span class="w">    </span><span class="n">MP_TOKEN_KW_ADD1</span><span class="p">,</span>
+</span><span data-line="12"><span class="hll"><span class="w">    </span><span class="p">...</span>
+</span></span><span data-line="13"><span class="p">}</span><span class="w"> </span><span class="n">mp_token_kind_t</span><span class="p">;</span>
+</span></pre></div>
+</div>
+<p>Bearbeiten Sie dann auch <code class="docutils literal notranslate"><span class="pre">py/lexer.c</span></code>, um den neuen Schlüsselwort-Literaltext hinzuzufügen:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">static</span><span class="w"> </span><span class="k">const</span><span class="w"> </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="k">const</span><span class="w"> </span><span class="n">tok_kw</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">    </span><span class="p">...</span>
+</span><span data-line="3"><span class="w">    </span><span class="s">&quot;or&quot;</span><span class="p">,</span>
+</span><span data-line="4"><span class="w">    </span><span class="s">&quot;pass&quot;</span><span class="p">,</span>
+</span><span data-line="5"><span class="w">    </span><span class="s">&quot;raise&quot;</span><span class="p">,</span>
+</span><span data-line="6"><span class="w">    </span><span class="s">&quot;return&quot;</span><span class="p">,</span>
+</span><span data-line="7"><span class="w">    </span><span class="s">&quot;try&quot;</span><span class="p">,</span>
+</span><span data-line="8"><span class="w">    </span><span class="s">&quot;while&quot;</span><span class="p">,</span>
+</span><span data-line="9"><span class="w">    </span><span class="s">&quot;with&quot;</span><span class="p">,</span>
+</span><span data-line="10"><span class="w">    </span><span class="s">&quot;yield&quot;</span><span class="p">,</span>
+</span><span data-line="11"><span class="w">    </span><span class="s">&quot;add1&quot;</span><span class="p">,</span>
+</span><span data-line="12"><span class="hll"><span class="w">    </span><span class="p">...</span>
+</span></span><span data-line="13"><span class="p">};</span>
+</span></pre></div>
+</div>
+<p>Beachten Sie, dass das Schlüsselwort je nach gewünschtem Namen benannt wird. Halten Sie der Konsistenz halber den Benennungsstandard entsprechend ein.</p>
+<div class="admonition note">
+<p class="admonition-title">Bemerkung</p>
+<p>Die Reihenfolge dieser Schlüsselwörter in <code class="docutils literal notranslate"><span class="pre">py/lexer.c</span></code> muss mit der Reihenfolge der Tokens im Enum übereinstimmen, das in <code class="docutils literal notranslate"><span class="pre">py/lexer.h</span></code> definiert ist.</p>
+</div>
+</section>
+<section id="parsing">
+<h2>Parsen<a class="headerlink" href="#parsing" title="Link to this heading">¶</a></h2>
+<p>In der Parsing-Phase nimmt der Parser die vom Lexer erzeugten Tokens und wandelt sie in einen abstrakten Syntaxbaum (AST) bzw. <em>Parse-Baum</em> um. Die Implementierung des Parsers ist in <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/parse.c">py/parse.c</a> definiert.</p>
+<p>Der Parser pflegt außerdem eine Konstantentabelle zur Verwendung in verschiedenen Aspekten des Parsens, ähnlich wie es eine <a class="reference external" href="https://steemit.com/programming/&#64;drifter1/writing-a-simple-compiler-on-my-own-symbol-table-basic-structure">Symboltabelle</a> tut.</p>
+<p>Während dieser Phase werden mehrere Optimierungen wie <a class="reference external" href="http://compileroptimizations.com/category/constant_folding.htm">Constant Folding</a> bei Ganzzahlen für die meisten Operationen, z. B. logische, binäre, unäre usw., sowie optimierende Verbesserungen bei Klammern um Ausdrücke durchgeführt, zusammen mit einigen Optimierungen bei Strings.</p>
+<p>Es ist erwähnenswert, dass <em>Docstrings</em> verworfen werden und für den Compiler nicht zugänglich sind. Selbst Optimierungen wie <a class="reference external" href="https://en.wikipedia.org/wiki/String_interning">String Interning</a> werden nicht auf <em>Docstrings</em> angewendet.</p>
+</section>
+<section id="compiler-passes">
+<h2>Compiler-Durchläufe<a class="headerlink" href="#compiler-passes" title="Link to this heading">¶</a></h2>
+<p>Wie viele Compiler kompiliert MicroPython sämtlichen Code zu MicroPython-Bytecode oder nativem Code. Die Funktionalität, die dies erreicht, ist in <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/compile.c">py/compile.c</a> implementiert. Die wichtigste Methode, die Sie kennen sollten, ist diese:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">mp_obj_t</span><span class="w"> </span><span class="nf">mp_compile</span><span class="p">(</span><span class="n">mp_parse_tree_t</span><span class="w"> </span><span class="o">*</span><span class="n">parse_tree</span><span class="p">,</span><span class="w"> </span><span class="n">qstr</span><span class="w"> </span><span class="n">source_file</span><span class="p">,</span><span class="w"> </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_repl</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">    </span><span class="c1">// Create a context for this module, and set its globals dict.</span>
+</span><span data-line="3"><span class="w">    </span><span class="n">mp_module_context_t</span><span class="w"> </span><span class="o">*</span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m_new_obj</span><span class="p">(</span><span class="n">mp_module_context_t</span><span class="p">);</span>
+</span><span data-line="4"><span class="w">    </span><span class="n">context</span><span class="o">-&gt;</span><span class="n">module</span><span class="p">.</span><span class="n">globals</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mp_globals_get</span><span class="p">();</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="w">    </span><span class="c1">// Compile the input parse_tree to a raw-code structure.</span>
+</span><span data-line="7"><span class="w">    </span><span class="n">mp_compiled_module_t</span><span class="w"> </span><span class="n">cm</span><span class="p">;</span>
+</span><span data-line="8"><span class="w">    </span><span class="n">cm</span><span class="p">.</span><span class="n">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">;</span>
+</span><span data-line="9"><span class="w">    </span><span class="n">mp_compile_to_raw_code</span><span class="p">(</span><span class="n">parse_tree</span><span class="p">,</span><span class="w"> </span><span class="n">source_file</span><span class="p">,</span><span class="w"> </span><span class="n">is_repl</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cm</span><span class="p">);</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="w">    </span><span class="c1">// Create and return a function object that executes the outer module.</span>
+</span><span data-line="12"><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mp_make_function_from_proto_fun</span><span class="p">(</span><span class="n">cm</span><span class="p">.</span><span class="n">rc</span><span class="p">,</span><span class="w"> </span><span class="n">cm</span><span class="p">.</span><span class="n">context</span><span class="p">,</span><span class="w"> </span><span class="nb">NULL</span><span class="p">);</span>
+</span><span data-line="13"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Der Compiler kompiliert den Code in vier Durchläufen: Geltungsbereich (Scope), Stack-Größe, Code-Größe und Emittieren. Jeder Durchlauf führt denselben C-Code über dieselbe AST-Datenstruktur aus, wobei jedes Mal auf Basis der Ergebnisse des vorherigen Durchlaufs unterschiedliche Dinge berechnet werden.</p>
+<section id="first-pass">
+<h3>Erster Durchlauf<a class="headerlink" href="#first-pass" title="Link to this heading">¶</a></h3>
+<p>Im ersten Durchlauf lernt der Compiler die bekannten Bezeichner (Variablen) und deren Geltungsbereich kennen, sei es global, lokal, geschlossen über (closed over) usw. Im selben Durchlauf berechnet der Emitter (Bytecode oder nativer Code) außerdem die Anzahl der für den emittierten Code benötigten Labels.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1">// Compile pass 1.</span>
+</span><span data-line="2"><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_bc</span><span class="p">;</span>
+</span><span data-line="3"><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit_method_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">emit_bc_method_table</span><span class="p">;</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="n">uint</span><span class="w"> </span><span class="n">max_num_labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+</span><span data-line="6"><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">scope_t</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">scope_head</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="7"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">emit_options</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_EMIT_OPT_ASM</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="8"><span class="w">        </span><span class="n">compile_scope_inline_asm</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_SCOPE</span><span class="p">);</span>
+</span><span data-line="9"><span class="w">    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="10"><span class="w">        </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_SCOPE</span><span class="p">);</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="w">        </span><span class="c1">// Check if any implicitly declared variables should be closed over.</span>
+</span><span data-line="13"><span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">id_info_len</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="14"><span class="w">            </span><span class="n">id_info_t</span><span class="w"> </span><span class="o">*</span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">id_info</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span><span data-line="15"><span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">id</span><span class="o">-&gt;</span><span class="n">kind</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ID_INFO_KIND_GLOBAL_IMPLICIT</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="16"><span class="w">                </span><span class="n">scope_check_to_close_over</span><span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">);</span>
+</span><span data-line="17"><span class="w">            </span><span class="p">}</span>
+</span><span data-line="18"><span class="w">        </span><span class="p">}</span>
+</span><span data-line="19"><span class="w">    </span><span class="p">}</span>
+</span><span data-line="20"><span class="w">    </span><span class="p">...</span>
+</span><span data-line="21"><span class="p">}</span>
+</span></pre></div>
+</div>
+</section>
+<section id="second-and-third-passes">
+<h3>Zweiter und dritter Durchlauf<a class="headerlink" href="#second-and-third-passes" title="Link to this heading">¶</a></h3>
+<p>Der zweite und dritte Durchlauf umfassen die Berechnung der Python-Stack-Größe und der Code-Größe für den Bytecode oder nativen Code. Nach dem dritten Durchlauf darf sich die Code-Größe nicht mehr ändern, andernfalls werden Sprung-Labels falsch.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">scope_t</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">scope_head</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">    </span><span class="p">...</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="w">    </span><span class="c1">// Pass 2: Compute the Python stack size.</span>
+</span><span data-line="5"><span class="w">    </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_STACK_SIZE</span><span class="p">);</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="w">    </span><span class="c1">// Pass 3: Compute the code size.</span>
+</span><span data-line="8"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="9"><span class="w">        </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_CODE_SIZE</span><span class="p">);</span>
+</span><span data-line="10"><span class="w">    </span><span class="p">}</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="w">    </span><span class="p">...</span>
+</span><span data-line="13"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Kurz vor dem zweiten Durchlauf erfolgt eine Auswahl des zu emittierenden Code-Typs, der entweder nativ oder Bytecode sein kann.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1">// Choose the emitter type.</span>
+</span><span data-line="2"><span class="k">switch</span><span class="w"> </span><span class="p">(</span><span class="n">s</span><span class="o">-&gt;</span><span class="n">emit_options</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="3"><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MP_EMIT_OPT_NATIVE_PYTHON</span><span class="p">:</span>
+</span><span data-line="4"><span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="no">MP_EMIT_OPT_VIPER</span><span class="p">:</span>
+</span><span data-line="5"><span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">emit_native</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="6"><span class="w">            </span><span class="n">emit_native</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NATIVE_EMITTER</span><span class="p">(</span><span class="n">new</span><span class="p">)(</span><span class="o">&amp;</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">next_label</span><span class="p">,</span><span class="w"> </span><span class="n">max_num_labels</span><span class="p">);</span>
+</span><span data-line="7"><span class="w">        </span><span class="p">}</span>
+</span><span data-line="8"><span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit_method_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NATIVE_EMITTER_TABLE</span><span class="p">;</span>
+</span><span data-line="9"><span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_native</span><span class="p">;</span>
+</span><span data-line="10"><span class="w">        </span><span class="k">break</span><span class="p">;</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="w">    </span><span class="k">default</span><span class="o">:</span>
+</span><span data-line="13"><span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_bc</span><span class="p">;</span>
+</span><span data-line="14"><span class="w">        </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">emit_method_table</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">emit_bc_method_table</span><span class="p">;</span>
+</span><span data-line="15"><span class="w">        </span><span class="k">break</span><span class="p">;</span>
+</span><span data-line="16"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Die Bytecode-Option ist die Standardeinstellung, aber etwas Besonderes ist bei der Option für nativen Code zu beachten: Es gibt eine weitere Option über <code class="docutils literal notranslate"><span class="pre">VIPER</span></code>. Weitere Einzelheiten zu Viper-Annotationen finden Sie im Abschnitt <a class="reference internal" href="#emitting-native-code"><span class="std std-ref">Nativen Code emittieren</span></a>.</p>
+<p>Es gibt außerdem Unterstützung für <em>Inline-Assembler-Code</em>, bei dem Assembler-Anweisungen als Python-Funktionsaufrufe geschrieben, aber direkt als entsprechender Maschinencode emittiert werden. Dieser Assembler hat nur drei Durchläufe (Scope, Code-Größe, Emittieren) und verwendet eine andere Implementierung, nicht die Funktion <code class="docutils literal notranslate"><span class="pre">compile_scope</span></code>. Weitere Einzelheiten finden Sie in der <a class="reference internal" href="../reference/asm_thumb2_index.html#asm-thumb2-index"><span class="std std-ref">Referenz zum Inline-Assembler</span></a>.</p>
+</section>
+<section id="fourth-pass">
+<h3>Vierter Durchlauf<a class="headerlink" href="#fourth-pass" title="Link to this heading">¶</a></h3>
+<p>Der vierte Durchlauf emittiert den endgültigen, ausführbaren Code, entweder Bytecode in der virtuellen Maschine oder nativen Code direkt durch die CPU.</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">scope_t</span><span class="w"> </span><span class="o">*</span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">scope_head</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="nb">NULL</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">;</span><span class="w"> </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">s</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">    </span><span class="p">...</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="w">    </span><span class="c1">// Pass 4: Emit the compiled bytecode or native code.</span>
+</span><span data-line="5"><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">comp</span><span class="o">-&gt;</span><span class="n">compile_error</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MP_OBJ_NULL</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="6"><span class="w">        </span><span class="n">compile_scope</span><span class="p">(</span><span class="n">comp</span><span class="p">,</span><span class="w"> </span><span class="n">s</span><span class="p">,</span><span class="w"> </span><span class="n">MP_PASS_EMIT</span><span class="p">);</span>
+</span><span data-line="7"><span class="w">    </span><span class="p">}</span>
+</span><span data-line="8"><span class="p">}</span>
+</span></pre></div>
+</div>
+</section>
+</section>
+<section id="emitting-bytecode">
+<h2>Bytecode emittieren<a class="headerlink" href="#emitting-bytecode" title="Link to this heading">¶</a></h2>
+<p>Anweisungen im Python-Code entsprechen üblicherweise emittiertem Bytecode, beispielsweise erzeugt <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span></code> „push a“, dann „push b“ und dann „binary op add“. Manche Anweisungen emittieren nichts, sondern beeinflussen stattdessen andere Dinge wie den Geltungsbereich von Variablen, beispielsweise <code class="docutils literal notranslate"><span class="pre">global</span> <span class="pre">a</span></code>.</p>
+<p>Die Implementierung einer Funktion, die Bytecode emittiert, sieht in etwa so aus:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kt">void</span><span class="w"> </span><span class="nf">mp_emit_bc_unary_op</span><span class="p">(</span><span class="n">emit_t</span><span class="w"> </span><span class="o">*</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">mp_unary_op_t</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">    </span><span class="n">emit_write_bytecode_byte</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">MP_BC_UNARY_OP_MULTI</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">op</span><span class="p">);</span>
+</span><span data-line="3"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Wir verwenden hier die Ausdrücke der unären Operatoren als Beispiel, aber die Implementierungsdetails sind für andere Anweisungen/Ausdrücke ähnlich. Die Methode <code class="docutils literal notranslate"><span class="pre">emit_write_bytecode_byte()</span></code> ist ein Wrapper um die Hauptfunktion <code class="docutils literal notranslate"><span class="pre">emit_get_cur_to_write_bytecode()</span></code>, die alle Funktionen aufrufen müssen, um Bytecode zu emittieren.</p>
+</section>
+<section id="emitting-native-code">
+<span id="id2"></span><h2>Nativen Code emittieren<a class="headerlink" href="#emitting-native-code" title="Link to this heading">¶</a></h2>
+<p>Ähnlich wie Bytecode erzeugt wird, sollte es für jede Code-Anweisung eine entsprechende Funktion in <code class="docutils literal notranslate"><span class="pre">py/emitnative.c</span></code> geben:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">emit_native_unary_op</span><span class="p">(</span><span class="n">emit_t</span><span class="w"> </span><span class="o">*</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">mp_unary_op_t</span><span class="w"> </span><span class="n">op</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="2"><span class="w">     </span><span class="n">vtype_kind_t</span><span class="w"> </span><span class="n">vtype</span><span class="p">;</span>
+</span><span data-line="3"><span class="w">     </span><span class="n">emit_pre_pop_reg</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">vtype</span><span class="p">,</span><span class="w"> </span><span class="n">REG_ARG_2</span><span class="p">);</span>
+</span><span data-line="4"><span class="w">     </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">vtype</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">VTYPE_PYOBJ</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="5"><span class="w">         </span><span class="n">emit_call_with_imm_arg</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">MP_F_UNARY_OP</span><span class="p">,</span><span class="w"> </span><span class="n">op</span><span class="p">,</span><span class="w"> </span><span class="n">REG_ARG_1</span><span class="p">);</span>
+</span><span data-line="6"><span class="w">         </span><span class="n">emit_post_push_reg</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="n">VTYPE_PYOBJ</span><span class="p">,</span><span class="w"> </span><span class="n">REG_RET</span><span class="p">);</span>
+</span><span data-line="7"><span class="w">     </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+</span><span data-line="8"><span class="w">         </span><span class="n">adjust_stack</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+</span><span data-line="9"><span class="w">         </span><span class="n">EMIT_NATIVE_VIPER_TYPE_ERROR</span><span class="p">(</span><span class="n">emit</span><span class="p">,</span>
+</span><span data-line="10"><span class="w">             </span><span class="n">MP_ERROR_TEXT</span><span class="p">(</span><span class="s">&quot;unary op %q not implemented&quot;</span><span class="p">),</span><span class="w"> </span><span class="n">mp_unary_op_method_name</span><span class="p">[</span><span class="n">op</span><span class="p">]);</span>
+</span><span data-line="11"><span class="w">     </span><span class="p">}</span>
+</span><span data-line="12"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Der Unterschied besteht hier darin, dass wir die <em>Viper-Typisierung</em> behandeln müssen. Viper-Annotationen ermöglichen es uns, mehr als einen Variablentyp zu behandeln. Standardmäßig sind alle Variablen Python-Objekte, aber mit Viper kann eine Variable auch als maschinentypisierte Variable deklariert werden, etwa als native Ganzzahl oder als Zeiger. Viper kann als eine Obermenge von Python betrachtet werden, bei der normale Python-Objekte wie gewohnt behandelt werden, während native Maschinenvariablen auf optimierte Weise behandelt werden, indem direkte Maschinenbefehle für die Operationen verwendet werden. Die Viper-Typisierung kann die Python-Äquivalenz brechen, da beispielsweise Ganzzahlen zu nativen Ganzzahlen werden und überlaufen können (im Gegensatz zu Python-Ganzzahlen, die sich automatisch auf beliebige Genauigkeit erweitern).</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Zurück nach oben</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="writingtests.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Zurück</span><div class="title">Tests schreiben</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="memorymgt.html">
+      <div class="page-info">
+        <span>Weiter</span>
+        <div class="title">Speicherverwaltung</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=4d6e379d"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=9bf55d28"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

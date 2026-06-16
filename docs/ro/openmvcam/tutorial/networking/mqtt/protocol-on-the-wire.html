@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ro" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>9.18. MQTT, octet cu octet - OpenMV MicroPython 1.28 documentație</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Căutare" href="../../../../search.html" /><link rel="next" title="9.19. MQTT în Python" href="mqtt-in-python.html" /><link rel="prev" title="9.17. Socluri criptate și TLS" href="../encrypted-sockets.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html"/>
+  <meta property="og:title" content="9.18. MQTT, octet cu octet"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Căutare" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Pornire rapid&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Prezentare general&#259; Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Controlul hardware-ului</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Senzori de viziune</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Procesarea imaginilor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#206;nv&#259;&#539;area automat&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">9. Re&#539;elistic&#259;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-networks.html">9.1. De ce re&#539;ele</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-protocols.html">9.2. Protocoale stratificate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/physical-and-link.html">9.3. Cablul &#537;i cadrul</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/bringing-the-link-up.html">9.4. Activarea leg&#259;turii</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/ip-addresses.html">9.5. Adrese IP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/packets-and-routing.html">9.6. Pachete &#537;i dirijare</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/private-networks.html">9.7. Re&#539;ele private &#537;i NAT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/ports.html">9.8. Porturi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/udp.html">9.9. UDP &#8211; trimite un pachet &#537;i sper&#259; la ce e mai bun</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/tcp.html">9.10. TCP &#8211; un flux fiabil de octe&#539;i</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/socket-objects.html">9.11. Obiecte socket</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/udp-sockets.html">9.12. Socket-uri UDP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/tcp-sockets.html">9.13. Socket-uri TCP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/async-sockets.html">9.14. Socket-uri cu asyncio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/dns.html">9.15. Nume &#537;i DNS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/ntp.html">9.16. Timpul &#537;i NTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../encrypted-sockets.html">9.17. Socluri criptate &#537;i TLS</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">9.18. MQTT, octet cu octet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mqtt-in-python.html">9.19. MQTT &#238;n Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">9.20. Recapitulare</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Servere web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Protocolul de gazd&#259;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Instrumente</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produc&#539;ie</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Biblioteci</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Pl&#259;ci</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shield-uri</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Senzori</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Limbaj</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Componente interne</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Istoric modific&#259;ri</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licen&#539;&#259;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#pub-sub-vs-request-response">9.18.1. Pub/sub vs cerere/r&#259;spuns</a></li>
+<li><a class="reference internal" href="#topics">9.18.2. Topicuri</a></li>
+<li><a class="reference internal" href="#the-packet-format">9.18.3. Formatul pachetului</a></li>
+<li><a class="reference internal" href="#qos-levels">9.18.4. Niveluri QoS</a></li>
+<li><a class="reference internal" href="#retained-messages-and-last-will">9.18.5. Mesaje re&#539;inute &#537;i ultima dorin&#539;&#259;</a></li>
+<li><a class="reference internal" href="#keepalive-and-reconnect">9.18.6. Keepalive &#537;i reconectare</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Tutorial OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">9. </span>Rețelistică</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">9.18. </span>MQTT, octet cu octet</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/protocol-on-the-wire.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="mqtt-byte-by-byte">
+<h1><span class="section-number">9.18. </span>MQTT, octet cu octet<a class="headerlink" href="#mqtt-byte-by-byte" title="Link to this heading">¶</a></h1>
+<p>În acest punct camera are toate componentele necesare pentru a comunica cu un serviciu real pe internetul deschis: un socket TCP, TLS pentru a-l încapsula, DNS pentru a numi partenerul și asyncio care permite aceluiași script să facă și alte lucruri cât timp conexiunea este deschisă. MQTT este primul protocol de comunicare care le reunește pe toate acestea într-un mod pe care un produs implementat chiar îl folosește.</p>
+<p>Această pagină acoperă protocolul în sine – formatul de transmisie, rolurile pe care le joacă fiecare participant și compromisurile din proiectarea sa – suficient de onest încât clientul <a class="reference internal" href="../../../../library/omv.mqtt.html#module-mqtt" title="mqtt: simple MQTT v3.1.1 client"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mqtt</span></code></a> inclus să arate ca o încapsulare evidentă a ceea ce se cunoaște deja, nu ca un salt în necunoscut.</p>
+<section id="pub-sub-vs-request-response">
+<h2><span class="section-number">9.18.1. </span>Pub/sub vs cerere/răspuns<a class="headerlink" href="#pub-sub-vs-request-response" title="Link to this heading">¶</a></h2>
+<p>HTTP – protocolul la care recurg primele cele mai multe proiecte cu camera – este <em>cerere/răspuns</em>. Un client cere unui anumit server o anumită resursă; serverul răspunde. Fiecare schimb este unu-la-unu, iar ambele capete cunosc dinainte adresa celuilalt.</p>
+<p>MQTT este <em>publicare/abonare</em> (publish/subscribe). Clienții se conectează la o terță parte aflată la mijloc, numită <strong>broker</strong>. Un <em>publisher</em> trimite un mesaj către un <strong>topic</strong> denumit fără să știe sau să-i pese cine ascultă. Un <em>subscriber</em> îi spune brokerului ce topicuri dorește și primește ulterior fiecare mesaj publicat pe acele topicuri. Brokerul este cel care distribuie: o singură publicare pe <code class="docutils literal notranslate"><span class="pre">yard-cam/motion</span></code> ajunge la fiecare dispozitiv abonat la <code class="docutils literal notranslate"><span class="pre">yard-cam/motion</span></code>, fie că sunt zero, unu sau cincizeci dintre ele.</p>
+<p>Din această schimbare de model decurg trei lucruri:</p>
+<ul class="simple">
+<li><p><strong>Decuplare.</strong> Publisherii nu trebuie să știe că subscriberii există. Subscriberii pot apărea și dispărea fără ca publisherul să observe. Adăugarea unui al doilea dashboard înseamnă o singură linie de cod pe noul dashboard; camera nu se schimbă.</p></li>
+<li><p><strong>Distribuție (fan-out).</strong> Brokerul se ocupă de fiecare duplicat, așa că camera trimite un singur pachet indiferent de câte dispozitive îl citesc. Acesta este cazul de utilizare pentru care a fost creat MQTT.</p></li>
+<li><p><strong>Asimetrie.</strong> Brokerul este acum o componentă de infrastructură obligatorie – fără unul, protocolul nu funcționează. Pentru proiecte casnice acesta este de obicei un broker public gratuit (<code class="docutils literal notranslate"><span class="pre">test.mosquitto.org</span></code>, <code class="docutils literal notranslate"><span class="pre">broker.hivemq.com</span></code>) sau unul mic pe care îl rulezi tu însuți.</p></li>
+</ul>
+<img alt="O singură cameră care publică pe un topic yard-cam/motion al unui broker, în timp ce două dashboard-uri de browser și un arhivator în cloud primesc fiecare același mesaj." class="align-center" src="../../../../_images/mqtt-fanout.svg" />
+</section>
+<section id="topics">
+<h2><span class="section-number">9.18.2. </span>Topicuri<a class="headerlink" href="#topics" title="Link to this heading">¶</a></h2>
+<p>Topicurile sunt șiruri separate prin bară oblică. Convenția este: cel mai general în stânga, cel mai specific în dreapta:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">yard</span><span class="o">-</span><span class="n">cam</span><span class="o">/</span><span class="n">motion</span>
+</span><span data-line="2"><span class="n">yard</span><span class="o">-</span><span class="n">cam</span><span class="o">/</span><span class="n">temperature</span>
+</span><span data-line="3"><span class="n">workshop</span><span class="o">-</span><span class="n">cam</span><span class="o">/</span><span class="n">motion</span>
+</span><span data-line="4"><span class="n">workshop</span><span class="o">-</span><span class="n">cam</span><span class="o">/</span><span class="n">temperature</span><span class="o">/</span><span class="n">sensor</span><span class="o">-</span><span class="mi">3</span>
+</span></pre></div>
+</div>
+<p>Două caractere de tip wildcard funcționează în <em>abonamente</em> (nu în publicări):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">+</span></code> se potrivește cu un singur nivel. <code class="docutils literal notranslate"><span class="pre">+/motion</span></code> se abonează la topicul de mișcare al fiecărei camere; <code class="docutils literal notranslate"><span class="pre">yard-cam/+</span></code> se abonează la fiecare sub-topic yard-cam.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">#</span></code> se potrivește cu unul sau mai multe niveluri finale. <code class="docutils literal notranslate"><span class="pre">yard-cam/#</span></code> se abonează la <code class="docutils literal notranslate"><span class="pre">yard-cam/motion</span></code>, <code class="docutils literal notranslate"><span class="pre">yard-cam/temperature</span></code>, <code class="docutils literal notranslate"><span class="pre">yard-cam/temperature/sensor-3</span></code> și la orice altceva aflat sub <code class="docutils literal notranslate"><span class="pre">yard-cam/</span></code>. Trebuie să apară la sfârșitul abonamentului.</p></li>
+</ul>
+<p>Șirurile de topic sunt sensibile la majuscule. Conform specificației, un <code class="docutils literal notranslate"><span class="pre">$</span></code> la început marchează topicuri interne ale brokerului (<code class="docutils literal notranslate"><span class="pre">$SYS/...</span></code>) în care publisherii nu ar trebui să scrie.</p>
+</section>
+<section id="the-packet-format">
+<h2><span class="section-number">9.18.3. </span>Formatul pachetului<a class="headerlink" href="#the-packet-format" title="Link to this heading">¶</a></h2>
+<p>MQTT rulează peste TCP. Fiecare pachet de control începe cu un <em>antet fix</em> de un octet, urmat de un câmp de <em>Remaining Length</em> de lungime variabilă, apoi de un <em>antet variabil</em> specific tipului de pachet și apoi de <em>payload</em>. Același format exterior acoperă fiecare comandă – CONNECT, PUBLISH, SUBSCRIBE, PUBACK, DISCONNECT și restul – motiv pentru care un client MQTT poate fi scris în câteva sute de linii.</p>
+<img alt="Dispunerea octeților unui pachet PUBLISH MQTT, arătând octetul de tip și de flaguri al antetului fix, câmpul Remaining Length de lungime variabilă, numele topicului, identificatorul opțional al pachetului și octeții de payload." class="align-center" src="../../../../_images/mqtt-publish-packet.svg" />
+<p>Antetul fix are un octet:</p>
+<ul class="simple">
+<li><p>Biții 7..4 sunt <strong>tipul pachetului de control</strong>. <code class="docutils literal notranslate"><span class="pre">0x3</span></code> este PUBLISH (deci primul octet începe de obicei cu <code class="docutils literal notranslate"><span class="pre">0x3?</span></code>). <code class="docutils literal notranslate"><span class="pre">0x1</span></code> este CONNECT, <code class="docutils literal notranslate"><span class="pre">0x2</span></code> CONNACK, <code class="docutils literal notranslate"><span class="pre">0x8</span></code> SUBSCRIBE, <code class="docutils literal notranslate"><span class="pre">0xC</span></code> PINGREQ, <code class="docutils literal notranslate"><span class="pre">0xE</span></code> DISCONNECT etc.</p></li>
+<li><p>Biții 3..0 sunt <strong>flaguri</strong> specifice tipului de pachet. Pentru PUBLISH flagurile codifică flagul de retransmitere DUP, nivelul QoS (2 biți) și flagul RETAIN.</p></li>
+</ul>
+<p>Remaining Length este un întreg de lungime variabilă, de 1 până la 4 octeți, care numără fiecare octet de după el însuși. Bitul cel mai semnificativ al fiecărui octet este un marcator de continuare – 1 înseamnă „urmează încă un octet de lungime”, 0 înseamnă „acesta este ultimul”. O lungime sub 128 încape într-un singur octet; payload-urile mai mari folosesc mai mulți. Lungimea maximă codificată este 256 MiB.</p>
+<p>Pentru un PUBLISH, antetul variabil este numele topicului – o lungime de 2 octeți, apoi octeții UTF-8 – urmat de un <em>identificator de pachet</em> de 2 octeți care există doar când QoS este 1 sau 2. Octeții rămași reprezintă payload-ul, tratat de protocol ca octeți opaci.</p>
+<p>Un PUBLISH minimal cu QoS 0 al lui <code class="docutils literal notranslate"><span class="pre">ok</span></code> către <code class="docutils literal notranslate"><span class="pre">a/b</span></code> este:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="mi">30</span> <span class="mi">07</span> <span class="mi">00</span> <span class="mi">03</span> <span class="s1">&#39;a&#39;</span> <span class="s1">&#39;/&#39;</span> <span class="s1">&#39;b&#39;</span> <span class="s1">&#39;o&#39;</span> <span class="s1">&#39;k&#39;</span>
+</span></pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">30</span></code> – PUBLISH, toate flagurile zero.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">07</span></code> – urmează 7 octeți.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">00</span> <span class="pre">03</span></code> – lungimea topicului 3.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'a'</span> <span class="pre">'/'</span> <span class="pre">'b'</span></code> – topicul.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'o'</span> <span class="pre">'k'</span></code> – payload-ul.</p></li>
+</ul>
+<p>Nouă octeți pe fir, iar mesajul ajunge la fiecare subscriber al lui <code class="docutils literal notranslate"><span class="pre">a/b</span></code> de pe broker.</p>
+</section>
+<section id="qos-levels">
+<h2><span class="section-number">9.18.4. </span>Niveluri QoS<a class="headerlink" href="#qos-levels" title="Link to this heading">¶</a></h2>
+<p>Quality-of-Service controlează cât de mult se străduiesc brokerul (și clientul) să asigure livrarea. Cele trei niveluri:</p>
+<p><strong>QoS 0 – cel mult o dată.</strong> Trimite și uită. Pachetul PUBLISH este trimis și niciodată confirmat. Dacă TCP livrează, brokerul retransmite. Dacă conexiunea cade în timpul trimiterii, mesajul se pierde. Majoritatea telemetriei de la senzori este în regulă la QoS 0 – o singură citire de temperatură ratată într-un flux care emite la fiecare 30 de secunde nu contează.</p>
+<p><strong>QoS 1 – cel puțin o dată.</strong> Publisherul include un identificator de pachet și așteaptă un PUBACK. Dacă niciun PUBACK nu sosește înainte de expirarea unui timeout, publisherul retransmite cu flagul DUP setat. Brokerul poate ajunge să livreze același mesaj de două ori unui subscriber de pe același nivel; subscriberul trebuie să fie pregătit să gestioneze duplicate.</p>
+<p><strong>QoS 2 – exact o dată.</strong> Un handshake în patru pași (PUBREC / PUBREL / PUBCOMP) asigură că mesajul ajunge exact o dată, chiar și peste reconectări. Costisitor în dus-întorsuri și în stare a brokerului. Puține aplicații cu camera au nevoie de el.</p>
+<p>Clientul <a class="reference internal" href="../../../../library/omv.mqtt.html#module-mqtt" title="mqtt: simple MQTT v3.1.1 client"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mqtt</span></code></a> inclus implementează QoS 0 și QoS 1; QoS 2 generează o eroare dacă îl ceri. Pentru o cameră care raportează citiri de la senzori, QoS 0 este aproape întotdeauna răspunsul corect.</p>
+</section>
+<section id="retained-messages-and-last-will">
+<h2><span class="section-number">9.18.5. </span>Mesaje reținute și ultima dorință<a class="headerlink" href="#retained-messages-and-last-will" title="Link to this heading">¶</a></h2>
+<p>Două funcționalități merită cunoscute deoarece schimbă ce reține brokerul despre topicul tău.</p>
+<p><strong>RETAIN.</strong> Dacă un PUBLISH are flagul RETAIN setat, brokerul stochează mesajul și îl retransmite fiecărui subscriber <em>viitor</em> în momentul în care se abonează. Așa gestionează MQTT „care este valoarea curentă?” – un senzor își publică ultima citire ca reținută, iar un dashboard care se abonează zece minute mai târziu primește totuși cea mai recentă valoare în loc să aștepte următoarea publicare. Republicarea cu același topic suprascrie valoarea reținută; publicarea unui payload gol o șterge.</p>
+<p><strong>Ultima dorință (last will).</strong> Când un client se conectează, poate da brokerului o „ultimă dorință și testament”: un topic, un payload, un QoS și un flag de reținere. Dacă acel client se deconectează <em>necurat</em> – TCP RESET, pierdere de alimentare, cădere de rețea fără pachet DISCONNECT – brokerul publică dorința în numele clientului. Subscriberii o văd ca notificare a camerei că a ieșit din rețea. Camera însăși nu trimite niciodată dorința; brokerul o face, pentru că până atunci camera a dispărut.</p>
+</section>
+<section id="keepalive-and-reconnect">
+<h2><span class="section-number">9.18.6. </span>Keepalive și reconectare<a class="headerlink" href="#keepalive-and-reconnect" title="Link to this heading">¶</a></h2>
+<p>CONNECT poartă un interval de <em>keepalive</em> în secunde. Dacă clientul a tăcut atât de mult timp, brokerul îl consideră mort. Pentru a preveni asta, clientul trimite periodic un PINGREQ (un octet: <code class="docutils literal notranslate"><span class="pre">0xC0</span></code>) și primește înapoi un PINGRESP (<code class="docutils literal notranslate"><span class="pre">0xD0</span></code>) – cel mai mic și mai ieftin semnal de viață pe care îl poate purta protocolul. Majoritatea aplicațiilor cu camera setează keepalive la 30 sau 60 de secunde.</p>
+<p>Dacă conexiunea TCP cade, ambele părți observă și se reconectează de la zero. Abonamentele făcute înainte de cădere se pierd, cu excepția cazului în care clientul a folosit o <em>sesiune persistentă</em> la conectare; pentru aplicațiile simple cu camera, modelul de reabonare-la-reconectare este mai scurt și la fel de bun.</p>
+<p>Atât este suficient pentru a citi specificația MQTT sau pentru a scrie de la zero un client peste un <a class="reference internal" href="../../../../library/socket.html#socket.socket" title="socket.socket"><code class="xref py py-class docutils literal notranslate"><span class="pre">socket.socket</span></code></a>. Clientul inclus în <a class="reference internal" href="../../../../library/omv.mqtt.html#module-mqtt" title="mqtt: simple MQTT v3.1.1 client"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mqtt</span></code></a> face exact asta, plus un API rezonabil pentru codul de aplicație.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../encrypted-sockets.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">9.17. </span>Socluri criptate și TLS</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="mqtt-in-python.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">9.19. </span>MQTT în Python</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=c8a2d540"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=055b6fdf"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

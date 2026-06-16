@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>内存管理 - OpenMV MicroPython 1.28 文档</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="索引" href="../genindex.html" /><link rel="search" title="搜索" href="../search.html" /><link rel="next" title="实现一个模块" href="library.html" /><link rel="prev" title="编译器" href="compiler.html" />
+      <link rel="canonical" href="https://docs.openmv.io/develop/memorymgt.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/develop/memorymgt.html"/>
+  <meta property="og:title" content="内存管理"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="de" href="/de/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="es" href="/es/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="it" href="/it/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/develop/memorymgt.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">Home</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">Tutorial</a></li><li class="link"><a href="../library/index.html">Libraries</a></li><li class="link"><a href="../openmvcam/quickref.html">Boards</a></li><li class="link"><a href="../openmvcam/shields.html">Shields</a></li><li class="link"><a href="../openmvcam/sensors.html">Sensors</a></li><li class="link"><a href="../reference/index.html">Language</a></li><li class="link"><a href="../genrst/index.html">CPython</a></li><li class="link"><a href="index.html">Internals</a></li><li class="link"><a href="../changelog/index.html">Changelog</a></li><li class="link"><a href="../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="搜索" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻译</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/develop/memorymgt.html">English</a></li><li><a href="/zh_CN/develop/memorymgt.html">简体中文</a></li><li><a href="/zh_TW/develop/memorymgt.html">繁體中文</a></li><li><a href="/de/develop/memorymgt.html">Deutsch</a></li><li><a href="/ja/develop/memorymgt.html">日本語</a></li><li><a href="/es/develop/memorymgt.html">Español</a></li><li><a href="/ru/develop/memorymgt.html">Русский</a></li><li><a href="/fr/develop/memorymgt.html">Français</a></li><li><a href="/ko/develop/memorymgt.html">한국어</a></li><li><a href="/it/develop/memorymgt.html">Italiano</a></li><li><a href="/pt_BR/develop/memorymgt.html">Português</a></li><li><a href="/nl/develop/memorymgt.html">Nederlands</a></li><li><a href="/ro/develop/memorymgt.html">Română</a></li><li><a href="/hr/develop/memorymgt.html">Hrvatski</a></li><li><a href="/cs/develop/memorymgt.html">Čeština</a></li><li><a href="/pl/develop/memorymgt.html">Polski</a></li><li><a href="/fi/develop/memorymgt.html">Suomi</a></li><li><a href="/sv/develop/memorymgt.html">Svenska</a></li><li><a href="/hu/develop/memorymgt.html">Magyar</a></li><li><a href="/tr/develop/memorymgt.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切换到亮色模式"
+data-aria-light="切换到暗色模式"
+data-aria-dark="切换到自动模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">讨论</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">&#25945;&#31243;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">&#24211;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">&#24320;&#21457;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">&#25193;&#23637;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../reference/index.html">&#35821;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">&#20869;&#37096;&#23454;&#29616;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">&#20837;&#38376;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writingtests.html">&#32534;&#20889;&#27979;&#35797;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html">&#32534;&#35793;&#22120;</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">&#20869;&#23384;&#31649;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library.html">&#23454;&#29616;&#19968;&#20010;&#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizations.html">&#20248;&#21270;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qstr.html">MicroPython &#23383;&#31526;&#20018;&#39547;&#30041;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maps.html">&#26144;&#23556;&#19982;&#23383;&#20856;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="publiccapi.html">&#20844;&#20849; C API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extendingmicropython.html">&#29992; C &#25193;&#23637; MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting.html">&#31227;&#26893; MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="support_tiers.html">MicroPython &#25903;&#25345;&#23618;&#32423;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">&#26356;&#26032;&#26085;&#24535;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">&#35768;&#21487;&#35777;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>该页内容</h3><ul>
+<li><a class="reference internal" href="#micropython-memory-from-c-code">&#20174; C &#20195;&#30721;&#20351;&#29992; MicroPython &#20869;&#23384;</a></li>
+<li><a class="reference internal" href="#the-object-model">&#23545;&#35937;&#27169;&#22411;</a></li>
+<li><a class="reference internal" href="#allocation-of-objects">&#23545;&#35937;&#30340;&#20998;&#37197;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/develop/memorymgt.rst">编辑此页面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython 内部原理</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">内存管理</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/develop/memorymgt.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>复制页面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/develop/memorymgt.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>复制页面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/develop/memorymgt.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>查看源代码</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/develop/memorymgt.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中打开</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/develop/memorymgt.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中打开</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/develop/memorymgt.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中打开</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="memory-management">
+<span id="memorymanagement"></span><h1>内存管理<a class="headerlink" href="#memory-management" title="链接到此标题。">¶</a></h1>
+<p>与 C/C++ 等编程语言不同，MicroPython 通过支持自动内存管理向开发者隐藏了内存管理的细节。自动内存管理是操作系统或应用程序用来自动管理内存分配与释放的一种技术。它消除了诸如忘记释放分配给对象的内存等难题。自动内存管理还避免了使用已释放内存这一严重问题。自动内存管理有多种形式，其中之一就是垃圾回收（GC）。</p>
+<p>垃圾回收器通常承担两项职责：</p>
+<ol class="arabic simple">
+<li><p>在可用内存中分配新对象。</p></li>
+<li><p>释放未使用的内存。</p></li>
+</ol>
+<p>GC 算法有很多种，但 MicroPython 采用 <a class="reference external" href="https://en.wikipedia.org/wiki/Tracing_garbage_collection#Basic_algorithm">标记-清除</a> 策略来管理内存。该算法包含一个标记阶段，遍历堆并标记所有存活对象；而清除阶段则遍历堆，回收所有未被标记的对象。</p>
+<p>MicroPython 中的垃圾回收功能可通过 <a class="reference internal" href="../library/gc.html#module-gc" title="gc: control the garbage collector"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gc</span></code></a> 内置模块使用：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">&gt;&gt;&gt;<span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
+</span><span data-line="2">&gt;&gt;&gt;<span class="w"> </span>x
+</span><span data-line="3"><span class="m">5</span>
+</span><span data-line="4">&gt;&gt;&gt;<span class="w"> </span>import<span class="w"> </span>gc
+</span><span data-line="5">&gt;&gt;&gt;<span class="w"> </span>gc.enable<span class="o">()</span>
+</span><span data-line="6">&gt;&gt;&gt;<span class="w"> </span>gc.mem_alloc<span class="o">()</span>
+</span><span data-line="7"><span class="m">1312</span>
+</span><span data-line="8">&gt;&gt;&gt;<span class="w"> </span>gc.mem_free<span class="o">()</span>
+</span><span data-line="9"><span class="m">2071392</span>
+</span><span data-line="10">&gt;&gt;&gt;<span class="w"> </span>gc.collect<span class="o">()</span>
+</span><span data-line="11"><span class="m">19</span>
+</span><span data-line="12">&gt;&gt;&gt;<span class="w"> </span>gc.disable<span class="o">()</span>
+</span><span data-line="13">&gt;&gt;&gt;
+</span></pre></div>
+</div>
+<p>即使调用了 <code class="docutils literal notranslate"><span class="pre">gc.disable()</span></code>，仍可使用 <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code> 触发回收。</p>
+<section id="micropython-memory-from-c-code">
+<span id="python-memory-from-c"></span><h2>从 C 代码使用 MicroPython 内存<a class="headerlink" href="#micropython-memory-from-c-code" title="链接到此标题。">¶</a></h2>
+<p>在编写从“Python 堆”分配内存的 C 代码时（即 <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>、<code class="docutils literal notranslate"><span class="pre">m_malloc0()</span></code>、<code class="docutils literal notranslate"><span class="pre">m_free()</span></code> 等函数），需要了解垃圾回收器的相关知识。</p>
+<p>垃圾回收器的标记阶段会从以下根（root）开始扫描指向堆内存的存活指针：</p>
+<ul class="simple">
+<li><p>主 Python 运行时（或 REPL）的栈。</p></li>
+<li><p>对于在原生操作系统线程或任务之上实现 Python 线程的移植版本，还包括每个“Python 线程”的栈。</p></li>
+<li><p>在 C 代码中使用宏 <code class="docutils literal notranslate"><span class="pre">MP_REGISTER_ROOT_POINTER</span></code> 定义的“根指针”。这是让静态作用域的指针指向 Python 堆的推荐方式。</p></li>
+<li><p>使用 <code class="docutils literal notranslate"><span class="pre">m_tracked_calloc()</span></code>、<code class="docutils literal notranslate"><span class="pre">m_tracked_realloc</span></code> 和 <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code> 函数进行的受跟踪分配。这些特殊函数允许分配一块始终被垃圾回收器视为存活的内存。与 C 中的内存分配类似，这块内存只有通过调用 <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code> 或软复位才会被释放。每次受跟踪分配都会带来少量的内存占用和运行时开销。该特性并非在所有移植版本上都默认启用。</p></li>
+</ul>
+<p>随后，垃圾回收器会从根指针出发，递归地扫描并标记它们所指向的所有内存，直到所有地址都被遍历完毕。这足以找到 MicroPython 运行时仍在使用的所有 Python 对象。</p>
+<p>然而，以下内存<strong>不会</strong>被垃圾回收器扫描，因而可能被过早释放：</p>
+<ul class="simple">
+<li><p>包含指向堆内存指针的静态或全局 C 变量。</p></li>
+<li><p>不指向已分配缓冲区“头部”（即 <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code> 返回的确切地址）、而是指向已分配缓冲区内部某个地址的指针（例如指向嵌套结构体的指针）。出于性能考虑，在这种情况下垃圾回收器不会标记其外层缓冲区。</p></li>
+<li><p>任何未运行 Python 代码、也未被手动注册为“Python 线程”的线程或 RTOS 任务的栈（针对支持原生线程或任务的移植版本）。</p></li>
+</ul>
+<p>在这些场景中避免释放后使用（use-after-free）的方法：</p>
+<ul class="simple">
+<li><p>使用受跟踪分配 API <code class="docutils literal notranslate"><span class="pre">m_tracked_calloc()</span></code>、<code class="docutils literal notranslate"><span class="pre">m_tracked_realloc()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code>。</p></li>
+<li><p>注册一个根指针（见上文），而不是将指针存储在静态变量中。</p></li>
+<li><p>重构代码，例如设计一个 API，让 Python 代码初始化一个单例 Python 对象（用 C 实现），由它持有所有相关指针，而不是将它们存放在静态变量中。</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p><a class="reference internal" href="../reference/reset_boot.html#soft-reset"><span class="std std-ref">软复位</span></a> 总会清空 Python 堆并释放所有内存。重要的是，在软复位之后不要再持有任何指向堆的指针，因为它们会变成指向已释放内存的悬空指针。</p>
+<p>某些移植版本还支持“C 堆”（见 <a class="reference internal" href="cmodules.html#c-heap"><span class="std std-ref">C 动态内存分配</span></a>），在这种情况下，你可以通过调用标准 C 函数（如 <code class="docutils literal notranslate"><span class="pre">malloc</span></code> 等）来分配在软复位后仍然有效的内存。</p>
+</div>
+</section>
+<section id="the-object-model">
+<h2>对象模型<a class="headerlink" href="#the-object-model" title="链接到此标题。">¶</a></h2>
+<p>所有 MicroPython 对象都通过 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 数据类型来引用。它通常是字大小的（即与目标架构上的指针大小相同），一般为 32 位（STM32、RP2、nRF、Unix x86）或 64 位（Unix x64）。对于某些对象表示形式，它也可能大于一个字的大小，例如 <code class="docutils literal notranslate"><span class="pre">OBJ_REPR_D</span></code> 在 32 位架构上拥有 64 位大小的 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code>。</p>
+<p>一个 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 表示一个 MicroPython 对象，例如整数、浮点数、类型、字典或类实例。某些对象（如布尔值和小整数）的值直接存储在 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 值中，无需额外内存。其他对象的值则存储在内存的别处（例如垃圾回收堆上），其 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 中包含指向该内存的指针。<code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 的一部分是标签（tag），用于指明它是哪种类型的对象。</p>
+<p>有关可用表示形式的具体细节，请参阅 <code class="docutils literal notranslate"><span class="pre">py/mpconfig.h</span></code>。</p>
+<p><strong>指针标签</strong></p>
+<p>由于指针是字对齐的，当它们被存储在 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 中时，这个对象句柄的低位将为零。例如在 32 位架构上，最低 2 位将为零：</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|******00</span></code></p>
+<p>这些位被保留用于存储标签。标签用于存储额外信息，而不是在对象中引入一个新字段来存储该信息——后者可能效率低下。在 MicroPython 中，标签会告诉我们处理的是小整数、内化（interned，小型）字符串还是具体对象，而这三者各自适用不同的语义。</p>
+<p>对于小整数，其映射如下：</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*******1</span></code></p>
+<p>其中星号保存实际的整数值。对于内化字符串或立即对象（例如 <code class="docutils literal notranslate"><span class="pre">True</span></code>），<code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 值的布局分别为：</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*****010</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*****110</span></code></p>
+<p>而既非以上任何一种的具体对象则采用如下形式：</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|******00</span></code></p>
+<p>这里的星号对应该具体对象在内存中的地址。</p>
+</section>
+<section id="allocation-of-objects">
+<h2>对象的分配<a class="headerlink" href="#allocation-of-objects" title="链接到此标题。">¶</a></h2>
+<p>小整数的值直接存储在 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 中，并就地分配，而不是分配在堆或其他地方。因此，创建小整数不会影响堆。对于其文本数据已存储在别处的内化字符串，以及 <code class="docutils literal notranslate"><span class="pre">None</span></code>、<code class="docutils literal notranslate"><span class="pre">False</span></code> 和 <code class="docutils literal notranslate"><span class="pre">True</span></code> 等立即值，情况也是如此。</p>
+<p>其他所有作为具体对象的内容都分配在堆上，其对象结构会在对象头中保留一个字段，用于存储对象的类型。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">+++++++++++
+</span><span data-line="2">+<span class="w">         </span>+
+</span><span data-line="3">+<span class="w"> </span><span class="nb">type</span><span class="w">    </span>+<span class="w"> </span>object<span class="w"> </span>header
+</span><span data-line="4">+<span class="w">         </span>+
+</span><span data-line="5">+++++++++++
+</span><span data-line="6">+<span class="w">         </span>+<span class="w"> </span>object<span class="w"> </span>items
+</span><span data-line="7">+<span class="w">         </span>+
+</span><span data-line="8">+<span class="w">         </span>+
+</span><span data-line="9">+++++++++++
+</span></pre></div>
+</div>
+<p>堆的最小分配单位是块（block），其大小为四个机器字（在 32 位机器上为 16 字节，在 64 位机器上为 32 字节）。还有另一个同样分配在堆上的结构，用于跟踪每个块中对象的分配情况。该结构称为<em>位图（bitmap）</em>。</p>
+<img alt="../_images/bitmap.png" src="../_images/bitmap.png" />
+<p>位图跟踪一个块是“空闲”还是“正在使用”，并使用两个比特位来记录每个块的这一状态。</p>
+<p>标记-清除垃圾回收器管理在堆上分配的对象，同时也利用位图来标记仍在使用的对象。完整的实现细节请参阅 <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/gc.c">py/gc.c</a>。</p>
+<p><strong>分配：堆布局</strong></p>
+<p>堆的组织方式是由多个池（pool）中的块构成。一个块可以具有不同的属性：</p>
+<ul class="simple">
+<li><p><em>ATB（分配表字节，allocation table byte）：</em> 若已设置，则该块为普通块</p></li>
+<li><p><em>FREE：</em> 空闲块</p></li>
+<li><p><em>HEAD：</em> 块链的头部</p></li>
+<li><p><em>TAIL：</em> 处于块链的尾部</p></li>
+<li><p><em>MARK ：</em> 已标记的头部块</p></li>
+<li><p><em>FTB（终结器表字节，finaliser table byte）：</em> 若已设置，则该块带有终结器</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到顶部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="compiler.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一章</span><div class="title">编译器</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="library.html">
+      <div class="page-info">
+        <span>下一章</span>
+        <div class="title">实现一个模块</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=6c58574e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=540d3cec"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

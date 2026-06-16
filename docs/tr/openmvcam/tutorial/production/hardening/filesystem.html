@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="tr" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>14.3.3. Dosya sistemi hijyeni - OpenMV MicroPython 1.28 belgelendirmesi</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Dizin" href="../../../../genindex.html" /><link rel="search" title="Ara" href="../../../../search.html" /><link rel="next" title="14.3.4. Flash okuma korumasıyla ilgili bir not" href="security.html" /><link rel="prev" title="14.3.2. Watchdog" href="watchdog.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/production/hardening/filesystem.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/production/hardening/filesystem.html"/>
+  <meta property="og:title" content="14.3.3. Dosya sistemi hijyeni"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/production/hardening/filesystem.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Ara" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/production/hardening/filesystem.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/production/hardening/filesystem.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/production/hardening/filesystem.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/production/hardening/filesystem.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/production/hardening/filesystem.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/production/hardening/filesystem.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/production/hardening/filesystem.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/production/hardening/filesystem.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/production/hardening/filesystem.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/production/hardening/filesystem.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/production/hardening/filesystem.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/production/hardening/filesystem.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/production/hardening/filesystem.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/production/hardening/filesystem.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/production/hardening/filesystem.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/production/hardening/filesystem.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/production/hardening/filesystem.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/production/hardening/filesystem.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/production/hardening/filesystem.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/production/hardening/filesystem.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#214;&#287;retici</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. H&#305;zl&#305; ba&#351;lang&#305;&#231;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python&#8217;a Genel Bak&#305;&#351;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Donan&#305;m Kontrol&#252;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. G&#246;r&#252;nt&#252; Sens&#246;rleri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. G&#246;r&#252;nt&#252; &#304;&#351;leme</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Makine &#214;&#287;renmesi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. A&#287; &#304;leti&#351;imi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web Sunucular&#305;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Ana Bilgisayar Protokol&#252;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Ara&#231;lar</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">14. &#220;retim</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../firmware/index.html">14.1. Ayg&#305;t yaz&#305;l&#305;m&#305; geli&#351;tirme</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../shipping/index.html">14.2. Uygulaman&#305;n sevki</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">14.3. &#220;retim i&#231;in sa&#287;lamla&#351;t&#305;rma</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="logging.html">14.3.1. G&#252;nl&#252;kleme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="watchdog.html">14.3.2. Watchdog</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">14.3.3. Dosya sistemi hijyeni</a></li>
+<li class="toctree-l4"><a class="reference internal" href="security.html">14.3.4. Flash okuma korumas&#305;yla ilgili bir not</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tls/index.html">14.4. TLS sertifikalar&#305;yla &#231;al&#305;&#351;ma</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">14.5. &#214;zet</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">K&#252;t&#252;phaneler</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Kartlar</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shield'lar</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sens&#246;rler</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Dil</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#304;&#231; Yap&#305;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">De&#287;i&#351;iklik G&#252;nl&#252;&#287;&#252;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Lisans</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#where-things-go">14.3.3.1. Neyin nereye gidece&#287;i</a></li>
+<li><a class="reference internal" href="#treat-both-as-can-fail">14.3.3.2. Her ikisini de ba&#351;ar&#305;s&#305;z-olabilir olarak de&#287;erlendirin</a></li>
+<li><a class="reference internal" href="#the-slow-directory-trap">14.3.3.3. Yava&#351; dizin tuza&#287;&#305;</a></li>
+<li><a class="reference internal" href="#per-device-paths">14.3.3.4. Cihaz ba&#351;&#305;na yollar</a></li>
+<li><a class="reference internal" href="#pulling-it-together">14.3.3.5. Hepsini bir araya getirmek</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/production/hardening/filesystem.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Eğitimi</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">14. </span>Üretim</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">14.3. </span>Üretim için sağlamlaştırma</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="4" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">14.3.3. </span>Dosya sistemi hijyeni</strong>
+        <meta itemprop="position" content="5" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="filesystem-hygiene">
+<h1><span class="section-number">14.3.3. </span>Dosya sistemi hijyeni<a class="headerlink" href="#filesystem-hygiene" title="Link to this heading">¶</a></h1>
+<p>Sevk edilen bir kameradaki flash bellek ve SD depolama, hiçbir operatörün elle temizlemeyeceği dosyalarla dolar. Bu depolamayla ilgili iki karar, ürünün ömrü boyunca onunla birlikte kalır: <em>hangi yüzeyin hangi tür veriyi tutacağı</em> ve <em>uygulama kayıtları biriktirdikçe dosya işlemlerinin çalışmaya devam edebilmesi için dizinlerin nasıl yapılandırıldığı</em>.</p>
+<section id="where-things-go">
+<h2><span class="section-number">14.3.3.1. </span>Neyin nereye gideceği<a class="headerlink" href="#where-things-go" title="Link to this heading">¶</a></h2>
+<p>Kod ve varlıklar, derlemenin sevk zamanında işlediği donmuş modüllerde ve ROMFS içinde taşınır. Uygulama <em>durumu</em> – uygulamanın çalışma zamanında yazdığı her şey, büyüyen her şey, önyüklemeler arasında değişen her şey – başka bir yerde bulunmak zorundadır. Kamera bunun için iki yazılabilir yüzey sunar:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> konumundaki <strong>dahili flash bellek</strong>: herhangi bir uygulama kodu çalışmadan önce bağlanan küçük, yazılabilir bir dosya sistemi. <em>Yeniden başlatmalardan sağ çıkan küçük, sabit boyutlu kayıtlar</em> için doğru yer: uygulamanın çalışma zamanında güncellediği yapılandırma, bilinen son kalibrasyon, sürekli artan bir sayaç, “bu kamera hazırlandı” diyen tek satırlık bir işaret dosyası. Sınırlı yazma döngüleri – modern dahili flash bellek, sektör başına milyonlarca değil binlerce ila on binlerce yazmaya dayanır; bu nedenle yazma işlemleri çerçeve başına değil, seyrek olmalıdır.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/sdcard</span></code> konumundaki <strong>SD kart</strong>: bir kart mevcut olduğunda bağlanan daha büyük, yazılabilir bir dosya sistemi. <em>Hacimli, değişken dosyalar</em> için doğru yer: görüntü ve video yakalamaları, günlük dosyaları, model ince ayar verileri, megabaytlara veya gigabaytlara büyüyebilecek her şey. Dahili flash bellekten daha yüksek yazma kapasitesine sahiptir ancak yine de sonludur; çıkarılabilir, değiştirilebilir ve uygulama yazma işleminin ortasındayken kaybolması en muhtemel yüzeydir.</p></li>
+</ul>
+<p><em>Bir şeyin nereye yazılacağı</em> sorusunun doğru cevabı neredeyse her zaman “küçük sabit kayıtlar için flash bellek, geri kalan her şey için SD” şeklindedir. İkisi birbirinin yerine geçmez: sürekli artan günlük dosyasını <code class="docutils literal notranslate"><span class="pre">/flash</span></code> konumuna karalayan bir uygulama, SD üzerinde sorunsuz çalışacak bir kurulumda flash belleğin yazma dayanıklılığını tüketir.</p>
+</section>
+<section id="treat-both-as-can-fail">
+<h2><span class="section-number">14.3.3.2. </span>Her ikisini de başarısız-olabilir olarak değerlendirin<a class="headerlink" href="#treat-both-as-can-fail" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> ve <code class="docutils literal notranslate"><span class="pre">/sdcard</span></code> her ikisi de başarısız olabilir. SD kart çıkarılabilir, flash bellek yazma sırasında bir güç kaybıyla bozulabilir, her ikisinin de yeri dolabilir ve her ikisi üzerindeki herhangi bir işlem, uygulamanın sahada teşhis etme şansını bulamayacağı nedenlerle <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> yükseltebilir.</p>
+<p>İki desen, uygulamanın bundan sağ çıkmasını sağlar:</p>
+<ul>
+<li><p><strong>Bağlamaları ve işlemleri try bloklarına sarın.</strong> Kullanıcı veri yollarına karşı her <a class="reference internal" href="../../../../library/builtins.html#open" title="open"><code class="xref py py-func docutils literal notranslate"><span class="pre">open()</span></code></a>, <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a>, <a class="reference internal" href="../../../../library/os.html#os.rename" title="os.rename"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.rename()</span></code></a> çağrısı potansiyel olarak başarısız olur. <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> yakalayın, günlüğe kaydedin ve tanımlı bir alternatife geri dönün – <code class="docutils literal notranslate"><span class="pre">/sdcard</span></code> yoksa <code class="docutils literal notranslate"><span class="pre">/flash</span></code> konumuna yazın, hiçbiri yoksa işlemi atlayın.</p></li>
+<li><p><strong>Bir güç kaybından sağ çıkması gereken dosyalar için atomik yazmalar.</strong> Geçici bir yola yazın, tutamacı kapatın, ardından canlı adın üzerine <a class="reference internal" href="../../../../library/os.html#os.rename" title="os.rename"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.rename()</span></code></a> uygulayın. Ya yeniden adlandırma başarılı olur ve dosya yeni sürümdür, ya da olmaz ve dosya eski sürümdür. Dosyanın yarı yazılmış olduğu üçüncü bir durum yoktur:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">def</span><span class="w"> </span><span class="nf">write_config_atomic</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">tmp</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;.tmp&#39;</span>
+</span><span data-line="5">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span data-line="6">        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+</span><span data-line="7">        <span class="n">f</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</span><span data-line="8">    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Desen hem flash bellekte hem de SD’de çalışır. Geçici dosyanın, dosya sisteminin boş alanını tükettiği kadar büyük dosyalar için çalışmaz; bunu küçük kayıtlar için ayırın.</p>
+</li>
+</ul>
+</section>
+<section id="the-slow-directory-trap">
+<h2><span class="section-number">14.3.3.3. </span>Yavaş dizin tuzağı<a class="headerlink" href="#the-slow-directory-trap" title="Link to this heading">¶</a></h2>
+<p>MicroPython VFS, dizin içeriğini bir masaüstü dosya sisteminin yaptığı gibi indekslemez. <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> ve <a class="reference internal" href="../../../../library/os.html#os.stat" title="os.stat"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.stat()</span></code></a>, altta yatan dosya tablosunu doğrusal olarak gezer. Yüz dosyalı bir dizin sorunsuzdur; on bin dosyalı bir dizin kullanılamayacak kadar yavaştır; her <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> saniyeler sürer ve her <a class="reference internal" href="../../../../library/builtins.html#open" title="open"><code class="xref py py-func docutils literal notranslate"><span class="pre">open()</span></code></a> geçişi sırasında tabloya karşı kontrol yapar.</p>
+<p>Disk’e günlük veya yakalama yazan uygulamalar buna en hızlı şekilde takılır. Dakikada bir yeni dosya açan naif bir <code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;timestamp&gt;.log</span></code> şeması, bir yıllık kurulumda <code class="docutils literal notranslate"><span class="pre">logs/</span></code> dizinini yarım milyon dosyayla doldurur. Bundan çok önce uygulama, her dosya açma işlemi bir çerçeve aralığından daha uzun sürdüğü için çerçeve hızını kaçırmaya başlar.</p>
+<p>Doğru desen, dosyaları tarihlendirilmiş alt dizinlerden oluşan bir ağaca bölmektir; böylece hiçbir tek dizin asla birkaç yüz girişten fazlasını tutmaz:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">LOG_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/sdcard/logs&#39;</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">def</span><span class="w"> </span><span class="nf">log_path</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span data-line="7">    <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="8">        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">()</span>
+</span><span data-line="9">    <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">hour</span> <span class="o">=</span> <span class="n">now</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+</span><span data-line="10">    <span class="n">directory</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:04d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="11">        <span class="n">LOG_ROOT</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span>
+</span><span data-line="12">    <span class="n">_makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+</span><span data-line="13">    <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">.log&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">hour</span><span class="p">)</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="k">def</span><span class="w"> </span><span class="nf">_makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+</span><span data-line="16">    <span class="c1"># os.makedirs equivalent -- create each level if missing</span>
+</span><span data-line="17">    <span class="n">parts</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+</span><span data-line="18">    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span data-line="19">        <span class="n">sub</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[:</span><span class="n">i</span><span class="p">])</span>
+</span><span data-line="20">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="21">            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+</span><span data-line="22">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="23">            <span class="k">pass</span>
+</span></pre></div>
+</div>
+<p>Saatte bir dosya tutulan bir yıllık günlük kaydı artık 365 gün dizinine yayılır ve her biri en fazla 24 dosya içerir; herhangi bir dizine karşı <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> ucuz kalır ve uygulamanın çerçeve döngüsü kurulum yaşlandıkça dosya işlemlerinde takılmaz.</p>
+<p>Aynı ilke görüntü yakalamalarına, sensör izlerine veya uygulamanın olay başına bir dosya yazdığı başka her şeye uygulanır. Olay hızı yüksekse, ağacın daha derin olması istenir (yıl/ay/gün/saat veya yıl/ay/gün/saat/dakika); böylece her yaprak dizin küçük kalır. Olay hızı düşükse, bir yıl/ay ağacı yeterlidir.</p>
+</section>
+<section id="per-device-paths">
+<h2><span class="section-number">14.3.3.4. </span>Cihaz başına yollar<a class="headerlink" href="#per-device-paths" title="Link to this heading">¶</a></h2>
+<p>Birden fazla kameradan oluşan bir filoda, günlük dosyalarının hangi fiziksel birimden geldiklerini tanımlamaları gerekir. <a class="reference internal" href="../../../../library/machine.html#machine.unique_id" title="machine.unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.unique_id()</span></code></a>, kameraya fabrikada işlenmiş bir donanım tanımlayıcısı döndürür; bu değer yeniden başlatmalar, aygıt yazılımı güncellemeleri ve SD kart değişimleri arasında aynıdır. Bunu günlük yoluna veya günlük kayıtlarına gömün, böylece bir yığın SD karta veya merkezi bir günlüğe bakan bir operatör hangisinin hangisi olduğunu söyleyebilir:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">UNIT_ID</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">machine</span><span class="o">.</span><span class="n">unique_id</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">LOG_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/sdcard/logs/&#39;</span> <span class="o">+</span> <span class="n">UNIT_ID</span>
+</span></pre></div>
+</div>
+<p>Tarihlendirilmiş alt dizin deseniyle birleştirildiğinde, düzen <code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;unit-id&gt;/2026/06/09/14.log</span></code> halini alır – bir birimin bir saatlik kayıtları, gezilemeyecek kadar sığ bir dizinde, dosya sisteminin kendisi üzerinde birimi adlandıran bir yolda.</p>
+</section>
+<section id="pulling-it-together">
+<h2><span class="section-number">14.3.3.5. </span>Hepsini bir araya getirmek<a class="headerlink" href="#pulling-it-together" title="Link to this heading">¶</a></h2>
+<p>Sevk edilen bir kameranın yazılabilir depolaması kabaca şuna benzer:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> – yapılandırma, kalibrasyon, bir hazırlama işareti. Nadiren yazılır, sık okunur. Kaybı bir sonraki önyüklemeyi bozacak herhangi bir dosya için atomik-yeniden-adlandırma deseni.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;unit-id&gt;/&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/&lt;hour&gt;.log</span></code> – operasyonel günlük. Sürekli yazılır, yola göre döndürülür, asla binlerce kardeşi olan bir dizinden geçirilerek yazılmaz.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/sdcard/captures/&lt;unit-id&gt;/&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/</span></code> – uygulamanın yaptığı görüntü veya video yakalamaları. Aynı ağaç şekli, aynı neden.</p></li>
+</ul>
+<p>Bu düzen uygulamaya yaklaşık yirmi satır kod maliyeti getirir ve onu, bir kurulumun aylar içinde kamerayı çökerten başarısızlık modlarından kurtarır.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="watchdog.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">14.3.2. </span>Watchdog</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="security.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">14.3.4. </span>Flash okuma korumasıyla ilgili bir not</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=0b15aba8"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=b0f24d8d"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="it" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3.17. Flussi di bit e misurazione di impulsi - Documentazione OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Indice" href="../../../../genindex.html" /><link rel="search" title="Cerca" href="../../../../search.html" /><link rel="next" title="3.18. Nozioni di base su UART" href="../uart/uart-basics.html" /><link rel="prev" title="3.16. Controllo dei servo" href="../pwm/servos.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/hardware/pulse-io/pulse-io.html"/>
+  <meta property="og:title" content="3.17. Flussi di bit e misurazione di impulsi"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/hardware/pulse-io/pulse-io.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Cerca" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/hardware/pulse-io/pulse-io.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Guida rapida</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Panoramica di Python</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">3. Controllo dell&#8217;hardware</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">3.1. Microcontrollori</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">3.2. Temporizzazione</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">3.3. Timer virtuali</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">3.4. Pin e periferiche</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">3.5. La classe LED</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">3.6. Nozioni di base di elettronica</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">3.7. Uscita GPIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">3.8. Adattamento di livello</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">3.9. Interruttori e resistori di pull</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">3.10. Ingresso GPIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">3.11. Debouncing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">3.12. Leggere segnali analogici con l&#8217;ADC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">3.13. Generare segnali analogici con PWM e un filtro RC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/led-dimming.html">3.14. Regolazione della luminosit&#224; dei LED con il PWM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/dc-motors.html">3.15. Controllo dei motori in corrente continua</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/servos.html">3.16. Controllo dei servo</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">3.17. Flussi di bit e misurazione di impulsi</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-basics.html">3.18. Nozioni di base su UART</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-code.html">3.19. UART nel codice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/serial-protocols.html">3.20. Protocolli seriali, framing e CRC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">3.21. Nozioni di base su SPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">3.22. SPI nel codice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-basics.html">3.23. Nozioni di base su I2C</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-code.html">3.24. I2C nel codice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-basics.html">3.25. Nozioni di base sul bus CAN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-code.html">3.26. Il bus CAN nel codice</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">3.27. Watchdog timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">3.28. Orologio in tempo reale</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">3.29. Modalit&#224; a basso consumo e di sospensione</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">3.30. Riepilogo</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Sensori di visione</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Elaborazione delle immagini</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Machine Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. Networking</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Protocollo host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Strumenti</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produzione</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Librerie</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Schede</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shield</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensori</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Linguaggio</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Aspetti interni</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licenza</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#sending-a-bit-stream">3.17.1. Inviare un flusso di bit</a></li>
+<li><a class="reference internal" href="#measuring-an-incoming-pulse">3.17.2. Misurare un impulso in ingresso</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Tutorial di OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">3. </span>Controllo dell’hardware</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">3.17. </span>Flussi di bit e misurazione di impulsi</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/pulse-io/pulse-io.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="bit-streams-and-pulse-measurement">
+<h1><span class="section-number">3.17. </span>Flussi di bit e misurazione di impulsi<a class="headerlink" href="#bit-streams-and-pulse-measurement" title="Link to this heading">¶</a></h1>
+<p>Alcuni dispositivi necessitano di pattern di impulsi temporizzati con precisione anziché di un segnale PWM a frequenza costante. Un LED RGB WS2812 codifica ogni bit come un impulso di larghezza specifica; un telemetro a ultrasuoni HC-SR04 risponde con un impulso di eco la cui larghezza è il tempo di volo di andata e ritorno; un telecomando IR invia un’intestazione seguita da bit di dati come sequenze di acceso-spento.</p>
+<p>Il modulo <a class="reference internal" href="../../../../library/machine.html#module-machine" title="machine: functions related to the hardware"><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code></a> dispone di due funzioni per questo tipo di GPIO a temporizzazione precisa:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../../library/machine.html#machine.bitstream" title="machine.bitstream"><code class="xref py py-func docutils literal notranslate"><span class="pre">bitstream()</span></code></a> invia un treno di impulsi con una temporizzazione separata per i bit <code class="docutils literal notranslate"><span class="pre">0</span></code> e <code class="docutils literal notranslate"><span class="pre">1</span></code>.</p></li>
+<li><p><a class="reference internal" href="../../../../library/machine.html#machine.time_pulse_us" title="machine.time_pulse_us"><code class="xref py py-func docutils literal notranslate"><span class="pre">time_pulse_us()</span></code></a> misura la larghezza di un impulso in ingresso in microsecondi.</p></li>
+</ul>
+<section id="sending-a-bit-stream">
+<h2><span class="section-number">3.17.1. </span>Inviare un flusso di bit<a class="headerlink" href="#sending-a-bit-stream" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/machine.html#machine.bitstream" title="machine.bitstream"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.bitstream()</span></code></a> accetta un pin, una codifica, una specifica di temporizzazione e i byte da inviare. La codifica più comune (<code class="docutils literal notranslate"><span class="pre">0</span></code>) è la modulazione della durata dell’impulso <em>alto-basso</em>: ogni bit è un impulso alto di una certa larghezza seguito da un impulso basso di un’altra, con i bit <code class="docutils literal notranslate"><span class="pre">0</span></code> e <code class="docutils literal notranslate"><span class="pre">1</span></code> aventi temporizzazioni distinte.</p>
+<figure class="align-default" id="id1">
+<img alt="Due forme d'onda sovrapposte. Quella superiore mostra un bit 0: un breve impulso alto (high_0) seguito da un periodo basso più lungo (low_0). Quella inferiore mostra un bit 1: un impulso alto più lungo (high_1) seguito da un periodo basso più breve (low_1)." src="../../../../_images/bitstream-encoding.svg" />
+<figcaption>
+<p><span class="caption-text">La codifica della durata dell’impulso alto-basso: un <code class="docutils literal notranslate"><span class="pre">0</span></code> e un <code class="docutils literal notranslate"><span class="pre">1</span></code> consistono ciascuno di una fase alta seguita da una fase bassa, con larghezze distinte.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>L’esempio canonico è il LED RGB WS2812 (NeoPixel), che si aspetta i bit a 800 kHz con queste temporizzazioni:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">0</span></code>: 400 ns alto, poi 850 ns basso.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">1</span></code>: 800 ns alto, poi 450 ns basso.</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span><span class="p">,</span> <span class="n">bitstream</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">pin</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P7&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="c1"># (high_0, low_0, high_1, low_1) in nanoseconds</span>
+</span><span data-line="6"><span class="n">timing</span> <span class="o">=</span> <span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">850</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="mi">450</span><span class="p">)</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="c1"># one LED: GRB order, three bytes per LED (red shown here)</span>
+</span><span data-line="9"><span class="n">bitstream</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">timing</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x00\xff\x00</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>L’MCU genera gli impulsi via bit-banging alle larghezze richieste; sulle cam abbastanza veloci la temporizzazione è accurata entro decine di nanosecondi.</p>
+<div class="admonition warning">
+<p class="admonition-title">Avvertimento</p>
+<p><a class="reference internal" href="../../../../library/machine.html#machine.bitstream" title="machine.bitstream"><code class="xref py py-func docutils literal notranslate"><span class="pre">bitstream()</span></code></a> disabilita tutti gli interrupt per l’intera trasmissione in modo da mantenere un controllo preciso sulla temporizzazione degli impulsi. La durata della chiamata cresce linearmente con il numero di byte – alla temporizzazione del WS2812 (circa 10 µs per byte), inviare 100 byte mette in pausa la CPU per circa 1 ms, 1000 byte per 10 ms e 10000 byte per ben 100 ms. Qualsiasi cosa oltre qualche centinaio di byte per chiamata rischia di causare blocchi percettibili – suddividi gli aggiornamenti lunghi in blocchi più piccoli, facendo ritornare la chiamata tra un blocco e l’altro così che il resto dello script possa girare.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Nota</p>
+<p>Per pilotare in particolare le strisce WS2812 / NeoPixel, il modulo <a class="reference internal" href="../../../../library/neopixel.html#module-neopixel" title="neopixel: control of WS2812 / NeoPixel LEDs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">neopixel</span></code></a> incapsula <a class="reference internal" href="../../../../library/machine.html#machine.bitstream" title="machine.bitstream"><code class="xref py py-func docutils literal notranslate"><span class="pre">bitstream()</span></code></a> in un’interfaccia di livello più alto che gestisce il riordino dell’ordine dei colori e gli aggiornamenti in blocco della striscia. Ricorri direttamente a <a class="reference internal" href="../../../../library/machine.html#machine.bitstream" title="machine.bitstream"><code class="xref py py-func docutils literal notranslate"><span class="pre">bitstream()</span></code></a> quando il protocollo <em>non</em> è il WS2812 ma rientra comunque in una forma PDM alto-basso.</p>
+</div>
+</section>
+<section id="measuring-an-incoming-pulse">
+<h2><span class="section-number">3.17.2. </span>Misurare un impulso in ingresso<a class="headerlink" href="#measuring-an-incoming-pulse" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/machine.html#machine.time_pulse_us" title="machine.time_pulse_us"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.time_pulse_us()</span></code></a> misura la larghezza di un singolo impulso su un pin. Attende che la linea raggiunga il livello specificato (l’inizio dell’impulso), poi misura per quanto tempo la linea rimane a quel livello (la fine dell’impulso) e restituisce la durata in microsecondi.</p>
+<p>L’uso classico è un sensore di distanza a ultrasuoni HC-SR04. La camera invia un impulso di trigger di 10 µs, poi attende che il pin di eco restituisca un impulso la cui larghezza è il tempo di andata e ritorno del suono:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">Pin</span><span class="p">,</span> <span class="n">time_pulse_us</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">trigger</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P7&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">echo</span>    <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P8&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">IN</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="8">    <span class="n">trigger</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="9">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_us</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span data-line="10">    <span class="n">trigger</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12">    <span class="n">width</span> <span class="o">=</span> <span class="n">time_pulse_us</span><span class="p">(</span><span class="n">echo</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">timeout_us</span><span class="o">=</span><span class="mi">30_000</span><span class="p">)</span>
+</span><span data-line="13">    <span class="k">if</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="14">        <span class="c1"># sound at ~343 m/s; round trip / 2 / 343 = distance (m)</span>
+</span><span data-line="15">        <span class="n">distance_cm</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">*</span> <span class="mi">343</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">/</span> <span class="mi">10_000</span>
+</span><span data-line="16">        <span class="nb">print</span><span class="p">(</span><span class="n">distance_cm</span><span class="p">,</span> <span class="s2">&quot;cm&quot;</span><span class="p">)</span>
+</span><span data-line="17">
+</span><span data-line="18">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Il terzo argomento è il timeout in microsecondi, applicato separatamente all“«attesa dell’inizio dell’impulso» e all“«attesa della fine dell’impulso». Allo scadere del timeout la funzione restituisce un valore negativo che identifica quale fase è fallita: <code class="docutils literal notranslate"><span class="pre">-2</span></code> se l’impulso non è mai iniziato, <code class="docutils literal notranslate"><span class="pre">-1</span></code> se è iniziato ma non è mai terminato entro la finestra.</p>
+<p>Entrambe le metà del timeout contano per i sensori reali. Un HC-SR04 può impiegare da uno a due millisecondi per avviare la sua eco, e l’eco stessa può durare decine di millisecondi per oggetti lontani. Dimensionare <code class="docutils literal notranslate"><span class="pre">timeout_us</span></code> alla portata massima necessaria mantiene la misurazione limitata.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../pwm/servos.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">3.16. </span>Controllo dei servo</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../uart/uart-basics.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">3.18. </span>Nozioni di base su UART</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=56ef32c7"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=45930005"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>메모리 관리 - OpenMV MicroPython 1.28 문서</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="색인" href="../genindex.html" /><link rel="search" title="검색" href="../search.html" /><link rel="next" title="모듈 구현하기" href="library.html" /><link rel="prev" title="컴파일러" href="compiler.html" />
+      <link rel="canonical" href="https://docs.openmv.io/develop/memorymgt.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/develop/memorymgt.html"/>
+  <meta property="og:title" content="메모리 관리"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="de" href="/de/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="es" href="/es/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="it" href="/it/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/develop/memorymgt.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/develop/memorymgt.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">Home</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">Tutorial</a></li><li class="link"><a href="../library/index.html">Libraries</a></li><li class="link"><a href="../openmvcam/quickref.html">Boards</a></li><li class="link"><a href="../openmvcam/shields.html">Shields</a></li><li class="link"><a href="../openmvcam/sensors.html">Sensors</a></li><li class="link"><a href="../reference/index.html">Language</a></li><li class="link"><a href="../genrst/index.html">CPython</a></li><li class="link"><a href="index.html">Internals</a></li><li class="link"><a href="../changelog/index.html">Changelog</a></li><li class="link"><a href="../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="검색" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">번역</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/develop/memorymgt.html">English</a></li><li><a href="/zh_CN/develop/memorymgt.html">简体中文</a></li><li><a href="/zh_TW/develop/memorymgt.html">繁體中文</a></li><li><a href="/de/develop/memorymgt.html">Deutsch</a></li><li><a href="/ja/develop/memorymgt.html">日本語</a></li><li><a href="/es/develop/memorymgt.html">Español</a></li><li><a href="/ru/develop/memorymgt.html">Русский</a></li><li><a href="/fr/develop/memorymgt.html">Français</a></li><li><a href="/ko/develop/memorymgt.html">한국어</a></li><li><a href="/it/develop/memorymgt.html">Italiano</a></li><li><a href="/pt_BR/develop/memorymgt.html">Português</a></li><li><a href="/nl/develop/memorymgt.html">Nederlands</a></li><li><a href="/ro/develop/memorymgt.html">Română</a></li><li><a href="/hr/develop/memorymgt.html">Hrvatski</a></li><li><a href="/cs/develop/memorymgt.html">Čeština</a></li><li><a href="/pl/develop/memorymgt.html">Polski</a></li><li><a href="/fi/develop/memorymgt.html">Suomi</a></li><li><a href="/sv/develop/memorymgt.html">Svenska</a></li><li><a href="/hu/develop/memorymgt.html">Magyar</a></li><li><a href="/tr/develop/memorymgt.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="라이트 모드로 전환"
+data-aria-light="다크 모드로 전환"
+data-aria-dark="색상 모드로 전환">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">토론</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">&#53916;&#53664;&#47532;&#50620;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">&#46972;&#51060;&#48652;&#47084;&#47532;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">&#48372;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">&#49892;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">&#49468;&#49436;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../reference/index.html">&#50616;&#50612;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">&#45236;&#48512; &#44396;&#51312;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">&#49884;&#51089;&#54616;&#44592;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writingtests.html">&#53580;&#49828;&#53944; &#51089;&#49457;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html">&#52980;&#54028;&#51068;&#47084;</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">&#47700;&#47784;&#47532; &#44288;&#47532;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library.html">&#47784;&#46280; &#44396;&#54788;&#54616;&#44592;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizations.html">&#52572;&#51201;&#54868;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qstr.html">MicroPython &#47928;&#51088;&#50676; &#51064;&#53552;&#45789;(interning)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maps.html">&#47605;&#44284; &#46357;&#49492;&#45320;&#47532;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="publiccapi.html">&#44277;&#44060; C API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extendingmicropython.html">C&#47196; MicroPython &#54869;&#51109;&#54616;&#44592;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting.html">MicroPython &#54252;&#54021;&#54616;&#44592;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="support_tiers.html">MicroPython &#51648;&#50896; &#46321;&#44553;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">&#48320;&#44221; &#47196;&#44536;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">&#46972;&#51060;&#49440;&#49828;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>이 페이지에서</h3><ul>
+<li><a class="reference internal" href="#micropython-memory-from-c-code">C &#53076;&#46300;&#50640;&#49436;&#51032; MicroPython &#47700;&#47784;&#47532;</a></li>
+<li><a class="reference internal" href="#the-object-model">&#44061;&#52404; &#47784;&#45944;</a></li>
+<li><a class="reference internal" href="#allocation-of-objects">&#44061;&#52404;&#51032; &#54624;&#45817;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/develop/memorymgt.rst">이 페이지 편집</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython 내부 구조</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">메모리 관리</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/develop/memorymgt.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>페이지 복사</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="추가 작업"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/develop/memorymgt.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>페이지 복사</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/develop/memorymgt.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>소스 보기</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/develop/memorymgt.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT 에서 열기</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/develop/memorymgt.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude 에서 열기</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/develop/memorymgt.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity 에서 열기</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="memory-management">
+<span id="memorymanagement"></span><h1>메모리 관리<a class="headerlink" href="#memory-management" title="Link to this heading">¶</a></h1>
+<p>C/C++와 같은 프로그래밍 언어와 달리, MicroPython은 자동 메모리 관리를 지원하여 메모리 관리 세부 사항을 개발자로부터 숨깁니다. 자동 메모리 관리는 메모리의 할당과 해제를 자동으로 관리하기 위해 운영 체제나 애플리케이션에서 사용하는 기법입니다. 이를 통해 객체에 할당된 메모리를 해제하는 것을 잊어버리는 등의 문제가 사라집니다. 또한 자동 메모리 관리는 이미 해제된 메모리를 사용하는 치명적인 문제도 방지합니다. 자동 메모리 관리에는 여러 형태가 있으며, 그중 하나가 가비지 컬렉션(garbage collection, GC)입니다.</p>
+<p>가비지 컬렉터는 일반적으로 두 가지 역할을 합니다.</p>
+<ol class="arabic simple">
+<li><p>사용 가능한 메모리에 새 객체를 할당합니다.</p></li>
+<li><p>사용하지 않는 메모리를 해제합니다.</p></li>
+</ol>
+<p>GC 알고리즘에는 여러 가지가 있지만, MicroPython은 메모리 관리를 위해 <a class="reference external" href="https://en.wikipedia.org/wiki/Tracing_garbage_collection#Basic_algorithm">Mark and Sweep</a> 정책을 사용합니다. 이 알고리즘은 힙을 순회하며 살아 있는 모든 객체를 표시하는 마크(mark) 단계와, 힙을 따라가며 표시되지 않은 모든 객체를 회수하는 스윕(sweep) 단계로 구성됩니다.</p>
+<p>MicroPython의 가비지 컬렉션 기능은 <a class="reference internal" href="../library/gc.html#module-gc" title="gc: control the garbage collector"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gc</span></code></a> 내장 모듈을 통해 사용할 수 있습니다:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">&gt;&gt;&gt;<span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
+</span><span data-line="2">&gt;&gt;&gt;<span class="w"> </span>x
+</span><span data-line="3"><span class="m">5</span>
+</span><span data-line="4">&gt;&gt;&gt;<span class="w"> </span>import<span class="w"> </span>gc
+</span><span data-line="5">&gt;&gt;&gt;<span class="w"> </span>gc.enable<span class="o">()</span>
+</span><span data-line="6">&gt;&gt;&gt;<span class="w"> </span>gc.mem_alloc<span class="o">()</span>
+</span><span data-line="7"><span class="m">1312</span>
+</span><span data-line="8">&gt;&gt;&gt;<span class="w"> </span>gc.mem_free<span class="o">()</span>
+</span><span data-line="9"><span class="m">2071392</span>
+</span><span data-line="10">&gt;&gt;&gt;<span class="w"> </span>gc.collect<span class="o">()</span>
+</span><span data-line="11"><span class="m">19</span>
+</span><span data-line="12">&gt;&gt;&gt;<span class="w"> </span>gc.disable<span class="o">()</span>
+</span><span data-line="13">&gt;&gt;&gt;
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">gc.disable()</span></code>를 호출한 경우에도 <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code>로 컬렉션을 수동으로 실행할 수 있습니다.</p>
+<section id="micropython-memory-from-c-code">
+<span id="python-memory-from-c"></span><h2>C 코드에서의 MicroPython 메모리<a class="headerlink" href="#micropython-memory-from-c-code" title="Link to this heading">¶</a></h2>
+<p>“Python 힙”에서 메모리를 할당하는 C 코드(즉, <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_malloc0()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_free()</span></code> 등의 함수)를 작성할 때는 가비지 컬렉터를 염두에 두어야 합니다.</p>
+<p>가비지 컬렉터의 마크 단계는 다음 루트(root)에서 시작하여 힙 메모리를 가리키는 살아 있는 포인터를 탐색합니다:</p>
+<ul class="simple">
+<li><p>메인 Python 런타임(또는 REPL)의 스택.</p></li>
+<li><p>네이티브 운영 체제 스레드나 태스크 위에 Python 스레드를 구현하는 포트의 경우, 각 “Python 스레드”의 스택.</p></li>
+<li><p>매크로 <code class="docutils literal notranslate"><span class="pre">MP_REGISTER_ROOT_POINTER</span></code>를 사용하여 C 코드에서 정의한 “루트 포인터”. 이것이 Python 힙에 대한 정적 범위 포인터를 두는 권장 방법입니다.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">m_tracked_calloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_tracked_realloc</span></code>, <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code> 함수로 만든 추적 할당. 이 특수 함수들은 가비지 컬렉터가 항상 살아 있다고 간주하는 메모리 블록을 할당할 수 있게 해줍니다. C의 메모리 할당과 유사하게, 이 메모리는 <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code> 호출이나 소프트 리셋으로만 해제됩니다. 각 추적 할당에는 약간의 메모리 사용량과 런타임 오버헤드가 따릅니다. 이 기능은 모든 포트에서 기본적으로 활성화되어 있지는 않습니다.</p></li>
+</ul>
+<p>그런 다음 가비지 컬렉터는 루트 포인터가 가리키는 모든 메모리를 재귀적으로 스캔하고 표시하며, 모든 주소를 다 처리할 때까지 이 과정을 반복합니다. 이것만으로도 MicroPython 런타임이 여전히 사용 중인 모든 Python 객체를 찾기에 충분합니다.</p>
+<p>그러나 다음 메모리는 가비지 컬렉터가 스캔하지 <strong>않으며</strong>, 따라서 조기에 해제될 수 있습니다:</p>
+<ul class="simple">
+<li><p>힙 메모리에 대한 포인터를 담고 있는 정적(static) 또는 전역(global) C 변수.</p></li>
+<li><p>할당된 버퍼의 “머리(head)”(즉, <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>이 반환한 정확한 주소)를 가리키지 않고, 대신 할당된 버퍼 내부의 주소를 가리키는 포인터(예: 중첩된 구조체에 대한 포인터). 성능상의 이유로, 가비지 컬렉터는 이러한 경우 이를 둘러싼 버퍼를 표시하지 않습니다.</p></li>
+<li><p>Python 코드를 실행하지 않거나 “Python 스레드”로 수동 등록되지 않은 스레드나 RTOS 태스크의 스택(네이티브 스레드나 태스크를 지원하는 포트의 경우).</p></li>
+</ul>
+<p>이러한 상황에서 use-after-free를 방지하는 방법:</p>
+<ul class="simple">
+<li><p>추적 할당 API <code class="docutils literal notranslate"><span class="pre">m_tracked_calloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_tracked_realloc()</span></code>, <code class="docutils literal notranslate"><span class="pre">m_tracked_free()</span></code>를 사용합니다.</p></li>
+<li><p>정적 변수에 포인터를 저장하는 대신 루트 포인터를 등록합니다(위 참조).</p></li>
+<li><p>코드를 재구성합니다. 예를 들어, 관련 포인터들을 정적 변수에 두는 대신, Python 코드가 그 포인터들을 모두 보유하는 싱글톤 Python 객체(C로 구현됨)를 초기화하는 API를 두는 방식입니다.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">참고</p>
+<p><a class="reference internal" href="../reference/reset_boot.html#soft-reset"><span class="std std-ref">소프트 리셋</span></a>은 항상 Python 힙을 비우고 모든 메모리를 해제합니다. 소프트 리셋 후에는 힙에 대한 어떤 포인터도 보유하지 않는 것이 중요한데, 그러한 포인터는 해제된 메모리를 가리키는 댕글링 포인터(dangling pointer)가 되기 때문입니다.</p>
+<p>일부 포트는 “C 힙”도 지원하며(<a class="reference internal" href="cmodules.html#c-heap"><span class="std std-ref">C 동적 메모리 할당</span></a> 참조), 이 경우 표준 C 함수 <code class="docutils literal notranslate"><span class="pre">malloc</span></code> 등을 호출하여 소프트 리셋 후에도 유효하게 유지되는 메모리를 할당할 수 있습니다.</p>
+</div>
+</section>
+<section id="the-object-model">
+<h2>객체 모델<a class="headerlink" href="#the-object-model" title="Link to this heading">¶</a></h2>
+<p>모든 MicroPython 객체는 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 데이터 타입으로 참조됩니다. 이는 보통 워드 크기(즉, 대상 아키텍처에서의 포인터와 같은 크기)이며, 일반적으로 32비트(STM32, RP2, nRF, Unix x86) 또는 64비트(Unix x64)일 수 있습니다. 특정 객체 표현의 경우 워드 크기보다 클 수도 있는데, 예를 들어 <code class="docutils literal notranslate"><span class="pre">OBJ_REPR_D</span></code>는 32비트 아키텍처에서 64비트 크기의 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code>를 가집니다.</p>
+<p><code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code>는 정수, 부동소수점, 타입, dict 또는 클래스 인스턴스와 같은 MicroPython 객체를 나타냅니다. 불리언과 작은 정수 같은 일부 객체는 그 값이 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 값 안에 직접 저장되어 추가 메모리를 필요로 하지 않습니다. 그 외의 객체는 값이 메모리의 다른 곳(예: 가비지 컬렉션 대상 힙)에 저장되며, 해당 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code>는 그 메모리를 가리키는 포인터를 담습니다. <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code>의 일부는 어떤 타입의 객체인지를 알려주는 태그입니다.</p>
+<p>사용 가능한 표현에 대한 구체적인 세부 사항은 <code class="docutils literal notranslate"><span class="pre">py/mpconfig.h</span></code>를 참조하세요.</p>
+<p><strong>포인터 태깅(Pointer tagging)</strong></p>
+<p>포인터는 워드 정렬되어 있으므로, <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code>에 저장될 때 이 객체 핸들의 하위 비트는 0이 됩니다. 예를 들어 32비트 아키텍처에서는 하위 2비트가 0이 됩니다:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|******00</span></code></p>
+<p>이 비트들은 태그를 저장하기 위한 용도로 예약되어 있습니다. 태그는 해당 정보를 객체에 저장하기 위한 새 필드를 도입하는 대신 추가 정보를 저장하는데, 새 필드 도입은 비효율적일 수 있습니다. MicroPython에서 태그는 우리가 작은 정수, 인터닝된(작은) 문자열, 또는 구체 객체(concrete object) 중 무엇을 다루고 있는지를 알려주며, 각각에 서로 다른 의미 체계가 적용됩니다.</p>
+<p>작은 정수의 경우 매핑은 다음과 같습니다:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*******1</span></code></p>
+<p>여기서 별표(*)는 실제 정수 값을 담습니다. 인터닝된 문자열이나 즉치 객체(immediate object)(예: <code class="docutils literal notranslate"><span class="pre">True</span></code>)의 경우 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 값의 레이아웃은 각각 다음과 같습니다:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*****010</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*****110</span></code></p>
+<p>반면 위의 어느 것도 아닌 구체 객체는 다음과 같은 형태를 취합니다:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|******00</span></code></p>
+<p>여기서 별표는 메모리 내 구체 객체의 주소에 해당합니다.</p>
+</section>
+<section id="allocation-of-objects">
+<h2>객체의 할당<a class="headerlink" href="#allocation-of-objects" title="Link to this heading">¶</a></h2>
+<p>작은 정수의 값은 <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> 안에 직접 저장되며 힙이나 다른 곳이 아닌 제자리(in-place)에 할당됩니다. 따라서 작은 정수의 생성은 힙에 영향을 주지 않습니다. 이미 텍스트 데이터가 다른 곳에 저장되어 있는 인터닝된 문자열과, <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>, <code class="docutils literal notranslate"><span class="pre">True</span></code> 같은 즉치 값도 마찬가지입니다.</p>
+<p>구체 객체에 해당하는 그 외의 모든 것은 힙에 할당되며, 그 객체 구조는 객체의 타입을 저장하기 위한 필드가 객체 헤더에 예약되도록 되어 있습니다.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">+++++++++++
+</span><span data-line="2">+<span class="w">         </span>+
+</span><span data-line="3">+<span class="w"> </span><span class="nb">type</span><span class="w">    </span>+<span class="w"> </span>object<span class="w"> </span>header
+</span><span data-line="4">+<span class="w">         </span>+
+</span><span data-line="5">+++++++++++
+</span><span data-line="6">+<span class="w">         </span>+<span class="w"> </span>object<span class="w"> </span>items
+</span><span data-line="7">+<span class="w">         </span>+
+</span><span data-line="8">+<span class="w">         </span>+
+</span><span data-line="9">+++++++++++
+</span></pre></div>
+</div>
+<p>힙의 가장 작은 할당 단위는 블록이며, 그 크기는 머신 워드 4개입니다(32비트 머신에서는 16바이트, 64비트 머신에서는 32바이트). 힙에 할당되는 또 다른 구조는 각 블록에서의 객체 할당을 추적합니다. 이 구조를 <em>비트맵(bitmap)</em>이라고 합니다.</p>
+<img alt="../_images/bitmap.png" src="../_images/bitmap.png" />
+<p>비트맵은 블록이 “비어 있는지(free)” 또는 “사용 중(in use)”인지를 추적하며, 각 블록의 이 상태를 추적하는 데 2비트를 사용합니다.</p>
+<p>마크-스윕 가비지 컬렉터는 힙에 할당된 객체를 관리하며, 비트맵을 활용하여 여전히 사용 중인 객체를 표시하기도 합니다. 이러한 세부 사항의 전체 구현은 <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/gc.c">py/gc.c</a> 를 참조하세요.</p>
+<p><strong>할당: 힙 레이아웃</strong></p>
+<p>힙은 풀(pool) 단위의 블록들로 구성되도록 배열됩니다. 블록은 서로 다른 속성을 가질 수 있습니다:</p>
+<ul class="simple">
+<li><p><em>ATB(allocation table byte, 할당 테이블 바이트):</em> 설정되어 있으면 해당 블록은 일반 블록입니다</p></li>
+<li><p><em>FREE:</em> 비어 있는 블록</p></li>
+<li><p><em>HEAD:</em> 블록 체인의 머리</p></li>
+<li><p><em>TAIL:</em> 블록 체인의 꼬리에 위치</p></li>
+<li><p><em>MARK :</em> 표시된 머리 블록</p></li>
+<li><p><em>FTB(finaliser table byte, 종료자 테이블 바이트):</em> 설정되어 있으면 해당 블록에 종료자(finaliser)가 있습니다</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>맨 위로</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="compiler.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>이전</span><div class="title">컴파일러</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="library.html">
+      <div class="page-info">
+        <span>다음</span>
+        <div class="title">모듈 구현하기</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=e74a095f"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=afa94a99"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

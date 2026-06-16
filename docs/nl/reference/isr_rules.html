@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="nl" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Interrupt-handlers schrijven - OpenMV MicroPython 1.28 documentatie</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Zoeken" href="../search.html" /><link rel="next" title="Maximaliseren van de snelheid van MicroPython" href="speed_python.html" /><link rel="prev" title="MicroPython .mpy-bestanden" href="mpyfiles.html" />
+      <link rel="canonical" href="https://docs.openmv.io/reference/isr_rules.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/reference/isr_rules.html"/>
+  <meta property="og:title" content="Interrupt-handlers schrijven"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="de" href="/de/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="es" href="/es/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="it" href="/it/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/reference/isr_rules.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/reference/isr_rules.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">Home</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">Tutorial</a></li><li class="link"><a href="../library/index.html">Libraries</a></li><li class="link"><a href="../openmvcam/quickref.html">Boards</a></li><li class="link"><a href="../openmvcam/shields.html">Shields</a></li><li class="link"><a href="../openmvcam/sensors.html">Sensors</a></li><li class="link"><a href="index.html">Language</a></li><li class="link"><a href="../genrst/index.html">CPython</a></li><li class="link"><a href="../develop/index.html">Internals</a></li><li class="link"><a href="../changelog/index.html">Changelog</a></li><li class="link"><a href="../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Zoeken" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/reference/isr_rules.html">English</a></li><li><a href="/zh_CN/reference/isr_rules.html">简体中文</a></li><li><a href="/zh_TW/reference/isr_rules.html">繁體中文</a></li><li><a href="/de/reference/isr_rules.html">Deutsch</a></li><li><a href="/ja/reference/isr_rules.html">日本語</a></li><li><a href="/es/reference/isr_rules.html">Español</a></li><li><a href="/ru/reference/isr_rules.html">Русский</a></li><li><a href="/fr/reference/isr_rules.html">Français</a></li><li><a href="/ko/reference/isr_rules.html">한국어</a></li><li><a href="/it/reference/isr_rules.html">Italiano</a></li><li><a href="/pt_BR/reference/isr_rules.html">Português</a></li><li><a href="/nl/reference/isr_rules.html">Nederlands</a></li><li><a href="/ro/reference/isr_rules.html">Română</a></li><li><a href="/hr/reference/isr_rules.html">Hrvatski</a></li><li><a href="/cs/reference/isr_rules.html">Čeština</a></li><li><a href="/pl/reference/isr_rules.html">Polski</a></li><li><a href="/fi/reference/isr_rules.html">Suomi</a></li><li><a href="/sv/reference/isr_rules.html">Svenska</a></li><li><a href="/hu/reference/isr_rules.html">Magyar</a></li><li><a href="/tr/reference/isr_rules.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">Tutorial</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">Bibliotheken</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">Sensors</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Taal</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Verklarende woordenlijst</a></li>
+<li class="toctree-l2"><a class="reference internal" href="repl.html">De interactieve interpretermodus van MicroPython (ook wel REPL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reset_boot.html">Reset- en opstartsequentie</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython op afstand bedienen: mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy-bestanden</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Interrupt-handlers schrijven</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">Maximaliseren van de snelheid van MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">MicroPython op microcontrollers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython manifest-bestanden</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">Pakketbeheer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler voor Thumb2-architecturen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem.html">Werken met bestandssystemen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="romfs.html">Werken met ROMFS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">Migratiegids voor MicroPython 2.0</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../develop/index.html">Interne werking</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">Licentie</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#tips-and-recommended-practices">Tips en aanbevolen praktijken</a></li>
+<li><a class="reference internal" href="#micropython-issues">MicroPython-kwesties</a><ul>
+<li><a class="reference internal" href="#the-emergency-exception-buffer">De noodbuffer voor uitzonderingen</a></li>
+<li><a class="reference internal" href="#simplicity">Eenvoud</a></li>
+<li><a class="reference internal" href="#communication-between-an-isr-and-the-main-program">Communicatie tussen een ISR en het hoofdprogramma</a></li>
+<li><a class="reference internal" href="#the-use-of-object-methods-as-callbacks">Het gebruik van objectmethoden als callbacks</a></li>
+<li><a class="reference internal" href="#creation-of-python-objects">Aanmaken van Python-objecten</a></li>
+<li><a class="reference internal" href="#use-of-python-objects">Gebruik van Python-objecten</a></li>
+<li><a class="reference internal" href="#overcoming-the-float-limitation">De float-beperking overwinnen</a></li>
+<li><a class="reference internal" href="#using-micropython-schedule">micropython.schedule gebruiken</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exceptions">Uitzonderingen</a></li>
+<li><a class="reference internal" href="#interfacing-to-asyncio">Koppelen aan asyncio</a></li>
+<li><a class="reference internal" href="#general-issues">Algemene kwesties</a><ul>
+<li><a class="reference internal" href="#interrupt-handler-design">Ontwerp van interrupt-handlers</a></li>
+<li><a class="reference internal" href="#reentrancy">Re-entrantie</a></li>
+<li><a class="reference internal" href="#critical-sections">Kritieke secties</a></li>
+<li><a class="reference internal" href="#interrupts-and-the-repl">Interrupts en de REPL</a></li>
+</ul>
+</li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/reference/isr_rules.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython-taal en -implementatie</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">Interrupt-handlers schrijven</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/reference/isr_rules.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/reference/isr_rules.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/reference/isr_rules.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/reference/isr_rules.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/reference/isr_rules.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/reference/isr_rules.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="writing-interrupt-handlers">
+<span id="isr-rules"></span><h1>Interrupt-handlers schrijven<a class="headerlink" href="#writing-interrupt-handlers" title="Link to this heading">¶</a></h1>
+<p>Op geschikte hardware biedt MicroPython de mogelijkheid om interrupt-handlers in Python te schrijven. Interrupt-handlers - ook bekend als interrupt service routines (ISR’s) - worden gedefinieerd als callback-functies. Deze worden uitgevoerd als reactie op een gebeurtenis zoals een timertrigger of een spanningsverandering op een pin. Dergelijke gebeurtenissen kunnen op elk moment tijdens de uitvoering van de programmacode optreden. Dit heeft aanzienlijke gevolgen, sommige specifiek voor de MicroPython-taal. Andere zijn gemeenschappelijk voor alle systemen die op realtime gebeurtenissen kunnen reageren. Dit document behandelt eerst de taalspecifieke kwesties, gevolgd door een korte inleiding tot realtime programmeren voor wie er nieuw in is.</p>
+<p>Deze inleiding gebruikt vage termen als “traag” of “zo snel mogelijk”. Dit is bewust, aangezien snelheden afhankelijk zijn van de toepassing. Acceptabele duren voor een ISR zijn afhankelijk van de snelheid waarmee interrupts optreden, de aard van het hoofdprogramma en de aanwezigheid van andere gelijktijdige gebeurtenissen.</p>
+<section id="tips-and-recommended-practices">
+<h2>Tips en aanbevolen praktijken<a class="headerlink" href="#tips-and-recommended-practices" title="Link to this heading">¶</a></h2>
+<p>Dit vat de hieronder gedetailleerde punten samen en somt de belangrijkste aanbevelingen voor interrupt-handlercode op.</p>
+<ul class="simple">
+<li><p>Houd de code zo kort en eenvoudig mogelijk.</p></li>
+<li><p>Vermijd geheugentoewijzing: geen toevoegingen aan lijsten of invoegingen in dictionaries, geen drijvende komma.</p></li>
+<li><p>Overweeg <code class="docutils literal notranslate"><span class="pre">micropython.schedule</span></code> te gebruiken om de bovenstaande beperking te omzeilen.</p></li>
+<li><p>Wanneer een ISR meerdere bytes teruggeeft, gebruik dan een vooraf toegewezen <code class="docutils literal notranslate"><span class="pre">bytearray</span></code>. Als er meerdere gehele getallen tussen een ISR en het hoofdprogramma gedeeld moeten worden, overweeg dan een array (<code class="docutils literal notranslate"><span class="pre">array.array</span></code>).</p></li>
+<li><p>Wanneer gegevens worden gedeeld tussen het hoofdprogramma en een ISR, overweeg dan om interrupts uit te schakelen voordat de gegevens in het hoofdprogramma worden benaderd en ze direct daarna weer in te schakelen (zie Kritieke secties).</p></li>
+<li><p>Wijs een noodbuffer voor uitzonderingen toe (zie hieronder).</p></li>
+</ul>
+</section>
+<section id="micropython-issues">
+<h2>MicroPython-kwesties<a class="headerlink" href="#micropython-issues" title="Link to this heading">¶</a></h2>
+<section id="the-emergency-exception-buffer">
+<h3>De noodbuffer voor uitzonderingen<a class="headerlink" href="#the-emergency-exception-buffer" title="Link to this heading">¶</a></h3>
+<p>Als er een fout optreedt in een ISR, kan MicroPython geen foutrapport produceren tenzij hiervoor een speciale buffer is aangemaakt. Het debuggen wordt vereenvoudigd als de volgende code wordt opgenomen in elk programma dat interrupts gebruikt.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">micropython</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">micropython</span><span class="o">.</span><span class="n">alloc_emergency_exception_buf</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>De noodbuffer voor uitzonderingen kan slechts één uitzonderings-stacktrace bevatten. Dit betekent dat als er een tweede uitzondering wordt opgeworpen tijdens de afhandeling van een uitzondering terwijl de heap vergrendeld is, de stacktrace van die tweede uitzondering de oorspronkelijke vervangt - zelfs als de tweede uitzondering netjes wordt afgehandeld. Dit kan leiden tot verwarrende uitzonderingsmeldingen als de buffer later wordt afgedrukt.</p>
+</section>
+<section id="simplicity">
+<h3>Eenvoud<a class="headerlink" href="#simplicity" title="Link to this heading">¶</a></h3>
+<p>Om diverse redenen is het belangrijk om ISR-code zo kort en eenvoudig mogelijk te houden. Het moet alleen doen wat onmiddellijk na de gebeurtenis die het veroorzaakte moet gebeuren: bewerkingen die uitgesteld kunnen worden, moeten aan de hoofdprogrammalus worden gedelegeerd. Doorgaans handelt een ISR het hardwareapparaat af dat de interrupt veroorzaakte, waardoor het klaar wordt gemaakt voor de volgende interrupt. Het communiceert met de hoofdlus door gedeelde gegevens bij te werken om aan te geven dat de interrupt heeft plaatsgevonden, en het keert terug. Een ISR moet de controle zo snel mogelijk teruggeven aan de hoofdlus. Dit is geen specifieke MicroPython-kwestie en wordt daarom meer in detail behandeld <a class="reference internal" href="#isr"><span class="std std-ref">hieronder</span></a>.</p>
+</section>
+<section id="communication-between-an-isr-and-the-main-program">
+<h3>Communicatie tussen een ISR en het hoofdprogramma<a class="headerlink" href="#communication-between-an-isr-and-the-main-program" title="Link to this heading">¶</a></h3>
+<p>Normaal gesproken moet een ISR communiceren met het hoofdprogramma. De eenvoudigste manier om dit te doen is via een of meer gedeelde gegevensobjecten, ofwel gedeclareerd als globaal ofwel gedeeld via een class (zie hieronder). Er zijn diverse beperkingen en gevaren rond het doen hiervan, die hieronder meer in detail worden behandeld. Gehele getallen, <code class="docutils literal notranslate"><span class="pre">bytes</span></code>- en <code class="docutils literal notranslate"><span class="pre">bytearray</span></code>-objecten worden hier vaak voor gebruikt, samen met arrays (uit de array-module) die diverse gegevenstypen kunnen opslaan.</p>
+</section>
+<section id="the-use-of-object-methods-as-callbacks">
+<h3>Het gebruik van objectmethoden als callbacks<a class="headerlink" href="#the-use-of-object-methods-as-callbacks" title="Link to this heading">¶</a></h3>
+<p>MicroPython ondersteunt deze krachtige techniek die het mogelijk maakt dat een ISR instantievariabelen deelt met de onderliggende code. Het stelt een class die een apparaatstuurprogramma implementeert ook in staat om meerdere apparaatinstanties te ondersteunen. Het volgende voorbeeld laat twee LED’s met verschillende snelheden knipperen.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">micropython</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">micropython</span><span class="o">.</span><span class="n">alloc_emergency_exception_buf</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span data-line="5">
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+</span><span data-line="8">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">led</span><span class="p">):</span>
+</span><span data-line="9">        <span class="bp">self</span><span class="o">.</span><span class="n">led</span> <span class="o">=</span> <span class="n">led</span>
+</span><span data-line="10">        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">machine</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cb</span><span class="p">,</span> <span class="n">hard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12">    <span class="k">def</span><span class="w"> </span><span class="nf">cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tim</span><span class="p">):</span>
+</span><span data-line="13">        <span class="bp">self</span><span class="o">.</span><span class="n">led</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+</span><span data-line="14">
+</span><span data-line="15">
+</span><span data-line="16"><span class="n">red</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">machine</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_RED&quot;</span><span class="p">))</span>
+</span><span data-line="17"><span class="n">green</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="n">machine</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="s2">&quot;LED_GREEN&quot;</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>In dit voorbeeld stuurt de instantie <code class="docutils literal notranslate"><span class="pre">red</span></code> de rode LED aan vanaf een virtuele timer van 1 Hz: telkens wanneer de timer afgaat wordt <code class="docutils literal notranslate"><span class="pre">red.cb()</span></code> aangeroepen, wat de rode LED omschakelt. De instantie <code class="docutils literal notranslate"><span class="pre">green</span></code> werkt op vergelijkbare wijze met een timer van 0,8 Hz die de groene LED omschakelt. Het gebruik van instantiemethoden levert twee voordelen op. Ten eerste stelt één enkele class code in staat om te worden gedeeld tussen meerdere hardware-instanties. Ten tweede is, als gebonden methode, het eerste argument van de callback-functie <code class="docutils literal notranslate"><span class="pre">self</span></code>. Dit stelt de callback in staat om instantiegegevens te benaderen en de toestand tussen opeenvolgende aanroepen te bewaren. Als de bovenstaande class bijvoorbeeld een variabele <code class="docutils literal notranslate"><span class="pre">self.count</span></code> had die in de constructor op nul is gezet, dan zou <code class="docutils literal notranslate"><span class="pre">cb()</span></code> de teller kunnen verhogen. De instanties <code class="docutils literal notranslate"><span class="pre">red</span></code> en <code class="docutils literal notranslate"><span class="pre">green</span></code> zouden dan onafhankelijke tellingen bijhouden van het aantal keren dat elke LED van toestand is veranderd.</p>
+</section>
+<section id="creation-of-python-objects">
+<h3>Aanmaken van Python-objecten<a class="headerlink" href="#creation-of-python-objects" title="Link to this heading">¶</a></h3>
+<p>ISR’s kunnen geen instanties van Python-objecten aanmaken. Dit komt doordat MicroPython geheugen voor het object moet toewijzen uit een voorraad vrije geheugenblokken die de <a class="reference internal" href="glossary.html#term-heap"><span class="xref std std-term">heap</span></a> wordt genoemd. Dit is niet toegestaan in een interrupt-handler omdat heap-toewijzing niet re-entrant is. Met andere woorden, de interrupt kan optreden terwijl het hoofdprogramma halverwege een toewijzing is - om de integriteit van de heap te behouden, staat de interpreter geen geheugentoewijzingen toe in ISR-code.</p>
+<p>Een gevolg hiervan is dat ISR’s geen drijvende-kommaberekeningen kunnen gebruiken; dit komt doordat floats Python-objecten zijn. Evenzo kan een ISR geen item aan een lijst toevoegen. In de praktijk kan het lastig zijn om precies te bepalen welke codeconstructies geheugentoewijzing zullen proberen uit te voeren en een foutmelding zullen veroorzaken: nog een reden om ISR-code kort en eenvoudig te houden.</p>
+<p>Een manier om deze kwestie te vermijden is dat de ISR vooraf toegewezen buffers gebruikt. Een class-constructor maakt bijvoorbeeld een <code class="docutils literal notranslate"><span class="pre">bytearray</span></code>-instantie en een booleaanse vlag aan. De ISR-methode wijst gegevens toe aan locaties in de buffer en zet de vlag. De geheugentoewijzing vindt plaats in de hoofdprogrammacode wanneer het object wordt geïnstantieerd in plaats van in de ISR.</p>
+<p>De I/O-methoden van de MicroPython-bibliotheek bieden gewoonlijk een optie om een vooraf toegewezen buffer te gebruiken. <code class="docutils literal notranslate"><span class="pre">machine.I2C.readfrom_into()</span></code> leest bijvoorbeeld in een door de aanroeper geleverde wijzigbare buffer: dit maakt het gebruik ervan in een ISR mogelijk.</p>
+<p>Een manier om een object aan te maken zonder een class of globals te gebruiken is als volgt:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">set_volume</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">buf</span><span class="o">=</span><span class="nb">bytearray</span><span class="p">(</span><span class="mi">3</span><span class="p">)):</span>
+</span><span data-line="2">    <span class="n">buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xa5</span>
+</span><span data-line="3">    <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span>
+</span><span data-line="4">    <span class="n">buf</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x5a</span>
+</span><span data-line="5">    <span class="k">return</span> <span class="n">buf</span>
+</span></pre></div>
+</div>
+<p>De compiler instantieert het standaardargument <code class="docutils literal notranslate"><span class="pre">buf</span></code> wanneer de functie voor het eerst wordt geladen (gewoonlijk wanneer de module waarin het zit wordt geïmporteerd).</p>
+<p>Een geval van objectaanmaak treedt op wanneer een verwijzing naar een gebonden methode wordt aangemaakt. Dit betekent dat een ISR geen gebonden methode aan een functie kan doorgeven. Eén oplossing is om in de class-constructor een verwijzing naar de gebonden methode aan te maken en die verwijzing in de ISR door te geven. Bijvoorbeeld:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">class</span><span class="w"> </span><span class="nc">Foo</span><span class="p">():</span>
+</span><span data-line="2">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="3">        <span class="bp">self</span><span class="o">.</span><span class="n">bar_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bar</span>  <span class="c1"># Allocation occurs here</span>
+</span><span data-line="4">        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mf">0.1</span>
+</span><span data-line="5">        <span class="bp">self</span><span class="o">.</span><span class="n">tim</span> <span class="o">=</span> <span class="n">machine</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cb</span><span class="p">,</span> <span class="n">hard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7">    <span class="k">def</span><span class="w"> </span><span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_</span><span class="p">):</span>
+</span><span data-line="8">        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">*=</span> <span class="mf">1.2</span>
+</span><span data-line="9">        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11">    <span class="k">def</span><span class="w"> </span><span class="nf">cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+</span><span data-line="12">        <span class="c1"># Passing self.bar would cause allocation.</span>
+</span><span data-line="13">        <span class="n">micropython</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bar_ref</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Andere technieken zijn het definiëren en instantiëren van de methode in de constructor, of het doorgeven van <code class="xref py py-meth docutils literal notranslate"><span class="pre">Foo.bar()</span></code> met het argument <em>self</em>.</p>
+</section>
+<section id="use-of-python-objects">
+<h3>Gebruik van Python-objecten<a class="headerlink" href="#use-of-python-objects" title="Link to this heading">¶</a></h3>
+<p>Een verdere beperking op objecten ontstaat door de manier waarop Python werkt. Wanneer een <code class="docutils literal notranslate"><span class="pre">import</span></code>-statement wordt uitgevoerd, wordt de Python-code gecompileerd naar <a class="reference internal" href="glossary.html#term-bytecode"><span class="xref std std-term">bytecode</span></a>, waarbij één regel code doorgaans op meerdere bytecodes wordt afgebeeld. Wanneer de code draait, leest de interpreter elke bytecode en voert deze uit als een reeks machinecode-instructies. Aangezien een interrupt op elk moment tussen machinecode-instructies kan optreden, kan de oorspronkelijke regel Python-code slechts gedeeltelijk zijn uitgevoerd. Bijgevolg kan een Python-object zoals een set, lijst of dictionary dat in de hoofdlus wordt gewijzigd interne consistentie missen op het moment dat de interrupt optreedt.</p>
+<p>Een typische uitkomst is als volgt. In zeldzame gevallen zal de ISR precies op het moment draaien dat het object gedeeltelijk is bijgewerkt. Wanneer de ISR het object probeert te lezen, ontstaat er een crash. Omdat dergelijke problemen doorgaans op zeldzame, willekeurige momenten optreden, kunnen ze moeilijk te diagnosticeren zijn. Er zijn manieren om deze kwestie te omzeilen, beschreven in <a class="reference internal" href="#critical"><span class="std std-ref">Kritieke secties</span></a> hieronder.</p>
+<p>Het is belangrijk om duidelijk te zijn over wat de wijziging van een object inhoudt. Het wijzigen van de inhoud van een array of bytearray is veilig. Dit komt doordat bytes of words worden geschreven als één enkele machinecode-instructie die niet onderbreekbaar is: in de terminologie van realtime programmeren is het schrijven atomair. Hetzelfde geldt voor het bijwerken van een dictionary-item, omdat items machinewoorden zijn, namelijk gehele getallen of pointers naar objecten. Een door de gebruiker gedefinieerd object kan een array of bytearray instantiëren. Het is geldig dat zowel de hoofdlus als de ISR de inhoud hiervan wijzigen.</p>
+<p>Het gevaar ontstaat wanneer de structuur van een object wordt gewijzigd, met name in het geval van dictionaries. Het toevoegen of verwijderen van sleutels kan een rehash veroorzaken. Als een harde ISR draait terwijl een rehash bezig is en probeert een item te benaderen, kan er een crash optreden. Intern worden globals geïmplementeerd als een dictionary. Bijgevolg moet het hoofdprogramma alle benodigde globals aanmaken voordat een proces wordt gestart dat harde interrupts genereert. Toepassingscode moet ook het verwijderen van globals vermijden.</p>
+<p>MicroPython ondersteunt gehele getallen van willekeurige precisie. Waarden tussen 2<strong>30 -1 en -2</strong>30 worden opgeslagen in één enkel machinewoord. Grotere waarden worden opgeslagen als Python-objecten. Bijgevolg kunnen wijzigingen aan lange gehele getallen niet als atomair worden beschouwd. Het gebruik van lange gehele getallen in ISR’s is onveilig, omdat geheugentoewijzing kan worden geprobeerd terwijl de waarde van de variabele verandert.</p>
+</section>
+<section id="overcoming-the-float-limitation">
+<h3>De float-beperking overwinnen<a class="headerlink" href="#overcoming-the-float-limitation" title="Link to this heading">¶</a></h3>
+<p>Over het algemeen is het het beste om het gebruik van floats in ISR-code te vermijden: hardwareapparaten werken normaal gesproken met gehele getallen en conversie naar floats wordt normaal gesproken in de hoofdlus gedaan. Er zijn echter enkele DSP-algoritmen die drijvende komma vereisen. Op platforms met hardwarematige drijvende komma (zoals de op STM32 gebaseerde OpenMV Cams) kan de inline ARM Thumb-assembler worden gebruikt om deze beperking te omzeilen. Dit komt doordat de processor float-waarden in een machinewoord opslaat; waarden kunnen tussen de ISR en de hoofdprogrammacode worden gedeeld via een array van floats.</p>
+</section>
+<section id="using-micropython-schedule">
+<h3>micropython.schedule gebruiken<a class="headerlink" href="#using-micropython-schedule" title="Link to this heading">¶</a></h3>
+<p>Deze functie stelt een ISR in staat om “zeer binnenkort” een callback voor uitvoering in te plannen. De callback wordt in een wachtrij geplaatst voor uitvoering die plaatsvindt op een moment dat de heap niet vergrendeld is. Daardoor kan het Python-objecten aanmaken en floats gebruiken. De callback wordt ook gegarandeerd uitgevoerd op een moment dat het hoofdprogramma elke update van Python-objecten heeft voltooid, dus de callback zal geen gedeeltelijk bijgewerkte objecten tegenkomen.</p>
+<p>Typisch gebruik is het afhandelen van sensorhardware. De ISR verkrijgt gegevens van de hardware en stelt deze in staat om een verdere interrupt uit te geven. Vervolgens plant het een callback in om de gegevens te verwerken.</p>
+<p>Ingeplande callbacks moeten voldoen aan de hieronder geschetste principes voor het ontwerp van interrupt-handlers. Dit om problemen te voorkomen die voortvloeien uit I/O-activiteit en de wijziging van gedeelde gegevens, die kunnen ontstaan in elke code die de hoofdprogrammalus onderbreekt.</p>
+<p>De uitvoeringstijd moet worden beschouwd in relatie tot de frequentie waarmee interrupts kunnen optreden. Als er een interrupt optreedt terwijl de vorige callback wordt uitgevoerd, wordt er een verdere instantie van de callback in de wachtrij geplaatst voor uitvoering; deze draait nadat de huidige instantie is voltooid. Een aanhoudend hoge herhalingssnelheid van interrupts brengt daarom een risico van ongecontroleerde groei van de wachtrij en uiteindelijke storing met een <code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code> met zich mee.</p>
+<p>Als de callback die aan <a class="reference internal" href="../library/micropython.html#micropython.schedule" title="micropython.schedule"><code class="xref any py py-func docutils literal notranslate"><span class="pre">schedule()</span></code></a> moet worden doorgegeven een gebonden methode is, raadpleeg dan de opmerking in “Aanmaken van Python-objecten”.</p>
+</section>
+</section>
+<section id="exceptions">
+<h2>Uitzonderingen<a class="headerlink" href="#exceptions" title="Link to this heading">¶</a></h2>
+<p>Als een ISR een uitzondering opwerpt, zal deze zich niet voortplanten naar de hoofdlus. De interrupt wordt uitgeschakeld tenzij de uitzondering door de ISR-code wordt afgehandeld.</p>
+</section>
+<section id="interfacing-to-asyncio">
+<h2>Koppelen aan asyncio<a class="headerlink" href="#interfacing-to-asyncio" title="Link to this heading">¶</a></h2>
+<p>Wanneer een ISR draait, kan deze de <a class="reference internal" href="../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a>-scheduler onderbreken. Als de ISR een <a class="reference internal" href="../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a>-bewerking uitvoert, kan de werking van de scheduler worden verstoord. Dit geldt ongeacht of de interrupt hard of zacht is en geldt ook als de ISR de uitvoering via <a class="reference internal" href="../library/micropython.html#micropython.schedule" title="micropython.schedule"><code class="xref any py py-func docutils literal notranslate"><span class="pre">micropython.schedule</span></code></a> aan een andere functie heeft doorgegeven. In het bijzonder is het aanmaken of annuleren van taken ongeldig in een ISR-context. De veilige manier om met <a class="reference internal" href="../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref any py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> te interageren is door een coroutine te implementeren met synchronisatie uitgevoerd door <a class="reference internal" href="../library/asyncio.html#asyncio.ThreadSafeFlag" title="asyncio.ThreadSafeFlag"><code class="xref any py py-class docutils literal notranslate"><span class="pre">asyncio.ThreadSafeFlag</span></code></a>. Het volgende fragment illustreert het aanmaken van een taak als reactie op een interrupt:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">tsf</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">ThreadSafeFlag</span><span class="p">()</span>
+</span><span data-line="2">
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">isr</span><span class="p">(</span><span class="n">_</span><span class="p">):</span>  <span class="c1"># Interrupt handler</span>
+</span><span data-line="5">    <span class="n">tsf</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+</span><span data-line="6">
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">foo</span><span class="p">():</span>
+</span><span data-line="9">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="10">        <span class="k">await</span> <span class="n">tsf</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</span><span data-line="11">        <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">bar</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>In dit voorbeeld zal er een variabele hoeveelheid latentie zijn tussen de uitvoering van de ISR en de uitvoering van <code class="docutils literal notranslate"><span class="pre">foo()</span></code>. Dit is inherent aan coöperatieve scheduling. De maximale latentie is afhankelijk van de toepassing en het platform, maar wordt doorgaans gemeten in tientallen ms.</p>
+</section>
+<section id="general-issues">
+<h2>Algemene kwesties<a class="headerlink" href="#general-issues" title="Link to this heading">¶</a></h2>
+<p>Dit is slechts een korte inleiding tot het onderwerp realtime programmeren. Beginners moeten er rekening mee houden dat ontwerpfouten in realtime programma’s kunnen leiden tot storingen die bijzonder moeilijk te diagnosticeren zijn. Dit komt doordat ze zelden en met essentieel willekeurige tussenpozen kunnen optreden. Het is cruciaal om het oorspronkelijke ontwerp goed te krijgen en problemen te anticiperen voordat ze ontstaan. Zowel interrupt-handlers als het hoofdprogramma moeten worden ontworpen met begrip van de volgende kwesties.</p>
+<section id="interrupt-handler-design">
+<span id="isr"></span><h3>Ontwerp van interrupt-handlers<a class="headerlink" href="#interrupt-handler-design" title="Link to this heading">¶</a></h3>
+<p>Zoals hierboven vermeld, moeten ISR’s zo eenvoudig mogelijk worden ontworpen. Ze moeten altijd binnen een korte, voorspelbare periode terugkeren. Dit is belangrijk omdat wanneer de ISR draait, de hoofdlus dat niet doet: de hoofdlus ondervindt onvermijdelijk pauzes in zijn uitvoering op willekeurige punten in de code. Dergelijke pauzes kunnen een bron zijn van moeilijk te diagnosticeren bugs, vooral als hun duur lang of variabel is. Om de implicaties van de looptijd van een ISR te begrijpen, is een basaal begrip van interruptprioriteiten vereist.</p>
+<p>Interrupts zijn georganiseerd volgens een prioriteitsschema. ISR-code kan zelf worden onderbroken door een interrupt met hogere prioriteit. Dit heeft implicaties als de twee interrupts gegevens delen (zie Kritieke secties hieronder). Als zo’n interrupt optreedt, introduceert deze een vertraging in de ISR-code. Als een interrupt met lagere prioriteit optreedt terwijl de ISR draait, wordt deze vertraagd tot de ISR is voltooid: als de vertraging te lang is, kan de interrupt met lagere prioriteit mislukken. Een verdere kwestie met trage ISR’s is het geval waarin een tweede interrupt van hetzelfde type optreedt tijdens de uitvoering ervan. De tweede interrupt wordt afgehandeld bij beëindiging van de eerste. Echter, als de snelheid van binnenkomende interrupts consequent de capaciteit van de ISR om ze af te handelen overschrijdt, zal de uitkomst geen gelukkige zijn.</p>
+<p>Bijgevolg moeten lusconstructies worden vermeden of geminimaliseerd. I/O naar andere apparaten dan het onderbrekende apparaat moet normaal gesproken worden vermeden: I/O zoals schijftoegang, <code class="docutils literal notranslate"><span class="pre">print</span></code>-statements en UART-toegang is relatief traag en de duur ervan kan variëren. Een verdere kwestie hierbij is dat bestandssysteemfuncties niet re-entrant zijn: het gebruik van bestandssysteem-I/O in een ISR en het hoofdprogramma zou gevaarlijk zijn. Cruciaal is dat ISR-code niet op een gebeurtenis mag wachten. I/O is acceptabel als gegarandeerd kan worden dat de code binnen een voorspelbare periode terugkeert, bijvoorbeeld het omschakelen van een pin of LED. Het benaderen van het onderbrekende apparaat via I2C of SPI kan nodig zijn, maar de tijd die voor dergelijke toegangen nodig is, moet worden berekend of gemeten en de impact ervan op de toepassing moet worden beoordeeld.</p>
+<p>Er is gewoonlijk een behoefte om gegevens te delen tussen de ISR en de hoofdlus. Dit kan worden gedaan ofwel via globale variabelen ofwel via class- of instantievariabelen. Variabelen zijn doorgaans integer- of booleaanse typen, of integer- of byte-arrays (een vooraf toegewezen integer-array biedt snellere toegang dan een lijst). Wanneer meerdere waarden door de ISR worden gewijzigd, is het nodig om het geval te overwegen waarin de interrupt optreedt op een moment dat het hoofdprogramma sommige, maar niet alle, van de waarden heeft benaderd. Dit kan tot inconsistenties leiden.</p>
+<p>Beschouw het volgende ontwerp. Een ISR slaat binnenkomende gegevens op in een bytearray en telt vervolgens het aantal ontvangen bytes op bij een geheel getal dat het totale aantal voor verwerking gereed staande bytes vertegenwoordigt. Het hoofdprogramma leest het aantal bytes, verwerkt de bytes en wist vervolgens het aantal gereed staande bytes. Dit werkt totdat een interrupt optreedt net nadat het hoofdprogramma het aantal bytes heeft gelezen. De ISR plaatst de toegevoegde gegevens in de buffer en werkt het ontvangen aantal bij, maar het hoofdprogramma heeft het aantal al gelezen en verwerkt daarom de oorspronkelijk ontvangen gegevens. De nieuw aangekomen bytes gaan verloren.</p>
+<p>Er zijn diverse manieren om dit gevaar te vermijden, waarvan de eenvoudigste het gebruik van een ringbuffer is. Als het niet mogelijk is om een structuur met inherente thread-veiligheid te gebruiken, worden hieronder andere manieren beschreven.</p>
+</section>
+<section id="reentrancy">
+<h3>Re-entrantie<a class="headerlink" href="#reentrancy" title="Link to this heading">¶</a></h3>
+<p>Er kan een potentieel gevaar optreden als een functie of methode wordt gedeeld tussen het hoofdprogramma en een of meer ISR’s, of tussen meerdere ISR’s. De kwestie hierbij is dat de functie zelf kan worden onderbroken en een verdere instantie van die functie kan draaien. Als dit moet kunnen gebeuren, moet de functie zodanig worden ontworpen dat deze re-entrant is. Hoe dit wordt gedaan is een gevorderd onderwerp dat buiten het bereik van deze tutorial valt.</p>
+</section>
+<section id="critical-sections">
+<span id="critical"></span><h3>Kritieke secties<a class="headerlink" href="#critical-sections" title="Link to this heading">¶</a></h3>
+<p>Een voorbeeld van een kritieke codesectie is er een die meer dan één variabele benadert die door een ISR kan worden beïnvloed. Als de interrupt toevallig optreedt tussen toegangen tot de afzonderlijke variabelen, zullen hun waarden inconsistent zijn. Dit is een geval van een gevaar dat bekend staat als een race-conditie: de ISR en de hoofdprogrammalus racen om de variabelen te wijzigen. Om inconsistentie te voorkomen, moet een middel worden ingezet om te garanderen dat de ISR de waarden niet wijzigt gedurende de kritieke sectie. Eén manier om dit te bereiken is door <code class="docutils literal notranslate"><span class="pre">machine.disable_irq()</span></code> uit te voeren vóór het begin van de sectie, en <code class="docutils literal notranslate"><span class="pre">machine.enable_irq()</span></code> aan het einde. Hier is een voorbeeld van deze aanpak:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">micropython</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">array</span>
+</span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+</span><span data-line="5"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="n">micropython</span><span class="o">.</span><span class="n">alloc_emergency_exception_buf</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9">
+</span><span data-line="10"><span class="k">class</span><span class="w"> </span><span class="nc">BoundsException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+</span><span data-line="11">    <span class="k">pass</span>
+</span><span data-line="12">
+</span><span data-line="13">
+</span><span data-line="14"><span class="n">ARRAYSIZE</span> <span class="o">=</span> <span class="n">const</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</span><span data-line="15"><span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="16"><span class="n">data</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="s1">&#39;i&#39;</span><span class="p">,</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">ARRAYSIZE</span><span class="p">)</span>
+</span><span data-line="17">
+</span><span data-line="18">
+</span><span data-line="19"><span class="k">def</span><span class="w"> </span><span class="nf">callback1</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+</span><span data-line="20">    <span class="k">global</span> <span class="n">data</span><span class="p">,</span> <span class="n">index</span>
+</span><span data-line="21">    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+</span><span data-line="22">        <span class="n">data</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">getrandbits</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>  <span class="c1"># simulate input</span>
+</span><span data-line="23">        <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span data-line="24">        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">ARRAYSIZE</span><span class="p">:</span>
+</span><span data-line="25">            <span class="k">raise</span> <span class="n">BoundsException</span><span class="p">(</span><span class="s1">&#39;Array bounds exceeded&#39;</span><span class="p">)</span>
+</span><span data-line="26">
+</span><span data-line="27">
+</span><span data-line="28"><span class="n">tim</span> <span class="o">=</span> <span class="n">machine</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">callback1</span><span class="p">,</span> <span class="n">hard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="29">
+</span><span data-line="30"><span class="k">for</span> <span class="n">loop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+</span><span data-line="31">    <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="32">        <span class="n">irq_state</span> <span class="o">=</span> <span class="n">machine</span><span class="o">.</span><span class="n">disable_irq</span><span class="p">()</span>  <span class="c1"># Start of critical section</span>
+</span><span data-line="33">        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">index</span><span class="p">):</span>
+</span><span data-line="34">            <span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+</span><span data-line="35">        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="36">        <span class="n">machine</span><span class="o">.</span><span class="n">enable_irq</span><span class="p">(</span><span class="n">irq_state</span><span class="p">)</span>  <span class="c1"># End of critical section</span>
+</span><span data-line="37">        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loop </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loop</span><span class="p">))</span>
+</span><span data-line="38">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="39">
+</span><span data-line="40"><span class="n">tim</span><span class="o">.</span><span class="n">deinit</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>Een kritieke sectie kan bestaan uit één enkele regel code en één enkele variabele. Beschouw het volgende codefragment.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="2">
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">cb</span><span class="p">():</span> <span class="c1"># An interrupt callback</span>
+</span><span data-line="5">    <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span data-line="6">
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="9">    <span class="c1"># Code to set up the interrupt callback omitted</span>
+</span><span data-line="10">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="11">        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+<p>Dit voorbeeld illustreert een subtiele bron van bugs. De regel <code class="docutils literal notranslate"><span class="pre">count</span> <span class="pre">+=</span> <span class="pre">1</span></code> in de hoofdlus draagt een specifiek race-conditie-gevaar dat bekend staat als een read-modify-write. Dit is een klassieke oorzaak van bugs in realtime systemen. In de hoofdlus leest MicroPython de waarde van <code class="docutils literal notranslate"><span class="pre">count</span></code>, telt er 1 bij op en schrijft deze terug. In zeldzame gevallen treedt de interrupt op na het lezen en vóór het schrijven. De interrupt wijzigt <code class="docutils literal notranslate"><span class="pre">count</span></code>, maar de wijziging wordt overschreven door de hoofdlus wanneer de ISR terugkeert. In een echt systeem zou dit kunnen leiden tot zeldzame, onvoorspelbare storingen.</p>
+<p>Zoals hierboven vermeld, moet voorzichtigheid worden betracht als een instantie van een ingebouwd Python-type wordt gewijzigd in de hoofdcode en die instantie wordt benaderd in een ISR. De code die de wijziging uitvoert, moet worden beschouwd als een kritieke sectie om te garanderen dat de instantie zich in een geldige toestand bevindt wanneer de ISR draait.</p>
+<p>Bijzondere voorzichtigheid moet worden betracht als een dataset wordt gedeeld tussen verschillende ISR’s. Het gevaar hierbij is dat de interrupt met hogere prioriteit kan optreden wanneer die met lagere prioriteit de gedeelde gegevens gedeeltelijk heeft bijgewerkt. Het omgaan met deze situatie is een gevorderd onderwerp dat buiten het bereik van deze inleiding valt, behalve om op te merken dat de hieronder beschreven mutex-objecten soms kunnen worden gebruikt.</p>
+<p>Het uitschakelen van interrupts gedurende een kritieke sectie is de gebruikelijke en eenvoudigste manier van werken, maar het schakelt alle interrupts uit in plaats van slechts die met de potentie om problemen te veroorzaken. Het is over het algemeen ongewenst om een interrupt lang uit te schakelen. In het geval van timer-interrupts introduceert het variabiliteit in het moment waarop een callback optreedt. In het geval van apparaat-interrupts kan het ertoe leiden dat het apparaat te laat wordt afgehandeld met mogelijk gegevensverlies of overrun-fouten in de apparaathardware. Net als ISR’s moet een kritieke sectie in de hoofdcode een korte, voorspelbare duur hebben.</p>
+<p>Een aanpak voor het omgaan met kritieke secties die de tijd waarin interrupts uitgeschakeld zijn radicaal verkort, is het gebruik van een object dat een mutex wordt genoemd (naam afgeleid van het begrip wederzijdse uitsluiting, oftewel mutual exclusion). Het hoofdprogramma vergrendelt de mutex voordat het de kritieke sectie uitvoert en ontgrendelt deze aan het einde. De ISR test of de mutex vergrendeld is. Als dat zo is, vermijdt het de kritieke sectie en keert het terug. De ontwerpuitdaging is het definiëren van wat de ISR moet doen in het geval dat toegang tot de kritieke variabelen wordt geweigerd. Een eenvoudig voorbeeld van een mutex is <a class="reference external" href="https://github.com/peterhinch/micropython-samples.git">hier</a> te vinden. Merk op dat de mutex-code interrupts wel uitschakelt, maar slechts voor de duur van acht machine-instructies: het voordeel van deze aanpak is dat andere interrupts vrijwel onaangetast blijven.</p>
+</section>
+<section id="interrupts-and-the-repl">
+<h3>Interrupts en de REPL<a class="headerlink" href="#interrupts-and-the-repl" title="Link to this heading">¶</a></h3>
+<p>Interrupt-handlers, zoals die geassocieerd met timers, kunnen blijven draaien nadat een programma is beëindigd. Dit kan onverwachte resultaten opleveren waar je had kunnen verwachten dat het object dat de callback opwekt buiten bereik zou zijn gegaan. Bijvoorbeeld op een OpenMV Cam:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">bar</span><span class="p">():</span>
+</span><span data-line="2">    <span class="n">foo</span> <span class="o">=</span> <span class="n">machine</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span> <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">),</span> <span class="n">hard</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">bar</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>Dit blijft draaien totdat de timer expliciet wordt uitgeschakeld of het board wordt gereset met <code class="docutils literal notranslate"><span class="pre">Ctrl-D</span></code>.</p>
+</section>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="mpyfiles.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">MicroPython .mpy-bestanden</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="speed_python.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">Maximaliseren van de snelheid van MicroPython</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=b268998d"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=e4d38c6a"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

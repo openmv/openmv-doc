@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ru" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3.15. Управление двигателем постоянного тока - документация OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Алфавитный указатель" href="../../../../genindex.html" /><link rel="search" title="Поиск" href="../../../../search.html" /><link rel="next" title="3.16. Управление сервоприводом" href="servos.html" /><link rel="prev" title="3.14. Регулирование яркости светодиода с помощью ШИМ" href="led-dimming.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/hardware/pwm/dc-motors.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/hardware/pwm/dc-motors.html"/>
+  <meta property="og:title" content="3.15. Управление двигателем постоянного тока"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/hardware/pwm/dc-motors.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Поиск" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/hardware/pwm/dc-motors.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/hardware/pwm/dc-motors.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/hardware/pwm/dc-motors.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/hardware/pwm/dc-motors.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/hardware/pwm/dc-motors.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/hardware/pwm/dc-motors.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/hardware/pwm/dc-motors.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/hardware/pwm/dc-motors.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/hardware/pwm/dc-motors.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/hardware/pwm/dc-motors.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/hardware/pwm/dc-motors.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/hardware/pwm/dc-motors.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/hardware/pwm/dc-motors.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/hardware/pwm/dc-motors.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/hardware/pwm/dc-motors.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/hardware/pwm/dc-motors.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/hardware/pwm/dc-motors.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/hardware/pwm/dc-motors.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/hardware/pwm/dc-motors.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/hardware/pwm/dc-motors.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#1056;&#1091;&#1082;&#1086;&#1074;&#1086;&#1076;&#1089;&#1090;&#1074;&#1086;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#1041;&#1099;&#1089;&#1090;&#1088;&#1099;&#1081; &#1089;&#1090;&#1072;&#1088;&#1090;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. &#1054;&#1073;&#1079;&#1086;&#1088; Python</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">3. &#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1086;&#1073;&#1086;&#1088;&#1091;&#1076;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077;&#1084;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">3.1. &#1052;&#1080;&#1082;&#1088;&#1086;&#1082;&#1086;&#1085;&#1090;&#1088;&#1086;&#1083;&#1083;&#1077;&#1088;&#1099;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">3.2. &#1054;&#1090;&#1089;&#1095;&#1105;&#1090; &#1074;&#1088;&#1077;&#1084;&#1077;&#1085;&#1080;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">3.3. &#1042;&#1080;&#1088;&#1090;&#1091;&#1072;&#1083;&#1100;&#1085;&#1099;&#1077; &#1090;&#1072;&#1081;&#1084;&#1077;&#1088;&#1099;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">3.4. &#1042;&#1099;&#1074;&#1086;&#1076;&#1099; &#1080; &#1087;&#1077;&#1088;&#1080;&#1092;&#1077;&#1088;&#1080;&#1081;&#1085;&#1099;&#1077; &#1091;&#1089;&#1090;&#1088;&#1086;&#1081;&#1089;&#1090;&#1074;&#1072;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">3.5. &#1050;&#1083;&#1072;&#1089;&#1089; LED</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">3.6. &#1054;&#1089;&#1085;&#1086;&#1074;&#1099; &#1101;&#1083;&#1077;&#1082;&#1090;&#1088;&#1086;&#1085;&#1080;&#1082;&#1080;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">3.7. &#1042;&#1099;&#1074;&#1086;&#1076; GPIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">3.8. &#1057;&#1086;&#1075;&#1083;&#1072;&#1089;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077; &#1091;&#1088;&#1086;&#1074;&#1085;&#1077;&#1081;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">3.9. &#1055;&#1077;&#1088;&#1077;&#1082;&#1083;&#1102;&#1095;&#1072;&#1090;&#1077;&#1083;&#1080; &#1080; &#1087;&#1086;&#1076;&#1090;&#1103;&#1075;&#1080;&#1074;&#1072;&#1102;&#1097;&#1080;&#1077; &#1088;&#1077;&#1079;&#1080;&#1089;&#1090;&#1086;&#1088;&#1099;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">3.10. GPIO-&#1074;&#1093;&#1086;&#1076;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">3.11. &#1055;&#1086;&#1076;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1076;&#1088;&#1077;&#1073;&#1077;&#1079;&#1075;&#1072;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">3.12. &#1063;&#1090;&#1077;&#1085;&#1080;&#1077; &#1072;&#1085;&#1072;&#1083;&#1086;&#1075;&#1086;&#1074;&#1086;&#1075;&#1086; &#1089;&#1080;&#1075;&#1085;&#1072;&#1083;&#1072; &#1089; &#1087;&#1086;&#1084;&#1086;&#1097;&#1100;&#1102; ADC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">3.13. &#1043;&#1077;&#1085;&#1077;&#1088;&#1072;&#1094;&#1080;&#1103; &#1072;&#1085;&#1072;&#1083;&#1086;&#1075;&#1086;&#1074;&#1086;&#1075;&#1086; &#1089;&#1080;&#1075;&#1085;&#1072;&#1083;&#1072; &#1089; &#1087;&#1086;&#1084;&#1086;&#1097;&#1100;&#1102; PWM &#1080; RC-&#1092;&#1080;&#1083;&#1100;&#1090;&#1088;&#1072;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="led-dimming.html">3.14. &#1056;&#1077;&#1075;&#1091;&#1083;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077; &#1103;&#1088;&#1082;&#1086;&#1089;&#1090;&#1080; &#1089;&#1074;&#1077;&#1090;&#1086;&#1076;&#1080;&#1086;&#1076;&#1072; &#1089; &#1087;&#1086;&#1084;&#1086;&#1097;&#1100;&#1102; &#1064;&#1048;&#1052;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">3.15. &#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1076;&#1074;&#1080;&#1075;&#1072;&#1090;&#1077;&#1083;&#1077;&#1084; &#1087;&#1086;&#1089;&#1090;&#1086;&#1103;&#1085;&#1085;&#1086;&#1075;&#1086; &#1090;&#1086;&#1082;&#1072;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="servos.html">3.16. &#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1089;&#1077;&#1088;&#1074;&#1086;&#1087;&#1088;&#1080;&#1074;&#1086;&#1076;&#1086;&#1084;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pulse-io/pulse-io.html">3.17. &#1041;&#1080;&#1090;&#1086;&#1074;&#1099;&#1077; &#1087;&#1086;&#1090;&#1086;&#1082;&#1080; &#1080; &#1080;&#1079;&#1084;&#1077;&#1088;&#1077;&#1085;&#1080;&#1077; &#1080;&#1084;&#1087;&#1091;&#1083;&#1100;&#1089;&#1086;&#1074;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-basics.html">3.18. &#1054;&#1089;&#1085;&#1086;&#1074;&#1099; UART</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-code.html">3.19. UART &#1074; &#1082;&#1086;&#1076;&#1077;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/serial-protocols.html">3.20. &#1055;&#1086;&#1089;&#1083;&#1077;&#1076;&#1086;&#1074;&#1072;&#1090;&#1077;&#1083;&#1100;&#1085;&#1099;&#1077; &#1087;&#1088;&#1086;&#1090;&#1086;&#1082;&#1086;&#1083;&#1099;, &#1082;&#1072;&#1076;&#1088;&#1080;&#1088;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077; &#1080; CRC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">3.21. &#1054;&#1089;&#1085;&#1086;&#1074;&#1099; SPI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">3.22. SPI &#1074; &#1082;&#1086;&#1076;&#1077;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-basics.html">3.23. &#1054;&#1089;&#1085;&#1086;&#1074;&#1099; I2C</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-code.html">3.24. I2C &#1074; &#1082;&#1086;&#1076;&#1077;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-basics.html">3.25. &#1054;&#1089;&#1085;&#1086;&#1074;&#1099; &#1096;&#1080;&#1085;&#1099; CAN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-code.html">3.26. &#1064;&#1080;&#1085;&#1072; CAN &#1074; &#1082;&#1086;&#1076;&#1077;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">3.27. &#1057;&#1090;&#1086;&#1088;&#1086;&#1078;&#1077;&#1074;&#1086;&#1081; &#1090;&#1072;&#1081;&#1084;&#1077;&#1088;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">3.28. &#1063;&#1072;&#1089;&#1099; &#1088;&#1077;&#1072;&#1083;&#1100;&#1085;&#1086;&#1075;&#1086; &#1074;&#1088;&#1077;&#1084;&#1077;&#1085;&#1080;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">3.29. &#1056;&#1077;&#1078;&#1080;&#1084;&#1099; &#1087;&#1086;&#1085;&#1080;&#1078;&#1077;&#1085;&#1085;&#1086;&#1075;&#1086; &#1101;&#1085;&#1077;&#1088;&#1075;&#1086;&#1087;&#1086;&#1090;&#1088;&#1077;&#1073;&#1083;&#1077;&#1085;&#1080;&#1103; &#1080; &#1089;&#1085;&#1072;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">3.30. &#1047;&#1072;&#1082;&#1083;&#1102;&#1095;&#1077;&#1085;&#1080;&#1077;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#1044;&#1072;&#1090;&#1095;&#1080;&#1082;&#1080; &#1080;&#1079;&#1086;&#1073;&#1088;&#1072;&#1078;&#1077;&#1085;&#1080;&#1103;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#1054;&#1073;&#1088;&#1072;&#1073;&#1086;&#1090;&#1082;&#1072; &#1080;&#1079;&#1086;&#1073;&#1088;&#1072;&#1078;&#1077;&#1085;&#1080;&#1081;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#1052;&#1072;&#1096;&#1080;&#1085;&#1085;&#1086;&#1077; &#1086;&#1073;&#1091;&#1095;&#1077;&#1085;&#1080;&#1077;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#1057;&#1077;&#1090;&#1080;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. &#1042;&#1077;&#1073;-&#1089;&#1077;&#1088;&#1074;&#1077;&#1088;&#1099;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#1055;&#1088;&#1086;&#1090;&#1086;&#1082;&#1086;&#1083; &#1093;&#1086;&#1089;&#1090;&#1072;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#1048;&#1085;&#1089;&#1090;&#1088;&#1091;&#1084;&#1077;&#1085;&#1090;&#1099;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#1055;&#1088;&#1086;&#1080;&#1079;&#1074;&#1086;&#1076;&#1089;&#1090;&#1074;&#1086;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#1041;&#1080;&#1073;&#1083;&#1080;&#1086;&#1090;&#1077;&#1082;&#1080;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#1055;&#1083;&#1072;&#1090;&#1099;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#1064;&#1080;&#1083;&#1076;&#1099;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#1044;&#1072;&#1090;&#1095;&#1080;&#1082;&#1080;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#1071;&#1079;&#1099;&#1082;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#1042;&#1085;&#1091;&#1090;&#1088;&#1077;&#1085;&#1085;&#1077;&#1077; &#1091;&#1089;&#1090;&#1088;&#1086;&#1081;&#1089;&#1090;&#1074;&#1086;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#1048;&#1089;&#1090;&#1086;&#1088;&#1080;&#1103; &#1080;&#1079;&#1084;&#1077;&#1085;&#1077;&#1085;&#1080;&#1081;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#1051;&#1080;&#1094;&#1077;&#1085;&#1079;&#1080;&#1103;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#the-h-bridge">3.15.1. H-&#1084;&#1086;&#1089;&#1090;</a></li>
+<li><a class="reference internal" href="#pwm-and-the-motor-s-inductance">3.15.2. &#1064;&#1048;&#1052; &#1080; &#1080;&#1085;&#1076;&#1091;&#1082;&#1090;&#1080;&#1074;&#1085;&#1086;&#1089;&#1090;&#1100; &#1076;&#1074;&#1080;&#1075;&#1072;&#1090;&#1077;&#1083;&#1103;</a></li>
+<li><a class="reference internal" href="#driving-an-h-bridge">3.15.3. &#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; H-&#1084;&#1086;&#1089;&#1090;&#1086;&#1084;</a></li>
+<li><a class="reference internal" href="#direction-and-speed-drivers">3.15.4. &#1044;&#1088;&#1072;&#1081;&#1074;&#1077;&#1088;&#1099; &#1089; &#1091;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077;&#1084; &#1085;&#1072;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077;&#1084; &#1080; &#1089;&#1082;&#1086;&#1088;&#1086;&#1089;&#1090;&#1100;&#1102;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/hardware/pwm/dc-motors.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Руководство по OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">3. </span>Управление оборудованием</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">3.15. </span>Управление двигателем постоянного тока</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/pwm/dc-motors.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/pwm/dc-motors.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/pwm/dc-motors.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/pwm/dc-motors.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/pwm/dc-motors.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/pwm/dc-motors.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="dc-motor-control">
+<h1><span class="section-number">3.15. </span>Управление двигателем постоянного тока<a class="headerlink" href="#dc-motor-control" title="Ссылка на этот заголовок">¶</a></h1>
+<p>Щёточный двигатель постоянного тока представляет собой катушку из провода на валу внутри магнитного поля. Пропустите ток через катушку, и поле начнёт действовать на неё с силой; эта сила превращается в крутящий момент на валу. Щётки внутри двигателя переключают направление тока в катушке по мере вращения вала, так что крутящий момент всегда толкает вал в одном и том же направлении. Подайте постоянное напряжение на два вывода двигателя, и вал завращается; поменяйте полярность, и он завращается в другую сторону.</p>
+<p>Двигателям обычно требуются от сотен миллиампер до нескольких ампер при напряжениях питания выше логического уровня 3,3 В камеры. Вывод GPIO может отдавать ток порядка 25 мА и не может менять полярность – он способен подключать лишь к двум своим шинам. Выходной каскад между камерой и двигателем должен пропускать ток двигателя, подводить отдельное питание двигателя с более высоким напряжением и позволять камере менять полярность по команде. Четырёхтранзисторный <em>H-мост</em> – это стандартное решение.</p>
+<section id="the-h-bridge">
+<h2><span class="section-number">3.15.1. </span>H-мост<a class="headerlink" href="#the-h-bridge" title="Ссылка на этот заголовок">¶</a></h2>
+<p>H-мост – это четыре ключа, расположенные в виде буквы H вокруг двигателя:</p>
+<figure class="align-default" id="id1">
+<img alt="Схема H-моста. Vmotor сверху подключается через ключ S1 вниз к узлу A слева и через ключ S2 вниз к узлу B справа. Двигатель M расположен горизонтально между A и B. От A ещё один ключ S3 идёт вниз к земле; от B ещё один ключ S4 идёт вниз к земле." src="../../../../_images/h-bridge.svg" />
+<figcaption>
+<p><span class="caption-text">H-мост: четыре ключа (<code class="docutils literal notranslate"><span class="pre">S1</span></code> – <code class="docutils literal notranslate"><span class="pre">S4</span></code>) соединяют двигатель <code class="docutils literal notranslate"><span class="pre">M</span></code> между Vmotor и землёй.</span><a class="headerlink" href="#id1" title="Ссылка на это изображение">¶</a></p>
+</figcaption>
+</figure>
+<p>Замыкание различных пар ключей определяет, что двигатель видит на своих выводах:</p>
+<ul class="simple">
+<li><p><strong>S1 + S4 замкнуты, S2 + S3 разомкнуты.</strong> Ток течёт от Vmotor через <code class="docutils literal notranslate"><span class="pre">S1</span></code>, в <code class="docutils literal notranslate"><span class="pre">A</span></code>, через двигатель к <code class="docutils literal notranslate"><span class="pre">B</span></code> и через <code class="docutils literal notranslate"><span class="pre">S4</span></code> к земле. Двигатель вращается в одну сторону.</p></li>
+<li><p><strong>S2 + S3 замкнуты, S1 + S4 разомкнуты.</strong> Ток течёт через двигатель в другую сторону. Двигатель вращается в другую сторону.</p></li>
+<li><p><strong>Все четыре разомкнуты.</strong> Оба вывода двигателя свободны; двигатель катится по инерции.</p></li>
+<li><p><strong>S3 + S4 замкнуты (или S1 + S2 замкнуты).</strong> Оба вывода двигателя подключены к одной и той же шине; собственная кинетическая энергия двигателя создаёт ток, который замкнутая пара рассеивает в виде тепла. Двигатель тормозит.</p></li>
+</ul>
+<p>Недопустимая комбинация – замыкание обоих ключей в одном столбце – <code class="docutils literal notranslate"><span class="pre">S1</span> <span class="pre">+</span> <span class="pre">S3</span></code> или <code class="docutils literal notranslate"><span class="pre">S2</span> <span class="pre">+</span> <span class="pre">S4</span></code> – что образует короткое замыкание от Vmotor прямо к земле. Это <em>сквозной ток</em>, и код камеры не должен его допускать.</p>
+<p>На практике четыре ключа – это MOSFET-транзисторы (представленные на странице <a class="reference internal" href="../gpio-output/level-shifting.html"><span class="doc">Согласование уровней</span></a>) внутри интегральной микросхемы драйвера. Чип предоставляет два или три логических входных вывода, которые внутренне сопоставляются с четырьмя ключами, и содержит логику блокировки, предотвращающую сквозной ток, так что коду камеры не приходится управлять этим напрямую.</p>
+</section>
+<section id="pwm-and-the-motor-s-inductance">
+<h2><span class="section-number">3.15.2. </span>ШИМ и индуктивность двигателя<a class="headerlink" href="#pwm-and-the-motor-s-inductance" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Чтобы задать <em>скорость</em> двигателя, недостаточно полного включения и полного выключения. Приём тот же, что использовался для светодиодов в <a class="reference internal" href="led-dimming.html"><span class="doc">Регулирование яркости светодиода с помощью ШИМ</span></a>: подавать привод импульсами высокой частоты и позволить нагрузке усреднить результат. Для светодиода усреднителем был глаз; для двигателя – сама катушка.</p>
+<p>Катушка двигателя обладает значительной индуктивностью. Ток через индуктивность не может измениться мгновенно; он меняется со скоростью, пропорциональной напряжению на нём. Подача импульсов на мост с включением и выключением на частоте 20 кГц наращивает ток катушки в течение каждой фазы включения, а в течение фазы выключения ток должен продолжать течь – катушка меняет полярность напряжения на себе, чтобы поддержать его.</p>
+<p>Не имея, куда деться, этот ток создал бы скачок напряжения на только что разомкнутом ключе и мог бы повредить транзистор. <em>Обратные (вентильные) диоды</em> на каждом ключе – часто это просто собственные паразитные диоды MOSFET-транзисторов внутри микросхемы драйвера – дают току необходимый путь. Он течёт через диод и обратно через один из ещё замкнутых ключей, замыкая <em>контур самоиндукции</em>, в котором ток постепенно затухает на малых сопротивлениях моста и самого двигателя. Диод также удерживает напряжение на разомкнутом ключе в пределах падения на диоде относительно той шины, к которой возвращается контур, что лежит хорошо внутри безопасной области работы MOSFET.</p>
+<p><em>Среднее</em> значение тока за каждый период ШИМ – это то, что создаёт крутящий момент, и это среднее линейно следует за коэффициентом заполнения – удвоение коэффициента заполнения примерно удваивает крутящий момент, а при постоянной нагрузке примерно удваивает скорость. В отличие от регулирования яркости светодиодов, где нелинейный отклик глаза требует кривой, линейное изменение <code class="docutils literal notranslate"><span class="pre">duty_u16</span></code> уже соответствует линейному изменению усилия двигателя.</p>
+<p>Частота ШИМ должна лишь преодолеть два порога:</p>
+<ul class="simple">
+<li><p>Выше ~20 кГц несущая выходит за пределы слышимого человеком диапазона. Ниже этого магнитная сила на катушке нарастает и спадает с каждым импульсом ШИМ, и обмотки и пластины сердечника физически вибрируют на частоте несущей – двигатель фактически становится маленьким динамиком, излучающим тон на частоте ШИМ.</p></li>
+<li><p>Значительно выше ~50 кГц MOSFET-транзисторы и их драйверы затворов начинают терять КПД на коммутационных потерях. Во время каждого перехода включения-выключения MOSFET кратковременно пропускает одновременно значительное напряжение и значительный ток, рассеивая небольшой всплеск мощности в виде тепла; ёмкость затвора MOSFET также приходится заряжать и разряжать каждый цикл, за что платит микросхема драйвера. Обе эти затраты растут с частотой ШИМ, так что на высоких частотах тепло от коммутации может сравниться с теплом от проведения тока двигателя.</p></li>
+</ul>
+<p>20 кГц – удобное значение по умолчанию для двигателей любительского размера.</p>
+</section>
+<section id="driving-an-h-bridge">
+<h2><span class="section-number">3.15.3. </span>Управление H-мостом<a class="headerlink" href="#driving-an-h-bridge" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Микросхема драйвера H-моста с двумя входами сопоставляет <code class="docutils literal notranslate"><span class="pre">IN1</span></code> и <code class="docutils literal notranslate"><span class="pre">IN2</span></code> с четырьмя ключами примерно так:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">IN1</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">IN2</span> <span class="pre">=</span> <span class="pre">0</span></code> – инерционный выбег (все четыре ключа разомкнуты).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IN1</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">IN2</span> <span class="pre">=</span> <span class="pre">0</span></code> – привод в одном направлении.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IN1</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">IN2</span> <span class="pre">=</span> <span class="pre">1</span></code> – привод в другом направлении.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IN1</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">IN2</span> <span class="pre">=</span> <span class="pre">1</span></code> – торможение.</p></li>
+</ul>
+<p>Подача на два входа сигналов ШИМ позволяет камере задавать направление выбором того, <em>который</em> из двух выводов несёт коэффициент заполнения, а скорость – самим значением коэффициента заполнения:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">PWM</span><span class="p">,</span> <span class="n">Pin</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">in1</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P7&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">in2</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P8&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">def</span><span class="w"> </span><span class="nf">drive_a</span><span class="p">(</span><span class="n">speed</span><span class="p">):</span>       <span class="c1"># speed: 0..65535</span>
+</span><span data-line="8">    <span class="n">in1</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="n">speed</span><span class="p">)</span>
+</span><span data-line="9">    <span class="n">in2</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="k">def</span><span class="w"> </span><span class="nf">drive_b</span><span class="p">(</span><span class="n">speed</span><span class="p">):</span>
+</span><span data-line="12">    <span class="n">in1</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="13">    <span class="n">in2</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="n">speed</span><span class="p">)</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="k">def</span><span class="w"> </span><span class="nf">coast</span><span class="p">():</span>
+</span><span data-line="16">    <span class="n">in1</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="17">    <span class="n">in2</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="k">def</span><span class="w"> </span><span class="nf">brake</span><span class="p">():</span>
+</span><span data-line="20">    <span class="n">in1</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">65535</span><span class="p">)</span>
+</span><span data-line="21">    <span class="n">in2</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">65535</span><span class="p">)</span>
+</span><span data-line="22">
+</span><span data-line="23"><span class="n">drive_a</span><span class="p">(</span><span class="mi">32768</span><span class="p">)</span>    <span class="c1"># half speed in direction A</span>
+</span><span data-line="24"><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="25"><span class="n">drive_b</span><span class="p">(</span><span class="mi">16384</span><span class="p">)</span>    <span class="c1"># quarter speed in direction B</span>
+</span><span data-line="26"><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="27"><span class="n">coast</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>Плавное нарастание от выключенного состояния до максимума и обратно обеспечивает мягкий пуск и остановку:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">65535</span><span class="p">,</span> <span class="mi">256</span><span class="p">):</span>
+</span><span data-line="2">    <span class="n">in1</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+</span><span data-line="3">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span data-line="4"><span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">65535</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">256</span><span class="p">):</span>
+</span><span data-line="5">    <span class="n">in1</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+</span><span data-line="6">    <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span></pre></div>
+</div>
+</section>
+<section id="direction-and-speed-drivers">
+<h2><span class="section-number">3.15.4. </span>Драйверы с управлением направлением и скоростью<a class="headerlink" href="#direction-and-speed-drivers" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Второе семейство микросхем H-моста предоставляет более удобный интерфейс: один цифровой вход <em>направления</em> (часто обозначаемый <code class="docutils literal notranslate"><span class="pre">DIR</span></code> или <code class="docutils literal notranslate"><span class="pre">PH</span></code> от «phase», фаза) плюс один вход <em>скорости</em> (часто <code class="docutils literal notranslate"><span class="pre">PWM</span></code> или <code class="docutils literal notranslate"><span class="pre">EN</span></code> от «enable», разрешение). Вывод направления выбирает, в какую сторону приводит мост; коэффициент заполнения на выводе скорости задаёт средний ток.</p>
+<p>Этим проще управлять из программы, чем схемой с двумя входами ШИМ. Два сигнала соответствуют тому, как обычно формулируется задача – «вращай в эту сторону, с такой скоростью» – так что код может сказать <code class="docutils literal notranslate"><span class="pre">set_direction(forward);</span> <span class="pre">set_speed(50)</span></code> вместо ветвления между <code class="docutils literal notranslate"><span class="pre">in1</span></code> и <code class="docutils literal notranslate"><span class="pre">in2</span></code>. Нужен только один канал ШИМ, что освобождает другой канал того же таймера для несвязанной задачи. А вывод направления может оставаться зафиксированным между изменениями без повторного запуска моста, так что изменение скорости при фиксированном направлении затрагивает только один регистр.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">PWM</span><span class="p">,</span> <span class="n">Pin</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">dir_pin</span> <span class="o">=</span> <span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P8&quot;</span><span class="p">,</span> <span class="n">Pin</span><span class="o">.</span><span class="n">OUT</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">speed</span> <span class="o">=</span> <span class="n">PWM</span><span class="p">(</span><span class="n">Pin</span><span class="p">(</span><span class="s2">&quot;P7&quot;</span><span class="p">),</span> <span class="n">freq</span><span class="o">=</span><span class="mi">20_000</span><span class="p">,</span> <span class="n">duty_u16</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">def</span><span class="w"> </span><span class="nf">drive</span><span class="p">(</span><span class="n">direction</span><span class="p">,</span> <span class="n">speed_u16</span><span class="p">):</span>
+</span><span data-line="8">    <span class="n">dir_pin</span><span class="o">.</span><span class="n">value</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>         <span class="c1"># 0 or 1</span>
+</span><span data-line="9">    <span class="n">speed</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="n">speed_u16</span><span class="p">)</span>        <span class="c1"># 0..65535</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="n">drive</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32768</span><span class="p">)</span>     <span class="c1"># direction A at half speed</span>
+</span><span data-line="12"><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="13"><span class="n">drive</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">16384</span><span class="p">)</span>     <span class="c1"># direction B at quarter speed</span>
+</span><span data-line="14"><span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+</span><span data-line="15"><span class="n">speed</span><span class="o">.</span><span class="n">duty_u16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>   <span class="c1"># stop</span>
+</span></pre></div>
+</div>
+<p>Что именно делает «стоп» на драйвере такого типа – выбег или торможение – зависит от чипа. С драйвером с двумя входами выбор делает код камеры (оба входа низкие для выбега, оба высокие для торможения); с драйвером управления направлением и скоростью решает чип, поэтому стоит заглянуть в техническое описание, прежде чем полагаться на то или иное поведение.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="led-dimming.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">3.14. </span>Регулирование яркости светодиода с помощью ШИМ</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="servos.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">3.16. </span>Управление сервоприводом</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=5e17ce58"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cd1d70c9"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

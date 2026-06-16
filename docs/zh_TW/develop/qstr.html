@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MicroPython 字串駐留（string interning） - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="索引" href="../genindex.html" /><link rel="search" title="搜尋" href="../search.html" /><link rel="next" title="對映與字典" href="maps.html" /><link rel="prev" title="最佳化" href="optimizations.html" />
+      <link rel="canonical" href="https://docs.openmv.io/develop/qstr.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/develop/qstr.html"/>
+  <meta property="og:title" content="MicroPython 字串駐留（string interning）"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/develop/qstr.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/develop/qstr.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/develop/qstr.html" />
+    <link rel="alternate" hreflang="de" href="/de/develop/qstr.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/develop/qstr.html" />
+    <link rel="alternate" hreflang="es" href="/es/develop/qstr.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/develop/qstr.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/develop/qstr.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/develop/qstr.html" />
+    <link rel="alternate" hreflang="it" href="/it/develop/qstr.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/develop/qstr.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/develop/qstr.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/develop/qstr.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/develop/qstr.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/develop/qstr.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/develop/qstr.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/develop/qstr.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/develop/qstr.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/develop/qstr.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/develop/qstr.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">Home</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">Tutorial</a></li><li class="link"><a href="../library/index.html">Libraries</a></li><li class="link"><a href="../openmvcam/quickref.html">Boards</a></li><li class="link"><a href="../openmvcam/shields.html">Shields</a></li><li class="link"><a href="../openmvcam/sensors.html">Sensors</a></li><li class="link"><a href="../reference/index.html">Language</a></li><li class="link"><a href="../genrst/index.html">CPython</a></li><li class="link"><a href="index.html">Internals</a></li><li class="link"><a href="../changelog/index.html">Changelog</a></li><li class="link"><a href="../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/develop/qstr.html">English</a></li><li><a href="/zh_CN/develop/qstr.html">简体中文</a></li><li><a href="/zh_TW/develop/qstr.html">繁體中文</a></li><li><a href="/de/develop/qstr.html">Deutsch</a></li><li><a href="/ja/develop/qstr.html">日本語</a></li><li><a href="/es/develop/qstr.html">Español</a></li><li><a href="/ru/develop/qstr.html">Русский</a></li><li><a href="/fr/develop/qstr.html">Français</a></li><li><a href="/ko/develop/qstr.html">한국어</a></li><li><a href="/it/develop/qstr.html">Italiano</a></li><li><a href="/pt_BR/develop/qstr.html">Português</a></li><li><a href="/nl/develop/qstr.html">Nederlands</a></li><li><a href="/ro/develop/qstr.html">Română</a></li><li><a href="/hr/develop/qstr.html">Hrvatski</a></li><li><a href="/cs/develop/qstr.html">Čeština</a></li><li><a href="/pl/develop/qstr.html">Polski</a></li><li><a href="/fi/develop/qstr.html">Suomi</a></li><li><a href="/sv/develop/qstr.html">Svenska</a></li><li><a href="/hu/develop/qstr.html">Magyar</a></li><li><a href="/tr/develop/qstr.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">&#25945;&#23416;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">&#20839;&#37096;&#27231;&#21046;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">&#20837;&#38272;&#25351;&#21335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writingtests.html">&#25776;&#23531;&#28204;&#35430;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html">&#32232;&#35695;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memorymgt.html">&#35352;&#25014;&#39636;&#31649;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library.html">&#23526;&#20316;&#27169;&#32068;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizations.html">&#26368;&#20339;&#21270;</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MicroPython &#23383;&#20018;&#39376;&#30041;&#65288;string interning&#65289;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maps.html">&#23565;&#26144;&#33287;&#23383;&#20856;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="publiccapi.html">&#20844;&#38283;&#30340; C API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="extendingmicropython.html">&#20197; C &#35486;&#35328;&#25844;&#20805; MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="porting.html">&#31227;&#26893; MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="support_tiers.html">MicroPython &#25903;&#25588;&#23652;&#32026;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#compile-time-qstr-generation">&#32232;&#35695;&#26399; QSTR &#29986;&#29983;</a></li>
+<li><a class="reference internal" href="#run-time-qstr-generation">&#22519;&#34892;&#38542;&#27573; QSTR &#29986;&#29983;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/develop/qstr.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython 內部原理</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">MicroPython 字串駐留（string interning）</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/develop/qstr.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/develop/qstr.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/develop/qstr.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/develop/qstr.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/develop/qstr.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/develop/qstr.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="micropython-string-interning">
+<span id="qstr"></span><h1>MicroPython 字串駐留（string interning）<a class="headerlink" href="#micropython-string-interning" title="連結到這個標頭">¶</a></h1>
+<p>MicroPython 使用 <a class="reference external" href="https://en.wikipedia.org/wiki/String_interning">string interning</a> 來同時節省 RAM 與 ROM。這可避免儲存同一字串的重複副本。這主要適用於程式碼中的識別字，因為像函式或變數名稱這類東西很可能會出現在程式碼的多個位置。在 MicroPython 中，駐留的字串稱為 QSTR（uniQue STRing，唯一字串）。</p>
+<p>QSTR 值（型別為 <code class="docutils literal notranslate"><span class="pre">qstr</span></code>）是指向 QSTR 池鏈結串列的索引。QSTR 會儲存其長度以及內容的雜湊值，以便在去重複的過程中進行快速比較。所有處理字串的位元組碼運算都使用 QSTR 引數。</p>
+<section id="compile-time-qstr-generation">
+<h2>編譯期 QSTR 產生<a class="headerlink" href="#compile-time-qstr-generation" title="連結到這個標頭">¶</a></h2>
+<p>在 MicroPython 的 C 程式碼中，任何應在最終韌體中被駐留的字串都會寫成 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code>。在編譯期，這會求值為一個 <code class="docutils literal notranslate"><span class="pre">qstr</span></code> 值，指向 QSTR 池中 <code class="docutils literal notranslate"><span class="pre">&quot;Foo&quot;</span></code> 的索引。</p>
+<p><code class="docutils literal notranslate"><span class="pre">Makefile</span></code> 中一個多步驟的流程讓這項機制得以運作。總結來說，此流程分為三個部分：</p>
+<ol class="arabic simple">
+<li><p>找出程式碼中所有的 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 符記（token）。</p></li>
+<li><p>產生一個靜態的 QSTR 池，包含所有字串資料（含長度與雜湊值）。</p></li>
+<li><p>（透過前置處理器）將所有 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 替換為其對應的索引。</p></li>
+</ol>
+<p><code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 符記會在兩個來源中被搜尋：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">$(SRC_QSTR)</span></code> 中參照的所有檔案。這是所有 C 程式碼（即 <code class="docutils literal notranslate"><span class="pre">py</span></code>、<code class="docutils literal notranslate"><span class="pre">extmod</span></code>、<code class="docutils literal notranslate"><span class="pre">ports/stm32</span></code>），但不包含像 <code class="docutils literal notranslate"><span class="pre">lib</span></code> 這類第三方程式碼。</p></li>
+<li><p>額外的 <code class="docutils literal notranslate"><span class="pre">$(QSTR_GLOBAL_DEPENDENCIES)</span></code>（其中包含 <code class="docutils literal notranslate"><span class="pre">mpconfig*.h</span></code>）。</p></li>
+</ol>
+<p><em>注意：</em> <code class="docutils literal notranslate"><span class="pre">frozen_mpy.c</span></code>（由 mpy-tool.py 產生）擁有自己的 QSTR 產生流程與池。</p>
+<p>某些無法以 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 語法表達的額外字串（例如它們包含非英數字元），會透過 <code class="docutils literal notranslate"><span class="pre">$(QSTR_DEFS)</span></code> 變數在 <code class="docutils literal notranslate"><span class="pre">qstrdefs.h</span></code> 與 <code class="docutils literal notranslate"><span class="pre">qstrdefsport.h</span></code> 中明確提供。</p>
+<p>處理過程分為以下幾個階段：</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">qstr.i.last</span></code> 是將每一個輸入檔案都送過 C 前置處理器後的串接結果。這代表任何依條件停用的程式碼都會被移除，且巨集會被展開。如此一來，我們就不會把不會用於最終韌體的字串加入池中。因為在這個階段（多虧了由 <code class="docutils literal notranslate"><span class="pre">QSTR_GEN_CFLAGS</span></code> 加入的 <code class="docutils literal notranslate"><span class="pre">NO_QSTR</span></code> 巨集），<code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 沒有任何定義，所以它會原封不動地通過這個階段。這個檔案也包含前置處理器產生的、含有行號資訊的註解。請注意此步驟只使用已變更的檔案，這代表 <code class="docutils literal notranslate"><span class="pre">qstr.i.last</span></code> 只會包含自上次編譯以來已變更檔案的資料。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qstr.split</span></code> 是在對 qstr.i.last 執行 <code class="docutils literal notranslate"><span class="pre">makeqstrdefs.py</span> <span class="pre">split</span></code> 之後所建立的空白檔案。它只是用來當作相依項目，以指示該步驟已執行。這個指令碼會為每個輸入的 C 檔案輸出一個檔案 <code class="docutils literal notranslate"><span class="pre">genhdr/qstr/...file.c.qstr</span></code>，其中只包含匹配到的 QSTR。每個 QSTR 都會印成 <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>。這個步驟是必要的，用以將既有的檔案與來自 <code class="docutils literal notranslate"><span class="pre">qstr.i.last</span></code> 增量更新所產生的新資料合併。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qstrdefs.collected.h</span></code> 是使用 <code class="docutils literal notranslate"><span class="pre">makeqstrdefs.py</span> <span class="pre">cat</span></code> 串接 <code class="docutils literal notranslate"><span class="pre">genhdr/qstr/*</span></code> 的輸出結果。這就是程式碼中找到的完整 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 集合，現在格式化為每行一個 <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>，並含有重複項。只有在 qstr 集合有變動時，此檔案才會更新。QSTR 資料的雜湊值會寫入另一個檔案（<code class="docutils literal notranslate"><span class="pre">qstrdefs.collected.h.hash</span></code>），讓它能追蹤跨建置的變更。</p></li>
+<li><p>產生一個列舉（enumeration），其中每個項目將一個 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 對應到其對應的索引。它會將 <code class="docutils literal notranslate"><span class="pre">qstrdefs.collected.h</span></code> 與 <code class="docutils literal notranslate"><span class="pre">qstrdefs*.h</span></code> 串接，然後將每一行從 <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code> 轉換為 <code class="docutils literal notranslate"><span class="pre">&quot;Q(Foo)&quot;</span></code>，使其可原封不動地通過前置處理器。接著使用前置處理器來處理 <code class="docutils literal notranslate"><span class="pre">qstrdefs*.h</span></code> 中的任何條件編譯。然後再將轉換還原回 <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>，並儲存為 <code class="docutils literal notranslate"><span class="pre">qstrdefs.preprocessed.h</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qstrdefs.generated.h</span></code> 是 <code class="docutils literal notranslate"><span class="pre">makeqstrdata.py</span></code> 的輸出。對於 qstrdefs.preprocessed.h 中的每個 <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>（加上一些額外的硬編碼項目），它會輸出 <code class="docutils literal notranslate"><span class="pre">QDEF(MP_QSTR_Foo,</span> <span class="pre">(const</span> <span class="pre">byte*)&quot;hash&quot;</span> <span class="pre">&quot;Foo&quot;)</span></code>。</p></li>
+</ol>
+<p>接著在主編譯過程中，<code class="docutils literal notranslate"><span class="pre">qstrdefs.generated.h</span></code> 會發生兩件事：</p>
+<ol class="arabic simple">
+<li><p>在 qstr.h 中，每個 QDEF 都會成為列舉中的一個項目，這使得 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> 可供程式碼使用，並等於該字串在 QSTR 表格中的索引。</p></li>
+<li><p>在 qstr.c 中，實際的 QSTR 資料表格會以 <code class="docutils literal notranslate"><span class="pre">mp_qstr_const_pool-&gt;qstrs</span></code> 的元素形式產生。</p></li>
+</ol>
+</section>
+<section id="run-time-qstr-generation">
+<h2>執行階段 QSTR 產生<a class="headerlink" href="#run-time-qstr-generation" title="連結到這個標頭">¶</a></h2>
+<p>可在執行階段建立額外的 QSTR 池，以便將字串加入其中。例如以下程式碼:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">foo</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+</span></pre></div>
+</div>
+<p>將需要為 <code class="docutils literal notranslate"><span class="pre">x</span></code> 的值建立一個 QSTR，這樣它才能被「load attr」位元組碼使用。</p>
+<p>此外，在編譯 Python 程式碼時，識別字與字面值需要建立 QSTR。注意：只有短於 10 個字元的字面值才會成為 QSTR。這是因為堆積（heap）上的一般字串至少都要佔用 16 個位元組（一個 GC 區塊），而 QSTR 則允許它們更有效率地封裝進池中。</p>
+<p>QSTR 池（以及儲存字串資料的底層「區塊」）會在堆積上依需求以最小尺寸配置。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="optimizations.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title">最佳化</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="maps.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title">對映與字典</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=cbf116e0"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

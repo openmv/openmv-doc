@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ko" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.30. 템플릿 매칭 - OpenMV MicroPython 1.28 문서</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="색인" href="../../../../genindex.html" /><link rel="search" title="검색" href="../../../../search.html" /><link rel="next" title="5.31. 변위 매칭" href="displacement-and-keypoints.html" /><link rel="prev" title="5.29. 바코드와 Data Matrix 코드" href="../decoding/barcodes-and-datamatrix.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/matching/template-and-similarity.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/matching/template-and-similarity.html"/>
+  <meta property="og:title" content="5.30. 템플릿 매칭"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/image/matching/template-and-similarity.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="검색" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">번역</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/image/matching/template-and-similarity.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/image/matching/template-and-similarity.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/image/matching/template-and-similarity.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/image/matching/template-and-similarity.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/image/matching/template-and-similarity.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/image/matching/template-and-similarity.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/image/matching/template-and-similarity.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/image/matching/template-and-similarity.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/image/matching/template-and-similarity.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/image/matching/template-and-similarity.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/image/matching/template-and-similarity.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/image/matching/template-and-similarity.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/image/matching/template-and-similarity.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/image/matching/template-and-similarity.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/image/matching/template-and-similarity.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/image/matching/template-and-similarity.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/image/matching/template-and-similarity.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/image/matching/template-and-similarity.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/image/matching/template-and-similarity.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/image/matching/template-and-similarity.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="라이트 모드로 전환"
+data-aria-light="다크 모드로 전환"
+data-aria-dark="색상 모드로 전환">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">토론</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#53916;&#53664;&#47532;&#50620;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#48736;&#47480; &#49884;&#51089;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#44060;&#50836;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#54616;&#46300;&#50920;&#50612; &#51228;&#50612;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#48708;&#51204; &#49468;&#49436;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">5. &#51060;&#48120;&#51648; &#52376;&#47532;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">5.1. Image &#44061;&#52404;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">5.2. &#51340;&#54364;&#50752; &#50689;&#50669;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">5.3. &#54589;&#49472; &#54805;&#49885;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">5.4. &#54589;&#49472; &#51069;&#44592;&#50752; &#50416;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">5.5. &#50689;&#50669;&#44284; &#47560;&#49828;&#53356;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/shapes-and-text.html">5.6. &#46020;&#54805;&#44284; &#53581;&#49828;&#53944; &#44536;&#47532;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/image-composition.html">5.7. &#51060;&#48120;&#51648; &#54633;&#49457;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/flood-fill-and-detection-glyphs.html">5.8. &#54540;&#47084;&#46300; &#54596;(flood fill)&#44284; &#44160;&#52636; &#44544;&#47532;&#54532;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">5.9. &#49328;&#49696; &#50672;&#49328;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">5.10. &#48708;&#53944; &#45800;&#50948; &#50672;&#49328;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">5.11. &#54532;&#47112;&#51076; &#52264;&#48516;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">5.12. &#51060;&#51652; &#51076;&#44228;&#44050; &#52376;&#47532;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/linear-neighborhood.html">5.13. &#49440;&#54805; &#48143; &#51060;&#50883; &#54596;&#53552;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/gaussian-and-edges.html">5.14. &#44032;&#50864;&#49884;&#50504; &#49828;&#47924;&#46377;&#44284; &#50640;&#51648;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/morphology.html">5.15. &#54805;&#53468;&#54617;&#51201; &#50672;&#49328;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/custom-kernels.html">5.16. &#49324;&#50857;&#51088; &#51221;&#51032; &#52968;&#48380;&#47336;&#49496; &#52964;&#45328;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../filters/standard-kernels.html">5.17. &#54364;&#51456; &#52964;&#45328; &#52852;&#53448;&#47196;&#44536;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/histograms-and-statistics.html">5.18. &#55176;&#49828;&#53664;&#44536;&#47016;&#44284; &#53685;&#44228;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/tonal-corrections.html">5.19. &#53668; &#48372;&#51221;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/regression-and-similarity.html">5.20. &#54924;&#44480;&#50752; &#50976;&#49324;&#46020;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">5.21. &#49828;&#52992;&#51068;, &#46244;&#51665;&#44592;, &#51088;&#47476;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">5.22. &#47116;&#51592; &#48143; &#50896;&#44540; &#48372;&#51221;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">5.23. &#50896;&#44540; &#48372;&#51221;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">5.24. &#44537;&#51340;&#54364; &#48320;&#54872;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">5.25. &#48660;&#47213; &#52286;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">5.26. &#49440;&#44284; &#49440;&#48516; &#52286;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">5.27. &#50896;&#44284; &#49324;&#44033;&#54805; &#52286;&#44592;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">5.28. QR &#53076;&#46300;&#50752; AprilTag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">5.29. &#48148;&#53076;&#46300;&#50752; Data Matrix &#53076;&#46300;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.30. &#53596;&#54540;&#47551; &#47588;&#52845;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="displacement-and-keypoints.html">5.31. &#48320;&#50948; &#47588;&#52845;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">5.32. &#51200;&#51109; &#48143; &#50517;&#52629;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">5.33. ImageIO &#49828;&#53944;&#47548;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.34. &#47560;&#47924;&#47532;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#47672;&#49888;&#47084;&#45789;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#45348;&#53944;&#50892;&#53433;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. &#50937; &#49436;&#48260;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#54840;&#49828;&#53944; &#54532;&#47196;&#53664;&#53084;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#46020;&#44396;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#54532;&#47196;&#45909;&#49496;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#46972;&#51060;&#48652;&#47084;&#47532;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#48372;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#49892;&#46300;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#49468;&#49436;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#50616;&#50612;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#45236;&#48512; &#44396;&#51312;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#48320;&#44221; &#47196;&#44536;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#46972;&#51060;&#49440;&#49828;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>이 페이지에서</h3><ul>
+<li><a class="reference internal" href="#the-basic-call">5.30.1. &#44592;&#48376; &#54840;&#52636;</a></li>
+<li><a class="reference internal" href="#search-strategy">5.30.2. &#44160;&#49353; &#51204;&#47029;</a></li>
+<li><a class="reference internal" href="#the-scale-and-rotation-trap">5.30.3. &#49828;&#52992;&#51068;&#44284; &#54924;&#51204;&#51032; &#54632;&#51221;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/image/matching/template-and-similarity.rst">이 페이지 편집</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 튜토리얼</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">5. </span>이미지 처리</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">5.30. </span>템플릿 매칭</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/matching/template-and-similarity.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>페이지 복사</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="추가 작업"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/matching/template-and-similarity.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>페이지 복사</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/matching/template-and-similarity.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>소스 보기</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/matching/template-and-similarity.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT 에서 열기</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/matching/template-and-similarity.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude 에서 열기</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/matching/template-and-similarity.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity 에서 열기</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="template-matching">
+<h1><span class="section-number">5.30. </span>템플릿 매칭<a class="headerlink" href="#template-matching" title="Link to this heading">¶</a></h1>
+<p>지금까지 다룬 검출기는 단일 프레임의 <em>내용</em>에 대한 질문에 답합니다. 즉, 블롭이 어디에 있는지, 선이 어디로 향하는지, 인쇄된 코드가 무엇을 의미하는지 같은 것들입니다. 이와는 다른 부류의 질문은 한 이미지를 다른 이미지와 비교합니다. <em>캡처한 프레임의 이 영역이 보정 시점에 저장해 둔 참조 패치처럼 보이는가?</em> 매칭 메서드가 바로 이 질문에 답합니다.</p>
+<p>색조 및 통계 분석에서는 관련된 질문, 즉 <em>같은 크기의 두 이미지가 전체적으로 얼마나 비슷한가?</em>에 대해 SSIM을 기반 지표로 사용하는 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_similarity" title="image.Image.get_similarity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_similarity()</span></code></a> 를 소개했습니다. 남은 매칭 질문은 <em>위치 파악</em>에 관한 것입니다. 즉 “이 두 이미지가 얼마나 비슷한가”가 아니라 “이 더 큰 이미지 안에서 그 더 작은 패치가 어디에 나타나는가”입니다. 위치 파악 질문에 알맞은 도구는 <em>템플릿 매칭</em>입니다.</p>
+<section id="the-basic-call">
+<h2><span class="section-number">5.30.1. </span>기본 호출<a class="headerlink" href="#the-basic-call" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_template" title="image.Image.find_template"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_template()</span></code></a> 은 작은 <em>템플릿</em> 이미지가 캡처한 프레임 안에서 처음으로 나타나는 위치를 찾습니다. 구현은 <em>정규화된 상호 상관(normalised cross-correlation, NCC)</em>을 사용합니다. 템플릿이 프레임 위를 미끄러지며 이동하고, 각 위치의 매칭 점수는 템플릿 픽셀과 그 아래에 있는 프레임 픽셀 간의 상관관계로부터 계산되며(게인 변화가 매칭을 속이지 못하도록 국소 평균과 분산에 대해 정규화됨), 점수가 <code class="docutils literal notranslate"><span class="pre">threshold</span></code> 를 넘는 첫 번째 위치가 경계 상자로 반환됩니다:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">template</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;/sdcard/template.bmp&quot;</span><span class="p">,</span> <span class="n">copy_to_fb</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">template</span><span class="o">.</span><span class="n">to_grayscale</span><span class="p">()</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">match</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">find_template</span><span class="p">(</span><span class="n">template</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+</span><span data-line="5">                           <span class="n">search</span><span class="o">=</span><span class="n">image</span><span class="o">.</span><span class="n">SEARCH_DS</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="8">    <span class="n">img</span><span class="o">.</span><span class="n">draw_rectangle</span><span class="p">(</span><span class="n">match</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>이 메서드는 <em>그레이스케일 이미지에서만 동작합니다</em>. 그레이스케일로 캡처하거나(색상 센서가 없는 모든 카메라에서 자연스러운 선택입니다), 호출 전에 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.to_grayscale" title="image.Image.to_grayscale"><code class="xref py py-meth docutils literal notranslate"><span class="pre">to_grayscale()</span></code></a> 를 통해 제자리에서 변환하십시오. 디스크에서 불러온 템플릿에도 동일하게 적용됩니다. 색상 템플릿은 같은 메서드로 변환되며, 그 결과가 매처가 기대하는 형식입니다.</p>
+<p><code class="docutils literal notranslate"><span class="pre">threshold</span></code> 는 <code class="docutils literal notranslate"><span class="pre">0.0</span></code> 부터 <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 까지의 float 값입니다. <code class="docutils literal notranslate"><span class="pre">1.0</span></code> 값은 픽셀 단위로 완벽하게 일치하기를 요구하며(실제로 캡처된 이미지에서는 결코 일어나지 않습니다), <code class="docutils literal notranslate"><span class="pre">0.0</span></code> 은 무엇이든 받아들이고, <code class="docutils literal notranslate"><span class="pre">0.6</span></code> 과 <code class="docutils literal notranslate"><span class="pre">0.8</span></code> 사이의 값은 템플릿이 비슷한 조명에서 캡처되었고 장면이 크게 변하지 않은 일반적인 경우를 포괄합니다. 오탐을 억제하려면 임계값을 높이고, 더 많은 잘못된 히트를 감수하면서 더 잡음이 많은 매칭을 받아들이려면 임계값을 낮추십시오.</p>
+</section>
+<section id="search-strategy">
+<h2><span class="section-number">5.30.2. </span>검색 전략<a class="headerlink" href="#search-strategy" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">search</span></code> 는 두 가지 전략 중에서 선택합니다. <a class="reference internal" href="../../../../library/omv.image.html#image.SEARCH_EX" title="image.SEARCH_EX"><code class="xref py py-data docutils literal notranslate"><span class="pre">image.SEARCH_EX</span></code></a> 는 <em>완전 탐색</em>입니다. 템플릿이 프레임 안의 모든 <code class="docutils literal notranslate"><span class="pre">step</span></code> 픽셀 위치를 미끄러지며 이동하고 임계값을 넘는 첫 번째 히트를 반환합니다. <a class="reference internal" href="../../../../library/omv.image.html#image.SEARCH_DS" title="image.SEARCH_DS"><code class="xref py py-data docutils literal notranslate"><span class="pre">image.SEARCH_DS</span></code></a> 는 <em>다이아몬드 탐색</em>입니다. 매처가 먼저 거칠게 샘플링한 다음 가장 높은 점수 주변을 정밀하게 다듬는데, 이는 극적으로 빠르지만 거친 단계가 우연히 전역 최댓값을 능가하는 국소 최댓값 근처에 도달했다면 진짜 매칭을 놓칠 수 있습니다. 템플릿이 잘 정의되어 있고 혼동될 가능성이 낮은 실시간 파이프라인에서는 <code class="docutils literal notranslate"><span class="pre">SEARCH_DS</span></code> 가 알맞은 기본값입니다. 놓침의 비용이 더 느린 스캔의 비용보다 큰 일회성 보정에서는 <code class="docutils literal notranslate"><span class="pre">SEARCH_EX</span></code> 가 더 안전합니다.</p>
+<p><code class="docutils literal notranslate"><span class="pre">step</span></code> 은 완전 탐색 단계에서의 픽셀 건너뛰기를 제어합니다(다이아몬드 탐색은 자체 step을 관리합니다). <code class="docutils literal notranslate"><span class="pre">step</span></code> 값이 클수록 서브픽셀 정확도를 희생하는 대신 스캔 속도가 빨라집니다. <code class="docutils literal notranslate"><span class="pre">roi</span></code> 는 검색을 프레임의 한 영역으로 제한하여, 매처가 고려하는 범위를 좁히는 동시에 작업량을 줄입니다.</p>
+<p>반환 값은 가장 잘 맞는 매칭을 식별하는 <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y,</span> <span class="pre">w,</span> <span class="pre">h)</span></code> 경계 상자 튜플이거나, 임계값을 넘는 위치가 없을 경우 <code class="docutils literal notranslate"><span class="pre">None</span></code> 입니다. 경계 상자는 다음 처리 단계를 위해 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.draw_rectangle" title="image.Image.draw_rectangle"><code class="xref py py-meth docutils literal notranslate"><span class="pre">draw_rectangle()</span></code></a> 이나 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.crop" title="image.Image.crop"><code class="xref py py-meth docutils literal notranslate"><span class="pre">crop()</span></code></a> 에 곧바로 넣을 수 있습니다.</p>
+</section>
+<section id="the-scale-and-rotation-trap">
+<h2><span class="section-number">5.30.3. </span>스케일과 회전의 함정<a class="headerlink" href="#the-scale-and-rotation-trap" title="Link to this heading">¶</a></h2>
+<p>템플릿 매칭의 고전적인 함정은 <em>스케일 및 회전 민감성</em>입니다. 매처는 템플릿을 프레임과 픽셀 단위로 비교합니다. 한 거리에서 캡처한 템플릿은 다른 거리에서 캡처한 같은 물체와 일치하지 않으며, 정면에서 캡처한 템플릿은 비스듬히 본 같은 물체와 일치하지 않습니다. 물체가 사람의 눈에 분명히 보이는 경우에도 임계값이 조용히 매칭 수준 아래로 떨어지고, 메서드는 <code class="docutils literal notranslate"><span class="pre">None</span></code> 을 반환합니다.</p>
+<p>단순한 경우에 대한 몇 가지 우회 방법이 있습니다. 애플리케이션은 서로 다른 스케일에서 여러 템플릿을 캡처하고 각각에 대해 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_template" title="image.Image.find_template"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_template()</span></code></a> 을 순차적으로 실행하여 임계값을 넘는 첫 번째 것을 받아들일 수 있습니다. 비용은 템플릿 수에 비례하여 늘어납니다. 또한 애플리케이션은 매칭이 실행되기 전에 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.rotation_corr" title="image.Image.rotation_corr"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rotation_corr()</span></code></a> 이나 극좌표 변환(기하 변환)으로 프레임을 전처리하여 문제가 되는 회전을 제거할 수 있습니다. 매칭된 템플릿은 여전히 보정된 기하 구조와 일치해야 합니다.</p>
+<p>QA 검사 파이프라인에 유용한 관용구는 템플릿 매처를 색조 및 통계 분석에서 소개한 유사도 채점기와 짝짓는 것입니다. <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.find_template" title="image.Image.find_template"><code class="xref py py-meth docutils literal notranslate"><span class="pre">find_template()</span></code></a> 이 캡처한 프레임에서 부품을 찾아내고, 반환된 경계 상자가 잘려 나와 참조 패치와 비교하기 위해 <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.get_similarity" title="image.Image.get_similarity"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_similarity()</span></code></a> 에 전달됩니다. 템플릿 매칭 단계는 <em>부품이 어디에 있는지</em>를 결정하고, 유사도 채점 단계는 <em>부품이 허용 가능한지</em>를 결정합니다. 두 단계는 매 프레임마다 실행되고, <code class="docutils literal notranslate"><span class="pre">mean</span></code> 에 대한 임계값이 합격/불합격 게이트이며, 프레임에 다시 그려진 매칭된 경계 상자는 작업자가 지켜보는 IDE 미리보기입니다.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>맨 위로</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../decoding/barcodes-and-datamatrix.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>이전</span><div class="title"><span class="section-number">5.29. </span>바코드와 Data Matrix 코드</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="displacement-and-keypoints.html">
+      <div class="page-info">
+        <span>다음</span>
+        <div class="title"><span class="section-number">5.31. </span>변위 매칭</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=e74a095f"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=afa94a99"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

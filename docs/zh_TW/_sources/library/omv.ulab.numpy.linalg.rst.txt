@@ -1,0 +1,94 @@
+:mod:`numpy.linalg` --- Linear algebra routines
+====================================================
+
+.. module:: numpy.linalg
+   :synopsis: Linear algebra routines
+
+The :mod:`numpy.linalg` submodule provides a small selection of linear-algebra
+routines that operate on :class:`numpy.ndarray` objects. Functions that operate
+on matrices require two-dimensional arrays; passing arrays of a different
+dimensionality raises a ``ValueError``. Complex dtypes are not supported by
+this submodule.
+
+Functions
+---------
+
+.. function:: cholesky(A: ndarray) -> ndarray
+
+   Compute the Cholesky decomposition of a positive-definite, symmetric square
+   matrix.
+
+   :param A: a positive-definite, symmetric, two-dimensional square matrix.
+   :return: a lower-triangular :class:`numpy.ndarray` ``L`` such that
+            ``A = L @ L.T``.
+   :raises ValueError: if *A* is not square, not symmetric, or not positive
+                       definite.
+
+.. function:: det(m: ndarray) -> float
+
+   Compute the determinant of a square matrix.
+
+   :param m: a two-dimensional square matrix.
+   :return: the determinant of *m* as a Python ``float``. The return value is
+            always a float, even when the input is an integer array.
+   :raises ValueError: if *m* is not square.
+
+   The computation is performed by Gaussian elimination with partial pivoting.
+
+.. function:: eig(m: ndarray) -> tuple[ndarray, ndarray]
+
+   Compute the eigenvalues and eigenvectors of a real symmetric square matrix.
+
+   :param m: a two-dimensional, real, symmetric square matrix.
+   :return: a 2-tuple ``(eigenvalues, eigenvectors)``. ``eigenvalues`` is a
+            one-dimensional array of length ``N``; ``eigenvectors`` is an
+            ``N``-by-``N`` array whose columns are the corresponding
+            eigenvectors.
+   :raises ValueError: if *m* is not square, not symmetric, or if the
+                       Jacobi-rotation iteration fails to converge.
+
+.. function:: inv(m: ndarray) -> ndarray
+
+   Compute the inverse of a square matrix.
+
+   :param m: a two-dimensional square matrix.
+   :return: the inverse of *m* as a float :class:`numpy.ndarray`.
+   :raises ValueError: if *m* is not square or is singular.
+
+   The inversion is performed by Gauss-Jordan elimination.
+
+.. function:: norm(x: ndarray, axis: int | None = None) -> float | ndarray
+
+   Compute the 2-norm of a vector or matrix.
+
+   :param x: an :class:`numpy.ndarray`, ``tuple``, ``list``, or ``range``.
+   :param axis: optional axis along which the norm is computed. If ``None``
+                (the default), the norm is taken over the flattened input and
+                a single ``float`` is returned. Otherwise the norm is reduced
+                along that axis and a :class:`numpy.ndarray` is returned.
+   :return: either a Python ``float`` (when *axis* is ``None`` or when *x* is
+            an iterable other than an ndarray) or a :class:`numpy.ndarray`
+            with that axis removed.
+
+   The 2-norm is computed as ``sqrt(sum(x*x))`` using a numerically stable
+   running mean, so the operation does not require additional storage
+   proportional to the size of the input.
+
+.. function:: qr(m: ndarray, mode: str = 'reduced') -> tuple[ndarray, ndarray]
+
+   Factor a matrix as the product of an orthonormal matrix and an
+   upper-triangular matrix.
+
+   :param m: a two-dimensional matrix of shape ``(M, N)``.
+   :param mode: either ``'reduced'`` (default) or ``'complete'``. In
+                ``'complete'`` mode, ``Q`` has shape ``(M, M)`` and ``R`` has
+                shape ``(M, N)``. In ``'reduced'`` mode, ``Q`` and ``R`` are
+                truncated to the leading ``min(M, N)`` columns and rows
+                respectively.
+   :return: a 2-tuple ``(Q, R)`` of :class:`numpy.ndarray` objects such that
+            ``m == Q @ R``, with ``Q`` orthonormal and ``R`` upper-triangular.
+   :raises TypeError: if *m* is not an :class:`numpy.ndarray`.
+   :raises ValueError: if *m* is not two-dimensional or *mode* is not one of
+                       the accepted values.
+
+   The decomposition is implemented via successive Givens rotations.

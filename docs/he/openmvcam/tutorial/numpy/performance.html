@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="he" data-accent-color="blue" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>6.19. ביצועים - תיעוד OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../_static/openmv.ico"/><link rel="index" title="אינדקס" href="../../../genindex.html" /><link rel="search" title="חיפוש" href="../../../search.html" /><link rel="next" title="6.20. סיכום" href="wrap-up.html" /><link rel="prev" title="6.18. תמונות ומערכי ndarray" href="images.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/numpy/performance.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/numpy/performance.html"/>
+  <meta property="og:title" content="6.19. ביצועים"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/numpy/performance.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      <img class="light-logo" src="../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../index.html">Home</a></li><li class="link"><a href="../index.html">Tutorial</a></li><li class="link"><a href="../../../library/index.html">Libraries</a></li><li class="link"><a href="../../quickref.html">Boards</a></li><li class="link"><a href="../../shields.html">Shields</a></li><li class="link"><a href="../../sensors.html">Sensors</a></li><li class="link"><a href="../../../reference/index.html">Language</a></li><li class="link"><a href="../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="חיפוש" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/numpy/performance.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/numpy/performance.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/numpy/performance.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/numpy/performance.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/numpy/performance.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/numpy/performance.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/numpy/performance.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/numpy/performance.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/numpy/performance.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/numpy/performance.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/numpy/performance.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/numpy/performance.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/numpy/performance.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/numpy/performance.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/numpy/performance.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/numpy/performance.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/numpy/performance.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/numpy/performance.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/numpy/performance.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/numpy/performance.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">&#1502;&#1491;&#1512;&#1497;&#1498;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart.html">1. &#1492;&#1514;&#1495;&#1500;&#1492; &#1502;&#1492;&#1497;&#1512;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python/index.html">2. &#1505;&#1511;&#1497;&#1512;&#1514; Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware/index.html">3. &#1489;&#1511;&#1512;&#1514; &#1495;&#1493;&#1502;&#1512;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../vision/index.html">4. &#1495;&#1497;&#1497;&#1513;&#1504;&#1497; &#1512;&#1488;&#1497;&#1497;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">5. &#1506;&#1497;&#1489;&#1493;&#1491; &#1514;&#1502;&#1493;&#1504;&#1492;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">6. NumPy</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="basics/why-arrays.html">6.1. &#1502;&#1491;&#1493;&#1506; &#1502;&#1506;&#1512;&#1499;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/the-ndarray.html">6.2. &#1492;-ndarray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/making-arrays.html">6.3. &#1497;&#1510;&#1497;&#1512;&#1514; &#1502;&#1506;&#1512;&#1499;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/dtypes.html">6.4. Dtypes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/shape-and-strides.html">6.5. &#1510;&#1493;&#1512;&#1492; &#1493;&#1510;&#1506;&#1491;&#1497;&#1501; (strides)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/indexing-and-slicing.html">6.6. &#1488;&#1497;&#1504;&#1491;&#1493;&#1511;&#1505; &#1493;&#1495;&#1497;&#1514;&#1493;&#1498;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/views-and-copies.html">6.7. &#1514;&#1510;&#1493;&#1490;&#1493;&#1514; &#1493;&#1492;&#1506;&#1514;&#1511;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/operators.html">6.8. &#1488;&#1493;&#1508;&#1512;&#1496;&#1493;&#1512;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/universal-functions.html">6.9. &#1508;&#1493;&#1504;&#1511;&#1510;&#1497;&#1493;&#1514; &#1488;&#1493;&#1504;&#1497;&#1489;&#1512;&#1505;&#1500;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/broadcasting.html">6.10. &#1513;&#1497;&#1491;&#1493;&#1512; (Broadcasting)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/reductions.html">6.11. &#1510;&#1502;&#1510;&#1493;&#1502;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/selection.html">6.12. &#1489;&#1495;&#1497;&#1512;&#1492; &#1493;&#1505;&#1497;&#1491;&#1493;&#1512; &#1502;&#1495;&#1491;&#1513;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linalg.html">6.13. &#1488;&#1500;&#1490;&#1489;&#1512;&#1492; &#1500;&#1497;&#1504;&#1488;&#1512;&#1497;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="signals/fft.html">6.14. FFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="signals/filtering.html">6.15. &#1505;&#1497;&#1504;&#1493;&#1503; &#1493;&#1505;&#1508;&#1511;&#1496;&#1512;&#1493;&#1490;&#1512;&#1502;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="numerical.html">6.16. &#1506;&#1511;&#1493;&#1502;&#1493;&#1514; &#1493;&#1488;&#1497;&#1504;&#1496;&#1490;&#1512;&#1510;&#1497;&#1492;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solvers-and-random.html">6.17. &#1508;&#1493;&#1514;&#1512;&#1497;&#1501; &#1493;&#1502;&#1505;&#1508;&#1512;&#1497;&#1501; &#1488;&#1511;&#1512;&#1488;&#1497;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="images.html">6.18. &#1514;&#1502;&#1493;&#1504;&#1493;&#1514; &#1493;&#1502;&#1506;&#1512;&#1499;&#1497; ndarray</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">6.19. &#1489;&#1497;&#1510;&#1493;&#1506;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wrap-up.html">6.20. &#1505;&#1497;&#1499;&#1493;&#1501;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">7. &#1500;&#1502;&#1497;&#1491;&#1514; &#1502;&#1499;&#1493;&#1504;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networking/index.html">9. &#1512;&#1513;&#1514;&#1493;&#1514;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../webservers/index.html">10. &#1513;&#1512;&#1514;&#1497; &#1488;&#1497;&#1504;&#1496;&#1512;&#1504;&#1496;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../protocol/index.html">12. &#1508;&#1512;&#1493;&#1496;&#1493;&#1511;&#1493;&#1500; &#1502;&#1488;&#1512;&#1495;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">13. &#1499;&#1500;&#1497;&#1501;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../production/index.html">14. &#1497;&#1497;&#1510;&#1493;&#1512;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../library/index.html">&#1505;&#1508;&#1512;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../quickref.html">&#1500;&#1493;&#1495;&#1493;&#1514;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../shields.html">&#1502;&#1490;&#1504;&#1497;&#1501; (Shields)</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../sensors.html">&#1495;&#1497;&#1497;&#1513;&#1504;&#1497;&#1501;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../reference/index.html">&#1513;&#1508;&#1492;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../develop/index.html">&#1512;&#1499;&#1497;&#1489;&#1497;&#1501; &#1508;&#1504;&#1497;&#1502;&#1497;&#1497;&#1501;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../changelog/index.html">&#1497;&#1493;&#1502;&#1503; &#1513;&#1497;&#1504;&#1493;&#1497;&#1497;&#1501;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../license.html">&#1512;&#1497;&#1513;&#1497;&#1493;&#1503;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#pick-a-reasonable-dtype">6.19.1. &#1489;&#1495;&#1512;&#1493; dtype &#1505;&#1489;&#1497;&#1512;</a></li>
+<li><a class="reference internal" href="#prefer-an-ndarray-to-an-iterable">6.19.2. &#1492;&#1506;&#1491;&#1497;&#1508;&#1493; ndarray &#1506;&#1500; &#1508;&#1504;&#1497; iterable</a></li>
+<li><a class="reference internal" href="#prefer-views-to-copies">6.19.3. &#1492;&#1506;&#1491;&#1497;&#1508;&#1493; &#1514;&#1510;&#1493;&#1490;&#1493;&#1514; &#1506;&#1500; &#1508;&#1504;&#1497; &#1492;&#1506;&#1514;&#1511;&#1497;&#1501;</a></li>
+<li><a class="reference internal" href="#allocate-once-then-write">6.19.4. &#1492;&#1511;&#1510;&#1493; &#1508;&#1506;&#1501; &#1488;&#1495;&#1514;, &#1493;&#1488;&#1494; &#1499;&#1514;&#1489;&#1493;</a></li>
+<li><a class="reference internal" href="#use-in-place-operators">6.19.5. &#1492;&#1513;&#1514;&#1502;&#1513;&#1493; &#1489;&#1488;&#1493;&#1508;&#1512;&#1496;&#1493;&#1512;&#1497;&#1501; &#1489;&#1502;&#1511;&#1493;&#1501; (in-place)</a></li>
+<li><a class="reference internal" href="#build-the-result-do-not-append-to-it">6.19.6. &#1489;&#1504;&#1493; &#1488;&#1514; &#1492;&#1514;&#1493;&#1510;&#1488;&#1492;, &#1488;&#1500; &#1514;&#1493;&#1505;&#1497;&#1508;&#1493; &#1488;&#1500;&#1497;&#1492; (append)</a></li>
+<li><a class="reference internal" href="#slice-assignment-instead-of-new-arrays">6.19.7. &#1492;&#1513;&#1502;&#1492; &#1500;&#1508;&#1512;&#1493;&#1505;&#1492; &#1489;&#1502;&#1511;&#1493;&#1501; &#1502;&#1506;&#1512;&#1499;&#1497;&#1501; &#1495;&#1491;&#1513;&#1497;&#1501;</a></li>
+<li><a class="reference internal" href="#watch-out-for-boolean-masks-in-streaming-loops">6.19.8. &#1492;&#1497;&#1494;&#1492;&#1512;&#1493; &#1502;&#1502;&#1505;&#1499;&#1493;&#1514; &#1489;&#1493;&#1500;&#1497;&#1488;&#1504;&#1497;&#1493;&#1514; &#1489;&#1500;&#1493;&#1500;&#1488;&#1493;&#1514; &#1494;&#1512;&#1497;&#1502;&#1492;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/numpy/performance.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">מדריך OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">6. </span>NumPy</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">6.19. </span>ביצועים</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="performance">
+<h1><span class="section-number">6.19. </span>ביצועים<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h1>
+<p>אותן החלטות תכן שהופכות את <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> למהיר על המצלמה – קריאות ספרייה על מערך שלם, חוצצים ארוזים בעלי טיפוס, ותצוגות שחולקות נתונים עם מקורן – חושפות גם קבוצה של הרגלים שכדאי להכיר. הדף <a class="reference internal" href="shape/shape-and-strides.html"><span class="doc">צורה וצעדים (strides)</span></a> כבר כיסה את כלל פריסת הציר האחרון; דף זה מקטלג את הרגלי ההקצאה והטיפוס (dtype) החשובים ביותר בלולאת זרימה.</p>
+<section id="pick-a-reasonable-dtype">
+<h2><span class="section-number">6.19.1. </span>בחרו dtype סביר<a class="headerlink" href="#pick-a-reasonable-dtype" title="Link to this heading">¶</a></h2>
+<p>ה-dtype ברירת המחדל של כל בנאי הוא <code class="docutils literal notranslate"><span class="pre">float</span></code>. עבור נתונים שהם מטבעם 8 סיביות או 16 סיביות – דגימות ADC, פיקסלים של תמונה, קריאות חיישן – העבירו <code class="docutils literal notranslate"><span class="pre">dtype=</span></code> במפורש לאחד מטיפוסי המספרים השלמים:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">adc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adc_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>החיסכון ב-RAM הוא פי 2 עבור <code class="docutils literal notranslate"><span class="pre">uint16</span></code> ופי 4 עבור <code class="docutils literal notranslate"><span class="pre">uint8</span></code> לעומת ברירת המחדל <code class="docutils literal notranslate"><span class="pre">float</span></code> בת 4 הבתים. החישוב גם רץ מהר יותר משום שנתיבי הקוד למספרים שלמים בתוך <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> הדוקים יותר מאלה הגנריים למספרים ממשיים. כלל הגלישה של מספרים שלמים שתואר ב-<a class="reference internal" href="basics/dtypes.html"><span class="doc">Dtypes</span></a> חל – המירו לטיפוס רחב יותר לפני פעולות חשבון שעלולות לגלוש.</p>
+</section>
+<section id="prefer-an-ndarray-to-an-iterable">
+<h2><span class="section-number">6.19.2. </span>העדיפו ndarray על פני iterable<a class="headerlink" href="#prefer-an-ndarray-to-an-iterable" title="Link to this heading">¶</a></h2>
+<p>רוב הצמצומים והפונקציות האוניברסליות מקבלים או iterable או <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>               <span class="c1"># works, but slow</span>
+</span><span data-line="2"><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]))</span>     <span class="c1"># ~3x faster</span>
+</span></pre></div>
+</div>
+<p>צורת ה-iterable מאלצת את <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> לעבור על הקלט אובייקט פייתון אחד בכל פעם, ולהמיר כל אחד למספר לפני שניתן להשתמש בו. מול <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> ההמרה כבר בוצעה והקריאה רצה ישירות דרך החוצץ הארוז.</p>
+<p>כאשר אותם נתונים משמשים יותר מפעם אחת, בנו את ה-<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> פעם אחת והעבירו אותו הלאה. כאשר הנתונים קיימים רק כרשימת פייתון ונצרכים פעם אחת, עלות ההמרה עלולה לגבור על שיפור המהירות – הבנאי <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.array" title="numpy.array"><code class="xref py py-func docutils literal notranslate"><span class="pre">array()</span></code></a> עצמו צריך לעבור על הרשימה ולהקצות.</p>
+</section>
+<section id="prefer-views-to-copies">
+<h2><span class="section-number">6.19.3. </span>העדיפו תצוגות על פני העתקים<a class="headerlink" href="#prefer-views-to-copies" title="Link to this heading">¶</a></h2>
+<p>חיתוך, אינדוקס לפי ציר יחיד של מערך מדרגה גבוהה יותר, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.reshape" title="numpy.ndarray.reshape"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reshape()</span></code></a>, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.transpose" title="numpy.ndarray.transpose"><code class="xref py py-meth docutils literal notranslate"><span class="pre">transpose()</span></code></a> ו-<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.frombuffer" title="numpy.frombuffer"><code class="xref py py-func docutils literal notranslate"><span class="pre">frombuffer()</span></code></a> כולם מחזירים <em>תצוגות</em> שחולקות נתונים עם המקור. הן בעצם חינמיות.</p>
+<p><a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.copy" title="numpy.ndarray.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a>, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.flatten" title="numpy.ndarray.flatten"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flatten()</span></code></a>, אינדוקס בוליאני (<code class="docutils literal notranslate"><span class="pre">a[mask]</span></code>), וכל ביטוי חשבוני מקצים <em>העתק</em>. השתמשו בהם רק כאשר באמת נדרש חוצץ עצמאי.</p>
+<p>כשמתעורר ספק, <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndinfo" title="numpy.ndinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">ndinfo()</span></code></a> מדפיס את מיקום החוצץ הבסיסי; שני מערכים המדווחים על אותה כתובת חולקים את נתוניהם. טבלת תצוגה-מול-העתק המלאה נמצאת ב-<a class="reference internal" href="shape/views-and-copies.html"><span class="doc">תצוגות והעתקים</span></a>.</p>
+</section>
+<section id="allocate-once-then-write">
+<h2><span class="section-number">6.19.4. </span>הקצו פעם אחת, ואז כתבו<a class="headerlink" href="#allocate-once-then-write" title="Link to this heading">¶</a></h2>
+<p>מלכודת הביצועים הגדולה ביותר על המצלמה היא הקצאת מערכים חדשים בתוך לולאה הרצה פעמים רבות בשנייה. כל <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> חדש מבקש מהמצלמה זיכרון RAM, והקצאות חדשות תכופות מבזבזות אותו.</p>
+<p>רוב הפונקציות האוניברסליות מקבלות <code class="docutils literal notranslate"><span class="pre">out=</span></code> כך שניתן לכתוב את התוצאה לתוך מערך שכבר קיים:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>        <span class="c1"># allocate once</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+</span><span data-line="6">    <span class="c1"># use y ...</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../library/omv.image.Image.html#image.Image.to_ndarray" title="image.Image.to_ndarray"><code class="xref py py-meth docutils literal notranslate"><span class="pre">image.Image.to_ndarray()</span></code></a> מקבל <code class="docutils literal notranslate"><span class="pre">buffer=</span></code> מאותה סיבה; <a class="reference internal" href="../../../library/omv.ulab.utils.html#ulab.utils.spectrogram" title="ulab.utils.spectrogram"><code class="xref py py-func docutils literal notranslate"><span class="pre">spectrogram()</span></code></a> והממירים מסוג <a class="reference internal" href="../../../library/omv.ulab.utils.html#ulab.utils.from_int32_buffer" title="ulab.utils.from_int32_buffer"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_int32_buffer()</span></code></a> מקבלים גם <code class="docutils literal notranslate"><span class="pre">out=</span></code> וגם <code class="docutils literal notranslate"><span class="pre">scratchpad=</span></code>. הקצו הכול פעם אחת והשתמשו בו מחדש.</p>
+</section>
+<section id="use-in-place-operators">
+<h2><span class="section-number">6.19.5. </span>השתמשו באופרטורים במקום (in-place)<a class="headerlink" href="#use-in-place-operators" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">b</span> <span class="pre">+</span> <span class="pre">1</span></code> מקצה משתנה זמני בגודל <code class="docutils literal notranslate"><span class="pre">b</span></code>, מעתיק, ומשייך מחדש. <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">+=</span> <span class="pre">1</span></code> משנה את <code class="docutils literal notranslate"><span class="pre">b</span></code> ישירות:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># makes a temporary</span>
+</span><span data-line="2"><span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="c1"># no temporary</span>
+</span><span data-line="5"><span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+<p>אותו רעיון חל על ביטויים מורכבים. <code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span> <span class="pre">*</span> <span class="pre">c</span></code> מקצה משתנה זמני עבור <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">*</span> <span class="pre">c</span></code>. פיצול הביטוי לתת-השמות פשוטות הכותבות לתוך חוצץ שהוקצה מראש מבטל את המשתנים הזמניים:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># one temporary for (a + b), another for the ``* 2``</span>
+</span><span data-line="2"><span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="c1"># zero temporaries</span>
+</span><span data-line="5"><span class="n">out</span><span class="p">[:]</span>  <span class="o">=</span> <span class="n">a</span>
+</span><span data-line="6"><span class="n">out</span>    <span class="o">+=</span> <span class="n">b</span>
+</span><span data-line="7"><span class="n">out</span>    <span class="o">*=</span> <span class="mi">2</span>
+</span></pre></div>
+</div>
+</section>
+<section id="build-the-result-do-not-append-to-it">
+<h2><span class="section-number">6.19.6. </span>בנו את התוצאה, אל תוסיפו אליה (append)<a class="headerlink" href="#build-the-result-do-not-append-to-it" title="Link to this heading">¶</a></h2>
+<p>ל-<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> אין <code class="docutils literal notranslate"><span class="pre">append</span></code> – בכוונה. הגדלת מערך תחייב הקצאת חוצץ חדש וגדול יותר והעתקת התוכן הישן לתוכו. על מיקרו-בקר, הקצו מראש את הגודל הסופי <em>ומלאו</em> אותו:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+</span><span data-line="3">    <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">some_calculation</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>כאשר <code class="docutils literal notranslate"><span class="pre">N</span></code> באמת אינו ידוע מראש, כתבו אל <a class="reference internal" href="../../../library/builtins.html#list" title="list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> של פייתון והמירו פעם אחת בסוף עם <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.array" title="numpy.array"><code class="xref py py-func docutils literal notranslate"><span class="pre">array()</span></code></a>.</p>
+</section>
+<section id="slice-assignment-instead-of-new-arrays">
+<h2><span class="section-number">6.19.7. </span>השמה לפרוסה במקום מערכים חדשים<a class="headerlink" href="#slice-assignment-instead-of-new-arrays" title="Link to this heading">¶</a></h2>
+<p>תבניות רבות של ”בניית מערך חדש מחלקים של אחרים“ ניתנות לביטוי כהשמות לפרוסות בתוך חוצץ שהוקצה מראש במקום הקצאה חדשה בכל קריאה.</p>
+<p>חלון מתגלגל על פני זרם דגימות – היסוד של מסנן ממוצע נע – הוא המקרה הקנוני. החוצץ מחזיק את <code class="docutils literal notranslate"><span class="pre">N</span></code> הדגימות האחרונות; כל איטרציה משמיטה את הישנה ביותר ומוסיפה את החדשה ביותר. הצורה המתבקשת בונה מחדש את החוצץ בכל איטרציה:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">sample</span> <span class="o">=</span> <span class="n">read_sample</span><span class="p">()</span>
+</span><span data-line="3">    <span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>              <span class="c1"># new buffer every loop</span>
+</span><span data-line="4">                          <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sample</span><span class="p">])))</span>
+</span><span data-line="5">    <span class="n">avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>זוהי הקצאה חדשה – והעתק של <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">-</span> <span class="pre">1</span></code> איברים – בכל דגימה. צורת ההשמה-לפרוסה מסיטה במקום:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">N</span>   <span class="o">=</span> <span class="mi">16</span>
+</span><span data-line="2"><span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>               <span class="c1"># allocate once</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">sample</span>   <span class="o">=</span> <span class="n">read_sample</span><span class="p">()</span>
+</span><span data-line="6">    <span class="n">buf</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>                          <span class="c1"># shift left by one</span>
+</span><span data-line="7">    <span class="n">buf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="o">=</span> <span class="n">sample</span>                           <span class="c1"># append at the end</span>
+</span><span data-line="8">    <span class="n">avg</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">buf[:-1]</span> <span class="pre">=</span> <span class="pre">buf[1:]</span></code> היא השורה המעניינת: שתי תצוגות חופפות לתוך אותו חוצץ, הפרוסה הימנית נקראת מקצה אחד ונכתבת לקצה האחר. <a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> עובר על הזיכרון הבסיסי בסדר ההופך את ההסטה במקום לבטוחה. שום מערך חדש אינו מוקצה בתוך הלולאה.</p>
+</section>
+<section id="watch-out-for-boolean-masks-in-streaming-loops">
+<h2><span class="section-number">6.19.8. </span>היזהרו ממסכות בוליאניות בלולאות זרימה<a class="headerlink" href="#watch-out-for-boolean-masks-in-streaming-loops" title="Link to this heading">¶</a></h2>
+<p>אינדוקס בוליאני ו-<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.where" title="numpy.where"><code class="xref py py-func docutils literal notranslate"><span class="pre">where()</span></code></a> מייצרים מערך חדש בכל קריאה – גודל התוצאה תלוי בנתונים, ולכן שום חוצץ שהוקצה מראש אינו יכול לקלוט את ההקצאה. בניית מסכה חוזרת ונשנית בלולאת זרימה ממלאת את ה-RAM במערכים חד-פעמיים. קריאת <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code> תקופתית משחררת את המקום:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">mask</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+</span><span data-line="5">    <span class="n">_</span>    <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="6">    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="7">        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>אותה הסתייגות חלה על ביטויים בוליאניים מורכבים כמו <code class="docutils literal notranslate"><span class="pre">(a</span> <span class="pre">&gt;</span> <span class="pre">lo)</span> <span class="pre">&amp;</span> <span class="pre">(a</span> <span class="pre">&lt;</span> <span class="pre">hi)</span></code> – כל אופרטור מקצה מערך bool חדש. כאשר מסכה משמשת מחדש, בנו אותה פעם אחת ושמרו אותה:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">mask</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+</span><span data-line="2"><span class="n">foo</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="3"><span class="n">bar</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="images.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">6.18. </span>תמונות ומערכי ndarray</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="wrap-up.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">6.20. </span>סיכום</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=bd25f2d5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=a336edf7"></script>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

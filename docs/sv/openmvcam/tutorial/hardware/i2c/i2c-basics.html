@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="sv" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3.23. Grunderna i I2C - OpenMV MicroPython 1.28 dokumentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Sök" href="../../../../search.html" /><link rel="next" title="3.24. I2C i kod" href="i2c-code.html" /><link rel="prev" title="3.22. SPI i kod" href="../spi/spi-code.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/hardware/i2c/i2c-basics.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/hardware/i2c/i2c-basics.html"/>
+  <meta property="og:title" content="3.23. Grunderna i I2C"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/hardware/i2c/i2c-basics.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Sök" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/hardware/i2c/i2c-basics.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/hardware/i2c/i2c-basics.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/hardware/i2c/i2c-basics.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/hardware/i2c/i2c-basics.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/hardware/i2c/i2c-basics.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/hardware/i2c/i2c-basics.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Handledning</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Snabbstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python-&#246;versikt</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">3. H&#229;rdvarustyrning</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">3.1. Mikrokontroller</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">3.2. Tidtagning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">3.3. Virtuella timrar</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">3.4. Stift och kringutrustning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">3.5. LED-klassen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">3.6. Elektronikgrunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">3.7. GPIO-utg&#229;ng</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">3.8. Niv&#229;omvandling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">3.9. Str&#246;mst&#228;llare och pull-motst&#229;nd</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">3.10. GPIO-ing&#229;ng</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">3.11. Avstudsning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">3.12. L&#228;sa analoga v&#228;rden med ADC:n</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">3.13. Generera analoga signaler med PWM och ett RC-filter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/led-dimming.html">3.14. LED-dimning med PWM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/dc-motors.html">3.15. Styrning av DC-motor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/servos.html">3.16. Styrning av servo</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pulse-io/pulse-io.html">3.17. Bitstr&#246;mmar och pulsm&#228;tning</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-basics.html">3.18. UART-grunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/uart-code.html">3.19. UART i kod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../uart/serial-protocols.html">3.20. Seriella protokoll, ramning och CRC:er</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">3.21. SPI-grunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">3.22. SPI i kod</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">3.23. Grunderna i I2C</a></li>
+<li class="toctree-l3"><a class="reference internal" href="i2c-code.html">3.24. I2C i kod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-basics.html">3.25. Grunderna i CAN-bussen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-code.html">3.26. CAN-bussen i kod</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">3.27. Watchdog-timer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">3.28. Realtidsklocka</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">3.29. L&#229;geffekts- och vilol&#228;ge</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">3.30. Sammanfattning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Bildsensorer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Bildbehandling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Maskininl&#228;rning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. N&#228;tverk</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Webbservrar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. V&#228;rdprotokoll</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Verktyg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produktion</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Bibliotek</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Kort</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Sk&#246;ldar</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensorer</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Spr&#229;k</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Interna delar</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#196;ndringslogg</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licens</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#two-wires-both-open-drain">3.23.1. Tv&#229; tr&#229;dar, b&#229;da open-drain</a></li>
+<li><a class="reference internal" href="#the-transaction">3.23.2. Transaktionen</a></li>
+<li><a class="reference internal" href="#addressing">3.23.3. Adressering</a></li>
+<li><a class="reference internal" href="#strengths-and-weaknesses">3.23.4. Styrkor och svagheter</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/hardware/i2c/i2c-basics.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Handledning för OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">3. </span>Hårdvarustyrning</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">3.23. </span>Grunderna i I2C</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/i2c/i2c-basics.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/i2c/i2c-basics.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/hardware/i2c/i2c-basics.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/i2c/i2c-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/i2c/i2c-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/hardware/i2c/i2c-basics.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="i2c-basics">
+<h1><span class="section-number">3.23. </span>Grunderna i I2C<a class="headerlink" href="#i2c-basics" title="Länk till denna rubrik">¶</a></h1>
+<p>I2C (<em>Inter-Integrated Circuit</em>, uttalas ”I-kvadrat-C” eller ”I-två-C”) är en tvåtrådig seriebuss avsedd för kortdistanslänkar mellan chip på samma kort. Den ligger mellan SPI och UART i prioriteringar: långsammare än SPI men snålare med stift, och adresserad (flera enheter på samma två trådar) där SPI behöver en dedikerad CS-ledning per enhet.</p>
+<p>I2C är den föredragna bussen för lågtakts-sensorer – accelerometrar, temperatursensorer, fuktsensorer, magnetometrar, realtidsklockor, EEPROM:er – där det att spara stift och bussens komplexitet betyder mer än ren genomströmning.</p>
+<section id="two-wires-both-open-drain">
+<h2><span class="section-number">3.23.1. </span>Två trådar, båda open-drain<a class="headerlink" href="#two-wires-both-open-drain" title="Länk till denna rubrik">¶</a></h2>
+<p>En I2C-buss har bara två signaler:</p>
+<ul class="simple">
+<li><p><strong>SCL</strong> (seriell klocka). Drivs av styrenheten (för det mesta).</p></li>
+<li><p><strong>SDA</strong> (seriella data). Drivs av vilken enhet som än talar för tillfället – styrenheten under adressen och utgående data, kringutrustningen under läsningar och ACK-bitar.</p></li>
+</ul>
+<p>Båda ledningarna är open-drain: varje enhet på bussen kan dra ledningen ned till jord men driver den aldrig hög. Två uppdragningsmotstånd på bussen (vanligtvis <code class="docutils literal notranslate"><span class="pre">2.2</span> <span class="pre">kΩ</span></code> till <code class="docutils literal notranslate"><span class="pre">10</span> <span class="pre">kΩ</span></code> mot matningsskenan) drar ledningarna höga när ingen drar dem låga. Det trådade-ELLER-beteendet faller ut av detta – vilken enhet som helst som drar ledningen låg vinner, och det höga tillståndet är bara ”ingen talar”.</p>
+<p>MCU:ns interna uppdragningar på dess SCL- och SDA-stift är vanligtvis <em>inte</em> starka nog att ensamma fungera som bussens uppdragningar; externa motstånd på bussen behövs normalt. Många sensor-breakout-kort innehåller dem redan; kontrollera databladet innan du lägger till fler.</p>
+</section>
+<section id="the-transaction">
+<h2><span class="section-number">3.23.2. </span>Transaktionen<a class="headerlink" href="#the-transaction" title="Länk till denna rubrik">¶</a></h2>
+<p>Varje I2C-transaktion följer samma form:</p>
+<figure class="align-default" id="id1">
+<img alt="SCL- och SDA-spår. SDA faller medan SCL är hög (START), sedan klockar SCL ut byte på SDA -- en 7-bitars adressbyte med en läs/skriv-bit och en ACK, sedan en registerbyte och en ACK, sedan en databyte och en NACK, sedan stiger SDA medan SCL är hög (STOP)." src="../../../../_images/i2c-transaction.svg" />
+<figcaption>
+<p><span class="caption-text">En I2C-transaktion: START, 7-bitars adress + R/W, ACK, register, ACK, data, NACK, STOP.</span><a class="headerlink" href="#id1" title="Länk till denna bild">¶</a></p>
+</figcaption>
+</figure>
+<p>Utbytet utvecklas bit för bit:</p>
+<ul class="simple">
+<li><p><strong>START.</strong> Styrenheten drar SDA låg medan SCL fortfarande är hög. Denna ovanliga flank talar om för varje enhet på bussen att en transaktion är på väg att börja.</p></li>
+<li><p><strong>Adress + R/W.</strong> Styrenheten klockar ut en 7-bitars kringutrustningsadress följd av en läs/skriv-bit (<code class="docutils literal notranslate"><span class="pre">0</span></code> för skrivning, <code class="docutils literal notranslate"><span class="pre">1</span></code> för läsning).</p></li>
+<li><p><strong>ACK / NACK.</strong> Efter varje byte driver <em>mottagaren</em> SDA under en klockpuls för att ACK:a (lågt) eller NACK:a (högt). På adressbyten ACK:ar kringutrustningen om den känner igen sin egen adress; om ingen enhet ACK:ar ser styrenheten en NACK och vet att adressen inte finns på bussen.</p></li>
+<li><p><strong>Databyte.</strong> Varje byte följs av en ACK från mottagaren. Vid en skrivning ACK:ar kringutrustningen varje byte; vid en läsning ACK:ar styrenheten varje byte den vill ha mer av och NACK:ar den sista byten för att tala om för kringutrustningen att sluta.</p></li>
+<li><p><strong>STOP.</strong> Styrenheten släpper SDA hög medan SCL är hög, vilket avslutar transaktionen.</p></li>
+</ul>
+<p>En <em>upprepad start</em> är en andra START som utfärdas utan en STOP emellan – styrenheten byter riktning (skrivadress, sedan läsadress) på samma kringutrustning utan att lämna ifrån sig bussen.</p>
+</section>
+<section id="addressing">
+<h2><span class="section-number">3.23.3. </span>Adressering<a class="headerlink" href="#addressing" title="Länk till denna rubrik">¶</a></h2>
+<p>Det 7-bitars adressutrymmet täcker <code class="docutils literal notranslate"><span class="pre">0x08</span></code> – <code class="docutils literal notranslate"><span class="pre">0x77</span></code>; värdena i ändarna är reserverade för speciella ändamål. Varje enhets adress sätts av chipkonstruktören; många komponenter tillåter att några av de låga bitarna ändras på kortnivå (genom att binda ett stift högt eller lågt) så att två av samma sensor kan sitta på samma buss.</p>
+<p>Om två enheter delar en adress finns det inget sätt att tala med en av dem utan att den andra stör, så kontrollera databladet innan du parar komponenter. <code class="docutils literal notranslate"><span class="pre">i2c.scan()</span></code> (behandlas i <a class="reference internal" href="i2c-code.html"><span class="doc">I2C i kod</span></a>) går igenom adressutrymmet och rapporterar vilka adresser som svarar, vilket är standardsättet att ta reda på vad som finns på bussen.</p>
+</section>
+<section id="strengths-and-weaknesses">
+<h2><span class="section-number">3.23.4. </span>Styrkor och svagheter<a class="headerlink" href="#strengths-and-weaknesses" title="Länk till denna rubrik">¶</a></h2>
+<p>Bussens styrkor och svagheter sätter dess nisch:</p>
+<ul class="simple">
+<li><p><strong>Två stift för många enheter.</strong> Ett enda SCL/SDA-par kan bära ett dussin sensorer. SPI skulle behöva ett extra CS-stift per enhet.</p></li>
+<li><p><strong>Standardhastigheter.</strong> <code class="docutils literal notranslate"><span class="pre">100</span> <span class="pre">kHz</span></code> (”standardläge”) och <code class="docutils literal notranslate"><span class="pre">400</span> <span class="pre">kHz</span></code> (”snabbläge”) täcker nästan varje sensor. <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">MHz</span></code> är uppnåeligt men börjar ställa större krav på busskapacitansen och uppdragningsmotståndens dimensionering.</p></li>
+<li><p><strong>Långsam jämfört med SPI.</strong> Allt som flyttar mer än några hundra kilobit per sekund vill ha SPI istället.</p></li>
+<li><p><strong>Adresskonflikter.</strong> Två enheter med samma adress på en buss är ett hårdvarufel som protokollet inte kan kringgå.</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../spi/spi-code.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">3.22. </span>SPI i kod</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="i2c-code.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">3.24. </span>I2C i kod</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=5b0c1db2"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=9581117f"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

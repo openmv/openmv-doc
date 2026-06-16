@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>12.4. 交握與能力協商 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="12.5. 可靠性 -- 序號、ACK 與重傳" href="reliability.html" /><link rel="prev" title="12.3. 封包格式" href="packet-format.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/protocol/framing/handshake.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/protocol/framing/handshake.html"/>
+  <meta property="og:title" content="12.4. 交握與能力協商"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/protocol/framing/handshake.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/protocol/framing/handshake.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/protocol/framing/handshake.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/protocol/framing/handshake.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/protocol/framing/handshake.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/protocol/framing/handshake.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/protocol/framing/handshake.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/protocol/framing/handshake.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/protocol/framing/handshake.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/protocol/framing/handshake.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/protocol/framing/handshake.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/protocol/framing/handshake.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/protocol/framing/handshake.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/protocol/framing/handshake.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/protocol/framing/handshake.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/protocol/framing/handshake.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/protocol/framing/handshake.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/protocol/framing/handshake.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/protocol/framing/handshake.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/protocol/framing/handshake.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/protocol/framing/handshake.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/protocol/framing/handshake.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">12. &#20027;&#27231;&#21332;&#23450;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../concepts/why-a-protocol.html">12.1. &#28858;&#20309;&#38656;&#35201;&#21332;&#23450;&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/the-four-layers.html">12.2. &#22235;&#20491;&#23652;&#32026;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="packet-format.html">12.3. &#23553;&#21253;&#26684;&#24335;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">12.4. &#20132;&#25569;&#33287;&#33021;&#21147;&#21332;&#21830;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="reliability.html">12.5. &#21487;&#38752;&#24615; -- &#24207;&#34399;&#12289;ACK &#33287;&#37325;&#20659;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../channels/named-channels.html">12.6. &#20855;&#21517;&#36890;&#36947;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../channels/channel-callbacks.html">12.7. &#36890;&#36947;&#22238;&#21628;&#20989;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../streaming/streaming-frames.html">12.8. &#20018;&#27969;&#24433;&#26684;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../streaming/bidirectional.html">12.9. &#38617;&#21521;&#27969;&#21205;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">12.10. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#the-host-opens-the-connection">12.4.1. &#20027;&#27231;&#38283;&#21855;&#36899;&#32218;</a></li>
+<li><a class="reference internal" href="#capability-exchange">12.4.2. &#33021;&#21147;&#20132;&#25563;</a></li>
+<li><a class="reference internal" href="#channel-discovery">12.4.3. &#36890;&#36947;&#25506;&#32034;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/protocol/framing/handshake.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">12. </span>主機協定</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">12.4. </span>交握與能力協商</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/handshake.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/handshake.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/handshake.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/handshake.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/handshake.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/protocol/framing/handshake.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="handshake-and-capability-negotiation">
+<h1><span class="section-number">12.4. </span>交握與能力協商<a class="headerlink" href="#handshake-and-capability-negotiation" title="連結到這個標頭">¶</a></h1>
+<p>相機與主機到達傳輸層時，各自對協定該如何運作抱持著自己的想法：使用哪些 CRC 模式、是否要求 ACK、它們能緩衝的最大酬載是多少。在真正的流量開始之前，它們會交換一次交握（handshake），把這些參數固定下來，供後續整個工作階段使用。</p>
+<section id="the-host-opens-the-connection">
+<h2><span class="section-number">12.4.1. </span>主機開啟連線<a class="headerlink" href="#the-host-opens-the-connection" title="連結到這個標頭">¶</a></h2>
+<p>相機端會在開機時啟動協定堆疊（或由應用程式以 <a class="reference internal" href="../../../../library/omv.protocol.html#protocol.init" title="protocol.init"><code class="xref py py-func docutils literal notranslate"><span class="pre">protocol.init()</span></code></a> 重新啟動它以變更參數），然後安靜地等待主機。從相機的角度來看，在封包抵達之前都無事可做。</p>
+<p>主機端會開啟傳輸層——USB 連接埠或 UART——並立即送出一個 <code class="docutils literal notranslate"><span class="pre">PROTO_SYNC</span></code> 封包（opcode <code class="docutils literal notranslate"><span class="pre">0x00</span></code>）。這個封包帶有一個魔術酬載（magic payload），即使雙方都失去同步，也能讓相機辨識出它；而且在能力協商完成之前，這是相機唯一會回應的封包。</p>
+<p>如果相機在重傳逾時內沒有回覆，主機會再次送出 <code class="docutils literal notranslate"><span class="pre">PROTO_SYNC</span></code>，最多 <code class="docutils literal notranslate"><span class="pre">rtx_retries</span></code> 次。在那之後它就放棄並回報連線失敗。正是這項重試讓「拔除、重插、重新啟動主機指令碼」得以運作，而相機完全不需要知道主機曾經離開過。</p>
+</section>
+<section id="capability-exchange">
+<h2><span class="section-number">12.4.2. </span>能力交換<a class="headerlink" href="#capability-exchange" title="連結到這個標頭">¶</a></h2>
+<p>一旦相機確認了同步，主機就送出 <code class="docutils literal notranslate"><span class="pre">PROTO_GET_CAPS</span></code>（opcode <code class="docutils literal notranslate"><span class="pre">0x01</span></code>），詢問相機支援哪些功能。回覆酬載會回報：</p>
+<ul class="simple">
+<li><p>CRC 驗證已啟用或已停用</p></li>
+<li><p>序號追蹤已啟用或已停用</p></li>
+<li><p>ACK 已啟用或已停用</p></li>
+<li><p>事件通知已啟用或已停用</p></li>
+<li><p>相機的最大酬載大小（位元組）</p></li>
+<li><p>目前的重傳重試次數、逾時與輪詢參數</p></li>
+</ul>
+<p>主機會將這些與自己的組態比對。如果主機需要 <em>變更</em> 其中任何一項——例如，因為它的接收緩衝區比相機的小，而需要協商出一個較小的最大酬載——它就會送出帶有新值的 <code class="docutils literal notranslate"><span class="pre">PROTO_SET_CAPS</span></code>（opcode <code class="docutils literal notranslate"><span class="pre">0x02</span></code>）。相機會重新設定其堆疊並予以確認。自此之後，每個跨越線路的封包都遵循那份共享的契約。</p>
+<p>如果主機不覆寫任何項目，預設值就全部啟用：CRC 驗證、序號追蹤、ACK 與事件通知。預設的最大酬載是相機的逐板緩衝區大小減去 14 個位元組的封包切分額外負擔（10 個位元組的標頭加上 4 個位元組的尾端酬載 CRC）。對於大多數相機對筆電的工作而言，預設值就是恰當的起點；可靠性那一頁會說明應用程式何時以及為何要關掉其中某些部分。</p>
+</section>
+<section id="channel-discovery">
+<h2><span class="section-number">12.4.3. </span>通道探索<a class="headerlink" href="#channel-discovery" title="連結到這個標頭">¶</a></h2>
+<p>在能力協商之後，主機送出 <code class="docutils literal notranslate"><span class="pre">CHANNEL_LIST</span></code>（opcode <code class="docutils literal notranslate"><span class="pre">0x20</span></code>）。相機回覆一份已註冊通道的清單——四個內建通道（<code class="docutils literal notranslate"><span class="pre">stdin</span></code>、<code class="docutils literal notranslate"><span class="pre">stdout</span></code>、<code class="docutils literal notranslate"><span class="pre">stream</span></code>、<code class="docutils literal notranslate"><span class="pre">profile</span></code>）加上任何由應用程式以 <a class="reference internal" href="../../../../library/omv.protocol.html#protocol.register" title="protocol.register"><code class="xref py py-func docutils literal notranslate"><span class="pre">protocol.register()</span></code></a> 註冊的通道。每一筆項目都帶有該通道的 ID、名稱以及它的能力旗標（唯讀、唯寫、可上鎖）。</p>
+<p>主機會收藏這份清單，待稍後應用程式碼要求 <code class="docutils literal notranslate"><span class="pre">channel_read(&quot;frame&quot;)</span></code> 或 <code class="docutils literal notranslate"><span class="pre">channel_write(&quot;config&quot;,</span> <span class="pre">...)</span></code> 時使用——名稱會被查找一次以對應到通道 ID，之後該通道上的每一個後續封包都直接使用該 ID。</p>
+<p>如果相機在初始清單之後註冊了一個新通道——當應用程式在交握之後才開始執行時，這很常見——相機會發出一個 <code class="docutils literal notranslate"><span class="pre">CHANNEL_REGISTERED</span></code> 事件封包。主機會監聽這些封包並更新其內部通道清單，因此一個早期就接上的主機指令碼，不必重新啟動就能看到新註冊的通道出現。</p>
+<p>交握在連線建立時會耗費幾個往返，之後就再也不重複。穩態流量就只是封包而已：切分後的位元組進、切分後的位元組出，通道 ID 兩端都已知曉。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="packet-format.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">12.3. </span>封包格式</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="reliability.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">12.5. </span>可靠性 -- 序號、ACK 與重傳</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

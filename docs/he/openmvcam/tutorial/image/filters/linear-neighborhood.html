@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="he" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>5.13. מסננים לינאריים ומסנני שכנות - תיעוד OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="אינדקס" href="../../../../genindex.html" /><link rel="search" title="חיפוש" href="../../../../search.html" /><link rel="next" title="5.14. החלקת גאוס וקצוות" href="gaussian-and-edges.html" /><link rel="prev" title="5.12. מעבר סף בינארי" href="../thresholding/binary-method.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/image/filters/linear-neighborhood.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/image/filters/linear-neighborhood.html"/>
+  <meta property="og:title" content="5.13. מסננים לינאריים ומסנני שכנות"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/image/filters/linear-neighborhood.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="חיפוש" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Translations</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/image/filters/linear-neighborhood.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/image/filters/linear-neighborhood.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/image/filters/linear-neighborhood.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/image/filters/linear-neighborhood.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/image/filters/linear-neighborhood.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/image/filters/linear-neighborhood.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/image/filters/linear-neighborhood.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/image/filters/linear-neighborhood.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/image/filters/linear-neighborhood.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/image/filters/linear-neighborhood.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/image/filters/linear-neighborhood.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/image/filters/linear-neighborhood.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/image/filters/linear-neighborhood.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/image/filters/linear-neighborhood.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/image/filters/linear-neighborhood.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/image/filters/linear-neighborhood.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/image/filters/linear-neighborhood.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/image/filters/linear-neighborhood.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/image/filters/linear-neighborhood.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/image/filters/linear-neighborhood.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#1502;&#1491;&#1512;&#1497;&#1498;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#1492;&#1514;&#1495;&#1500;&#1492; &#1502;&#1492;&#1497;&#1512;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. &#1505;&#1511;&#1497;&#1512;&#1514; Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#1489;&#1511;&#1512;&#1514; &#1495;&#1493;&#1502;&#1512;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#1495;&#1497;&#1497;&#1513;&#1504;&#1497; &#1512;&#1488;&#1497;&#1497;&#1492;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">5. &#1506;&#1497;&#1489;&#1493;&#1491; &#1514;&#1502;&#1493;&#1504;&#1492;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-an-image.html">5.1. &#1488;&#1493;&#1489;&#1497;&#1497;&#1511;&#1496; &#1492;-Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/coordinates.html">5.2. &#1511;&#1493;&#1488;&#1493;&#1512;&#1491;&#1497;&#1504;&#1496;&#1493;&#1514; &#1493;&#1488;&#1494;&#1493;&#1512;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-formats.html">5.3. &#1508;&#1493;&#1512;&#1502;&#1496;&#1497;&#1501; &#1513;&#1500; &#1508;&#1497;&#1511;&#1505;&#1500;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pixel-access.html">5.4. &#1511;&#1512;&#1497;&#1488;&#1492; &#1493;&#1499;&#1514;&#1497;&#1489;&#1492; &#1513;&#1500; &#1508;&#1497;&#1511;&#1505;&#1500;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/regions-and-masks.html">5.5. &#1488;&#1494;&#1493;&#1512;&#1497;&#1501; &#1493;&#1502;&#1505;&#1499;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/shapes-and-text.html">5.6. &#1510;&#1497;&#1493;&#1512; &#1510;&#1493;&#1512;&#1493;&#1514; &#1493;&#1496;&#1511;&#1505;&#1496;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/image-composition.html">5.7. &#1492;&#1512;&#1499;&#1489;&#1514; &#1514;&#1502;&#1493;&#1504;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../drawing/flood-fill-and-detection-glyphs.html">5.8. &#1502;&#1497;&#1500;&#1493;&#1497; &#1513;&#1497;&#1496;&#1508;&#1493;&#1503; (flood fill) &#1493;&#1490;&#1500;&#1497;&#1508;&#1497; &#1494;&#1497;&#1492;&#1493;&#1497;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/arithmetic.html">5.9. &#1508;&#1506;&#1493;&#1500;&#1493;&#1514; &#1488;&#1512;&#1497;&#1514;&#1502;&#1496;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/bitwise.html">5.10. &#1508;&#1506;&#1493;&#1500;&#1493;&#1514; &#1505;&#1497;&#1489;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pixel-math/frame-differencing.html">5.11. &#1492;&#1513;&#1493;&#1493;&#1488;&#1514; &#1508;&#1512;&#1497;&#1497;&#1502;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../thresholding/binary-method.html">5.12. &#1502;&#1506;&#1489;&#1512; &#1505;&#1507; &#1489;&#1497;&#1504;&#1488;&#1512;&#1497;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">5.13. &#1502;&#1505;&#1504;&#1504;&#1497;&#1501; &#1500;&#1497;&#1504;&#1488;&#1512;&#1497;&#1497;&#1501; &#1493;&#1502;&#1505;&#1504;&#1504;&#1497; &#1513;&#1499;&#1504;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gaussian-and-edges.html">5.14. &#1492;&#1495;&#1500;&#1511;&#1514; &#1490;&#1488;&#1493;&#1505; &#1493;&#1511;&#1510;&#1493;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="morphology.html">5.15. &#1508;&#1506;&#1493;&#1500;&#1493;&#1514; &#1502;&#1493;&#1512;&#1508;&#1493;&#1500;&#1493;&#1490;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="custom-kernels.html">5.16. &#1490;&#1512;&#1506;&#1497;&#1504;&#1497; &#1511;&#1493;&#1504;&#1489;&#1493;&#1500;&#1493;&#1510;&#1497;&#1492; &#1502;&#1493;&#1514;&#1488;&#1502;&#1497;&#1501; &#1488;&#1497;&#1513;&#1497;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="standard-kernels.html">5.17. &#1511;&#1496;&#1500;&#1493;&#1490; &#1513;&#1500; &#1490;&#1512;&#1506;&#1497;&#1504;&#1497;&#1501; &#1505;&#1496;&#1504;&#1491;&#1512;&#1496;&#1497;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/histograms-and-statistics.html">5.18. &#1492;&#1497;&#1505;&#1496;&#1493;&#1490;&#1512;&#1502;&#1493;&#1514; &#1493;&#1505;&#1496;&#1496;&#1497;&#1505;&#1496;&#1497;&#1511;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/tonal-corrections.html">5.19. &#1514;&#1497;&#1511;&#1493;&#1504;&#1497; &#1490;&#1493;&#1493;&#1503;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analysis/regression-and-similarity.html">5.20. &#1512;&#1490;&#1512;&#1505;&#1497;&#1492; &#1493;&#1491;&#1502;&#1497;&#1493;&#1503;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/scale-flip-crop.html">5.21. &#1513;&#1497;&#1504;&#1493;&#1497; &#1511;&#1504;&#1492; &#1502;&#1497;&#1491;&#1492;, &#1492;&#1497;&#1508;&#1493;&#1498; &#1493;&#1495;&#1497;&#1514;&#1493;&#1498;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/lens-and-perspective.html">5.22. &#1514;&#1497;&#1511;&#1493;&#1503; &#1506;&#1491;&#1513;&#1492; &#1493;&#1508;&#1512;&#1505;&#1508;&#1511;&#1496;&#1497;&#1489;&#1492;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/perspective-correction.html">5.23. &#1514;&#1497;&#1511;&#1493;&#1503; &#1508;&#1512;&#1505;&#1508;&#1511;&#1496;&#1497;&#1489;&#1492;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transforms/polar.html">5.24. &#1496;&#1512;&#1504;&#1505;&#1508;&#1493;&#1512;&#1502;&#1510;&#1497;&#1493;&#1514; &#1508;&#1493;&#1500;&#1512;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/blobs.html">5.25. &#1502;&#1510;&#1497;&#1488;&#1514; &#1512;&#1499;&#1497;&#1489;&#1497;&#1501; (blobs)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/lines-and-segments.html">5.26. &#1502;&#1510;&#1497;&#1488;&#1514; &#1511;&#1493;&#1493;&#1497;&#1501; &#1493;&#1511;&#1496;&#1506;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../finding/circles-and-rectangles.html">5.27. &#1502;&#1510;&#1497;&#1488;&#1514; &#1506;&#1497;&#1490;&#1493;&#1500;&#1497;&#1501; &#1493;&#1502;&#1500;&#1489;&#1504;&#1497;&#1501;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/qr-apriltag.html">5.28. &#1511;&#1493;&#1491;&#1497; QR &#1493;-AprilTags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../decoding/barcodes-and-datamatrix.html">5.29. &#1489;&#1512;&#1511;&#1493;&#1491;&#1497;&#1501; &#1493;&#1511;&#1493;&#1491;&#1497; Data Matrix</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/template-and-similarity.html">5.30. &#1492;&#1514;&#1488;&#1502;&#1514; &#1514;&#1489;&#1504;&#1497;&#1514;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../matching/displacement-and-keypoints.html">5.31. &#1492;&#1514;&#1488;&#1502;&#1514; &#1492;&#1497;&#1505;&#1496;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/saving-and-compression.html">5.32. &#1513;&#1502;&#1497;&#1512;&#1492; &#1493;&#1491;&#1495;&#1497;&#1505;&#1492;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../io/imageio-streams.html">5.33. &#1494;&#1512;&#1502;&#1497; ImageIO</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">5.34. &#1505;&#1497;&#1499;&#1493;&#1501;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#1500;&#1502;&#1497;&#1491;&#1514; &#1502;&#1499;&#1493;&#1504;&#1492;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#1512;&#1513;&#1514;&#1493;&#1514;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. &#1513;&#1512;&#1514;&#1497; &#1488;&#1497;&#1504;&#1496;&#1512;&#1504;&#1496;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#1508;&#1512;&#1493;&#1496;&#1493;&#1511;&#1493;&#1500; &#1502;&#1488;&#1512;&#1495;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#1499;&#1500;&#1497;&#1501;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#1497;&#1497;&#1510;&#1493;&#1512;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#1505;&#1508;&#1512;&#1497;&#1493;&#1514;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#1500;&#1493;&#1495;&#1493;&#1514;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#1502;&#1490;&#1504;&#1497;&#1501; (Shields)</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#1495;&#1497;&#1497;&#1513;&#1504;&#1497;&#1501;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#1513;&#1508;&#1492;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#1512;&#1499;&#1497;&#1489;&#1497;&#1501; &#1508;&#1504;&#1497;&#1502;&#1497;&#1497;&#1501;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#1497;&#1493;&#1502;&#1503; &#1513;&#1497;&#1504;&#1493;&#1497;&#1497;&#1501;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#1512;&#1497;&#1513;&#1497;&#1493;&#1503;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#the-kernel-size">5.13.1. &#1490;&#1493;&#1491;&#1500; &#1492;&#1500;&#1497;&#1489;&#1492; (kernel)</a></li>
+<li><a class="reference internal" href="#the-mean-filter">5.13.2. &#1502;&#1505;&#1504;&#1503; &#1492;&#1502;&#1502;&#1493;&#1510;&#1506;</a></li>
+<li><a class="reference internal" href="#median-mode-midpoint">5.13.3. &#1495;&#1510;&#1497;&#1493;&#1503;, &#1513;&#1499;&#1497;&#1495;, &#1504;&#1511;&#1493;&#1491;&#1514; &#1488;&#1502;&#1510;&#1506;</a></li>
+<li><a class="reference internal" href="#bilateral-the-edge-preserving-version">5.13.4. Bilateral, &#1492;&#1490;&#1512;&#1505;&#1492; &#1502;&#1513;&#1502;&#1512;&#1514;-&#1492;&#1511;&#1510;&#1493;&#1493;&#1514;</a></li>
+<li><a class="reference internal" href="#adaptive-thresholding">5.13.5. &#1505;&#1507; &#1488;&#1491;&#1508;&#1496;&#1497;&#1489;&#1497;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/image/filters/linear-neighborhood.rst">Edit this page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">מדריך OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">5. </span>עיבוד תמונה</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">5.13. </span>מסננים לינאריים ומסנני שכנות</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copy page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="More actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copy page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>View Source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Open in ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Open in Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/image/filters/linear-neighborhood.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Open in Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="linear-and-neighbourhood-filters">
+<h1><span class="section-number">5.13. </span>מסננים לינאריים ומסנני שכנות<a class="headerlink" href="#linear-and-neighbourhood-filters" title="Link to this heading">¶</a></h1>
+<p>פעולות חשבון הפיקסלים שתוארו קודם בפרק שילבו שתי תמונות נקודה אחר נקודה. <em>מסננים</em> מבצעים עבודה דומה בדרך אחרת: הם מחשבים את הערך של כל פיקסל פלט מתוך <em>שכנות</em> קטנה של פיקסלי קלט שמקיפים את המיקום המקביל. הפלט ב-<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> הוא איזושהי תכונה סטטיסטית – הממוצע, החציון, הערך השכיח ביותר – של פיקסלי הקלט בתיבה קטנה שמרכזה ב-<code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code>.</p>
+<p>אותו שינוי קטן במסגור – המעבר מטיפול בפיקסל אחד בכל פעם לטיפול בחלון של פיקסלים בכל פעם – הוא מה שמאפשר למשפחה שלמה של פעולות שימושיות לעבוד. ממוצע פשוט על פני חלון קטן מחליק את רעש החיישן. החציון על פני אותו חלון מסיר נקודות רעש בודדות מבלי לרכך קצוות באותה מידה. ממוצע דו-צדדי (bilateral) נמנע מהחלקה לרוחב גבולות ניגודיות חזקים, ובכך משמר את קצוות העצמים תוך ניקוי המרקמים שבתוכם. השכנות היא יחידת העבודה; הבחירה בתכונה הסטטיסטית קובעת מה המסנן עושה.</p>
+<section id="the-kernel-size">
+<h2><span class="section-number">5.13.1. </span>גודל הליבה (kernel)<a class="headerlink" href="#the-kernel-size" title="Link to this heading">¶</a></h2>
+<p>כל מסנן שכנות מקבל פרמטר <code class="docutils literal notranslate"><span class="pre">size</span></code> שמגדיר את <em>הרדיוס</em> של החלון בפיקסלים. החלון עצמו ריבועי ומכסה <code class="docutils literal notranslate"><span class="pre">(2</span> <span class="pre">*</span> <span class="pre">size</span> <span class="pre">+</span> <span class="pre">1)</span></code> פיקסלים בכל צד – כך ש-<code class="docutils literal notranslate"><span class="pre">size=1</span></code> משמעו שכנות של 3 על 3, <code class="docutils literal notranslate"><span class="pre">size=2</span></code> משמעו 5 על 5, <code class="docutils literal notranslate"><span class="pre">size=3</span></code> משמעו 7 על 7, וכן הלאה.</p>
+<figure class="align-default" id="id1">
+<img alt="רשת תמונה קטנה עם תת-רשת מודגשת של 3 על 3 שמייצגת את שכנות המסנן. חץ מראה את השכנות מחליקה פיקסל אחד ימינה. חץ שני מראה אותה מחליקה מטה אל השורה הבאה בסוף השורה. פיקסל הפלט עבור כל מיקום מצויר מתחת לשכנות, עם הערה קטנה שאומרת שהפלט הוא תכונה סטטיסטית כלשהי של שכנות הקלט." src="../../../../_images/convolution-kernel.svg" />
+<figcaption>
+<p><span class="caption-text">השכנות מחליקה על פני התמונה פיקסל אחד בכל פעם, משמאל למעלה לימין למטה. כל פיקסל פלט הוא תוצאה של החלת התכונה הסטטיסטית של המסנן על שכנות הקלט שמרכזה בו.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>גדלים גדולים יותר משמעם שכנויות גדולות יותר, שמשמען סינון חלק יותר (או אגרסיבי יותר). העלות גדלה עם שטח החלון, כך שמסנן <code class="docutils literal notranslate"><span class="pre">size=3</span></code> מבצע בערך פי תשעה עבודה לכל פיקסל בהשוואה למסנן <code class="docutils literal notranslate"><span class="pre">size=1</span></code>. ברירת המחדל המעשית לרוב עבודות הניקוי היא <code class="docutils literal notranslate"><span class="pre">size=1</span></code> או <code class="docutils literal notranslate"><span class="pre">size=2</span></code>; פנו לגדלים גדולים יותר רק כששכנויות קטנות אינן מספיקות כדי לדכא את המאפיין שהיישום מנסה לדכא.</p>
+</section>
+<section id="the-mean-filter">
+<h2><span class="section-number">5.13.2. </span>מסנן הממוצע<a class="headerlink" href="#the-mean-filter" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> מחליף כל פיקסל ב<em>ממוצע החשבוני</em> של שכנותו. התוצאה מחליקה שינויים מפיקסל לפיקסל על פני גודל החלון, מה שהופך אותה לדרך הזולה ביותר לדכא נקודות רעש חיישן: שינויים בתדר גבוה ממוצעים החוצה, ותוכן בתדר נמוך שורד.</p>
+<p>התמורה היא שגם קצוות ומאפיינים חדים אחרים ממוצעים. קצה בהיר שהיה ברוחב פיקסל אחד לפני המסנן הופך לרוחב שניים או שלושה פיקסלים אחרי מסנן ממוצע <code class="docutils literal notranslate"><span class="pre">size=1</span></code>, כשהבהירות יורדת בהדרגה בשוליים. עבור הפחתת רעש טהורה בתמונה דלת-מרקם (קיר נקי, פנים של סמן צבעוני) התמורה משתלמת. עבור סצנה עמוסה שבה הקצוות חשובים, אחד המסננים הבאים הוא בדרך כלל התאמה טובה יותר.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>        <span class="c1"># 3x3 box average -- fast, gentle smoothing</span>
+</span><span data-line="2"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>        <span class="c1"># 5x5 box average -- stronger, slower</span>
+</span></pre></div>
+</div>
+</section>
+<section id="median-mode-midpoint">
+<h2><span class="section-number">5.13.3. </span>חציון, שכיח, נקודת אמצע<a class="headerlink" href="#median-mode-midpoint" title="Link to this heading">¶</a></h2>
+<p>שלושת מסנני השכנות הסטטיסטיים האחרים ממירים את הממוצע החשבוני הפשוט במשהו עמיד יותר בפני ערכים חריגים.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a> מחזיר את <em>החציון</em> של השכנות – הערך שמגיע לאמצע הרשימה הממוינת של פיקסלי החלון. פיקסל בודד בהיר מאוד או כהה מאוד בחלון אינו מושך את החציון; הוא פשוט הופך לאחד מהקצוות הנדחים. ההשפעה המעשית היא שסינון חציון מסיר נקודות רעש בודדות ורעש מלח-ופלפל מבלי לרכך קצוות כפי ש-<code class="docutils literal notranslate"><span class="pre">mean</span></code> עושה. העלות היא יותר חישוב לכל פיקסל – מיון חלון איטי יותר ממיצועו – והתוצאה אינה בדיוק ממוצע, מה שלעיתים חשוב לחישובים בהמשך.</p>
+<p>פרמטר <code class="docutils literal notranslate"><span class="pre">percentile</span></code> (ברירת מחדל <code class="docutils literal notranslate"><span class="pre">0.5</span></code>) מזיז את הערך הנבחר מחוץ לחציון המדויק. <code class="docutils literal notranslate"><span class="pre">percentile=0.0</span></code> מחזיר את המינימום של השכנות, <code class="docutils literal notranslate"><span class="pre">percentile=1.0</span></code> את המקסימום; ערכי ביניים בוחרים באופן יחסי ביניהם בחלון הממוין. זה מעניק ל-<code class="docutils literal notranslate"><span class="pre">median</span></code> את היכולת להדגיש חלקים כהים או בהירים של השכנות מבלי לאבד את העמידות בפני חריגים של סטטיסטיקת הסדר.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mode" title="image.Image.mode"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mode()</span></code></a> מחזיר את הערך <em>השכיח ביותר</em> בשכנות. שימושי כאשר מודל הרעש הוא ”רוב הפיקסלים נכונים, מעטים נפגמו במידות שונות“, שבו התשובה הנכונה היא הערך שמופיע לעיתים קרובות ביותר – מה שהחציון עלול להחמיץ כשהערכים הפגומים מצטברים בצד אחד של החלון הממוין.</p>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.midpoint" title="image.Image.midpoint"><code class="xref py py-meth docutils literal notranslate"><span class="pre">midpoint()</span></code></a> מחזיר <em>שילוב משוקלל של המינימום והמקסימום</em> של השכנות – <code class="docutils literal notranslate"><span class="pre">bias=0.5</span></code> נותן את נקודת האמצע ביניהם, <code class="docutils literal notranslate"><span class="pre">bias=0.0</span></code> נותן את המינימום, <code class="docutils literal notranslate"><span class="pre">bias=1.0</span></code> נותן את המקסימום. בשימוש פחות נפוץ מהאחרים אך כדאי להכיר אותו כשהמטרה היא במפורש לחלץ מאפיינים כהים או בהירים.</p>
+</section>
+<section id="bilateral-the-edge-preserving-version">
+<h2><span class="section-number">5.13.4. </span>Bilateral, הגרסה משמרת-הקצוות<a class="headerlink" href="#bilateral-the-edge-preserving-version" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.bilateral" title="image.Image.bilateral"><code class="xref py py-meth docutils literal notranslate"><span class="pre">bilateral()</span></code></a> הוא מסנן השכנות שהכי כדאי להבין היטב. הוא מפיק את אפקט ההחלקה של <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>, אך עם אילוץ נוסף: ככל שפיקסל שכן <em>שונה</em> יותר מפיקסל המרכז, כך הוא נספר פחות בממוצע. התוצאה מחליקה את הפנים של כל אזור אחיד מבלי לדלוף לרוחב הקצוות שמפרידים ביניהם, וזה בדיוק מה שרוב היישומים באמת רוצים.</p>
+<p>שני פרמטרים שולטים עד כמה המסנן מנכה פיקסלים באגרסיביות:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">color_sigma</span></code> קובע כיצד <em>הבדל הצבע</em> משפיע על השקלול. ערכים קטנים יותר משמעם שהמסנן מחמיר יותר בניכוי פיקסלים השונים מהמרכז.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">space_sigma</span></code> קובע כיצד <em>המרחק המרחבי</em> משפיע על השקלול. ערכים קטנים יותר נותנים משקל רב יותר לפיקסלים הקרובים למרכז.</p></li>
+</ul>
+<p>ברירות המחדל (<code class="docutils literal notranslate"><span class="pre">color_sigma=0.1</span></code>, <code class="docutils literal notranslate"><span class="pre">space_sigma=1.0</span></code>) הן נקודות מוצא סבירות; כיוונון שלהן הוא בדרך כלל עניין של הרצת המסנן על פריים לדוגמה והתאמה עד שהקצוות חדים והפנים נקיים.</p>
+<p>Bilateral יקר יותר מ-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a> ויקר משמעותית מ-<a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a>, ולכן כדאי לפנות אליו <em>רק</em> כאשר ההתנהגות משמרת-הקצוות היא מה שהיישום צריך.</p>
+</section>
+<section id="adaptive-thresholding">
+<h2><span class="section-number">5.13.5. </span>סף אדפטיבי<a class="headerlink" href="#adaptive-thresholding" title="Link to this heading">¶</a></h2>
+<p>מסנני הממוצע, החציון, השכיח ונקודת האמצע נושאים כולם את אותו זוג ארגומנטים בעלי מילת מפתח שהופכים את הפלט שלהם לסף בינארי:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> מעביר את המסנן למצב סיפֵּף.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">offset=N</span></code> מסיט את הסף המקומי ב-<code class="docutils literal notranslate"><span class="pre">N</span></code> יחידות לפני ההשוואה.</p></li>
+</ul>
+<p>המנגנון בנוי ישירות על ההתנהגות הרגילה של המסנן. ללא <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code>, המסנן מחשב את התכונה הסטטיסטית שלו על פני השכנות וכותב את אותה תכונה לפיקסל הפלט. עם <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code>, המסנן מחשב את אותה תכונה, ואז משווה את פיקסל <em>המקור</em> באותו מיקום מול התכונה ועוד ההיסט, וכותב את הערך המקסימלי של הפורמט אם המקור גדול יותר, ואפס אחרת.</p>
+<p>התוצאה היא תמונה בינארית שהסף שלה <em>נע עם הבהירות המקומית</em> על פני הפריים. אזורים בהירים מקבלים סף גבוה, אזורים עמומים מקבלים סף נמוך, ופיקסל קדמה שבהיר מקומית יותר משכניו מתאים בין אם הוא יושב באזור בהיר ובין אם בעמום – וזו בדיוק ההתנהגות שסף גלובלי יחיד לא יכול היה להפיק בתמונה מוארת באופן לא אחיד.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">img</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>פרמטר <code class="docutils literal notranslate"><span class="pre">offset</span></code> הוא המקום שבו היישום שולט עד כמה הבדיקה <em>מחמירה</em>. היסט חיובי קטן דורש שפיקסל המקור יהיה בהיר באופן מדיד יותר משכניו לפני שייחשב להתאמה, מה שמדכא תוצאות חיוביות שגויות של רעש חיישן במחיר השמטת קדמה חלשה. היסט שלילי קטן תופס קדמה חלשה במחיר מעבר של מעט רעש. הבחירה תלויה במה ששאר הצנרת תעשה עם הפלט הבינארי.</p>
+<figure class="align-default" id="id2">
+<img alt="שלושה פאנלי תמונה בשורה. הראשון הוא פריים קלט בגווני אפור עם מדרון בהירות וסימני קדמה פזורים לרוחבו באותה רמת כהות. הפאנל השני מראה סף גלובלי שהוחל עליו: ה קדמה מסווגת נכון בצד הבהיר, אך כל הצד הכהה נקרא כקדמה כי הדף והקדמה שניהם נופלים מתחת לסף. הפאנל השלישי מראה סף אדפטיבי שהוחל על אותו קלט: הקדמה מסווגת נכון על פני כל הפריים." src="../../../../_images/adaptive-threshold.svg" />
+<figcaption>
+<p><span class="caption-text">תחת תאורה לא אחידה, סף גלובלי יחיד אינו יכול לתאר את הקדמה בכל מיקום. מסנן שכנות שמורץ עם <code class="docutils literal notranslate"><span class="pre">threshold=True</span></code> מפיק סף שנע עם הבהירות המקומית ומסווג את הקדמה נכונה על פני כל הפריים.</span><a class="headerlink" href="#id2" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>משפחת המסננים מריצה את הסף האדפטיבי, ולכן בחירת המסנן <em>הנכון</em> חשובה: <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.mean" title="image.Image.mean"><code class="xref py py-meth docutils literal notranslate"><span class="pre">mean()</span></code></a> לסף האדפטיבי הזול ביותר, <a class="reference internal" href="../../../../library/omv.image.Image.html#image.Image.median" title="image.Image.median"><code class="xref py py-meth docutils literal notranslate"><span class="pre">median()</span></code></a> כאשר לקלט יש רעש מלח-ופלפל שהמסנן צריך לדחות לפני חישוב הסף המקומי.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../thresholding/binary-method.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title"><span class="section-number">5.12. </span>מעבר סף בינארי</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="gaussian-and-edges.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title"><span class="section-number">5.14. </span>החלקת גאוס וקצוות</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=bd25f2d5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=a336edf7"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

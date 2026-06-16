@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>9.19. Python 中的 MQTT - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="9.20. 總結" href="../wrap-up.html" /><link rel="prev" title="9.18. MQTT，逐位元組解析" href="protocol-on-the-wire.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html"/>
+  <meta property="og:title" content="9.19. Python 中的 MQTT"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/networking/mqtt/mqtt-in-python.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">9. &#32178;&#36335;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-networks.html">9.1. &#28858;&#20160;&#40636;&#38656;&#35201;&#32178;&#36335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-protocols.html">9.2. &#20998;&#23652;&#21332;&#23450;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/physical-and-link.html">9.3. &#32412;&#32218;&#33287;&#35338;&#26694;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/bringing-the-link-up.html">9.4. &#24314;&#31435;&#36899;&#32080;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/ip-addresses.html">9.5. IP &#20301;&#22336;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/packets-and-routing.html">9.6. &#23553;&#21253;&#33287;&#36335;&#30001;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/private-networks.html">9.7. &#31169;&#26377;&#32178;&#36335;&#33287; NAT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/ports.html">9.8. &#36899;&#25509;&#22496;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/udp.html">9.9. UDP -- &#36865;&#20986;&#23553;&#21253;&#65292;&#32893;&#22825;&#30001;&#21629;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/tcp.html">9.10. TCP -- &#21487;&#38752;&#30340;&#20301;&#20803;&#32068;&#20018;&#27969;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/socket-objects.html">9.11. Socket &#29289;&#20214;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/udp-sockets.html">9.12. UDP socket</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/tcp-sockets.html">9.13. TCP socket</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/async-sockets.html">9.14. &#20351;&#29992; asyncio &#30340; Socket</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/dns.html">9.15. &#21517;&#31281;&#33287; DNS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/ntp.html">9.16. &#26178;&#38291;&#33287; NTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../encrypted-sockets.html">9.17. &#21152;&#23494; socket &#33287; TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="protocol-on-the-wire.html">9.18. MQTT&#65292;&#36880;&#20301;&#20803;&#32068;&#35299;&#26512;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">9.19. Python &#20013;&#30340; MQTT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">9.20. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#a-publisher-in-fifteen-lines">9.19.1. &#21313;&#20116;&#34892;&#31243;&#24335;&#30908;&#23531;&#25104;&#30340;&#30332;&#24067;&#32773;</a></li>
+<li><a class="reference internal" href="#connecting-over-tls">9.19.2. &#36879;&#36942; TLS &#36899;&#32218;</a></li>
+<li><a class="reference internal" href="#subscribing-and-receiving">9.19.3. &#35330;&#38321;&#33287;&#25509;&#25910;</a></li>
+<li><a class="reference internal" href="#reconnecting-cleanly">9.19.4. &#20094;&#28136;&#22320;&#37325;&#26032;&#36899;&#32218;</a></li>
+<li><a class="reference internal" href="#the-last-will-hook">9.19.5. &#36986;&#39000;&#65288;last-will&#65289;&#25499;&#37476;</a></li>
+<li><a class="reference internal" href="#when-to-pick-mqtt-over-http">9.19.6. &#20309;&#26178;&#35442;&#36984;&#25799; MQTT &#32780;&#38750; HTTP</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">9. </span>網路</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">9.19. </span>Python 中的 MQTT</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/networking/mqtt/mqtt-in-python.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="mqtt-in-python">
+<h1><span class="section-number">9.19. </span>Python 中的 MQTT<a class="headerlink" href="#mqtt-in-python" title="連結到這個標頭">¶</a></h1>
+<p>每台連網的 OpenMV cam 都隨附的 <a class="reference internal" href="../../../../library/omv.mqtt.html#module-mqtt" title="mqtt: simple MQTT v3.1.1 client"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mqtt</span></code></a> 模組，將 MQTT 線路協定包裝在單一類別 <a class="reference internal" href="../../../../library/omv.mqtt.html#mqtt.MQTTClient" title="mqtt.MQTTClient"><code class="xref py py-class docutils literal notranslate"><span class="pre">mqtt.MQTTClient</span></code></a> 中。這個類別會開啟 TCP socket、執行 CONNECT 交握、封裝與解封裝位元組層級的封包、處理 PINGREQ 保活機制，並將傳入的 PUBLISH 訊息派送給一個回呼函式。應用程式碼則呼叫 <code class="xref py py-meth docutils literal notranslate"><span class="pre">connect()</span></code>、<code class="xref py py-meth docutils literal notranslate"><span class="pre">publish()</span></code>、<code class="xref py py-meth docutils literal notranslate"><span class="pre">subscribe()</span></code> 以及 <code class="xref py py-meth docutils literal notranslate"><span class="pre">wait_msg()</span></code> / <code class="xref py py-meth docutils literal notranslate"><span class="pre">check_msg()</span></code>。</p>
+<section id="a-publisher-in-fifteen-lines">
+<h2><span class="section-number">9.19.1. </span>十五行程式碼寫成的發布者<a class="headerlink" href="#a-publisher-in-fifteen-lines" title="連結到這個標頭">¶</a></h2>
+<p>最小而實用的程式就是單次發布。連線、發布一則訊息、然後斷線：：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">mqtt</span><span class="w"> </span><span class="kn">import</span> <span class="n">MQTTClient</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="4">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;test.mosquitto.org&#39;</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">port</span><span class="o">=</span><span class="mi">1883</span><span class="p">,</span>
+</span><span data-line="7"><span class="p">)</span>
+</span><span data-line="8"><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="9"><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;yard-cam/motion&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;detected at 14:02&#39;</span><span class="p">,</span> <span class="n">qos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="10"><span class="n">client</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">test.mosquitto.org</span></code> 是由 Eclipse Mosquitto 專案營運的公開測試代理伺服器。它在連接埠 1883 上接受不需憑證的純 TCP 連線。請勿將它用於任何正式用途；它沒有任何隱私保證，而且主題命名空間是與網際網路上其他所有測試者共用的。</p>
+<p><code class="docutils literal notranslate"><span class="pre">client_id</span></code> 在每個代理伺服器連線中都必須是唯一的——代理伺服器會用它來追蹤工作階段。主題與訊息酬載都是位元組；若傳入 <a class="reference internal" href="../../../../library/builtins.html#str" title="str"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> 更方便，用戶端會將它編碼為 UTF-8。</p>
+</section>
+<section id="connecting-over-tls">
+<h2><span class="section-number">9.19.2. </span>透過 TLS 連線<a class="headerlink" href="#connecting-over-tls" title="連結到這個標頭">¶</a></h2>
+<p>對於任何超出快速實驗範圍的用途，透過 TLS 進行的 MQTT 只需多一個引數。<code class="docutils literal notranslate"><span class="pre">ssl_params</span></code> 字典會被轉送給 <code class="xref py py-func docutils literal notranslate"><span class="pre">ssl.wrap_socket()</span></code>，因此凡是在那裡可用的設定，在這裡也都可用：：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="4">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;broker.example.com&#39;</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">port</span><span class="o">=</span><span class="mi">8883</span><span class="p">,</span>                          <span class="c1"># TLS-MQTT default port</span>
+</span><span data-line="7">    <span class="n">ssl_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;server_hostname&#39;</span><span class="p">:</span> <span class="s1">&#39;broker.example.com&#39;</span><span class="p">},</span>
+</span><span data-line="8">    <span class="n">user</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="9">    <span class="n">password</span><span class="o">=</span><span class="n">load_token</span><span class="p">(),</span>
+</span><span data-line="10"><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>連接埠 <code class="docutils literal notranslate"><span class="pre">8883</span></code> 是 IANA 保留給 TLS-MQTT 的連接埠。<code class="docutils literal notranslate"><span class="pre">server_hostname</span></code> 會開啟 SNI，讓位於共用 IP 之後的代理伺服器能夠路由到正確的憑證——這與 HTTPS 所用的機制相同。<code class="docutils literal notranslate"><span class="pre">user</span></code> / <code class="docutils literal notranslate"><span class="pre">password</span></code> 對應到 CONNECT 封包的使用者名稱／密碼欄位；代理伺服器會決定這些憑證是否授予對特定主題的發布或訂閱權限。</p>
+</section>
+<section id="subscribing-and-receiving">
+<h2><span class="section-number">9.19.3. </span>訂閱與接收<a class="headerlink" href="#subscribing-and-receiving" title="連結到這個標頭">¶</a></h2>
+<p>若要接收訊息，用戶端需提供一個回呼函式並呼叫 <code class="xref py py-meth docutils literal notranslate"><span class="pre">subscribe()</span></code>。該回呼函式會收到兩個位元組引數，即主題與酬載：：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">on_message</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">msg</span><span class="p">):</span>
+</span><span data-line="2">    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;received on&#39;</span><span class="p">,</span> <span class="n">topic</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">msg</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="5">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;dashboard&#39;</span><span class="p">,</span>
+</span><span data-line="6">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;test.mosquitto.org&#39;</span><span class="p">,</span>
+</span><span data-line="7">    <span class="n">port</span><span class="o">=</span><span class="mi">1883</span><span class="p">,</span>
+</span><span data-line="8">    <span class="n">callback</span><span class="o">=</span><span class="n">on_message</span><span class="p">,</span>
+</span><span data-line="9"><span class="p">)</span>
+</span><span data-line="10"><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="11"><span class="n">client</span><span class="o">.</span><span class="n">subscribe</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;yard-cam/motion&#39;</span><span class="p">,</span> <span class="n">qos</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="12"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="13">    <span class="n">client</span><span class="o">.</span><span class="n">wait_msg</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p><code class="xref py py-meth docutils literal notranslate"><span class="pre">wait_msg()</span></code> 會阻塞直到有一個 MQTT 封包抵達，將它剖析，若它是已訂閱主題上的 PUBLISH 則呼叫回呼函式，然後返回。已訂閱的回呼函式會從該呼叫內部觸發——這裡沒有背景執行緒。</p>
+<p>對於需要持續做其他工作的互動式相機迴圈，<code class="xref py py-meth docutils literal notranslate"><span class="pre">check_msg()</span></code> 是同樣的邏輯但以非阻塞形式呈現。它使用逾時為 50 ms 的 <a class="reference internal" href="../../../../library/select.html#select.select" title="select.select"><code class="xref py py-func docutils literal notranslate"><span class="pre">select.select()</span></code></a>，若沒有任何待處理的內容就立即返回：：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">client</span><span class="o">.</span><span class="n">check_msg</span><span class="p">()</span>
+</span><span data-line="3">    <span class="n">run_frame</span><span class="p">()</span>                  <span class="c1"># capture + processing</span>
+</span><span data-line="4">    <span class="n">check_motion_threshold</span><span class="p">()</span>
+</span></pre></div>
+</div>
+</section>
+<section id="reconnecting-cleanly">
+<h2><span class="section-number">9.19.4. </span>乾淨地重新連線<a class="headerlink" href="#reconnecting-cleanly" title="連結到這個標頭">¶</a></h2>
+<p>任何長時間執行的 MQTT 用戶端都必須處理連線中斷。Wi-Fi 斷線、代理伺服器重新啟動、NAT 逾時，或單純地在沒有流量的情況下超過保活時間，都會結束這個 socket。隨附的用戶端會從察覺到中斷的那次呼叫中引發 <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a>（或一個帶有代理伺服器回傳碼的裸例外），而標準做法是使用一個重試迴圈：：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">def</span><span class="w"> </span><span class="nf">keep_publishing</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">topic</span><span class="p">,</span> <span class="n">get_message</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="6">            <span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="7">            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="8">                <span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">topic</span><span class="p">,</span> <span class="n">get_message</span><span class="p">())</span>
+</span><span data-line="9">                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span data-line="10">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="11">            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;connection lost, reconnecting in 5s&#39;</span><span class="p">)</span>
+</span><span data-line="12">            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>除非用戶端在連線時傳入了 <code class="docutils literal notranslate"><span class="pre">clean_session=False</span></code>，否則訂閱 <em>不會</em> 在重新連線後保留下來，因此內層的 <code class="docutils literal notranslate"><span class="pre">connect</span></code> 在進入發布迴圈之前，也應重新發出所有的 <code class="xref py py-meth docutils literal notranslate"><span class="pre">subscribe()</span></code> 呼叫。</p>
+</section>
+<section id="the-last-will-hook">
+<h2><span class="section-number">9.19.5. </span>遺願（last-will）掛鉤<a class="headerlink" href="#the-last-will-hook" title="連結到這個標頭">¶</a></h2>
+<p>回報狀態的相機，應告訴代理伺服器在連線意外中斷時要代表相機送出什麼訊息。請在 <code class="xref py py-meth docutils literal notranslate"><span class="pre">connect()</span></code> <em>之前</em> 設定遺願：：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">client</span> <span class="o">=</span> <span class="n">MQTTClient</span><span class="p">(</span>
+</span><span data-line="2">    <span class="n">client_id</span><span class="o">=</span><span class="s1">&#39;yard-cam&#39;</span><span class="p">,</span>
+</span><span data-line="3">    <span class="n">server</span><span class="o">=</span><span class="s1">&#39;broker.example.com&#39;</span><span class="p">,</span>
+</span><span data-line="4">    <span class="n">port</span><span class="o">=</span><span class="mi">8883</span><span class="p">,</span>
+</span><span data-line="5">    <span class="n">ssl_params</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;server_hostname&#39;</span><span class="p">:</span> <span class="s1">&#39;broker.example.com&#39;</span><span class="p">},</span>
+</span><span data-line="6"><span class="p">)</span>
+</span><span data-line="7"><span class="n">client</span><span class="o">.</span><span class="n">set_last_will</span><span class="p">(</span>
+</span><span data-line="8">    <span class="sa">b</span><span class="s1">&#39;yard-cam/status&#39;</span><span class="p">,</span>
+</span><span data-line="9">    <span class="sa">b</span><span class="s1">&#39;offline&#39;</span><span class="p">,</span>
+</span><span data-line="10">    <span class="n">retain</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="11">    <span class="n">qos</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+</span><span data-line="12"><span class="p">)</span>
+</span><span data-line="13"><span class="n">client</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+</span><span data-line="14"><span class="n">client</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;yard-cam/status&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;online&#39;</span><span class="p">,</span> <span class="n">retain</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>如此一來，任何訂閱了 <code class="docutils literal notranslate"><span class="pre">yard-cam/status</span></code> 的儀表板，會在相機連線的當下看到 <code class="docutils literal notranslate"><span class="pre">online</span></code>，並在代理伺服器察覺相機已斷線時看到 <code class="docutils literal notranslate"><span class="pre">offline</span></code>。被保留的 <code class="docutils literal notranslate"><span class="pre">offline</span></code> 訊息會留存在代理伺服器上，因此即使是十分鐘後才連線的儀表板，仍能看到正確的當前狀態。</p>
+</section>
+<section id="when-to-pick-mqtt-over-http">
+<h2><span class="section-number">9.19.6. </span>何時該選擇 MQTT 而非 HTTP<a class="headerlink" href="#when-to-pick-mqtt-over-http" title="連結到這個標頭">¶</a></h2>
+<p>webservers 章節涵蓋了相機作為 HTTP 伺服器、以及在雲端上傳頁面中作為向固定 URL 張貼 JPEG 的 HTTP 用戶端這兩種角色。兩者各有其用武之地。改用 MQTT 的恰當時機是：</p>
+<ul class="simple">
+<li><p>同一份資料需要送給好幾個接收方（一個儀表板、一個通知服務、一個錄製器），而相機事先並不知道這份名單。</p></li>
+<li><p>接收方可能來來去去，而相機不必重新啟動。</p></li>
+<li><p>相機想要 <em>訂閱</em>——也就是接收來自控制端的命令——這是 HTTP 用戶端在沒有長輪詢、或沒有伺服器向回呼 URL 推送的情況下做不到的。</p></li>
+<li><p>連線必須以低廉的成本撐過長時間的閒置期。</p></li>
+</ul>
+<p>繼續使用 HTTP 的恰當時機：單一相機、單一伺服器、固定的請求／回應模式，而且本文內容大到無法放進單一 MQTT 主題（透過 MQTT 傳送 JPEG 影格雖然可行，但對代理伺服器很不禮貌；HTTP POST 才是自然的選擇）。</p>
+<p>交叉連結：webservers 章節中的雲端上傳頁面展示了「相機 → 雲端封存」的 HTTP 版本。同一問題的 MQTT 版本能讓相機與封存的 URL 解耦，並讓第二個消費者（比方說一個手機警示應用程式）也能接入同一個資料流。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="protocol-on-the-wire.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">9.18. </span>MQTT，逐位元組解析</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../wrap-up.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">9.20. </span>總結</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

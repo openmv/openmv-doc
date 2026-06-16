@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>4.12. ISP 處理流程 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="4.13. 像素格式" href="../formats/pixel-formats.html" /><link rel="prev" title="4.11. 去拜耳化（Debayering）" href="debayering.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/vision/color/isp-pipeline.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/vision/color/isp-pipeline.html"/>
+  <meta property="og:title" content="4.12. ISP 處理流程"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="fr" href="/fr/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/vision/color/isp-pipeline.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/vision/color/isp-pipeline.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/vision/color/isp-pipeline.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/vision/color/isp-pipeline.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/vision/color/isp-pipeline.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/vision/color/isp-pipeline.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/vision/color/isp-pipeline.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/vision/color/isp-pipeline.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/vision/color/isp-pipeline.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/vision/color/isp-pipeline.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/vision/color/isp-pipeline.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/vision/color/isp-pipeline.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/vision/color/isp-pipeline.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/vision/color/isp-pipeline.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/vision/color/isp-pipeline.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/vision/color/isp-pipeline.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/vision/color/isp-pipeline.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/vision/color/isp-pipeline.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/vision/color/isp-pipeline.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/vision/color/isp-pipeline.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/vision/color/isp-pipeline.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換到亮色模式"
+data-aria-light="切換到暗黑模式"
+data-aria-dark="切換到自動模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../optics/pinhole-camera.html">4.1. &#37341;&#23380;&#30456;&#27231;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../optics/lenses-and-focus.html">4.2. &#37857;&#38957;&#33287;&#23565;&#28966;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../optics/field-of-view.html">4.3. &#35222;&#37326;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../optics/real-lens-effects.html">4.4. &#30495;&#23526;&#37857;&#38957;&#30340;&#25928;&#25033;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensor/sensor-grid.html">4.5. &#20687;&#32032;&#21934;&#20803;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensor/shutter-types.html">4.6. &#25458;&#31806;&#24335;&#24555;&#38272;&#33287;&#20840;&#22495;&#24555;&#38272;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensor/exposure-and-gain.html">4.7. &#26333;&#20809;&#33287;&#22686;&#30410;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensor/calibration.html">4.8. &#24863;&#28204;&#22120;&#19978;&#26657;&#27491;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sensor/data-bus.html">4.9. &#24863;&#28204;&#22120;&#21295;&#27969;&#25490;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="color-sensors.html">4.10. &#24425;&#33394;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="debayering.html">4.11. &#21435;&#25308;&#32819;&#21270;&#65288;Debayering&#65289;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">4.12. ISP &#34389;&#29702;&#27969;&#31243;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../formats/pixel-formats.html">4.13. &#20687;&#32032;&#26684;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csi/csi-basics.html">4.14. CSI &#22522;&#30990;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csi/framebuffers.html">4.15. &#24433;&#26684;&#32233;&#34909;&#21312;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csi/ide-preview.html">4.16. &#24433;&#20687;&#38928;&#35261;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../csi/sensor-knobs.html">4.17. &#24863;&#28204;&#22120;&#35519;&#31680;&#26059;&#37397;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../advanced/multi-sensor.html">4.18. &#22810;&#20491;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../advanced/memory-pools.html">4.19. &#35352;&#25014;&#39636;&#27744;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">4.20. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>該頁內容</h3><ul>
+<li><a class="reference internal" href="#the-stages">4.12.1. &#21508;&#20491;&#38542;&#27573;</a></li>
+<li><a class="reference internal" href="#the-control-loop-feedback">4.12.2. &#25511;&#21046;&#36852;&#36335;&#22238;&#39243;</a></li>
+<li><a class="reference internal" href="#where-the-isp-runs">4.12.3. ISP &#22312;&#21738;&#35041;&#22519;&#34892;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/vision/color/isp-pipeline.rst">編輯此頁面</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">4. </span>視覺感測器</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">4.12. </span>ISP 處理流程</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/vision/color/isp-pipeline.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/vision/color/isp-pipeline.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/vision/color/isp-pipeline.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/vision/color/isp-pipeline.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/vision/color/isp-pipeline.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/vision/color/isp-pipeline.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="the-isp-pipeline">
+<h1><span class="section-number">4.12. </span>ISP 處理流程<a class="headerlink" href="#the-isp-pipeline" title="連結到這個標頭">¶</a></h1>
+<p><em>影像訊號處理器</em>（ISP）是將感測器送出的原始像素值轉換成完成色彩影像的硬體處理流程。感測器上的<a class="reference internal" href="../sensor/calibration.html"><span class="doc">像素層級校正</span></a>是該流程的第一批階段。這些階段執行之後，流程其餘部分會在每個影格上以固定順序進行色彩處理與輸出格式化。</p>
+<figure class="align-default" id="id1">
+<img alt="一張垂直的處理流程圖，由上而下有八個 標示名稱的方框：統計擷取、自動白平衡、 去拜耳化、色彩矩陣校正、伽瑪校正、 影像縮放、影像裁切，以及像素打包。頂部 的箭頭標示為「已校正的 Bayer 像素」， 底部的箭頭標示為「完成的 影格」。" src="../../../../_images/isp-pipeline.svg" />
+<figcaption>
+<p><span class="caption-text">ISP 的色彩處理與輸出階段。處理流程會先讓每個階段處理完影格中的每個像素，下一個階段才開始。</span><a class="headerlink" href="#id1" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+<section id="the-stages">
+<h2><span class="section-number">4.12.1. </span>各個階段<a class="headerlink" href="#the-stages" title="連結到這個標頭">¶</a></h2>
+<p>每個階段依序套用一個明確定義的轉換。順序至關重要，後面的階段假設前面的階段已經執行完畢，而且其中有幾個階段也會取用 <em>前一個</em> 影格的輸出作為輸入。</p>
+<ol class="arabic simple">
+<li><p><strong>統計擷取</strong> 從已校正的 Bayer 影格量測每個區域的平均亮度與每個通道的總和。這些數值會餵入自動曝光、自動增益與自動白平衡的控制迴路，接著這些迴路會為 <em>下一個</em> 影格更新感測器的設定。</p></li>
+<li><p><strong>自動白平衡增益</strong> 以每種色彩各自的乘數來縮放每個 Bayer 像素，紅色像素乘上 R 增益、綠色像素乘上 G 增益、藍色像素乘上 B 增益，藉此把場景的白色參考推向中性灰，使記錄下來的色彩看起來符合人眼所見。這些乘數來自前一個影格的 AWB 統計。</p></li>
+<li><p><strong>去拜耳化</strong> 從 Bayer 馬賽克為每個像素重建缺少的那兩個色彩通道，把每像素單通道的原始資料轉換成三通道 RGB。（參見<a class="reference internal" href="debayering.html"><span class="doc">去拜耳化（Debayering）</span></a>。）此階段之後的所有處理都在 RGB 像素上進行，而非在 Bayer 馬賽克上。</p></li>
+<li><p><strong>色彩矩陣校正（CCM）</strong> 對每個 RGB 像素套用一個 3x3 的矩陣乘法，將感測器原生的紅綠藍反應映射到標準色彩空間。每個感測器的濾光片都有各自的光譜反應，並不完全符合任何標準的預期；此矩陣是逐感測器校正的轉換，能把「感測器 RGB」轉成「標準 RGB」。</p></li>
+<li><p><strong>伽瑪校正</strong> 對每個通道套用一條非線性曲線，把線性的感測器訊號壓縮成符合感知的編碼。人眼對暗色調之間差異的察覺強於對亮色調之間差異的察覺，因此一種把較多位元預算花在暗端的編碼，在給定的位元深度下能捕捉到更多可見的細節。</p></li>
+<li><p><strong>影像縮放</strong> 把影格從感測器的原生解析度調整為目標輸出解析度。多數應用以低於感測器完整像素數的設定執行，而縮小尺寸可同時減輕後續一切環節的頻寬與記憶體壓力。</p></li>
+<li><p><strong>影像裁切</strong> 從縮放後的影格中擷取一個子矩形，並捨棄其外的像素。用於擷取感興趣區域、符合特定的長寬比，或去掉應用不需要的邊框。</p></li>
+<li><p><strong>像素打包</strong> 把每通道的內部表示法（通常為每通道 10 或 12 位元）轉換成所選的輸出格式，並將結果寫入 RAM。</p></li>
+</ol>
+</section>
+<section id="the-control-loop-feedback">
+<h2><span class="section-number">4.12.2. </span>控制迴路回饋<a class="headerlink" href="#the-control-loop-feedback" title="連結到這個標頭">¶</a></h2>
+<p>階段 1 與階段 2 構成一個橫跨多個影格的控制迴路。從影格 N 擷取出的統計告訴感測器該影格場景有多亮、其色彩平衡如何；自動曝光、自動增益與自動白平衡控制器利用這些數值為影格 N+1 挑選新的曝光、增益與白平衡暫存器值。新的值會在下一個影格的讀出時生效，新影格的統計再回饋回來，迴路便閉合。</p>
+<p>對於不會變化的場景，迴路會在幾個影格內收斂並維持在固定設定。對於亮度或色偏會變化的場景，例如相機從室內搖向陽光照射的窗戶，迴路會在數個影格內追蹤該變化，使用者在邁向新穩態的過程中會看到短暫的亮度或色彩漂移。</p>
+</section>
+<section id="where-the-isp-runs">
+<h2><span class="section-number">4.12.3. </span>ISP 在哪裡執行<a class="headerlink" href="#where-the-isp-runs" title="連結到這個標頭">¶</a></h2>
+<p>常見有兩種安排方式。</p>
+<ul class="simple">
+<li><p><em>感測器內 ISP</em> 在感測器晶片內部執行整個處理流程，並輸出完成的 RGB 影像。MCU 只負責收取結果。</p></li>
+<li><p><em>感測器外 ISP</em> 位於主機 MCU 或 SoC 中。感測器輸出原始 Bayer；MCU 的矽晶片（或其驅動程式碼）會執行處理流程，再把完成的影格交給使用者程式碼。</p></li>
+</ul>
+<p>這種分工會影響感測器能直接交給使用者哪些輸出格式。具備完整晶片內 ISP 的感測器讓使用者可從晶片支援的任何完成格式中挑選。沒有 ISP 的感測器只輸出 Bayer，格式轉換則發生在 MCU 矽晶片或軟體中。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="debayering.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">4.11. </span>去拜耳化（Debayering）</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../formats/pixel-formats.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">4.13. </span>像素格式</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>

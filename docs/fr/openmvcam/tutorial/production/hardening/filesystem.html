@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="fr" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>14.3.3. Hygiène du système de fichiers - Documentation OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Recherche" href="../../../../search.html" /><link rel="next" title="14.3.4. Note sur la protection en lecture de la mémoire flash" href="security.html" /><link rel="prev" title="14.3.2. Le chien de garde" href="watchdog.html" />
+      <link rel="canonical" href="https://docs.openmv.io/openmvcam/tutorial/production/hardening/filesystem.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=60fb4c22" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/openmvcam/tutorial/production/hardening/filesystem.html"/>
+  <meta property="og:title" content="14.3.3. Hygiène du système de fichiers"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/zh_CN/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/zh_TW/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="de" href="/de/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ja" href="/ja/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="es" href="/es/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ru" href="/ru/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ko" href="/ko/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="it" href="/it/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/pt_BR/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="nl" href="/nl/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="ro" href="/ro/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="hr" href="/hr/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="cs" href="/cs/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="pl" href="/pl/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="fi" href="/fi/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="sv" href="/sv/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="hu" href="/hu/openmvcam/tutorial/production/hardening/filesystem.html" />
+    <link rel="alternate" hreflang="tr" href="/tr/openmvcam/tutorial/production/hardening/filesystem.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Home</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Libraries</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensors</a></li><li class="link"><a href="../../../../reference/index.html">Language</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Internals</a></li><li class="link"><a href="../../../../changelog/index.html">Changelog</a></li><li class="link"><a href="../../../../license.html">License</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Recherche" />
+  <kbd>/</kbd>
+</form><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Traductions</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/openmvcam/tutorial/production/hardening/filesystem.html">English</a></li><li><a href="/zh_CN/openmvcam/tutorial/production/hardening/filesystem.html">简体中文</a></li><li><a href="/zh_TW/openmvcam/tutorial/production/hardening/filesystem.html">繁體中文</a></li><li><a href="/de/openmvcam/tutorial/production/hardening/filesystem.html">Deutsch</a></li><li><a href="/ja/openmvcam/tutorial/production/hardening/filesystem.html">日本語</a></li><li><a href="/es/openmvcam/tutorial/production/hardening/filesystem.html">Español</a></li><li><a href="/ru/openmvcam/tutorial/production/hardening/filesystem.html">Русский</a></li><li><a href="/fr/openmvcam/tutorial/production/hardening/filesystem.html">Français</a></li><li><a href="/ko/openmvcam/tutorial/production/hardening/filesystem.html">한국어</a></li><li><a href="/it/openmvcam/tutorial/production/hardening/filesystem.html">Italiano</a></li><li><a href="/pt_BR/openmvcam/tutorial/production/hardening/filesystem.html">Português</a></li><li><a href="/nl/openmvcam/tutorial/production/hardening/filesystem.html">Nederlands</a></li><li><a href="/ro/openmvcam/tutorial/production/hardening/filesystem.html">Română</a></li><li><a href="/hr/openmvcam/tutorial/production/hardening/filesystem.html">Hrvatski</a></li><li><a href="/cs/openmvcam/tutorial/production/hardening/filesystem.html">Čeština</a></li><li><a href="/pl/openmvcam/tutorial/production/hardening/filesystem.html">Polski</a></li><li><a href="/fi/openmvcam/tutorial/production/hardening/filesystem.html">Suomi</a></li><li><a href="/sv/openmvcam/tutorial/production/hardening/filesystem.html">Svenska</a></li><li><a href="/hu/openmvcam/tutorial/production/hardening/filesystem.html">Magyar</a></li><li><a href="/tr/openmvcam/tutorial/production/hardening/filesystem.html">Türkçe</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Passer en mode clair"
+data-aria-light="Passer en mode sombre"
+data-aria-dark="Passer en mode automatique">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Discussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutoriel</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. D&#233;marrage rapide</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Aper&#231;u de Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Contr&#244;le du mat&#233;riel</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Capteurs de vision</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Traitement d&#8217;image</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Apprentissage automatique</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. R&#233;seau</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Serveurs web</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Protocole h&#244;te</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Outils</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">14. Production</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../firmware/index.html">14.1. D&#233;veloppement du micrologiciel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../shipping/index.html">14.2. Livrer l&#8217;application</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">14.3. Durcissement pour la production</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="logging.html">14.3.1. Journalisation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="watchdog.html">14.3.2. Le chien de garde</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">14.3.3. Hygi&#232;ne du syst&#232;me de fichiers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="security.html">14.3.4. Note sur la protection en lecture de la m&#233;moire flash</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tls/index.html">14.4. Travailler avec les certificats TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">14.5. Conclusion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Biblioth&#232;ques</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Cartes</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Capteurs</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Langage</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Composants internes</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Journal des modifications</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licence</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Sur cette page</h3><ul>
+<li><a class="reference internal" href="#where-things-go">14.3.3.1. O&#249; vont les choses</a></li>
+<li><a class="reference internal" href="#treat-both-as-can-fail">14.3.3.2. Consid&#233;rez les deux comme pouvant &#233;chouer</a></li>
+<li><a class="reference internal" href="#the-slow-directory-trap">14.3.3.3. Le pi&#232;ge du r&#233;pertoire lent</a></li>
+<li><a class="reference internal" href="#per-device-paths">14.3.3.4. Chemins par appareil</a></li>
+<li><a class="reference internal" href="#pulling-it-together">14.3.3.5. Mise en commun</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/d8b4c0f73aabb0d21cfcf7415002e73bd79281c4/docs/openmvcam/tutorial/production/hardening/filesystem.rst">Modifier cette page</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Tutoriel de l’OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">14. </span>Production</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">14.3. </span>Durcissement pour la production</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="4" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">14.3.3. </span>Hygiène du système de fichiers</strong>
+        <meta itemprop="position" content="5" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Copier la page</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Plus d’actions"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Copier la page</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Afficher le code source</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Ouvrir dans ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Ouvrir dans Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/_sources/openmvcam/tutorial/production/hardening/filesystem.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Ouvrir dans Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="filesystem-hygiene">
+<h1><span class="section-number">14.3.3. </span>Hygiène du système de fichiers<a class="headerlink" href="#filesystem-hygiene" title="Lien vers cette rubrique">¶</a></h1>
+<p>Sur une caméra livrée, la mémoire flash et le stockage SD se remplissent de fichiers qu’aucun opérateur ne viendra nettoyer à la main. Deux décisions concernant ce stockage accompagnent le produit tout au long de sa durée de vie : <em>quelle surface contient quel type de données</em>, et <em>comment les répertoires sont structurés pour que les opérations sur les fichiers continuent de fonctionner à mesure que l’application accumule des enregistrements</em>.</p>
+<section id="where-things-go">
+<h2><span class="section-number">14.3.3.1. </span>Où vont les choses<a class="headerlink" href="#where-things-go" title="Lien vers cette rubrique">¶</a></h2>
+<p>Le code et les ressources sont embarqués dans les modules figés et le ROMFS que la compilation fige au moment de la livraison. L”<em>état</em> de l’application – tout ce que l’application écrit à l’exécution, tout ce qui grossit, tout ce qui change d’un démarrage à l’autre – doit résider ailleurs. La caméra expose deux surfaces inscriptibles à cet effet :</p>
+<ul class="simple">
+<li><p><strong>Mémoire flash interne</strong> dans <code class="docutils literal notranslate"><span class="pre">/flash</span></code> : un petit système de fichiers inscriptible monté avant l’exécution de tout code applicatif. C’est l’endroit idéal pour les <em>petits enregistrements de taille fixe qui survivent aux redémarrages</em> : la configuration que l’application met à jour à l’exécution, le dernier étalonnage connu, un compteur cumulatif, un fichier marqueur d’une ligne indiquant « cette caméra a été provisionnée ». Cycles d’écriture limités – la mémoire flash interne moderne tolère des milliers à des dizaines de milliers d’écritures par secteur, pas des millions, de sorte que les écritures doivent être peu fréquentes, et non par trame.</p></li>
+<li><p><strong>Carte SD</strong> dans <code class="docutils literal notranslate"><span class="pre">/sdcard</span></code> : un système de fichiers inscriptible plus grand, monté lorsqu’une carte est présente. C’est l’endroit idéal pour les <em>fichiers volumineux et variables</em> : captures d’images et de vidéos, fichiers journaux, données d’ajustement fin de modèle, tout ce qui peut atteindre des mégaoctets ou des gigaoctets. Capacité d’écriture supérieure à la mémoire flash interne, mais tout de même finie ; amovible, remplaçable, et la surface la plus susceptible de disparaître alors que l’application est en pleine écriture.</p></li>
+</ul>
+<p>La bonne réponse à la question de <em>où écrire quelque chose</em> est presque toujours « la flash pour les petits enregistrements de taille fixe, la SD pour tout le reste ». Les deux ne sont pas interchangeables : une application qui griffonne son fichier journal cumulatif dans <code class="docutils literal notranslate"><span class="pre">/flash</span></code> épuisera l’endurance en écriture de la flash dans un déploiement qui se serait très bien passé sur SD.</p>
+</section>
+<section id="treat-both-as-can-fail">
+<h2><span class="section-number">14.3.3.2. </span>Considérez les deux comme pouvant échouer<a class="headerlink" href="#treat-both-as-can-fail" title="Lien vers cette rubrique">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> et <code class="docutils literal notranslate"><span class="pre">/sdcard</span></code> peuvent tous deux échouer. La carte SD peut être éjectée, la flash peut être corrompue par une coupure de courant en pleine écriture, l’un comme l’autre peut tomber à court d’espace, et toute opération sur l’un ou l’autre peut lever une <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> pour des raisons que l’application n’aura pas l’occasion de diagnostiquer sur le terrain.</p>
+<p>Deux modèles permettent à l’application de survivre à cela :</p>
+<ul>
+<li><p><strong>Enveloppez les montages et les opérations dans des blocs try.</strong> Chaque <a class="reference internal" href="../../../../library/builtins.html#open" title="open"><code class="xref py py-func docutils literal notranslate"><span class="pre">open()</span></code></a>, <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a>, <a class="reference internal" href="../../../../library/os.html#os.rename" title="os.rename"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.rename()</span></code></a> sur des chemins de données utilisateur est potentiellement défaillant. Interceptez <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a>, journalisez-la, et repliez-vous sur une alternative définie – écrivez dans <code class="docutils literal notranslate"><span class="pre">/flash</span></code> si <code class="docutils literal notranslate"><span class="pre">/sdcard</span></code> a disparu, ignorez l’opération si aucun des deux n’est disponible.</p></li>
+<li><p><strong>Écritures atomiques pour les fichiers qui doivent survivre à une coupure de courant.</strong> Écrivez dans un chemin temporaire, fermez le descripteur, puis utilisez <a class="reference internal" href="../../../../library/os.html#os.rename" title="os.rename"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.rename()</span></code></a> par-dessus le nom actif. Soit le renommage a réussi et le fichier est la nouvelle version, soit il a échoué et le fichier est l’ancienne version. Il n’existe pas de troisième état où le fichier serait écrit à moitié</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">def</span><span class="w"> </span><span class="nf">write_config_atomic</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">contents</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">tmp</span> <span class="o">=</span> <span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;.tmp&#39;</span>
+</span><span data-line="5">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span data-line="6">        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">contents</span><span class="p">)</span>
+</span><span data-line="7">        <span class="n">f</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</span><span data-line="8">    <span class="n">os</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Ce modèle fonctionne aussi bien sur la flash que sur la SD. Il ne fonctionne <em>pas</em> pour des fichiers suffisamment volumineux pour que le fichier tmp épuise l’espace libre du système de fichiers ; réservez-le aux petits enregistrements.</p>
+</li>
+</ul>
+</section>
+<section id="the-slow-directory-trap">
+<h2><span class="section-number">14.3.3.3. </span>Le piège du répertoire lent<a class="headerlink" href="#the-slow-directory-trap" title="Lien vers cette rubrique">¶</a></h2>
+<p>Le VFS de MicroPython n’indexe pas le contenu des répertoires comme le fait un système de fichiers de bureau. <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> et <a class="reference internal" href="../../../../library/os.html#os.stat" title="os.stat"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.stat()</span></code></a> parcourent linéairement la table de fichiers sous-jacente. Un répertoire contenant une centaine de fichiers convient ; un répertoire contenant dix mille fichiers est d’une lenteur inutilisable, chaque <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> prenant des secondes et chaque <a class="reference internal" href="../../../../library/builtins.html#open" title="open"><code class="xref py py-func docutils literal notranslate"><span class="pre">open()</span></code></a> devant vérifier la table au passage.</p>
+<p>Les applications qui écrivent des journaux ou des captures sur le disque rencontrent ce problème le plus rapidement. Un schéma naïf <code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;timestamp&gt;.log</span></code> qui ouvre un nouveau fichier par minute remplit le répertoire <code class="docutils literal notranslate"><span class="pre">logs/</span></code> d’un demi-million de fichiers en une année de déploiement. Bien avant cela, l’application commence à manquer sa cadence d’images parce que chaque ouverture de fichier prend plus de temps qu’un intervalle entre trames.</p>
+<p>Le bon modèle consiste à répartir les fichiers dans une arborescence de sous-répertoires datés afin qu’aucun répertoire ne contienne jamais plus de quelques centaines d’entrées</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">LOG_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/sdcard/logs&#39;</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="k">def</span><span class="w"> </span><span class="nf">log_path</span><span class="p">(</span><span class="n">now</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+</span><span data-line="7">    <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="8">        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">()</span>
+</span><span data-line="9">    <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">,</span> <span class="n">hour</span> <span class="o">=</span> <span class="n">now</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+</span><span data-line="10">    <span class="n">directory</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:04d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+</span><span data-line="11">        <span class="n">LOG_ROOT</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">month</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span>
+</span><span data-line="12">    <span class="n">_makedirs</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+</span><span data-line="13">    <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">.log&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">hour</span><span class="p">)</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="k">def</span><span class="w"> </span><span class="nf">_makedirs</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+</span><span data-line="16">    <span class="c1"># os.makedirs equivalent -- create each level if missing</span>
+</span><span data-line="17">    <span class="n">parts</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+</span><span data-line="18">    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+</span><span data-line="19">        <span class="n">sub</span> <span class="o">=</span> <span class="s1">&#39;/&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">[:</span><span class="n">i</span><span class="p">])</span>
+</span><span data-line="20">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="21">            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">sub</span><span class="p">)</span>
+</span><span data-line="22">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="23">            <span class="k">pass</span>
+</span></pre></div>
+</div>
+<p>Une année de journalisation à raison d’un fichier par heure est désormais répartie sur 365 répertoires de jours, chacun contenant au maximum 24 fichiers ; <a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> sur n’importe quel répertoire reste peu coûteux, et la boucle de trames de l’application ne se bloque pas sur les opérations de fichiers à mesure que le déploiement vieillit.</p>
+<p>Le même principe s’applique aux captures d’images, aux traces de capteurs, ou à tout autre élément pour lequel l’application écrit un fichier par événement. Si le taux d’événements est élevé, l’arborescence devra être plus profonde (année/mois/jour/heure, ou année/mois/jour/heure/minute) afin que chaque répertoire feuille reste petit. Si le taux d’événements est faible, une arborescence année/mois suffit.</p>
+</section>
+<section id="per-device-paths">
+<h2><span class="section-number">14.3.3.4. </span>Chemins par appareil<a class="headerlink" href="#per-device-paths" title="Lien vers cette rubrique">¶</a></h2>
+<p>Dans un parc de plus d’une caméra, les fichiers journaux doivent identifier de quelle unité physique ils proviennent. <a class="reference internal" href="../../../../library/machine.html#machine.unique_id" title="machine.unique_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">machine.unique_id()</span></code></a> renvoie un identifiant matériel inscrit dans la caméra à l’usine ; c’est la même valeur d’un redémarrage à l’autre, d’une mise à jour de micrologiciel à l’autre, et d’un échange de carte SD à l’autre. Intégrez-le dans le chemin du journal ou dans les enregistrements du journal, et un opérateur examinant une pile de cartes SD ou un journal centralisé pourra dire laquelle est laquelle</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">UNIT_ID</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">machine</span><span class="o">.</span><span class="n">unique_id</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">LOG_ROOT</span> <span class="o">=</span> <span class="s1">&#39;/sdcard/logs/&#39;</span> <span class="o">+</span> <span class="n">UNIT_ID</span>
+</span></pre></div>
+</div>
+<p>Combiné au modèle des sous-répertoires datés, l’agencement devient <code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;unit-id&gt;/2026/06/09/14.log</span></code> – une heure d’enregistrements d’une unité, dans un répertoire assez peu profond pour être parcouru, sur un chemin qui nomme l’unité dans le système de fichiers lui-même.</p>
+</section>
+<section id="pulling-it-together">
+<h2><span class="section-number">14.3.3.5. </span>Mise en commun<a class="headerlink" href="#pulling-it-together" title="Lien vers cette rubrique">¶</a></h2>
+<p>Le stockage inscriptible d’une caméra livrée ressemble à peu près à ceci :</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/flash</span></code> – configuration, étalonnage, un marqueur de provisionnement. Écrit rarement, lu souvent. Modèle de renommage atomique pour tout fichier dont la perte casserait le prochain démarrage.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;unit-id&gt;/&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/&lt;hour&gt;.log</span></code> – le journal opérationnel. Écrit en continu, rotaté par le chemin, jamais écrit à travers un répertoire comptant des milliers de voisins.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/sdcard/captures/&lt;unit-id&gt;/&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/</span></code> – les captures d’images ou de vidéos réalisées par l’application. Même forme d’arborescence, même raison.</p></li>
+</ul>
+<p>Cet agencement coûte à l’application une vingtaine de lignes de code et lui épargne les modes de défaillance qui mettent la caméra hors service des mois après le début d’un déploiement.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Retour au sommet</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="watchdog.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Précédent</span><div class="title"><span class="section-number">14.3.2. </span>Le chien de garde</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="security.html">
+      <div class="page-info">
+        <span>Suivant</span>
+        <div class="title"><span class="section-number">14.3.4. </span>Note sur la protection en lecture de la mémoire flash</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    For OpenMV firmware v5.0.0 &middot; based on MicroPython v1.28 &middot; docs built 16 Jun 2026 &middot; Copyright &copy; 2014-2026 by OpenMV, Damien P. George, and others.
+  </p>
+  <p>
+    Made with
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> using the
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=b89d0095"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=e6b791cb"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=ce5f7ee1"></script></body>
+</html>
