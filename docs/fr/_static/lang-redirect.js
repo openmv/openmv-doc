@@ -16,10 +16,11 @@
   "use strict";
 
   // Language subdirectories that actually exist (mirror conf.py languages).
-  // he/ar are translated but intentionally excluded until their RTL layout is
-  // verified (kept out of conf.py's switcher too); add them here at the same time.
+  // he/ar are translated and selectable in the switcher; their layout ships
+  // left-to-right for now (the theme has no RTL chrome) but the text reads
+  // correctly, so they are auto-routed like every other locale.
   var SUBDIRS = ["zh_CN", "zh_TW", "de", "ja", "es", "ru", "fr", "ko", "it", "pt_BR", "nl",
-                 "ro", "hr", "cs", "pl", "fi", "sv", "hu", "tr"];
+                 "ro", "hr", "cs", "pl", "fi", "sv", "hu", "tr", "ar", "he"];
 
   // Browser locale prefix (lowercased BCP-47) -> subdirectory.
   // Ordered most-specific first so e.g. "zh-tw" beats the generic "zh".
@@ -30,8 +31,8 @@
     ["de", "de"], ["ja", "ja"], ["es", "es"], ["ru", "ru"],
     ["fr", "fr"], ["ko", "ko"], ["it", "it"], ["nl", "nl"],
     ["ro", "ro"], ["hr", "hr"], ["cs", "cs"], ["pl", "pl"],
-    ["fi", "fi"], ["sv", "sv"], ["hu", "hu"], ["tr", "tr"]
-    // RTL (add with switcher once layout verified): ["he","he"], ["ar","ar"]
+    ["fi", "fi"], ["sv", "sv"], ["hu", "hu"], ["tr", "tr"],
+    ["ar", "ar"], ["he", "he"]
   ];
 
   var STORE_KEY = "omvLangPref"; // "en" or a subdir; set on manual switch.
