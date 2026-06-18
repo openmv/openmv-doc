@@ -32,20 +32,35 @@ jobs:
         make -C ports/unix -j"$(nproc)"
         (cd tools && python gen-cpydiff.py)
 
+    # The docs are versioned: a master push builds the rolling "dev" channel;
+    # a "vX.Y.Z" tag builds that frozen release snapshot. The channel is the
+    # top-level URL segment (docs.openmv.io/<channel>/...) and is read by
+    # conf.py via OPENMV_DOCS_CHANNEL.
+    - name: Determine version channel
+      id: channel
+      run: |
+        if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+          echo "channel=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          echo "is_release=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "channel=dev" >> "$GITHUB_OUTPUT"
+          echo "is_release=false" >> "$GITHUB_OUTPUT"
+        fi
+
     - name: Build docs
       working-directory: micropython/docs
+      env:
+        OPENMV_DOCS_CHANNEL: ${{ steps.channel.outputs.channel }}
       run: python -m sphinx -b html -d build/doctrees . build/html
 
     - name: Build translations
       working-directory: micropython/docs
       # Build every committed translation (one per locale/<lang>/ directory)
-      # into its own build/html/<lang>/ subdir, matching the URL patterns in
-      # conf.py's html_context["languages"] switcher. Builds run in parallel
-      # across the runner's cores -- each gets its own doctrees dir so they
-      # don't contend. The language set is derived from locale/, so adding a
-      # new translation needs no change here. Sphinx compiles the committed
-      # .po catalogs to .mo automatically (gettext_auto_build); the "Sync
-      # built docs" step deploys these subdirs alongside the English root.
+      # into build/html/<lang>/, in parallel across the runner's cores. The
+      # language set is derived from locale/, so adding a translation needs no
+      # change here. Same OPENMV_DOCS_CHANNEL so their switcher URLs match.
+      env:
+        OPENMV_DOCS_CHANNEL: ${{ steps.channel.outputs.channel }}
       run: |
         ls -d locale/*/ | xargs -n1 basename | xargs -P "$(nproc)" -I {} \
           python -m sphinx -q -b html -D language={} -d "build/doctrees-{}" . "build/html/{}"
@@ -73,18 +88,29 @@ jobs:
         path: micropython/docs/build/stubs/
 
     - name: Sync built docs into repository
+      env:
+        CHANNEL: ${{ steps.channel.outputs.channel }}
       run: |
-        # Clean first (preserving the hand-placed CNAME) so pages removed
-        # from the documentation do not linger in docs/ and on GitHub Pages
-        # forever; cp -r alone never deletes anything.
-        find docs -mindepth 1 -maxdepth 1 ! -name CNAME -exec rm -rf {} +
-        cp -r micropython/docs/build/html/* docs/
-        cp -r micropython/docs/build/stubs docs/stubs
+        set -euo pipefail
+        # Replace ONLY this channel's folder. Every other version snapshot,
+        # the CNAME, and the root files are preserved -- frozen releases are
+        # never rebuilt, so the build stays bounded no matter how many pile up.
+        rm -rf "docs/${CHANNEL}"
+        mkdir -p "docs/${CHANNEL}"
+        cp -r micropython/docs/build/html/* "docs/${CHANNEL}/"
+        cp -r micropython/docs/build/stubs "docs/${CHANNEL}/stubs"
         touch docs/.nojekyll
+
+        # 404 redirect shim (old flat URLs + /latest/ deep links -> channels).
+        cp .ci/404.html docs/404.html
+        # Regenerate versions.json + root and /latest/ redirects from the
+        # version folders now present.
+        python .ci/gen_versions.py docs
+
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add docs
-        git commit -m "Update documentation" -a || true
+        git commit -m "Update documentation (${CHANNEL})" -a || true
         # Commit fails if no changes; ignore.
 
     - name: Push documentation changes
@@ -93,21 +119,38 @@ jobs:
         branch: master
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Stage docs with stubs for the IDE push
-      if: startsWith(github.ref, 'refs/tags/v')
-      # Local copy so build/html itself (uploaded artifacts, docs/ sync, and
-      # the OpenMV Studio resources flow) is not modified.
-      run: |
-        cp -r micropython/docs/build/html micropython/docs/build/html-with-stubs
-        cp -r micropython/docs/build/stubs micropython/docs/build/html-with-stubs/stubs
+    # Tell OpenMV Studio to re-pull the docs and rebuild its stubs. Same
+    # trigger-and-pull pattern the firmware (openmv) and SDK (openmv-sdk) use:
+    # Studio's package-resources.sh clones openmv-doc (HEAD for dev, the stable
+    # tag for stable) and reads docs/<channel>/_sources/library/. Fires on dev
+    # (master) and releases (tags). continue-on-error so a missing app-token
+    # secret never fails an otherwise-good docs deploy.
+    - name: Generate app token for OpenMV Studio
+      id: studio-token
+      continue-on-error: true
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ secrets.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: openmv-studio
+    - name: Trigger OpenMV Studio resources update
+      if: steps.studio-token.outputs.token != ''
+      continue-on-error: true
+      env:
+        GH_TOKEN: ${{ steps.studio-token.outputs.token }}
+      run: gh workflow run resources.yml --repo ${{ github.repository_owner }}/openmv-studio
 
-    - name: Pushes to another repository
+    # Bundle the docs into the (legacy) OpenMV IDE / Qt Creator. Kept tag-gated.
+    # The IDE has no version support, so it ships the rolling "dev" docs channel
+    # (docs/dev/, last built on master) rather than the tagged release tree.
+    - name: Push dev docs into the OpenMV IDE
       if: startsWith(github.ref, 'refs/tags/v')
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
       with:
-        source-directory: 'micropython/docs/build/html-with-stubs'
+        source-directory: 'docs/dev'
         destination-github-username: 'openmv'
         destination-repository-name: 'qt-creator'
         target-branch: openmv-qtc-14.0.2
