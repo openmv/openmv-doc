@@ -20,19 +20,21 @@
   // left-to-right for now (the theme has no RTL chrome) but the text reads
   // correctly, so they are auto-routed like every other locale.
   var SUBDIRS = ["zh_CN", "zh_TW", "de", "ja", "es", "ru", "fr", "ko", "it", "pt_BR", "nl",
-                 "ro", "hr", "cs", "pl", "fi", "sv", "hu", "tr", "ar", "he"];
+                 "ro", "hr", "cs", "pl", "fi", "sv", "hu", "tr", "ar", "he",
+                 "vi", "id", "th", "uk", "pt_PT"];
 
   // Browser locale prefix (lowercased BCP-47) -> subdirectory.
   // Ordered most-specific first so e.g. "zh-tw" beats the generic "zh".
   var MAP = [
     ["zh-hant", "zh_TW"], ["zh-tw", "zh_TW"], ["zh-hk", "zh_TW"], ["zh-mo", "zh_TW"],
     ["zh-hans", "zh_CN"], ["zh-cn", "zh_CN"], ["zh-sg", "zh_CN"], ["zh", "zh_CN"],
-    ["pt-br", "pt_BR"], ["pt", "pt_BR"],
+    ["pt-br", "pt_BR"], ["pt-pt", "pt_PT"], ["pt", "pt_BR"],
     ["de", "de"], ["ja", "ja"], ["es", "es"], ["ru", "ru"],
     ["fr", "fr"], ["ko", "ko"], ["it", "it"], ["nl", "nl"],
     ["ro", "ro"], ["hr", "hr"], ["cs", "cs"], ["pl", "pl"],
     ["fi", "fi"], ["sv", "sv"], ["hu", "hu"], ["tr", "tr"],
-    ["ar", "ar"], ["he", "he"]
+    ["ar", "ar"], ["he", "he"],
+    ["id", "id"], ["th", "th"], ["uk", "uk"], ["vi", "vi"]
   ];
 
   var STORE_KEY = "omvLangPref"; // "en" or a subdir; set on manual switch.

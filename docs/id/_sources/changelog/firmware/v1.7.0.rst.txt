@@ -1,0 +1,142 @@
+.. _changelog_v1_7_0:
+
+v1.7.0
+======
+
+v1.7.0 introduces the ``cpufreq`` module (CPU frequency / overclocking
+control), the MicroPython :mod:`os` module, MLX thermal-sensor refresh /
+resolution control, and initial **OpenMV Cam M7** (STM32F7) board bring-up.
+The :func:`fir.init` signature, oversized-frame handling, and the default JPEG
+quality changed — read the breaking changes below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- ``cpufreq`` module — query / set the CPU frequency, with an
+  overclocking example.
+- :mod:`os` module — the MicroPython :mod:`os` module is now available.
+- **MLX thermal** — :func:`fir.init` accepts a refresh rate and ADC resolution.
+- **OpenMV Cam M7** — initial STM32F7 board bring-up.
+- **Breaking:** :func:`fir.init` is now keyword-only, oversized frames
+  auto-crop, and the default JPEG quality dropped — see the breaking changes.
+
+New features
+------------
+
+- ``cpufreq`` — added the ``cpufreq`` module with
+  ``cpufreq.get_frequency()`` / ``cpufreq.set_frequency()`` and the
+  ``CPUFREQ_120MHZ`` / ``144`` / ``168`` / ``192`` / ``216MHZ`` constants,
+  plus an ``overclocking.py`` example.
+- :mod:`os` — enabled the MicroPython :mod:`os` module.
+- **MLX / FIR** — :func:`fir.init` now accepts a refresh rate and ADC
+  resolution, with matching ``refresh`` / ``resolution`` controls for the MLX
+  thermal sensor.
+
+Other changes and improvements
+------------------------------
+
+- Tuned the OV7725 AGC/AEC region (less motion blur), enabled the DSP solid
+  colorbar for the OV7725, and fixed IDE framebuffer streaming (no stale /
+  duplicate frames).
+
+Bug fixes
+---------
+
+- Fixed a DCMI/DMA transfer-size overflow in :func:`sensor.snapshot`, cleaned
+  up JPEG-compression buffer-overflow handling, improved the OV7725 AEC/AGC
+  operating region for better auto exposure/gain, and corrected the
+  colorbar / self-test scripts for the OV7725.
+
+Hardware and board support
+--------------------------
+
+- **OpenMV Cam M7 (STM32F7 / OPENMV7)** — initial board and bootloader
+  support.
+- **OpenMV 2** — sensor clock driven by the MCO output.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v1.6.0 and v1.7.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v1_7_0_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v1_7_0_fir:
+
+:func:`fir.init` is now keyword-only *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`fir.init` was reworked to take keyword arguments
+(``type=`` / ``refresh=`` / ``resolution=``, default ``refresh`` 64 Hz, max
+512 Hz) instead of positional arguments. Update positional
+``fir.init(...)`` calls to the keyword form.
+
+*Commits:* `958c5b7f7 <https://github.com/openmv/openmv/commit/958c5b7f7>`__
+
+.. _v1_7_0_oversized:
+
+Oversized frames auto-crop to QVGA *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`sensor.snapshot` no longer raises when the raw frame exceeds the board's
+maximum raw frame size — oversized raw frames are now windowed/cropped to
+QVGA instead (only JPEG-mode raw is still rejected). Choose a supported
+framesize if you relied on the previous error.
+
+*Commits:* `b655a5488 <https://github.com/openmv/openmv/commit/b655a5488>`__,
+`abace9e4f <https://github.com/openmv/openmv/commit/abace9e4f>`__
+
+.. _v1_7_0_omv2framesize:
+
+OpenMV 2 max framesize lowered to QVGA *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On the OpenMV 2, the maximum integral-image / raw / blob framesize was
+lowered from VGA to QVGA. Requesting VGA for grayscale / RGB565 / blob /
+integral-image operations on the OpenMV 2 now crops to QVGA — redesign
+scripts that depended on VGA processing on that board.
+
+*Commits:* `7499062bd <https://github.com/openmv/openmv/commit/7499062bd>`__
+
+.. _v1_7_0_jpeg:
+
+Default JPEG quality reduced *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default JPEG quality was reduced (default 50 → 35, with lower IDE
+subsample thresholds) for more reliable streaming. Captured/streamed JPEGs
+are visibly lower quality by default — pass an explicit ``quality`` to
+``image.compress()`` if you need the previous quality.
+
+*Commits:* `d9c8b1535 <https://github.com/openmv/openmv/commit/d9c8b1535>`__
+
+.. _v1_7_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v1.7.0 the typical work is:
+
+#. Convert positional ``fir.init(...)`` calls to the keyword form
+   (:ref:`the fir.init change <v1_7_0_fir>`).
+#. Use a supported framesize instead of relying on the old oversized-frame
+   error (:ref:`the oversized-frame change <v1_7_0_oversized>`), and redesign
+   VGA processing on the OpenMV 2
+   (:ref:`the OpenMV 2 framesize change <v1_7_0_omv2framesize>`).
+#. Pass an explicit ``quality`` to ``image.compress()`` if you need the
+   previous JPEG quality (:ref:`the JPEG-quality change <v1_7_0_jpeg>`).
+
+All other scripts run unchanged.
