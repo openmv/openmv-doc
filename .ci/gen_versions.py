@@ -20,6 +20,11 @@ docs = sys.argv[1] if len(sys.argv) > 1 else "docs"
 
 VERSION_RE = re.compile(r"^v\d+\.\d+")
 
+# The versioning era starts at v5.0.0. Older tags (e.g. v4.8.1) are kept as
+# reachable "legacy" snapshots in the switcher but are never treated as the
+# newest/"latest" release, so the root never redirects to them.
+LEGACY_BEFORE = (5, 0, 0)
+
 
 def version_key(name):
     return tuple(int(n) for n in re.findall(r"\d+", name))
@@ -30,15 +35,22 @@ present = [
     if os.path.isdir(os.path.join(docs, name))
     and (name == "dev" or VERSION_RE.match(name))
 ]
-releases = sorted((n for n in present if n != "dev"), key=version_key, reverse=True)
-latest = releases[0] if releases else None
+all_releases = sorted((n for n in present if n != "dev"), key=version_key, reverse=True)
+current = [r for r in all_releases if version_key(r) >= LEGACY_BEFORE]
+legacy = [r for r in all_releases if version_key(r) < LEGACY_BEFORE]
+latest = current[0] if current else None
 
-# dev first, then releases newest-first.
-ordered = (["dev"] if "dev" in present else []) + releases
-versions = [
-    {"id": v, "label": (v + " (latest)") if v == latest else v}
-    for v in ordered
-]
+# dev first, then current releases newest-first, then legacy snapshots.
+ordered = (["dev"] if "dev" in present else []) + current + legacy
+versions = []
+for v in ordered:
+    if v == latest:
+        label = v + " (latest)"
+    elif v in legacy:
+        label = v + " (legacy)"
+    else:
+        label = v
+    versions.append({"id": v, "label": label})
 with open(os.path.join(docs, "versions.json"), "w", encoding="utf-8") as f:
     json.dump({"versions": versions, "latest": latest}, f, indent=1)
 
