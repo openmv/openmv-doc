@@ -38,6 +38,10 @@ jobs:
     needs: gate
     if: needs.gate.outputs.proceed == 'true'
     runs-on: ubuntu-22.04
+    # contents: write covers the docs push AND publishing the html.zip GitHub
+    # Release (development + per-tag).
+    permissions:
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -237,3 +241,45 @@ jobs:
         destination-repository-name: 'qt-creator'
         target-branch: openmv-qtc-14.0.2
         target-directory: 'share/qtcreator/html'
+
+    # ---- Downloadable html bundle (GitHub Release) --------------------------
+    # Package the offline English bundle as html.zip -- it extracts to html/,
+    # the exact layout the Qt IDE drops into share/qtcreator/. Published the
+    # dev/release way the firmware (openmv) repo does: a rolling "development"
+    # prerelease refreshed on every master push, and a per-tag release on v* tags.
+    # (Same bundle pushed to the IDE source above; named html only INSIDE the zip
+    # so the committed folder stays "offline" and doesn't collide with the docs'
+    # own html output.)
+    - name: Package offline bundle as html.zip
+      run: |
+        rm -rf _pkg && mkdir -p _pkg/html
+        cp -a offline/. _pkg/html/
+        (cd _pkg && zip -rqX ../openmv-doc-html.zip html)
+        du -h openmv-doc-html.zip
+
+    - name: Publish development html release
+      if: github.ref == 'refs/heads/master'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # Refresh the rolling "development" release (delete + recreate so it gets
+        # a fresh timestamp and a single current asset).
+        gh release delete development --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
+        gh release create development openmv-doc-html.zip \
+          --repo "$GITHUB_REPOSITORY" \
+          --prerelease \
+          --title "Development Build" \
+          --notes "Rolling development build of the offline OpenMV documentation (English). Unzips to html/ for the OpenMV IDE."
+
+    - name: Publish tagged html release
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # The tag already exists (it triggered this run). Create its release, or
+        # if re-running, just replace the asset.
+        gh release create "$GITHUB_REF_NAME" openmv-doc-html.zip \
+          --repo "$GITHUB_REPOSITORY" \
+          --title "$GITHUB_REF_NAME" \
+          --notes "Offline OpenMV documentation (English) for $GITHUB_REF_NAME. Unzips to html/ for the OpenMV IDE." \
+          || gh release upload "$GITHUB_REF_NAME" openmv-doc-html.zip --clobber --repo "$GITHUB_REPOSITORY"
