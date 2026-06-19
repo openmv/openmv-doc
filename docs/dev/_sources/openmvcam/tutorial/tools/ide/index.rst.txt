@@ -25,13 +25,16 @@ bottom edge reports what the connected camera is doing.
 You can collapse any pane when the script needs the
 room.
 
-.. figure:: figures/main-window.gif
+.. video:: figures/main-window.mp4
    :width: 100%
    :class: framed
+   :autoplay:
+   :loop:
+   :muted:
+   :playsinline:
+   :nocontrols:
    :alt: The OpenMV IDE main window with a camera connected and a script running: the script in the editor on the left, the frame buffer on the right tracking a person in live video
-
-   The main window with a script running: edit on the
-   left, watch on the right.
+   :caption: The main window with a script running: edit on the left, watch on the right.
 
 Keyboard shortcuts in this chapter are written for
 Windows and Linux; on macOS substitute ``Cmd`` for
