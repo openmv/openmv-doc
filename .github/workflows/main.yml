@@ -173,6 +173,13 @@ jobs:
         # version folders now present.
         python .ci/gen_versions.py docs
 
+        # Keep only dev + the current latest release fully translated; reduce
+        # every other v5.0.0+ release snapshot to English-only (hides its
+        # language switcher, keeps the version switcher). This demotes the
+        # previous latest automatically at each release. Idempotent; legacy
+        # v4.x snapshots are left untouched.
+        python .ci/snapshot_english.py reconcile docs --locales-dir micropython/docs/locale
+
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add docs
@@ -212,13 +219,21 @@ jobs:
     # Ship the docs for the release being built -- docs/<channel> is the
     # vX.Y.Z tree the Sync step just produced -- so the IDE always carries the
     # latest released docs, not the rolling dev channel.
+    - name: Build English-only IDE bundle
+      if: startsWith(github.ref, 'refs/tags/v')
+      # The IDE ships a single offline English build. Reduce the release tree to
+      # English (drop the 26 language subdirs), hide the language AND version
+      # switchers (the IDE has no version support), neutralize the locale
+      # auto-redirect, and drop _sources/llms (unused offline).
+      run: python .ci/snapshot_english.py ide "docs/${{ steps.channel.outputs.channel }}" ide-bundle --locales-dir micropython/docs/locale
+
     - name: Push release docs into the OpenMV IDE
       if: startsWith(github.ref, 'refs/tags/v')
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
       with:
-        source-directory: 'docs/${{ steps.channel.outputs.channel }}'
+        source-directory: 'ide-bundle'
         destination-github-username: 'openmv'
         destination-repository-name: 'qt-creator'
         target-branch: openmv-qtc-14.0.2
