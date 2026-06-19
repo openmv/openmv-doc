@@ -7,42 +7,50 @@ on:
     tags:
       - "v*"
 
+# The docs build only ever runs for the rolling "dev" channel, on master. The
+# version a build documents is conf.py's `openmv_version` -- the git tag does NOT
+# drive the build. A "vX.Y.Z" tag instead triggers the *release* job, which is a
+# fast COPY of the already-built, already-committed docs/dev -> docs/vX.Y.Z (with
+# the channel string rechanneled), then moves the tag onto that commit so it sits
+# on the committed docs (like the historical v4.x tags) and OpenMV Studio, cloning
+# the tag, gets the real snapshot. No rebuild on release.
 jobs:
-  # Only master (the "dev" channel) and v5.0.0+ release tags build. Legacy tags
-  # (v4.x and earlier) exist on this repo purely for historical tracking; their
-  # docs are frozen HTML snapshots committed directly under docs/<version>/ and
-  # must never be rebuilt with current tooling. The workflow triggers on every
-  # "v*" tag push, so this gate stops those legacy pushes from doing real work.
   gate:
     runs-on: ubuntu-22.04
     outputs:
-      proceed: ${{ steps.g.outputs.proceed }}
+      mode: ${{ steps.g.outputs.mode }}        # dev | release | "" (skip)
+      channel: ${{ steps.g.outputs.channel }}  # dev | vX.Y.Z
     steps:
-    - name: Decide whether to build
+    - name: Decide mode
       id: g
       run: |
-        ref="${GITHUB_REF}"
-        proceed=false
+        ref="${GITHUB_REF}"; mode=""; channel=""
         if [[ "$ref" == refs/heads/master ]]; then
-          proceed=true
+          mode=dev; channel=dev
         elif [[ "$ref" == refs/tags/v* ]]; then
-          major="${ref#refs/tags/v}"; major="${major%%.*}"
+          # Legacy v4.x and earlier tags are frozen history -- never release them.
+          tag="${ref#refs/tags/}"; major="${tag#v}"; major="${major%%.*}"
           if [[ "$major" =~ ^[0-9]+$ ]] && [ "$major" -ge 5 ]; then
-            proceed=true
+            mode=release; channel="$tag"
           fi
         fi
-        echo "ref=$ref proceed=$proceed"
-        echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
+        echo "ref=$ref mode=$mode channel=$channel"
+        { echo "mode=$mode"; echo "channel=$channel"; } >> "$GITHUB_OUTPUT"
+        # NB: the release job moves the tag using GITHUB_TOKEN, and pushes made
+        # with GITHUB_TOKEN do not trigger another workflow run -- so there is no
+        # re-trigger loop and no guard is needed here.
 
-  build:
+  # =========================================================================
+  # DEV BUILD (master) -- the single heavy Sphinx build. Produces docs/dev/,
+  # the offline/ bundle, the rolling "development" html.zip release, and pings
+  # Studio. Releases are copies of this, so this is the only place docs are built.
+  # =========================================================================
+  dev-build:
     needs: gate
-    if: needs.gate.outputs.proceed == 'true'
+    if: needs.gate.outputs.mode == 'dev'
     runs-on: ubuntu-22.04
-    # contents: write covers the docs push AND publishing the html.zip GitHub
-    # Release (development + per-tag).
     permissions:
       contents: write
-
     steps:
     - uses: actions/checkout@v4
       with:
@@ -54,8 +62,7 @@ jobs:
         python-version: '3.11'
 
     - name: Install dependencies
-      # Pillow + minify-html drive the post-build size-optimization steps
-      # (.ci/optimize_images.py and .ci/minify_docs.py).
+      # Pillow + minify-html drive the post-build size-optimization steps.
       run: pip install -U -r micropython/docs/requirements.txt Pillow minify-html
 
     - name: Generate CPython differences (genrst)
@@ -66,73 +73,36 @@ jobs:
         make -C ports/unix -j"$(nproc)"
         (cd tools && python gen-cpydiff.py)
 
-    # The docs are versioned: a master push builds the rolling "dev" channel;
-    # a "vX.Y.Z" tag builds that frozen release snapshot. The channel is the
-    # top-level URL segment (docs.openmv.io/<channel>/...) and is read by
-    # conf.py via OPENMV_DOCS_CHANNEL.
-    - name: Determine version channel
-      id: channel
-      run: |
-        if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-          echo "channel=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          echo "is_release=true" >> "$GITHUB_OUTPUT"
-        else
-          echo "channel=dev" >> "$GITHUB_OUTPUT"
-          echo "is_release=false" >> "$GITHUB_OUTPUT"
-        fi
-
     - name: Build docs
       working-directory: micropython/docs
       env:
-        OPENMV_DOCS_CHANNEL: ${{ steps.channel.outputs.channel }}
-        # Mark this as the channel-root build so conf.py emits llms.txt /
-        # llms-full.txt here only. The dump is English source regardless of
-        # build language, so the per-language builds below leave it unset and
-        # skip it -- avoiding ~5 MB x26 of duplication and the generation time,
-        # with no per-language copies to clean up. (_images/_downloads/_sources
-        # are still emitted per build -- Sphinx has no switch to share them and
-        # _sources backs the Copy-page dropdown -- so the dedup step below
-        # removes those per-language copies.)
+        OPENMV_DOCS_CHANNEL: dev
+        # Channel-root build: conf.py emits llms.txt/llms-full.txt here only (the
+        # per-language builds below leave it unset and skip the ~5 MB x26 dump).
         OPENMV_DOCS_ROOT_BUILD: '1'
       run: python -m sphinx -b html -d build/doctrees . build/html
 
     - name: Build translations
       working-directory: micropython/docs
-      # Build every committed translation (one per locale/<lang>/ directory)
-      # into build/html/<lang>/, in parallel across the runner's cores. The
-      # language set is derived from locale/, so adding a translation needs no
-      # change here. Same OPENMV_DOCS_CHANNEL so their switcher URLs match.
+      # One Sphinx build per locale/<lang>/ into build/html/<lang>/, in parallel.
       env:
-        OPENMV_DOCS_CHANNEL: ${{ steps.channel.outputs.channel }}
+        OPENMV_DOCS_CHANNEL: dev
       run: |
         ls -d locale/*/ | xargs -n1 basename | xargs -P "$(nproc)" -I {} \
           python -m sphinx -q -b html -D language={} -d "build/doctrees-{}" . "build/html/{}"
 
     - name: Deduplicate per-language assets
       working-directory: micropython/docs
-      # Each per-language build copies the byte-identical _images/, _downloads/,
-      # _sources/ trees and the home-page hero video; that duplication is the
-      # bulk of the channel's size (~3.1 GB on dev). Drop the per-language
-      # copies and repoint each locale's HTML at the channel-root copy (one
-      # extra "../", correct at every page depth). Runs after all locale builds
-      # and before Sync, on build/html/. Root _sources (used by the stub steps
-      # below) is left untouched.
+      # Drop the byte-identical _images/_downloads/_sources copies in each locale
+      # and repoint its HTML at the channel-root copy (one extra "../").
       run: python ../../.ci/dedup_assets.py build/html --locales-dir locale
 
     - name: Optimize images
       working-directory: micropython/docs
-      # Palette-quantize flat-colour diagram PNGs and re-compress photos in
-      # place (same filenames, no HTML changes). Images are gzip-immune, so this
-      # is the biggest reduction in what GitHub Pages actually serves. Runs after
-      # dedup so it only touches the single channel-root _images copy.
       run: python ../../.ci/optimize_images.py build/html
 
     - name: Minify HTML
       working-directory: micropython/docs
-      # Collapse whitespace / minify inline CSS in every page (code blocks and
-      # inline JS are preserved). ~10% off the raw HTML. Negligible for web
-      # visitors (Pages already gzips), but it shrinks the committed folder and,
-      # most usefully, the English IDE bundle (served from local files, no gzip).
       run: python ../../.ci/minify_docs.py build/html
 
     - name: Generate Python stubs
@@ -157,46 +127,28 @@ jobs:
         name: stubs
         path: micropython/docs/build/stubs/
 
-    - name: Sync built docs into repository
-      env:
-        CHANNEL: ${{ steps.channel.outputs.channel }}
+    - name: Sync dev docs into repository
       run: |
         set -euo pipefail
-        # Replace ONLY this channel's folder. Every other version snapshot,
-        # the CNAME, and the root files are preserved -- frozen releases are
-        # never rebuilt, so the build stays bounded no matter how many pile up.
-        rm -rf "docs/${CHANNEL}"
-        mkdir -p "docs/${CHANNEL}"
-        cp -r micropython/docs/build/html/* "docs/${CHANNEL}/"
-        # NB: prebuilt stubs do NOT go in the online docs -- they ship only in
-        # the offline/ bundle below.
+        # Replace only docs/dev. Every frozen release snapshot, the CNAME, and the
+        # root files are preserved.
+        rm -rf docs/dev && mkdir -p docs/dev
+        cp -r micropython/docs/build/html/* docs/dev/
+        # Prebuilt stubs ship only in the offline/ bundle, not the online docs.
         touch docs/.nojekyll
-
-        # 404 redirect shim (old flat URLs + /latest/ deep links -> channels).
         cp .ci/404.html docs/404.html
-        # Regenerate versions.json + root and /latest/ redirects from the
-        # version folders now present.
         python .ci/gen_versions.py docs
-
-        # Keep only dev + the current latest release fully translated; reduce
-        # every other v5.0.0+ release snapshot to English-only (hides its
-        # language switcher, keeps the version switcher). This demotes the
-        # previous latest automatically at each release. Idempotent; legacy
-        # v4.x snapshots are left untouched.
+        # Keep dev + the current latest release fully translated; reduce other
+        # v5.0.0+ snapshots to English-only. Idempotent; legacy v4.x untouched.
         python .ci/snapshot_english.py reconcile docs --locales-dir micropython/docs/locale
-
-        # Rebuild the committed offline/ bundle for desktop apps (Qt IDE +
-        # OpenMV Studio): English-only build of THIS channel, both switchers
-        # hidden, with _sources/ and the prebuilt stubs/. Mirrors the channel of
-        # the commit (dev on master, the release on a tag).
+        # Rebuild the committed offline/ bundle (English-only, switchers hidden,
+        # with _sources/ + stubs) for the desktop apps from this dev build.
         python .ci/snapshot_english.py offline micropython/docs/build/html offline \
           --locales-dir micropython/docs/locale --stubs micropython/docs/build/stubs
-
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add docs offline
-        git commit -m "Update documentation (${CHANNEL})" -a || true
-        # Commit fails if no changes; ignore.
+        git commit -m "Update documentation (dev)" -a || true
 
     - name: Push documentation changes
       uses: ad-m/github-push-action@master
@@ -204,12 +156,8 @@ jobs:
         branch: master
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    # Tell OpenMV Studio to re-pull the docs and rebuild its stubs. Same
-    # trigger-and-pull pattern the firmware (openmv) and SDK (openmv-sdk) use:
-    # Studio's package-resources.sh clones openmv-doc (HEAD for dev, the stable
-    # tag for stable) and reads docs/<channel>/_sources/library/. Fires on dev
-    # (master) and releases (tags). continue-on-error so a missing app-token
-    # secret never fails an otherwise-good docs deploy.
+    # Tell OpenMV Studio to re-pull the docs (it reads docs/dev/_sources for dev).
+    # continue-on-error so a missing app-token secret never fails the deploy.
     - name: Generate app token for OpenMV Studio
       id: studio-token
       continue-on-error: true
@@ -226,28 +174,18 @@ jobs:
         GH_TOKEN: ${{ steps.studio-token.outputs.token }}
       run: gh workflow run resources.yml --repo ${{ github.repository_owner }}/openmv-studio
 
-    # ---- Downloadable html bundle (GitHub Release) --------------------------
-    # Package the offline English bundle as html.zip -- it extracts to html/,
-    # the exact layout the Qt IDE drops into share/qtcreator/. Published the
-    # dev/release way the firmware (openmv) repo does: a rolling "development"
-    # prerelease refreshed on every master push, and a per-tag release on v* tags.
-    # (Same bundle pushed to the IDE source above; named html only INSIDE the zip
-    # so the committed folder stays "offline" and doesn't collide with the docs'
-    # own html output.)
+    # Rolling "development" html.zip release (offline bundle under html/, so it
+    # unzips into the OpenMV IDE's share/qtcreator/ layout).
     - name: Package offline bundle as html.zip
       run: |
         rm -rf _pkg && mkdir -p _pkg/html
         cp -a offline/. _pkg/html/
         (cd _pkg && zip -rqX ../openmv-doc-html.zip html)
         du -h openmv-doc-html.zip
-
     - name: Publish development html release
-      if: github.ref == 'refs/heads/master'
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Refresh the rolling "development" release (delete + recreate so it gets
-        # a fresh timestamp and a single current asset).
         gh release delete development --yes --cleanup-tag --repo "$GITHUB_REPOSITORY" || true
         gh release create development openmv-doc-html.zip \
           --repo "$GITHUB_REPOSITORY" \
@@ -255,28 +193,98 @@ jobs:
           --title "Development Build" \
           --notes "Rolling development build of the offline OpenMV documentation (English). Unzips to html/ for the OpenMV IDE. Changelog: https://docs.openmv.io/dev/changelog/"
 
+  # =========================================================================
+  # RELEASE (vX.Y.Z tag) -- NO rebuild. Copy the committed docs/dev -> docs/<tag>,
+  # rechannel the baked /dev/ URLs to /<tag>/, regenerate versions.json, then
+  # commit + move the tag onto that commit (so it's on the committed docs), and
+  # publish the html.zip release + push to the IDE.
+  # =========================================================================
+  release:
+    needs: gate
+    if: needs.gate.outputs.mode == 'release'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.gate.outputs.channel }}
+    steps:
+    - name: Checkout master (carries the committed dev build)
+      uses: actions/checkout@v4
+      with:
+        ref: master
+        submodules: 'true'
+        fetch-depth: 1
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Snapshot dev -> ${{ env.TAG }} (copy + rechannel, no rebuild)
+      run: |
+        set -euo pipefail
+        rm -rf "docs/$TAG"
+        cp -r docs/dev "docs/$TAG"
+        # Rewrite the baked /dev/ channel in canonical/og/hreflang/lang-switcher.
+        python .ci/rechannel.py "docs/$TAG" dev "$TAG"
+        # The offline bundle is the same content for this release; rechannel it too.
+        python .ci/rechannel.py offline dev "$TAG"
+        cp .ci/404.html docs/404.html
+        # latest -> <tag>; "/" and "/latest/" now resolve to it.
+        python .ci/gen_versions.py docs
+        # New release is the latest (stays full); demote the previous latest to
+        # English-only. No-op for the first release.
+        python .ci/snapshot_english.py reconcile docs --locales-dir micropython/docs/locale
+
+    - name: Commit, push, and move the tag onto the committed docs
+      run: |
+        set -euo pipefail
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs offline
+        git commit -m "Release documentation ($TAG)" -a
+        git push origin HEAD:master
+        # Re-point the tag at the commit that actually contains docs/<tag>/.
+        # Pushed with GITHUB_TOKEN, so this does NOT re-trigger the workflow.
+        git tag -f "$TAG"
+        git push -f origin "refs/tags/$TAG"
+
+    - name: Package offline bundle as html.zip
+      run: |
+        rm -rf _pkg && mkdir -p _pkg/html
+        cp -a offline/. _pkg/html/
+        (cd _pkg && zip -rqX ../openmv-doc-html.zip html)
+        du -h openmv-doc-html.zip
+
     - name: Publish tagged html release
-      if: startsWith(github.ref, 'refs/tags/v')
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        # Auto-published (not a draft). To require manual review before it goes
-        # public, add `--draft` to the create command below.
-        # The tag already exists (it triggered this run). Create its release, or
-        # if re-running, just replace the asset.
-        gh release create "$GITHUB_REF_NAME" openmv-doc-html.zip \
+        # Auto-published (not a draft). Add --draft to require manual review.
+        gh release create "$TAG" openmv-doc-html.zip \
           --repo "$GITHUB_REPOSITORY" \
-          --title "$GITHUB_REF_NAME" \
-          --notes "Offline OpenMV documentation (English) for $GITHUB_REF_NAME. Unzips to html/ for the OpenMV IDE. Changelog: https://docs.openmv.io/$GITHUB_REF_NAME/changelog/" \
-          || gh release upload "$GITHUB_REF_NAME" openmv-doc-html.zip --clobber --repo "$GITHUB_REPOSITORY"
+          --title "$TAG" \
+          --notes "Offline OpenMV documentation (English) for $TAG. Unzips to html/ for the OpenMV IDE. Changelog: https://docs.openmv.io/$TAG/changelog/" \
+          || gh release upload "$TAG" openmv-doc-html.zip --clobber --repo "$GITHUB_REPOSITORY"
 
-    # Bundle the docs into the (legacy) OpenMV IDE / Qt Creator. Tag-gated, so
-    # this only runs on a release build (the gate already blocks tags < v5.0.0).
-    # Ships the committed offline/ bundle the Sync step just rebuilt for this
-    # release. LAST step on purpose: a failed IDE push (e.g. a bad SSH key) must
-    # not skip the html.zip GitHub Release above it.
+    - name: Generate app token for OpenMV Studio
+      id: studio-token
+      continue-on-error: true
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ secrets.APP_ID }}
+        private-key: ${{ secrets.APP_PRIVATE_KEY }}
+        owner: ${{ github.repository_owner }}
+        repositories: openmv-studio
+    - name: Trigger OpenMV Studio resources update
+      if: steps.studio-token.outputs.token != ''
+      continue-on-error: true
+      env:
+        GH_TOKEN: ${{ steps.studio-token.outputs.token }}
+      run: gh workflow run resources.yml --repo ${{ github.repository_owner }}/openmv-studio
+
+    # Ship the offline bundle to the Qt IDE. LAST step on purpose: a failed IDE
+    # push (e.g. a bad SSH key) must not skip the html.zip release above it.
     - name: Push release docs into the OpenMV IDE
-      if: startsWith(github.ref, 'refs/tags/v')
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
