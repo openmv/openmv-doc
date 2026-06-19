@@ -79,12 +79,15 @@ jobs:
       working-directory: micropython/docs
       env:
         OPENMV_DOCS_CHANNEL: ${{ steps.channel.outputs.channel }}
-        # Emit /llms.txt + /llms-full.txt only in this English channel-root
-        # build. The dump is English source regardless of build language, so
-        # the per-language builds below leave it unset (conf.py then skips the
-        # sphinx_llms_txt extension) -- saving ~5 MB x26 of duplication and the
-        # generation time. The channel-root copies are the canonical ones.
-        OPENMV_DOCS_EMIT_LLMS: '1'
+        # Mark this as the channel-root build so conf.py emits llms.txt /
+        # llms-full.txt here only. The dump is English source regardless of
+        # build language, so the per-language builds below leave it unset and
+        # skip it -- avoiding ~5 MB x26 of duplication and the generation time,
+        # with no per-language copies to clean up. (_images/_downloads/_sources
+        # are still emitted per build -- Sphinx has no switch to share them and
+        # _sources backs the Copy-page dropdown -- so the dedup step below
+        # removes those per-language copies.)
+        OPENMV_DOCS_ROOT_BUILD: '1'
       run: python -m sphinx -b html -d build/doctrees . build/html
 
     - name: Build translations
@@ -186,16 +189,18 @@ jobs:
         GH_TOKEN: ${{ steps.studio-token.outputs.token }}
       run: gh workflow run resources.yml --repo ${{ github.repository_owner }}/openmv-studio
 
-    # Bundle the docs into the (legacy) OpenMV IDE / Qt Creator. Kept tag-gated.
-    # The IDE has no version support, so it ships the rolling "dev" docs channel
-    # (docs/dev/, last built on master) rather than the tagged release tree.
-    - name: Push dev docs into the OpenMV IDE
+    # Bundle the docs into the (legacy) OpenMV IDE / Qt Creator. Tag-gated, so
+    # this only runs on a release build (the gate already blocks tags < v5.0.0).
+    # Ship the docs for the release being built -- docs/<channel> is the
+    # vX.Y.Z tree the Sync step just produced -- so the IDE always carries the
+    # latest released docs, not the rolling dev channel.
+    - name: Push release docs into the OpenMV IDE
       if: startsWith(github.ref, 'refs/tags/v')
       uses: cpina/github-action-push-to-another-repository@main
       env:
         SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
       with:
-        source-directory: 'docs/dev'
+        source-directory: 'docs/${{ steps.channel.outputs.channel }}'
         destination-github-username: 'openmv'
         destination-repository-name: 'qt-creator'
         target-branch: openmv-qtc-14.0.2
