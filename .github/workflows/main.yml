@@ -242,7 +242,21 @@ jobs:
         git config --local user.name "GitHub Action"
         git add docs offline
         git commit -m "Release documentation ($TAG)" -a
-        git push origin HEAD:master
+        # Push to master. If master advanced since the tag was pushed (someone
+        # pushed during the release), rebase the release commit onto it and retry;
+        # if that can't be done cleanly, fail rather than force -- re-run the
+        # release once master has settled.
+        if ! git push origin HEAD:master; then
+          echo "::warning::master moved since the tag; rebasing the release onto it"
+          git fetch --deepen=100 origin master 2>/dev/null || git fetch origin master
+          if git rebase origin/master; then
+            git push origin HEAD:master
+          else
+            git rebase --abort || true
+            echo "::error::master advanced and the release commit could not be cleanly rebased. Re-run the release after master settles."
+            exit 1
+          fi
+        fi
         # Re-point the tag at the commit that actually contains docs/<tag>/.
         # Pushed with GITHUB_TOKEN, so this does NOT re-trigger the workflow.
         git tag -f "$TAG"
