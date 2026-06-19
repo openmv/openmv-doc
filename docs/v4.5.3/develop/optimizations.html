@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Optimizations &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Optimizations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/develop/optimizations.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="optimizations">
+<span id="id1"></span><h1>Optimizations<a class="headerlink" href="#optimizations" title="Permalink to this heading">¶</a></h1>
+<p>MicroPython uses several optimizations to save RAM but also ensure the efficient
+execution of programs. This chapter discusses some of these optimizations.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="qstr.html#qstr"><span class="std std-ref">MicroPython string interning</span></a> and <a class="reference internal" href="maps.html#maps"><span class="std std-ref">Maps and Dictionaries</span></a> details other optimizations on strings and
+dictionaries.</p>
+</div>
+<section id="frozen-bytecode">
+<h2>Frozen bytecode<a class="headerlink" href="#frozen-bytecode" title="Permalink to this heading">¶</a></h2>
+<p>When MicroPython loads Python code from the filesystem, it first has to parse the file into
+a temporary in-memory representation, and then generate bytecode for execution, both of which
+are stored in the heap (in RAM). This can lead to significant amounts of memory being used.
+The MicroPython cross compiler can be used to generate
+a <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> file, containing the pre-compiled bytecode for a Python module. This will still
+be loaded into RAM, but it avoids the additional overhead of the parsing stage.</p>
+<p>As a further optimisation, the pre-compiled bytecode from a <code class="docutils literal notranslate"><span class="pre">.mpy</span></code> file can be “frozen”
+into the firmware image as part of the main firmware compilation process, which means that
+the bytecode will be executed from ROM. This can lead to a significant memory saving, and
+reduce heap fragmentation.</p>
+<p>See <a class="reference internal" href="../reference/manifest.html#manifest"><span class="std std-ref">MicroPython manifest files</span></a> for more information.</p>
+</section>
+<section id="variables">
+<h2>Variables<a class="headerlink" href="#variables" title="Permalink to this heading">¶</a></h2>
+<p>MicroPython processes local and global variables differently. Global variables
+are stored and looked up from a global dictionary that is allocated on the heap
+(note that each module has its own separate dict, so separate namespace).
+Local variables on the other hand are are stored on the Python value stack, which may
+live on the C stack or on the heap.  They are accessed directly by their offset
+within the Python stack, which is more efficient than a global lookup in a dict.</p>
+<p>The length of global variable names also affects how much RAM is used as identifiers
+are stored in RAM. The shorter the identifier, the less memory is used.</p>
+<p>The other aspect is that <code class="docutils literal notranslate"><span class="pre">const</span></code> variables that start with an underscore are treated as
+proper constants and are not allocated or added in a dictionary, hence saving some memory.
+These variables use <code class="docutils literal notranslate"><span class="pre">const()</span></code> from the MicroPython library. Therefore:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">micropython</span> <span class="kn">import</span> <span class="n">const</span>
+
+<span class="n">X</span> <span class="o">=</span> <span class="n">const</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">_Y</span> <span class="o">=</span> <span class="n">const</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">foo</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">_Y</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Compiles to:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">foo</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="allocation-of-memory">
+<h2>Allocation of memory<a class="headerlink" href="#allocation-of-memory" title="Permalink to this heading">¶</a></h2>
+<p>Most of the common MicroPython constructs are not allocated on the heap.
+However the following are:</p>
+<ul class="simple">
+<li><p>Dynamic data structures like lists, mappings, etc;</p></li>
+<li><p>Functions, classes and object instances;</p></li>
+<li><p>imports; and</p></li>
+<li><p>First-time assignment of global variables (to create the slot in the global dict).</p></li>
+</ul>
+<p>For a detailed discussion on a more user-centric perspective on optimization,
+see <a class="reference external" href="https://docs.micropython.org/en/latest/reference/speed_python.html">Maximising MicroPython speed</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

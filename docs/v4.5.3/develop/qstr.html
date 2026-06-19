@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MicroPython string interning &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">MicroPython string interning</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/develop/qstr.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="micropython-string-interning">
+<span id="qstr"></span><h1>MicroPython string interning<a class="headerlink" href="#micropython-string-interning" title="Permalink to this heading">¶</a></h1>
+<p>MicroPython uses <a class="reference external" href="https://en.wikipedia.org/wiki/String_interning">string interning</a> to save both RAM and ROM.  This avoids
+having to store duplicate copies of the same string.  Primarily, this applies to
+identifiers in your code, as something like a function or variable name is very
+likely to appear in multiple places in the code.  In MicroPython an interned
+string is called a QSTR (uniQue STRing).</p>
+<p>A QSTR value (with type <code class="docutils literal notranslate"><span class="pre">qstr</span></code>) is a index into a linked list of QSTR pools.
+QSTRs store their length and a hash of their contents for fast comparison during
+the de-duplication process.  All bytecode operations that work with strings use
+a QSTR argument.</p>
+<section id="compile-time-qstr-generation">
+<h2>Compile-time QSTR generation<a class="headerlink" href="#compile-time-qstr-generation" title="Permalink to this heading">¶</a></h2>
+<p>In the MicroPython C code, any strings that should be interned in the final
+firmware are written as <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code>.  At compile time this will evaluate to
+a <code class="docutils literal notranslate"><span class="pre">qstr</span></code> value that points to the index of <code class="docutils literal notranslate"><span class="pre">&quot;Foo&quot;</span></code> in the QSTR pool.</p>
+<p>A multi-step process in the <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> makes this work.  In summary this
+process has three parts:</p>
+<ol class="arabic simple">
+<li><p>Find all <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> tokens in the code.</p></li>
+<li><p>Generate a static QSTR pool containing all the string data (including lengths
+and hashes).</p></li>
+<li><p>Replace all <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> (via the preprocessor) with their corresponding
+index.</p></li>
+</ol>
+<p><code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> tokens are searched for in two sources:</p>
+<ol class="arabic simple">
+<li><p>All files referenced in <code class="docutils literal notranslate"><span class="pre">$(SRC_QSTR)</span></code>.  This is all C code (i.e. <code class="docutils literal notranslate"><span class="pre">py</span></code>,
+<code class="docutils literal notranslate"><span class="pre">extmod</span></code>, <code class="docutils literal notranslate"><span class="pre">ports/stm32</span></code>) but not including third-party code such as
+<code class="docutils literal notranslate"><span class="pre">lib</span></code>.</p></li>
+<li><p>Additional <code class="docutils literal notranslate"><span class="pre">$(QSTR_GLOBAL_DEPENDENCIES)</span></code> (which includes <code class="docutils literal notranslate"><span class="pre">mpconfig*.h</span></code>).</p></li>
+</ol>
+<p><em>Note:</em> <code class="docutils literal notranslate"><span class="pre">frozen_mpy.c</span></code> (generated by mpy-tool.py) has its own QSTR generation
+and pool.</p>
+<p>Some additional strings that can’t be expressed using the <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> syntax
+(e.g. they contain non-alphanumeric characters) are explicitly provided in
+<code class="docutils literal notranslate"><span class="pre">qstrdefs.h</span></code> and <code class="docutils literal notranslate"><span class="pre">qstrdefsport.h</span></code> via the <code class="docutils literal notranslate"><span class="pre">$(QSTR_DEFS)</span></code> variable.</p>
+<p>Processing happens in the following stages:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">qstr.i.last</span></code> is the concatenation of putting every single input file
+through the C pre-processor.  This means that any conditionally disabled code
+will be removed, and macros expanded.  This means we don’t add strings to the
+pool that won’t be used in the final firmware.  Because at this stage (thanks
+to the <code class="docutils literal notranslate"><span class="pre">NO_QSTR</span></code> macro added by <code class="docutils literal notranslate"><span class="pre">QSTR_GEN_CFLAGS</span></code>) there is no
+definition for <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> it passes through this stage unaffected.  This
+file also includes comments from the preprocessor that include line number
+information.  Note that this step only uses files that have changed, which
+means that <code class="docutils literal notranslate"><span class="pre">qstr.i.last</span></code> will only contain data from files that have
+changed since the last compile.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qstr.split</span></code> is an empty file created after running <code class="docutils literal notranslate"><span class="pre">makeqstrdefs.py</span> <span class="pre">split</span></code>
+on qstr.i.last. It’s just used as a dependency to indicate that the step ran.
+This script outputs one file per input C file,  <code class="docutils literal notranslate"><span class="pre">genhdr/qstr/...file.c.qstr</span></code>,
+which contains only the matched QSTRs. Each QSTR is printed as <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>.
+This step is necessary to combine the existing files with the new data
+generated from the incremental update in <code class="docutils literal notranslate"><span class="pre">qstr.i.last</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qstrdefs.collected.h</span></code> is the output of concatenating <code class="docutils literal notranslate"><span class="pre">genhdr/qstr/*</span></code>
+using <code class="docutils literal notranslate"><span class="pre">makeqstrdefs.py</span> <span class="pre">cat</span></code>.  This is now the full set of <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code>’s
+found in the code, now formatted as <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>, one-per-line, with duplicates.
+This file is only updated if the set of qstrs has changed.  A hash of the QSTR
+data is written to another file (<code class="docutils literal notranslate"><span class="pre">qstrdefs.collected.h.hash</span></code>) which allows
+it to track changes across builds.</p></li>
+<li><p>Generate an enumeration, each entry of which maps a <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code> to it’s corresponding index.
+It concatenates <code class="docutils literal notranslate"><span class="pre">qstrdefs.collected.h</span></code> with <code class="docutils literal notranslate"><span class="pre">qstrdefs*.h</span></code>, then it transforms
+each line from <code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code> to <code class="docutils literal notranslate"><span class="pre">&quot;Q(Foo)&quot;</span></code> so they pass through the preprocessor
+unchanged.  Then the preprocessor is used to deal with any conditional
+compilation in <code class="docutils literal notranslate"><span class="pre">qstrdefs*.h</span></code>.  Then the transformation is undone back to
+<code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code>, and saved as <code class="docutils literal notranslate"><span class="pre">qstrdefs.preprocessed.h</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">qstrdefs.generated.h</span></code> is the output of <code class="docutils literal notranslate"><span class="pre">makeqstrdata.py</span></code>.  For each
+<code class="docutils literal notranslate"><span class="pre">Q(Foo)</span></code> in qstrdefs.preprocessed.h (plus some extra hard-coded ones), it outputs
+<code class="docutils literal notranslate"><span class="pre">QDEF(MP_QSTR_Foo,</span> <span class="pre">(const</span> <span class="pre">byte*)&quot;hash&quot;</span> <span class="pre">&quot;Foo&quot;)</span></code>.</p></li>
+</ol>
+<p>Then in the main compile, two things happen with <code class="docutils literal notranslate"><span class="pre">qstrdefs.generated.h</span></code>:</p>
+<ol class="arabic simple">
+<li><p>In qstr.h, each QDEF becomes an entry in an enum, which makes <code class="docutils literal notranslate"><span class="pre">MP_QSTR_Foo</span></code>
+available to code and equal to the index of that string in the QSTR table.</p></li>
+<li><p>In qstr.c, the actual QSTR data table is generated as elements of the
+<code class="docutils literal notranslate"><span class="pre">mp_qstr_const_pool-&gt;qstrs</span></code>.</p></li>
+</ol>
+</section>
+<section id="run-time-qstr-generation">
+<h2>Run-time QSTR generation<a class="headerlink" href="#run-time-qstr-generation" title="Permalink to this heading">¶</a></h2>
+<p>Additional QSTR pools can be created at runtime so that strings can be added to
+them. For example, the code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">foo</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+</pre></div>
+</div>
+<p>Will need to create a QSTR for the value of <code class="docutils literal notranslate"><span class="pre">x</span></code> so it can be used by the
+“load attr” bytecode.</p>
+<p>Also, when compiling Python code, identifiers and literals need to have QSTRs
+created.  Note: only literals shorter than 10 characters become QSTRs.  This is
+because a regular string on the heap always takes up a minimum of 16 bytes (one
+GC block), whereas QSTRs allow them to be packed more efficiently into the pool.</p>
+<p>QSTR pools (and the underlying “chunks” that store the string data) are allocated
+on-demand on the heap with a minimum size.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

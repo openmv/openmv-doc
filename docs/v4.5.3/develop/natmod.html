@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Native machine code in .mpy files &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Native machine code in .mpy files</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/develop/natmod.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="native-machine-code-in-mpy-files">
+<span id="natmod"></span><h1>Native machine code in .mpy files<a class="headerlink" href="#native-machine-code-in-mpy-files" title="Permalink to this heading">¶</a></h1>
+<p>This section describes how to build and work with .mpy files that contain native
+machine code from a language other than Python.  This allows you to
+write code in a language like C, compile and link it into a .mpy file, and then
+import this file like a normal Python module.  This can be used for implementing
+functionality which is performance critical, or for including an existing
+library written in another language.</p>
+<p>One of the main advantages of using native .mpy files is that native machine code
+can be imported by a script dynamically, without the need to rebuild the main
+MicroPython firmware.  This is in contrast to <a class="reference internal" href="cmodules.html#cmodules"><span class="std std-ref">MicroPython external C modules</span></a> which also allows
+defining custom modules in C but they must be compiled into the main firmware image.</p>
+<p>The focus here is on using C to build native modules, but in principle any
+language which can be compiled to stand-alone machine code can be put into a
+.mpy file.</p>
+<p>A native .mpy module is built using the <code class="docutils literal notranslate"><span class="pre">mpy_ld.py</span></code> tool, which is found in the
+<code class="docutils literal notranslate"><span class="pre">tools/</span></code> directory of the project.  This tool takes a set of object files
+(.o files) and links them together to create a native .mpy files.  It requires
+CPython 3 and the library pyelftools v0.25 or greater.</p>
+<section id="supported-features-and-limitations">
+<h2>Supported features and limitations<a class="headerlink" href="#supported-features-and-limitations" title="Permalink to this heading">¶</a></h2>
+<p>A .mpy file can contain MicroPython bytecode and/or native machine code.  If it
+contains native machine code then the .mpy file has a specific architecture
+associated with it.  Current supported architectures are (these are the valid
+options for the <code class="docutils literal notranslate"><span class="pre">ARCH</span></code> variable, see below):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">x86</span></code> (32 bit)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">x64</span></code> (64 bit x86)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">armv6m</span></code> (ARM Thumb, eg Cortex-M0)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">armv7m</span></code> (ARM Thumb 2, eg Cortex-M3)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">armv7emsp</span></code> (ARM Thumb 2, single precision float, eg Cortex-M4F, Cortex-M7)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">armv7emdp</span></code> (ARM Thumb 2, double precision float, eg Cortex-M7)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">xtensa</span></code> (non-windowed, eg ESP8266)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">xtensawin</span></code> (windowed with window size 8, eg ESP32)</p></li>
+</ul>
+<p>When compiling and linking the native .mpy file the architecture must be chosen
+and the corresponding file can only be imported on that architecture.  For more
+details about .mpy files see <a class="reference internal" href="../reference/mpyfiles.html#mpy-files"><span class="std std-ref">MicroPython .mpy files</span></a>.</p>
+<p>Native code must be compiled as position independent code (PIC) and use a global
+offset table (GOT), although the details of this varies from architecture to
+architecture.  When importing .mpy files with native code the import machinery
+is able to do some basic relocation of the native code.  This includes
+relocating text, rodata and BSS sections.</p>
+<p>Supported features of the linker and dynamic loader are:</p>
+<ul class="simple">
+<li><p>executable code (text)</p></li>
+<li><p>read-only data (rodata), including strings and constant data (arrays, structs, etc)</p></li>
+<li><p>zeroed data (BSS)</p></li>
+<li><p>pointers in text to text, rodata and BSS</p></li>
+<li><p>pointers in rodata to text, rodata and BSS</p></li>
+</ul>
+<p>The known limitations are:</p>
+<ul class="simple">
+<li><p>data sections are not supported; workaround: use BSS data and initialise the
+data values explicitly</p></li>
+<li><p>static BSS variables are not supported; workaround: use global BSS variables</p></li>
+</ul>
+<p>So, if your C code has writable data, make sure the data is defined globally,
+without an initialiser, and only written to within functions.</p>
+<p>Linker limitation: the native module is not linked against the symbol table of the
+full MicroPython firmware.  Rather, it is linked against an explicit table of exported
+symbols found in <code class="docutils literal notranslate"><span class="pre">mp_fun_table</span></code> (in <code class="docutils literal notranslate"><span class="pre">py/nativeglue.h</span></code>), that is fixed at firmware
+build time.  It is thus not possible to simply call some arbitrary HAL/OS/RTOS/system
+function, for example.</p>
+<p>New symbols can be added to the end of the table and the firmware rebuilt.
+The symbols also need to be added to <code class="docutils literal notranslate"><span class="pre">tools/mpy_ld.py</span></code>’s <code class="docutils literal notranslate"><span class="pre">fun_table</span></code> dict in the
+same location.  This allows <code class="docutils literal notranslate"><span class="pre">mpy_ld.py</span></code> to be able to pick the new symbols up and
+provide relocations for them when the mpy is imported.  Finally, if the symbol is a
+function, a macro or stub should be added to <code class="docutils literal notranslate"><span class="pre">py/dynruntime.h</span></code> to make it easy to
+call the function.</p>
+</section>
+<section id="defining-a-native-module">
+<h2>Defining a native module<a class="headerlink" href="#defining-a-native-module" title="Permalink to this heading">¶</a></h2>
+<p>A native .mpy module is defined by a set of files that are used to build the .mpy.
+The filesystem layout consists of two main parts, the source files and the Makefile:</p>
+<ul>
+<li><p>In the simplest case only a single C source file is required, which contains all
+the code that will be compiled into the .mpy module.  This C source code must
+include the <code class="docutils literal notranslate"><span class="pre">py/dynruntime.h</span></code> file to access the MicroPython dynamic API, and
+must at least define a function called <code class="docutils literal notranslate"><span class="pre">mpy_init</span></code>.  This function will be the
+entry point of the module, called when the module is imported.</p>
+<p>The module can be split into multiple C source files if desired.  Parts of the
+module can also be implemented in Python.  All source files should be listed in
+the Makefile, by adding them to the <code class="docutils literal notranslate"><span class="pre">SRC</span></code> variable (see below).  This includes
+both C source files as well as any Python files which will be included in the
+resulting .mpy file.</p>
+</li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> contains the build configuration for the module and list the
+source files used to build the .mpy module.  It should define <code class="docutils literal notranslate"><span class="pre">MPY_DIR</span></code> as the
+location of the MicroPython repository (to find header files, the relevant Makefile
+fragment, and the <code class="docutils literal notranslate"><span class="pre">mpy_ld.py</span></code> tool), <code class="docutils literal notranslate"><span class="pre">MOD</span></code> as the name of the module, <code class="docutils literal notranslate"><span class="pre">SRC</span></code>
+as the list of source files, optionally specify the machine architecture via <code class="docutils literal notranslate"><span class="pre">ARCH</span></code>,
+and then include <code class="docutils literal notranslate"><span class="pre">py/dynruntime.mk</span></code>.</p></li>
+</ul>
+</section>
+<section id="minimal-example">
+<h2>Minimal example<a class="headerlink" href="#minimal-example" title="Permalink to this heading">¶</a></h2>
+<p>This section provides a fully working example of a simple module named <code class="docutils literal notranslate"><span class="pre">factorial</span></code>.
+This module provides a single function <code class="docutils literal notranslate"><span class="pre">factorial.factorial(x)</span></code> which computes the
+factorial of the input and returns the result.</p>
+<p>Directory layout:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>factorial/
+├── factorial.c
+└── Makefile
+</pre></div>
+</div>
+<p>The file <code class="docutils literal notranslate"><span class="pre">factorial.c</span></code> contains:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="c1">// Include the header file to get access to the MicroPython API</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&quot;py/dynruntime.h&quot;</span>
+
+<span class="c1">// Helper function to compute factorial</span>
+<span class="n">STATIC</span><span class="w"> </span><span class="n">mp_int_t</span><span class="w"> </span><span class="n">factorial_helper</span><span class="p">(</span><span class="n">mp_int_t</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">factorial_helper</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// This is the function which will be called from Python, as factorial(x)</span>
+<span class="n">STATIC</span><span class="w"> </span><span class="n">mp_obj_t</span><span class="w"> </span><span class="n">factorial</span><span class="p">(</span><span class="n">mp_obj_t</span><span class="w"> </span><span class="n">x_obj</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Extract the integer from the MicroPython input object</span>
+<span class="w">    </span><span class="n">mp_int_t</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mp_obj_get_int</span><span class="p">(</span><span class="n">x_obj</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Calculate the factorial</span>
+<span class="w">    </span><span class="n">mp_int_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factorial_helper</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Convert the result to a MicroPython integer object and return it</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">mp_obj_new_int</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="c1">// Define a Python reference to the function above</span>
+<span class="n">STATIC</span><span class="w"> </span><span class="n">MP_DEFINE_CONST_FUN_OBJ_1</span><span class="p">(</span><span class="n">factorial_obj</span><span class="p">,</span><span class="w"> </span><span class="n">factorial</span><span class="p">);</span>
+
+<span class="c1">// This is the entry point and is called when the module is imported</span>
+<span class="n">mp_obj_t</span><span class="w"> </span><span class="nf">mpy_init</span><span class="p">(</span><span class="n">mp_obj_fun_bc_t</span><span class="w"> </span><span class="o">*</span><span class="n">self</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">n_args</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">n_kw</span><span class="p">,</span><span class="w"> </span><span class="n">mp_obj_t</span><span class="w"> </span><span class="o">*</span><span class="n">args</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// This must be first, it sets up the globals dict and other things</span>
+<span class="w">    </span><span class="n">MP_DYNRUNTIME_INIT_ENTRY</span>
+
+<span class="w">    </span><span class="c1">// Make the function available in the module&#39;s namespace</span>
+<span class="w">    </span><span class="n">mp_store_global</span><span class="p">(</span><span class="n">MP_QSTR_factorial</span><span class="p">,</span><span class="w"> </span><span class="n">MP_OBJ_FROM_PTR</span><span class="p">(</span><span class="o">&amp;</span><span class="n">factorial_obj</span><span class="p">));</span>
+
+<span class="w">    </span><span class="c1">// This must be last, it restores the globals dict</span>
+<span class="w">    </span><span class="n">MP_DYNRUNTIME_INIT_EXIT</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The file <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> contains:</p>
+<div class="highlight-make notranslate"><div class="highlight"><pre><span></span><span class="c"># Location of top-level MicroPython directory</span>
+<span class="nv">MPY_DIR</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>../../..
+
+<span class="c"># Name of module</span>
+<span class="nv">MOD</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>factorial
+
+<span class="c"># Source files (.c or .py)</span>
+<span class="nv">SRC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>factorial.c
+
+<span class="c"># Architecture to build for (x86, x64, armv6m, armv7m, xtensa, xtensawin)</span>
+<span class="nv">ARCH</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>x64
+
+<span class="c"># Include to get the rules for compiling and linking the module</span>
+<span class="cp">include $(MPY_DIR)/py/dynruntime.mk</span>
+</pre></div>
+</div>
+</section>
+<section id="compiling-the-module">
+<h2>Compiling the module<a class="headerlink" href="#compiling-the-module" title="Permalink to this heading">¶</a></h2>
+<p>The prerequisite tools needed to build a native .mpy file are:</p>
+<ul class="simple">
+<li><p>The MicroPython repository (at least the <code class="docutils literal notranslate"><span class="pre">py/</span></code> and <code class="docutils literal notranslate"><span class="pre">tools/</span></code> directories).</p></li>
+<li><p>CPython 3, and the library pyelftools (eg <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'pyelftools&gt;=0.25'</span></code>).</p></li>
+<li><p>GNU make.</p></li>
+<li><p>A C compiler for the target architecture (if C source is used).</p></li>
+<li><p>Optionally <code class="docutils literal notranslate"><span class="pre">mpy-cross</span></code>, built from the MicroPython repository (if .py source is used).</p></li>
+</ul>
+<p>Be sure to select the correct <code class="docutils literal notranslate"><span class="pre">ARCH</span></code> for the target you are going to run on.
+Then build with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ make
+</pre></div>
+</div>
+<p>Without modifying the Makefile you can specify the target architecture via:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ make ARCH=armv7m
+</pre></div>
+</div>
+</section>
+<section id="module-usage-in-micropython">
+<h2>Module usage in MicroPython<a class="headerlink" href="#module-usage-in-micropython" title="Permalink to this heading">¶</a></h2>
+<p>Once the module is built there should be a file called <code class="docutils literal notranslate"><span class="pre">factorial.mpy</span></code>.  Copy
+this so it is accessible on the filesystem of your MicroPython system and can be
+found in the import path.  The module can now be accessed in Python just like any
+other module, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">factorial</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">factorial</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+<span class="c1"># should display 3628800</span>
+</pre></div>
+</div>
+</section>
+<section id="further-examples">
+<h2>Further examples<a class="headerlink" href="#further-examples" title="Permalink to this heading">¶</a></h2>
+<p>See <code class="docutils literal notranslate"><span class="pre">examples/natmod/</span></code> for further examples which show many of the available
+features of native .mpy modules.  Such features include:</p>
+<ul class="simple">
+<li><p>using multiple C source files</p></li>
+<li><p>including Python code alongside C code</p></li>
+<li><p>rodata and BSS data</p></li>
+<li><p>memory allocation</p></li>
+<li><p>use of floating point</p></li>
+<li><p>exception handling</p></li>
+<li><p>including external C libraries</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -5,12 +5,14 @@
 <title>OpenMV Documentation</title>
 <!--
   GitHub Pages serves this file for any path it can't find. It routes:
-    * /latest/<page>      -> /<newest-release>/<page>   (the "latest" alias)
-    * an OLD flat URL      -> /<newest-release>/<page>   (pre-versioning links)
+    * /latest/<page>       -> /<newest-release>/<page>   (the "latest" alias)
+    * /<alias>/<page>      -> /<snapshot>/<page>         (a firmware release that
+                                                          reuses another's docs)
+    * an OLD flat URL       -> /<newest-release>/<page>   (pre-versioning links)
     * a missing page under a real channel -> that channel's home
-  The newest release is read from /versions.json so this file never needs
-  regenerating. Bounded to at most two hops (an old/flat redirect that still
-  misses lands on the channel home, which always exists).
+  Everything is read from /versions.json so this file never needs regenerating.
+  Bounded to at most two hops (an old/flat/alias redirect that still misses lands
+  on a channel home, which always exists).
 -->
 <script>
 (function () {
@@ -21,14 +23,25 @@
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (d) {
       var latest = (d && d.latest) ? d.latest : "dev";
-      var channels = (d && d.versions ? d.versions.map(function (v) { return v.id; }) : ["dev"]);
+      var versions = (d && d.versions) ? d.versions : [];
+      var aliasMap = {};   // alias id -> snapshot folder
+      var folders = [];    // real folders (versions without a snapshot)
+      versions.forEach(function (v) {
+        if (v.snapshot) aliasMap[v.id] = v.snapshot;
+        else folders.push(v.id);
+      });
+      if (folders.indexOf("dev") === -1) folders.push("dev");
+
       var seg = path.split("/");           // ["", "<first>", ...rest]
       var first = seg[1] || "";
 
       if (first === "latest") {            // /latest/<rest> -> /<latest>/<rest>
         seg[1] = latest;
         go(seg.join("/"));
-      } else if (channels.indexOf(first) !== -1) {
+      } else if (aliasMap[first]) {        // /<alias>/<rest> -> /<snapshot>/<rest>
+        seg[1] = aliasMap[first];
+        go(seg.join("/"));
+      } else if (folders.indexOf(first) !== -1) {
         // a real version channel but the page is missing -> channel home
         go("/" + first + "/");
       } else {

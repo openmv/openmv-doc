@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Management &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Memory Management</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/develop/memorymgt.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="memory-management">
+<span id="memorymanagement"></span><h1>Memory Management<a class="headerlink" href="#memory-management" title="Permalink to this heading">¶</a></h1>
+<p>Unlike programming languages such as C/C++, MicroPython hides memory management
+details from the developer by supporting automatic memory management.
+Automatic memory management is a technique used by operating systems or applications to automatically manage
+the allocation and deallocation of memory. This eliminates challenges such as forgetting to
+free the memory allocated to an object. Automatic memory management also avoids the critical issue of using memory
+that is already released. Automatic memory management takes many forms, one of them being
+garbage collection (GC).</p>
+<p>The garbage collector usually has two responsibilities;</p>
+<ol class="arabic simple">
+<li><p>Allocate new objects in available memory.</p></li>
+<li><p>Free unused memory.</p></li>
+</ol>
+<p>There are many GC algorithms but MicroPython uses the
+<a class="reference external" href="https://en.wikipedia.org/wiki/Tracing_garbage_collection#Basic_algorithm">Mark and Sweep</a>
+policy for managing memory. This algorithm has a mark phase that traverses the heap marking all
+live objects while the sweep phase goes through the heap reclaiming all unmarked objects.</p>
+<p>Garbage collection functionality in MicroPython is available through the <code class="docutils literal notranslate"><span class="pre">gc</span></code> built-in
+module:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;&gt;&gt;<span class="w"> </span><span class="nv">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span>
+&gt;&gt;&gt;<span class="w"> </span>x
+<span class="m">5</span>
+&gt;&gt;&gt;<span class="w"> </span>import<span class="w"> </span>gc
+&gt;&gt;&gt;<span class="w"> </span>gc.enable<span class="o">()</span>
+&gt;&gt;&gt;<span class="w"> </span>gc.mem_alloc<span class="o">()</span>
+<span class="m">1312</span>
+&gt;&gt;&gt;<span class="w"> </span>gc.mem_free<span class="o">()</span>
+<span class="m">2071392</span>
+&gt;&gt;&gt;<span class="w"> </span>gc.collect<span class="o">()</span>
+<span class="m">19</span>
+&gt;&gt;&gt;<span class="w"> </span>gc.disable<span class="o">()</span>
+&gt;&gt;&gt;
+</pre></div>
+</div>
+<p>Even when <code class="docutils literal notranslate"><span class="pre">gc.disable()</span></code> is invoked, collection can be triggered with <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code>.</p>
+<section id="the-object-model">
+<h2>The object model<a class="headerlink" href="#the-object-model" title="Permalink to this heading">¶</a></h2>
+<p>All MicroPython objects are referred to by the <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> data type.
+This is usually word-sized (i.e. the same size as a pointer on the target architecture),
+and can be typically 32-bit (STM32, nRF, ESP32, Unix x86) or 64-bit (Unix x64).
+It can also be greater than a word-size for certain object representations, for
+example <code class="docutils literal notranslate"><span class="pre">OBJ_REPR_D</span></code> has a 64-bit sized <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> on a 32-bit architecture.</p>
+<p>An <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> represents a MicroPython object, for example an integer, float, type, dict or
+class instance. Some objects, like booleans and small integers, have their value stored directly
+in the <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> value and do not require additional memory. Other objects have their value
+store elsewhere in memory (for example on the garbage-collected heap) and their <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> contains
+a pointer to that memory. A portion of <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> is the tag which tells what type of object it is.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">py/mpconfig.h</span></code> for the specific details of the available representations.</p>
+<p><strong>Pointer tagging</strong></p>
+<p>Because pointers are word-aligned, when they are stored in an <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> the
+lower bits of this object handle will be zero.  For example on a 32-bit architecture
+the lower 2 bits will be zero:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|******00</span></code></p>
+<p>These bits are reserved for purposes of storing a tag. The tag stores extra information as
+opposed to introducing a new field to store that information in the object, which may be
+inefficient.  In MicroPython the tag tells if we are dealing with a small integer, interned
+(small) string or a concrete object, and different semantics apply to each of these.</p>
+<p>For small integers the mapping is this:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*******1</span></code></p>
+<p>Where the asterisks hold the actual integer value.  For an interned string or an immediate
+object (e.g. <code class="docutils literal notranslate"><span class="pre">True</span></code>) the layout of the <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> value is, respectively:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*****010</span></code></p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|*****110</span></code></p>
+<p>While a concrete object that is none of the above takes the form:</p>
+<p><code class="docutils literal notranslate"><span class="pre">********|********|********|******00</span></code></p>
+<p>The stars here correspond to the address of the concrete object in memory.</p>
+</section>
+<section id="allocation-of-objects">
+<h2>Allocation of objects<a class="headerlink" href="#allocation-of-objects" title="Permalink to this heading">¶</a></h2>
+<p>The value of a small integer is stored directly in the <code class="docutils literal notranslate"><span class="pre">mp_obj_t</span></code> and will be
+allocated in-place, not on the heap or elsewhere.  As such, creation of small
+integers does not affect the heap.  Similarly for interned strings that already have
+their textual data stored elsewhere, and immediate values like <code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>
+and <code class="docutils literal notranslate"><span class="pre">True</span></code>.</p>
+<p>Everything else which is a concrete object is allocated on the heap and its object structure is such that
+a field is reserved in the object header to store the type of the object.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>+++++++++++
++<span class="w">         </span>+
++<span class="w"> </span><span class="nb">type</span><span class="w">    </span>+<span class="w"> </span>object<span class="w"> </span>header
++<span class="w">         </span>+
++++++++++++
++<span class="w">         </span>+<span class="w"> </span>object<span class="w"> </span>items
++<span class="w">         </span>+
++<span class="w">         </span>+
++++++++++++
+</pre></div>
+</div>
+<p>The heap’s smallest unit of allocation is a block, which is four machine words in
+size (16 bytes on a 32-bit machine, 32 bytes on a 64-bit machine).
+Another structure also allocated on the heap tracks the allocation of
+objects in each block. This structure is called a <em>bitmap</em>.</p>
+<img alt="../_images/bitmap.png" src="../_images/bitmap.png" />
+<p>The bitmap tracks whether a block is “free” or “in use” and use two bits to track this state
+for each block.</p>
+<p>The mark-sweep garbage collector manages the objects allocated on the heap, and also
+utilises the bitmap to mark objects that are still in use.
+See <a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/gc.c">py/gc.c</a>
+for the full implementation of these details.</p>
+<p><strong>Allocation: heap layout</strong></p>
+<p>The heap is arranged such that it consists of blocks in pools. A block
+can have different properties:</p>
+<ul class="simple">
+<li><p><em>ATB(allocation table byte):</em> If set, then the block is a normal block</p></li>
+<li><p><em>FREE:</em> Free block</p></li>
+<li><p><em>HEAD:</em> Head of a chain of blocks</p></li>
+<li><p><em>TAIL:</em> In the tail of a chain of blocks</p></li>
+<li><p><em>MARK :</em> Marked head block</p></li>
+<li><p><em>FTB(finaliser table byte):</em> If set, then the block has a finaliser</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

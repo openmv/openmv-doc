@@ -8,7 +8,35 @@ on:
       - "v*"
 
 jobs:
+  # Only master (the "dev" channel) and v5.0.0+ release tags build. Legacy tags
+  # (v4.x and earlier) exist on this repo purely for historical tracking; their
+  # docs are frozen HTML snapshots committed directly under docs/<version>/ and
+  # must never be rebuilt with current tooling. The workflow triggers on every
+  # "v*" tag push, so this gate stops those legacy pushes from doing real work.
+  gate:
+    runs-on: ubuntu-22.04
+    outputs:
+      proceed: ${{ steps.g.outputs.proceed }}
+    steps:
+    - name: Decide whether to build
+      id: g
+      run: |
+        ref="${GITHUB_REF}"
+        proceed=false
+        if [[ "$ref" == refs/heads/master ]]; then
+          proceed=true
+        elif [[ "$ref" == refs/tags/v* ]]; then
+          major="${ref#refs/tags/v}"; major="${major%%.*}"
+          if [[ "$major" =~ ^[0-9]+$ ]] && [ "$major" -ge 5 ]; then
+            proceed=true
+          fi
+        fi
+        echo "ref=$ref proceed=$proceed"
+        echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: gate
+    if: needs.gate.outputs.proceed == 'true'
     runs-on: ubuntu-22.04
 
     steps:

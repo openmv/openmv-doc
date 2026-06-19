@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>uctypes – access binary data in a structured way &mdash; MicroPython 1.20 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=6b422e2e"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mutex — mutex module" href="mutex.html" />
+    <link rel="prev" title="class LAN – control an Ethernet module" href="network.LAN.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.20
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython libraries</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#python-standard-libraries-and-micro-libraries">Python standard libraries and micro-libraries</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#micropython-specific-libraries">MicroPython-specific libraries</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bluetooth.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluetooth</span></code> — low-level Bluetooth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="btree.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">btree</span></code> – simple BTree database</a></li>
+<li class="toctree-l3"><a class="reference internal" href="cryptolib.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cryptolib</span></code> – cryptographic ciphers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="framebuf.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">framebuf</span></code> — frame buffer manipulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="machine.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code> — functions related to the hardware</a></li>
+<li class="toctree-l3"><a class="reference internal" href="micropython.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">micropython</span></code> – access and control MicroPython internals</a></li>
+<li class="toctree-l3"><a class="reference internal" href="neopixel.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">neopixel</span></code> — control of WS2812 / NeoPixel LEDs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="network.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">network</span></code> — network configuration</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uctypes</span></code> – access binary data in a structured way</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#defining-structure-layout">Defining structure layout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#structure-descriptors-and-instantiating-structure-objects">Structure descriptors and instantiating structure objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#structure-objects">Structure objects</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#limitations">Limitations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mutex.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mutex</span></code> — mutex module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="uping.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uping</span></code> — Ping another computer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="urequests.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">urequests</span></code> — Related functions of HTTP client</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#libraries-specific-to-the-openmv-cam">Libraries specific to the OpenMV Cam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#third-party-libraries-on-the-openmv-cam">Third-party libraries on the OpenMV Cam</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#extending-built-in-libraries-from-python">Extending built-in libraries from Python</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython libraries</a></li>
+      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uctypes</span></code> – access binary data in a structured way</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/library/uctypes.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-uctypes">
+<span id="uctypes-access-binary-data-in-a-structured-way"></span><h1><a class="reference internal" href="#module-uctypes" title="uctypes: access binary data in a structured way"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uctypes</span></code></a> – access binary data in a structured way<a class="headerlink" href="#module-uctypes" title="Permalink to this heading">¶</a></h1>
+<p>This module implements “foreign data interface” for MicroPython. The idea
+behind it is similar to CPython’s <code class="docutils literal notranslate"><span class="pre">ctypes</span></code> modules, but the actual API is
+different, streamlined and optimized for small size. The basic idea of the
+module is to define data structure layout with about the same power as the
+C language allows, and then access it using familiar dot-syntax to reference
+sub-fields.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">uctypes</span></code> module allows access to arbitrary memory addresses of the
+machine (including I/O and control registers). Uncareful usage of it
+may lead to crashes, data loss, and even hardware malfunction.</p>
+</div>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<dl class="simple">
+<dt>Module <a class="reference internal" href="struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a></dt><dd><p>Standard Python way to access binary data structures (doesn’t scale
+well to large and complex structures).</p>
+</dd>
+</dl>
+</div>
+<p>Usage examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">uctypes</span>
+
+<span class="c1"># Example 1: Subset of ELF file header</span>
+<span class="c1"># https://wikipedia.org/wiki/Executable_and_Linkable_Format#File_header</span>
+<span class="n">ELF_HEADER</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;EI_MAG&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mh">0x0</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">ARRAY</span><span class="p">,</span> <span class="mi">4</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">),</span>
+    <span class="s2">&quot;EI_DATA&quot;</span><span class="p">:</span> <span class="mh">0x5</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">,</span>
+    <span class="s2">&quot;e_machine&quot;</span><span class="p">:</span> <span class="mh">0x12</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT16</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1"># &quot;f&quot; is an ELF file opened in binary mode</span>
+<span class="n">buf</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">uctypes</span><span class="o">.</span><span class="n">sizeof</span><span class="p">(</span><span class="n">ELF_HEADER</span><span class="p">,</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">LITTLE_ENDIAN</span><span class="p">))</span>
+<span class="n">header</span> <span class="o">=</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">struct</span><span class="p">(</span><span class="n">uctypes</span><span class="o">.</span><span class="n">addressof</span><span class="p">(</span><span class="n">buf</span><span class="p">),</span> <span class="n">ELF_HEADER</span><span class="p">,</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">LITTLE_ENDIAN</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">header</span><span class="o">.</span><span class="n">EI_MAG</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x7f</span><span class="s2">ELF&quot;</span>
+<span class="k">assert</span> <span class="n">header</span><span class="o">.</span><span class="n">EI_DATA</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Oops, wrong endianness. Could retry with uctypes.BIG_ENDIAN.&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;machine:&quot;</span><span class="p">,</span> <span class="nb">hex</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">e_machine</span><span class="p">))</span>
+
+
+<span class="c1"># Example 2: In-memory data structure, with pointers</span>
+<span class="n">COORD</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">FLOAT32</span><span class="p">,</span>
+    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="mi">4</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">FLOAT32</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">STRUCT1</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;data1&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">,</span>
+    <span class="s2">&quot;data2&quot;</span><span class="p">:</span> <span class="mi">4</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT32</span><span class="p">,</span>
+    <span class="s2">&quot;ptr&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">8</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">PTR</span><span class="p">,</span> <span class="n">COORD</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="c1"># Suppose you have address of a structure of type STRUCT1 in &quot;addr&quot;</span>
+<span class="c1"># uctypes.NATIVE is optional (used by default)</span>
+<span class="n">struct1</span> <span class="o">=</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">struct</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">STRUCT1</span><span class="p">,</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">NATIVE</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x:&quot;</span><span class="p">,</span> <span class="n">struct1</span><span class="o">.</span><span class="n">ptr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+
+<span class="c1"># Example 3: Access to CPU registers. Subset of STM32F4xx WWDG block</span>
+<span class="n">WWDG_LAYOUT</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;WWDG_CR&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">{</span>
+        <span class="c1"># BFUINT32 here means size of the WWDG_CR register</span>
+        <span class="s2">&quot;WDGA&quot;</span><span class="p">:</span> <span class="mi">7</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_POS</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_LEN</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BFUINT32</span><span class="p">,</span>
+        <span class="s2">&quot;T&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_POS</span> <span class="o">|</span> <span class="mi">7</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_LEN</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BFUINT32</span><span class="p">,</span>
+    <span class="p">}),</span>
+    <span class="s2">&quot;WWDG_CFR&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">{</span>
+        <span class="s2">&quot;EWI&quot;</span><span class="p">:</span> <span class="mi">9</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_POS</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_LEN</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BFUINT32</span><span class="p">,</span>
+        <span class="s2">&quot;WDGTB&quot;</span><span class="p">:</span> <span class="mi">7</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_POS</span> <span class="o">|</span> <span class="mi">2</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_LEN</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BFUINT32</span><span class="p">,</span>
+        <span class="s2">&quot;W&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_POS</span> <span class="o">|</span> <span class="mi">7</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_LEN</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BFUINT32</span><span class="p">,</span>
+    <span class="p">}),</span>
+<span class="p">}</span>
+
+<span class="n">WWDG</span> <span class="o">=</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">struct</span><span class="p">(</span><span class="mh">0x40002c00</span><span class="p">,</span> <span class="n">WWDG_LAYOUT</span><span class="p">)</span>
+
+<span class="n">WWDG</span><span class="o">.</span><span class="n">WWDG_CFR</span><span class="o">.</span><span class="n">WDGTB</span> <span class="o">=</span> <span class="mb">0b10</span>
+<span class="n">WWDG</span><span class="o">.</span><span class="n">WWDG_CR</span><span class="o">.</span><span class="n">WDGA</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Current counter:&quot;</span><span class="p">,</span> <span class="n">WWDG</span><span class="o">.</span><span class="n">WWDG_CR</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+</pre></div>
+</div>
+<section id="defining-structure-layout">
+<h2>Defining structure layout<a class="headerlink" href="#defining-structure-layout" title="Permalink to this heading">¶</a></h2>
+<p>Structure layout is defined by a “descriptor” - a Python dictionary which
+encodes field names as keys and other properties required to access them as
+associated values:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s2">&quot;field1&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">properties</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="s2">&quot;field2&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">properties</span><span class="o">&gt;</span><span class="p">,</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Currently, <code class="docutils literal notranslate"><span class="pre">uctypes</span></code> requires explicit specification of offsets for each
+field. Offset are given in bytes from the structure start.</p>
+<p>Following are encoding examples for various field types:</p>
+<ul>
+<li><p>Scalar types:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;field_name&quot;</span><span class="p">:</span> <span class="n">offset</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT32</span>
+</pre></div>
+</div>
+<p>in other words, the value is a scalar type identifier ORed with a field offset
+(in bytes) from the start of the structure.</p>
+</li>
+<li><p>Recursive structures:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;sub&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="p">{</span>
+    <span class="s2">&quot;b0&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">,</span>
+    <span class="s2">&quot;b1&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">,</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+<p>i.e. value is a 2-tuple, first element of which is an offset, and second is
+a structure descriptor dictionary (note: offsets in recursive descriptors
+are relative to the structure it defines). Of course, recursive structures
+can be specified not just by a literal dictionary, but by referring to a
+structure descriptor dictionary (defined earlier) by name.</p>
+</li>
+<li><p>Arrays of primitive types:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;arr&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">offset</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">ARRAY</span><span class="p">,</span> <span class="n">size</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">),</span>
+</pre></div>
+</div>
+<p>i.e. value is a 2-tuple, first element of which is ARRAY flag ORed
+with offset, and second is scalar element type ORed number of elements
+in the array.</p>
+</li>
+<li><p>Arrays of aggregate types:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;arr2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">offset</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">ARRAY</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">}),</span>
+</pre></div>
+</div>
+<p>i.e. value is a 3-tuple, first element of which is ARRAY flag ORed
+with offset, second is a number of elements in the array, and third is
+a descriptor of element type.</p>
+</li>
+<li><p>Pointer to a primitive type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;ptr&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">offset</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">PTR</span><span class="p">,</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">),</span>
+</pre></div>
+</div>
+<p>i.e. value is a 2-tuple, first element of which is PTR flag ORed
+with offset, and second is a scalar element type.</p>
+</li>
+<li><p>Pointer to an aggregate type:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;ptr2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">offset</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">PTR</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">0</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">UINT8</span><span class="p">}),</span>
+</pre></div>
+</div>
+<p>i.e. value is a 2-tuple, first element of which is PTR flag ORed
+with offset, second is a descriptor of type pointed to.</p>
+</li>
+<li><p>Bitfields:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;bitf0&quot;</span><span class="p">:</span> <span class="n">offset</span> <span class="o">|</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BFUINT16</span> <span class="o">|</span> <span class="n">lsbit</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_POS</span> <span class="o">|</span> <span class="n">bitsize</span> <span class="o">&lt;&lt;</span> <span class="n">uctypes</span><span class="o">.</span><span class="n">BF_LEN</span><span class="p">,</span>
+</pre></div>
+</div>
+<p>i.e. value is a type of scalar value containing given bitfield (typenames are
+similar to scalar types, but prefixes with <code class="docutils literal notranslate"><span class="pre">BF</span></code>), ORed with offset for
+scalar value containing the bitfield, and further ORed with values for
+bit position and bit length of the bitfield within the scalar value, shifted by
+BF_POS and BF_LEN bits, respectively. A bitfield position is counted
+from the least significant bit of the scalar (having position of 0), and
+is the number of right-most bit of a field (in other words, it’s a number
+of bits a scalar needs to be shifted right to extract the bitfield).</p>
+<p>In the example above, first a UINT16 value will be extracted at offset 0
+(this detail may be important when accessing hardware registers, where
+particular access size and alignment are required), and then bitfield
+whose rightmost bit is <em>lsbit</em> bit of this UINT16, and length
+is <em>bitsize</em> bits, will be extracted. For example, if <em>lsbit</em> is 0 and
+<em>bitsize</em> is 8, then effectively it will access least-significant byte
+of UINT16.</p>
+<p>Note that bitfield operations are independent of target byte endianness,
+in particular, example above will access least-significant byte of UINT16
+in both little- and big-endian structures. But it depends on the least
+significant bit being numbered 0. Some targets may use different
+numbering in their native ABI, but <code class="docutils literal notranslate"><span class="pre">uctypes</span></code> always uses the normalized
+numbering described above.</p>
+</li>
+</ul>
+</section>
+<section id="module-contents">
+<h2>Module contents<a class="headerlink" href="#module-contents" title="Permalink to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="uctypes.struct">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">struct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">descriptor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">NATIVE</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#uctypes.struct" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate a “foreign data structure” object based on structure address in
+memory, descriptor (encoded as a dictionary), and layout type (see below).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.LITTLE_ENDIAN">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">LITTLE_ENDIAN</span></span><a class="headerlink" href="#uctypes.LITTLE_ENDIAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Layout type for a little-endian packed structure. (Packed means that every
+field occupies exactly as many bytes as defined in the descriptor, i.e.
+the alignment is 1).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.BIG_ENDIAN">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">BIG_ENDIAN</span></span><a class="headerlink" href="#uctypes.BIG_ENDIAN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Layout type for a big-endian packed structure.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.NATIVE">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">NATIVE</span></span><a class="headerlink" href="#uctypes.NATIVE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Layout type for a native structure - with data endianness and alignment
+conforming to the ABI of the system on which MicroPython runs.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="uctypes.sizeof">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">sizeof</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">struct</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">NATIVE</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">/</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#uctypes.sizeof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return size of data structure in bytes. The <em>struct</em> argument can be
+either a structure class or a specific instantiated structure object
+(or its aggregate field).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="uctypes.addressof">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">addressof</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#uctypes.addressof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return address of an object. Argument should be bytes, bytearray or
+other object supporting buffer protocol (and address of this buffer
+is what actually returned).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="uctypes.bytes_at">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">bytes_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#uctypes.bytes_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>Capture memory at the given address and size as bytes object. As bytes
+object is immutable, memory is actually duplicated and copied into
+bytes object, so if memory contents change later, created object
+retains original value.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="uctypes.bytearray_at">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">bytearray_at</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">addr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#uctypes.bytearray_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>Capture memory at the given address and size as bytearray object.
+Unlike bytes_at() function above, memory is captured by reference,
+so it can be both written too, and you will access current value
+at the given memory address.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.UINT8">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT8</span></span><a class="headerlink" href="#uctypes.UINT8" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.INT8">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT8</span></span><a class="headerlink" href="#uctypes.INT8" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.UINT16">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT16</span></span><a class="headerlink" href="#uctypes.UINT16" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.INT16">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT16</span></span><a class="headerlink" href="#uctypes.INT16" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.UINT32">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT32</span></span><a class="headerlink" href="#uctypes.UINT32" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.INT32">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT32</span></span><a class="headerlink" href="#uctypes.INT32" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.UINT64">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">UINT64</span></span><a class="headerlink" href="#uctypes.UINT64" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.INT64">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">INT64</span></span><a class="headerlink" href="#uctypes.INT64" title="Permalink to this definition">¶</a></dt>
+<dd><p>Integer types for structure descriptors. Constants for 8, 16, 32,
+and 64 bit types are provided, both signed and unsigned.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.FLOAT32">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">FLOAT32</span></span><a class="headerlink" href="#uctypes.FLOAT32" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.FLOAT64">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">FLOAT64</span></span><a class="headerlink" href="#uctypes.FLOAT64" title="Permalink to this definition">¶</a></dt>
+<dd><p>Floating-point types for structure descriptors.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.VOID">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">VOID</span></span><a class="headerlink" href="#uctypes.VOID" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">VOID</span></code> is an alias for <code class="docutils literal notranslate"><span class="pre">UINT8</span></code>, and is provided to conveniently define
+C’s void pointers: <code class="docutils literal notranslate"><span class="pre">(uctypes.PTR,</span> <span class="pre">uctypes.VOID)</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="uctypes.PTR">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">PTR</span></span><a class="headerlink" href="#uctypes.PTR" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="uctypes.ARRAY">
+<span class="sig-prename descclassname"><span class="pre">uctypes.</span></span><span class="sig-name descname"><span class="pre">ARRAY</span></span><a class="headerlink" href="#uctypes.ARRAY" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type constants for pointers and arrays. Note that there is no explicit
+constant for structures, it’s implicit: an aggregate type without <code class="docutils literal notranslate"><span class="pre">PTR</span></code>
+or <code class="docutils literal notranslate"><span class="pre">ARRAY</span></code> flags is a structure.</p>
+</dd></dl>
+
+</section>
+<section id="structure-descriptors-and-instantiating-structure-objects">
+<h2>Structure descriptors and instantiating structure objects<a class="headerlink" href="#structure-descriptors-and-instantiating-structure-objects" title="Permalink to this heading">¶</a></h2>
+<p>Given a structure descriptor dictionary and its layout type, you can
+instantiate a specific structure instance at a given memory address
+using <a class="reference internal" href="#uctypes.struct" title="uctypes.struct"><code class="xref py py-class docutils literal notranslate"><span class="pre">uctypes.struct()</span></code></a> constructor. Memory address usually comes from
+following sources:</p>
+<ul class="simple">
+<li><p>Predefined address, when accessing hardware registers on a baremetal
+system. Lookup these addresses in datasheet for a particular MCU/SoC.</p></li>
+<li><p>As a return value from a call to some FFI (Foreign Function Interface)
+function.</p></li>
+<li><p>From <a class="reference internal" href="#uctypes.addressof" title="uctypes.addressof"><code class="xref any py py-func docutils literal notranslate"><span class="pre">uctypes.addressof()</span></code></a>, when you want to pass arguments to an FFI
+function, or alternatively, to access some data for I/O (for example,
+data read from a file or network socket).</p></li>
+</ul>
+</section>
+<section id="structure-objects">
+<h2>Structure objects<a class="headerlink" href="#structure-objects" title="Permalink to this heading">¶</a></h2>
+<p>Structure objects allow accessing individual fields using standard dot
+notation: <code class="docutils literal notranslate"><span class="pre">my_struct.substruct1.field1</span></code>. If a field is of scalar type,
+getting it will produce a primitive value (Python integer or float)
+corresponding to the value contained in a field. A scalar field can also
+be assigned to.</p>
+<p>If a field is an array, its individual elements can be accessed with
+the standard subscript operator <code class="docutils literal notranslate"><span class="pre">[]</span></code> - both read and assigned to.</p>
+<p>If a field is a pointer, it can be dereferenced using <code class="docutils literal notranslate"><span class="pre">[0]</span></code> syntax
+(corresponding to C <code class="docutils literal notranslate"><span class="pre">*</span></code> operator, though <code class="docutils literal notranslate"><span class="pre">[0]</span></code> works in C too).
+Subscripting a pointer with other integer values but 0 are also supported,
+with the same semantics as in C.</p>
+<p>Summing up, accessing structure fields generally follows the C syntax,
+except for pointer dereference, when you need to use <code class="docutils literal notranslate"><span class="pre">[0]</span></code> operator
+instead of <code class="docutils literal notranslate"><span class="pre">*</span></code>.</p>
+</section>
+<section id="limitations">
+<h2>Limitations<a class="headerlink" href="#limitations" title="Permalink to this heading">¶</a></h2>
+<p>1. Accessing non-scalar fields leads to allocation of intermediate objects
+to represent them. This means that special care should be taken to
+layout a structure which needs to be accessed when memory allocation
+is disabled (e.g. from an interrupt). The recommendations are:</p>
+<ul class="simple">
+<li><p>Avoid accessing nested structures. For example, instead of
+<code class="docutils literal notranslate"><span class="pre">mcu_registers.peripheral_a.register1</span></code>, define separate layout
+descriptors for each peripheral, to be accessed as
+<code class="docutils literal notranslate"><span class="pre">peripheral_a.register1</span></code>. Or just cache a particular peripheral:
+<code class="docutils literal notranslate"><span class="pre">peripheral_a</span> <span class="pre">=</span> <span class="pre">mcu_registers.peripheral_a</span></code>. If a register
+consists of multiple bitfields, you would need to cache references
+to a particular register: <code class="docutils literal notranslate"><span class="pre">reg_a</span> <span class="pre">=</span> <span class="pre">mcu_registers.peripheral_a.reg_a</span></code>.</p></li>
+<li><p>Avoid other non-scalar data, like arrays. For example, instead of
+<code class="docutils literal notranslate"><span class="pre">peripheral_a.register[0]</span></code> use <code class="docutils literal notranslate"><span class="pre">peripheral_a.register0</span></code>. Again,
+an alternative is to cache intermediate values, e.g.
+<code class="docutils literal notranslate"><span class="pre">register0</span> <span class="pre">=</span> <span class="pre">peripheral_a.register[0]</span></code>.</p></li>
+</ul>
+<p>2. Range of offsets supported by the <code class="docutils literal notranslate"><span class="pre">uctypes</span></code> module is limited.
+The exact range supported is considered an implementation detail,
+and the general suggestion is to split structure definitions to
+cover from a few kilobytes to a few dozen of kilobytes maximum.
+In most cases, this is a natural situation anyway, e.g. it doesn’t make
+sense to define all registers of an MCU (spread over 32-bit address
+space) in one structure, but rather a peripheral block by peripheral
+block. In some extreme cases, you may need to split a structure in
+several parts artificially (e.g. if accessing native data structure
+with multi-megabyte array in the middle, though that would be a very
+synthetic case).</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="network.LAN.html" class="btn btn-neutral float-left" title="class LAN – control an Ethernet module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mutex.html" class="btn btn-neutral float-right" title="mutex — mutex module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 01 Dec 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The MicroPython Interactive Interpreter Mode (aka REPL) &mdash; MicroPython 1.20 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=6b422e2e"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="MicroPython remote control: mpremote" href="mpremote.html" />
+    <link rel="prev" title="Glossary" href="glossary.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.20
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython language and implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">The MicroPython Interactive Interpreter Mode (aka REPL)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#auto-indent">Auto-indent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#auto-completion">Auto-completion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#interrupting-a-running-program">Interrupting a running program</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#paste-mode">Paste mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#soft-reset">Soft reset</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#the-special-variable-underscore">The special variable _ (underscore)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#raw-mode-and-raw-paste-mode">Raw mode and raw-paste mode</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython remote control: mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="isr_rules.html">Writing interrupt handlers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">Maximising MicroPython speed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">MicroPython on microcontrollers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython manifest files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython language and implementation</a></li>
+      <li class="breadcrumb-item active">The MicroPython Interactive Interpreter Mode (aka REPL)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/repl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="the-micropython-interactive-interpreter-mode-aka-repl">
+<h1>The MicroPython Interactive Interpreter Mode (aka REPL)<a class="headerlink" href="#the-micropython-interactive-interpreter-mode-aka-repl" title="Permalink to this heading">¶</a></h1>
+<p>This section covers some characteristics of the MicroPython Interactive
+Interpreter Mode. A commonly used term for this is REPL (read-eval-print-loop)
+which will be used to refer to this interactive prompt.</p>
+<section id="auto-indent">
+<h2>Auto-indent<a class="headerlink" href="#auto-indent" title="Permalink to this heading">¶</a></h2>
+<p>When typing python statements which end in a colon (for example if, for, while)
+then the prompt will change to three dots (…) and the cursor will be indented
+by 4 spaces. When you press return, the next line will continue at the same
+level of indentation for regular statements or an additional level of indentation
+where appropriate. If you press the backspace key then it will undo one
+level of indentation.</p>
+<p>If your cursor is all the way back at the beginning, pressing RETURN will then
+execute the code that you’ve entered. The following shows what you’d see
+after entering a for statement (the underscore shows where the cursor winds up):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="n">_</span>
+</pre></div>
+</div>
+<p>If you then enter an if statement, an additional level of indentation will be
+provided:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">_</span>
+</pre></div>
+</div>
+<p>Now enter <code class="docutils literal notranslate"><span class="pre">break</span></code> followed by RETURN and press BACKSPACE:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">break</span>
+<span class="gp">... </span>    <span class="n">_</span>
+</pre></div>
+</div>
+<p>Finally type <code class="docutils literal notranslate"><span class="pre">print(i)</span></code>, press RETURN, press BACKSPACE and press RETURN again:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">break</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">0</span>
+<span class="go">1</span>
+<span class="go">2</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Auto-indent won’t be applied if the previous two lines were all spaces.  This
+means that you can finish entering a compound statement by pressing RETURN
+twice, and then a third press will finish and execute.</p>
+</section>
+<section id="auto-completion">
+<h2>Auto-completion<a class="headerlink" href="#auto-completion" title="Permalink to this heading">¶</a></h2>
+<p>While typing a command at the REPL, if the line typed so far corresponds to
+the beginning of the name of something, then pressing TAB will show
+possible things that could be entered. For example, first import the machine
+module by entering <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">machine</span></code> and pressing RETURN.
+Then type <code class="docutils literal notranslate"><span class="pre">m</span></code> and press TAB and it should expand to <code class="docutils literal notranslate"><span class="pre">machine</span></code>.
+Enter a dot <code class="docutils literal notranslate"><span class="pre">.</span></code> and press TAB again. You should see something like:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">machine</span><span class="o">.</span>
+<span class="go">__name__        info            unique_id       reset</span>
+<span class="go">bootloader      freq            rng             idle</span>
+<span class="go">sleep           deepsleep       disable_irq     enable_irq</span>
+<span class="go">Pin</span>
+</pre></div>
+</div>
+<p>The word will be expanded as much as possible until multiple possibilities exist.
+For example, type <code class="docutils literal notranslate"><span class="pre">machine.Pin.AF3</span></code> and press TAB and it will expand to
+<code class="docutils literal notranslate"><span class="pre">machine.Pin.AF3_TIM</span></code>. Pressing TAB a second time will show the possible
+expansions:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">machine</span><span class="o">.</span><span class="n">Pin</span><span class="o">.</span><span class="n">AF3_TIM</span>
+<span class="go">AF3_TIM10       AF3_TIM11       AF3_TIM8        AF3_TIM9</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">machine</span><span class="o">.</span><span class="n">Pin</span><span class="o">.</span><span class="n">AF3_TIM</span>
+</pre></div>
+</div>
+</section>
+<section id="interrupting-a-running-program">
+<h2>Interrupting a running program<a class="headerlink" href="#interrupting-a-running-program" title="Permalink to this heading">¶</a></h2>
+<p>You can interrupt a running program by pressing Ctrl-C. This will raise a KeyboardInterrupt
+which will bring you back to the REPL, providing your program doesn’t intercept the
+KeyboardInterrupt exception.</p>
+<p>For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000000</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+<span class="gp">...</span>
+<span class="go">0</span>
+<span class="go">1</span>
+<span class="go">2</span>
+<span class="go">3</span>
+<span class="go">...</span>
+<span class="go">6466</span>
+<span class="go">6467</span>
+<span class="go">6468</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">2</span>, in <span class="n">&lt;module&gt;</span>
+<span class="gr">KeyboardInterrupt</span><span class="w">:</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="paste-mode">
+<h2>Paste mode<a class="headerlink" href="#paste-mode" title="Permalink to this heading">¶</a></h2>
+<p>If you want to paste some code into your terminal window, the auto-indent feature
+will mess things up. For example, if you had the following python code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;This is a test to show paste mode&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Here is a second line&#39;</span><span class="p">)</span>
+<span class="n">foo</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>and you try to paste this into the normal REPL, then you will see something like
+this:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">foo</span><span class="p">():</span>
+<span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;This is a test to show paste mode&#39;</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Here is a second line&#39;</span><span class="p">)</span>
+<span class="gp">... </span>            <span class="n">foo</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gt">Traceback (most recent call last):</span>
+  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">3</span>
+<span class="gr">IndentationError</span>: <span class="n">unexpected indent</span>
+</pre></div>
+</div>
+<p>If you press Ctrl-E, then you will enter paste mode, which essentially turns off
+the auto-indent feature, and changes the prompt from <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> to <code class="docutils literal notranslate"><span class="pre">===</span></code>. For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt;</span>
+<span class="go">paste mode; Ctrl-C to cancel, Ctrl-D to finish</span>
+<span class="go">=== def foo():</span>
+<span class="go">===     print(&#39;This is a test to show paste mode&#39;)</span>
+<span class="go">===     print(&#39;Here is a second line&#39;)</span>
+<span class="go">=== foo()</span>
+<span class="go">===</span>
+<span class="go">This is a test to show paste mode</span>
+<span class="go">Here is a second line</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Paste Mode allows blank lines to be pasted. The pasted text is compiled as if
+it were a file. Pressing Ctrl-D exits paste mode and initiates the compilation.</p>
+</section>
+<section id="soft-reset">
+<h2>Soft reset<a class="headerlink" href="#soft-reset" title="Permalink to this heading">¶</a></h2>
+<p>A soft reset will reset the python interpreter, but tries not to reset the
+method by which you’re connected to the MicroPython board (USB-serial, or Wifi).</p>
+<p>You can perform a soft reset from the REPL by pressing Ctrl-D, or from your python
+code by executing:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">machine</span><span class="o">.</span><span class="n">soft_reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>For example, if you reset your MicroPython board, and you execute a dir()
+command, you’d see something like this:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">()</span>
+<span class="go">[&#39;__name__&#39;, &#39;pyb&#39;]</span>
+</pre></div>
+</div>
+<p>Now create some variables and repeat the dir() command:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">j</span> <span class="o">=</span> <span class="mi">23</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;abc&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">()</span>
+<span class="go">[&#39;j&#39;, &#39;x&#39;, &#39;__name__&#39;, &#39;pyb&#39;, &#39;i&#39;]</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+<p>Now if you enter Ctrl-D, and repeat the dir() command, you’ll see that your
+variables no longer exist:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">MPY</span><span class="p">:</span> <span class="n">sync</span> <span class="n">filesystems</span>
+<span class="n">MPY</span><span class="p">:</span> <span class="n">soft</span> <span class="n">reboot</span>
+<span class="n">MicroPython</span> <span class="n">v1</span><span class="mf">.5</span><span class="o">-</span><span class="mi">51</span><span class="o">-</span><span class="n">g6f70283</span><span class="o">-</span><span class="n">dirty</span> <span class="n">on</span> <span class="mi">2015</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mi">30</span><span class="p">;</span> <span class="n">PYBv1</span><span class="mf">.0</span> <span class="k">with</span> <span class="n">STM32F405RG</span>
+<span class="n">Type</span> <span class="s2">&quot;help()&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="nb">dir</span><span class="p">()</span>
+<span class="p">[</span><span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="s1">&#39;pyb&#39;</span><span class="p">]</span>
+<span class="o">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="the-special-variable-underscore">
+<h2>The special variable _ (underscore)<a class="headerlink" href="#the-special-variable-underscore" title="Permalink to this heading">¶</a></h2>
+<p>When you use the REPL, you may perform computations and see the results.
+MicroPython stores the results of the previous statement in the variable _ (underscore).
+So you can use the underscore to save the result in a variable. For example:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">5</span>
+<span class="go">15</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">_</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+<span class="go">15</span>
+<span class="gp">&gt;&gt;&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="raw-mode-and-raw-paste-mode">
+<h2>Raw mode and raw-paste mode<a class="headerlink" href="#raw-mode-and-raw-paste-mode" title="Permalink to this heading">¶</a></h2>
+<p>Raw mode (also called raw REPL) is not something that a person would normally use.
+It is intended for programmatic use and essentially behaves like paste mode with
+echo turned off, and with optional flow control.</p>
+<p>Raw mode is entered using Ctrl-A. You then send your python code, followed by
+a Ctrl-D. The Ctrl-D will be acknowledged by ‘OK’ and then the python code will
+be compiled and executed. Any output (or errors) will be sent back. Entering
+Ctrl-B will leave raw mode and return the the regular (aka friendly) REPL.</p>
+<p>Raw-paste mode is an additional mode within the raw REPL that includes flow control,
+and which compiles code as it receives it. This makes it more robust for high-speed
+transfer of code into the device, and it also uses less RAM when receiving because
+it does not need to store a verbatim copy of the code before compiling (unlike
+standard raw mode).</p>
+<p>Raw-paste mode uses the following protocol:</p>
+<ol class="arabic simple">
+<li><p>Enter raw REPL as usual via ctrl-A.</p></li>
+<li><p>Write 3 bytes: <code class="docutils literal notranslate"><span class="pre">b&quot;\x05A\x01&quot;</span></code> (ie ctrl-E then “A” then ctrl-A).</p></li>
+<li><p>Read 2 bytes to determine if the device entered raw-paste mode:</p>
+<ul class="simple">
+<li><p>If the result is <code class="docutils literal notranslate"><span class="pre">b&quot;R\x00&quot;</span></code> then the device understands the command but
+doesn’t support raw paste.</p></li>
+<li><p>If the result is <code class="docutils literal notranslate"><span class="pre">b&quot;R\x01&quot;</span></code> then the device does support raw paste and
+has entered this mode.</p></li>
+<li><p>Otherwise the result should be <code class="docutils literal notranslate"><span class="pre">b&quot;ra&quot;</span></code> and the device doesn’t support raw
+paste and the string <code class="docutils literal notranslate"><span class="pre">b&quot;w</span> <span class="pre">REPL;</span> <span class="pre">CTRL-B</span> <span class="pre">to</span> <span class="pre">exit\r\n&gt;&quot;</span></code> should be read and
+discarded.</p></li>
+</ul>
+</li>
+<li><p>If the device is in raw-paste mode then continue, otherwise fallback to
+standard raw mode.</p></li>
+<li><p>Read 2 bytes, this is the flow control window-size-increment (in bytes)
+stored as a 16-bit unsigned little endian integer.  The initial value for the
+remaining-window-size variable should be set to this number.</p></li>
+<li><p>Write out the code to the device:</p>
+<ul class="simple">
+<li><p>While there are bytes to send, write up to the remaining-window-size worth
+of bytes, and decrease the remaining-window-size by the number of bytes
+written.</p></li>
+<li><p>If the remaining-window-size is 0, or there is a byte waiting to read, read
+1 byte.  If this byte is <code class="docutils literal notranslate"><span class="pre">b&quot;\x01&quot;</span></code> then increase the remaining-window-size
+by the window-size-increment from step 5.  If this byte is <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code> then
+the device wants to end the data reception, and <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code> should be
+written to the device and no more code sent after that.  (Note: if there is
+a byte waiting to be read from the device then it does not need to be read
+and acted upon immediately, the device will continue to consume incoming
+bytes as long as reamining-window-size is greater than 0.)</p></li>
+</ul>
+</li>
+<li><p>When all code has been written to the device, write <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code> to indicate
+end-of-data.</p></li>
+<li><p>Read from the device until <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code> is received.  At this point the device
+has received and compiled all of the code that was sent and is executing it.</p></li>
+<li><p>The device outputs any characters produced by the executing code.  When (if)
+the code finishes <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code> will be output, followed by any exception that
+was uncaught, followed again by <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code>.  It then goes back to the
+standard raw REPL and outputs <code class="docutils literal notranslate"><span class="pre">b&quot;&gt;&quot;</span></code>.</p></li>
+</ol>
+<p>For example, starting at a new line at the normal (friendly) REPL, if you write:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x05</span><span class="s2">A</span><span class="se">\x01</span><span class="s2">print(123)</span><span class="se">\x04</span><span class="s2">&quot;</span>
+</pre></div>
+</div>
+<p>Then the device will respond with something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">raw REPL; CTRL-B to exit</span><span class="se">\r\n</span><span class="s2">&gt;R</span><span class="se">\x01\x80\x00\x01\x04</span><span class="s2">123</span><span class="se">\r\n\x04\x04</span><span class="s2">&gt;&quot;</span>
+</pre></div>
+</div>
+<p>Broken down over time this looks like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Step 1: enter raw REPL</span>
+<span class="n">write</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01</span><span class="s2">&quot;</span>
+<span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">raw REPL; CTRL-B to exit</span><span class="se">\r\n</span><span class="s2">&gt;&quot;</span>
+
+<span class="c1"># Step 2-5: enter raw-paste mode</span>
+<span class="n">write</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x05</span><span class="s2">A</span><span class="se">\x01</span><span class="s2">&quot;</span>
+<span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;R</span><span class="se">\x01\x80\x00\x01</span><span class="s2">&quot;</span>
+
+<span class="c1"># Step 6-8: write out code</span>
+<span class="n">write</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;print(123)</span><span class="se">\x04</span><span class="s2">&quot;</span>
+<span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x04</span><span class="s2">&quot;</span>
+
+<span class="c1"># Step 9: code executes and result is read</span>
+<span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;123</span><span class="se">\r\n\x04\x04</span><span class="s2">&gt;&quot;</span>
+</pre></div>
+</div>
+<p>In this case the flow control window-size-increment is 128 and there are two
+windows worth of data immediately available at the start, one from the initial
+window-size-increment value and one from the explicit <code class="docutils literal notranslate"><span class="pre">b&quot;\x01&quot;</span></code> value that
+is sent.  So this means up to 256 bytes can be written to begin with before
+waiting or checking for more incoming flow-control characters.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">tools/pyboard.py</span></code> program uses the raw REPL, including raw-paste mode, to
+execute Python code on a MicroPython-enabled board.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="glossary.html" class="btn btn-neutral float-left" title="Glossary" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="mpremote.html" class="btn btn-neutral float-right" title="MicroPython remote control: mpremote" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 01 Dec 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

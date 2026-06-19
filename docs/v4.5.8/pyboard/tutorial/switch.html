@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>5. Switches, callbacks and interrupts &mdash; MicroPython 1.22 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=f8c2205d"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.22
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active"><span class="section-number">5. </span>Switches, callbacks and interrupts</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/pyboard/tutorial/switch.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="switches-callbacks-and-interrupts">
+<span id="pyboard-tutorial-switch"></span><h1><span class="section-number">5. </span>Switches, callbacks and interrupts<a class="headerlink" href="#switches-callbacks-and-interrupts" title="Permalink to this heading">¶</a></h1>
+<p>The pyboard has 2 small switches, labelled USR and RST.  The RST switch
+is a hard-reset switch, and if you press it then it restarts the pyboard
+from scratch, equivalent to turning the power off then back on.</p>
+<p>The USR switch is for general use, and is controlled via a Switch object.
+To make a switch object do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Switch</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Remember that you may need to type <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">pyb</span></code> if you get an error that
+the name <code class="docutils literal notranslate"><span class="pre">pyb</span></code> does not exist.</p>
+<p>With the switch object you can get its status:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span><span class="o">.</span><span class="n">value</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<p>This will print <code class="docutils literal notranslate"><span class="pre">False</span></code> if the switch is not held, or <code class="docutils literal notranslate"><span class="pre">True</span></code> if it is held.
+Try holding the USR switch down while running the above command.</p>
+<p>There is also a shorthand notation to get the switch status, by “calling” the
+switch object:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span><span class="p">()</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+<section id="switch-callbacks">
+<h2><span class="section-number">5.1. </span>Switch callbacks<a class="headerlink" href="#switch-callbacks" title="Permalink to this heading">¶</a></h2>
+<p>The switch is a very simple object, but it does have one advanced feature:
+the <code class="docutils literal notranslate"><span class="pre">sw.callback()</span></code> function.  The callback function sets up something to
+run when the switch is pressed, and uses an interrupt.  It’s probably best
+to start with an example before understanding how interrupts work.  Try
+running the following at the prompt:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;press!&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This tells the switch to print <code class="docutils literal notranslate"><span class="pre">press!</span></code> each time the switch is pressed
+down.  Go ahead and try it: press the USR switch and watch the output on
+your PC.  Note that this print will interrupt anything you are typing, and
+is an example of an interrupt routine running asynchronously.</p>
+<p>As another example try:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span><span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toggle</span><span class="p">())</span>
+</pre></div>
+</div>
+<p>This will toggle the red LED each time the switch is pressed.  And it will
+even work while other code is running.</p>
+<p>To disable the switch callback, pass <code class="docutils literal notranslate"><span class="pre">None</span></code> to the callback function:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can pass any function (that takes zero arguments) to the switch callback.
+Above we used the <code class="docutils literal notranslate"><span class="pre">lambda</span></code> feature of Python to create an anonymous function
+on the fly.  But we could equally do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+<span class="gp">... </span>  <span class="n">pyb</span><span class="o">.</span><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">toggle</span><span class="p">()</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sw</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This creates a function called <code class="docutils literal notranslate"><span class="pre">f</span></code> and assigns it to the switch callback.
+You can do things this way when your function is more complicated than a
+<code class="docutils literal notranslate"><span class="pre">lambda</span></code> will allow.</p>
+<p>Note that your callback functions must not allocate any memory (for example
+they cannot create a tuple or list).  Callback functions should be relatively
+simple.  If you need to make a list, make it beforehand and store it in a
+global variable (or make it local and close over it).  If you need to do
+a long, complicated calculation, then use the callback to set a flag which
+some other code then responds to.</p>
+</section>
+<section id="technical-details-of-interrupts">
+<h2><span class="section-number">5.2. </span>Technical details of interrupts<a class="headerlink" href="#technical-details-of-interrupts" title="Permalink to this heading">¶</a></h2>
+<p>Let’s step through the details of what is happening with the switch
+callback.  When you register a function with <code class="docutils literal notranslate"><span class="pre">sw.callback()</span></code>, the switch
+sets up an external interrupt trigger (falling edge) on the pin that the
+switch is connected to.  This means that the microcontroller will listen
+on the pin for any changes, and the following will occur:</p>
+<ol class="arabic simple">
+<li><p>When the switch is pressed a change occurs on the pin (the pin goes
+from low to high), and the microcontroller registers this change.</p></li>
+<li><p>The microcontroller finishes executing the current machine instruction,
+stops execution, and saves its current state (pushes the registers on
+the stack).  This has the effect of pausing any code, for example your
+running Python script.</p></li>
+<li><p>The microcontroller starts executing the special interrupt handler
+associated with the switch’s external trigger.  This interrupt handler
+gets the function that you registered with <code class="docutils literal notranslate"><span class="pre">sw.callback()</span></code> and executes
+it.</p></li>
+<li><p>Your callback function is executed until it finishes, returning control
+to the switch interrupt handler.</p></li>
+<li><p>The switch interrupt handler returns, and the microcontroller is
+notified that the interrupt has been dealt with.</p></li>
+<li><p>The microcontroller restores the state that it saved in step 2.</p></li>
+<li><p>Execution continues of the code that was running at the beginning.  Apart
+from the pause, this code does not notice that it was interrupted.</p></li>
+</ol>
+<p>The above sequence of events gets a bit more complicated when multiple
+interrupts occur at the same time.  In that case, the interrupt with the
+highest priority goes first, then the others in order of their priority.
+The switch interrupt is set at the lowest priority.</p>
+</section>
+<section id="further-reading">
+<h2><span class="section-number">5.3. </span>Further reading<a class="headerlink" href="#further-reading" title="Permalink to this heading">¶</a></h2>
+<p>For further information about using hardware interrupts see
+<a class="reference internal" href="../../reference/isr_rules.html#isr-rules"><span class="std std-ref">writing interrupt handlers</span></a>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2024, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 05 Mar 2024.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

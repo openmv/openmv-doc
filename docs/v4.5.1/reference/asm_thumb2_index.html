@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inline assembler for Thumb2 architectures &mdash; MicroPython 1.20 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=6b422e2e"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="1. Register move instructions" href="asm_thumb2_mov.html" />
+    <link rel="prev" title="Package management" href="packages.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.20
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython language and implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="repl.html">The MicroPython Interactive Interpreter Mode (aka REPL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython remote control: mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="isr_rules.html">Writing interrupt handlers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">Maximising MicroPython speed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">MicroPython on microcontrollers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython manifest files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Inline assembler for Thumb2 architectures</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#document-conventions">Document conventions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#instruction-categories">Instruction categories</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_mov.html">1. Register move instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_ldr.html">2. Load register from memory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_str.html">3. Store register to memory</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_logical_bit.html">4. Logical &amp; bitwise instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_arith.html">5. Arithmetic instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_compare.html">6. Comparison instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_label_branch.html">7. Branch instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_stack.html">8. Stack push and pop</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_misc.html">9. Miscellaneous instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_float.html">10. Floating point instructions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_directives.html">11. Assembler directives</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#usage-examples">Usage examples</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="asm_thumb2_hints_tips.html">1. Hints and tips</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#references">References</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem.html">Working with filesystems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython language and implementation</a></li>
+      <li class="breadcrumb-item active">Inline assembler for Thumb2 architectures</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/asm_thumb2_index.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="inline-assembler-for-thumb2-architectures">
+<span id="asm-thumb2-index"></span><h1>Inline assembler for Thumb2 architectures<a class="headerlink" href="#inline-assembler-for-thumb2-architectures" title="Permalink to this heading">¶</a></h1>
+<p>This document assumes some familiarity with assembly language programming.
+For a detailed description of the instruction set consult the
+Architecture Reference Manual detailed below.
+The inline assembler supports a subset of the ARM Thumb-2 instruction set described here. The syntax tries
+to be as close as possible to that defined in the above ARM manual, converted to Python function calls.</p>
+<p>Instructions operate on 32 bit signed integer data except where stated otherwise. Most supported instructions
+operate on registers <code class="docutils literal notranslate"><span class="pre">R0-R7</span></code> only: where <code class="docutils literal notranslate"><span class="pre">R8-R15</span></code> are supported this is stated. Registers <code class="docutils literal notranslate"><span class="pre">R8-R12</span></code> must be
+restored to their initial value before return from a function. Registers <code class="docutils literal notranslate"><span class="pre">R13-R15</span></code> constitute the Link Register,
+Stack Pointer and Program Counter respectively.</p>
+<section id="document-conventions">
+<h2>Document conventions<a class="headerlink" href="#document-conventions" title="Permalink to this heading">¶</a></h2>
+<p>Where possible the behaviour of each instruction is described in Python, for example</p>
+<ul class="simple">
+<li><p>add(Rd, Rn, Rm) <code class="docutils literal notranslate"><span class="pre">Rd</span> <span class="pre">=</span> <span class="pre">Rn</span> <span class="pre">+</span> <span class="pre">Rm</span></code></p></li>
+</ul>
+<p>This enables the effect of instructions to be demonstrated in Python. In certain case this is impossible
+because Python doesn’t support concepts such as indirection. The pseudocode employed in such cases is
+described on the relevant page.</p>
+</section>
+<section id="instruction-categories">
+<h2>Instruction categories<a class="headerlink" href="#instruction-categories" title="Permalink to this heading">¶</a></h2>
+<p>The following sections details the subset of the ARM Thumb-2 instruction set supported by MicroPython.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_mov.html">1. Register move instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_ldr.html">2. Load register from memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_str.html">3. Store register to memory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_logical_bit.html">4. Logical &amp; bitwise instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_arith.html">5. Arithmetic instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_compare.html">6. Comparison instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_label_branch.html">7. Branch instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_stack.html">8. Stack push and pop</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_misc.html">9. Miscellaneous instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_float.html">10. Floating point instructions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_directives.html">11. Assembler directives</a></li>
+</ul>
+</div>
+</section>
+<section id="usage-examples">
+<h2>Usage examples<a class="headerlink" href="#usage-examples" title="Permalink to this heading">¶</a></h2>
+<p>These sections provide further code examples and hints on the use of the assembler.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="asm_thumb2_hints_tips.html">1. Hints and tips</a></li>
+</ul>
+</div>
+</section>
+<section id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="http://wiki.micropython.org/platforms/boards/pyboard/assembler">Wiki hints and tips</a></p></li>
+<li><p><a class="reference external" href="https://github.com/micropython/micropython/blob/master/py/emitinlinethumb.c">uPy Inline Assembler source-code,
+emitinlinethumb.c</a></p></li>
+<li><p><a class="reference external" href="http://infocenter.arm.com/help/topic/com.arm.doc.qrc0001l/QRC0001_UAL.pdf">ARM Thumb2 Instruction Set Quick Reference
+Card</a></p></li>
+<li><p><a class="reference external" href="http://www.google.ae/url?sa=t&amp;rct=j&amp;q=&amp;esrc=s&amp;source=web&amp;cd=1&amp;cad=rja&amp;uact=8&amp;sqi=2&amp;ved=0CBoQFjAA&amp;url=http%3A%2F%2Fwww.st.com%2Fst-web-ui%2Fstatic%2Factive%2Fen%2Fresource%2Ftechnical%2Fdocument%2Freference_manual%2FDM00031020.pdf&amp;ei=G0rSU66xFeuW0QWYwoD4CQ&amp;usg=AFQjCNFuW6TgzE4QpahO_U7g3f3wdwecAg&amp;sig2=iET-R0y9on_Pbflzf9aYDw&amp;bvm=bv.71778758,bs.1,d.bGQ">RM0090 Reference
+Manual</a></p></li>
+<li><p>ARM v7-M Architecture Reference Manual (Available on the
+ARM site after a simple registration procedure. Also available on academic sites but beware of out of date versions.)</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="packages.html" class="btn btn-neutral float-left" title="Package management" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="asm_thumb2_mov.html" class="btn btn-neutral float-right" title="1. Register move instructions" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 01 Dec 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

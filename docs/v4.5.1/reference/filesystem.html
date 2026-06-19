@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Working with filesystems &mdash; MicroPython 1.20 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=6b422e2e"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The pyboard.py tool" href="pyboard.py.html" />
+    <link rel="prev" title="1. Hints and tips" href="asm_thumb2_hints_tips.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.20
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython language and implementation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">Glossary</a></li>
+<li class="toctree-l2"><a class="reference internal" href="repl.html">The MicroPython Interactive Interpreter Mode (aka REPL)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython remote control: mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="isr_rules.html">Writing interrupt handlers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">Maximising MicroPython speed</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">MicroPython on microcontrollers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython manifest files</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">Package management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">Inline assembler for Thumb2 architectures</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Working with filesystems</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vfs">VFS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#block-devices">Block devices</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#built-in-block-devices">Built-in block devices</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#custom-block-devices">Custom block devices</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#filesystems">Filesystems</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#fat">FAT</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#littlefs">Littlefs</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hybrid-stm32">Hybrid (STM32)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#hybrid-esp32">Hybrid (ESP32)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pyboard.py.html">The pyboard.py tool</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../genrst/index.html">MicroPython differences from CPython</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython language and implementation</a></li>
+      <li class="breadcrumb-item active">Working with filesystems</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/filesystem.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="working-with-filesystems">
+<span id="filesystem"></span><h1><a class="toc-backref" href="#id2" role="doc-backlink">Working with filesystems</a><a class="headerlink" href="#working-with-filesystems" title="Permalink to this heading">¶</a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#working-with-filesystems" id="id2">Working with filesystems</a></p>
+<ul>
+<li><p><a class="reference internal" href="#vfs" id="id3">VFS</a></p></li>
+<li><p><a class="reference internal" href="#block-devices" id="id4">Block devices</a></p>
+<ul>
+<li><p><a class="reference internal" href="#built-in-block-devices" id="id5">Built-in block devices</a></p>
+<ul>
+<li><p><a class="reference internal" href="#stm32-pyboard-openmv-cam" id="id6">STM32 / Pyboard / OpenMV Cam</a></p></li>
+<li><p><a class="reference internal" href="#esp8266" id="id7">ESP8266</a></p></li>
+<li><p><a class="reference internal" href="#esp32" id="id8">ESP32</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#custom-block-devices" id="id9">Custom block devices</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#filesystems" id="id10">Filesystems</a></p>
+<ul>
+<li><p><a class="reference internal" href="#fat" id="id11">FAT</a></p></li>
+<li><p><a class="reference internal" href="#littlefs" id="id12">Littlefs</a></p></li>
+<li><p><a class="reference internal" href="#hybrid-stm32" id="id13">Hybrid (STM32)</a></p></li>
+<li><p><a class="reference internal" href="#hybrid-esp32" id="id14">Hybrid (ESP32)</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<p>This tutorial describes how MicroPython provides an on-device filesystem,
+allowing standard Python file I/O methods to be used with persistent storage.</p>
+<p>MicroPython automatically creates a default configuration and auto-detects the
+primary filesystem, so this tutorial will be mostly useful if you want to modify
+the partitioning, filesystem type, or use custom block devices.</p>
+<p>The filesystem is typically backed by internal flash memory on the device, but
+can also use external flash, RAM, or a custom block device.</p>
+<p>On some ports (e.g. STM32), the filesystem may also be available over USB MSC to
+a host PC. <a class="reference internal" href="pyboard.py.html#pyboard-py"><span class="std std-ref">The pyboard.py tool</span></a> also provides a way for the host PC to access to
+the filesystem on all ports.</p>
+<p>Note: This is mainly for use on bare-metal ports like STM32 and ESP32. On ports
+with an operating system (e.g. the Unix port) the filesystem is provided by the
+host OS.</p>
+<section id="vfs">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">VFS</a><a class="headerlink" href="#vfs" title="Permalink to this heading">¶</a></h2>
+<p>MicroPython implements a Unix-like Virtual File System (VFS) layer. All mounted
+filesystems are combined into a single virtual filesystem, starting at the root
+<code class="docutils literal notranslate"><span class="pre">/</span></code>. Filesystems are mounted into directories in this structure, and at
+startup the working directory is changed to where the primary filesystem is
+mounted.</p>
+<p>On STM32 / Pyboard, the internal flash is mounted at <code class="docutils literal notranslate"><span class="pre">/flash</span></code>, and optionally
+the SDCard at <code class="docutils literal notranslate"><span class="pre">/sd</span></code>. On ESP8266/ESP32, the primary filesystem is mounted at
+<code class="docutils literal notranslate"><span class="pre">/</span></code>. On the OpenMV Cam the internal flash is mounted at <code class="docutils literal notranslate"><span class="pre">/</span></code> unless an SDCard
+is installed which will be moutned at <code class="docutils literal notranslate"><span class="pre">/</span></code> instead.</p>
+</section>
+<section id="block-devices">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Block devices</a><a class="headerlink" href="#block-devices" title="Permalink to this heading">¶</a></h2>
+<p>A block device is an instance of a class that implements the
+<a class="reference internal" href="../library/os.html#os.AbstractBlockDev" title="os.AbstractBlockDev"><code class="xref py py-class docutils literal notranslate"><span class="pre">os.AbstractBlockDev</span></code></a> protocol.</p>
+<section id="built-in-block-devices">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Built-in block devices</a><a class="headerlink" href="#built-in-block-devices" title="Permalink to this heading">¶</a></h3>
+<p>Ports provide built-in block devices to access their primary flash.</p>
+<p>On power-on, MicroPython will attempt to detect the filesystem on the default
+flash and configure and mount it automatically. If no filesystem is found,
+MicroPython will attempt to create a FAT filesystem spanning the entire flash.
+Ports can also provide a mechanism to “factory reset” the primary flash, usually
+by some combination of button presses at power on.</p>
+<section id="stm32-pyboard-openmv-cam">
+<h4><a class="toc-backref" href="#id6" role="doc-backlink">STM32 / Pyboard / OpenMV Cam</a><a class="headerlink" href="#stm32-pyboard-openmv-cam" title="Permalink to this heading">¶</a></h4>
+<p>The <a class="reference internal" href="../library/pyb.Flash.html#pyb-flash"><span class="std std-ref">pyb.Flash</span></a> class provides access to the internal flash. On some
+boards which have larger external flash (e.g. Pyboard D), it will use that
+instead. The <code class="docutils literal notranslate"><span class="pre">start</span></code> kwarg should always be specified, i.e.
+<code class="docutils literal notranslate"><span class="pre">pyb.Flash(start=0)</span></code>.</p>
+<p>Note: For backwards compatibility, when constructed with no arguments (i.e.
+<code class="docutils literal notranslate"><span class="pre">pyb.Flash()</span></code>), it only implements the simple block interface and reflects the
+virtual device presented to USB MSC (i.e. it includes a virtual partition table
+at the start).</p>
+</section>
+<section id="esp8266">
+<h4><a class="toc-backref" href="#id7" role="doc-backlink">ESP8266</a><a class="headerlink" href="#esp8266" title="Permalink to this heading">¶</a></h4>
+<p>The internal flash is exposed as a block device object which is created in the
+<code class="docutils literal notranslate"><span class="pre">flashbdev</span></code> module on start up. This object is by default added as a global
+variable so it can usually be accessed simply as <code class="docutils literal notranslate"><span class="pre">bdev</span></code>. This implements the
+extended interface.</p>
+</section>
+<section id="esp32">
+<h4><a class="toc-backref" href="#id8" role="doc-backlink">ESP32</a><a class="headerlink" href="#esp32" title="Permalink to this heading">¶</a></h4>
+<p>The <code class="xref py py-class docutils literal notranslate"><span class="pre">esp32.Partition</span></code> class implements a block device for partitions
+defined for the board. Like ESP8266, there is a global variable <code class="docutils literal notranslate"><span class="pre">bdev</span></code> which
+points to the default partition. This implements the extended interface.</p>
+</section>
+</section>
+<section id="custom-block-devices">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Custom block devices</a><a class="headerlink" href="#custom-block-devices" title="Permalink to this heading">¶</a></h3>
+<p>The following class implements a simple block device that stores its data in
+RAM using a <code class="docutils literal notranslate"><span class="pre">bytearray</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RAMBlockDev</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">num_blocks</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="n">block_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">block_size</span> <span class="o">*</span> <span class="n">num_blocks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">readblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_num</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)):</span>
+            <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">block_num</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">writeblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_num</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">block_num</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">ioctl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># get number of blocks</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span> <span class="c1"># get block size</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+</pre></div>
+</div>
+<p>It can be used as follows:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">bdev</span> <span class="o">=</span> <span class="n">RAMBlockDev</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsFat</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">bdev</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">bdev</span><span class="p">,</span> <span class="s1">&#39;/ramdisk&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>An example of a block device that supports both the simple and extended
+interface (i.e. both signatures and behaviours of the
+<a class="reference internal" href="../library/os.html#os.AbstractBlockDev.readblocks" title="os.AbstractBlockDev.readblocks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">os.AbstractBlockDev.readblocks()</span></code></a> and
+<a class="reference internal" href="../library/os.html#os.AbstractBlockDev.writeblocks" title="os.AbstractBlockDev.writeblocks"><code class="xref py py-meth docutils literal notranslate"><span class="pre">os.AbstractBlockDev.writeblocks()</span></code></a> methods) is:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">RAMBlockDev</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_size</span><span class="p">,</span> <span class="n">num_blocks</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="n">block_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">block_size</span> <span class="o">*</span> <span class="n">num_blocks</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">readblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_num</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="n">block_num</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">+</span> <span class="n">offset</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)):</span>
+            <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">addr</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">writeblocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_num</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">offset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># do erase, then write</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="n">block_num</span> <span class="o">+</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">addr</span> <span class="o">=</span> <span class="n">block_num</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">+</span> <span class="n">offset</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">addr</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">ioctl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">op</span><span class="p">,</span> <span class="n">arg</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span> <span class="c1"># block count</span>
+            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span> <span class="c1"># block size</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span>
+        <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span> <span class="c1"># block erase</span>
+            <span class="k">return</span> <span class="mi">0</span>
+</pre></div>
+</div>
+<p>As it supports the extended interface, it can be used with <a class="reference internal" href="../library/os.html#os.VfsLfs2" title="os.VfsLfs2"><code class="xref py py-class docutils literal notranslate"><span class="pre">littlefs</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="n">bdev</span> <span class="o">=</span> <span class="n">RAMBlockDev</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsLfs2</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">bdev</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">bdev</span><span class="p">,</span> <span class="s1">&#39;/ramdisk&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once mounted, the filesystem (regardless of its type) can be used as it
+normally would be used from Python code, for example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;/ramdisk/hello.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;Hello world&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="s1">&#39;/ramdisk/hello.txt&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="filesystems">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Filesystems</a><a class="headerlink" href="#filesystems" title="Permalink to this heading">¶</a></h2>
+<p>MicroPython ports can provide implementations of <a class="reference internal" href="../library/os.html#os.VfsFat" title="os.VfsFat"><code class="xref py py-class docutils literal notranslate"><span class="pre">FAT</span></code></a>,
+<a class="reference internal" href="../library/os.html#os.VfsLfs1" title="os.VfsLfs1"><code class="xref py py-class docutils literal notranslate"><span class="pre">littlefs</span> <span class="pre">v1</span></code></a> and <a class="reference internal" href="../library/os.html#os.VfsLfs2" title="os.VfsLfs2"><code class="xref py py-class docutils literal notranslate"><span class="pre">littlefs</span> <span class="pre">v2</span></code></a>.</p>
+<p>The following table shows which filesystems are included in the firmware by
+default for given port/board combinations, however they can be optionally
+enabled in a custom firmware build.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Board</p></th>
+<th class="head"><p>FAT</p></th>
+<th class="head"><p>littlefs v1</p></th>
+<th class="head"><p>littlefs v2</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>pyboard 1.0, 1.1, D</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>Other STM32</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+</tr>
+<tr class="row-even"><td><p>ESP8266 (1M)</p></td>
+<td><p>No</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-odd"><td><p>ESP8266 (2M+)</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+</tr>
+<tr class="row-even"><td><p>ESP32</p></td>
+<td><p>Yes</p></td>
+<td><p>No</p></td>
+<td><p>Yes</p></td>
+</tr>
+</tbody>
+</table>
+<section id="fat">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">FAT</a><a class="headerlink" href="#fat" title="Permalink to this heading">¶</a></h3>
+<p>The main advantage of the FAT filesystem is that it can be accessed over USB MSC
+on supported boards (e.g. STM32) without any additional drivers required on the
+host PC.</p>
+<p>However, FAT is not tolerant to power failure during writes and this can lead to
+filesystem corruption. For applications that do not require USB MSC, it is
+recommended to use littlefs instead.</p>
+<p>To format the entire flash using FAT:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># ESP8266 and ESP32</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">umount</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsFat</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">bdev</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">bdev</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+<span class="c1"># STM32</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pyb</span>
+<span class="n">os</span><span class="o">.</span><span class="n">umount</span><span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsFat</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="littlefs">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Littlefs</a><a class="headerlink" href="#littlefs" title="Permalink to this heading">¶</a></h3>
+<p><a class="reference external" href="https://github.com/littlefs-project/littlefs">Littlefs</a> is a filesystem designed for flash-based devices, and is much more
+resistant to filesystem corruption.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are reports of littlefs v1 and v2 failing in certain
+situations, for details see <a class="reference external" href="https://github.com/littlefs-project/littlefs/issues/347">littlefs issue 347</a>  and
+<a class="reference external" href="https://github.com/littlefs-project/littlefs/issues/295">littlefs issue 295</a>.</p>
+</div>
+<p>To format the entire flash using littlefs v2:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># ESP8266 and ESP32</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">umount</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsLfs2</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">bdev</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">bdev</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
+
+<span class="c1"># STM32</span>
+<span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pyb</span>
+<span class="n">os</span><span class="o">.</span><span class="n">umount</span><span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsLfs2</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A littlefs filesystem can be still be accessed on a PC over USB MSC using the
+<a class="reference external" href="https://github.com/littlefs-project/littlefs-fuse">littlefs FUSE driver</a>.  Note that you must specify both the <code class="docutils literal notranslate"><span class="pre">--block_size</span></code>
+and <code class="docutils literal notranslate"><span class="pre">--block_count</span></code> options to override the defaults.  For example (after
+building the littlefs-fuse executable):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./lfs --block_size=4096 --block_count=512 -o allow_other /dev/sdb1 mnt
+</pre></div>
+</div>
+<p>This will allow the board’s littlefs filesystem to be accessed at the <code class="docutils literal notranslate"><span class="pre">mnt</span></code>
+directory.  To get the correct values of <code class="docutils literal notranslate"><span class="pre">block_size</span></code> and <code class="docutils literal notranslate"><span class="pre">block_count</span></code> use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pyb</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">f</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># initialise flash in littlefs raw-block mode</span>
+<span class="n">block_count</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">block_size</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">ioctl</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="hybrid-stm32">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Hybrid (STM32)</a><a class="headerlink" href="#hybrid-stm32" title="Permalink to this heading">¶</a></h3>
+<p>By using the <code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">len</span></code> kwargs to <a class="reference internal" href="../library/pyb.Flash.html#pyb.Flash" title="pyb.Flash"><code class="xref py py-class docutils literal notranslate"><span class="pre">pyb.Flash</span></code></a>, you can create
+block devices spanning a subset of the flash device.</p>
+<p>For example, to configure the first 256kiB as FAT (and available over USB MSC),
+and the remainder as littlefs:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pyb</span>
+<span class="n">os</span><span class="o">.</span><span class="n">umount</span><span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+<span class="n">p1</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="o">=</span><span class="mi">256</span><span class="o">*</span><span class="mi">1024</span><span class="p">)</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">256</span><span class="o">*</span><span class="mi">1024</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsFat</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">VfsLfs2</span><span class="o">.</span><span class="n">mkfs</span><span class="p">(</span><span class="n">p2</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">p2</span><span class="p">,</span> <span class="s1">&#39;/data&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This might be useful to make your Python files, configuration and other
+rarely-modified content available over USB MSC, but allowing for frequently
+changing application data to reside on littlefs with better resilience to power
+failure, etc.</p>
+<p>The partition at offset <code class="docutils literal notranslate"><span class="pre">0</span></code> will be mounted automatically (and the filesystem
+type automatically detected), but you can add:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pyb</span>
+<span class="n">p2</span> <span class="o">=</span> <span class="n">pyb</span><span class="o">.</span><span class="n">Flash</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">256</span><span class="o">*</span><span class="mi">1024</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">p2</span><span class="p">,</span> <span class="s1">&#39;/data&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>to <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> to mount the data partition.</p>
+</section>
+<section id="hybrid-esp32">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Hybrid (ESP32)</a><a class="headerlink" href="#hybrid-esp32" title="Permalink to this heading">¶</a></h3>
+<p>On ESP32, if you build custom firmware, you can modify <code class="docutils literal notranslate"><span class="pre">partitions.csv</span></code> to
+define an arbitrary partition layout.</p>
+<p>At boot, the partition named “vfs” will be mounted at <code class="docutils literal notranslate"><span class="pre">/</span></code> by default, but any
+additional partitions can be mounted in your <code class="docutils literal notranslate"><span class="pre">boot.py</span></code> using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">esp32</span><span class="o">,</span> <span class="nn">os</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">esp32</span><span class="o">.</span><span class="n">Partition</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">esp32</span><span class="o">.</span><span class="n">Partition</span><span class="o">.</span><span class="n">TYPE_DATA</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
+<span class="n">os</span><span class="o">.</span><span class="n">mount</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="s1">&#39;/foo&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="asm_thumb2_hints_tips.html" class="btn btn-neutral float-left" title="1. Hints and tips" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pyboard.py.html" class="btn btn-neutral float-right" title="The pyboard.py tool" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 01 Dec 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

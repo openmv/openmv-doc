@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Core language &mdash; MicroPython 1.20 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=d5a28fe3" />
+      <link rel="stylesheet" href="../_static/customstyle.css" type="text/css" />
+
+  
+    <link rel="shortcut icon" href="../_static/openmv.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=6b422e2e"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Builtin types" href="builtin_types.html" />
+    <link rel="prev" title="Syntax" href="syntax.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            MicroPython
+              <img src="../_static/web-logo-sticky.png" class="logo" alt="Logo"/>
+          </a>
+              <div class="version">
+                1.20
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../library/index.html">MicroPython libraries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">MicroPython language and implementation</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">MicroPython differences from CPython</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../differences/python_35.html">Python 3.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../differences/python_36.html">Python 3.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../differences/python_37.html">Python 3.7</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../differences/python_38.html">Python 3.8</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../differences/python_39.html">Python 3.9</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../differences/python_310.html">Python 3.10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html">Syntax</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Core language</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#f-strings-don-t-support-concatenation-with-adjacent-literals-if-the-adjacent-literals-contain-braces-or-are-f-strings">f-strings don’t support concatenation with adjacent literals if the adjacent literals contain braces or are f-strings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#f-strings-cannot-support-expressions-that-require-parsing-to-resolve-unbalanced-nested-braces-and-brackets">f-strings cannot support expressions that require parsing to resolve unbalanced nested braces and brackets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#raw-f-strings-are-not-supported">Raw f-strings are not supported</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#f-strings-don-t-support-the-r-s-and-a-conversions">f-strings don’t support the !r, !s, and !a conversions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#special-method-del-not-implemented-for-user-defined-classes">Special method __del__ not implemented for user-defined classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#method-resolution-order-mro-is-not-compliant-with-cpython">Method Resolution Order (MRO) is not compliant with CPython</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#when-inheriting-from-multiple-classes-super-only-calls-one-class">When inheriting from multiple classes super() only calls one class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#calling-super-getter-property-in-subclass-will-return-a-property-object-not-the-value">Calling super() getter property in subclass will return a property object, not the value</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#error-messages-for-methods-may-display-unexpected-argument-counts">Error messages for methods may display unexpected argument counts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#function-objects-do-not-have-the-module-attribute">Function objects do not have the <code class="docutils literal notranslate"><span class="pre">__module__</span></code> attribute</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#user-defined-attributes-for-functions-are-not-supported">User-defined attributes for functions are not supported</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#generator">Generator</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#context-manager-exit-not-called-in-a-generator-which-does-not-run-to-completion">Context manager __exit__() not called in a generator which does not run to completion</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#runtime">Runtime</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#local-variables-aren-t-included-in-locals-result">Local variables aren’t included in locals() result</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#code-running-in-eval-function-doesn-t-have-access-to-local-variables">Code running in eval() function doesn’t have access to local variables</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#import">import</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#all-is-unsupported-in-init-py-in-micropython">__all__ is unsupported in __init__.py in MicroPython.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#path-attribute-of-a-package-has-a-different-type-single-string-instead-of-list-of-strings-in-micropython">__path__ attribute of a package has a different type (single string instead of list of strings) in MicroPython</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#failed-to-load-modules-are-still-registered-as-loaded">Failed to load modules are still registered as loaded</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#micropython-does-t-support-namespace-packages-split-across-filesystem">MicroPython does’t support namespace packages split across filesystem.</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="builtin_types.html">Builtin types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modules.html">Modules</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MicroPython license information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../openmvcam/quickref.html">Quick reference for the openmvcam</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MicroPython</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">MicroPython differences from CPython</a></li>
+      <li class="breadcrumb-item active">Core language</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/genrst/core_language.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="core-language">
+<h1>Core language<a class="headerlink" href="#core-language" title="Permalink to this heading">¶</a></h1>
+<p>Generated Fri 01 Dec 2023 02:10:23 UTC</p>
+<section id="f-strings-don-t-support-concatenation-with-adjacent-literals-if-the-adjacent-literals-contain-braces-or-are-f-strings">
+<span id="cpydiff-core-fstring-concat"></span><h2>f-strings don’t support concatenation with adjacent literals if the adjacent literals contain braces or are f-strings<a class="headerlink" href="#f-strings-don-t-support-concatenation-with-adjacent-literals-if-the-adjacent-literals-contain-braces-or-are-f-strings" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython is optimised for code space.</p>
+<p><strong>Workaround:</strong> Use the + operator between literal strings when either or both are f-strings</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;aa&quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># works</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span> <span class="s2">&quot;ab&quot;</span><span class="p">)</span>  <span class="c1"># works</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;a</span><span class="si">{}</span><span class="s2">a&quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># fails</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span> <span class="s2">&quot;a</span><span class="si">{}</span><span class="s2">b&quot;</span><span class="p">)</span>  <span class="c1"># fails</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s2">&quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">y</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># fails</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">aa1</span>
+<span class="mi">1</span><span class="n">ab</span>
+<span class="n">a</span><span class="p">{}</span><span class="n">a1</span>
+<span class="mi">1</span><span class="n">a</span><span class="p">{}</span><span class="n">b</span>
+<span class="mi">12</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="f-strings-cannot-support-expressions-that-require-parsing-to-resolve-unbalanced-nested-braces-and-brackets">
+<span id="cpydiff-core-fstring-parser"></span><h2>f-strings cannot support expressions that require parsing to resolve unbalanced nested braces and brackets<a class="headerlink" href="#f-strings-cannot-support-expressions-that-require-parsing-to-resolve-unbalanced-nested-braces-and-brackets" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython is optimised for code space.</p>
+<p><strong>Workaround:</strong> Always use balanced braces and brackets in expressions inside f-strings</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;hello { world&quot;</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="s2">&quot;hello ] world&quot;</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hello</span> <span class="p">{</span> <span class="n">world</span>
+<span class="n">hello</span> <span class="p">]</span> <span class="n">world</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="raw-f-strings-are-not-supported">
+<span id="cpydiff-core-fstring-raw"></span><h2>Raw f-strings are not supported<a class="headerlink" href="#raw-f-strings-are-not-supported" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython is optimised for code space.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sa">rf</span><span class="s2">&quot;hello&quot;</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="f-strings-don-t-support-the-r-s-and-a-conversions">
+<span id="cpydiff-core-fstring-repr"></span><h2>f-strings don’t support the !r, !s, and !a conversions<a class="headerlink" href="#f-strings-don-t-support-the-r-s-and-a-conversions" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython is optimised for code space.</p>
+<p><strong>Workaround:</strong> Use repr(), str(), and ascii() explictly.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">X</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;repr&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;str&quot;</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">X</span><span class="p">()</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">X</span><span class="p">()</span><span class="si">!s}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nb">repr</span>
+<span class="nb">str</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Permalink to this heading">¶</a></h3>
+</section>
+</section>
+<section id="special-method-del-not-implemented-for-user-defined-classes">
+<span id="cpydiff-core-class-delnotimpl"></span><h2>Special method __del__ not implemented for user-defined classes<a class="headerlink" href="#special-method-del-not-implemented-for-user-defined-classes" title="Permalink to this heading">¶</a></h2>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gc</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;__del__&quot;</span><span class="p">)</span>
+
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">()</span>
+<span class="k">del</span> <span class="n">f</span>
+
+<span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="fm">__del__</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="method-resolution-order-mro-is-not-compliant-with-cpython">
+<span id="cpydiff-core-class-mro"></span><h2>Method Resolution Order (MRO) is not compliant with CPython<a class="headerlink" href="#method-resolution-order-mro-is-not-compliant-with-cpython" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> Depth first non-exhaustive method resolution order</p>
+<p><strong>Workaround:</strong> Avoid complex class hierarchies with multiple inheritance and complex method overrides. Keep in mind that many languages don’t support multiple inheritance at all.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;Foo&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="n">Foo</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="n">t</span> <span class="o">=</span> <span class="n">C</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Foo</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="when-inheriting-from-multiple-classes-super-only-calls-one-class">
+<span id="cpydiff-core-class-supermultiple"></span><h2>When inheriting from multiple classes super() only calls one class<a class="headerlink" href="#when-inheriting-from-multiple-classes-super-only-calls-one-class" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> See <a class="reference internal" href="#cpydiff-core-class-mro"><span class="std std-ref">Method Resolution Order (MRO) is not compliant with CPython</span></a></p>
+<p><strong>Workaround:</strong> See <a class="reference internal" href="#cpydiff-core-class-mro"><span class="std std-ref">Method Resolution Order (MRO) is not compliant with CPython</span></a></p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;A.__init__&quot;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">B</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;B.__init__&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">C</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;C.__init__&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+
+<span class="k">class</span> <span class="nc">D</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">C</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;D.__init__&quot;</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+
+<span class="n">D</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">D</span><span class="o">.</span><span class="fm">__init__</span>
+<span class="n">B</span><span class="o">.</span><span class="fm">__init__</span>
+<span class="n">C</span><span class="o">.</span><span class="fm">__init__</span>
+<span class="n">A</span><span class="o">.</span><span class="fm">__init__</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="calling-super-getter-property-in-subclass-will-return-a-property-object-not-the-value">
+<span id="cpydiff-core-class-superproperty"></span><h2>Calling super() getter property in subclass will return a property object, not the value<a class="headerlink" href="#calling-super-getter-property-in-subclass-will-return-a-property-object-not-the-value" title="Permalink to this heading">¶</a></h2>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">A</span><span class="p">:</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">AA</span><span class="p">(</span><span class="n">A</span><span class="p">):</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">p</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">p</span>
+
+
+<span class="n">a</span> <span class="o">=</span> <span class="n">AA</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">}</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h3>
+</section>
+</section>
+<section id="error-messages-for-methods-may-display-unexpected-argument-counts">
+<span id="cpydiff-core-function-argcount"></span><h2>Error messages for methods may display unexpected argument counts<a class="headerlink" href="#error-messages-for-methods-may-display-unexpected-argument-counts" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython counts “self” as an argument.</p>
+<p><strong>Workaround:</strong> Interpret error messages with the information above in mind.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">try</span><span class="p">:</span>
+    <span class="p">[]</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
+<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">append</span><span class="p">()</span> <span class="n">takes</span> <span class="n">exactly</span> <span class="n">one</span> <span class="n">argument</span> <span class="p">(</span><span class="mi">0</span> <span class="n">given</span><span class="p">)</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="function-objects-do-not-have-the-module-attribute">
+<span id="cpydiff-core-function-moduleattr"></span><h2>Function objects do not have the <code class="docutils literal notranslate"><span class="pre">__module__</span></code> attribute<a class="headerlink" href="#function-objects-do-not-have-the-module-attribute" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython is optimized for reduced code size and RAM usage.</p>
+<p><strong>Workaround:</strong> Use <code class="docutils literal notranslate"><span class="pre">sys.modules[function.__globals__['__name__']]</span></code> for non-builtin modules.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+    <span class="k">pass</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="vm">__module__</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">__main__</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="user-defined-attributes-for-functions-are-not-supported">
+<span id="cpydiff-core-function-userattr"></span><h2>User-defined attributes for functions are not supported<a class="headerlink" href="#user-defined-attributes-for-functions-are-not-supported" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython is highly optimized for memory usage.</p>
+<p><strong>Workaround:</strong> Use external dictionary, e.g. <code class="docutils literal notranslate"><span class="pre">FUNC_X[f]</span> <span class="pre">=</span> <span class="pre">0</span></code>.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">f</span><span class="p">():</span>
+    <span class="k">pass</span>
+
+
+<span class="n">f</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">0</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<section id="generator">
+<h3>Generator<a class="headerlink" href="#generator" title="Permalink to this heading">¶</a></h3>
+</section>
+</section>
+<section id="context-manager-exit-not-called-in-a-generator-which-does-not-run-to-completion">
+<span id="cpydiff-core-generator-noexit"></span><h2>Context manager __exit__() not called in a generator which does not run to completion<a class="headerlink" href="#context-manager-exit-not-called-in-a-generator-which-does-not-run-to-completion" title="Permalink to this heading">¶</a></h2>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">foo</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Enter&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Exit&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">foo</span><span class="p">():</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">yield</span> <span class="n">x</span>
+
+
+<span class="k">def</span> <span class="nf">func</span><span class="p">():</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">bar</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">g</span><span class="p">))</span>
+
+
+<span class="n">func</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Enter</span>
+<span class="mi">1</span>
+<span class="mi">2</span>
+<span class="mi">3</span>
+<span class="n">Exit</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<section id="runtime">
+<h3>Runtime<a class="headerlink" href="#runtime" title="Permalink to this heading">¶</a></h3>
+</section>
+</section>
+<section id="local-variables-aren-t-included-in-locals-result">
+<span id="cpydiff-core-locals"></span><h2>Local variables aren’t included in locals() result<a class="headerlink" href="#local-variables-aren-t-included-in-locals-result" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython doesn’t maintain symbolic local environment, it is optimized to an array of slots. Thus, local variables can’t be accessed by a name.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">locals</span><span class="p">())</span>
+
+
+<span class="n">test</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;val&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="code-running-in-eval-function-doesn-t-have-access-to-local-variables">
+<span id="cpydiff-core-locals-eval"></span><h2>Code running in eval() function doesn’t have access to local variables<a class="headerlink" href="#code-running-in-eval-function-doesn-t-have-access-to-local-variables" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython doesn’t maintain symbolic local environment, it is optimized to an array of slots. Thus, local variables can’t be accessed by a name. Effectively, <code class="docutils literal notranslate"><span class="pre">eval(expr)</span></code> in MicroPython is equivalent to <code class="docutils literal notranslate"><span class="pre">eval(expr,</span> <span class="pre">globals(),</span> <span class="pre">globals())</span></code>.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">val</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">def</span> <span class="nf">test</span><span class="p">():</span>
+    <span class="n">val</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="nb">eval</span><span class="p">(</span><span class="s2">&quot;print(val)&quot;</span><span class="p">)</span>
+
+
+<span class="n">test</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mi">2</span>
+<span class="mi">2</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<section id="import">
+<h3>import<a class="headerlink" href="#import" title="Permalink to this heading">¶</a></h3>
+</section>
+</section>
+<section id="all-is-unsupported-in-init-py-in-micropython">
+<span id="cpydiff-core-import-all"></span><h2>__all__ is unsupported in __init__.py in MicroPython.<a class="headerlink" href="#all-is-unsupported-in-init-py-in-micropython" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> Not implemented.</p>
+<p><strong>Workaround:</strong> Manually import the sub-modules directly in __init__.py using <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">.</span> <span class="pre">import</span> <span class="pre">foo,</span> <span class="pre">bar</span></code>.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">modules3</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">foo</span><span class="o">.</span><span class="n">hello</span><span class="p">()</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hello</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="path-attribute-of-a-package-has-a-different-type-single-string-instead-of-list-of-strings-in-micropython">
+<span id="cpydiff-core-import-path"></span><h2>__path__ attribute of a package has a different type (single string instead of list of strings) in MicroPython<a class="headerlink" href="#path-attribute-of-a-package-has-a-different-type-single-string-instead-of-list-of-strings-in-micropython" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython does’t support namespace packages split across filesystem. Beyond that, MicroPython’s import system is highly optimized for minimal memory usage.</p>
+<p><strong>Workaround:</strong> Details of import handling is inherently implementation dependent. Don’t rely on such details in portable applications.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">modules</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">modules</span><span class="o">.</span><span class="n">__path__</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="s1">&#39;/github/workspace/micropython/tests/cpydiff/modules&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="failed-to-load-modules-are-still-registered-as-loaded">
+<span id="cpydiff-core-import-prereg"></span><h2>Failed to load modules are still registered as loaded<a class="headerlink" href="#failed-to-load-modules-are-still-registered-as-loaded" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> To make module handling more efficient, it’s not wrapped with exception handling.</p>
+<p><strong>Workaround:</strong> Test modules before production use; during development, use <code class="docutils literal notranslate"><span class="pre">del</span> <span class="pre">sys.modules[&quot;name&quot;]</span></code>, or just soft or hard reset the board.</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">modules</span> <span class="kn">import</span> <span class="n">foo</span>
+<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">modules</span> <span class="kn">import</span> <span class="n">foo</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Should not get here&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">foo</span>
+<span class="n">name</span> <span class="s1">&#39;xxx&#39;</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">defined</span>
+<span class="n">foo</span>
+<span class="n">name</span> <span class="s1">&#39;xxx&#39;</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">defined</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="micropython-does-t-support-namespace-packages-split-across-filesystem">
+<span id="cpydiff-core-import-split-ns-pkgs"></span><h2>MicroPython does’t support namespace packages split across filesystem.<a class="headerlink" href="#micropython-does-t-support-namespace-packages-split-across-filesystem" title="Permalink to this heading">¶</a></h2>
+<p><strong>Cause:</strong> MicroPython’s import system is highly optimized for simplicity, minimal memory usage, and minimal filesystem search overhead.</p>
+<p><strong>Workaround:</strong> Don’t install modules belonging to the same namespace package in different directories. For MicroPython, it’s recommended to have at most 3-component module search paths: for your current application, per-user (writable), system-wide (non-writable).</p>
+<p>Sample code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/modules&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;/modules2&quot;</span><span class="p">)</span>
+
+<span class="kn">import</span> <span class="nn">subpkg.foo</span>
+<span class="kn">import</span> <span class="nn">subpkg.bar</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Two modules of a split namespace package imported&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<table class="docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>CPy output:</p></td>
+<td><p>uPy output:</p></td>
+</tr>
+<tr class="row-even"><td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Two</span> <span class="n">modules</span> <span class="n">of</span> <span class="n">a</span> <span class="n">split</span> <span class="n">namespace</span> <span class="n">package</span> <span class="n">imported</span>
+</pre></div>
+</div>
+</td>
+<td><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span><span class="p">:</span> <span class="mi">1</span><span class="p">:</span> <span class="o">../</span><span class="n">ports</span><span class="o">/</span><span class="n">unix</span><span class="o">/</span><span class="n">build</span><span class="o">-</span><span class="n">standard</span><span class="o">/</span><span class="n">micropython</span><span class="p">:</span> <span class="ow">not</span> <span class="n">found</span>
+</pre></div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="syntax.html" class="btn btn-neutral float-left" title="Syntax" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="builtin_types.html" class="btn btn-neutral float-right" title="Builtin types" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright - The MicroPython Documentation is Copyright © 2014-2023, Damien P. George, Paul Sokolovsky, and contributors.
+      <span class="lastupdated">Last updated on 01 Dec 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    <span class="fa fa-book"> Language and External Links</span>
+    <span class="fa fa-caret-down"></span>
+  </span>
+  <div class="rst-other-versions">
+    <dl>
+      <dt>Language</dt>
+      <dd>
+        <a href="https://openmv.io">English</a>
+      </dd>
+      <dd>
+        <a href="http://doc.singtown.cc">中文</a>
+      </dd>
+    </dl>
+    <hr/>
+    <dl>
+      <dt>External links</dt>
+      <dd>
+        <a href="https://openmv.io">openmv.io</a>
+      </dd>
+      <dd>
+        <a href="http://forums.openmv.io">forums.openmv.io</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/openmv/openmv">github.com/openmv/openmv</a>
+      </dd>
+      <dd>
+        <a href="http://micropython.org">micropython.org</a>
+      </dd>
+      <dd>
+        <a href="http://forum.micropython.org">forum.micropython.org</a>
+      </dd>
+      <dd>
+        <a href="https://github.com/micropython/micropython">github.com/micropython/micropython</a>
+      </dd>
+    </dl>
+  </div>
+</div><script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
