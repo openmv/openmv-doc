@@ -45,9 +45,11 @@
     data.versions.forEach(function (v) {
       var id = typeof v === "string" ? v : v.id;
       var label = (typeof v === "object" && v.label) ? v.label : id;
+      // Alias versions (no folder of their own) link to their snapshot folder.
+      var target = (typeof v === "object" && v.snapshot) ? v.snapshot : id;
       var li = document.createElement("li");
       var a = document.createElement("a");
-      a.href = "/" + id + tail;
+      a.href = "/" + target + tail;
       a.textContent = label;
       if (id === cur) a.setAttribute("aria-current", "true");
       li.appendChild(a);
