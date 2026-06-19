@@ -32,6 +32,18 @@
     return "/" + p.slice(2).join("/");
   }
 
+  // The switcher button shows the channel baked at build time (always "dev",
+  // since releases are a copy of the dev build). Override it from the URL so a
+  // copied snapshot's button reads its own version ("v5.0.0") with no rewrite.
+  function setCurrentLabel() {
+    var box = document.querySelector(".nav-versions");
+    if (!box) return;
+    var cur = channelOf(window.location.pathname);
+    if (!cur) return;
+    var label = box.querySelector('button span[class~="md:inline"]');
+    if (label) label.textContent = cur;
+  }
+
   function populate(data) {
     var box = document.querySelector(".nav-versions");
     if (!box || !data || !Array.isArray(data.versions)) return;
@@ -68,9 +80,14 @@
       .catch(function () { /* offline / local build: keep the server bootstrap */ });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", load);
-  } else {
+  function run() {
+    setCurrentLabel();   // URL-based, works even if versions.json can't be fetched
     load();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
   }
 })();
