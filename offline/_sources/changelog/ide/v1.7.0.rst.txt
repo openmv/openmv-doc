@@ -1,0 +1,118 @@
+.. _changelog_ide_v1_7_0:
+
+v1.7.0
+======
+
+v1.7.0 adds serial frame-buffer chunking and reassembly so large frames can
+be transferred over the debug serial link, makes disconnect-with-reset safer
+by flushing (and, on Windows, ejecting) the camera's USB mass-storage drive,
+and refreshes the example set. The release is based on Qt Creator 4.0.2 (the
+same base as the previous release) and adds build support for cross-compiled
+embedded Linux targets such as the Raspberry Pi. There are no breaking
+changes.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **Serial frame-buffer chunking** — large frame-buffer transfers are split
+  into MTU-sized chunks and reassembled in a pixel buffer, so big frames can
+  be moved over the debug serial link.
+- **Safer disconnect-with-reset** — the camera's USB mass-storage drive is
+  flushed before reset (and force-ejected on Windows) so the filesystem is
+  synced first.
+- **Atomic file saving** — ``main.py`` and keypoint files are written
+  atomically, preventing corruption and fixing a path bug that wrote
+  ``main.py`` to the wrong location.
+- **Raspberry Pi / embedded Linux** — cross-compile build support is now
+  included.
+- **Refreshed examples** — a Servo Shield set, new Feature-Detection demos,
+  and Image Reader/Writer video examples.
+
+New features
+------------
+
+- **Serial frame-buffer chunking and reassembly.** Frame-buffer transfers are
+  split into MTU-sized chunks and reassembled in a pixel buffer, so large
+  frames can be moved over the debug serial link using a default MTU. A
+  runtime MTU auto-negotiation handshake was added with its firmware version
+  gate set to 2.5.0, matching the 2.5.0 firmware bundled in the same commit
+  (`96458ccef <https://github.com/openmv/qt-creator/commit/96458ccef>`__). The
+  gate was then raised to ``9.9.9`` for release, which no shipped firmware
+  reports, so cameras use the default MTU and no negotiation occurs
+  (`abd1dacb9 <https://github.com/openmv/qt-creator/commit/abd1dacb9>`__).
+- **Flush/eject on disconnect-with-reset.** Disconnecting with reset now
+  flushes the camera's USB mass-storage drive before reset: on Windows the
+  drive is force-ejected, while on Linux and macOS the drive's filesystem is
+  synced (``syncfs`` / ``sync_volume_np``). A ``Failed to eject`` error is
+  reported on failure on all three platforms
+  (`243618791 <https://github.com/openmv/qt-creator/commit/243618791>`__,
+  `ff6b15aff <https://github.com/openmv/qt-creator/commit/ff6b15aff>`__,
+  `1865ffd31 <https://github.com/openmv/qt-creator/commit/1865ffd31>`__,
+  `4fd4e89cf <https://github.com/openmv/qt-creator/commit/4fd4e89cf>`__).
+- **Servo Shield examples.** Added a ``15-Servo-Shield`` example set
+  demonstrating PCA9685-driven servos, including a ``pca9685.py`` driver and a
+  ``servo.py`` helper
+  (`abd1dacb9 <https://github.com/openmv/qt-creator/commit/abd1dacb9>`__).
+- **New Feature-Detection examples.** Added ``find_circles`` (Hough),
+  ``find_rects`` (quad-threshold), ``find_numbers`` (LeNet digit recognition),
+  and fast and robust linear regression examples under
+  ``09-Feature-Detection``
+  (`abd1dacb9 <https://github.com/openmv/qt-creator/commit/abd1dacb9>`__).
+- **Video and board-control examples.** Added Image Reader/Writer examples for
+  recording and replaying snapshot streams from the SD card, an RTC
+  board-control example, and an on-camera unit-test runner
+  (`abd1dacb9 <https://github.com/openmv/qt-creator/commit/abd1dacb9>`__).
+
+Other changes and improvements
+------------------------------
+
+- Renamed the ``99-Tests`` example folder (formerly ``15-Tests``) and added the
+  ``unittests.py`` runner
+  (`abd1dacb9 <https://github.com/openmv/qt-creator/commit/abd1dacb9>`__).
+
+Bug fixes
+---------
+
+- Hardened saving of ``main.py`` and keypoint files. The writes were switched
+  to atomic ``FileSaver`` writes (write then finalize) in
+  (`4fd4e89cf <https://github.com/openmv/qt-creator/commit/4fd4e89cf>`__), and
+  a missing path separator that wrote ``main.py`` to the wrong location was
+  fixed in
+  (`1865ffd31 <https://github.com/openmv/qt-creator/commit/1865ffd31>`__).
+- Improved serial reliability by enlarging the serial read buffer to 1MB on all
+  ports and increasing the read-stall timeout, addressing dropped data with
+  ``QSerialPort``
+  (`7f68368dc <https://github.com/openmv/qt-creator/commit/7f68368dc>`__).
+- Fixed a window splitter layout glitch by exporting ``MainWindow`` and
+  emitting a show-event signal so the OpenMV plugin can restore the layout when
+  the main window is shown
+  (`4895e20b7 <https://github.com/openmv/qt-creator/commit/4895e20b7>`__).
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 4.0.2.
+- Added build support for cross-compiled embedded Linux targets such as the
+  Raspberry Pi: deploys Qt fonts, fixes ``chrpath``/RPATH handling, builds
+  translations with host binaries, and adds a missing ``qml`` dependency
+  (`73c052fcc <https://github.com/openmv/qt-creator/commit/73c052fcc>`__,
+  `8f0baa131 <https://github.com/openmv/qt-creator/commit/8f0baa131>`__,
+  `5b9e9e82e <https://github.com/openmv/qt-creator/commit/5b9e9e82e>`__,
+  `45011ec2a <https://github.com/openmv/qt-creator/commit/45011ec2a>`__).
+- Updated bundled OpenMV firmware from 2.4.1 to 2.5.0
+  (`96458ccef <https://github.com/openmv/qt-creator/commit/96458ccef>`__).
+- Renamed the firmware folders ``OMV2``/``OMV3`` to ``OPENMV2``/``OPENMV3``
+  and shipped updated, rebuilt STM32F427 (OPENMV2) and STM32F765 (OPENMV3)
+  firmware and bootloader binaries
+  (`abd1dacb9 <https://github.com/openmv/qt-creator/commit/abd1dacb9>`__).
+
+Breaking changes
+----------------
+
+None. This release introduces no user-facing workflow or behavior breaks, and
+existing projects continue to work unchanged.

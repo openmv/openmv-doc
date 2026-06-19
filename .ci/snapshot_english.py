@@ -18,10 +18,12 @@ Modes:
       In place: delete the per-language subdirs, hide the LANGUAGE switcher
       (the version switcher stays), and neutralize the locale auto-redirect.
 
-  ide <release-dir> <out-dir>
-      Copy the English root only to <out-dir> (no language subdirs), hide BOTH
-      the language and version switchers, neutralize the auto-redirect, and drop
-      _sources/ + llms (unused offline). For the qt-creator bundle.
+  offline <release-dir> <out-dir> --locales-dir <locale> [--stubs <dir>]
+      Build the committed offline/ bundle for desktop apps: copy the English
+      root only (no language subdirs), keep _sources/ (OpenMV Studio reads it),
+      add the prebuilt stubs/ (--stubs; they live only here, not the online
+      docs), drop llms, hide BOTH switchers, neutralize the auto-redirect. The
+      Qt IDE displays the HTML; Studio reads offline/_sources/library/.
 
 Hiding is one rule appended to the snapshot's _static/custom.css (loaded by
 every page -- frozen-safe, no per-page edits). The auto-redirect is neutralized
@@ -83,7 +85,14 @@ def make_web(snapshot, locs):
           f"lang switcher {'hidden' if hid else 'already/none'}")
 
 
-def make_ide(release_dir, out_dir, locs):
+def make_offline(release_dir, out_dir, locs, stubs_dir=None):
+    """Build the committed offline/ bundle that desktop apps consume:
+      * the Qt IDE displays the rendered English HTML,
+      * OpenMV Studio reads _sources/library/ to generate stubs,
+    so this keeps the English HTML + _sources (and the prebuilt stubs/), drops
+    the per-language subdirs and llms, hides BOTH switchers, and neutralizes the
+    locale redirect. Mirrors the channel of the commit it is built on (dev at
+    HEAD, the release at a tag)."""
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
@@ -97,16 +106,21 @@ def make_ide(release_dir, out_dir, locs):
             shutil.copytree(src, dst)
         else:
             shutil.copy2(src, dst)
-    # drop offline-unused bulk
-    for rel in ("_sources", "llms.txt", "llms-full.txt"):
+    # drop llms (unused by either consumer); KEEP _sources for Studio's genpyi
+    for rel in ("llms.txt", "llms-full.txt"):
         p = os.path.join(out_dir, rel)
-        if os.path.isdir(p):
-            shutil.rmtree(p)
-        elif os.path.isfile(p):
+        if os.path.isfile(p):
             os.remove(p)
+    # prebuilt stubs live only in the offline bundle, not the online docs
+    if stubs_dir and os.path.isdir(stubs_dir):
+        dst = os.path.join(out_dir, "stubs")
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(stubs_dir, dst)
     hide_switchers(out_dir, hide_versions=True)
     neutralize_redirect(out_dir)
-    print(f"  ide bundle {out_dir}: English-only, both switchers hidden")
+    print(f"  offline bundle {out_dir}: English-only (HTML + _sources + stubs), "
+          f"both switchers hidden")
 
 
 # The versioning era starts at v5.0.0; older snapshots (v4.x) predate the
@@ -145,8 +159,9 @@ def cmd_web(args):
     make_web(args.snapshot, locale_names(args.locales_dir))
 
 
-def cmd_ide(args):
-    make_ide(args.release_dir, args.out_dir, locale_names(args.locales_dir))
+def cmd_offline(args):
+    make_offline(args.release_dir, args.out_dir, locale_names(args.locales_dir),
+                 stubs_dir=args.stubs)
 
 
 def main():
@@ -160,11 +175,12 @@ def main():
     w.add_argument("snapshot")
     w.add_argument("--locales-dir", required=True)
     w.set_defaults(func=cmd_web)
-    i = sub.add_parser("ide")
-    i.add_argument("release_dir")
-    i.add_argument("out_dir")
-    i.add_argument("--locales-dir", required=True)
-    i.set_defaults(func=cmd_ide)
+    o = sub.add_parser("offline")
+    o.add_argument("release_dir")
+    o.add_argument("out_dir")
+    o.add_argument("--locales-dir", required=True)
+    o.add_argument("--stubs", help="stubs dir to copy into <out>/stubs")
+    o.set_defaults(func=cmd_offline)
     args = ap.parse_args()
     args.func(args)
 
