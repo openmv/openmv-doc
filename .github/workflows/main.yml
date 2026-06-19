@@ -50,7 +50,9 @@ jobs:
         python-version: '3.11'
 
     - name: Install dependencies
-      run: pip install -U -r micropython/docs/requirements.txt
+      # Pillow + minify-html drive the post-build size-optimization steps
+      # (.ci/optimize_images.py and .ci/minify_html.py).
+      run: pip install -U -r micropython/docs/requirements.txt Pillow minify-html
 
     - name: Generate CPython differences (genrst)
       working-directory: micropython
@@ -112,6 +114,14 @@ jobs:
       # and before Sync, on build/html/. Root _sources (used by the stub steps
       # below) is left untouched.
       run: python ../../.ci/dedup_assets.py build/html --locales-dir locale
+
+    - name: Optimize images
+      working-directory: micropython/docs
+      # Palette-quantize flat-colour diagram PNGs and re-compress photos in
+      # place (same filenames, no HTML changes). Images are gzip-immune, so this
+      # is the biggest reduction in what GitHub Pages actually serves. Runs after
+      # dedup so it only touches the single channel-root _images copy.
+      run: python ../../.ci/optimize_images.py build/html
 
     - name: Generate Python stubs
       run: |
