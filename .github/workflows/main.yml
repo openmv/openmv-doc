@@ -79,6 +79,12 @@ jobs:
       working-directory: micropython/docs
       env:
         OPENMV_DOCS_CHANNEL: ${{ steps.channel.outputs.channel }}
+        # Emit /llms.txt + /llms-full.txt only in this English channel-root
+        # build. The dump is English source regardless of build language, so
+        # the per-language builds below leave it unset (conf.py then skips the
+        # sphinx_llms_txt extension) -- saving ~5 MB x26 of duplication and the
+        # generation time. The channel-root copies are the canonical ones.
+        OPENMV_DOCS_EMIT_LLMS: '1'
       run: python -m sphinx -b html -d build/doctrees . build/html
 
     - name: Build translations
@@ -92,6 +98,17 @@ jobs:
       run: |
         ls -d locale/*/ | xargs -n1 basename | xargs -P "$(nproc)" -I {} \
           python -m sphinx -q -b html -D language={} -d "build/doctrees-{}" . "build/html/{}"
+
+    - name: Deduplicate per-language assets
+      working-directory: micropython/docs
+      # Each per-language build copies the byte-identical _images/, _downloads/,
+      # _sources/ trees and the home-page hero video; that duplication is the
+      # bulk of the channel's size (~3.1 GB on dev). Drop the per-language
+      # copies and repoint each locale's HTML at the channel-root copy (one
+      # extra "../", correct at every page depth). Runs after all locale builds
+      # and before Sync, on build/html/. Root _sources (used by the stub steps
+      # below) is left untouched.
+      run: python ../../.ci/dedup_assets.py build/html --locales-dir locale
 
     - name: Generate Python stubs
       run: |

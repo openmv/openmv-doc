@@ -262,13 +262,13 @@ data-aria-dark="切换到自动颜色模式">
 <section id="open-addressing">
 <h2>开放寻址<a class="headerlink" href="#open-addressing" title="链接到此标题。">¶</a></h2>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Open_addressing">开放寻址</a> 用于解决冲突。冲突是非常常见的情况，当两个项恰好哈希到同一个槽位或位置时就会发生。例如，给定如下的哈希设置：</p>
-<img alt="../_images/collision.png" src="../_images/collision.png" />
+<img alt="../../_images/collision.png" src="../../_images/collision.png" />
 <p>如果有一个请求要用 <code class="docutils literal notranslate"><span class="pre">70</span></code> 填充槽位 <code class="docutils literal notranslate"><span class="pre">0</span></code>，由于槽位 <code class="docutils literal notranslate"><span class="pre">0</span></code> 不为空，开放寻址会在字典中查找下一个可用的槽位来处理此请求。这种对替代位置的顺序搜索称为<em>探测</em>。有多种序列探测算法，但 MicroPython 使用的是下一节将介绍的线性探测。</p>
 </section>
 <section id="linear-probing">
 <h2>线性探测<a class="headerlink" href="#linear-probing" title="链接到此标题。">¶</a></h2>
 <p>线性探测是在字典中查找可用地址或槽位的方法之一。在 MicroPython 中，它与开放寻址配合使用。与其他探测算法不同，为了处理上述请求，线性探测假定每次探测之间的间隔固定为 <code class="docutils literal notranslate"><span class="pre">1</span></code>。因此，该请求将通过把项放入下一个空闲槽位来处理，在我们的示例中即槽位 <code class="docutils literal notranslate"><span class="pre">4</span></code>：</p>
-<img alt="../_images/linprob.png" src="../_images/linprob.png" />
+<img alt="../../_images/linprob.png" src="../../_images/linprob.png" />
 <p>搜索字典中的某一项时，也使用同样的方法，即开放寻址和线性探测。假设我们要搜索数据项 <code class="docutils literal notranslate"><span class="pre">33</span></code>。计算出的哈希值将为 2。查看槽位 2 会发现 <code class="docutils literal notranslate"><span class="pre">33</span></code>。此时，我们返回 <code class="docutils literal notranslate"><span class="pre">True</span></code>。搜索 <code class="docutils literal notranslate"><span class="pre">70</span></code> 则截然不同，因为在插入时发生了冲突。因此计算出的哈希值为 <code class="docutils literal notranslate"><span class="pre">0</span></code>，而该槽位当前保存的是 <code class="docutils literal notranslate"><span class="pre">44</span></code>。我们不会简单地返回 <code class="docutils literal notranslate"><span class="pre">False</span></code>，而是从位置 <code class="docutils literal notranslate"><span class="pre">1</span></code> 开始进行顺序搜索，直到找到项 <code class="docutils literal notranslate"><span class="pre">70</span></code> 或遇到一个空闲槽位为止。这就是在哈希中执行查找的一般方式：</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1">// not yet found, keep searching in this table</span>
 </span><span data-line="2"><span class="n">pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">set</span><span class="o">-&gt;</span><span class="n">alloc</span><span class="p">;</span>

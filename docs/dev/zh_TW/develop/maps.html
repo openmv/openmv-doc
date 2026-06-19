@@ -262,13 +262,13 @@ data-aria-dark="切換至自動色彩模式">
 <section id="open-addressing">
 <h2>開放定址<a class="headerlink" href="#open-addressing" title="連結到這個標頭">¶</a></h2>
 <p><a class="reference external" href="https://en.wikipedia.org/wiki/Open_addressing">開放定址</a> 用於解決碰撞問題。碰撞是相當常見的情況，當兩個項目恰好雜湊到相同的插槽或位置時就會發生。例如，給定如下的雜湊配置：</p>
-<img alt="../_images/collision.png" src="../_images/collision.png" />
+<img alt="../../_images/collision.png" src="../../_images/collision.png" />
 <p>如果有一個請求要以 <code class="docutils literal notranslate"><span class="pre">70</span></code> 填入插槽 <code class="docutils literal notranslate"><span class="pre">0</span></code>，由於插槽 <code class="docutils literal notranslate"><span class="pre">0</span></code> 並非空的，開放定址便會在字典中尋找下一個可用的插槽來處理此請求。這種對替代位置進行的循序搜尋稱為 <em>探測（probing）</em>。探測有數種序列演算法，但 MicroPython 使用的是下一節所描述的線性探測。</p>
 </section>
 <section id="linear-probing">
 <h2>線性探測<a class="headerlink" href="#linear-probing" title="連結到這個標頭">¶</a></h2>
 <p>線性探測是在字典中尋找可用位址或插槽的方法之一。在 MicroPython 中，它與開放定址搭配使用。為了處理上述請求，線性探測不同於其他探測演算法，它假設探測之間有固定的間隔 <code class="docutils literal notranslate"><span class="pre">1</span></code>。因此，該請求會藉由將項目放入下一個空閒插槽來處理，在我們的範例中即為插槽 <code class="docutils literal notranslate"><span class="pre">4</span></code>：</p>
-<img alt="../_images/linprob.png" src="../_images/linprob.png" />
+<img alt="../../_images/linprob.png" src="../../_images/linprob.png" />
 <p>在字典中搜尋項目時，使用的是相同的方法，亦即開放定址與線性探測。假設我們想搜尋資料項目 <code class="docutils literal notranslate"><span class="pre">33</span></code>。其計算出的雜湊值為 2。查看插槽 2 即可看到 <code class="docutils literal notranslate"><span class="pre">33</span></code>。此時，我們回傳 <code class="docutils literal notranslate"><span class="pre">True</span></code>。搜尋 <code class="docutils literal notranslate"><span class="pre">70</span></code> 則相當不同，因為在插入時曾發生碰撞。因此，計算出的雜湊值為 <code class="docutils literal notranslate"><span class="pre">0</span></code>，而該位置目前持有的是 <code class="docutils literal notranslate"><span class="pre">44</span></code>。我們不會單純地回傳 <code class="docutils literal notranslate"><span class="pre">False</span></code>，而是從位置 <code class="docutils literal notranslate"><span class="pre">1</span></code> 開始進行循序搜尋，直到找到項目 <code class="docutils literal notranslate"><span class="pre">70</span></code> 或遇到空閒插槽為止。這就是在雜湊中執行查找的一般方式：</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1">// not yet found, keep searching in this table</span>
 </span><span data-line="2"><span class="n">pos</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">pos</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">%</span><span class="w"> </span><span class="n">set</span><span class="o">-&gt;</span><span class="n">alloc</span><span class="p">;</span>
