@@ -25,14 +25,14 @@ In `/`, build the docs:
 
      ./make.py
 
-You'll find the index page at `micropython/docs/_build/html/index.html`.
+You'll find the index page at `micropython/docs/build/html/index.html`.
 
 ## Contributing to the project
 
 Contributions are most welcome. If you are interested in contributing to the project, start by creating a fork of each of the following repositories:
 
 * https://github.com/openmv/openmv-doc.git
-* https://github.com/openmv/micropython.git
+* https://github.com/openmv/micropython-doc.git
 
 Clone the forked openmv-doc repository, and add a remote to the main openmv-doc repository:
 ```bash
@@ -40,17 +40,17 @@ git clone --recursive https://github.com/<username>/openmv-doc.git
 git -C openmv-doc remote add upstream https://github.com/openmv/openmv-doc.git
 ```
 
-Set the `origin` remote of the micropython submodule to the forked micropython repo:
+Set the `origin` remote of the micropython submodule to the forked micropython-doc repo:
 ```bash
-git -C openmv-doc/micropython remote set-url origin https://github.com/<username>/micropython.git
+git -C openmv-doc/micropython remote set-url origin https://github.com/<username>/micropython-doc.git
 ```
 
-Finally add a remote to openmv-doc's micropython fork:
+Finally add a remote to openmv-doc's micropython-doc fork:
 ```bash
-git -C openmv-doc/micropython remote add upstream https://github.com/openmv/micropython.git
+git -C openmv-doc/micropython remote add upstream https://github.com/openmv/micropython-doc.git
 ```
 
-Now the repositories are ready for pull requests. To send a pull request, create a new feature branch and push it to origin, and use Github to create the pull request from the forked repository to the upstream openmv/micropython repository. For example:
+Now the repositories are ready for pull requests. To send a pull request, create a new feature branch and push it to origin, and use Github to create the pull request from the forked repository to the upstream openmv/micropython-doc repository. For example:
 ```bash
 git checkout -b <some_branch_name>
 <commit changes>

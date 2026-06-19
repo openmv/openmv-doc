@@ -18,7 +18,7 @@ def make():
     else:
         if os.system("cd " + os.path.join(__folder__,
         "micropython/docs") + " && make MICROPY_PORT=openmvcam "
-        "BUILDDIR=_build html"):
+        "BUILDDIR=build html"):
             sys.exit("Make Failed...")
 
 if __name__ == "__main__":
