@@ -134,6 +134,57 @@ def rewrite_hero(lang_root):
     return changed
 
 
+def rewrite_static(lang_root, relpaths):
+    """Prepend one '../' to references to specific _static/<relpath> files (the
+    byte-identical-to-root ones). Per-language files (documentation_options.js,
+    etc.) are NOT in relpaths, so their refs are left pointing at the local copy.
+    Anchored with a trailing lookahead so a filename isn't matched as a prefix."""
+    if not relpaths:
+        return
+    alt = "|".join(re.escape(r) for r in sorted(relpaths, key=len, reverse=True))
+    pat = re.compile(_BOUNDARY + r"(?P<rel>(?:\.\./)*)_static/(?P<f>(?:" + alt +
+                     r"))(?=[?\"'#)\s])")
+    repl = r"\g<b>\g<rel>../_static/\g<f>"
+    for dirpath, _, fnames in os.walk(lang_root):
+        for fn in fnames:
+            if not fn.endswith(".html"):
+                continue
+            ap = os.path.join(dirpath, fn)
+            with open(ap, encoding="utf-8") as f:
+                src = f.read()
+            new = pat.sub(repl, src)
+            if new != src:
+                with open(ap, "w", encoding="utf-8") as f:
+                    f.write(new)
+
+
+def dedup_static(root, lang):
+    """Delete _static files in <lang>/ that are byte-identical to the channel
+    root and repoint their HTML refs there. Keeps per-language files
+    (documentation_options.js / language_data.js / translations.js) in place."""
+    lang_static = os.path.join(root, lang, "_static")
+    root_static = os.path.join(root, "_static")
+    if not os.path.isdir(lang_static) or not os.path.isdir(root_static):
+        return 0
+    root_files = _tree_files(root_static)
+    dedupable, freed = [], 0
+    for rel, ap in _tree_files(lang_static).items():
+        rp = root_files.get(rel)
+        if rp and os.path.getsize(ap) == os.path.getsize(rp) and _sha1(ap) == _sha1(rp):
+            dedupable.append((rel, ap))
+    if not dedupable:
+        return 0
+    rewrite_static(os.path.join(root, lang), [rel for rel, _ in dedupable])
+    for rel, ap in dedupable:
+        freed += os.path.getsize(ap)
+        os.remove(ap)
+    # prune now-empty subdirs (e.g. _static/battery_life)
+    for dp, dns, fns in os.walk(lang_static, topdown=False):
+        if dp != lang_static and not os.listdir(dp):
+            os.rmdir(dp)
+    return freed
+
+
 def _rm_dir(path):
     import shutil
     shutil.rmtree(path)
@@ -177,6 +228,10 @@ def dedup_locale(root, lang):
         if os.path.isfile(p):
             freed += os.path.getsize(p)
             os.remove(p)
+
+    # D) _static files that are byte-identical to the root (theme css/js/fonts);
+    # per-language files (documentation_options.js, ...) are kept.
+    freed += dedup_static(root, lang)
 
     print(f"  [{lang}] freed {freed/1e6:.1f} MB"
           f"  (dirs: {','.join(to_delete) or 'none'})")
