@@ -1,469 +1,58 @@
-<!DOCTYPE html>
-<html lang="es" data-accent-color="blue" data-content_root="../../../">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>9.17. Sockets cifrados y TLS - documentación de OpenMV MicroPython - 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Índice" href="../../../genindex.html" /><link rel="search" title="Búsqueda" href="../../../search.html" /><link rel="next" title="9.18. MQTT, byte a byte" href="mqtt/protocol-on-the-wire.html" /><link rel="prev" title="9.16. Hora y NTP" href="names/ntp.html" />
-      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/networking/encrypted-sockets.html" /><script>
-    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
-    setColorMode(localStorage._theme||"auto");
-  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
-    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
-    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
-  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
-}
-</style>
-    
-  <meta property="og:type" content="website"/>
-  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/networking/encrypted-sockets.html"/>
-  <meta property="og:title" content="9.17. Sockets cifrados y TLS"/>
-    <meta name="twitter:card" content="summary"/>
-  
-    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/networking/encrypted-sockets.html" />
-    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/networking/encrypted-sockets.html" />
-</head>
-<body><div class="sy-head">
-  <div class="sy-head-blur"></div>
-  <div class="sy-head-inner sy-container mx-auto">
-    <a class="sy-head-brand" href="../../../index.html">
-      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
-      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
-      <strong>OpenMV MicroPython</strong>
-    </a>
-    <div class="sy-head-nav" id="head-nav">
-      <nav class="sy-head-links"><ul><li class="link"><a href="../../../index.html">Inicio</a></li><li class="link"><a href="../index.html">Tutorial</a></li><li class="link"><a href="../../../library/index.html">Bibliotecas principales</a></li><li class="link"><a href="../../quickref.html">Placas</a></li><li class="link"><a href="../../shields.html">Shields</a></li><li class="link"><a href="../../sensors.html">Sensores</a></li><li class="link"><a href="../../../reference/index.html">Lenguaje</a></li><li class="link"><a href="../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../develop/index.html">Aspectos internos</a></li><li class="link"><a href="../../../changelog/index.html">Registro de cambios</a></li></ul></nav>
-      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
-  <input type="text" name="q" placeholder="Búsqueda" />
-  <kbd>/</kbd>
-</form><div class="nav-versions">
-    <button type="button" aria-label="Versiones">
-      <span class="md:hidden">Versiones</span>
-      <span class="hidden md:inline">dev</span>
-      <i class="i-lucide chevron-down"></i>
-    </button>
-    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
-  </div><div class="nav-languages">
-  <button type="button">
-    <span class="md:hidden">Traducciones</span>
-    <iconify-icon icon="lucide:languages"></iconify-icon>
-  </button>
-  <div class="nav-languages-choices">
-    <ul><li><a href="/dev/openmvcam/tutorial/networking/encrypted-sockets.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/networking/encrypted-sockets.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/networking/encrypted-sockets.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/networking/encrypted-sockets.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/networking/encrypted-sockets.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/networking/encrypted-sockets.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/networking/encrypted-sockets.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/networking/encrypted-sockets.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/networking/encrypted-sockets.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/networking/encrypted-sockets.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/networking/encrypted-sockets.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/networking/encrypted-sockets.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/networking/encrypted-sockets.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/networking/encrypted-sockets.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/networking/encrypted-sockets.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/networking/encrypted-sockets.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/networking/encrypted-sockets.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/networking/encrypted-sockets.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/networking/encrypted-sockets.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/networking/encrypted-sockets.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/networking/encrypted-sockets.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/networking/encrypted-sockets.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/networking/encrypted-sockets.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/networking/encrypted-sockets.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/networking/encrypted-sockets.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/networking/encrypted-sockets.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/networking/encrypted-sockets.html">Tiếng Việt</a></li></ul>
-  </div>
-</div><div class="sy-head-socials">
-  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
-    <iconify-icon icon="simple-icons:github"></iconify-icon>
-  </a>
-<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
-  <iconify-icon icon="prime:twitter"></iconify-icon>
-</a></div></div>
-    </div>
-    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
-data-aria-auto="Cambiar al modo claro"
-data-aria-light="Cambiar al modo oscuro"
-data-aria-dark="Cambiar al modo de color automático">
-<i class="i-lucide theme-icon"></i>
-</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
-        <div class="hamburger">
-          <span class="hamburger_1"></span>
-          <span class="hamburger_2"></span>
-          <span class="hamburger_3"></span>
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-<div class="sy-page sy-container flex mx-auto">
-  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
-    <div class="sy-lside-inner md:sticky">
-      <div class="sy-scrollbar p-6"><div class="sidebar-links">
-  <ul>
-    <li><a class="icon-link" href="https://forums.openmv.io/">
-  <span class="icon">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
-      <circle fill="white" cx="12" cy="11" r="1"/>
-      <circle fill="white" cx="9" cy="11" r="1"/>
-      <circle fill="white" cx="15" cy="11" r="1"/>
-    </svg>
-  </span>
-  <span class="text">Discusión</span>
-</a></li>
-  </ul>
-</div>
-        <div class="globaltoc" data-expand-depth="1"><ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorial</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../quickstart.html">1. Inicio r&#225;pido</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../python/index.html">2. Visi&#243;n general de Python</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../hardware/index.html">3. Control de hardware</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../vision/index.html">4. Sensores de visi&#243;n</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../image/index.html">5. Procesamiento de im&#225;genes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../numpy/index.html">6. NumPy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">7. Aprendizaje autom&#225;tico</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../asyncio/index.html">8. Asyncio</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="index.html">9. Redes</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="basics/why-networks.html">9.1. Por qu&#233; redes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="basics/layered-protocols.html">9.2. Protocolos por capas</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lower-layers/physical-and-link.html">9.3. El cable y la trama</a></li>
-<li class="toctree-l3"><a class="reference internal" href="lower-layers/bringing-the-link-up.html">9.4. Levantar el enlace</a></li>
-<li class="toctree-l3"><a class="reference internal" href="network/ip-addresses.html">9.5. Direcciones IP</a></li>
-<li class="toctree-l3"><a class="reference internal" href="network/packets-and-routing.html">9.6. Paquetes y enrutamiento</a></li>
-<li class="toctree-l3"><a class="reference internal" href="network/private-networks.html">9.7. Redes privadas y NAT</a></li>
-<li class="toctree-l3"><a class="reference internal" href="transport/ports.html">9.8. Puertos</a></li>
-<li class="toctree-l3"><a class="reference internal" href="transport/udp.html">9.9. UDP &#8211; env&#237;a un paquete y cruza los dedos</a></li>
-<li class="toctree-l3"><a class="reference internal" href="transport/tcp.html">9.10. TCP &#8211; un flujo fiable de bytes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sockets/socket-objects.html">9.11. Objetos socket</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sockets/udp-sockets.html">9.12. Sockets UDP</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sockets/tcp-sockets.html">9.13. Sockets TCP</a></li>
-<li class="toctree-l3"><a class="reference internal" href="sockets/async-sockets.html">9.14. Sockets con asyncio</a></li>
-<li class="toctree-l3"><a class="reference internal" href="names/dns.html">9.15. Nombres y DNS</a></li>
-<li class="toctree-l3"><a class="reference internal" href="names/ntp.html">9.16. Hora y NTP</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">9.17. Sockets cifrados y TLS</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mqtt/protocol-on-the-wire.html">9.18. MQTT, byte a byte</a></li>
-<li class="toctree-l3"><a class="reference internal" href="mqtt/mqtt-in-python.html">9.19. MQTT en Python</a></li>
-<li class="toctree-l3"><a class="reference internal" href="wrap-up.html">9.20. Recapitulaci&#243;n</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="../webservers/index.html">10. Servidores web</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../bluetooth/index.html">11. Bluetooth</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../protocol/index.html">12. Protocolo del host</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">13. Herramientas</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../production/index.html">14. Producci&#243;n</a></li>
-</ul>
-</li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../library/index.html">Bibliotecas</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../quickref.html">Placas</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../shields.html">Escudos (Shields)</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../sensors.html">Sensores</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../reference/index.html">Lenguaje</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../genrst/index.html">CPython</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../develop/index.html">Internos</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../changelog/index.html">Registro de cambios</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../license.html">Licencia</a></li>
-</ul>
-        </div>
-      </div>
-    </div>
-  </aside>
-  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
-  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
-    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
-      <i class="i-lucide close"></i>
-    </button>
-    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>En esta página</h3><ul>
-<li><a class="reference internal" href="#what-tls-adds-and-what-the-cam-ships-with">9.17.1. Qu&#233; a&#241;ade TLS, y qu&#233; incluye la c&#225;mara de f&#225;brica</a></li>
-<li><a class="reference internal" href="#encrypting-an-outbound-connection">9.17.2. Cifrar una conexi&#243;n saliente</a></li>
-<li><a class="reference internal" href="#with-asyncio">9.17.3. Con asyncio</a></li>
-<li><a class="reference internal" href="#dtls-tls-over-udp">9.17.4. DTLS &#8211; TLS sobre UDP</a></li>
-<li><a class="reference internal" href="#going-further">9.17.5. Ir m&#225;s all&#225;</a></li>
-</ul>
-</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
-  data-type="github" data-user="openmv" data-repo="micropython-doc">
-  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
-    <iconify-icon icon="simple-icons:github"></iconify-icon>
-  </span>
-  <span class="flex-grow px-2 break-all">
-    
-    
-      <span>micropython-doc</span>
-    
-    <span class="flex text-sm repo-stats-count">
-      <span class="flex items-center pr-3">
-        <iconify-icon icon="lucide:star"></iconify-icon>
-        <strong class="js-repo-stars ml-1">0</strong>
-      </span>
-      <span class="flex items-center">
-        <iconify-icon icon="lucide:git-fork"></iconify-icon>
-        <strong class="js-repo-forks ml-1">0</strong>
-      </span>
-    </span>
-  </span>
-</a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/49076d1a5e02296ba3cfa31fe1660cf4507e761f/docs/openmvcam/tutorial/networking/encrypted-sockets.rst">Editar esta página</a>
-</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
-  </aside>
-  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
-  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
-<div class="sy-breadcrumbs" role="navigation">
-  <div class="sy-breadcrumbs-inner flex items-center">
-    <div class="md:hidden mr-3">
-      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
-        <i class="i-lucide menu"></i>
-      </button>
-    </div>
-    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="1" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="../index.html"><span itemprop="name">Tutorial de la OpenMV Cam</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="2" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">9. </span>Redes</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="3" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <strong itemprop="name"><span class="section-number">9.17. </span>Sockets cifrados y TLS</strong>
-        <meta itemprop="position" content="4" />
-      </li></ol>
-    <div class="xl:hidden ml-1">
-      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
-        aria-expanded="false">
-        <i class="i-lucide outdent"></i>
-      </button>
-    </div>
-  </div>
-</div><div class="flex flex-col break-words justify-between">
-      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
-  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
-  <div id="copy-page-trigger">
-    <button
-      type="button"
-      class="js-copy px-3 py-1 inline-flex items-center gap-1"
-      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt"
-    >
-      <i class="i-lucide" data-icon="copy"></i>
-      <span>Copiar página</span>
-    </button>
-    <button class="js-menu px-2 py-1" type="button" aria-label="Más acciones"
-      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
-      <i class="i-lucide chevron-down"></i>
-    </button>
-  </div>
-  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
-    <div role="presentation">
-      <div class="flex flex-col" role="group">
-        <button class="js-copy" type="button" role="menuitem"
-          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt">
-          <span class="iconify-icon">
-            <i class="i-lucide" data-icon="copy"></i>
-          </span>
-          <span>Copiar página</span>
-        </button>
-        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
-            <span>Ver fuente</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
-          <iconify-icon icon="bi:openai"></iconify-icon>
-          <span>Abrir en ChatGPT</span>
-        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
-          <iconify-icon icon="bi:claude"></iconify-icon>
-          <span>Abrir en Claude</span>
-        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
-          <iconify-icon icon="bi:perplexity"></iconify-icon>
-          <span>Abrir en Perplexity</span>
-        </a></div>
-    </div>
-  </div>
-</div><article class="yue" role="main">
-          <section id="encrypted-sockets-and-tls">
-<h1><span class="section-number">9.17. </span>Sockets cifrados y TLS<a class="headerlink" href="#encrypted-sockets-and-tls" title="Link to this heading">¶</a></h1>
-<p>Todo lo cubierto hasta aquí mueve bytes en claro. Cualquier dispositivo en la ruta entre la cámara y el servidor – el router del hogar, el proveedor de servicios de internet, un punto de acceso malicioso en una cafetería – puede, en principio, leer o modificar lo que pasa a través de él. Para la mayoría del tráfico de internet eso no es aceptable. La solución estándar es envolver la conexión en una capa de cifrado: <em>TLS</em>, el protocolo Transport Layer Security. El icono del candado «HTTPS» en un navegador es TLS ejecutándose sobre TCP, y ese mismo envoltorio es lo que hace «seguro» a cualquier otro protocolo de internet. El módulo <a class="reference internal" href="../../../library/ssl.html#module-ssl" title="ssl: TLS/SSL wrapper for socket objects"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ssl</span></code></a> de la cámara es lo que envuelve un <a class="reference internal" href="../../../library/socket.html#socket.socket" title="socket.socket"><code class="xref py py-class docutils literal notranslate"><span class="pre">socket</span></code></a> en TLS.</p>
-<section id="what-tls-adds-and-what-the-cam-ships-with">
-<h2><span class="section-number">9.17.1. </span>Qué añade TLS, y qué incluye la cámara de fábrica<a class="headerlink" href="#what-tls-adds-and-what-the-cam-ships-with" title="Link to this heading">¶</a></h2>
-<p>TLS se sitúa entre TCP y la aplicación – la aplicación escribe bytes en un socket envuelto en TLS, TLS los cifra y entrega el resultado a TCP, y el proceso se invierte en el otro extremo. En su forma completa, TLS ofrece tres garantías por encima de TCP en claro:</p>
-<ul class="simple">
-<li><p><strong>Confidencialidad.</strong> Quien escuche en la ruta no puede leer lo que intercambian los dos extremos.</p></li>
-<li><p><strong>Integridad.</strong> Cualquier modificación del tráfico en tránsito se detecta; la conexión se rompe en lugar de entregar datos manipulados.</p></li>
-<li><p><strong>Autenticación.</strong> El servidor demuestra que es el servidor nombrado, no un impostor (y, opcionalmente, el cliente demuestra quién es <em>él</em> también).</p></li>
-</ul>
-<p>Las dos primeras provienen del propio cifrado. La tercera necesita <em>certificados</em> en al menos uno de los lados, más algo previamente confiable contra lo que verificar esos certificados. La cámara OpenMV se entrega <strong>sin ningún almacén de certificados integrado</strong>: una cámara recién flasheada no confía en ninguna autoridad de certificación, no tiene un certificado de servidor propio, y el modo de verificación predeterminado (<a class="reference external" href="https://docs.python.org/3/library/ssl.html#ssl.CERT_NONE" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">ssl.CERT_NONE</span></code></a>) no comprueba el certificado del par contra nada. Así que, de fábrica, TLS en la cámara te da las dos primeras garantías – cifrado contra escuchas y manipulaciones por parte de un observador pasivo – pero <strong>no</strong> la tercera.</p>
-</section>
-<section id="encrypting-an-outbound-connection">
-<h2><span class="section-number">9.17.2. </span>Cifrar una conexión saliente<a class="headerlink" href="#encrypting-an-outbound-connection" title="Link to this heading">¶</a></h2>
-<p>El uso más sencillo es envolver una conexión TCP saliente. El flujo es: abrir un socket TCP normal, entregarlo a <code class="xref py py-func docutils literal notranslate"><span class="pre">ssl.wrap_socket()</span></code>, y luego leer y escribir a través del socket envuelto exactamente igual que lo harías con el socket en claro:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="n">addr</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="mi">443</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="5"><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">)</span>
-</span><span data-line="6"><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
-</span><span data-line="7">
-</span><span data-line="8"><span class="n">s</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
-</span><span data-line="9">
-</span><span data-line="10"><span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;GET / HTTP/1.0</span><span class="se">\r\n</span><span class="s2">Host: example.com</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="11"><span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
-</span><span data-line="12"><span class="n">s</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>El envoltorio realiza el handshake TLS; después, cada byte que pasa por <code class="docutils literal notranslate"><span class="pre">s.send</span></code> se cifra al salir y cada byte de <code class="docutils literal notranslate"><span class="pre">s.recv</span></code> viajó cifrado por el cable. No se configuró ningún certificado, no se suministró ningún ancla de confianza – TLS simplemente negocia una clave de sesión efímera con el servidor que responda y la usa.</p>
-<figure class="align-default" id="id1">
-<img alt="A diagram with two columns labelled &quot;client&quot; and &quot;server&quot;. A dashed horizontal line near the top is labelled &quot;TCP connection already open&quot;. Below it, three arrows show the TLS handshake: &quot;ClientHello&quot; from client to server, &quot;ServerHello + certificate + key share&quot; back, and &quot;Finished&quot; forward again. A second dashed horizontal line below is labelled &quot;TLS session open -- everything after this is encrypted&quot;. Two thick bidirectional arrows below it carry &quot;encrypted data&quot;." src="../../../../_images/tls-handshake.svg" />
-<figcaption>
-<p><span class="caption-text">El handshake TLS que ejecuta <code class="xref py py-func docutils literal notranslate"><span class="pre">ssl.wrap_socket()</span></code>. Se sitúa encima de la conexión TCP ya abierta de la figura anterior; una vez que ambos lados han enviado <code class="docutils literal notranslate"><span class="pre">Finished</span></code>, el resto de la conversación se cifra en ambas direcciones.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
-</figcaption>
-</figure>
-<div class="admonition warning">
-<p class="admonition-title">Advertencia</p>
-<p>Esto es solo cifrado, <strong>no</strong> TLS autenticado. La cámara habla de forma segura con <em>lo que sea</em> que respondió en el otro extremo de la conexión TCP. Si un atacante intermediario (man-in-the-middle) redirige la conexión a un servidor que controla y ese servidor presenta <em>cualquier</em> certificado, el handshake aún tiene éxito y la cámara termina hablando de forma segura con el atacante. Usa este modo solo cuando un atacante intermediario no forme parte del modelo de amenazas – una red local cerrada, un entorno de desarrollo, la cámara hablando con un servicio que se ejecuta en el mismo hardware – y <em>no</em> cuando se conecta a la internet pública.</p>
-<p>Para una autenticación real – la cámara verificando un servidor público, la cámara actuando como servidor TLS, o TLS mutuo – necesitas llevar certificados al dispositivo. La historia completa está en <a class="reference internal" href="../production/tls/index.html"><span class="doc">Trabajar con certificados TLS</span></a>.</p>
-</div>
-<p>El mismo envoltorio funciona para el tráfico TCP entrante, seleccionando el protocolo de servidor y pasando <code class="docutils literal notranslate"><span class="pre">server_side=True</span></code> a <code class="xref py py-func docutils literal notranslate"><span class="pre">ssl.wrap_socket()</span></code>. La advertencia anterior sigue siendo válida: sin un certificado propio, la cámara no puede demostrar quién es ante el cliente, y un cliente curioso vería un fallo de handshake de «no certificate» en la mayoría de las pilas TLS. El flujo de trabajo de certificados del lado de producción es lo que desbloquea ejecutar la cámara como servidor TLS de forma útil.</p>
-</section>
-<section id="with-asyncio">
-<h2><span class="section-number">9.17.3. </span>Con asyncio<a class="headerlink" href="#with-asyncio" title="Link to this heading">¶</a></h2>
-<p>El <a class="reference internal" href="../asyncio/index.html"><span class="doc">capítulo de asyncio</span></a> mostró <a class="reference internal" href="../../../library/asyncio.html#asyncio.open_connection" title="asyncio.open_connection"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.open_connection()</span></code></a> para clientes TCP en claro. La misma llamada acepta una palabra clave <code class="docutils literal notranslate"><span class="pre">ssl=True</span></code> que envuelve la conexión en TLS, de nuevo sin ninguna configuración de certificados:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-</span><span data-line="4">    <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span>
-</span><span data-line="5">        <span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="mi">443</span><span class="p">,</span> <span class="n">ssl</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span data-line="6">    <span class="p">)</span>
-</span><span data-line="7">    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;GET / HTTP/1.0</span><span class="se">\r\n</span><span class="s2">Host: example.com</span><span class="se">\r\n\r\n</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span data-line="8">    <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
-</span><span data-line="9">    <span class="nb">print</span><span class="p">(</span><span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4096</span><span class="p">))</span>
-</span><span data-line="10">    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span><span data-line="11">    <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
-</span><span data-line="12">
-</span><span data-line="13"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
-</span></pre></div>
-</div>
-<p>El par lector/escritor detrás de una conexión TLS tiene la misma forma que el de una conexión TCP en claro – solo difiere la configuración. La misma salvedad sobre la autenticación se aplica: <code class="docutils literal notranslate"><span class="pre">ssl=True</span></code> por sí solo da únicamente cifrado, no verificación.</p>
-</section>
-<section id="dtls-tls-over-udp">
-<h2><span class="section-number">9.17.4. </span>DTLS – TLS sobre UDP<a class="headerlink" href="#dtls-tls-over-udp" title="Link to this heading">¶</a></h2>
-<p>TLS, tal como se ha descrito hasta ahora, viaja encima de TCP. El protocolo paralelo para UDP es <em>DTLS</em> (Datagram TLS), y el módulo <a class="reference internal" href="../../../library/ssl.html#module-ssl" title="ssl: TLS/SSL wrapper for socket objects"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ssl</span></code></a> de la cámara lo admite del mismo modo. Donde TLS convierte una conexión TCP en un flujo de bytes cifrado, DTLS convierte un socket UDP en un flujo de datagramas cifrados y entregados individualmente – de modo que las propiedades de pérdida / desorden / sin control de flujo de UDP de <a class="reference internal" href="transport/udp.html"><span class="doc">UDP – envía un paquete y cruza los dedos</span></a> se mantienen, ahora con los bytes dentro de cada datagrama cifrados.</p>
-<p>El envoltorio se ve igual que en el caso de TLS, solo que con un socket <a class="reference internal" href="../../../library/socket.html#socket.SOCK_DGRAM" title="socket.SOCK_DGRAM"><code class="xref py py-data docutils literal notranslate"><span class="pre">SOCK_DGRAM</span></code></a> y las constantes de protocolo DTLS:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
-</span><span data-line="5"><span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="mi">4433</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="n">ctx</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_DTLS_CLIENT</span><span class="p">)</span>
-</span><span data-line="8"><span class="n">s</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
-</span><span data-line="9">
-</span><span data-line="10"><span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;ping&quot;</span><span class="p">)</span>
-</span><span data-line="11"><span class="nb">print</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">64</span><span class="p">))</span>
-</span><span data-line="12"><span class="n">s</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>(Llamar a <a class="reference internal" href="../../../library/socket.html#socket.socket.connect" title="socket.socket.connect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">connect()</span></code></a> en un socket UDP no abre una conexión – simplemente recuerda un destino predeterminado para que las llamadas posteriores <a class="reference internal" href="../../../library/socket.html#socket.socket.send" title="socket.socket.send"><code class="xref py py-meth docutils literal notranslate"><span class="pre">send()</span></code></a> / <a class="reference internal" href="../../../library/socket.html#socket.socket.recv" title="socket.socket.recv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">recv()</span></code></a> no tengan que repetirlo. DTLS necesita ese destino fijo contra el que ejecutar su handshake.)</p>
-<p>El handshake tiene la misma forma que el diagrama TLS de arriba; la diferencia es que cada mensaje del handshake es en sí mismo un datagrama UDP, y cualquiera de los dos lados reintentará en caso de pérdida.</p>
-<div class="admonition note">
-<p class="admonition-title">Nota</p>
-<p>¿Perder paquetes rompe el cifrado? No. Cada paquete DTLS lleva un número de secuencia, y el cifrado usa ese número para producir una salida diferente por cada paquete – de modo que la misma entrada nunca se cifra a los mismos bytes dos veces, y cualquier paquete se puede descifrar por sí solo sin que el anterior haya llegado. Los paquetes perdidos o desordenados no desincronizan a los dos lados. (El propio handshake es la única parte que tiene que llegar de forma fiable, y DTLS se encarga de eso con su propia retransmisión.)</p>
-</div>
-<p>La misma advertencia de solo-cifrado-sin-certificados de arriba se aplica: un handshake DTLS contra un par <code class="docutils literal notranslate"><span class="pre">CERT_NONE</span></code> cifra el tráfico pero no verifica quién es el otro lado. El flujo de trabajo completo de DTLS – certificados, la cookie anti-spoofing del lado del servidor, cómo esta es la misma superficie que TLS salvo por las constantes de protocolo – se cubre junto al material de TLS en <a class="reference internal" href="../production/tls/index.html"><span class="doc">Trabajar con certificados TLS</span></a>.</p>
-<p>La versión con asyncio usa el mismo patrón de UDP no bloqueante de <a class="reference internal" href="sockets/async-sockets.html"><span class="doc">Sockets con asyncio</span></a>. Realiza el handshake de forma síncrona al principio, cambia el socket a no bloqueante, y luego sondea dentro de una corrutina:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
-</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">ssl</span>
-</span><span data-line="4">
-</span><span data-line="5"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">dtls_ping</span><span class="p">(</span><span class="n">target_addr</span><span class="p">,</span> <span class="n">period_ms</span><span class="p">):</span>
-</span><span data-line="6">    <span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
-</span><span data-line="7">    <span class="n">sock</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">target_addr</span><span class="p">)</span>
-</span><span data-line="8">
-</span><span data-line="9">    <span class="c1"># Handshake while still blocking, then switch to async polling.</span>
-</span><span data-line="10">    <span class="n">ctx</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_DTLS_CLIENT</span><span class="p">)</span>
-</span><span data-line="11">    <span class="n">s</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">wrap_socket</span><span class="p">(</span><span class="n">sock</span><span class="p">)</span>
-</span><span data-line="12">    <span class="n">s</span><span class="o">.</span><span class="n">setblocking</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-</span><span data-line="13">
-</span><span data-line="14">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-</span><span data-line="15">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="16">            <span class="n">s</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;ping&quot;</span><span class="p">)</span>
-</span><span data-line="17">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
-</span><span data-line="18">            <span class="k">pass</span>
-</span><span data-line="19">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">period_ms</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>El handshake es el único punto donde esta corrutina bloquea el bucle de eventos; después de eso, cada <code class="docutils literal notranslate"><span class="pre">s.send</span></code> / <code class="docutils literal notranslate"><span class="pre">s.recv</span></code> retorna de inmediato (o lanza <a class="reference internal" href="../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a>), y el <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">asyncio.sleep_ms</span></code> mantiene en marcha el resto del programa.</p>
-</section>
-<section id="going-further">
-<h2><span class="section-number">9.17.5. </span>Ir más allá<a class="headerlink" href="#going-further" title="Link to this heading">¶</a></h2>
-<p>Todo lo que va <em>más allá</em> de TLS de solo cifrado – verificar el certificado de un servidor HTTPS público, ejecutar la cámara como un servidor TLS autenticado, TLS mutuo entre la cámara y un back-end, elegir claves y tipos de clave, lidiar con la caducidad de certificados – está en <a class="reference internal" href="../production/tls/index.html"><span class="doc">Trabajar con certificados TLS</span></a>. Esa sección cubre cómo generar certificados autofirmados para pruebas locales, cómo obtener certificados firmados por una CA para producción, cómo llevarlos a la cámara en el formato correcto (DER), cómo verificar un servidor público cuando la cámara es el cliente, cómo pensar en la protección de claves en un dispositivo que un atacante podría desmontar, y cómo planificar para el día en que el certificado caduque.</p>
-<p>Para la referencia completa de la API <a class="reference internal" href="../../../library/ssl.html#module-ssl" title="ssl: TLS/SSL wrapper for socket objects"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ssl</span></code></a> – versiones de TLS admitidas, conjuntos de cifrado y opciones de contexto – consulta <a class="reference internal" href="../../../library/ssl.html"><span class="doc">ssl — Módulo SSL/TLS</span></a>.</p>
-</section>
-</section>
-
-        </article><button class="back-to-top" type="button">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
-  </svg>
-  <span>Volver arriba</span>
-</button><div class="navigation flex print:hidden"><div class="navigation-prev">
-    <a href="names/ntp.html">
-      <i class="i-lucide chevron-left"></i>
-      <div class="page-info">
-        <span>Anterior</span><div class="title"><span class="section-number">9.16. </span>Hora y NTP</div></div>
-    </a>
-  </div><div class="navigation-next">
-    <a href="mqtt/protocol-on-the-wire.html">
-      <div class="page-info">
-        <span>Siguiente</span>
-        <div class="title"><span class="section-number">9.18. </span>MQTT, byte a byte</div>
-      </div>
-      <i class="i-lucide chevron-right"></i>
-    </a>
-  </div></div></div>
-    </div>
-  </main>
-</div>
-<footer class="sy-foot">
-  <div class="sy-foot-inner sy-container mx-auto">
-    <div class="sy-foot-reserved md:flex justify-between items-center">
-      <div class="sy-foot-copyright">
-  <p class="omv-build-stamp">
-    Para el firmware de OpenMV v5.0.0 &middot; basado en MicroPython v1.28 &middot; documentación generada 19 de junio de 2026 &middot; Copyright &copy; 2014-2026 de OpenMV, Damien P. George y otros.
-  </p>
-  <p>
-    
-    Creado con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando el <a href="https://shibuya.lepture.com">Shibuya theme</a>.
-    
-  </p>
-</div>
-      <div class="sy-foot-socials">
-<a href="https://github.com/openmv/openmv" aria-label="GitHub">
-  <iconify-icon icon="simple-icons:github"></iconify-icon>
-</a>
-<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
-  <iconify-icon icon="prime:twitter"></iconify-icon>
-</a>
-<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
-  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
-</a>
-<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
-  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
-</a></div>
-    </div>
-  </div>
-</footer>
-      <script src="../../../_static/documentation_options.js?v=8b8370db"></script>
-      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../../../_static/translations.js?v=f85f4cfb"></script>
-      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
-      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
-      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
-      <script src="../../../../_static/nav-versions.js?v=b4d4f1af"></script></body>
-</html>
+<!doctype html><html data-accent-color=blue data-content_root=../../../ lang=es><head><meta charset=utf-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>9.17. Sockets cifrados y TLS - documentación de OpenMV MicroPython - 1.28</title><link rel="shortcut icon" href=../../../../_static/openmv.ico><link href=../../../genindex.html rel=index title=Índice><link href=../../../search.html rel=search title=Búsqueda><link title="9.18. MQTT, byte a byte" href=mqtt/protocol-on-the-wire.html rel=next><link title="9.16. Hora y NTP" href=names/ntp.html rel=prev><link href=https://docs.openmv.io/dev/openmvcam/tutorial/networking/encrypted-sockets.html rel=canonical><script>function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");</script><link href="../../../../_static/pygments.css?v=e1a1ceaf" rel=stylesheet><link href="../../../../_static/shibuya.css?v=9454f7d5" rel=stylesheet><link href="../../../../_static/print.css?v=20ff2c19" media=print rel=stylesheet><link href="../../../../_static/custom.css?v=0166669e" rel=stylesheet><link href="../../../../_static/rtl.css?v=a0ea7a54" rel=stylesheet><link href=https://fonts.googleapis.com rel=preconnect><link crossorigin href=https://fonts.gstatic.com rel=preconnect><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel=stylesheet><style>:root{--sy-f-text:"Inter",var(--sy-f-sys),var(--sy-f-cjk),sans-serif;--sy-f-heading:"Inter",var(--sy-f-sys),var(--sy-f-cjk),sans-serif}</style><meta content=website property=og:type><meta content=https://docs.openmv.io/dev/openmvcam/tutorial/networking/encrypted-sockets.html property=og:url><meta content="9.17. Sockets cifrados y TLS" property=og:title><meta content=summary name=twitter:card><link href=/dev/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=en rel=alternate><link href=/dev/ar/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=ar rel=alternate><link href=/dev/zh_CN/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=zh-Hans rel=alternate><link href=/dev/zh_TW/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=zh-Hant rel=alternate><link href=/dev/hr/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=hr rel=alternate><link href=/dev/cs/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=cs rel=alternate><link href=/dev/nl/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=nl rel=alternate><link href=/dev/fi/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=fi rel=alternate><link href=/dev/fr/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=fr rel=alternate><link href=/dev/de/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=de rel=alternate><link href=/dev/he/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=he rel=alternate><link href=/dev/hu/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=hu rel=alternate><link href=/dev/id/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=id rel=alternate><link href=/dev/it/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=it rel=alternate><link href=/dev/ja/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=ja rel=alternate><link href=/dev/ko/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=ko rel=alternate><link href=/dev/pl/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=pl rel=alternate><link href=/dev/pt_BR/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=pt-BR rel=alternate><link href=/dev/pt_PT/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=pt-PT rel=alternate><link href=/dev/ro/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=ro rel=alternate><link href=/dev/ru/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=ru rel=alternate><link href=/dev/sv/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=sv rel=alternate><link href=/dev/th/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=th rel=alternate><link href=/dev/tr/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=tr rel=alternate><link href=/dev/uk/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=uk rel=alternate><link href=/dev/vi/openmvcam/tutorial/networking/encrypted-sockets.html hreflang=vi rel=alternate></head><body><div class=sy-head><div class=sy-head-blur></div><div class="sy-head-inner sy-container mx-auto"><a class=sy-head-brand href=../../../index.html> <img alt="OpenMV MicroPython" class=light-logo height=28 loading=lazy src=../../../../_static/openmv-logo-light.png> <img alt="OpenMV MicroPython" class=dark-logo height=28 loading=lazy src=../../../../_static/openmv-logo-dark.png> <strong>OpenMV MicroPython</strong> </a><div class=sy-head-nav id=head-nav><nav class=sy-head-links><ul><li class=link><a href=../../../index.html>Inicio</a></li><li class=link><a href=../index.html>Tutorial</a></li><li class=link><a href=../../../library/index.html>Bibliotecas principales</a></li><li class=link><a href=../../quickref.html>Placas</a></li><li class=link><a href=../../shields.html>Shields</a></li><li class=link><a href=../../sensors.html>Sensores</a></li><li class=link><a href=../../../reference/index.html>Lenguaje</a></li><li class=link><a href=../../../genrst/index.html>CPython</a></li><li class=link><a href=../../../develop/index.html>Aspectos internos</a></li><li class=link><a href=../../../changelog/index.html>Registro de cambios</a></li></ul></nav><div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action=../../../search.html><input name=q placeholder=Búsqueda><kbd>/</kbd></form><div class=nav-versions><button aria-label=Versiones type=button><span class=md:hidden>Versiones</span> <span class="hidden md:inline">dev</span> <i class="i-lucide chevron-down"></i></button><div class=nav-versions-choices><ul><li><a href>dev</a></li></ul></div></div><div class=nav-languages><button type=button><span class=md:hidden>Traducciones</span> <iconify-icon icon=lucide:languages></iconify-icon></button><div class=nav-languages-choices><ul><li><a href=/dev/openmvcam/tutorial/networking/encrypted-sockets.html>English</a></li><li><a href=/dev/ar/openmvcam/tutorial/networking/encrypted-sockets.html>العربية</a></li><li><a href=/dev/zh_CN/openmvcam/tutorial/networking/encrypted-sockets.html>简体中文</a></li><li><a href=/dev/zh_TW/openmvcam/tutorial/networking/encrypted-sockets.html>繁體中文</a></li><li><a href=/dev/hr/openmvcam/tutorial/networking/encrypted-sockets.html>Hrvatski</a></li><li><a href=/dev/cs/openmvcam/tutorial/networking/encrypted-sockets.html>Čeština</a></li><li><a href=/dev/nl/openmvcam/tutorial/networking/encrypted-sockets.html>Nederlands</a></li><li><a href=/dev/fi/openmvcam/tutorial/networking/encrypted-sockets.html>Suomi</a></li><li><a href=/dev/fr/openmvcam/tutorial/networking/encrypted-sockets.html>Français</a></li><li><a href=/dev/de/openmvcam/tutorial/networking/encrypted-sockets.html>Deutsch</a></li><li><a href=/dev/he/openmvcam/tutorial/networking/encrypted-sockets.html>עברית</a></li><li><a href=/dev/hu/openmvcam/tutorial/networking/encrypted-sockets.html>Magyar</a></li><li><a href=/dev/id/openmvcam/tutorial/networking/encrypted-sockets.html>Bahasa Indonesia</a></li><li><a href=/dev/it/openmvcam/tutorial/networking/encrypted-sockets.html>Italiano</a></li><li><a href=/dev/ja/openmvcam/tutorial/networking/encrypted-sockets.html>日本語</a></li><li><a href=/dev/ko/openmvcam/tutorial/networking/encrypted-sockets.html>한국어</a></li><li><a href=/dev/pl/openmvcam/tutorial/networking/encrypted-sockets.html>Polski</a></li><li><a href=/dev/pt_BR/openmvcam/tutorial/networking/encrypted-sockets.html>Português (Brasil)</a></li><li><a href=/dev/pt_PT/openmvcam/tutorial/networking/encrypted-sockets.html>Português (Portugal)</a></li><li><a href=/dev/ro/openmvcam/tutorial/networking/encrypted-sockets.html>Română</a></li><li><a href=/dev/ru/openmvcam/tutorial/networking/encrypted-sockets.html>Русский</a></li><li><a href=/dev/es/openmvcam/tutorial/networking/encrypted-sockets.html>Español</a></li><li><a href=/dev/sv/openmvcam/tutorial/networking/encrypted-sockets.html>Svenska</a></li><li><a href=/dev/th/openmvcam/tutorial/networking/encrypted-sockets.html>ไทย</a></li><li><a href=/dev/tr/openmvcam/tutorial/networking/encrypted-sockets.html>Türkçe</a></li><li><a href=/dev/uk/openmvcam/tutorial/networking/encrypted-sockets.html>Українська</a></li><li><a href=/dev/vi/openmvcam/tutorial/networking/encrypted-sockets.html>Tiếng Việt</a></li></ul></div></div><div class=sy-head-socials><a aria-label=GitHub href=https://github.com/openmv/openmv> <iconify-icon icon=simple-icons:github></iconify-icon> </a><a aria-label="X (Twitter)" href=https://x.com/openmvcam> <iconify-icon icon=prime:twitter></iconify-icon> </a></div></div></div><div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center" data-aria-auto="Cambiar al modo claro" data-aria-dark="Cambiar al modo de color automático" data-aria-light="Cambiar al modo oscuro"><i class="i-lucide theme-icon"></i></button><button class="md:hidden flex items-center js-menu" aria-controls=head-nav aria-expanded=false aria-label=Menu type=button><div class=hamburger><span class=hamburger_1></span><span class=hamburger_2></span><span class=hamburger_3></span></div></button></div></div></div><div class="sy-page sy-container flex mx-auto"><aside class="sy-lside md:w-72 md:shrink-0 print:hidden" id=lside><div class="sy-lside-inner md:sticky"><div class="sy-scrollbar p-6"><div class=sidebar-links><ul><li><a class=icon-link href=https://forums.openmv.io/> <span class=icon> <svg viewbox="0 0 24 24" fill=none><path d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z" clip-rule=evenodd fill=var(--accent-9) fill-rule=evenodd /><circle cx=12 cy=11 fill=white r=1 /><circle cx=9 cy=11 fill=white r=1 /><circle cx=15 cy=11 fill=white r=1 /></svg> </span> <span class=text>Discusión</span> </a></li></ul></div><div class=globaltoc data-expand-depth=1><ul class=current><li class="toctree-l1 current"><a class="reference internal" href=../index.html>Tutorial</a><ul class=current><li class=toctree-l2><a class="reference internal" href=../quickstart.html>1. Inicio rápido</a></li><li class=toctree-l2><a class="reference internal" href=../python/index.html>2. Visión general de Python</a></li><li class=toctree-l2><a class="reference internal" href=../hardware/index.html>3. Control de hardware</a></li><li class=toctree-l2><a class="reference internal" href=../vision/index.html>4. Sensores de visión</a></li><li class=toctree-l2><a class="reference internal" href=../image/index.html>5. Procesamiento de imágenes</a></li><li class=toctree-l2><a class="reference internal" href=../numpy/index.html>6. NumPy</a></li><li class=toctree-l2><a class="reference internal" href=../ml/index.html>7. Aprendizaje automático</a></li><li class=toctree-l2><a class="reference internal" href=../asyncio/index.html>8. Asyncio</a></li><li class="toctree-l2 current"><a class="reference internal" href=index.html>9. Redes</a><ul class=current><li class=toctree-l3><a class="reference internal" href=basics/why-networks.html>9.1. Por qué redes</a></li><li class=toctree-l3><a class="reference internal" href=basics/layered-protocols.html>9.2. Protocolos por capas</a></li><li class=toctree-l3><a class="reference internal" href=lower-layers/physical-and-link.html>9.3. El cable y la trama</a></li><li class=toctree-l3><a class="reference internal" href=lower-layers/bringing-the-link-up.html>9.4. Levantar el enlace</a></li><li class=toctree-l3><a class="reference internal" href=network/ip-addresses.html>9.5. Direcciones IP</a></li><li class=toctree-l3><a class="reference internal" href=network/packets-and-routing.html>9.6. Paquetes y enrutamiento</a></li><li class=toctree-l3><a class="reference internal" href=network/private-networks.html>9.7. Redes privadas y NAT</a></li><li class=toctree-l3><a class="reference internal" href=transport/ports.html>9.8. Puertos</a></li><li class=toctree-l3><a class="reference internal" href=transport/udp.html>9.9. UDP – envía un paquete y cruza los dedos</a></li><li class=toctree-l3><a class="reference internal" href=transport/tcp.html>9.10. TCP – un flujo fiable de bytes</a></li><li class=toctree-l3><a class="reference internal" href=sockets/socket-objects.html>9.11. Objetos socket</a></li><li class=toctree-l3><a class="reference internal" href=sockets/udp-sockets.html>9.12. Sockets UDP</a></li><li class=toctree-l3><a class="reference internal" href=sockets/tcp-sockets.html>9.13. Sockets TCP</a></li><li class=toctree-l3><a class="reference internal" href=sockets/async-sockets.html>9.14. Sockets con asyncio</a></li><li class=toctree-l3><a class="reference internal" href=names/dns.html>9.15. Nombres y DNS</a></li><li class=toctree-l3><a class="reference internal" href=names/ntp.html>9.16. Hora y NTP</a></li><li class="toctree-l3 current"><a class="current reference internal" href=#>9.17. Sockets cifrados y TLS</a></li><li class=toctree-l3><a class="reference internal" href=mqtt/protocol-on-the-wire.html>9.18. MQTT, byte a byte</a></li><li class=toctree-l3><a class="reference internal" href=mqtt/mqtt-in-python.html>9.19. MQTT en Python</a></li><li class=toctree-l3><a class="reference internal" href=wrap-up.html>9.20. Recapitulación</a></li></ul></li><li class=toctree-l2><a class="reference internal" href=../webservers/index.html>10. Servidores web</a></li><li class=toctree-l2><a class="reference internal" href=../bluetooth/index.html>11. Bluetooth</a></li><li class=toctree-l2><a class="reference internal" href=../protocol/index.html>12. Protocolo del host</a></li><li class=toctree-l2><a class="reference internal" href=../tools/index.html>13. Herramientas</a></li><li class=toctree-l2><a class="reference internal" href=../production/index.html>14. Producción</a></li></ul></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../library/index.html>Bibliotecas</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../quickref.html>Placas</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../shields.html>Escudos (Shields)</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../sensors.html>Sensores</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../reference/index.html>Lenguaje</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../genrst/index.html>CPython</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../develop/index.html>Internos</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../changelog/index.html>Registro de cambios</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../license.html>Licencia</a></li></ul></div></div></div></aside><div aria-label="Close left sidebar" class="lside-overlay js-menu" aria-controls=lside aria-expanded=false role=button></div><aside class="sy-rside pb-3 w-64 shrink-0 order-last" id=rside><button aria-label="Close Table of Contents" class="rside-close js-menu xl:hidden" aria-controls=rside aria-expanded=false type=button><i class="i-lucide close"></i></button><div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class=localtoc><h3>En esta página</h3><ul><li><a class="reference internal" href=#what-tls-adds-and-what-the-cam-ships-with>9.17.1. Qué añade TLS, y qué incluye la cámara de fábrica</a></li><li><a class="reference internal" href=#encrypting-an-outbound-connection>9.17.2. Cifrar una conexión saliente</a></li><li><a class="reference internal" href=#with-asyncio>9.17.3. Con asyncio</a></li><li><a class="reference internal" href=#dtls-tls-over-udp>9.17.4. DTLS – TLS sobre UDP</a></li><li><a class="reference internal" href=#going-further>9.17.5. Ir más allá</a></li></ul></div><a class="js-repo-stats repo-stats flex items-center" data-repo=micropython-doc data-type=github data-user=openmv href=https://github.com/openmv/micropython-doc> <span class="w-8 flex items-center justify-around shrink-0 text-3xl"> <iconify-icon icon=simple-icons:github></iconify-icon> </span> <span class="flex-grow px-2 break-all"> <span>micropython-doc</span> <span class="flex text-sm repo-stats-count"> <span class="flex items-center pr-3"> <iconify-icon icon=lucide:star></iconify-icon> <strong class="js-repo-stars ml-1">0</strong> </span> <span class="flex items-center"> <iconify-icon icon=lucide:git-fork></iconify-icon> <strong class="js-repo-forks ml-1">0</strong> </span> </span> </span> </a><div class=edit-this-page><a href=https://github.com/openmv/micropython-doc/blob/49076d1a5e02296ba3cfa31fe1660cf4507e761f/docs/openmvcam/tutorial/networking/encrypted-sockets.rst>Editar esta página</a></div><div data-ea-publisher=readthedocs id=ethical-ad-placement></div></div></aside><div aria-label="Close Table of Contents" class="rside-overlay js-menu" aria-controls=rside aria-expanded=false role=button></div><main class="sy-main w-full max-sm:max-w-full print:pt-6"><div class=sy-breadcrumbs role=navigation><div class="sy-breadcrumbs-inner flex items-center"><div class="md:hidden mr-3"><button aria-controls=lside aria-expanded=false aria-label=Menu class=js-menu type=button><i class="i-lucide menu"></i></button></div><ol class=flex-1 itemscope itemtype=https://schema.org/BreadcrumbList><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=../../../index.html itemprop=item><span itemprop=name>OpenMV MicroPython</span></a> <span>/</span> <meta content=1 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=../index.html itemprop=item><span itemprop=name>Tutorial de la OpenMV Cam</span></a> <span>/</span> <meta content=2 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=index.html itemprop=item><span itemprop=name><span class=section-number>9. </span>Redes</span></a> <span>/</span> <meta content=3 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><strong itemprop=name><span class=section-number>9.17. </span>Sockets cifrados y TLS</strong> <meta content=4 itemprop=position></li></ol><div class="xl:hidden ml-1"><button aria-label="Show table of contents" aria-controls=rside aria-expanded=false class=js-menu type=button><i class="i-lucide outdent"></i></button></div></div></div><div class="flex flex-col break-words justify-between"><div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12"><div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12"><div id=copy-page-trigger><button class="js-copy px-3 py-1 inline-flex items-center gap-1" data-url=https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt type=button><i class=i-lucide data-icon=copy></i> <span>Copiar página</span></button><button aria-label="Más acciones" class="js-menu px-2 py-1" aria-controls=copy-page-content aria-expanded=false aria-haspopup=menu type=button><i class="i-lucide chevron-down"></i></button></div><div aria-hidden=true aria-orientation=vertical id=copy-page-content role=menu><div role=presentation><div class="flex flex-col" role=group><button class=js-copy data-url=https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt role=menuitem type=button><span class=iconify-icon> <i class=i-lucide data-icon=copy></i> </span> <span>Copiar página</span></button><a href=https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt rel=nofollow role=menuitem target=_blank><iconify-icon icon=bi:code-slash></iconify-icon> <span>Ver fuente</span></a><a href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." rel=nofollow role=menuitem target=_blank> <iconify-icon icon=bi:openai></iconify-icon> <span>Abrir en ChatGPT</span> </a><a href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." rel=nofollow role=menuitem target=_blank> <iconify-icon icon=bi:claude></iconify-icon> <span>Abrir en Claude</span> </a><a href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/encrypted-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." rel=nofollow role=menuitem target=_blank> <iconify-icon icon=bi:perplexity></iconify-icon> <span>Abrir en Perplexity</span> </a></div></div></div></div><article class=yue role=main><section id=encrypted-sockets-and-tls><h1><span class=section-number>9.17. </span>Sockets cifrados y TLS<a title="Link to this heading" class=headerlink href=#encrypted-sockets-and-tls>¶</a></h1><p>Todo lo cubierto hasta aquí mueve bytes en claro. Cualquier dispositivo en la ruta entre la cámara y el servidor – el router del hogar, el proveedor de servicios de internet, un punto de acceso malicioso en una cafetería – puede, en principio, leer o modificar lo que pasa a través de él. Para la mayoría del tráfico de internet eso no es aceptable. La solución estándar es envolver la conexión en una capa de cifrado: <em>TLS</em>, el protocolo Transport Layer Security. El icono del candado «HTTPS» en un navegador es TLS ejecutándose sobre TCP, y ese mismo envoltorio es lo que hace «seguro» a cualquier otro protocolo de internet. El módulo <a class="reference internal" title="ssl: TLS/SSL wrapper for socket objects" href=../../../library/ssl.html#module-ssl><code class="xref py py-mod docutils literal notranslate"><span class=pre>ssl</span></code></a> de la cámara es lo que envuelve un <a class="reference internal" href=../../../library/socket.html#socket.socket title=socket.socket><code class="xref py py-class docutils literal notranslate"><span class=pre>socket</span></code></a> en TLS.</p><section id=what-tls-adds-and-what-the-cam-ships-with><h2><span class=section-number>9.17.1. </span>Qué añade TLS, y qué incluye la cámara de fábrica<a title="Link to this heading" class=headerlink href=#what-tls-adds-and-what-the-cam-ships-with>¶</a></h2><p>TLS se sitúa entre TCP y la aplicación – la aplicación escribe bytes en un socket envuelto en TLS, TLS los cifra y entrega el resultado a TCP, y el proceso se invierte en el otro extremo. En su forma completa, TLS ofrece tres garantías por encima de TCP en claro:</p><ul class=simple><li><p><strong>Confidencialidad.</strong> Quien escuche en la ruta no puede leer lo que intercambian los dos extremos.</p></li><li><p><strong>Integridad.</strong> Cualquier modificación del tráfico en tránsito se detecta; la conexión se rompe en lugar de entregar datos manipulados.</p></li><li><p><strong>Autenticación.</strong> El servidor demuestra que es el servidor nombrado, no un impostor (y, opcionalmente, el cliente demuestra quién es <em>él</em> también).</p></li></ul><p>Las dos primeras provienen del propio cifrado. La tercera necesita <em>certificados</em> en al menos uno de los lados, más algo previamente confiable contra lo que verificar esos certificados. La cámara OpenMV se entrega <strong>sin ningún almacén de certificados integrado</strong>: una cámara recién flasheada no confía en ninguna autoridad de certificación, no tiene un certificado de servidor propio, y el modo de verificación predeterminado (<a class="reference external" title="(in Python v3.14)" href=https://docs.python.org/3/library/ssl.html#ssl.CERT_NONE><code class="xref py py-data docutils literal notranslate"><span class=pre>ssl.CERT_NONE</span></code></a>) no comprueba el certificado del par contra nada. Así que, de fábrica, TLS en la cámara te da las dos primeras garantías – cifrado contra escuchas y manipulaciones por parte de un observador pasivo – pero <strong>no</strong> la tercera.</p></section><section id=encrypting-an-outbound-connection><h2><span class=section-number>9.17.2. </span>Cifrar una conexión saliente<a title="Link to this heading" class=headerlink href=#encrypting-an-outbound-connection>¶</a></h2><p>El uso más sencillo es envolver una conexión TCP saliente. El flujo es: abrir un socket TCP normal, entregarlo a <code class="xref py py-func docutils literal notranslate"><span class=pre>ssl.wrap_socket()</span></code>, y luego leer y escribir a través del socket envuelto exactamente igual que lo harías con el socket en claro:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>socket</span>
+</span><span data-line=2><span class=kn>import</span><span class=w> </span><span class=nn>ssl</span>
+</span><span data-line=3>
+</span><span data-line=4><span class=n>addr</span> <span class=o>=</span> <span class=n>socket</span><span class=o>.</span><span class=n>getaddrinfo</span><span class=p>(</span><span class=s2>"example.com"</span><span class=p>,</span> <span class=mi>443</span><span class=p>)[</span><span class=mi>0</span><span class=p>][</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span>
+</span><span data-line=5><span class=n>sock</span> <span class=o>=</span> <span class=n>socket</span><span class=o>.</span><span class=n>socket</span><span class=p>(</span><span class=n>socket</span><span class=o>.</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>socket</span><span class=o>.</span><span class=n>SOCK_STREAM</span><span class=p>)</span>
+</span><span data-line=6><span class=n>sock</span><span class=o>.</span><span class=n>connect</span><span class=p>(</span><span class=n>addr</span><span class=p>)</span>
+</span><span data-line=7>
+</span><span data-line=8><span class=n>s</span> <span class=o>=</span> <span class=n>ssl</span><span class=o>.</span><span class=n>wrap_socket</span><span class=p>(</span><span class=n>sock</span><span class=p>)</span>
+</span><span data-line=9>
+</span><span data-line=10><span class=n>s</span><span class=o>.</span><span class=n>send</span><span class=p>(</span><span class=sa>b</span><span class=s2>"GET / HTTP/1.0</span><span class=se>\r\n</span><span class=s2>Host: example.com</span><span class=se>\r\n\r\n</span><span class=s2>"</span><span class=p>)</span>
+</span><span data-line=11><span class=nb>print</span><span class=p>(</span><span class=n>s</span><span class=o>.</span><span class=n>recv</span><span class=p>(</span><span class=mi>4096</span><span class=p>))</span>
+</span><span data-line=12><span class=n>s</span><span class=o>.</span><span class=n>close</span><span class=p>()</span>
+</span></pre></div></div><p>El envoltorio realiza el handshake TLS; después, cada byte que pasa por <code class="docutils literal notranslate"><span class=pre>s.send</span></code> se cifra al salir y cada byte de <code class="docutils literal notranslate"><span class=pre>s.recv</span></code> viajó cifrado por el cable. No se configuró ningún certificado, no se suministró ningún ancla de confianza – TLS simplemente negocia una clave de sesión efímera con el servidor que responda y la usa.</p><figure class=align-default id=id1><img alt='A diagram with two columns labelled "client" and "server". A dashed horizontal line near the top is labelled "TCP connection already open". Below it, three arrows show the TLS handshake: "ClientHello" from client to server, "ServerHello + certificate + key share" back, and "Finished" forward again. A second dashed horizontal line below is labelled "TLS session open -- everything after this is encrypted". Two thick bidirectional arrows below it carry "encrypted data".' src=../../../../_images/tls-handshake.svg><figcaption><p><span class=caption-text>El handshake TLS que ejecuta <code class="xref py py-func docutils literal notranslate"><span class=pre>ssl.wrap_socket()</span></code>. Se sitúa encima de la conexión TCP ya abierta de la figura anterior; una vez que ambos lados han enviado <code class="docutils literal notranslate"><span class=pre>Finished</span></code>, el resto de la conversación se cifra en ambas direcciones.</span><a title="Link to this image" class=headerlink href=#id1>¶</a></p></figcaption></figure><div class="admonition warning"><p class=admonition-title>Advertencia</p><p>Esto es solo cifrado, <strong>no</strong> TLS autenticado. La cámara habla de forma segura con <em>lo que sea</em> que respondió en el otro extremo de la conexión TCP. Si un atacante intermediario (man-in-the-middle) redirige la conexión a un servidor que controla y ese servidor presenta <em>cualquier</em> certificado, el handshake aún tiene éxito y la cámara termina hablando de forma segura con el atacante. Usa este modo solo cuando un atacante intermediario no forme parte del modelo de amenazas – una red local cerrada, un entorno de desarrollo, la cámara hablando con un servicio que se ejecuta en el mismo hardware – y <em>no</em> cuando se conecta a la internet pública.</p><p>Para una autenticación real – la cámara verificando un servidor público, la cámara actuando como servidor TLS, o TLS mutuo – necesitas llevar certificados al dispositivo. La historia completa está en <a class="reference internal" href=../production/tls/index.html><span class=doc>Trabajar con certificados TLS</span></a>.</p></div><p>El mismo envoltorio funciona para el tráfico TCP entrante, seleccionando el protocolo de servidor y pasando <code class="docutils literal notranslate"><span class=pre>server_side=True</span></code> a <code class="xref py py-func docutils literal notranslate"><span class=pre>ssl.wrap_socket()</span></code>. La advertencia anterior sigue siendo válida: sin un certificado propio, la cámara no puede demostrar quién es ante el cliente, y un cliente curioso vería un fallo de handshake de «no certificate» en la mayoría de las pilas TLS. El flujo de trabajo de certificados del lado de producción es lo que desbloquea ejecutar la cámara como servidor TLS de forma útil.</p></section><section id=with-asyncio><h2><span class=section-number>9.17.3. </span>Con asyncio<a title="Link to this heading" class=headerlink href=#with-asyncio>¶</a></h2><p>El <a class="reference internal" href=../asyncio/index.html><span class=doc>capítulo de asyncio</span></a> mostró <a class="reference internal" href=../../../library/asyncio.html#asyncio.open_connection title=asyncio.open_connection><code class="xref py py-func docutils literal notranslate"><span class=pre>asyncio.open_connection()</span></code></a> para clientes TCP en claro. La misma llamada acepta una palabra clave <code class="docutils literal notranslate"><span class=pre>ssl=True</span></code> que envuelve la conexión en TLS, de nuevo sin ninguna configuración de certificados:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>asyncio</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>main</span><span class=p>():</span>
+</span><span data-line=4>    <span class=n>reader</span><span class=p>,</span> <span class=n>writer</span> <span class=o>=</span> <span class=k>await</span> <span class=n>asyncio</span><span class=o>.</span><span class=n>open_connection</span><span class=p>(</span>
+</span><span data-line=5>        <span class=s2>"example.com"</span><span class=p>,</span> <span class=mi>443</span><span class=p>,</span> <span class=n>ssl</span><span class=o>=</span><span class=kc>True</span><span class=p>,</span>
+</span><span data-line=6>    <span class=p>)</span>
+</span><span data-line=7>    <span class=n>writer</span><span class=o>.</span><span class=n>write</span><span class=p>(</span><span class=sa>b</span><span class=s2>"GET / HTTP/1.0</span><span class=se>\r\n</span><span class=s2>Host: example.com</span><span class=se>\r\n\r\n</span><span class=s2>"</span><span class=p>)</span>
+</span><span data-line=8>    <span class=k>await</span> <span class=n>writer</span><span class=o>.</span><span class=n>drain</span><span class=p>()</span>
+</span><span data-line=9>    <span class=nb>print</span><span class=p>(</span><span class=k>await</span> <span class=n>reader</span><span class=o>.</span><span class=n>read</span><span class=p>(</span><span class=mi>4096</span><span class=p>))</span>
+</span><span data-line=10>    <span class=n>writer</span><span class=o>.</span><span class=n>close</span><span class=p>()</span>
+</span><span data-line=11>    <span class=k>await</span> <span class=n>writer</span><span class=o>.</span><span class=n>wait_closed</span><span class=p>()</span>
+</span><span data-line=12>
+</span><span data-line=13><span class=n>asyncio</span><span class=o>.</span><span class=n>run</span><span class=p>(</span><span class=n>main</span><span class=p>())</span>
+</span></pre></div></div><p>El par lector/escritor detrás de una conexión TLS tiene la misma forma que el de una conexión TCP en claro – solo difiere la configuración. La misma salvedad sobre la autenticación se aplica: <code class="docutils literal notranslate"><span class=pre>ssl=True</span></code> por sí solo da únicamente cifrado, no verificación.</p></section><section id=dtls-tls-over-udp><h2><span class=section-number>9.17.4. </span>DTLS – TLS sobre UDP<a title="Link to this heading" class=headerlink href=#dtls-tls-over-udp>¶</a></h2><p>TLS, tal como se ha descrito hasta ahora, viaja encima de TCP. El protocolo paralelo para UDP es <em>DTLS</em> (Datagram TLS), y el módulo <a class="reference internal" title="ssl: TLS/SSL wrapper for socket objects" href=../../../library/ssl.html#module-ssl><code class="xref py py-mod docutils literal notranslate"><span class=pre>ssl</span></code></a> de la cámara lo admite del mismo modo. Donde TLS convierte una conexión TCP en un flujo de bytes cifrado, DTLS convierte un socket UDP en un flujo de datagramas cifrados y entregados individualmente – de modo que las propiedades de pérdida / desorden / sin control de flujo de UDP de <a class="reference internal" href=transport/udp.html><span class=doc>UDP – envía un paquete y cruza los dedos</span></a> se mantienen, ahora con los bytes dentro de cada datagrama cifrados.</p><p>El envoltorio se ve igual que en el caso de TLS, solo que con un socket <a class="reference internal" href=../../../library/socket.html#socket.SOCK_DGRAM title=socket.SOCK_DGRAM><code class="xref py py-data docutils literal notranslate"><span class=pre>SOCK_DGRAM</span></code></a> y las constantes de protocolo DTLS:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>socket</span>
+</span><span data-line=2><span class=kn>import</span><span class=w> </span><span class=nn>ssl</span>
+</span><span data-line=3>
+</span><span data-line=4><span class=n>sock</span> <span class=o>=</span> <span class=n>socket</span><span class=o>.</span><span class=n>socket</span><span class=p>(</span><span class=n>socket</span><span class=o>.</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>socket</span><span class=o>.</span><span class=n>SOCK_DGRAM</span><span class=p>)</span>
+</span><span data-line=5><span class=n>sock</span><span class=o>.</span><span class=n>connect</span><span class=p>(</span><span class=n>socket</span><span class=o>.</span><span class=n>getaddrinfo</span><span class=p>(</span><span class=s2>"example.com"</span><span class=p>,</span> <span class=mi>4433</span><span class=p>)[</span><span class=mi>0</span><span class=p>][</span><span class=o>-</span><span class=mi>1</span><span class=p>])</span>
+</span><span data-line=6>
+</span><span data-line=7><span class=n>ctx</span> <span class=o>=</span> <span class=n>ssl</span><span class=o>.</span><span class=n>SSLContext</span><span class=p>(</span><span class=n>ssl</span><span class=o>.</span><span class=n>PROTOCOL_DTLS_CLIENT</span><span class=p>)</span>
+</span><span data-line=8><span class=n>s</span> <span class=o>=</span> <span class=n>ctx</span><span class=o>.</span><span class=n>wrap_socket</span><span class=p>(</span><span class=n>sock</span><span class=p>)</span>
+</span><span data-line=9>
+</span><span data-line=10><span class=n>s</span><span class=o>.</span><span class=n>send</span><span class=p>(</span><span class=sa>b</span><span class=s2>"ping"</span><span class=p>)</span>
+</span><span data-line=11><span class=nb>print</span><span class=p>(</span><span class=n>s</span><span class=o>.</span><span class=n>recv</span><span class=p>(</span><span class=mi>64</span><span class=p>))</span>
+</span><span data-line=12><span class=n>s</span><span class=o>.</span><span class=n>close</span><span class=p>()</span>
+</span></pre></div></div><p>(Llamar a <a class="reference internal" href=../../../library/socket.html#socket.socket.connect title=socket.socket.connect><code class="xref py py-meth docutils literal notranslate"><span class=pre>connect()</span></code></a> en un socket UDP no abre una conexión – simplemente recuerda un destino predeterminado para que las llamadas posteriores <a class="reference internal" href=../../../library/socket.html#socket.socket.send title=socket.socket.send><code class="xref py py-meth docutils literal notranslate"><span class=pre>send()</span></code></a> / <a class="reference internal" href=../../../library/socket.html#socket.socket.recv title=socket.socket.recv><code class="xref py py-meth docutils literal notranslate"><span class=pre>recv()</span></code></a> no tengan que repetirlo. DTLS necesita ese destino fijo contra el que ejecutar su handshake.)</p><p>El handshake tiene la misma forma que el diagrama TLS de arriba; la diferencia es que cada mensaje del handshake es en sí mismo un datagrama UDP, y cualquiera de los dos lados reintentará en caso de pérdida.</p><div class="admonition note"><p class=admonition-title>Nota</p><p>¿Perder paquetes rompe el cifrado? No. Cada paquete DTLS lleva un número de secuencia, y el cifrado usa ese número para producir una salida diferente por cada paquete – de modo que la misma entrada nunca se cifra a los mismos bytes dos veces, y cualquier paquete se puede descifrar por sí solo sin que el anterior haya llegado. Los paquetes perdidos o desordenados no desincronizan a los dos lados. (El propio handshake es la única parte que tiene que llegar de forma fiable, y DTLS se encarga de eso con su propia retransmisión.)</p></div><p>La misma advertencia de solo-cifrado-sin-certificados de arriba se aplica: un handshake DTLS contra un par <code class="docutils literal notranslate"><span class=pre>CERT_NONE</span></code> cifra el tráfico pero no verifica quién es el otro lado. El flujo de trabajo completo de DTLS – certificados, la cookie anti-spoofing del lado del servidor, cómo esta es la misma superficie que TLS salvo por las constantes de protocolo – se cubre junto al material de TLS en <a class="reference internal" href=../production/tls/index.html><span class=doc>Trabajar con certificados TLS</span></a>.</p><p>La versión con asyncio usa el mismo patrón de UDP no bloqueante de <a class="reference internal" href=sockets/async-sockets.html><span class=doc>Sockets con asyncio</span></a>. Realiza el handshake de forma síncrona al principio, cambia el socket a no bloqueante, y luego sondea dentro de una corrutina:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>asyncio</span>
+</span><span data-line=2><span class=kn>import</span><span class=w> </span><span class=nn>socket</span>
+</span><span data-line=3><span class=kn>import</span><span class=w> </span><span class=nn>ssl</span>
+</span><span data-line=4>
+</span><span data-line=5><span class=k>async</span> <span class=k>def</span><span class=w> </span><span class=nf>dtls_ping</span><span class=p>(</span><span class=n>target_addr</span><span class=p>,</span> <span class=n>period_ms</span><span class=p>):</span>
+</span><span data-line=6>    <span class=n>sock</span> <span class=o>=</span> <span class=n>socket</span><span class=o>.</span><span class=n>socket</span><span class=p>(</span><span class=n>socket</span><span class=o>.</span><span class=n>AF_INET</span><span class=p>,</span> <span class=n>socket</span><span class=o>.</span><span class=n>SOCK_DGRAM</span><span class=p>)</span>
+</span><span data-line=7>    <span class=n>sock</span><span class=o>.</span><span class=n>connect</span><span class=p>(</span><span class=n>target_addr</span><span class=p>)</span>
+</span><span data-line=8>
+</span><span data-line=9>    <span class=c1># Handshake while still blocking, then switch to async polling.</span>
+</span><span data-line=10>    <span class=n>ctx</span> <span class=o>=</span> <span class=n>ssl</span><span class=o>.</span><span class=n>SSLContext</span><span class=p>(</span><span class=n>ssl</span><span class=o>.</span><span class=n>PROTOCOL_DTLS_CLIENT</span><span class=p>)</span>
+</span><span data-line=11>    <span class=n>s</span> <span class=o>=</span> <span class=n>ctx</span><span class=o>.</span><span class=n>wrap_socket</span><span class=p>(</span><span class=n>sock</span><span class=p>)</span>
+</span><span data-line=12>    <span class=n>s</span><span class=o>.</span><span class=n>setblocking</span><span class=p>(</span><span class=kc>False</span><span class=p>)</span>
+</span><span data-line=13>
+</span><span data-line=14>    <span class=k>while</span> <span class=kc>True</span><span class=p>:</span>
+</span><span data-line=15>        <span class=k>try</span><span class=p>:</span>
+</span><span data-line=16>            <span class=n>s</span><span class=o>.</span><span class=n>send</span><span class=p>(</span><span class=sa>b</span><span class=s2>"ping"</span><span class=p>)</span>
+</span><span data-line=17>        <span class=k>except</span> <span class=ne>OSError</span><span class=p>:</span>
+</span><span data-line=18>            <span class=k>pass</span>
+</span><span data-line=19>        <span class=k>await</span> <span class=n>asyncio</span><span class=o>.</span><span class=n>sleep_ms</span><span class=p>(</span><span class=n>period_ms</span><span class=p>)</span>
+</span></pre></div></div><p>El handshake es el único punto donde esta corrutina bloquea el bucle de eventos; después de eso, cada <code class="docutils literal notranslate"><span class=pre>s.send</span></code> / <code class="docutils literal notranslate"><span class=pre>s.recv</span></code> retorna de inmediato (o lanza <a class="reference internal" href=../../../library/builtins.html#OSError title=OSError><code class="xref py py-exc docutils literal notranslate"><span class=pre>OSError</span></code></a>), y el <code class="docutils literal notranslate"><span class=pre>await</span> <span class=pre>asyncio.sleep_ms</span></code> mantiene en marcha el resto del programa.</p></section><section id=going-further><h2><span class=section-number>9.17.5. </span>Ir más allá<a title="Link to this heading" class=headerlink href=#going-further>¶</a></h2><p>Todo lo que va <em>más allá</em> de TLS de solo cifrado – verificar el certificado de un servidor HTTPS público, ejecutar la cámara como un servidor TLS autenticado, TLS mutuo entre la cámara y un back-end, elegir claves y tipos de clave, lidiar con la caducidad de certificados – está en <a class="reference internal" href=../production/tls/index.html><span class=doc>Trabajar con certificados TLS</span></a>. Esa sección cubre cómo generar certificados autofirmados para pruebas locales, cómo obtener certificados firmados por una CA para producción, cómo llevarlos a la cámara en el formato correcto (DER), cómo verificar un servidor público cuando la cámara es el cliente, cómo pensar en la protección de claves en un dispositivo que un atacante podría desmontar, y cómo planificar para el día en que el certificado caduque.</p><p>Para la referencia completa de la API <a class="reference internal" title="ssl: TLS/SSL wrapper for socket objects" href=../../../library/ssl.html#module-ssl><code class="xref py py-mod docutils literal notranslate"><span class=pre>ssl</span></code></a> – versiones de TLS admitidas, conjuntos de cifrado y opciones de contexto – consulta <a class="reference internal" href=../../../library/ssl.html><span class=doc>ssl — Módulo SSL/TLS</span></a>.</p></section></section></article><button class=back-to-top type=button><svg viewbox="0 0 24 24" xmlns=http://www.w3.org/2000/svg><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path></svg> <span>Volver arriba</span></button><div class="navigation flex print:hidden"><div class=navigation-prev><a href=names/ntp.html> <i class="i-lucide chevron-left"></i> <div class=page-info><span>Anterior</span><div class=title><span class=section-number>9.16. </span>Hora y NTP</div></div> </a></div><div class=navigation-next><a href=mqtt/protocol-on-the-wire.html> <div class=page-info><span>Siguiente</span><div class=title><span class=section-number>9.18. </span>MQTT, byte a byte</div></div> <i class="i-lucide chevron-right"></i> </a></div></div></div></div></main></div><footer class=sy-foot><div class="sy-foot-inner sy-container mx-auto"><div class="sy-foot-reserved md:flex justify-between items-center"><div class=sy-foot-copyright><p class=omv-build-stamp>Para el firmware de OpenMV v5.0.0 · basado en MicroPython v1.28 · documentación generada 19 de junio de 2026 · Copyright © 2014-2026 de OpenMV, Damien P. George y otros.</p><p>Creado con <a href=https://www.sphinx-doc.org/>Sphinx</a> usando el <a href=https://shibuya.lepture.com>Shibuya theme</a>.</p></div><div class=sy-foot-socials><a aria-label=GitHub href=https://github.com/openmv/openmv> <iconify-icon icon=simple-icons:github></iconify-icon> </a><a aria-label="X (Twitter)" href=https://x.com/openmvcam> <iconify-icon icon=prime:twitter></iconify-icon> </a><a aria-label=YouTube href=https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ> <iconify-icon icon=simple-icons:youtube></iconify-icon> </a><a aria-label=LinkedIn href=https://www.linkedin.com/company/16193624/> <iconify-icon icon=simple-icons:linkedin></iconify-icon> </a></div></div></div></footer><script src="../../../_static/documentation_options.js?v=8b8370db"></script><script src="../../../../_static/doctools.js?v=fd6eb6e6"></script><script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script><script src="../../../_static/translations.js?v=f85f4cfb"></script><script src="../../../../_static/shibuya.js?v=50760d75"></script><script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script><script src="../../../../_static/navbar-height.js?v=45931de4"></script><script src="../../../../_static/nav-versions.js?v=b4d4f1af"></script></body></html>

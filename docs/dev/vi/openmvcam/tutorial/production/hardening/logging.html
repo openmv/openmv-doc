@@ -1,637 +1,143 @@
-<!DOCTYPE html>
-<html lang="vi" data-accent-color="blue" data-content_root="../../../../">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>14.3.1. Ghi nhật ký - Tài liệu OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Tìm Kiếm" href="../../../../search.html" /><link rel="next" title="14.3.2. Watchdog" href="watchdog.html" /><link rel="prev" title="14.3. Tăng cường bảo mật cho sản xuất" href="index.html" />
-      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/production/hardening/logging.html" /><script>
-    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
-    setColorMode(localStorage._theme||"auto");
-  </script><link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=e1a1ceaf" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/shibuya.css?v=9454f7d5" />
-    <link media="print" rel="stylesheet" type="text/css" href="../../../../../_static/print.css?v=20ff2c19" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=0166669e" />
-    <link rel="stylesheet" type="text/css" href="../../../../../_static/rtl.css?v=a0ea7a54" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
-  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
-}
-</style>
-    
-  <meta property="og:type" content="website"/>
-  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/production/hardening/logging.html"/>
-  <meta property="og:title" content="14.3.1. Ghi nhật ký"/>
-    <meta name="twitter:card" content="summary"/>
-  
-    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/production/hardening/logging.html" />
-    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/production/hardening/logging.html" />
-</head>
-<body><div class="sy-head">
-  <div class="sy-head-blur"></div>
-  <div class="sy-head-inner sy-container mx-auto">
-    <a class="sy-head-brand" href="../../../../index.html">
-      <img class="light-logo" src="../../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
-      <img class="dark-logo" src="../../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
-      <strong>OpenMV MicroPython</strong>
-    </a>
-    <div class="sy-head-nav" id="head-nav">
-      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Trang chủ</a></li><li class="link"><a href="../../index.html">Hướng dẫn</a></li><li class="link"><a href="../../../../library/index.html">Thư viện</a></li><li class="link"><a href="../../../quickref.html">Bo mạch</a></li><li class="link"><a href="../../../shields.html">Shield</a></li><li class="link"><a href="../../../sensors.html">Cảm biến</a></li><li class="link"><a href="../../../../reference/index.html">Ngôn ngữ</a></li><li class="link"><a href="../../../../genrst/index.html">CPython</a></li><li class="link"><a href="../../../../develop/index.html">Nội bộ</a></li><li class="link"><a href="../../../../changelog/index.html">Nhật ký thay đổi</a></li></ul></nav>
-      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
-  <input type="text" name="q" placeholder="Tìm Kiếm" />
-  <kbd>/</kbd>
-</form><div class="nav-versions">
-    <button type="button" aria-label="Phiên bản">
-      <span class="md:hidden">Phiên bản</span>
-      <span class="hidden md:inline">dev</span>
-      <i class="i-lucide chevron-down"></i>
-    </button>
-    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
-  </div><div class="nav-languages">
-  <button type="button">
-    <span class="md:hidden">Bản dịch</span>
-    <iconify-icon icon="lucide:languages"></iconify-icon>
-  </button>
-  <div class="nav-languages-choices">
-    <ul><li><a href="/dev/openmvcam/tutorial/production/hardening/logging.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/production/hardening/logging.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/production/hardening/logging.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/production/hardening/logging.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/production/hardening/logging.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/production/hardening/logging.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/production/hardening/logging.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/production/hardening/logging.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/production/hardening/logging.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/production/hardening/logging.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/production/hardening/logging.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/production/hardening/logging.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/production/hardening/logging.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/production/hardening/logging.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/production/hardening/logging.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/production/hardening/logging.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/production/hardening/logging.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/production/hardening/logging.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/production/hardening/logging.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/production/hardening/logging.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/production/hardening/logging.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/production/hardening/logging.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/production/hardening/logging.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/production/hardening/logging.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/production/hardening/logging.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/production/hardening/logging.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/production/hardening/logging.html">Tiếng Việt</a></li></ul>
-  </div>
-</div><div class="sy-head-socials">
-  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
-    <iconify-icon icon="simple-icons:github"></iconify-icon>
-  </a>
-<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
-  <iconify-icon icon="prime:twitter"></iconify-icon>
-</a></div></div>
-    </div>
-    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
-data-aria-auto="Chuyển sang chế độ sáng"
-data-aria-light="Chuyển sang chế độ tối"
-data-aria-dark="Chuyển sang chế độ màu tự động">
-<i class="i-lucide theme-icon"></i>
-</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
-        <div class="hamburger">
-          <span class="hamburger_1"></span>
-          <span class="hamburger_2"></span>
-          <span class="hamburger_3"></span>
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-<div class="sy-page sy-container flex mx-auto">
-  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
-    <div class="sy-lside-inner md:sticky">
-      <div class="sy-scrollbar p-6"><div class="sidebar-links">
-  <ul>
-    <li><a class="icon-link" href="https://forums.openmv.io/">
-  <span class="icon">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
-      <circle fill="white" cx="12" cy="11" r="1"/>
-      <circle fill="white" cx="9" cy="11" r="1"/>
-      <circle fill="white" cx="15" cy="11" r="1"/>
-    </svg>
-  </span>
-  <span class="text">Thảo luận</span>
-</a></li>
-  </ul>
-</div>
-        <div class="globaltoc" data-expand-depth="1"><ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">H&#432;&#7899;ng d&#7851;n</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. B&#7855;t &#273;&#7847;u nhanh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. T&#7893;ng quan v&#7873; Python</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#272;i&#7873;u khi&#7875;n ph&#7847;n c&#7913;ng</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. C&#7843;m bi&#7871;n th&#7883; gi&#225;c</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. X&#7917; l&#253; &#7843;nh</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. H&#7885;c m&#225;y</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. K&#7871;t n&#7889;i m&#7841;ng</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web Server</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Giao th&#7913;c Host</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. C&#244;ng c&#7909;</a></li>
-<li class="toctree-l2 current"><a class="reference internal" href="../index.html">14. Production</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../firmware/index.html">14.1. Ph&#225;t tri&#7875;n firmware</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../shipping/index.html">14.2. Xu&#7845;t x&#432;&#7903;ng &#7913;ng d&#7909;ng</a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="index.html">14.3. T&#259;ng c&#432;&#7901;ng b&#7843;o m&#7853;t cho s&#7843;n xu&#7845;t</a><ul class="current">
-<li class="toctree-l4 current"><a class="current reference internal" href="#">14.3.1. Ghi nh&#7853;t k&#253;</a></li>
-<li class="toctree-l4"><a class="reference internal" href="watchdog.html">14.3.2. Watchdog</a></li>
-<li class="toctree-l4"><a class="reference internal" href="filesystem.html">14.3.3. V&#7879; sinh h&#7879; th&#7889;ng t&#7879;p</a></li>
-<li class="toctree-l4"><a class="reference internal" href="security.html">14.3.4. L&#432;u &#253; v&#7873; b&#7843;o v&#7879; &#273;&#7885;c b&#7897; nh&#7899; flash</a></li>
-</ul>
-</li>
-<li class="toctree-l3"><a class="reference internal" href="../tls/index.html">14.4. L&#224;m vi&#7879;c v&#7899;i ch&#7913;ng ch&#7881; TLS</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">14.5. T&#7893;ng k&#7871;t</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Th&#432; vi&#7879;n</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">C&#7843;m bi&#7871;n</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Ng&#244;n ng&#7919;</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">N&#7897;i b&#7897;</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
-<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Gi&#7845;y ph&#233;p</a></li>
-</ul>
-        </div>
-      </div>
-    </div>
-  </aside>
-  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
-  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
-    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
-      <i class="i-lucide close"></i>
-    </button>
-    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Trên trang này</h3><ul>
-<li><a class="reference internal" href="#the-mental-model">14.3.1.1. M&#244; h&#236;nh t&#432; duy</a></li>
-<li><a class="reference internal" href="#levels-and-what-each-one-means">14.3.1.2. C&#225;c m&#7913;c &#273;&#7897; v&#224; &#253; ngh&#297;a c&#7911;a t&#7915;ng m&#7913;c</a></li>
-<li><a class="reference internal" href="#basicconfig-the-quickstart">14.3.1.3. basicConfig: b&#432;&#7899;c kh&#7903;i &#273;&#7847;u nhanh</a></li>
-<li><a class="reference internal" href="#named-loggers-per-module">14.3.1.4. Logger &#273;&#432;&#7907;c &#273;&#7863;t t&#234;n theo module</a></li>
-<li><a class="reference internal" href="#lazy-arg-formatting">14.3.1.5. &#272;&#7883;nh d&#7841;ng %-arg l&#432;&#7901;i bi&#7871;ng</a></li>
-<li><a class="reference internal" href="#logging-exceptions">14.3.1.6. Ghi nh&#7853;t k&#253; ngo&#7841;i l&#7879;</a></li>
-<li><a class="reference internal" href="#multiple-handlers">14.3.1.7. Nhi&#7873;u handler</a></li>
-<li><a class="reference internal" href="#rotating-log-files">14.3.1.8. Xoay v&#242;ng t&#7879;p nh&#7853;t k&#253;</a></li>
-<li><a class="reference internal" href="#flushing-on-power-sensitive-deployments">14.3.1.9. X&#7843; b&#7897; &#273;&#7879;m tr&#234;n c&#225;c tri&#7875;n khai nh&#7841;y c&#7843;m v&#7899;i ngu&#7891;n &#273;i&#7879;n</a></li>
-<li><a class="reference internal" href="#boot-time-diagnostics">14.3.1.10. Ch&#7849;n &#273;o&#225;n l&#250;c kh&#7903;i &#273;&#7897;ng</a></li>
-<li><a class="reference internal" href="#putting-it-together">14.3.1.11. K&#7871;t h&#7907;p l&#7841;i</a></li>
-</ul>
-</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
-  data-type="github" data-user="openmv" data-repo="micropython-doc">
-  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
-    <iconify-icon icon="simple-icons:github"></iconify-icon>
-  </span>
-  <span class="flex-grow px-2 break-all">
-    
-    
-      <span>micropython-doc</span>
-    
-    <span class="flex text-sm repo-stats-count">
-      <span class="flex items-center pr-3">
-        <iconify-icon icon="lucide:star"></iconify-icon>
-        <strong class="js-repo-stars ml-1">0</strong>
-      </span>
-      <span class="flex items-center">
-        <iconify-icon icon="lucide:git-fork"></iconify-icon>
-        <strong class="js-repo-forks ml-1">0</strong>
-      </span>
-    </span>
-  </span>
-</a><div class="edit-this-page">
-  <a href="https://github.com/openmv/micropython-doc/blob/49076d1a5e02296ba3cfa31fe1660cf4507e761f/docs/openmvcam/tutorial/production/hardening/logging.rst">Chỉnh sửa trang này</a>
-</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
-  </aside>
-  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
-  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
-<div class="sy-breadcrumbs" role="navigation">
-  <div class="sy-breadcrumbs-inner flex items-center">
-    <div class="md:hidden mr-3">
-      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
-        <i class="i-lucide menu"></i>
-      </button>
-    </div>
-    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="1" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="../../index.html"><span itemprop="name">Hướng Dẫn OpenMV Cam</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="2" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">14. </span>Production</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="3" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">14.3. </span>Tăng cường bảo mật cho sản xuất</span></a>
-        <span>/</span>
-        <meta itemprop="position" content="4" />
-      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <strong itemprop="name"><span class="section-number">14.3.1. </span>Ghi nhật ký</strong>
-        <meta itemprop="position" content="5" />
-      </li></ol>
-    <div class="xl:hidden ml-1">
-      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
-        aria-expanded="false">
-        <i class="i-lucide outdent"></i>
-      </button>
-    </div>
-  </div>
-</div><div class="flex flex-col break-words justify-between">
-      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
-  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
-  <div id="copy-page-trigger">
-    <button
-      type="button"
-      class="js-copy px-3 py-1 inline-flex items-center gap-1"
-      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt"
-    >
-      <i class="i-lucide" data-icon="copy"></i>
-      <span>Sao chép trang</span>
-    </button>
-    <button class="js-menu px-2 py-1" type="button" aria-label="Thêm hành động"
-      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
-      <i class="i-lucide chevron-down"></i>
-    </button>
-  </div>
-  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
-    <div role="presentation">
-      <div class="flex flex-col" role="group">
-        <button class="js-copy" type="button" role="menuitem"
-          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt">
-          <span class="iconify-icon">
-            <i class="i-lucide" data-icon="copy"></i>
-          </span>
-          <span>Sao chép trang</span>
-        </button>
-        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
-            <span>Xem nguồn</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
-          <iconify-icon icon="bi:openai"></iconify-icon>
-          <span>Mở trong ChatGPT</span>
-        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
-          <iconify-icon icon="bi:claude"></iconify-icon>
-          <span>Mở trong Claude</span>
-        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
-          <iconify-icon icon="bi:perplexity"></iconify-icon>
-          <span>Mở trong Perplexity</span>
-        </a></div>
-    </div>
-  </div>
-</div><article class="yue" role="main">
-          <section id="logging">
-<h1><span class="section-number">14.3.1. </span>Ghi nhật ký<a class="headerlink" href="#logging" title="Link to this heading">¶</a></h1>
-<p>Một sản phẩm đã xuất xưởng không thể gửi dữ liệu về máy chủ bằng <a class="reference internal" href="../../../../library/builtins.html#print" title="print"><code class="xref py py-func docutils literal notranslate"><span class="pre">print()</span></code></a>. <code class="docutils literal notranslate"><span class="pre">print()</span></code> ghi vào stdout USB, chỉ tồn tại khi cam đang trên bàn của nhà phát triển với một terminal đang mở. Ở thực địa, không có gì đọc nó; mỗi dòng đều bị bỏ qua. Thư viện <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> là sự thay thế -- một bộ lọc mức độ, một đích đến do ứng dụng lựa chọn, và một định dạng cho biết điều gì đã xảy ra và khi nào.</p>
-<p>Module <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> trên cam là một bản port thu gọn từ CPython -- cùng mô hình tư duy, bề mặt nhỏ hơn, một vài điểm khác biệt quan trọng cho việc thiết lập môi trường sản xuất.</p>
-<section id="the-mental-model">
-<h2><span class="section-number">14.3.1.1. </span>Mô hình tư duy<a class="headerlink" href="#the-mental-model" title="Link to this heading">¶</a></h2>
-<p>Ghi nhật ký được xây dựng từ bốn thành phần. Mỗi thành phần có một nhiệm vụ; sự tách biệt này cho phép một logger phân nhánh đến nhiều đích, mỗi đích có định dạng và mức độ riêng:</p>
-<ul>
-<li><p><strong>Logger</strong> là thứ ứng dụng gọi. Code viết <code class="docutils literal notranslate"><span class="pre">log.info(&quot;frame</span> <span class="pre">%d&quot;,</span> <span class="pre">n)</span></code>; logger là đối tượng mà lệnh gọi đó đến. Các logger được tra cứu theo tên bằng <a class="reference internal" href="../../../../library/logging.html#logging.getLogger" title="logging.getLogger"><code class="xref py py-func docutils literal notranslate"><span class="pre">logging.getLogger()</span></code></a>.</p></li>
-<li><p><strong>Handler</strong> quyết định <em>nơi</em> một bản ghi đến. <a class="reference internal" href="../../../../library/logging.html#logging.StreamHandler" title="logging.StreamHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">StreamHandler</span></code></a> ghi vào một luồng (<a class="reference internal" href="../../../../library/sys.html#sys.stderr" title="sys.stderr"><code class="xref py py-data docutils literal notranslate"><span class="pre">sys.stderr</span></code></a> mặc định); <a class="reference internal" href="../../../../library/logging.html#logging.FileHandler" title="logging.FileHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">FileHandler</span></code></a> thêm vào một tệp trên đĩa. Một logger có thể có bất kỳ số lượng handler nào.</p>
-<div class="admonition note">
-<p class="admonition-title">Ghi chú</p>
-<p>Trên cam, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code> và <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> được nối vào cùng một đường ống USB CDC -- các lần ghi vào một trong hai đều hiển thị trên cùng terminal mà nhà phát triển đang mở qua USB. Một handler ghi vào <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> thực chất là một handler ghi vào cùng nơi <code class="docutils literal notranslate"><span class="pre">print()</span></code> ghi vào. Sự trừu tượng hóa handler vẫn cho phép lọc và định dạng theo từng đích; chỉ là nó không cung cấp một kênh vật lý riêng biệt.</p>
-</div>
-</li>
-<li><p><strong>Formatter</strong> quyết định <em>cách</em> một bản ghi được hiển thị thành văn bản. Nó nhận một bản ghi và trả về dòng được ghi. Một chuỗi định dạng mỗi formatter; một formatter mỗi handler.</p></li>
-<li><p><strong>Bộ lọc mức độ</strong> nằm trên mỗi logger và mỗi handler. Các bản ghi mang một mức độ (<code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> / <code class="docutils literal notranslate"><span class="pre">INFO</span></code> / <code class="docutils literal notranslate"><span class="pre">WARNING</span></code> / <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> / <code class="docutils literal notranslate"><span class="pre">CRITICAL</span></code>). Chỉ các bản ghi ở mức độ bằng hoặc cao hơn mức lọc mới được thông qua.</p></li>
-</ul>
-<p>Sự tách biệt đó quan trọng vì một thiết lập sản xuất điển hình có nhiều hơn một đích: một tệp trên thẻ SD chứa tất cả mọi thứ từ <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> trở xuống cho phân tích sau sự cố, và một luồng đến USB chỉ hiển thị <code class="docutils literal notranslate"><span class="pre">WARNING</span></code> và nghiêm trọng hơn để nhà phát triển kết nối với cam thấy được điểm nổi bật mà không bị chìm trong chi tiết. Cùng một code, hai đích, hai bộ lọc.</p>
-</section>
-<section id="levels-and-what-each-one-means">
-<h2><span class="section-number">14.3.1.2. </span>Các mức độ và ý nghĩa của từng mức<a class="headerlink" href="#levels-and-what-each-one-means" title="Link to this heading">¶</a></h2>
-<p>Năm mức độ là một thang đo có thứ tự. Các bản ghi mang một mức độ để bộ lọc trên mỗi handler có thể loại bỏ những bản ghi nó không quan tâm.</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> -- theo dõi, bộ đếm theo khung hình, kết xuất trạng thái nội bộ. Mức thấp nhất; khối lượng cao.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">INFO</span></code> -- các sự kiện vận hành bình thường. Wi-Fi đã kết nối, mô hình đã tải, watchdog đã khởi động, một tệp nhật ký mới đã được xoay vòng.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">WARNING</span></code> -- điều gì đó không mong đợi nhưng ứng dụng đã xử lý được. Một khung hình bị bỏ, một yêu cầu mạng đã thử lại.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ERROR</span></code> -- một thao tác đã thất bại và ứng dụng không thể hoàn thành nó. Một tệp mô hình bị thiếu, một lần ghi thẻ SD bị từ chối.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">CRITICAL</span></code> -- ứng dụng hoàn toàn không thể tiếp tục. Hết bộ nhớ, thiếu điểm gắn kết bắt buộc.</p></li>
-</ul>
-<p>Một mặc định quan trọng cần nhớ: module <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> của cam khởi động mỗi logger ở mức <code class="docutils literal notranslate"><span class="pre">WARNING</span></code>. Các bản ghi ở <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> và <code class="docutils literal notranslate"><span class="pre">INFO</span></code> bị âm thầm loại bỏ trừ khi <code class="xref py py-meth docutils literal notranslate"><span class="pre">Logger.setLevel()</span></code> được gọi -- thường là trong lệnh gọi <code class="xref py py-func docutils literal notranslate"><span class="pre">basicConfig()</span></code> bên dưới. Triệu chứng đầu tiên phổ biến của một thiết lập ghi nhật ký &quot;không hoạt động&quot; là ứng dụng phát ở <code class="docutils literal notranslate"><span class="pre">INFO</span></code> và bộ lọc mặc định đã loại bỏ bản ghi.</p>
-<div class="admonition note">
-<p class="admonition-title">Ghi chú</p>
-<p>Mức độ là bộ lọc duy nhất mà <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> của cam cung cấp. Không có đối tượng <code class="xref py py-class docutils literal notranslate"><span class="pre">Filter</span></code> cho các quy tắc phong phú hơn theo từng bản ghi; nếu mức độ của bản ghi vượt qua, nó sẽ được phát ra.</p>
-</div>
-</section>
-<section id="basicconfig-the-quickstart">
-<h2><span class="section-number">14.3.1.3. </span>basicConfig: bước khởi đầu nhanh<a class="headerlink" href="#basicconfig-the-quickstart" title="Link to this heading">¶</a></h2>
-<p><a class="reference internal" href="../../../../library/logging.html#logging.basicConfig" title="logging.basicConfig"><code class="xref py py-func docutils literal notranslate"><span class="pre">logging.basicConfig()</span></code></a> cấu hình root logger trong một lệnh gọi. Hai dạng thường xuất hiện nhất:</p>
-<p>Thiết lập phát triển, tất cả ra USB stderr ở mức <code class="docutils literal notranslate"><span class="pre">INFO</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Thiết lập sản xuất, tất cả vào một tệp trên thẻ SD với định dạng có dấu thời gian:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span>
-</span><span data-line="4">    <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;/sdcard/logs/app.log&#39;</span><span class="p">,</span>
-</span><span data-line="5">    <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
-</span><span data-line="6">    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1"> </span><span class="si">%(name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span><span class="p">,</span>
-</span><span data-line="7"><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Truyền <code class="docutils literal notranslate"><span class="pre">filename=</span></code> cho <code class="xref py py-class docutils literal notranslate"><span class="pre">FileHandler</span></code> hoặc <code class="docutils literal notranslate"><span class="pre">stream=</span></code> cho <code class="xref py py-class docutils literal notranslate"><span class="pre">StreamHandler</span></code>; hai tùy chọn này loại trừ lẫn nhau trong <code class="xref py py-func docutils literal notranslate"><span class="pre">basicConfig()</span></code>.</p>
-<p>Chuỗi định dạng là một mẫu kiểu <code class="docutils literal notranslate"><span class="pre">%(field)s</span></code>. Các trường mà formatter của cam hỗ trợ:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">%(asctime)s</span></code> -- dấu thời gian được định dạng từ <a class="reference internal" href="../../../../library/time.html#time.localtime" title="time.localtime"><code class="xref py py-func docutils literal notranslate"><span class="pre">time.localtime()</span></code></a>. Định dạng mặc định là <code class="docutils literal notranslate"><span class="pre">%Y-%m-%d</span> <span class="pre">%H:%M:%S</span></code>; truyền <code class="docutils literal notranslate"><span class="pre">datefmt=</span></code> để ghi đè.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">%(levelname)s</span></code> -- <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> / <code class="docutils literal notranslate"><span class="pre">INFO</span></code> / <code class="docutils literal notranslate"><span class="pre">WARNING</span></code> / <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> / <code class="docutils literal notranslate"><span class="pre">CRITICAL</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">%(name)s</span></code> -- tên của logger (xem phần tiếp theo).</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">%(message)s</span></code> -- thông điệp được định dạng của bản ghi.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">%(msecs)d</span></code> -- phần mili-giây của dấu thời gian bản ghi.</p></li>
-</ul>
-<p>Định dạng mặc định nếu không có định dạng nào được cung cấp là <code class="docutils literal notranslate"><span class="pre">%(levelname)s:%(name)s:%(message)s</span></code> -- phù hợp cho thiết lập phát triển và không đủ cho nhật ký thực địa, nơi dấu thời gian là thứ làm cho tệp hữu ích vài tuần sau.</p>
-<p><code class="xref py py-func docutils literal notranslate"><span class="pre">basicConfig()</span></code> là một lệnh không làm gì ở các lần gọi tiếp theo trừ khi <code class="docutils literal notranslate"><span class="pre">force=True</span></code> được truyền. Cấu hình một lần khi khởi động; không gọi lại để &quot;chuyển đích&quot; trong khi chạy.</p>
-<div class="admonition note">
-<p class="admonition-title">Ghi chú</p>
-<p>Cam's <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> không có <code class="xref py py-func docutils literal notranslate"><span class="pre">dictConfig()</span></code> hay <code class="xref py py-func docutils literal notranslate"><span class="pre">fileConfig()</span></code>. Cấu hình luôn theo chương trình -- một helper <code class="docutils literal notranslate"><span class="pre">setup_logging()</span></code> được gọi một lần từ <code class="docutils literal notranslate"><span class="pre">main.py</span></code> là quy ước.</p>
-</div>
-</section>
-<section id="named-loggers-per-module">
-<h2><span class="section-number">14.3.1.4. </span>Logger được đặt tên theo module<a class="headerlink" href="#named-loggers-per-module" title="Link to this heading">¶</a></h2>
-<p>Code ứng dụng không nên gọi các phím tắt cấp module (<a class="reference internal" href="../../../../library/logging.html#logging.info" title="logging.info"><code class="xref py py-func docutils literal notranslate"><span class="pre">logging.info()</span></code></a>, <a class="reference internal" href="../../../../library/logging.html#logging.warning" title="logging.warning"><code class="xref py py-func docutils literal notranslate"><span class="pre">logging.warning()</span></code></a>, và các hàm tương tự). Tất cả chúng đều đi qua root logger, và các bản ghi nhật ký kết quả mang tên <code class="docutils literal notranslate"><span class="pre">root</span></code> -- vô dụng khi muốn biết <em>bản ghi đến từ đâu</em>.</p>
-<p>Quy ước là một logger mỗi module, đặt tên theo module:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># in app/detector.py</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span data-line="5">
-</span><span data-line="6"><span class="k">def</span><span class="w"> </span><span class="nf">detect</span><span class="p">(</span><span class="n">frame</span><span class="p">):</span>
-</span><span data-line="7">    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;detect on </span><span class="si">%d</span><span class="s2">x</span><span class="si">%d</span><span class="s2"> frame&quot;</span><span class="p">,</span> <span class="n">frame</span><span class="o">.</span><span class="n">width</span><span class="p">(),</span> <span class="n">frame</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
-</span></pre></div>
-</div>
-<p>Mỗi bản ghi sau đó mang <code class="docutils literal notranslate"><span class="pre">app.detector</span></code> trong <code class="docutils literal notranslate"><span class="pre">%(name)s</span></code> và dòng nhật ký cho biết ai đã phát ra nó.</p>
-<p>Cam's <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> khác với CPython ở một điểm quan trọng: không gian tên logger là <strong>phẳng</strong>. <code class="docutils literal notranslate"><span class="pre">getLogger('app')</span></code> và <code class="docutils literal notranslate"><span class="pre">getLogger('app.detector')</span></code> là các logger độc lập không có quan hệ cha / con -- đặt mức độ trên <code class="docutils literal notranslate"><span class="pre">app</span></code> <em>không</em> lan truyền đến <code class="docutils literal notranslate"><span class="pre">app.detector</span></code>. Cơ chế hoạt động được: một logger được đặt tên không có handler của riêng nó sẽ mượn handler và mức độ của root logger. Đó là cách một lệnh gọi <code class="xref py py-func docutils literal notranslate"><span class="pre">basicConfig()</span></code> duy nhất trên root thiết lập mọi lệnh gọi <code class="xref py py-func docutils literal notranslate"><span class="pre">getLogger()</span></code> ở nơi khác trong ứng dụng.</p>
-</section>
-<section id="lazy-arg-formatting">
-<h2><span class="section-number">14.3.1.5. </span>Định dạng %-arg lười biếng<a class="headerlink" href="#lazy-arg-formatting" title="Link to this heading">¶</a></h2>
-<p>Viết:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;processed </span><span class="si">%d</span><span class="s2"> frames in </span><span class="si">%d</span><span class="s2"> ms&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">dt</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Không viết:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;processed </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> frames in </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2"> ms&quot;</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Dạng <code class="docutils literal notranslate"><span class="pre">%</span></code>-arg cho phép logger nội suy các đối số <em>sau</em> khi bộ lọc mức độ đã quyết định có phát bản ghi hay không. Một lệnh gọi <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> bị lọc ra trong một vòng lặp nóng không tốn chi phí nào cho chuỗi định dạng của nó. Một f-string được đánh giá trước, mỗi lần, trước khi lệnh gọi ngay cả đến logger.</p>
-<p>Từ khóa <code class="docutils literal notranslate"><span class="pre">extra=</span></code> của CPython cho các trường có cấu trúc không được hỗ trợ trên cam; thay vào đó hãy truyền các giá trị dưới dạng đối số thông điệp.</p>
-</section>
-<section id="logging-exceptions">
-<h2><span class="section-number">14.3.1.6. </span>Ghi nhật ký ngoại lệ<a class="headerlink" href="#logging-exceptions" title="Link to this heading">¶</a></h2>
-<p>Bên trong một khối <a class="reference external" href="https://docs.python.org/3/reference/compound_stmts.html#except" title="(in Python v3.14)"><code class="xref std std-keyword docutils literal notranslate"><span class="pre">except</span></code></a>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">Logger.exception()</span></code> ghi thông điệp ở mức <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> <em>và</em> thêm traceback của ngoại lệ hiện tại vào bản ghi:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">try</span><span class="p">:</span>
-</span><span data-line="2">    <span class="n">frame</span> <span class="o">=</span> <span class="n">csi0</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
-</span><span data-line="3">    <span class="n">process</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
-</span><span data-line="4"><span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-</span><span data-line="5">    <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;frame loop iteration failed&quot;</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Traceback được thu thập qua <a class="reference internal" href="../../../../library/sys.html#sys.print_exception" title="sys.print_exception"><code class="xref py py-func docutils literal notranslate"><span class="pre">sys.print_exception()</span></code></a>, đó là thứ tạo ra khối <code class="docutils literal notranslate"><span class="pre">Traceback</span> <span class="pre">(most</span> <span class="pre">recent</span> <span class="pre">call</span> <span class="pre">last):</span></code> nhiều dòng của nhật ký ngoại lệ. Đây là công cụ phù hợp cho xử lý ngoại lệ cấp cao nhất -- bắt, ghi nhật ký, và tiếp tục.</p>
-</section>
-<section id="multiple-handlers">
-<h2><span class="section-number">14.3.1.7. </span>Nhiều handler<a class="headerlink" href="#multiple-handlers" title="Link to this heading">¶</a></h2>
-<p>Sự phân chia sản xuất đã đề cập ở đầu -- tất cả vào một tệp ở mức <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code>, điểm nổi bật ra stderr ở mức <code class="docutils literal notranslate"><span class="pre">WARNING</span></code> -- là hai handler gắn vào cùng một logger, mỗi cái có mức độ và formatter riêng:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1"> </span><span class="si">%(name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
-</span><span data-line="4">
-</span><span data-line="5"><span class="n">file_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="s1">&#39;/sdcard/logs/app.log&#39;</span><span class="p">)</span>
-</span><span data-line="6"><span class="n">file_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
-</span><span data-line="7"><span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">fmt</span><span class="p">))</span>
-</span><span data-line="8">
-</span><span data-line="9"><span class="n">stream_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
-</span><span data-line="10"><span class="n">stream_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
-</span><span data-line="11"><span class="n">stream_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">fmt</span><span class="p">))</span>
-</span><span data-line="12">
-</span><span data-line="13"><span class="n">root</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
-</span><span data-line="14"><span class="n">root</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>          <span class="c1"># admit everything to the filters</span>
-</span><span data-line="15"><span class="n">root</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
-</span><span data-line="16"><span class="n">root</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">stream_handler</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Mức độ của root logger là bộ lọc <em>đầu tiên</em> mà mỗi bản ghi gặp phải. Đặt nó ở mức thấp nhất mà bất kỳ handler nào muốn thấy -- <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code> ở đây -- để không handler nào bị bỏ đói bởi chính logger. Sau đó các mức độ per-handler quyết định bản ghi nào thực sự được phát ra đến đích nào.</p>
-</section>
-<section id="rotating-log-files">
-<h2><span class="section-number">14.3.1.8. </span>Xoay vòng tệp nhật ký<a class="headerlink" href="#rotating-log-files" title="Link to this heading">¶</a></h2>
-<p>Cam's <a class="reference internal" href="../../../../library/logging.html#module-logging" title="logging: event logging"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code></a> không có <code class="xref py py-class docutils literal notranslate"><span class="pre">RotatingFileHandler</span></code> hay <code class="xref py py-class docutils literal notranslate"><span class="pre">TimedRotatingFileHandler</span></code>. Xoay vòng là công việc của ứng dụng.</p>
-<p>Mẫu là giữ <code class="xref py py-class docutils literal notranslate"><span class="pre">FileHandler</span></code> hiện tại ở một nơi đã biết, hoán đổi nó với một cái mới khi tiêu chí xoay vòng kích hoạt, và để một đường dẫn có ngày tháng cung cấp ranh giới tệp tự nhiên. Cho xoay vòng hàng giờ vào <code class="docutils literal notranslate"><span class="pre">/sdcard/logs/&lt;year&gt;/&lt;month&gt;/&lt;day&gt;/&lt;hour&gt;.log</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-</span><span data-line="3">
-</span><span data-line="4"><span class="n">_LOG_FMT</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1"> </span><span class="si">%(name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
-</span><span data-line="5"><span class="n">_current_path</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="6"><span class="n">_current_handler</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="7">
-</span><span data-line="8"><span class="k">def</span><span class="w"> </span><span class="nf">_hourly_path</span><span class="p">(</span><span class="n">now</span><span class="p">):</span>
-</span><span data-line="9">    <span class="k">return</span> <span class="s1">&#39;/sdcard/logs/</span><span class="si">{:04d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">/</span><span class="si">{:02d}</span><span class="s1">.log&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-</span><span data-line="10">        <span class="n">now</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">now</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-</span><span data-line="11">
-</span><span data-line="12"><span class="k">def</span><span class="w"> </span><span class="nf">rotate_if_needed</span><span class="p">():</span>
-</span><span data-line="13">    <span class="k">global</span> <span class="n">_current_path</span><span class="p">,</span> <span class="n">_current_handler</span>
-</span><span data-line="14">
-</span><span data-line="15">    <span class="n">path</span> <span class="o">=</span> <span class="n">_hourly_path</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">localtime</span><span class="p">())</span>
-</span><span data-line="16">    <span class="k">if</span> <span class="n">path</span> <span class="o">==</span> <span class="n">_current_path</span><span class="p">:</span>
-</span><span data-line="17">        <span class="k">return</span>
-</span><span data-line="18">
-</span><span data-line="19">    <span class="n">root</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
-</span><span data-line="20">    <span class="k">if</span> <span class="n">_current_handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="21">        <span class="n">root</span><span class="o">.</span><span class="n">removeHandler</span><span class="p">(</span><span class="n">_current_handler</span><span class="p">)</span>
-</span><span data-line="22">        <span class="n">_current_handler</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span><span data-line="23">
-</span><span data-line="24">    <span class="n">_current_handler</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-</span><span data-line="25">    <span class="n">_current_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">_LOG_FMT</span><span class="p">))</span>
-</span><span data-line="26">    <span class="n">root</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">_current_handler</span><span class="p">)</span>
-</span><span data-line="27">    <span class="n">_current_path</span> <span class="o">=</span> <span class="n">path</span>
-</span></pre></div>
-</div>
-<p>Gọi <code class="docutils literal notranslate"><span class="pre">rotate_if_needed()</span></code> một lần mỗi vòng lặp chính; kiểm tra đường dẫn rẻ và việc hoán đổi chỉ xảy ra tại ranh giới giờ. Cây thư mục phải tồn tại trước khi <code class="xref py py-class docutils literal notranslate"><span class="pre">FileHandler</span></code> có thể mở tệp.</p>
-</section>
-<section id="flushing-on-power-sensitive-deployments">
-<h2><span class="section-number">14.3.1.9. </span>Xả bộ đệm trên các triển khai nhạy cảm với nguồn điện<a class="headerlink" href="#flushing-on-power-sensitive-deployments" title="Link to this heading">¶</a></h2>
-<p>Các lần ghi <code class="xref py py-class docutils literal notranslate"><span class="pre">FileHandler</span></code> đi qua bộ đệm Python của đối tượng tệp bên dưới. Mất nguồn điện giữa một lần ghi và một lần xả bộ đệm sẽ mất các bản ghi cuối cùng. Đối với các triển khai dùng pin hoặc rút nguồn đột ngột, hãy gọi <code class="docutils literal notranslate"><span class="pre">flush()</span></code> trên luồng của handler sau các bản ghi quan trọng, hoặc theo bộ định thời.</p>
-<p>Một helper nhỏ xả bộ đệm mọi handler gắn với root logger:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="k">def</span><span class="w"> </span><span class="nf">flush_handlers</span><span class="p">():</span>
-</span><span data-line="4">    <span class="k">for</span> <span class="n">handler</span> <span class="ow">in</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">handlers</span><span class="p">:</span>
-</span><span data-line="5">        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">handler</span><span class="p">,</span> <span class="s1">&#39;stream&#39;</span><span class="p">):</span>
-</span><span data-line="6">            <span class="n">handler</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>Gọi <code class="docutils literal notranslate"><span class="pre">flush_handlers()</span></code> ngay sau một bản ghi mà ứng dụng không thể để mất:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="s2">&quot;memory low: restarting&quot;</span><span class="p">)</span>
-</span><span data-line="2"><span class="n">flush_handlers</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>Để an toàn trong nền, hãy gọi nó từ vòng lặp chính theo nhịp cân bằng giữa độ tươi của nhật ký và độ hao mòn flash -- một lần mỗi giây thường là đủ. <code class="xref py py-meth docutils literal notranslate"><span class="pre">Logger.critical()</span></code> <em>không</em> tự kích hoạt xả bộ đệm.</p>
-</section>
-<section id="boot-time-diagnostics">
-<h2><span class="section-number">14.3.1.10. </span>Chẩn đoán lúc khởi động<a class="headerlink" href="#boot-time-diagnostics" title="Link to this heading">¶</a></h2>
-<p>Một nhật ký thực địa không có ngữ cảnh gần như vô dụng. Các bản ghi đầu tiên mỗi lần khởi động lạnh nên xác định <em>cam nào</em>, <em>bản build nào</em> đang chạy, và <em>cách</em> cam đến lần khởi động này. Ba nguồn trên thiết bị cùng nhau bao gồm tất cả những điều đó:</p>
-<ul class="simple">
-<li><p><a class="reference internal" href="../../../../library/omv.omv.html#module-omv" title="omv: OpenMV Cam Information"><code class="xref py py-mod docutils literal notranslate"><span class="pre">omv</span></code></a> -- phiên bản firmware OpenMV.</p></li>
-<li><p><a class="reference internal" href="../../../../library/os.html#os.uname" title="os.uname"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.uname()</span></code></a> -- phiên bản MicroPython, tên bo mạch + MCU, và tag git và ngày build của mã nguồn mà firmware được xây dựng từ đó.</p></li>
-<li><p><a class="reference internal" href="../../../../library/machine.html#module-machine" title="machine: functions related to the hardware"><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code></a> -- ID silicon duy nhất của MCU và nguyên nhân reset đã kích hoạt lần khởi động này.</p></li>
-<li><p><a class="reference internal" href="../../../../library/os.html#os.listdir" title="os.listdir"><code class="xref py py-func docutils literal notranslate"><span class="pre">os.listdir()</span></code></a> đối với từng điểm gắn kết -- các hệ thống tệp thực sự đã khởi động.</p></li>
-</ul>
-<p>Một helper kéo tất cả những điều đó vào các bản ghi đầu tiên của nhật ký:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
-</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">machine</span>
-</span><span data-line="4"><span class="kn">import</span><span class="w"> </span><span class="nn">omv</span>
-</span><span data-line="5"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span><span data-line="8">
-</span><span data-line="9"><span class="n">_RESET_NAMES</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="10">    <span class="n">machine</span><span class="o">.</span><span class="n">PWRON_RESET</span><span class="p">:</span> <span class="s2">&quot;power-on&quot;</span><span class="p">,</span>
-</span><span data-line="11">    <span class="n">machine</span><span class="o">.</span><span class="n">HARD_RESET</span><span class="p">:</span> <span class="s2">&quot;hard reset&quot;</span><span class="p">,</span>
-</span><span data-line="12">    <span class="n">machine</span><span class="o">.</span><span class="n">WDT_RESET</span><span class="p">:</span> <span class="s2">&quot;watchdog timeout&quot;</span><span class="p">,</span>
-</span><span data-line="13">    <span class="n">machine</span><span class="o">.</span><span class="n">DEEPSLEEP_RESET</span><span class="p">:</span> <span class="s2">&quot;wake from deep sleep&quot;</span><span class="p">,</span>
-</span><span data-line="14">    <span class="n">machine</span><span class="o">.</span><span class="n">SOFT_RESET</span><span class="p">:</span> <span class="s2">&quot;soft reset&quot;</span><span class="p">,</span>
-</span><span data-line="15"><span class="p">}</span>
-</span><span data-line="16">
-</span><span data-line="17"><span class="k">def</span><span class="w"> </span><span class="nf">log_boot_diagnostics</span><span class="p">():</span>
-</span><span data-line="18">    <span class="n">uname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">uname</span><span class="p">()</span>
-</span><span data-line="19">
-</span><span data-line="20">    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;machine: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">uname</span><span class="o">.</span><span class="n">machine</span><span class="p">)</span>
-</span><span data-line="21">    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;unique id: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span data-line="22">             <span class="n">binascii</span><span class="o">.</span><span class="n">hexlify</span><span class="p">(</span><span class="n">machine</span><span class="o">.</span><span class="n">unique_id</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
-</span><span data-line="23">    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;firmware: openmv </span><span class="si">%s</span><span class="s2">, micropython </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span data-line="24">             <span class="n">omv</span><span class="o">.</span><span class="n">version_string</span><span class="p">(),</span> <span class="n">uname</span><span class="o">.</span><span class="n">release</span><span class="p">)</span>
-</span><span data-line="25">    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;build: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">uname</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
-</span><span data-line="26">    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;reset cause: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span data-line="27">             <span class="n">_RESET_NAMES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">machine</span><span class="o">.</span><span class="n">reset_cause</span><span class="p">(),</span> <span class="s2">&quot;unknown&quot;</span><span class="p">))</span>
-</span><span data-line="28">
-</span><span data-line="29">    <span class="k">for</span> <span class="n">mount</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;/flash&#39;</span><span class="p">,</span> <span class="s1">&#39;/sdcard&#39;</span><span class="p">,</span> <span class="s1">&#39;/rom&#39;</span><span class="p">):</span>
-</span><span data-line="30">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="31">            <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">mount</span><span class="p">)</span>
-</span><span data-line="32">            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;mount </span><span class="si">%s</span><span class="s2">: ok&quot;</span><span class="p">,</span> <span class="n">mount</span><span class="p">)</span>
-</span><span data-line="33">        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span data-line="34">            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;mount </span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">mount</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Một nhật ký điển hình mở đầu với nội dung như:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">INFO</span> <span class="n">machine</span><span class="p">:</span> <span class="n">OPENMV4</span> <span class="k">with</span> <span class="n">STM32H743</span>
-</span><span data-line="2"><span class="n">INFO</span> <span class="n">unique</span> <span class="nb">id</span><span class="p">:</span> <span class="mi">002</span><span class="n">C00543235501020373835</span>
-</span><span data-line="3"><span class="n">INFO</span> <span class="n">firmware</span><span class="p">:</span> <span class="n">openmv</span> <span class="mf">5.0.0</span><span class="p">,</span> <span class="n">micropython</span> <span class="mf">1.28.0</span>
-</span><span data-line="4"><span class="n">INFO</span> <span class="n">build</span><span class="p">:</span> <span class="n">v1</span><span class="mf">.28.0</span><span class="o">-</span><span class="mi">101</span><span class="o">-</span><span class="n">gabc1234</span> <span class="n">on</span> <span class="mi">2026</span><span class="o">-</span><span class="mi">06</span><span class="o">-</span><span class="mi">09</span>
-</span><span data-line="5"><span class="n">INFO</span> <span class="n">reset</span> <span class="n">cause</span><span class="p">:</span> <span class="n">watchdog</span> <span class="n">timeout</span>
-</span><span data-line="6"><span class="n">INFO</span> <span class="n">mount</span> <span class="o">/</span><span class="n">flash</span><span class="p">:</span> <span class="n">ok</span>
-</span><span data-line="7"><span class="n">INFO</span> <span class="n">mount</span> <span class="o">/</span><span class="n">sdcard</span><span class="p">:</span> <span class="n">ok</span>
-</span><span data-line="8"><span class="n">INFO</span> <span class="n">mount</span> <span class="o">/</span><span class="n">rom</span><span class="p">:</span> <span class="n">ok</span>
-</span></pre></div>
-</div>
-<p>Tám dòng đầu mỗi tệp nhật ký, người vận hành biết đơn vị vật lý, dòng dõi firmware, lý do cam khởi động, và bộ nhớ nào đã khởi động. <code class="docutils literal notranslate"><span class="pre">unique</span> <span class="pre">id</span></code> là số sê-ri silicon được lập trình tại nhà máy của MCU; nó giống nhau qua các lần nạp lại firmware và qua các lần đổi thẻ SD. <code class="docutils literal notranslate"><span class="pre">build</span></code> là tag git và ngày của cây firmware mà ảnh được xây dựng từ đó -- trường duy nhất nói rằng &quot;đây chính xác là nhị phân được giao đến đơn vị này tại thời điểm này.&quot;</p>
-</section>
-<section id="putting-it-together">
-<h2><span class="section-number">14.3.1.11. </span>Kết hợp lại<a class="headerlink" href="#putting-it-together" title="Link to this heading">¶</a></h2>
-<p>Một thiết lập ghi nhật ký sản xuất hoàn chỉnh, được tổ chức vào một helper mà <code class="docutils literal notranslate"><span class="pre">main.py</span></code> gọi một lần khi khởi động:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">_LOG_FMT</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">%(asctime)s</span><span class="s1"> </span><span class="si">%(levelname)s</span><span class="s1"> </span><span class="si">%(name)s</span><span class="s1">: </span><span class="si">%(message)s</span><span class="s1">&#39;</span>
-</span><span data-line="4">
-</span><span data-line="5"><span class="k">def</span><span class="w"> </span><span class="nf">setup_logging</span><span class="p">(</span><span class="n">log_path</span><span class="p">):</span>
-</span><span data-line="6">    <span class="n">fh</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">FileHandler</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
-</span><span data-line="7">    <span class="n">fh</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
-</span><span data-line="8">    <span class="n">fh</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">_LOG_FMT</span><span class="p">))</span>
-</span><span data-line="9">
-</span><span data-line="10">    <span class="n">sh</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
-</span><span data-line="11">    <span class="n">sh</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">WARNING</span><span class="p">)</span>
-</span><span data-line="12">    <span class="n">sh</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="n">_LOG_FMT</span><span class="p">))</span>
-</span><span data-line="13">
-</span><span data-line="14">    <span class="n">root</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span>
-</span><span data-line="15">    <span class="n">root</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
-</span><span data-line="16">    <span class="n">root</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
-</span><span data-line="17">    <span class="n">root</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">sh</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>Sau đó ở đầu <code class="docutils literal notranslate"><span class="pre">main.py</span></code></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">app.logging_setup</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_logging</span><span class="p">,</span> <span class="n">log_boot_diagnostics</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">setup_logging</span><span class="p">(</span><span class="s1">&#39;/sdcard/logs/app.log&#39;</span><span class="p">)</span>
-</span><span data-line="4"><span class="n">log_boot_diagnostics</span><span class="p">()</span>
-</span></pre></div>
-</div>
-<p>Mỗi module khác trong ứng dụng chỉ cần làm:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-</span><span data-line="2">
-</span><span data-line="3"><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-</span></pre></div>
-</div>
-<p>và nhận được kết quả đầu ra đã cấu hình miễn phí -- tệp với chi tiết đầy đủ, luồng với các cảnh báo, bản ghi được đặt tên, formatter có dấu thời gian, và một lần khởi động được ghi lại mỗi lần khởi động lạnh.</p>
-</section>
-</section>
-
-        </article><button class="back-to-top" type="button">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
-  </svg>
-  <span>Quay lại đầu trang</span>
-</button><div class="navigation flex print:hidden"><div class="navigation-prev">
-    <a href="index.html">
-      <i class="i-lucide chevron-left"></i>
-      <div class="page-info">
-        <span>Trước</span><div class="title"><span class="section-number">14.3. </span>Tăng cường bảo mật cho sản xuất</div></div>
-    </a>
-  </div><div class="navigation-next">
-    <a href="watchdog.html">
-      <div class="page-info">
-        <span>Tiếp theo</span>
-        <div class="title"><span class="section-number">14.3.2. </span>Watchdog</div>
-      </div>
-      <i class="i-lucide chevron-right"></i>
-    </a>
-  </div></div></div>
-    </div>
-  </main>
-</div>
-<footer class="sy-foot">
-  <div class="sy-foot-inner sy-container mx-auto">
-    <div class="sy-foot-reserved md:flex justify-between items-center">
-      <div class="sy-foot-copyright">
-  <p class="omv-build-stamp">
-    Dành cho OpenMV firmware v5.0.0 &middot; dựa trên MicroPython v1.28 &middot; tài liệu được xây dựng 19 tháng 6, 2026 &middot; Bản quyền &copy; 2014-2026 bởi OpenMV, Damien P. George và những người khác.
-  </p>
-  <p>
-    
-    Được tạo bằng <a href="https://www.sphinx-doc.org/">Sphinx</a> sử dụng <a href="https://shibuya.lepture.com">chủ đề Shibuya</a>.
-    
-  </p>
-</div>
-      <div class="sy-foot-socials">
-<a href="https://github.com/openmv/openmv" aria-label="GitHub">
-  <iconify-icon icon="simple-icons:github"></iconify-icon>
-</a>
-<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
-  <iconify-icon icon="prime:twitter"></iconify-icon>
-</a>
-<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
-  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
-</a>
-<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
-  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
-</a></div>
-    </div>
-  </div>
-</footer>
-      <script src="../../../../_static/documentation_options.js?v=bab09030"></script>
-      <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
-      <script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
-      <script src="../../../../_static/translations.js?v=4c1d55b0"></script>
-      <script src="../../../../../_static/shibuya.js?v=50760d75"></script>
-      <script src="../../../../../_static/lang-redirect.js?v=51fde6fc"></script>
-      <script src="../../../../../_static/navbar-height.js?v=45931de4"></script>
-      <script src="../../../../../_static/nav-versions.js?v=b4d4f1af"></script></body>
-</html>
+<!doctype html><html data-accent-color=blue data-content_root=../../../../ lang=vi><head><meta charset=utf-8><meta content="width=device-width,initial-scale=1.0" name=viewport><title>14.3.1. Ghi nhật ký - Tài liệu OpenMV MicroPython 1.28</title><link rel="shortcut icon" href=../../../../../_static/openmv.ico><link href=../../../../genindex.html rel=index title=Index><link title="Tìm Kiếm" href=../../../../search.html rel=search><link title="14.3.2. Watchdog" href=watchdog.html rel=next><link title="14.3. Tăng cường bảo mật cho sản xuất" href=index.html rel=prev><link href=https://docs.openmv.io/dev/openmvcam/tutorial/production/hardening/logging.html rel=canonical><script>function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");</script><link href="../../../../../_static/pygments.css?v=e1a1ceaf" rel=stylesheet><link href="../../../../../_static/shibuya.css?v=9454f7d5" rel=stylesheet><link href="../../../../../_static/print.css?v=20ff2c19" media=print rel=stylesheet><link href="../../../../../_static/custom.css?v=0166669e" rel=stylesheet><link href="../../../../../_static/rtl.css?v=a0ea7a54" rel=stylesheet><link href=https://fonts.googleapis.com rel=preconnect><link crossorigin href=https://fonts.gstatic.com rel=preconnect><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel=stylesheet><style>:root{--sy-f-text:"Inter",var(--sy-f-sys),var(--sy-f-cjk),sans-serif;--sy-f-heading:"Inter",var(--sy-f-sys),var(--sy-f-cjk),sans-serif}</style><meta content=website property=og:type><meta content=https://docs.openmv.io/dev/openmvcam/tutorial/production/hardening/logging.html property=og:url><meta content="14.3.1. Ghi nhật ký" property=og:title><meta content=summary name=twitter:card><link href=/dev/openmvcam/tutorial/production/hardening/logging.html hreflang=en rel=alternate><link href=/dev/ar/openmvcam/tutorial/production/hardening/logging.html hreflang=ar rel=alternate><link href=/dev/zh_CN/openmvcam/tutorial/production/hardening/logging.html hreflang=zh-Hans rel=alternate><link href=/dev/zh_TW/openmvcam/tutorial/production/hardening/logging.html hreflang=zh-Hant rel=alternate><link href=/dev/hr/openmvcam/tutorial/production/hardening/logging.html hreflang=hr rel=alternate><link href=/dev/cs/openmvcam/tutorial/production/hardening/logging.html hreflang=cs rel=alternate><link href=/dev/nl/openmvcam/tutorial/production/hardening/logging.html hreflang=nl rel=alternate><link href=/dev/fi/openmvcam/tutorial/production/hardening/logging.html hreflang=fi rel=alternate><link href=/dev/fr/openmvcam/tutorial/production/hardening/logging.html hreflang=fr rel=alternate><link href=/dev/de/openmvcam/tutorial/production/hardening/logging.html hreflang=de rel=alternate><link href=/dev/he/openmvcam/tutorial/production/hardening/logging.html hreflang=he rel=alternate><link href=/dev/hu/openmvcam/tutorial/production/hardening/logging.html hreflang=hu rel=alternate><link href=/dev/id/openmvcam/tutorial/production/hardening/logging.html hreflang=id rel=alternate><link href=/dev/it/openmvcam/tutorial/production/hardening/logging.html hreflang=it rel=alternate><link href=/dev/ja/openmvcam/tutorial/production/hardening/logging.html hreflang=ja rel=alternate><link href=/dev/ko/openmvcam/tutorial/production/hardening/logging.html hreflang=ko rel=alternate><link href=/dev/pl/openmvcam/tutorial/production/hardening/logging.html hreflang=pl rel=alternate><link href=/dev/pt_BR/openmvcam/tutorial/production/hardening/logging.html hreflang=pt-BR rel=alternate><link href=/dev/pt_PT/openmvcam/tutorial/production/hardening/logging.html hreflang=pt-PT rel=alternate><link href=/dev/ro/openmvcam/tutorial/production/hardening/logging.html hreflang=ro rel=alternate><link href=/dev/ru/openmvcam/tutorial/production/hardening/logging.html hreflang=ru rel=alternate><link href=/dev/es/openmvcam/tutorial/production/hardening/logging.html hreflang=es rel=alternate><link href=/dev/sv/openmvcam/tutorial/production/hardening/logging.html hreflang=sv rel=alternate><link href=/dev/th/openmvcam/tutorial/production/hardening/logging.html hreflang=th rel=alternate><link href=/dev/tr/openmvcam/tutorial/production/hardening/logging.html hreflang=tr rel=alternate><link href=/dev/uk/openmvcam/tutorial/production/hardening/logging.html hreflang=uk rel=alternate></head><body><div class=sy-head><div class=sy-head-blur></div><div class="sy-head-inner sy-container mx-auto"><a class=sy-head-brand href=../../../../index.html> <img alt="OpenMV MicroPython" class=light-logo height=28 loading=lazy src=../../../../../_static/openmv-logo-light.png> <img alt="OpenMV MicroPython" class=dark-logo height=28 loading=lazy src=../../../../../_static/openmv-logo-dark.png> <strong>OpenMV MicroPython</strong> </a><div class=sy-head-nav id=head-nav><nav class=sy-head-links><ul><li class=link><a href=../../../../index.html>Trang chủ</a></li><li class=link><a href=../../index.html>Hướng dẫn</a></li><li class=link><a href=../../../../library/index.html>Thư viện</a></li><li class=link><a href=../../../quickref.html>Bo mạch</a></li><li class=link><a href=../../../shields.html>Shield</a></li><li class=link><a href=../../../sensors.html>Cảm biến</a></li><li class=link><a href=../../../../reference/index.html>Ngôn ngữ</a></li><li class=link><a href=../../../../genrst/index.html>CPython</a></li><li class=link><a href=../../../../develop/index.html>Nội bộ</a></li><li class=link><a href=../../../../changelog/index.html>Nhật ký thay đổi</a></li></ul></nav><div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action=../../../../search.html><input placeholder="Tìm Kiếm" name=q><kbd>/</kbd></form><div class=nav-versions><button aria-label="Phiên bản" type=button><span class=md:hidden>Phiên bản</span> <span class="hidden md:inline">dev</span> <i class="i-lucide chevron-down"></i></button><div class=nav-versions-choices><ul><li><a href>dev</a></li></ul></div></div><div class=nav-languages><button type=button><span class=md:hidden>Bản dịch</span> <iconify-icon icon=lucide:languages></iconify-icon></button><div class=nav-languages-choices><ul><li><a href=/dev/openmvcam/tutorial/production/hardening/logging.html>English</a></li><li><a href=/dev/ar/openmvcam/tutorial/production/hardening/logging.html>العربية</a></li><li><a href=/dev/zh_CN/openmvcam/tutorial/production/hardening/logging.html>简体中文</a></li><li><a href=/dev/zh_TW/openmvcam/tutorial/production/hardening/logging.html>繁體中文</a></li><li><a href=/dev/hr/openmvcam/tutorial/production/hardening/logging.html>Hrvatski</a></li><li><a href=/dev/cs/openmvcam/tutorial/production/hardening/logging.html>Čeština</a></li><li><a href=/dev/nl/openmvcam/tutorial/production/hardening/logging.html>Nederlands</a></li><li><a href=/dev/fi/openmvcam/tutorial/production/hardening/logging.html>Suomi</a></li><li><a href=/dev/fr/openmvcam/tutorial/production/hardening/logging.html>Français</a></li><li><a href=/dev/de/openmvcam/tutorial/production/hardening/logging.html>Deutsch</a></li><li><a href=/dev/he/openmvcam/tutorial/production/hardening/logging.html>עברית</a></li><li><a href=/dev/hu/openmvcam/tutorial/production/hardening/logging.html>Magyar</a></li><li><a href=/dev/id/openmvcam/tutorial/production/hardening/logging.html>Bahasa Indonesia</a></li><li><a href=/dev/it/openmvcam/tutorial/production/hardening/logging.html>Italiano</a></li><li><a href=/dev/ja/openmvcam/tutorial/production/hardening/logging.html>日本語</a></li><li><a href=/dev/ko/openmvcam/tutorial/production/hardening/logging.html>한국어</a></li><li><a href=/dev/pl/openmvcam/tutorial/production/hardening/logging.html>Polski</a></li><li><a href=/dev/pt_BR/openmvcam/tutorial/production/hardening/logging.html>Português (Brasil)</a></li><li><a href=/dev/pt_PT/openmvcam/tutorial/production/hardening/logging.html>Português (Portugal)</a></li><li><a href=/dev/ro/openmvcam/tutorial/production/hardening/logging.html>Română</a></li><li><a href=/dev/ru/openmvcam/tutorial/production/hardening/logging.html>Русский</a></li><li><a href=/dev/es/openmvcam/tutorial/production/hardening/logging.html>Español</a></li><li><a href=/dev/sv/openmvcam/tutorial/production/hardening/logging.html>Svenska</a></li><li><a href=/dev/th/openmvcam/tutorial/production/hardening/logging.html>ไทย</a></li><li><a href=/dev/tr/openmvcam/tutorial/production/hardening/logging.html>Türkçe</a></li><li><a href=/dev/uk/openmvcam/tutorial/production/hardening/logging.html>Українська</a></li><li><a href=/dev/vi/openmvcam/tutorial/production/hardening/logging.html>Tiếng Việt</a></li></ul></div></div><div class=sy-head-socials><a aria-label=GitHub href=https://github.com/openmv/openmv> <iconify-icon icon=simple-icons:github></iconify-icon> </a><a aria-label="X (Twitter)" href=https://x.com/openmvcam> <iconify-icon icon=prime:twitter></iconify-icon> </a></div></div></div><div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center" data-aria-auto="Chuyển sang chế độ sáng" data-aria-dark="Chuyển sang chế độ màu tự động" data-aria-light="Chuyển sang chế độ tối"><i class="i-lucide theme-icon"></i></button><button class="md:hidden flex items-center js-menu" aria-controls=head-nav aria-expanded=false aria-label=Menu type=button><div class=hamburger><span class=hamburger_1></span><span class=hamburger_2></span><span class=hamburger_3></span></div></button></div></div></div><div class="sy-page sy-container flex mx-auto"><aside class="sy-lside md:w-72 md:shrink-0 print:hidden" id=lside><div class="sy-lside-inner md:sticky"><div class="sy-scrollbar p-6"><div class=sidebar-links><ul><li><a class=icon-link href=https://forums.openmv.io/> <span class=icon> <svg viewbox="0 0 24 24" fill=none><path d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z" clip-rule=evenodd fill=var(--accent-9) fill-rule=evenodd /><circle cx=12 cy=11 fill=white r=1 /><circle cx=9 cy=11 fill=white r=1 /><circle cx=15 cy=11 fill=white r=1 /></svg> </span> <span class=text>Thảo luận</span> </a></li></ul></div><div class=globaltoc data-expand-depth=1><ul class=current><li class="toctree-l1 current"><a class="reference internal" href=../../index.html>Hướng dẫn</a><ul class=current><li class=toctree-l2><a class="reference internal" href=../../quickstart.html>1. Bắt đầu nhanh</a></li><li class=toctree-l2><a class="reference internal" href=../../python/index.html>2. Tổng quan về Python</a></li><li class=toctree-l2><a class="reference internal" href=../../hardware/index.html>3. Điều khiển phần cứng</a></li><li class=toctree-l2><a class="reference internal" href=../../vision/index.html>4. Cảm biến thị giác</a></li><li class=toctree-l2><a class="reference internal" href=../../image/index.html>5. Xử lý ảnh</a></li><li class=toctree-l2><a class="reference internal" href=../../numpy/index.html>6. NumPy</a></li><li class=toctree-l2><a class="reference internal" href=../../ml/index.html>7. Học máy</a></li><li class=toctree-l2><a class="reference internal" href=../../asyncio/index.html>8. Asyncio</a></li><li class=toctree-l2><a class="reference internal" href=../../networking/index.html>9. Kết nối mạng</a></li><li class=toctree-l2><a class="reference internal" href=../../webservers/index.html>10. Web Server</a></li><li class=toctree-l2><a class="reference internal" href=../../bluetooth/index.html>11. Bluetooth</a></li><li class=toctree-l2><a class="reference internal" href=../../protocol/index.html>12. Giao thức Host</a></li><li class=toctree-l2><a class="reference internal" href=../../tools/index.html>13. Công cụ</a></li><li class="toctree-l2 current"><a class="reference internal" href=../index.html>14. Production</a><ul class=current><li class=toctree-l3><a class="reference internal" href=../firmware/index.html>14.1. Phát triển firmware</a></li><li class=toctree-l3><a class="reference internal" href=../shipping/index.html>14.2. Xuất xưởng ứng dụng</a></li><li class="toctree-l3 current"><a class="reference internal" href=index.html>14.3. Tăng cường bảo mật cho sản xuất</a><ul class=current><li class="toctree-l4 current"><a class="current reference internal" href=#>14.3.1. Ghi nhật ký</a></li><li class=toctree-l4><a class="reference internal" href=watchdog.html>14.3.2. Watchdog</a></li><li class=toctree-l4><a class="reference internal" href=filesystem.html>14.3.3. Vệ sinh hệ thống tệp</a></li><li class=toctree-l4><a class="reference internal" href=security.html>14.3.4. Lưu ý về bảo vệ đọc bộ nhớ flash</a></li></ul></li><li class=toctree-l3><a class="reference internal" href=../tls/index.html>14.4. Làm việc với chứng chỉ TLS</a></li><li class=toctree-l3><a class="reference internal" href=../wrap-up.html>14.5. Tổng kết</a></li></ul></li></ul></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../../library/index.html>Thư viện</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../quickref.html>Boards</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../shields.html>Shields</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../sensors.html>Cảm biến</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../../reference/index.html>Ngôn ngữ</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../../genrst/index.html>CPython</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../../develop/index.html>Nội bộ</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../../changelog/index.html>Changelog</a></li><li class="toctree-l1 _expand"><a class="reference internal" href=../../../../license.html>Giấy phép</a></li></ul></div></div></div></aside><div aria-label="Close left sidebar" class="lside-overlay js-menu" aria-controls=lside aria-expanded=false role=button></div><aside class="sy-rside pb-3 w-64 shrink-0 order-last" id=rside><button aria-label="Close Table of Contents" class="rside-close js-menu xl:hidden" aria-controls=rside aria-expanded=false type=button><i class="i-lucide close"></i></button><div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class=localtoc><h3>Trên trang này</h3><ul><li><a class="reference internal" href=#the-mental-model>14.3.1.1. Mô hình tư duy</a></li><li><a class="reference internal" href=#levels-and-what-each-one-means>14.3.1.2. Các mức độ và ý nghĩa của từng mức</a></li><li><a class="reference internal" href=#basicconfig-the-quickstart>14.3.1.3. basicConfig: bước khởi đầu nhanh</a></li><li><a class="reference internal" href=#named-loggers-per-module>14.3.1.4. Logger được đặt tên theo module</a></li><li><a class="reference internal" href=#lazy-arg-formatting>14.3.1.5. Định dạng %-arg lười biếng</a></li><li><a class="reference internal" href=#logging-exceptions>14.3.1.6. Ghi nhật ký ngoại lệ</a></li><li><a class="reference internal" href=#multiple-handlers>14.3.1.7. Nhiều handler</a></li><li><a class="reference internal" href=#rotating-log-files>14.3.1.8. Xoay vòng tệp nhật ký</a></li><li><a class="reference internal" href=#flushing-on-power-sensitive-deployments>14.3.1.9. Xả bộ đệm trên các triển khai nhạy cảm với nguồn điện</a></li><li><a class="reference internal" href=#boot-time-diagnostics>14.3.1.10. Chẩn đoán lúc khởi động</a></li><li><a class="reference internal" href=#putting-it-together>14.3.1.11. Kết hợp lại</a></li></ul></div><a class="js-repo-stats repo-stats flex items-center" data-repo=micropython-doc data-type=github data-user=openmv href=https://github.com/openmv/micropython-doc> <span class="w-8 flex items-center justify-around shrink-0 text-3xl"> <iconify-icon icon=simple-icons:github></iconify-icon> </span> <span class="flex-grow px-2 break-all"> <span>micropython-doc</span> <span class="flex text-sm repo-stats-count"> <span class="flex items-center pr-3"> <iconify-icon icon=lucide:star></iconify-icon> <strong class="js-repo-stars ml-1">0</strong> </span> <span class="flex items-center"> <iconify-icon icon=lucide:git-fork></iconify-icon> <strong class="js-repo-forks ml-1">0</strong> </span> </span> </span> </a><div class=edit-this-page><a href=https://github.com/openmv/micropython-doc/blob/49076d1a5e02296ba3cfa31fe1660cf4507e761f/docs/openmvcam/tutorial/production/hardening/logging.rst>Chỉnh sửa trang này</a></div><div data-ea-publisher=readthedocs id=ethical-ad-placement></div></div></aside><div aria-label="Close Table of Contents" class="rside-overlay js-menu" aria-controls=rside aria-expanded=false role=button></div><main class="sy-main w-full max-sm:max-w-full print:pt-6"><div class=sy-breadcrumbs role=navigation><div class="sy-breadcrumbs-inner flex items-center"><div class="md:hidden mr-3"><button aria-controls=lside aria-expanded=false aria-label=Menu class=js-menu type=button><i class="i-lucide menu"></i></button></div><ol class=flex-1 itemscope itemtype=https://schema.org/BreadcrumbList><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=../../../../index.html itemprop=item><span itemprop=name>OpenMV MicroPython</span></a> <span>/</span> <meta content=1 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=../../index.html itemprop=item><span itemprop=name>Hướng Dẫn OpenMV Cam</span></a> <span>/</span> <meta content=2 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=../index.html itemprop=item><span itemprop=name><span class=section-number>14. </span>Production</span></a> <span>/</span> <meta content=3 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><a href=index.html itemprop=item><span itemprop=name><span class=section-number>14.3. </span>Tăng cường bảo mật cho sản xuất</span></a> <span>/</span> <meta content=4 itemprop=position></li><li itemprop=itemListElement itemscope itemtype=https://schema.org/ListItem><strong itemprop=name><span class=section-number>14.3.1. </span>Ghi nhật ký</strong> <meta content=5 itemprop=position></li></ol><div class="xl:hidden ml-1"><button aria-label="Show table of contents" aria-controls=rside aria-expanded=false class=js-menu type=button><i class="i-lucide outdent"></i></button></div></div></div><div class="flex flex-col break-words justify-between"><div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12"><div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12"><div id=copy-page-trigger><button class="js-copy px-3 py-1 inline-flex items-center gap-1" data-url=https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt type=button><i class=i-lucide data-icon=copy></i> <span>Sao chép trang</span></button><button aria-label="Thêm hành động" class="js-menu px-2 py-1" aria-controls=copy-page-content aria-expanded=false aria-haspopup=menu type=button><i class="i-lucide chevron-down"></i></button></div><div aria-hidden=true aria-orientation=vertical id=copy-page-content role=menu><div role=presentation><div class="flex flex-col" role=group><button class=js-copy data-url=https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt role=menuitem type=button><span class=iconify-icon> <i class=i-lucide data-icon=copy></i> </span> <span>Sao chép trang</span></button><a href=https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt rel=nofollow role=menuitem target=_blank><iconify-icon icon=bi:code-slash></iconify-icon> <span>Xem nguồn</span></a><a href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." rel=nofollow role=menuitem target=_blank> <iconify-icon icon=bi:openai></iconify-icon> <span>Mở trong ChatGPT</span> </a><a href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." rel=nofollow role=menuitem target=_blank> <iconify-icon icon=bi:claude></iconify-icon> <span>Mở trong Claude</span> </a><a href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/hardening/logging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." rel=nofollow role=menuitem target=_blank> <iconify-icon icon=bi:perplexity></iconify-icon> <span>Mở trong Perplexity</span> </a></div></div></div></div><article class=yue role=main><section id=logging><h1><span class=section-number>14.3.1. </span>Ghi nhật ký<a title="Link to this heading" class=headerlink href=#logging>¶</a></h1><p>Một sản phẩm đã xuất xưởng không thể gửi dữ liệu về máy chủ bằng <a class="reference internal" href=../../../../library/builtins.html#print title=print><code class="xref py py-func docutils literal notranslate"><span class=pre>print()</span></code></a>. <code class="docutils literal notranslate"><span class=pre>print()</span></code> ghi vào stdout USB, chỉ tồn tại khi cam đang trên bàn của nhà phát triển với một terminal đang mở. Ở thực địa, không có gì đọc nó; mỗi dòng đều bị bỏ qua. Thư viện <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> là sự thay thế -- một bộ lọc mức độ, một đích đến do ứng dụng lựa chọn, và một định dạng cho biết điều gì đã xảy ra và khi nào.</p><p>Module <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> trên cam là một bản port thu gọn từ CPython -- cùng mô hình tư duy, bề mặt nhỏ hơn, một vài điểm khác biệt quan trọng cho việc thiết lập môi trường sản xuất.</p><section id=the-mental-model><h2><span class=section-number>14.3.1.1. </span>Mô hình tư duy<a title="Link to this heading" class=headerlink href=#the-mental-model>¶</a></h2><p>Ghi nhật ký được xây dựng từ bốn thành phần. Mỗi thành phần có một nhiệm vụ; sự tách biệt này cho phép một logger phân nhánh đến nhiều đích, mỗi đích có định dạng và mức độ riêng:</p><ul><li><p><strong>Logger</strong> là thứ ứng dụng gọi. Code viết <code class="docutils literal notranslate"><span class=pre>log.info("frame</span> <span class=pre>%d",</span> <span class=pre>n)</span></code>; logger là đối tượng mà lệnh gọi đó đến. Các logger được tra cứu theo tên bằng <a class="reference internal" href=../../../../library/logging.html#logging.getLogger title=logging.getLogger><code class="xref py py-func docutils literal notranslate"><span class=pre>logging.getLogger()</span></code></a>.</p></li><li><p><strong>Handler</strong> quyết định <em>nơi</em> một bản ghi đến. <a class="reference internal" href=../../../../library/logging.html#logging.StreamHandler title=logging.StreamHandler><code class="xref py py-class docutils literal notranslate"><span class=pre>StreamHandler</span></code></a> ghi vào một luồng (<a class="reference internal" href=../../../../library/sys.html#sys.stderr title=sys.stderr><code class="xref py py-data docutils literal notranslate"><span class=pre>sys.stderr</span></code></a> mặc định); <a class="reference internal" href=../../../../library/logging.html#logging.FileHandler title=logging.FileHandler><code class="xref py py-class docutils literal notranslate"><span class=pre>FileHandler</span></code></a> thêm vào một tệp trên đĩa. Một logger có thể có bất kỳ số lượng handler nào.</p> <div class="admonition note"><p class=admonition-title>Ghi chú</p><p>Trên cam, <code class="docutils literal notranslate"><span class=pre>sys.stdout</span></code> và <code class="docutils literal notranslate"><span class=pre>sys.stderr</span></code> được nối vào cùng một đường ống USB CDC -- các lần ghi vào một trong hai đều hiển thị trên cùng terminal mà nhà phát triển đang mở qua USB. Một handler ghi vào <code class="docutils literal notranslate"><span class=pre>sys.stderr</span></code> thực chất là một handler ghi vào cùng nơi <code class="docutils literal notranslate"><span class=pre>print()</span></code> ghi vào. Sự trừu tượng hóa handler vẫn cho phép lọc và định dạng theo từng đích; chỉ là nó không cung cấp một kênh vật lý riêng biệt.</p></div></li><li><p><strong>Formatter</strong> quyết định <em>cách</em> một bản ghi được hiển thị thành văn bản. Nó nhận một bản ghi và trả về dòng được ghi. Một chuỗi định dạng mỗi formatter; một formatter mỗi handler.</p></li><li><p><strong>Bộ lọc mức độ</strong> nằm trên mỗi logger và mỗi handler. Các bản ghi mang một mức độ (<code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> / <code class="docutils literal notranslate"><span class=pre>INFO</span></code> / <code class="docutils literal notranslate"><span class=pre>WARNING</span></code> / <code class="docutils literal notranslate"><span class=pre>ERROR</span></code> / <code class="docutils literal notranslate"><span class=pre>CRITICAL</span></code>). Chỉ các bản ghi ở mức độ bằng hoặc cao hơn mức lọc mới được thông qua.</p></li></ul><p>Sự tách biệt đó quan trọng vì một thiết lập sản xuất điển hình có nhiều hơn một đích: một tệp trên thẻ SD chứa tất cả mọi thứ từ <code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> trở xuống cho phân tích sau sự cố, và một luồng đến USB chỉ hiển thị <code class="docutils literal notranslate"><span class=pre>WARNING</span></code> và nghiêm trọng hơn để nhà phát triển kết nối với cam thấy được điểm nổi bật mà không bị chìm trong chi tiết. Cùng một code, hai đích, hai bộ lọc.</p></section><section id=levels-and-what-each-one-means><h2><span class=section-number>14.3.1.2. </span>Các mức độ và ý nghĩa của từng mức<a title="Link to this heading" class=headerlink href=#levels-and-what-each-one-means>¶</a></h2><p>Năm mức độ là một thang đo có thứ tự. Các bản ghi mang một mức độ để bộ lọc trên mỗi handler có thể loại bỏ những bản ghi nó không quan tâm.</p><ul class=simple><li><p><code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> -- theo dõi, bộ đếm theo khung hình, kết xuất trạng thái nội bộ. Mức thấp nhất; khối lượng cao.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>INFO</span></code> -- các sự kiện vận hành bình thường. Wi-Fi đã kết nối, mô hình đã tải, watchdog đã khởi động, một tệp nhật ký mới đã được xoay vòng.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>WARNING</span></code> -- điều gì đó không mong đợi nhưng ứng dụng đã xử lý được. Một khung hình bị bỏ, một yêu cầu mạng đã thử lại.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>ERROR</span></code> -- một thao tác đã thất bại và ứng dụng không thể hoàn thành nó. Một tệp mô hình bị thiếu, một lần ghi thẻ SD bị từ chối.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>CRITICAL</span></code> -- ứng dụng hoàn toàn không thể tiếp tục. Hết bộ nhớ, thiếu điểm gắn kết bắt buộc.</p></li></ul><p>Một mặc định quan trọng cần nhớ: module <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> của cam khởi động mỗi logger ở mức <code class="docutils literal notranslate"><span class=pre>WARNING</span></code>. Các bản ghi ở <code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> và <code class="docutils literal notranslate"><span class=pre>INFO</span></code> bị âm thầm loại bỏ trừ khi <code class="xref py py-meth docutils literal notranslate"><span class=pre>Logger.setLevel()</span></code> được gọi -- thường là trong lệnh gọi <code class="xref py py-func docutils literal notranslate"><span class=pre>basicConfig()</span></code> bên dưới. Triệu chứng đầu tiên phổ biến của một thiết lập ghi nhật ký "không hoạt động" là ứng dụng phát ở <code class="docutils literal notranslate"><span class=pre>INFO</span></code> và bộ lọc mặc định đã loại bỏ bản ghi.</p><div class="admonition note"><p class=admonition-title>Ghi chú</p><p>Mức độ là bộ lọc duy nhất mà <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> của cam cung cấp. Không có đối tượng <code class="xref py py-class docutils literal notranslate"><span class=pre>Filter</span></code> cho các quy tắc phong phú hơn theo từng bản ghi; nếu mức độ của bản ghi vượt qua, nó sẽ được phát ra.</p></div></section><section id=basicconfig-the-quickstart><h2><span class=section-number>14.3.1.3. </span>basicConfig: bước khởi đầu nhanh<a title="Link to this heading" class=headerlink href=#basicconfig-the-quickstart>¶</a></h2><p><a class="reference internal" href=../../../../library/logging.html#logging.basicConfig title=logging.basicConfig><code class="xref py py-func docutils literal notranslate"><span class=pre>logging.basicConfig()</span></code></a> cấu hình root logger trong một lệnh gọi. Hai dạng thường xuất hiện nhất:</p><p>Thiết lập phát triển, tất cả ra USB stderr ở mức <code class="docutils literal notranslate"><span class=pre>INFO</span></code></p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=n>logging</span><span class=o>.</span><span class=n>basicConfig</span><span class=p>(</span><span class=n>level</span><span class=o>=</span><span class=n>logging</span><span class=o>.</span><span class=n>INFO</span><span class=p>)</span>
+</span></pre></div></div><p>Thiết lập sản xuất, tất cả vào một tệp trên thẻ SD với định dạng có dấu thời gian:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=n>logging</span><span class=o>.</span><span class=n>basicConfig</span><span class=p>(</span>
+</span><span data-line=4>    <span class=n>filename</span><span class=o>=</span><span class=s1>'/sdcard/logs/app.log'</span><span class=p>,</span>
+</span><span data-line=5>    <span class=n>level</span><span class=o>=</span><span class=n>logging</span><span class=o>.</span><span class=n>INFO</span><span class=p>,</span>
+</span><span data-line=6>    <span class=nb>format</span><span class=o>=</span><span class=s1>'</span><span class=si>%(asctime)s</span><span class=s1> </span><span class=si>%(levelname)s</span><span class=s1> </span><span class=si>%(name)s</span><span class=s1>: </span><span class=si>%(message)s</span><span class=s1>'</span><span class=p>,</span>
+</span><span data-line=7><span class=p>)</span>
+</span></pre></div></div><p>Truyền <code class="docutils literal notranslate"><span class=pre>filename=</span></code> cho <code class="xref py py-class docutils literal notranslate"><span class=pre>FileHandler</span></code> hoặc <code class="docutils literal notranslate"><span class=pre>stream=</span></code> cho <code class="xref py py-class docutils literal notranslate"><span class=pre>StreamHandler</span></code>; hai tùy chọn này loại trừ lẫn nhau trong <code class="xref py py-func docutils literal notranslate"><span class=pre>basicConfig()</span></code>.</p><p>Chuỗi định dạng là một mẫu kiểu <code class="docutils literal notranslate"><span class=pre>%(field)s</span></code>. Các trường mà formatter của cam hỗ trợ:</p><ul class=simple><li><p><code class="docutils literal notranslate"><span class=pre>%(asctime)s</span></code> -- dấu thời gian được định dạng từ <a class="reference internal" href=../../../../library/time.html#time.localtime title=time.localtime><code class="xref py py-func docutils literal notranslate"><span class=pre>time.localtime()</span></code></a>. Định dạng mặc định là <code class="docutils literal notranslate"><span class=pre>%Y-%m-%d</span> <span class=pre>%H:%M:%S</span></code>; truyền <code class="docutils literal notranslate"><span class=pre>datefmt=</span></code> để ghi đè.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>%(levelname)s</span></code> -- <code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> / <code class="docutils literal notranslate"><span class=pre>INFO</span></code> / <code class="docutils literal notranslate"><span class=pre>WARNING</span></code> / <code class="docutils literal notranslate"><span class=pre>ERROR</span></code> / <code class="docutils literal notranslate"><span class=pre>CRITICAL</span></code>.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>%(name)s</span></code> -- tên của logger (xem phần tiếp theo).</p></li><li><p><code class="docutils literal notranslate"><span class=pre>%(message)s</span></code> -- thông điệp được định dạng của bản ghi.</p></li><li><p><code class="docutils literal notranslate"><span class=pre>%(msecs)d</span></code> -- phần mili-giây của dấu thời gian bản ghi.</p></li></ul><p>Định dạng mặc định nếu không có định dạng nào được cung cấp là <code class="docutils literal notranslate"><span class=pre>%(levelname)s:%(name)s:%(message)s</span></code> -- phù hợp cho thiết lập phát triển và không đủ cho nhật ký thực địa, nơi dấu thời gian là thứ làm cho tệp hữu ích vài tuần sau.</p><p><code class="xref py py-func docutils literal notranslate"><span class=pre>basicConfig()</span></code> là một lệnh không làm gì ở các lần gọi tiếp theo trừ khi <code class="docutils literal notranslate"><span class=pre>force=True</span></code> được truyền. Cấu hình một lần khi khởi động; không gọi lại để "chuyển đích" trong khi chạy.</p><div class="admonition note"><p class=admonition-title>Ghi chú</p><p>Cam's <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> không có <code class="xref py py-func docutils literal notranslate"><span class=pre>dictConfig()</span></code> hay <code class="xref py py-func docutils literal notranslate"><span class=pre>fileConfig()</span></code>. Cấu hình luôn theo chương trình -- một helper <code class="docutils literal notranslate"><span class=pre>setup_logging()</span></code> được gọi một lần từ <code class="docutils literal notranslate"><span class=pre>main.py</span></code> là quy ước.</p></div></section><section id=named-loggers-per-module><h2><span class=section-number>14.3.1.4. </span>Logger được đặt tên theo module<a title="Link to this heading" class=headerlink href=#named-loggers-per-module>¶</a></h2><p>Code ứng dụng không nên gọi các phím tắt cấp module (<a class="reference internal" href=../../../../library/logging.html#logging.info title=logging.info><code class="xref py py-func docutils literal notranslate"><span class=pre>logging.info()</span></code></a>, <a class="reference internal" href=../../../../library/logging.html#logging.warning title=logging.warning><code class="xref py py-func docutils literal notranslate"><span class=pre>logging.warning()</span></code></a>, và các hàm tương tự). Tất cả chúng đều đi qua root logger, và các bản ghi nhật ký kết quả mang tên <code class="docutils literal notranslate"><span class=pre>root</span></code> -- vô dụng khi muốn biết <em>bản ghi đến từ đâu</em>.</p><p>Quy ước là một logger mỗi module, đặt tên theo module:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=c1># in app/detector.py</span>
+</span><span data-line=2><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=3>
+</span><span data-line=4><span class=n>log</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span><span data-line=5>
+</span><span data-line=6><span class=k>def</span><span class=w> </span><span class=nf>detect</span><span class=p>(</span><span class=n>frame</span><span class=p>):</span>
+</span><span data-line=7>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"detect on </span><span class=si>%d</span><span class=s2>x</span><span class=si>%d</span><span class=s2> frame"</span><span class=p>,</span> <span class=n>frame</span><span class=o>.</span><span class=n>width</span><span class=p>(),</span> <span class=n>frame</span><span class=o>.</span><span class=n>height</span><span class=p>())</span>
+</span></pre></div></div><p>Mỗi bản ghi sau đó mang <code class="docutils literal notranslate"><span class=pre>app.detector</span></code> trong <code class="docutils literal notranslate"><span class=pre>%(name)s</span></code> và dòng nhật ký cho biết ai đã phát ra nó.</p><p>Cam's <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> khác với CPython ở một điểm quan trọng: không gian tên logger là <strong>phẳng</strong>. <code class="docutils literal notranslate"><span class=pre>getLogger('app')</span></code> và <code class="docutils literal notranslate"><span class=pre>getLogger('app.detector')</span></code> là các logger độc lập không có quan hệ cha / con -- đặt mức độ trên <code class="docutils literal notranslate"><span class=pre>app</span></code> <em>không</em> lan truyền đến <code class="docutils literal notranslate"><span class=pre>app.detector</span></code>. Cơ chế hoạt động được: một logger được đặt tên không có handler của riêng nó sẽ mượn handler và mức độ của root logger. Đó là cách một lệnh gọi <code class="xref py py-func docutils literal notranslate"><span class=pre>basicConfig()</span></code> duy nhất trên root thiết lập mọi lệnh gọi <code class="xref py py-func docutils literal notranslate"><span class=pre>getLogger()</span></code> ở nơi khác trong ứng dụng.</p></section><section id=lazy-arg-formatting><h2><span class=section-number>14.3.1.5. </span>Định dạng %-arg lười biếng<a title="Link to this heading" class=headerlink href=#lazy-arg-formatting>¶</a></h2><p>Viết:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"processed </span><span class=si>%d</span><span class=s2> frames in </span><span class=si>%d</span><span class=s2> ms"</span><span class=p>,</span> <span class=n>count</span><span class=p>,</span> <span class=n>dt</span><span class=p>)</span>
+</span></pre></div></div><p>Không viết:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=sa>f</span><span class=s2>"processed </span><span class=si>{</span><span class=n>count</span><span class=si>}</span><span class=s2> frames in </span><span class=si>{</span><span class=n>dt</span><span class=si>}</span><span class=s2> ms"</span><span class=p>)</span>
+</span></pre></div></div><p>Dạng <code class="docutils literal notranslate"><span class=pre>%</span></code>-arg cho phép logger nội suy các đối số <em>sau</em> khi bộ lọc mức độ đã quyết định có phát bản ghi hay không. Một lệnh gọi <code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> bị lọc ra trong một vòng lặp nóng không tốn chi phí nào cho chuỗi định dạng của nó. Một f-string được đánh giá trước, mỗi lần, trước khi lệnh gọi ngay cả đến logger.</p><p>Từ khóa <code class="docutils literal notranslate"><span class=pre>extra=</span></code> của CPython cho các trường có cấu trúc không được hỗ trợ trên cam; thay vào đó hãy truyền các giá trị dưới dạng đối số thông điệp.</p></section><section id=logging-exceptions><h2><span class=section-number>14.3.1.6. </span>Ghi nhật ký ngoại lệ<a title="Link to this heading" class=headerlink href=#logging-exceptions>¶</a></h2><p>Bên trong một khối <a class="reference external" title="(in Python v3.14)" href=https://docs.python.org/3/reference/compound_stmts.html#except><code class="xref std std-keyword docutils literal notranslate"><span class=pre>except</span></code></a>, <code class="xref py py-meth docutils literal notranslate"><span class=pre>Logger.exception()</span></code> ghi thông điệp ở mức <code class="docutils literal notranslate"><span class=pre>ERROR</span></code> <em>và</em> thêm traceback của ngoại lệ hiện tại vào bản ghi:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=k>try</span><span class=p>:</span>
+</span><span data-line=2>    <span class=n>frame</span> <span class=o>=</span> <span class=n>csi0</span><span class=o>.</span><span class=n>snapshot</span><span class=p>()</span>
+</span><span data-line=3>    <span class=n>process</span><span class=p>(</span><span class=n>frame</span><span class=p>)</span>
+</span><span data-line=4><span class=k>except</span> <span class=ne>Exception</span><span class=p>:</span>
+</span><span data-line=5>    <span class=n>log</span><span class=o>.</span><span class=n>exception</span><span class=p>(</span><span class=s2>"frame loop iteration failed"</span><span class=p>)</span>
+</span></pre></div></div><p>Traceback được thu thập qua <a class="reference internal" href=../../../../library/sys.html#sys.print_exception title=sys.print_exception><code class="xref py py-func docutils literal notranslate"><span class=pre>sys.print_exception()</span></code></a>, đó là thứ tạo ra khối <code class="docutils literal notranslate"><span class=pre>Traceback</span> <span class=pre>(most</span> <span class=pre>recent</span> <span class=pre>call</span> <span class=pre>last):</span></code> nhiều dòng của nhật ký ngoại lệ. Đây là công cụ phù hợp cho xử lý ngoại lệ cấp cao nhất -- bắt, ghi nhật ký, và tiếp tục.</p></section><section id=multiple-handlers><h2><span class=section-number>14.3.1.7. </span>Nhiều handler<a title="Link to this heading" class=headerlink href=#multiple-handlers>¶</a></h2><p>Sự phân chia sản xuất đã đề cập ở đầu -- tất cả vào một tệp ở mức <code class="docutils literal notranslate"><span class=pre>DEBUG</span></code>, điểm nổi bật ra stderr ở mức <code class="docutils literal notranslate"><span class=pre>WARNING</span></code> -- là hai handler gắn vào cùng một logger, mỗi cái có mức độ và formatter riêng:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=n>fmt</span> <span class=o>=</span> <span class=s1>'</span><span class=si>%(asctime)s</span><span class=s1> </span><span class=si>%(levelname)s</span><span class=s1> </span><span class=si>%(name)s</span><span class=s1>: </span><span class=si>%(message)s</span><span class=s1>'</span>
+</span><span data-line=4>
+</span><span data-line=5><span class=n>file_handler</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>FileHandler</span><span class=p>(</span><span class=s1>'/sdcard/logs/app.log'</span><span class=p>)</span>
+</span><span data-line=6><span class=n>file_handler</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>DEBUG</span><span class=p>)</span>
+</span><span data-line=7><span class=n>file_handler</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>fmt</span><span class=p>))</span>
+</span><span data-line=8>
+</span><span data-line=9><span class=n>stream_handler</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>StreamHandler</span><span class=p>()</span>
+</span><span data-line=10><span class=n>stream_handler</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>WARNING</span><span class=p>)</span>
+</span><span data-line=11><span class=n>stream_handler</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>fmt</span><span class=p>))</span>
+</span><span data-line=12>
+</span><span data-line=13><span class=n>root</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>()</span>
+</span><span data-line=14><span class=n>root</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>DEBUG</span><span class=p>)</span>          <span class=c1># admit everything to the filters</span>
+</span><span data-line=15><span class=n>root</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>file_handler</span><span class=p>)</span>
+</span><span data-line=16><span class=n>root</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>stream_handler</span><span class=p>)</span>
+</span></pre></div></div><p>Mức độ của root logger là bộ lọc <em>đầu tiên</em> mà mỗi bản ghi gặp phải. Đặt nó ở mức thấp nhất mà bất kỳ handler nào muốn thấy -- <code class="docutils literal notranslate"><span class=pre>DEBUG</span></code> ở đây -- để không handler nào bị bỏ đói bởi chính logger. Sau đó các mức độ per-handler quyết định bản ghi nào thực sự được phát ra đến đích nào.</p></section><section id=rotating-log-files><h2><span class=section-number>14.3.1.8. </span>Xoay vòng tệp nhật ký<a title="Link to this heading" class=headerlink href=#rotating-log-files>¶</a></h2><p>Cam's <a class="reference internal" title="logging: event logging" href=../../../../library/logging.html#module-logging><code class="xref py py-mod docutils literal notranslate"><span class=pre>logging</span></code></a> không có <code class="xref py py-class docutils literal notranslate"><span class=pre>RotatingFileHandler</span></code> hay <code class="xref py py-class docutils literal notranslate"><span class=pre>TimedRotatingFileHandler</span></code>. Xoay vòng là công việc của ứng dụng.</p><p>Mẫu là giữ <code class="xref py py-class docutils literal notranslate"><span class=pre>FileHandler</span></code> hiện tại ở một nơi đã biết, hoán đổi nó với một cái mới khi tiêu chí xoay vòng kích hoạt, và để một đường dẫn có ngày tháng cung cấp ranh giới tệp tự nhiên. Cho xoay vòng hàng giờ vào <code class="docutils literal notranslate"><span class=pre>/sdcard/logs/&lt;year>/&lt;month>/&lt;day>/&lt;hour>.log</span></code></p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2><span class=kn>import</span><span class=w> </span><span class=nn>time</span>
+</span><span data-line=3>
+</span><span data-line=4><span class=n>_LOG_FMT</span> <span class=o>=</span> <span class=s1>'</span><span class=si>%(asctime)s</span><span class=s1> </span><span class=si>%(levelname)s</span><span class=s1> </span><span class=si>%(name)s</span><span class=s1>: </span><span class=si>%(message)s</span><span class=s1>'</span>
+</span><span data-line=5><span class=n>_current_path</span> <span class=o>=</span> <span class=kc>None</span>
+</span><span data-line=6><span class=n>_current_handler</span> <span class=o>=</span> <span class=kc>None</span>
+</span><span data-line=7>
+</span><span data-line=8><span class=k>def</span><span class=w> </span><span class=nf>_hourly_path</span><span class=p>(</span><span class=n>now</span><span class=p>):</span>
+</span><span data-line=9>    <span class=k>return</span> <span class=s1>'/sdcard/logs/</span><span class=si>{:04d}</span><span class=s1>/</span><span class=si>{:02d}</span><span class=s1>/</span><span class=si>{:02d}</span><span class=s1>/</span><span class=si>{:02d}</span><span class=s1>.log'</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+</span><span data-line=10>        <span class=n>now</span><span class=p>[</span><span class=mi>0</span><span class=p>],</span> <span class=n>now</span><span class=p>[</span><span class=mi>1</span><span class=p>],</span> <span class=n>now</span><span class=p>[</span><span class=mi>2</span><span class=p>],</span> <span class=n>now</span><span class=p>[</span><span class=mi>3</span><span class=p>])</span>
+</span><span data-line=11>
+</span><span data-line=12><span class=k>def</span><span class=w> </span><span class=nf>rotate_if_needed</span><span class=p>():</span>
+</span><span data-line=13>    <span class=k>global</span> <span class=n>_current_path</span><span class=p>,</span> <span class=n>_current_handler</span>
+</span><span data-line=14>
+</span><span data-line=15>    <span class=n>path</span> <span class=o>=</span> <span class=n>_hourly_path</span><span class=p>(</span><span class=n>time</span><span class=o>.</span><span class=n>localtime</span><span class=p>())</span>
+</span><span data-line=16>    <span class=k>if</span> <span class=n>path</span> <span class=o>==</span> <span class=n>_current_path</span><span class=p>:</span>
+</span><span data-line=17>        <span class=k>return</span>
+</span><span data-line=18>
+</span><span data-line=19>    <span class=n>root</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>()</span>
+</span><span data-line=20>    <span class=k>if</span> <span class=n>_current_handler</span> <span class=ow>is</span> <span class=ow>not</span> <span class=kc>None</span><span class=p>:</span>
+</span><span data-line=21>        <span class=n>root</span><span class=o>.</span><span class=n>removeHandler</span><span class=p>(</span><span class=n>_current_handler</span><span class=p>)</span>
+</span><span data-line=22>        <span class=n>_current_handler</span><span class=o>.</span><span class=n>close</span><span class=p>()</span>
+</span><span data-line=23>
+</span><span data-line=24>    <span class=n>_current_handler</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>FileHandler</span><span class=p>(</span><span class=n>path</span><span class=p>)</span>
+</span><span data-line=25>    <span class=n>_current_handler</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>_LOG_FMT</span><span class=p>))</span>
+</span><span data-line=26>    <span class=n>root</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>_current_handler</span><span class=p>)</span>
+</span><span data-line=27>    <span class=n>_current_path</span> <span class=o>=</span> <span class=n>path</span>
+</span></pre></div></div><p>Gọi <code class="docutils literal notranslate"><span class=pre>rotate_if_needed()</span></code> một lần mỗi vòng lặp chính; kiểm tra đường dẫn rẻ và việc hoán đổi chỉ xảy ra tại ranh giới giờ. Cây thư mục phải tồn tại trước khi <code class="xref py py-class docutils literal notranslate"><span class=pre>FileHandler</span></code> có thể mở tệp.</p></section><section id=flushing-on-power-sensitive-deployments><h2><span class=section-number>14.3.1.9. </span>Xả bộ đệm trên các triển khai nhạy cảm với nguồn điện<a title="Link to this heading" class=headerlink href=#flushing-on-power-sensitive-deployments>¶</a></h2><p>Các lần ghi <code class="xref py py-class docutils literal notranslate"><span class=pre>FileHandler</span></code> đi qua bộ đệm Python của đối tượng tệp bên dưới. Mất nguồn điện giữa một lần ghi và một lần xả bộ đệm sẽ mất các bản ghi cuối cùng. Đối với các triển khai dùng pin hoặc rút nguồn đột ngột, hãy gọi <code class="docutils literal notranslate"><span class=pre>flush()</span></code> trên luồng của handler sau các bản ghi quan trọng, hoặc theo bộ định thời.</p><p>Một helper nhỏ xả bộ đệm mọi handler gắn với root logger:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=k>def</span><span class=w> </span><span class=nf>flush_handlers</span><span class=p>():</span>
+</span><span data-line=4>    <span class=k>for</span> <span class=n>handler</span> <span class=ow>in</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>()</span><span class=o>.</span><span class=n>handlers</span><span class=p>:</span>
+</span><span data-line=5>        <span class=k>if</span> <span class=nb>hasattr</span><span class=p>(</span><span class=n>handler</span><span class=p>,</span> <span class=s1>'stream'</span><span class=p>):</span>
+</span><span data-line=6>            <span class=n>handler</span><span class=o>.</span><span class=n>stream</span><span class=o>.</span><span class=n>flush</span><span class=p>()</span>
+</span></pre></div></div><p>Gọi <code class="docutils literal notranslate"><span class=pre>flush_handlers()</span></code> ngay sau một bản ghi mà ứng dụng không thể để mất:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=n>log</span><span class=o>.</span><span class=n>critical</span><span class=p>(</span><span class=s2>"memory low: restarting"</span><span class=p>)</span>
+</span><span data-line=2><span class=n>flush_handlers</span><span class=p>()</span>
+</span></pre></div></div><p>Để an toàn trong nền, hãy gọi nó từ vòng lặp chính theo nhịp cân bằng giữa độ tươi của nhật ký và độ hao mòn flash -- một lần mỗi giây thường là đủ. <code class="xref py py-meth docutils literal notranslate"><span class=pre>Logger.critical()</span></code> <em>không</em> tự kích hoạt xả bộ đệm.</p></section><section id=boot-time-diagnostics><h2><span class=section-number>14.3.1.10. </span>Chẩn đoán lúc khởi động<a title="Link to this heading" class=headerlink href=#boot-time-diagnostics>¶</a></h2><p>Một nhật ký thực địa không có ngữ cảnh gần như vô dụng. Các bản ghi đầu tiên mỗi lần khởi động lạnh nên xác định <em>cam nào</em>, <em>bản build nào</em> đang chạy, và <em>cách</em> cam đến lần khởi động này. Ba nguồn trên thiết bị cùng nhau bao gồm tất cả những điều đó:</p><ul class=simple><li><p><a class="reference internal" title="omv: OpenMV Cam Information" href=../../../../library/omv.omv.html#module-omv><code class="xref py py-mod docutils literal notranslate"><span class=pre>omv</span></code></a> -- phiên bản firmware OpenMV.</p></li><li><p><a class="reference internal" href=../../../../library/os.html#os.uname title=os.uname><code class="xref py py-func docutils literal notranslate"><span class=pre>os.uname()</span></code></a> -- phiên bản MicroPython, tên bo mạch + MCU, và tag git và ngày build của mã nguồn mà firmware được xây dựng từ đó.</p></li><li><p><a class="reference internal" title="machine: functions related to the hardware" href=../../../../library/machine.html#module-machine><code class="xref py py-mod docutils literal notranslate"><span class=pre>machine</span></code></a> -- ID silicon duy nhất của MCU và nguyên nhân reset đã kích hoạt lần khởi động này.</p></li><li><p><a class="reference internal" href=../../../../library/os.html#os.listdir title=os.listdir><code class="xref py py-func docutils literal notranslate"><span class=pre>os.listdir()</span></code></a> đối với từng điểm gắn kết -- các hệ thống tệp thực sự đã khởi động.</p></li></ul><p>Một helper kéo tất cả những điều đó vào các bản ghi đầu tiên của nhật ký:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>binascii</span>
+</span><span data-line=2><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=3><span class=kn>import</span><span class=w> </span><span class=nn>machine</span>
+</span><span data-line=4><span class=kn>import</span><span class=w> </span><span class=nn>omv</span>
+</span><span data-line=5><span class=kn>import</span><span class=w> </span><span class=nn>os</span>
+</span><span data-line=6>
+</span><span data-line=7><span class=n>log</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span><span data-line=8>
+</span><span data-line=9><span class=n>_RESET_NAMES</span> <span class=o>=</span> <span class=p>{</span>
+</span><span data-line=10>    <span class=n>machine</span><span class=o>.</span><span class=n>PWRON_RESET</span><span class=p>:</span> <span class=s2>"power-on"</span><span class=p>,</span>
+</span><span data-line=11>    <span class=n>machine</span><span class=o>.</span><span class=n>HARD_RESET</span><span class=p>:</span> <span class=s2>"hard reset"</span><span class=p>,</span>
+</span><span data-line=12>    <span class=n>machine</span><span class=o>.</span><span class=n>WDT_RESET</span><span class=p>:</span> <span class=s2>"watchdog timeout"</span><span class=p>,</span>
+</span><span data-line=13>    <span class=n>machine</span><span class=o>.</span><span class=n>DEEPSLEEP_RESET</span><span class=p>:</span> <span class=s2>"wake from deep sleep"</span><span class=p>,</span>
+</span><span data-line=14>    <span class=n>machine</span><span class=o>.</span><span class=n>SOFT_RESET</span><span class=p>:</span> <span class=s2>"soft reset"</span><span class=p>,</span>
+</span><span data-line=15><span class=p>}</span>
+</span><span data-line=16>
+</span><span data-line=17><span class=k>def</span><span class=w> </span><span class=nf>log_boot_diagnostics</span><span class=p>():</span>
+</span><span data-line=18>    <span class=n>uname</span> <span class=o>=</span> <span class=n>os</span><span class=o>.</span><span class=n>uname</span><span class=p>()</span>
+</span><span data-line=19>
+</span><span data-line=20>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"machine: </span><span class=si>%s</span><span class=s2>"</span><span class=p>,</span> <span class=n>uname</span><span class=o>.</span><span class=n>machine</span><span class=p>)</span>
+</span><span data-line=21>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"unique id: </span><span class=si>%s</span><span class=s2>"</span><span class=p>,</span>
+</span><span data-line=22>             <span class=n>binascii</span><span class=o>.</span><span class=n>hexlify</span><span class=p>(</span><span class=n>machine</span><span class=o>.</span><span class=n>unique_id</span><span class=p>())</span><span class=o>.</span><span class=n>decode</span><span class=p>())</span>
+</span><span data-line=23>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"firmware: openmv </span><span class=si>%s</span><span class=s2>, micropython </span><span class=si>%s</span><span class=s2>"</span><span class=p>,</span>
+</span><span data-line=24>             <span class=n>omv</span><span class=o>.</span><span class=n>version_string</span><span class=p>(),</span> <span class=n>uname</span><span class=o>.</span><span class=n>release</span><span class=p>)</span>
+</span><span data-line=25>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"build: </span><span class=si>%s</span><span class=s2>"</span><span class=p>,</span> <span class=n>uname</span><span class=o>.</span><span class=n>version</span><span class=p>)</span>
+</span><span data-line=26>    <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"reset cause: </span><span class=si>%s</span><span class=s2>"</span><span class=p>,</span>
+</span><span data-line=27>             <span class=n>_RESET_NAMES</span><span class=o>.</span><span class=n>get</span><span class=p>(</span><span class=n>machine</span><span class=o>.</span><span class=n>reset_cause</span><span class=p>(),</span> <span class=s2>"unknown"</span><span class=p>))</span>
+</span><span data-line=28>
+</span><span data-line=29>    <span class=k>for</span> <span class=n>mount</span> <span class=ow>in</span> <span class=p>(</span><span class=s1>'/flash'</span><span class=p>,</span> <span class=s1>'/sdcard'</span><span class=p>,</span> <span class=s1>'/rom'</span><span class=p>):</span>
+</span><span data-line=30>        <span class=k>try</span><span class=p>:</span>
+</span><span data-line=31>            <span class=n>os</span><span class=o>.</span><span class=n>listdir</span><span class=p>(</span><span class=n>mount</span><span class=p>)</span>
+</span><span data-line=32>            <span class=n>log</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=s2>"mount </span><span class=si>%s</span><span class=s2>: ok"</span><span class=p>,</span> <span class=n>mount</span><span class=p>)</span>
+</span><span data-line=33>        <span class=k>except</span> <span class=ne>OSError</span> <span class=k>as</span> <span class=n>e</span><span class=p>:</span>
+</span><span data-line=34>            <span class=n>log</span><span class=o>.</span><span class=n>warning</span><span class=p>(</span><span class=s2>"mount </span><span class=si>%s</span><span class=s2>: </span><span class=si>%s</span><span class=s2>"</span><span class=p>,</span> <span class=n>mount</span><span class=p>,</span> <span class=n>e</span><span class=p>)</span>
+</span></pre></div></div><p>Một nhật ký điển hình mở đầu với nội dung như:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=n>INFO</span> <span class=n>machine</span><span class=p>:</span> <span class=n>OPENMV4</span> <span class=k>with</span> <span class=n>STM32H743</span>
+</span><span data-line=2><span class=n>INFO</span> <span class=n>unique</span> <span class=nb>id</span><span class=p>:</span> <span class=mi>002</span><span class=n>C00543235501020373835</span>
+</span><span data-line=3><span class=n>INFO</span> <span class=n>firmware</span><span class=p>:</span> <span class=n>openmv</span> <span class=mf>5.0.0</span><span class=p>,</span> <span class=n>micropython</span> <span class=mf>1.28.0</span>
+</span><span data-line=4><span class=n>INFO</span> <span class=n>build</span><span class=p>:</span> <span class=n>v1</span><span class=mf>.28.0</span><span class=o>-</span><span class=mi>101</span><span class=o>-</span><span class=n>gabc1234</span> <span class=n>on</span> <span class=mi>2026</span><span class=o>-</span><span class=mi>06</span><span class=o>-</span><span class=mi>09</span>
+</span><span data-line=5><span class=n>INFO</span> <span class=n>reset</span> <span class=n>cause</span><span class=p>:</span> <span class=n>watchdog</span> <span class=n>timeout</span>
+</span><span data-line=6><span class=n>INFO</span> <span class=n>mount</span> <span class=o>/</span><span class=n>flash</span><span class=p>:</span> <span class=n>ok</span>
+</span><span data-line=7><span class=n>INFO</span> <span class=n>mount</span> <span class=o>/</span><span class=n>sdcard</span><span class=p>:</span> <span class=n>ok</span>
+</span><span data-line=8><span class=n>INFO</span> <span class=n>mount</span> <span class=o>/</span><span class=n>rom</span><span class=p>:</span> <span class=n>ok</span>
+</span></pre></div></div><p>Tám dòng đầu mỗi tệp nhật ký, người vận hành biết đơn vị vật lý, dòng dõi firmware, lý do cam khởi động, và bộ nhớ nào đã khởi động. <code class="docutils literal notranslate"><span class=pre>unique</span> <span class=pre>id</span></code> là số sê-ri silicon được lập trình tại nhà máy của MCU; nó giống nhau qua các lần nạp lại firmware và qua các lần đổi thẻ SD. <code class="docutils literal notranslate"><span class=pre>build</span></code> là tag git và ngày của cây firmware mà ảnh được xây dựng từ đó -- trường duy nhất nói rằng "đây chính xác là nhị phân được giao đến đơn vị này tại thời điểm này."</p></section><section id=putting-it-together><h2><span class=section-number>14.3.1.11. </span>Kết hợp lại<a title="Link to this heading" class=headerlink href=#putting-it-together>¶</a></h2><p>Một thiết lập ghi nhật ký sản xuất hoàn chỉnh, được tổ chức vào một helper mà <code class="docutils literal notranslate"><span class=pre>main.py</span></code> gọi một lần khi khởi động:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=n>_LOG_FMT</span> <span class=o>=</span> <span class=s1>'</span><span class=si>%(asctime)s</span><span class=s1> </span><span class=si>%(levelname)s</span><span class=s1> </span><span class=si>%(name)s</span><span class=s1>: </span><span class=si>%(message)s</span><span class=s1>'</span>
+</span><span data-line=4>
+</span><span data-line=5><span class=k>def</span><span class=w> </span><span class=nf>setup_logging</span><span class=p>(</span><span class=n>log_path</span><span class=p>):</span>
+</span><span data-line=6>    <span class=n>fh</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>FileHandler</span><span class=p>(</span><span class=n>log_path</span><span class=p>)</span>
+</span><span data-line=7>    <span class=n>fh</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>DEBUG</span><span class=p>)</span>
+</span><span data-line=8>    <span class=n>fh</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>_LOG_FMT</span><span class=p>))</span>
+</span><span data-line=9>
+</span><span data-line=10>    <span class=n>sh</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>StreamHandler</span><span class=p>()</span>
+</span><span data-line=11>    <span class=n>sh</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>WARNING</span><span class=p>)</span>
+</span><span data-line=12>    <span class=n>sh</span><span class=o>.</span><span class=n>setFormatter</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>Formatter</span><span class=p>(</span><span class=n>_LOG_FMT</span><span class=p>))</span>
+</span><span data-line=13>
+</span><span data-line=14>    <span class=n>root</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>()</span>
+</span><span data-line=15>    <span class=n>root</span><span class=o>.</span><span class=n>setLevel</span><span class=p>(</span><span class=n>logging</span><span class=o>.</span><span class=n>DEBUG</span><span class=p>)</span>
+</span><span data-line=16>    <span class=n>root</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>fh</span><span class=p>)</span>
+</span><span data-line=17>    <span class=n>root</span><span class=o>.</span><span class=n>addHandler</span><span class=p>(</span><span class=n>sh</span><span class=p>)</span>
+</span></pre></div></div><p>Sau đó ở đầu <code class="docutils literal notranslate"><span class=pre>main.py</span></code></p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>from</span><span class=w> </span><span class=nn>app.logging_setup</span><span class=w> </span><span class=kn>import</span> <span class=n>setup_logging</span><span class=p>,</span> <span class=n>log_boot_diagnostics</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=n>setup_logging</span><span class=p>(</span><span class=s1>'/sdcard/logs/app.log'</span><span class=p>)</span>
+</span><span data-line=4><span class=n>log_boot_diagnostics</span><span class=p>()</span>
+</span></pre></div></div><p>Mỗi module khác trong ứng dụng chỉ cần làm:</p><div class="highlight-default notranslate"><div class=highlight><pre><span></span><span data-line=1><span class=kn>import</span><span class=w> </span><span class=nn>logging</span>
+</span><span data-line=2>
+</span><span data-line=3><span class=n>log</span> <span class=o>=</span> <span class=n>logging</span><span class=o>.</span><span class=n>getLogger</span><span class=p>(</span><span class=vm>__name__</span><span class=p>)</span>
+</span></pre></div></div><p>và nhận được kết quả đầu ra đã cấu hình miễn phí -- tệp với chi tiết đầy đủ, luồng với các cảnh báo, bản ghi được đặt tên, formatter có dấu thời gian, và một lần khởi động được ghi lại mỗi lần khởi động lạnh.</p></section></section></article><button class=back-to-top type=button><svg viewbox="0 0 24 24" xmlns=http://www.w3.org/2000/svg><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path></svg> <span>Quay lại đầu trang</span></button><div class="navigation flex print:hidden"><div class=navigation-prev><a href=index.html> <i class="i-lucide chevron-left"></i> <div class=page-info><span>Trước</span><div class=title><span class=section-number>14.3. </span>Tăng cường bảo mật cho sản xuất</div></div> </a></div><div class=navigation-next><a href=watchdog.html> <div class=page-info><span>Tiếp theo</span><div class=title><span class=section-number>14.3.2. </span>Watchdog</div></div> <i class="i-lucide chevron-right"></i> </a></div></div></div></div></main></div><footer class=sy-foot><div class="sy-foot-inner sy-container mx-auto"><div class="sy-foot-reserved md:flex justify-between items-center"><div class=sy-foot-copyright><p class=omv-build-stamp>Dành cho OpenMV firmware v5.0.0 · dựa trên MicroPython v1.28 · tài liệu được xây dựng 19 tháng 6, 2026 · Bản quyền © 2014-2026 bởi OpenMV, Damien P. George và những người khác.</p><p>Được tạo bằng <a href=https://www.sphinx-doc.org/>Sphinx</a> sử dụng <a href=https://shibuya.lepture.com>chủ đề Shibuya</a>.</p></div><div class=sy-foot-socials><a aria-label=GitHub href=https://github.com/openmv/openmv> <iconify-icon icon=simple-icons:github></iconify-icon> </a><a aria-label="X (Twitter)" href=https://x.com/openmvcam> <iconify-icon icon=prime:twitter></iconify-icon> </a><a aria-label=YouTube href=https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ> <iconify-icon icon=simple-icons:youtube></iconify-icon> </a><a aria-label=LinkedIn href=https://www.linkedin.com/company/16193624/> <iconify-icon icon=simple-icons:linkedin></iconify-icon> </a></div></div></div></footer><script src="../../../../_static/documentation_options.js?v=bab09030"></script><script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script><script src="../../../../../_static/sphinx_highlight.js?v=6ffebe34"></script><script src="../../../../_static/translations.js?v=4c1d55b0"></script><script src="../../../../../_static/shibuya.js?v=50760d75"></script><script src="../../../../../_static/lang-redirect.js?v=51fde6fc"></script><script src="../../../../../_static/navbar-height.js?v=45931de4"></script><script src="../../../../../_static/nav-versions.js?v=b4d4f1af"></script></body></html>

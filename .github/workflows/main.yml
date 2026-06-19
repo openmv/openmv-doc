@@ -51,7 +51,7 @@ jobs:
 
     - name: Install dependencies
       # Pillow + minify-html drive the post-build size-optimization steps
-      # (.ci/optimize_images.py and .ci/minify_html.py).
+      # (.ci/optimize_images.py and .ci/minify_docs.py).
       run: pip install -U -r micropython/docs/requirements.txt Pillow minify-html
 
     - name: Generate CPython differences (genrst)
@@ -122,6 +122,14 @@ jobs:
       # is the biggest reduction in what GitHub Pages actually serves. Runs after
       # dedup so it only touches the single channel-root _images copy.
       run: python ../../.ci/optimize_images.py build/html
+
+    - name: Minify HTML
+      working-directory: micropython/docs
+      # Collapse whitespace / minify inline CSS in every page (code blocks and
+      # inline JS are preserved). ~10% off the raw HTML. Negligible for web
+      # visitors (Pages already gzips), but it shrinks the committed folder and,
+      # most usefully, the English IDE bundle (served from local files, no gzip).
+      run: python ../../.ci/minify_docs.py build/html
 
     - name: Generate Python stubs
       run: |
