@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="cs" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>7.14. Průchod YOLOv8 - Dokumentace pro OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Rejstřík" href="../../../../genindex.html" /><link rel="search" title="Vyhledávání" href="../../../../search.html" /><link rel="next" title="7.15. Napsání vlastního" href="writing-your-own.html" /><link rel="prev" title="7.13. Potlačení nemaximálních hodnot (non-max suppression)" href="non-max-suppression.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html"/>
+  <meta property="og:title" content="7.14. Průchod YOLOv8"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Domů</a></li><li class="link"><a href="../../index.html">Tutoriál</a></li><li class="link"><a href="../../../../library/index.html">Základní knihovny</a></li><li class="link"><a href="../../../quickref.html">Desky</a></li><li class="link"><a href="../../../shields.html">Rozšiřující desky</a></li><li class="link"><a href="../../../sensors.html">Senzory</a></li><li class="link"><a href="../../../../reference/index.html">Jazyk</a></li><li class="link"><a href="../../../../develop/index.html">Vnitřní struktura</a></li><li class="link"><a href="../../../../changelog/index.html">Změny</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Vyhledávání" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Verze">
+      <span class="md:hidden">Verze</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Překlady</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Přepnout na světlý barevný režim"
+data-aria-light="Přepnout na tmavý barevný režim"
+data-aria-dark="Přepnout na automatický barevný režim">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Diskuze</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutori&#225;l</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Rychl&#253; start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. P&#345;ehled Pythonu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#344;&#237;zen&#237; hardwaru</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Vision Sensors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Zpracov&#225;n&#237; obrazu</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">7. Strojov&#233; u&#269;en&#237;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-is-a-neural-network.html">7.1. Co je to neuronov&#225; s&#237;&#357;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/what-ml-changed.html">7.2. Co zm&#283;nilo strojov&#233; u&#269;en&#237;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/hello-blazeface.html">7.3. Hello BlazeFace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/loading-a-model.html">7.4. Na&#269;ten&#237; modelu</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../ml-module/romfs.html">7.5. ROMFS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/anatomy-of-predict.html">7.6. Anatomie predict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/normalization.html">7.7. Normalizace</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pipeline/tensor-io.html">7.8. Vstup/v&#253;stup tenzor&#367;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/tflm.html">7.9. TensorFlow Lite for Microcontrollers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/cmsis-nn.html">7.10. CMSIS-NN</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../engines/npus.html">7.11. NPU</a></li>
+<li class="toctree-l3"><a class="reference internal" href="postprocessors.html">7.12. Post-procesory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="non-max-suppression.html">7.13. Potla&#269;en&#237; nemaxim&#225;ln&#237;ch hodnot (non-max suppression)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">7.14. Pr&#367;chod YOLOv8</a></li>
+<li class="toctree-l3"><a class="reference internal" href="writing-your-own.html">7.15. Naps&#225;n&#237; vlastn&#237;ho</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">7.16. Shrnut&#237;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. S&#237;t&#283;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Webov&#233; servery</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Hostitelsk&#253; protokol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. N&#225;stroje</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produkce</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Knihovny</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Desky</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shieldy</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Senzory</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Jazyk</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Vnit&#345;n&#237; mechanismy</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Seznam zm&#283;n</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Licence</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Na této stránce</h3><ul>
+<li><a class="reference internal" href="#the-starting-tensor">7.14.1. V&#253;choz&#237; tenzor</a></li>
+<li><a class="reference internal" href="#thresholding-before-dequantizing">7.14.2. Prahov&#225;n&#237; p&#345;ed dekvantizac&#237;</a></li>
+<li><a class="reference internal" href="#dequantizing-the-survivors">7.14.3. Dekvantizace p&#345;e&#382;iv&#353;&#237;ch</a></li>
+<li><a class="reference internal" href="#reading-the-geometry">7.14.4. &#268;ten&#237; geometrie</a></li>
+<li><a class="reference internal" href="#non-max-suppression">7.14.5. Potla&#269;en&#237; nemaxim&#225;ln&#237;ch hodnot</a></li>
+<li><a class="reference internal" href="#what-the-script-gets-back">7.14.6. Co skript dostane zp&#283;t</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst">Upravit tuto stránku</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Tutoriál k OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">7. </span>Strojové učení</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">7.14. </span>Průchod YOLOv8</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Kopírovat stránku</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Další akce"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Kopírovat stránku</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Zobrazit zdrojový kód</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Otevřít v ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Otevřít v Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/ml/postprocessing/yolov8-walkthrough.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Otevřít v Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="yolov8-walkthrough">
+<h1><span class="section-number">7.14. </span>Průchod YOLOv8<a class="headerlink" href="#yolov8-walkthrough" title="Link to this heading">¶</a></h1>
+<p>Post-procesor YOLOv8 je dostatečně malý na to, aby se dal projít krok za krokem od vstupního tenzoru po vrácený seznam. Jedno přečtení ukazuje, co dělá každý jiný post-procesor v katalogu: levně prahovat kvantizovaná skóre, vzít to, co přežije, dekvantizovat, dekódovat geometrii, protlačit do NMS, vrátit seznamy podle tříd.</p>
+<section id="the-starting-tensor">
+<h2><span class="section-number">7.14.1. </span>Výchozí tenzor<a class="headerlink" href="#the-starting-tensor" title="Link to this heading">¶</a></h2>
+<p>Model YOLOv8 vypouští jediný výstupní tenzor, jehož tvar je <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">C,</span> <span class="pre">A)</span></code> – jeden snímek, <code class="docutils literal notranslate"><span class="pre">C</span></code> kanálů, <code class="docutils literal notranslate"><span class="pre">A</span></code> predikcí kotev. První čtyři kanály jsou geometrie rámečku – <code class="docutils literal notranslate"><span class="pre">cx</span></code>, <code class="docutils literal notranslate"><span class="pre">cy</span></code>, <code class="docutils literal notranslate"><span class="pre">w</span></code>, <code class="docutils literal notranslate"><span class="pre">h</span></code> – normalizovaná na <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> vstupních rozměrů sítě. Zbývajících <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">-</span> <span class="pre">4</span></code> kanálů jsou skóre podle tříd, u trénovaného modelu už v rozsahu <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code>. Každá kotva je sloupcem napříč kanály.</p>
+<figure class="align-default" id="id1">
+<img alt="A grid laid on its side: rows labelled cx, cy, w, h, score_0, score_1, ..., score_(N-1); columns labelled anchor 0 through anchor A-1. One column is outlined to show that a single anchor's prediction is one column down the channels." src="../../../../_images/yolov8-tensor.svg" />
+<figcaption>
+<p><span class="caption-text">Jedna kotva YOLOv8 je jeden sloupec napříč kanály: čtyři čísla rámečku a <code class="docutils literal notranslate"><span class="pre">N</span></code> skóre tříd.</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+<p>Dodávaný <code class="docutils literal notranslate"><span class="pre">yolov8n_192.tflite</span></code> je jednotřídový detektor osob, takže <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">=</span> <span class="pre">5</span></code> a <code class="docutils literal notranslate"><span class="pre">A</span></code> je v tisících; vlastní model trénovaný na plné 80třídové sadě COCO má <code class="docutils literal notranslate"><span class="pre">C</span> <span class="pre">=</span> <span class="pre">84</span></code> při stejném <code class="docutils literal notranslate"><span class="pre">A</span></code>. Níže uvedené dekódování platí pro libovolný počet tříd.</p>
+</section>
+<section id="thresholding-before-dequantizing">
+<h2><span class="section-number">7.14.2. </span>Prahování před dekvantizací<a class="headerlink" href="#thresholding-before-dequantizing" title="Link to this heading">¶</a></h2>
+<p>Nejprve levný krok. Výstupní tenzor je v kvantizovaném celočíselném dtype modelu a dekvantizace každé hodnoty by se dotkla každého prvku tenzoru s tisíci položkami – z nichž většina je pod prahem skóre a nakonec se zahodí. Post-procesor místo toho kvantizuje práh jednou a porovnává v hrubém kvantizovaném prostoru:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">ml.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">quantize</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">dequantize</span><span class="p">,</span> <span class="n">NMS</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">ulab</span><span class="w"> </span><span class="kn">import</span> <span class="n">numpy</span> <span class="k">as</span> <span class="n">np</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">oh</span><span class="p">,</span> <span class="n">ow</span><span class="p">,</span> <span class="n">oc</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">output_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="5"><span class="n">scale</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">output_scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="6"><span class="n">t</span> <span class="o">=</span> <span class="n">quantize</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="n">column_outputs</span> <span class="o">=</span> <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">oh</span> <span class="o">*</span> <span class="n">ow</span><span class="p">,</span> <span class="n">oc</span><span class="p">))</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="n">score_block</span> <span class="o">=</span> <span class="n">column_outputs</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="p">:]</span>
+</span><span data-line="11"><span class="n">score_indices</span> <span class="o">=</span> <span class="n">threshold</span><span class="p">(</span><span class="n">score_block</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span>
+</span><span data-line="12">                          <span class="n">find_max</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="13">                          <span class="n">find_max_axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="14"><span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">score_indices</span><span class="p">):</span>
+</span><span data-line="15">    <span class="k">return</span> <span class="p">()</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">column_outputs</span></code> je tenzor přetvarovaný na <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">A)</span></code>, takže kanály jsou řádky a kotvy jsou sloupce. <code class="docutils literal notranslate"><span class="pre">score_block</span></code> je dílčí tenzor skóre tříd – vše od řádku <code class="docutils literal notranslate"><span class="pre">4</span></code> dolů. <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.threshold" title="ml.utils.threshold"><code class="xref py py-func docutils literal notranslate"><span class="pre">ml.utils.threshold()</span></code></a> redukuje tento blok podél osy <code class="docutils literal notranslate"><span class="pre">0</span></code> (<code class="docutils literal notranslate"><span class="pre">find_max=True</span></code>, <code class="docutils literal notranslate"><span class="pre">find_max_axis=0</span></code>) na maximální skóre na kotvu a poté vrací indexy kotev, jejichž maximum projde kvantizovaným prahem. Celý tenzor nebyl nikdy dekvantizován; jen maximální redukce po sloupcích v kvantizovaném celočíselném prostoru.</p>
+<p>Pokud neprojde žádná kotva, post-procesor vrátí prázdnou n-tici, kterou <a class="reference internal" href="../../../../library/omv.ml.html#ml.Model.predict" title="ml.Model.predict"><code class="xref py py-meth docutils literal notranslate"><span class="pre">predict()</span></code></a> interpretuje jako žádnou detekci.</p>
+<p>Dvě rozhodnutí v tomto kódu dělají rozdíl mezi spustitelným post-procesorem a nepoužitelně pomalým. Prvním je provádění aritmetiky přes <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a>: výstupní tenzor má tisíce prvků a jeho iterace v čistém Pythonu trvá celé sekundy na inferenci, kde stejná aritmetika vektorizovaná přes <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> běží v milisekundách. Druhým je dekvantizace <em>po</em> prahovém filtru, nikoli před ním. Dekvantizace nejprve by alokovala plovoucí tenzor čtyřnásobné velikosti oproti kvantizovanému a prošla by každý prvek, než téměř všechny zahodí; dekvantizace pouze přeživších sloupců se dotkne nanejvýš hrstky hodnot a ušetří jak čas, tak RAM, kterou by úplný převod spotřeboval.</p>
+</section>
+<section id="dequantizing-the-survivors">
+<h2><span class="section-number">7.14.3. </span>Dekvantizace přeživších<a class="headerlink" href="#dequantizing-the-survivors" title="Link to this heading">¶</a></h2>
+<p>Geometrii je třeba dekódovat pouze u přeživších kotev. <a class="reference internal" href="../../../../library/omv.ulab.numpy.html#numpy.take" title="numpy.take"><code class="xref py py-func docutils literal notranslate"><span class="pre">numpy.take()</span></code></a> vytáhne tyto sloupce a jediné volání <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.dequantize" title="ml.utils.dequantize"><code class="xref py py-func docutils literal notranslate"><span class="pre">ml.utils.dequantize()</span></code></a> je převede na plovoucí čísla:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">bb</span> <span class="o">=</span> <span class="n">dequantize</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
+</span><span data-line="2">                <span class="n">np</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">column_outputs</span><span class="p">,</span> <span class="n">score_indices</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">bb</span></code> je nyní <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">K)</span></code>, kde <code class="docutils literal notranslate"><span class="pre">K</span></code> je počet přeživších kotev – typicky hrstka, i když <code class="docutils literal notranslate"><span class="pre">A</span></code> bylo v tisících.</p>
+</section>
+<section id="reading-the-geometry">
+<h2><span class="section-number">7.14.4. </span>Čtení geometrie<a class="headerlink" href="#reading-the-geometry" title="Link to this heading">¶</a></h2>
+<p>Čtyři kanály rámečku a skóre podle tříd se vytáhnou přímo:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">bb_scores</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="p">:],</span>    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">bb_classes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">bb</span><span class="p">[</span><span class="mi">4</span><span class="p">:,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">x_center</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span>
+</span><span data-line="5"><span class="n">y_center</span> <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+</span><span data-line="6"><span class="n">w_half</span>   <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="mf">0.5</span>
+</span><span data-line="7"><span class="n">h_half</span>   <span class="o">=</span> <span class="n">bb</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="mf">0.5</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">bb_scores</span></code> je nejlepší skóre třídy na přeživší kotvu; <code class="docutils literal notranslate"><span class="pre">bb_classes</span></code> je index třídy, která toto skóre dodala. Geometrie rámečku je stále normalizovaná na <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1]</span></code> vstupních rozměrů sítě, takže ji další krok přeškáluje na pixely:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">ib</span><span class="p">,</span> <span class="n">ih</span><span class="p">,</span> <span class="n">iw</span><span class="p">,</span> <span class="n">ic</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">input_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="2"><span class="n">xmin</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_center</span> <span class="o">-</span> <span class="n">w_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">iw</span>
+</span><span data-line="3"><span class="n">ymin</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_center</span> <span class="o">-</span> <span class="n">h_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">ih</span>
+</span><span data-line="4"><span class="n">xmax</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_center</span> <span class="o">+</span> <span class="n">w_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">iw</span>
+</span><span data-line="5"><span class="n">ymax</span> <span class="o">=</span> <span class="p">(</span><span class="n">y_center</span> <span class="o">+</span> <span class="n">h_half</span><span class="p">)</span> <span class="o">*</span> <span class="n">ih</span>
+</span></pre></div>
+</div>
+<p>Poté jsou rámečky v pixelovém prostoru vstupu sítě – souřadnicovém prostoru, který <a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS" title="ml.utils.NMS"><code class="xref py py-class docutils literal notranslate"><span class="pre">NMS</span></code></a> očekává na vstupu.</p>
+</section>
+<section id="non-max-suppression">
+<h2><span class="section-number">7.14.5. </span>Potlačení nemaximálních hodnot<a class="headerlink" href="#non-max-suppression" title="Link to this heading">¶</a></h2>
+<p>Přeživší projdou přes NMS a jsou vráceni jako seznamy podle tříd:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">nms</span> <span class="o">=</span> <span class="n">NMS</span><span class="p">(</span><span class="n">iw</span><span class="p">,</span> <span class="n">ih</span><span class="p">,</span> <span class="n">inputs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">roi</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bb</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+</span><span data-line="3">    <span class="n">nms</span><span class="o">.</span><span class="n">add_bounding_box</span><span class="p">(</span><span class="n">xmin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ymin</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+</span><span data-line="4">                         <span class="n">xmax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ymax</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+</span><span data-line="5">                         <span class="n">bb_scores</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">bb_classes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</span><span data-line="6"><span class="k">return</span> <span class="n">nms</span><span class="o">.</span><span class="n">get_bounding_boxes</span><span class="p">(</span><span class="n">threshold</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nms_threshold</span><span class="p">,</span>
+</span><span data-line="7">                              <span class="n">sigma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nms_sigma</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../../library/omv.ml.utils.html#ml.utils.NMS" title="ml.utils.NMS"><code class="xref py py-class docutils literal notranslate"><span class="pre">NMS</span></code></a> čte <code class="docutils literal notranslate"><span class="pre">inputs[0].roi</span></code>, takže vrácené rámečky jsou v souřadnicovém prostoru původního obrazu, nikoli sítě – aplikace je kreslí přímo do zachyceného snímku bez dalšího přemapování.</p>
+</section>
+<section id="what-the-script-gets-back">
+<h2><span class="section-number">7.14.6. </span>Co skript dostane zpět<a class="headerlink" href="#what-the-script-gets-back" title="Link to this heading">¶</a></h2>
+<p>Návratovou hodnotou je seznam seznamů podle tříd indexovaný třídou. Příklad se třemi třídami by mohl vypadat takto:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">[</span>
+</span><span data-line="2">    <span class="p">[((</span><span class="mi">23</span><span class="p">,</span> <span class="mi">41</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">142</span><span class="p">),</span> <span class="mf">0.92</span><span class="p">),</span> <span class="p">((</span><span class="mi">180</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">88</span><span class="p">,</span> <span class="mi">130</span><span class="p">),</span> <span class="mf">0.71</span><span class="p">)],</span>
+</span><span data-line="3">    <span class="p">[],</span>
+</span><span data-line="4">    <span class="p">[((</span><span class="mi">310</span><span class="p">,</span> <span class="mi">95</span><span class="p">,</span> <span class="mi">55</span><span class="p">,</span> <span class="mi">70</span><span class="p">),</span> <span class="mf">0.85</span><span class="p">)],</span>
+</span><span data-line="5"><span class="p">]</span>
+</span></pre></div>
+</div>
+<p>Každá položka je n-tice <code class="docutils literal notranslate"><span class="pre">((x,</span> <span class="pre">y,</span> <span class="pre">w,</span> <span class="pre">h),</span> <span class="pre">score)</span></code>: <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> je levý horní roh ohraničujícího rámečku v pixelových souřadnicích původního obrazu, <code class="docutils literal notranslate"><span class="pre">w</span></code> a <code class="docutils literal notranslate"><span class="pre">h</span></code> jsou jeho šířka a výška v pixelech a <code class="docutils literal notranslate"><span class="pre">score</span></code> je spolehlivost, kterou síť detekci přiřadila. Takže <code class="docutils literal notranslate"><span class="pre">((180,</span> <span class="pre">60,</span> <span class="pre">88,</span> <span class="pre">130),</span> <span class="pre">0.71)</span></code> se čte jako rámeček, jehož levý horní roh leží na pixelu <code class="docutils literal notranslate"><span class="pre">(180,</span> <span class="pre">60)</span></code>, sahá 88 pixelů doprava a 130 pixelů dolů a byl ohlášen se spolehlivostí <code class="docutils literal notranslate"><span class="pre">0.71</span></code>.</p>
+<p>Vnější seznam ukazuje dva přeživší rámečky pro třídu <code class="docutils literal notranslate"><span class="pre">0</span></code>, nic pro třídu <code class="docutils literal notranslate"><span class="pre">1</span></code>, jeden pro třídu <code class="docutils literal notranslate"><span class="pre">2</span></code>. Prázdný seznam pro třídu <code class="docutils literal notranslate"><span class="pre">1</span></code> je ponechán na místě, aby vnější index vždy odpovídal indexu třídy. U dodávaného detektoru osob má vnější seznam jediný prvek, jehož vnitřní seznam obsahuje přeživší rámečky osob. U 80třídového modelu má 80 vnitřních seznamů, z nichž je v daném snímku většina prázdná, přičemž neprázdné položky drží rámečky pro třídy, které se aktivovaly. Aplikace čte výsledek pomocí <code class="docutils literal notranslate"><span class="pre">enumerate(boxes)</span></code>, aby procházela indexy tříd spolu se seznamy rámečků – stejný tvar, na který cílí detekční post-procesory napříč katalogem.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Zpět nahoru</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="non-max-suppression.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Předchozí</span><div class="title"><span class="section-number">7.13. </span>Potlačení nemaximálních hodnot (non-max suppression)</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="writing-your-own.html">
+      <div class="page-info">
+        <span>Další</span>
+        <div class="title"><span class="section-number">7.15. </span>Napsání vlastního</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    Pro OpenMV firmware v5.0.0 &middot; založeno na MicroPython v1.28 &middot; dokumentace sestavena 19. června 2026 &middot; Autorská práva &copy; 2014-2026 OpenMV, Damien P. George a další.
+  </p>
+  <p>
+    
+    Vytvořeno pomocí <a href="https://www.sphinx-doc.org/">Sphinx</a> s tématem <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=f3a6927f"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=22e1c300"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

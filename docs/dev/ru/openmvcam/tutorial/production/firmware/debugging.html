@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ru" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>14.1.1.4. Отладка прошивки - документация OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Алфавитный указатель" href="../../../../genindex.html" /><link rel="search" title="Поиск" href="../../../../search.html" /><link rel="next" title="14.1.1.5. Восстановление загрузчика" href="recovery.html" /><link rel="prev" title="14.1.1.3.5.5. Стирание внутренней файловой системы" href="flashing/erasing.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/production/firmware/debugging.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/production/firmware/debugging.html"/>
+  <meta property="og:title" content="14.1.1.4. Отладка прошивки"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/production/firmware/debugging.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Главная</a></li><li class="link"><a href="../../index.html">Учебник</a></li><li class="link"><a href="../../../../library/index.html">Основные библиотеки</a></li><li class="link"><a href="../../../quickref.html">Платы</a></li><li class="link"><a href="../../../shields.html">Шилды</a></li><li class="link"><a href="../../../sensors.html">Датчики</a></li><li class="link"><a href="../../../../reference/index.html">Язык</a></li><li class="link"><a href="../../../../develop/index.html">Внутреннее устройство</a></li><li class="link"><a href="../../../../changelog/index.html">История изменений</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Поиск" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Версии">
+      <span class="md:hidden">Версии</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Переводы</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/production/firmware/debugging.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/production/firmware/debugging.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/production/firmware/debugging.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/production/firmware/debugging.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/production/firmware/debugging.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/production/firmware/debugging.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/production/firmware/debugging.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/production/firmware/debugging.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/production/firmware/debugging.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/production/firmware/debugging.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/production/firmware/debugging.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/production/firmware/debugging.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/production/firmware/debugging.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/production/firmware/debugging.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/production/firmware/debugging.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/production/firmware/debugging.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/production/firmware/debugging.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/production/firmware/debugging.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/production/firmware/debugging.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/production/firmware/debugging.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/production/firmware/debugging.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/production/firmware/debugging.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/production/firmware/debugging.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/production/firmware/debugging.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/production/firmware/debugging.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/production/firmware/debugging.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/production/firmware/debugging.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Переключить в светлый режим"
+data-aria-light="Переключить в тёмный режим"
+data-aria-dark="Переключить в автоматический цветовой режим">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Обсуждение</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#1056;&#1091;&#1082;&#1086;&#1074;&#1086;&#1076;&#1089;&#1090;&#1074;&#1086;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#1041;&#1099;&#1089;&#1090;&#1088;&#1099;&#1081; &#1089;&#1090;&#1072;&#1088;&#1090;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. &#1054;&#1073;&#1079;&#1086;&#1088; Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#1059;&#1087;&#1088;&#1072;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1086;&#1073;&#1086;&#1088;&#1091;&#1076;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077;&#1084;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#1044;&#1072;&#1090;&#1095;&#1080;&#1082;&#1080; &#1080;&#1079;&#1086;&#1073;&#1088;&#1072;&#1078;&#1077;&#1085;&#1080;&#1103;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#1054;&#1073;&#1088;&#1072;&#1073;&#1086;&#1090;&#1082;&#1072; &#1080;&#1079;&#1086;&#1073;&#1088;&#1072;&#1078;&#1077;&#1085;&#1080;&#1081;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#1052;&#1072;&#1096;&#1080;&#1085;&#1085;&#1086;&#1077; &#1086;&#1073;&#1091;&#1095;&#1077;&#1085;&#1080;&#1077;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#1057;&#1077;&#1090;&#1080;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. &#1042;&#1077;&#1073;-&#1089;&#1077;&#1088;&#1074;&#1077;&#1088;&#1099;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#1055;&#1088;&#1086;&#1090;&#1086;&#1082;&#1086;&#1083; &#1093;&#1086;&#1089;&#1090;&#1072;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#1048;&#1085;&#1089;&#1090;&#1088;&#1091;&#1084;&#1077;&#1085;&#1090;&#1099;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">14. &#1055;&#1088;&#1086;&#1080;&#1079;&#1074;&#1086;&#1076;&#1089;&#1090;&#1074;&#1086;</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">14.1. &#1056;&#1072;&#1079;&#1088;&#1072;&#1073;&#1086;&#1090;&#1082;&#1072; &#1087;&#1088;&#1086;&#1096;&#1080;&#1074;&#1082;&#1080;</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="setup.html">14.1.1.1. &#1053;&#1072;&#1089;&#1090;&#1088;&#1086;&#1081;&#1082;&#1072; &#1089;&#1088;&#1077;&#1076;&#1099; &#1088;&#1072;&#1079;&#1088;&#1072;&#1073;&#1086;&#1090;&#1082;&#1080;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="building.html">14.1.1.2. &#1057;&#1073;&#1086;&#1088;&#1082;&#1072; &#1087;&#1088;&#1086;&#1096;&#1080;&#1074;&#1082;&#1080;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="flashing/index.html">14.1.1.3. &#1055;&#1088;&#1086;&#1096;&#1080;&#1074;&#1082;&#1072; firmware</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">14.1.1.4. &#1054;&#1090;&#1083;&#1072;&#1076;&#1082;&#1072; &#1087;&#1088;&#1086;&#1096;&#1080;&#1074;&#1082;&#1080;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="recovery.html">14.1.1.5. &#1042;&#1086;&#1089;&#1089;&#1090;&#1072;&#1085;&#1086;&#1074;&#1083;&#1077;&#1085;&#1080;&#1077; &#1079;&#1072;&#1075;&#1088;&#1091;&#1079;&#1095;&#1080;&#1082;&#1072;</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../shipping/index.html">14.2. &#1055;&#1086;&#1089;&#1090;&#1072;&#1074;&#1082;&#1072; &#1087;&#1088;&#1080;&#1083;&#1086;&#1078;&#1077;&#1085;&#1080;&#1103;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hardening/index.html">14.3. &#1047;&#1072;&#1082;&#1072;&#1083;&#1082;&#1072; &#1076;&#1083;&#1103; &#1101;&#1082;&#1089;&#1087;&#1083;&#1091;&#1072;&#1090;&#1072;&#1094;&#1080;&#1080;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tls/index.html">14.4. &#1056;&#1072;&#1073;&#1086;&#1090;&#1072; &#1089; &#1089;&#1077;&#1088;&#1090;&#1080;&#1092;&#1080;&#1082;&#1072;&#1090;&#1072;&#1084;&#1080; TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">14.5. &#1047;&#1072;&#1082;&#1083;&#1102;&#1095;&#1077;&#1085;&#1080;&#1077;</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#1041;&#1080;&#1073;&#1083;&#1080;&#1086;&#1090;&#1077;&#1082;&#1080;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#1055;&#1083;&#1072;&#1090;&#1099;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#1064;&#1080;&#1083;&#1076;&#1099;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#1044;&#1072;&#1090;&#1095;&#1080;&#1082;&#1080;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#1071;&#1079;&#1099;&#1082;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#1042;&#1085;&#1091;&#1090;&#1088;&#1077;&#1085;&#1085;&#1077;&#1077; &#1091;&#1089;&#1090;&#1088;&#1086;&#1081;&#1089;&#1090;&#1074;&#1086;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#1048;&#1089;&#1090;&#1086;&#1088;&#1080;&#1103; &#1080;&#1079;&#1084;&#1077;&#1085;&#1077;&#1085;&#1080;&#1081;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#1051;&#1080;&#1094;&#1077;&#1085;&#1079;&#1080;&#1103;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>На этой странице</h3><ul>
+<li><a class="reference internal" href="#build-for-debugging">14.1.1.4.1. &#1057;&#1073;&#1086;&#1088;&#1082;&#1072; &#1076;&#1083;&#1103; &#1086;&#1090;&#1083;&#1072;&#1076;&#1082;&#1080;</a></li>
+<li><a class="reference internal" href="#the-hardware-j-link-over-swd">14.1.1.4.2. &#1054;&#1073;&#1086;&#1088;&#1091;&#1076;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077;: J-Link &#1095;&#1077;&#1088;&#1077;&#1079; SWD</a></li>
+<li><a class="reference internal" href="#vs-code-cortex-debug-setup">14.1.1.4.3. &#1053;&#1072;&#1089;&#1090;&#1088;&#1086;&#1081;&#1082;&#1072; Cortex-Debug &#1074; VS Code</a></li>
+<li><a class="reference internal" href="#peripheral-register-view-svd">14.1.1.4.4. &#1055;&#1088;&#1086;&#1089;&#1084;&#1086;&#1090;&#1088; &#1088;&#1077;&#1075;&#1080;&#1089;&#1090;&#1088;&#1086;&#1074; &#1087;&#1077;&#1088;&#1080;&#1092;&#1077;&#1088;&#1080;&#1080; (SVD)</a></li>
+<li><a class="reference internal" href="#windows-the-wsl-windows-j-link-bridge">14.1.1.4.5. Windows: &#1084;&#1086;&#1089;&#1090; J-Link &#1084;&#1077;&#1078;&#1076;&#1091; WSL &#1080; Windows</a></li>
+<li><a class="reference internal" href="#command-line-debugging-with-gdbrunner">14.1.1.4.6. &#1054;&#1090;&#1083;&#1072;&#1076;&#1082;&#1072; &#1080;&#1079; &#1082;&#1086;&#1084;&#1072;&#1085;&#1076;&#1085;&#1086;&#1081; &#1089;&#1090;&#1088;&#1086;&#1082;&#1080; &#1089; &#1087;&#1086;&#1084;&#1086;&#1097;&#1100;&#1102; gdbrunner</a></li>
+<li><a class="reference internal" href="#using-the-debugger">14.1.1.4.7. &#1048;&#1089;&#1087;&#1086;&#1083;&#1100;&#1079;&#1086;&#1074;&#1072;&#1085;&#1080;&#1077; &#1086;&#1090;&#1083;&#1072;&#1076;&#1095;&#1080;&#1082;&#1072;</a></li>
+<li><a class="reference internal" href="#debugging-pitfalls">14.1.1.4.8. &#1055;&#1086;&#1076;&#1074;&#1086;&#1076;&#1085;&#1099;&#1077; &#1082;&#1072;&#1084;&#1085;&#1080; &#1086;&#1090;&#1083;&#1072;&#1076;&#1082;&#1080;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/production/firmware/debugging.rst">Редактировать страницу</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Руководство по OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">14. </span>Производство</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">14.1. </span>Разработка прошивки</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="4" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">14.1.1.4. </span>Отладка прошивки</strong>
+        <meta itemprop="position" content="5" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Копировать страницу</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Дополнительные действия"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Копировать страницу</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Просмотреть источник</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Открыть в ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Открыть в Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Открыть в Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="debugging-the-firmware">
+<span id="firmware-debugging"></span><h1><span class="section-number">14.1.1.4. </span>Отладка прошивки<a class="headerlink" href="#debugging-the-firmware" title="Ссылка на этот заголовок">¶</a></h1>
+<p>Аппаратная отладка означает остановку процессора, установку точек останова в исходном коде на C, пошаговое выполнение и просмотр переменных, памяти, регистров и периферийных устройств – прямо из VS Code. Для этого нужны три вещи: <strong>отладочная сборка</strong>, <strong>отладочный зонд SWD</strong> (Segger J-Link) и расширение <strong>Cortex-Debug</strong>, управляющее <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> через GDB-сервер J-Link.</p>
+<section id="build-for-debugging">
+<h2><span class="section-number">14.1.1.4.1. </span>Сборка для отладки<a class="headerlink" href="#build-for-debugging" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Всегда пересобирайте целевую прошивку с <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">make -j$(nproc) TARGET=&lt;TARGET&gt; DEBUG=1
+</span></pre></div>
+</div>
+<p>Релизный образ (<code class="docutils literal notranslate"><span class="pre">DEBUG=0</span></code>) компилируется с <code class="docutils literal notranslate"><span class="pre">-O2</span></code>; в отладчике вы будете видеть <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code> для многих переменных, встраиваемые функции сворачиваются в свои вызывающие функции, а пошаговое выполнение перескакивает непредсказуемо. Сборки с <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> используют <code class="docutils literal notranslate"><span class="pre">-Og</span> <span class="pre">-ggdb3</span></code>, что обеспечивает отлаживаемость, при этом прошивка всё ещё загружается на камере. ELF-файл, на который вы направляете отладчик, это:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">build</span><span class="o">/&lt;</span><span class="n">TARGET</span><span class="o">&gt;/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span></pre></div>
+</div>
+<p>(Для Alif AE3 отлаживайте <code class="docutils literal notranslate"><span class="pre">build/OPENMV_AE3/bin/firmware_M55_HP.elf</span></code> – высокопроизводительное ядро.)</p>
+</section>
+<section id="the-hardware-j-link-over-swd">
+<h2><span class="section-number">14.1.1.4.2. </span>Оборудование: J-Link через SWD<a class="headerlink" href="#the-hardware-j-link-over-swd" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Подключите Segger J-Link к выводам <strong>SWD</strong> камеры (SWDIO, SWCLK, GND и целевой VCC для опорного напряжения; камера, как обычно, питается через USB). Подойдут J-Link EDU / Base / Pro. Расположение отладочных выводов различается у разных камер – на многих платах есть выделенный разъём JTAG/SWD, на других SWD выведен на колодку ввода-вывода или на контактные площадки – поэтому проверьте схему расположения выводов и принципиальную схему конкретной платы в документации по оборудованию OpenMV, чтобы понять, какие выводы подключать. Установите <strong>J-Link Software and Documentation Pack</strong> с сайта <a class="reference external" href="https://www.segger.com/downloads/jlink/">segger.com</a> на ту машину, к которой физически подключён зонд. Поддерживайте его достаточно свежим – более старое ПО J-Link не будет знать имена новых устройств (STM32N6, MIMXRT, Alif).</p>
+<p>Каждому микроконтроллеру нужно его точное <strong>имя устройства</strong> J-Link, чтобы зонд загрузил правильный загрузчик флеш-памяти и карту памяти:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 34.0%" />
+<col style="width: 26.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Камера (<code class="docutils literal notranslate"><span class="pre">TARGET</span></code>)</p></th>
+<th class="head"><p>MCU</p></th>
+<th class="head"><p>J-Link <code class="docutils literal notranslate"><span class="pre">device</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV2</span></code></p></td>
+<td><p>STM32F427</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32F427VG</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV3</span></code></p></td>
+<td><p>STM32F765</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32F765VI</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV4</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMV4P</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMVPT</span></code></p></td>
+<td><p>STM32H743</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32H743VI</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_N6</span></code></p></td>
+<td><p>STM32N657</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32N657L0</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_RT1060</span></code></p></td>
+<td><p>MIMXRT1062</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MIMXRT1062xxx6A</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_AE3</span></code></p></td>
+<td><p>Alif Ensemble (M55-HP)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AE302F80F55D5_HP</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ARDUINO_PORTENTA_H7</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_GIGA</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_NICLA_VISION</span></code></p></td>
+<td><p>STM32H747</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32H747XI</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="vs-code-cortex-debug-setup">
+<h2><span class="section-number">14.1.1.4.3. </span>Настройка Cortex-Debug в VS Code<a class="headerlink" href="#vs-code-cortex-debug-setup" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Создайте <code class="docutils literal notranslate"><span class="pre">.vscode/launch.json</span></code> в репозитории. Простейший случай – VS Code, J-Link и сборка находятся на <strong>одной</strong> машине Linux / macOS – использует <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code>, что заставляет Cortex-Debug самостоятельно запускать GDB-сервер J-Link:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2">  <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.2.0&quot;</span><span class="p">,</span>
+</span><span data-line="3">  <span class="s2">&quot;configurations&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span data-line="4">    <span class="p">{</span>
+</span><span data-line="5">      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;OpenMV J-Link&quot;</span><span class="p">,</span>
+</span><span data-line="6">      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cortex-debug&quot;</span><span class="p">,</span>
+</span><span data-line="7">      <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+</span><span data-line="8">      <span class="s2">&quot;cwd&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span data-line="9">      <span class="s2">&quot;executable&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">/build/OPENMV4/bin/firmware.elf&quot;</span><span class="p">,</span>
+</span><span data-line="10">      <span class="s2">&quot;servertype&quot;</span><span class="p">:</span> <span class="s2">&quot;jlink&quot;</span><span class="p">,</span>
+</span><span data-line="11">      <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;STM32H743VI&quot;</span><span class="p">,</span>
+</span><span data-line="12">      <span class="s2">&quot;interface&quot;</span><span class="p">:</span> <span class="s2">&quot;swd&quot;</span><span class="p">,</span>
+</span><span data-line="13">      <span class="s2">&quot;runToEntryPoint&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+</span><span data-line="14">      <span class="s2">&quot;armToolchainPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin&quot;</span><span class="p">,</span>
+</span><span data-line="15">      <span class="s2">&quot;gdbPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin/arm-none-eabi-gdb&quot;</span>
+</span><span data-line="16">    <span class="p">}</span>
+</span><span data-line="17">  <span class="p">]</span>
+</span><span data-line="18"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Измените <code class="docutils literal notranslate"><span class="pre">executable</span></code> и <code class="docutils literal notranslate"><span class="pre">device</span></code> под вашу плату (см. таблицу выше). Нажмите <kbd class="kbd docutils literal notranslate">F5</kbd>, чтобы собрать, прошить, запустить до <code class="docutils literal notranslate"><span class="pre">main</span></code> и остановиться там.</p>
+<div class="admonition tip">
+<p class="admonition-title">Совет</p>
+<p>Чтобы автоматически выполнять пересборку при каждом запуске отладки, добавьте задачу сборки в <code class="docutils literal notranslate"><span class="pre">.vscode/tasks.json</span></code> и сошлитесь на неё из конфигурации запуска через <code class="docutils literal notranslate"><span class="pre">&quot;preLaunchTask&quot;</span></code>. Например, задача, выполняющая <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">-j$(nproc)</span> <span class="pre">TARGET=OPENMV4</span> <span class="pre">DEBUG=1</span></code>, с именем <code class="docutils literal notranslate"><span class="pre">&quot;build-firmware&quot;</span></code>, плюс <code class="docutils literal notranslate"><span class="pre">&quot;preLaunchTask&quot;:</span> <span class="pre">&quot;build-firmware&quot;</span></code> в приведённой выше конфигурации, чтобы <kbd class="kbd docutils literal notranslate">F5</kbd> пересобирал, прошивал и запускал отладчик за один шаг.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Предупреждение</p>
+<p>Cortex-Debug требует <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code>. Он поставляется в составе SDK по пути <code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/gcc/bin</span></code>, но по умолчанию <strong>не</strong> добавлен в <code class="docutils literal notranslate"><span class="pre">PATH</span></code>, поэтому отладка завершается ошибкой <em>«GDB executable „arm-none-eabi-gdb“ was not found»</em>. Исправьте это либо установив <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code> / <code class="docutils literal notranslate"><span class="pre">gdbPath</span></code>, как показано выше, либо добавив <code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/gcc/bin</span></code> в ваш <code class="docutils literal notranslate"><span class="pre">PATH</span></code> (тогда <code class="docutils literal notranslate"><span class="pre">printenv</span> <span class="pre">PATH</span></code> должен его перечислять).</p>
+</div>
+</section>
+<section id="peripheral-register-view-svd">
+<h2><span class="section-number">14.1.1.4.4. </span>Просмотр регистров периферии (SVD)<a class="headerlink" href="#peripheral-register-view-svd" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Направьте Cortex-Debug на файл CMSIS <strong>SVD</strong>, чтобы получить декодированный просмотр регистров периферии (таймеры, DMA, интерфейс камеры и т.д.) по имени и битовым полям:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="s2">&quot;svdFile&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/STM32H743.svd&quot;</span>
+</span></pre></div>
+</div>
+<p>Для STM32 и MIMXRT получите SVD из пакетов CMSIS ST / NXP или из реестра SVD Cortex-Debug. SVD-файлы Alif включены в репозиторий прошивки по пути <code class="docutils literal notranslate"><span class="pre">lib/micropython/lib/alif_ensemble-cmsis-dfp/Debug/SVD/</span></code> (используйте <code class="docutils literal notranslate"><span class="pre">..._CM55_HP_View.svd</span></code> для HP-ядра AE3).</p>
+</section>
+<section id="windows-the-wsl-windows-j-link-bridge">
+<span id="firmware-debugging-wsl"></span><h2><span class="section-number">14.1.1.4.5. </span>Windows: мост J-Link между WSL и Windows<a class="headerlink" href="#windows-the-wsl-windows-j-link-bridge" title="Ссылка на этот заголовок">¶</a></h2>
+<p>WSL 2 не может напрямую видеть USB-устройство J-Link, поэтому разделение такое: <strong>Windows обслуживает зонд</strong> (туда он подключён), а <strong>VS Code + gdb работают в WSL</strong> и обращаются к нему по TCP.</p>
+<ol class="arabic">
+<li><p><strong>В Windows</strong> установите пакет Segger J-Link и подключите J-Link к USB-порту Windows.</p></li>
+<li><p><strong>В Windows</strong> запустите <strong>J-Link Remote Server</strong> (он поставляется в составе пакета J-Link): запустите его с подключённым J-Link и нажмите <strong>OK</strong>. Разрешите его прохождение через брандмауэр Windows при появлении запроса. В окне отображается <strong>IP-адрес</strong>, по которому обслуживается зонд – запишите его.</p></li>
+<li><p><strong>В WSL</strong> соберите с <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> и убедитесь, что <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> доступен (установите <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code>, как описано выше).</p></li>
+<li><p><strong>В WSL VS Code</strong> оставьте <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> – GDB-сервер работает в WSL и обращается к зонду через Remote Server – и добавьте <code class="docutils literal notranslate"><span class="pre">serverpath</span></code> + <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2">  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;OpenMV J-Link (Windows host)&quot;</span><span class="p">,</span>
+</span><span data-line="3">  <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cortex-debug&quot;</span><span class="p">,</span>
+</span><span data-line="4">  <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+</span><span data-line="5">  <span class="s2">&quot;cwd&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span data-line="6">  <span class="s2">&quot;executable&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">/build/OPENMV4/bin/firmware.elf&quot;</span><span class="p">,</span>
+</span><span data-line="7">  <span class="s2">&quot;servertype&quot;</span><span class="p">:</span> <span class="s2">&quot;jlink&quot;</span><span class="p">,</span>
+</span><span data-line="8">  <span class="s2">&quot;serverpath&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/SEGGER/JLink/JLinkGDBServer&quot;</span><span class="p">,</span>
+</span><span data-line="9">  <span class="s2">&quot;ipAddress&quot;</span><span class="p">:</span> <span class="s2">&quot;192.168.x.x&quot;</span><span class="p">,</span>
+</span><span data-line="10">  <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;STM32H743VI&quot;</span><span class="p">,</span>
+</span><span data-line="11">  <span class="s2">&quot;interface&quot;</span><span class="p">:</span> <span class="s2">&quot;swd&quot;</span><span class="p">,</span>
+</span><span data-line="12">  <span class="s2">&quot;runToEntryPoint&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+</span><span data-line="13">  <span class="s2">&quot;armToolchainPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin&quot;</span>
+</span><span data-line="14"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Установите <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code> в адрес, отображаемый в окне Remote Server. Это и есть весь мост.</p>
+</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Совет</p>
+<p><strong>Альтернатива мосту GDB-сервера: usbipd-win.</strong> Вместо запуска сервера в Windows вы можете подключить USB-устройство J-Link напрямую в WSL с помощью <a class="reference external" href="https://github.com/dorssel/usbipd-win">usbipd-win</a>. Из PowerShell с правами администратора:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">winget</span> <span class="n">install</span> <span class="n">usbipd</span>
+</span><span data-line="2"><span class="n">usbipd</span> <span class="nb">list</span>
+</span><span data-line="3"><span class="n">usbipd</span> <span class="n">bind</span> <span class="o">--</span><span class="n">busid</span> <span class="o">&lt;</span><span class="n">busid</span><span class="o">&gt;</span>
+</span><span data-line="4"><span class="n">usbipd</span> <span class="n">attach</span> <span class="o">--</span><span class="n">wsl</span> <span class="o">--</span><span class="n">busid</span> <span class="o">&lt;</span><span class="n">busid</span><span class="o">&gt;</span>
+</span></pre></div>
+</div>
+<p>(<code class="docutils literal notranslate"><span class="pre">&lt;busid&gt;</span></code> – это идентификатор шины J-Link из <code class="docutils literal notranslate"><span class="pre">usbipd</span> <span class="pre">list</span></code>.) После этого зонд появляется <em>внутри</em> WSL, и вы используете обычную одномашинную конфигурацию <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> из раздела <a class="reference internal" href="#vs-code-cortex-debug-setup">Настройка Cortex-Debug в VS Code</a> без IP-адреса и без отдельного сервера в Windows. Мост GDB-сервера требует меньше настройки для эпизодического использования; usbipd-win удобнее для повседневной разработки.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Совет</p>
+<p>Используйте <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;attach&quot;</span></code> для отладки прошивки <em>в то время, как она уже работает</em>, без сброса или перепрошивки – идеально для выявления зависания в полевых условиях. Используйте <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;launch&quot;</span></code> для сброса, прошивки ELF и запуска с начала с <code class="docutils literal notranslate"><span class="pre">runToEntryPoint</span></code>.</p>
+</div>
+</section>
+<section id="command-line-debugging-with-gdbrunner">
+<h2><span class="section-number">14.1.1.4.6. </span>Отладка из командной строки с помощью gdbrunner<a class="headerlink" href="#command-line-debugging-with-gdbrunner" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Настройка сеанса GDB для встраиваемой цели вручную – это танец из пяти шагов: запустить GDB-сервер J-Link / ST-Link в одном окне с правильными флагами устройства, порта и интерфейса; дождаться, пока он выведет <em>Waiting for GDB connection</em>; запустить <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> во втором окне; ввести <code class="docutils literal notranslate"><span class="pre">target</span> <span class="pre">remote</span> <span class="pre">localhost:&lt;port&gt;</span></code>; направить gdb на ELF. Когда сеанс gdb завершается, нужно не забыть закрыть окно сервера. <a class="reference external" href="https://github.com/openmv/gdbrunner">gdbrunner</a> – это небольшой CLI, сворачивающий всё это в одну команду на переднем плане. Он поставляется в составе Python-окружения SDK OpenMV, поэтому устанавливать ничего не нужно; обычная точка входа – цель <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> репозитория прошивки:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">make -j$(nproc) TARGET=&lt;TARGET&gt; DEBUG=1 debug
+</span></pre></div>
+</div>
+<p>Это запускает gdbrunner с аргументами отладчика из конфигурации платы – именем устройства J-Link и, где это необходимо, внешним загрузчиком флеш-памяти ST-Link – с <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> из SDK, уже находящимся в <code class="docutils literal notranslate"><span class="pre">PATH</span></code>. Бэкенд по умолчанию – J-Link; <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">DEBUGGER=STLINK</span> <span class="pre">debug</span></code> работает с зондом ST-Link.</p>
+<p>gdbrunner также можно вызывать напрямую (вне SDK, <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdbrunner</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">gdbrunner</span> <span class="n">jlink</span> <span class="o">--</span><span class="n">device</span> <span class="n">STM32H743VI</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span><span data-line="2"><span class="n">gdbrunner</span> <span class="n">stlink</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span><span data-line="3"><span class="n">gdbrunner</span> <span class="n">qemu</span> <span class="o">--</span><span class="n">machine</span> <span class="n">mps2</span><span class="o">-</span><span class="n">an500</span> <span class="n">build</span><span class="o">/</span><span class="n">MPS2_AN500</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span></pre></div>
+</div>
+<p>Первый позиционный аргумент выбирает бэкенд сервера (<code class="docutils literal notranslate"><span class="pre">jlink</span></code>, <code class="docutils literal notranslate"><span class="pre">stlink</span></code>, <code class="docutils literal notranslate"><span class="pre">qemu</span></code>); остальные передаются этому бэкенду, со значениями по умолчанию, подходящими для камер OpenMV. <code class="docutils literal notranslate"><span class="pre">gdbrunner</span> <span class="pre">--help</span></code> выводит полный список флагов для каждого бэкенда; таблица аргументов каждого бэкенда задаётся через JSON (<code class="docutils literal notranslate"><span class="pre">src/gdbrunner/backends.json</span></code>), поэтому добавление нового сервера – это правка конфигурации, а не кода.</p>
+<p>Что gdbrunner делает для работы из командной строки:</p>
+<ul class="simple">
+<li><p><strong>Один процесс, чистый жизненный цикл.</strong> Сервер запускается, gdb подключается, когда порт открыт, сервер корректно завершается при выходе из gdb. Никаких осиротевших процессов <code class="docutils literal notranslate"><span class="pre">JLinkGDBServer</span></code>, переживающих сеанс, никаких двух терминалов для управления.</p></li>
+<li><p><strong>Автообнаружение STM32CubeProgrammer.</strong> Бэкенд <code class="docutils literal notranslate"><span class="pre">stlink</span></code> ищет инструменты STM32CubeProgrammer в обычных местах установки (<code class="docutils literal notranslate"><span class="pre">~/STM32CubeProgrammer/</span></code>, <code class="docutils literal notranslate"><span class="pre">/opt/st/</span></code>, дерево плагинов STM32CubeIDE), чтобы длинный путь <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code> не приходилось вводить каждый раз. SDK содержит собственную копию по пути <code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/stcubeprog/bin</span></code> – направьте <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code> туда, если системной установки нет.</p></li>
+<li><p><strong>Учёт gdbinit для каждого проекта.</strong> Файл <code class="docutils literal notranslate"><span class="pre">.gdbinit</span></code> в текущем каталоге загружается с <code class="docutils literal notranslate"><span class="pre">-ix</span></code> – переопределяя общесистемный <code class="docutils literal notranslate"><span class="pre">~/.gdbinit</span></code> – поэтому gdb-скрипты для конкретного проекта (pretty-printer’ы, макросы для конкретной платы, наборы точек останова) подключаются простым присутствием в рабочем каталоге. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> запускается из корня репозитория, поэтому <code class="docutils literal notranslate"><span class="pre">.gdbinit</span></code> там применяется.</p></li>
+<li><p><strong>Пробный прогон.</strong> <code class="docutils literal notranslate"><span class="pre">--dryrun</span></code> выводит команду сервера без её запуска, что полезно для адаптации вызова к скрипту-обёртке, копирования в конфигурацию запуска IDE или просто для проверки того, какие аргументы составляет gdbrunner.</p></li>
+<li><p><strong>Видимый вывод сервера.</strong> <code class="docutils literal notranslate"><span class="pre">--show-output</span></code> сохраняет stdout / stderr сервера видимыми. По умолчанию они подавляются (чтобы интерфейс gdb оставался чистым); включайте этот флаг, когда некорректно ведёт себя сам сервер.</p></li>
+<li><p><strong>Бэкенд QEMU.</strong> <code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> отлаживает сборку прошивки без подключённой платы. Цель <code class="docutils literal notranslate"><span class="pre">MPS2_AN500</span></code> выбирает этот бэкенд в своей конфигурации платы, поэтому <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">TARGET=MPS2_AN500</span> <span class="pre">DEBUG=1</span> <span class="pre">debug</span></code> собирает для машины <code class="docutils literal notranslate"><span class="pre">mps2-an500</span></code> QEMU и пошагово выполняет платформенно-независимый код – всё, что не затрагивает специфичную для камеры периферию – в полёте. (<code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> устанавливается на хост, а не входит в SDK.)</p></li>
+</ul>
+<p>Для пошагового выполнения на уровне исходного кода с маркерами точек останова на полях и просмотром регистров периферии лучше подходит описанная выше настройка Cortex-Debug в VS Code; gdbrunner – правильный инструмент для всего, что живёт в командной строке.</p>
+</section>
+<section id="using-the-debugger">
+<h2><span class="section-number">14.1.1.4.7. </span>Использование отладчика<a class="headerlink" href="#using-the-debugger" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Когда сеанс запущен (процессор остановлен на <code class="docutils literal notranslate"><span class="pre">main</span></code>):</p>
+<ul class="simple">
+<li><p><strong>Точки останова</strong> – кликните по полю рядом со строкой на C или в Debug Console введите <code class="docutils literal notranslate"><span class="pre">break</span> <span class="pre">&lt;file&gt;:&lt;line&gt;</span></code> / <code class="docutils literal notranslate"><span class="pre">break</span> <span class="pre">&lt;function&gt;</span></code>. Ядра Cortex-M имеют небольшое число <em>аппаратных</em> компараторов точек останова (обычно 6–8 на M7 / H7, 8 на M55). Превышение этого числа для кода во флеш-памяти молча не срабатывает – держите количество активных точек останова умеренным.</p></li>
+<li><p><strong>Пошаговое выполнение</strong> – <kbd class="kbd docutils literal notranslate">F10</kbd> шаг с обходом (<code class="docutils literal notranslate"><span class="pre">next</span></code>), <kbd class="kbd docutils literal notranslate">F11</kbd> шаг с заходом (<code class="docutils literal notranslate"><span class="pre">step</span></code>), <kbd class="kbd docutils literal notranslate">Shift</kbd>+<kbd class="kbd docutils literal notranslate">F11</kbd> шаг с выходом (<code class="docutils literal notranslate"><span class="pre">finish</span></code>), <kbd class="kbd docutils literal notranslate">F5</kbd> продолжить. Пошаговое выполнение на уровне инструкций – это <code class="docutils literal notranslate"><span class="pre">stepi</span></code> / <code class="docutils literal notranslate"><span class="pre">nexti</span></code> в Debug Console.</p></li>
+<li><p><strong>Переменные / наблюдение / стек вызовов</strong> – панели <em>Variables</em> и <em>Call Stack</em> показывают локальные переменные и обратную трассировку; добавляйте выражения в <em>Watch</em>. Наведите курсор на переменную в исходном коде, чтобы увидеть её значение. Всё, что отображается как <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code>, означает, что вы не на сборке с <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code>.</p></li>
+<li><p><strong>Точки наблюдения (точки останова по данным)</strong> – <code class="docutils literal notranslate"><span class="pre">watch</span> <span class="pre">&lt;expr&gt;</span></code> останавливается при записи переменной, <code class="docutils literal notranslate"><span class="pre">rwatch</span></code> при чтении, <code class="docutils literal notranslate"><span class="pre">awatch</span></code> при любом из них. Блок DWT Cortex-M поддерживает ~4 аппаратных точки наблюдения – незаменимо для выяснения того, <em>кто</em> повредил переменную.</p></li>
+<li><p><strong>Регистры и периферия</strong> – представление <em>Cortex Registers</em> показывает регистры ядра; при установленном <code class="docutils literal notranslate"><span class="pre">svdFile</span></code> представление <em>Peripherals</em> декодирует каждый регистр периферии и битовое поле (DMA, таймеры, интерфейс камеры / CSI, XSPI и т.д.) – самый быстрый способ понять, почему драйвер ведёт себя неправильно.</p></li>
+<li><p><strong>Память</strong> – используйте просмотрщик памяти Cortex-Debug или <code class="docutils literal notranslate"><span class="pre">x/</span></code> в gdb для прямого просмотра буферов кадров, буферов DMA и структур.</p></li>
+<li><p><strong>printf без остановки (SWO/RTT)</strong> – для проблем, чувствительных к таймингу, Segger <strong>RTT</strong> или <strong>SWO</strong> обеспечивает <code class="docutils literal notranslate"><span class="pre">printf</span></code> с почти нулевыми накладными расходами во время работы целевой системы. Соберите с <code class="docutils literal notranslate"><span class="pre">DEBUG_PRINTF=1</span></code> и добавьте <code class="docutils literal notranslate"><span class="pre">rttConfig</span></code> (RTT) или <code class="docutils literal notranslate"><span class="pre">swoConfig</span></code> (SWO, требует частоту ядра) Cortex-Debug. Это правильный инструмент, когда точка останова изменила бы тайминг, который вы пытаетесь наблюдать.</p></li>
+<li><p><strong>Отключение</strong> – <em>Stop</em> в сеансе <code class="docutils literal notranslate"><span class="pre">launch</span></code> останавливает целевую систему; <em>Disconnect</em> в сеансе <code class="docutils literal notranslate"><span class="pre">attach</span></code> оставляет камеру работающей. После этого выполните перезагрузку питания камеры, чтобы вернуть её к нормальной работе.</p></li>
+</ul>
+</section>
+<section id="debugging-pitfalls">
+<h2><span class="section-number">14.1.1.4.8. </span>Подводные камни отладки<a class="headerlink" href="#debugging-pitfalls" title="Ссылка на этот заголовок">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Оптимизированные переменные.</strong> Всё отображается как <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code> – вы собрали с <code class="docutils literal notranslate"><span class="pre">DEBUG=0</span></code>. Пересоберите с <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code>.</p></li>
+<li><p><strong>«GDB executable not found»</strong> – <code class="docutils literal notranslate"><span class="pre">gcc/bin</span></code> из SDK не в <code class="docutils literal notranslate"><span class="pre">PATH</span></code>; установите <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code> / <code class="docutils literal notranslate"><span class="pre">gdbPath</span></code>.</p></li>
+<li><p><strong>«Cannot connect» / неверная карта памяти</strong> – неверное или отсутствующее имя <code class="docutils literal notranslate"><span class="pre">device</span></code>; используйте точную строку из таблицы.</p></li>
+<li><p><strong>Точки останова молча не срабатывают</strong> – слишком много аппаратных точек останова на коде, размещённом во флеш-памяти; уменьшите их количество.</p></li>
+<li><p><strong>Пути к исходникам не совпадают (ELF, собранный в Docker)</strong> – собирайте с целью Docker <code class="docutils literal notranslate"><span class="pre">build-firmware-dev</span></code> (одинаковый абсолютный путь внутри и вне контейнера) или установите <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">substitute-path</span></code> в gdb.</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Наверх</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="flashing/erasing.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Назад</span><div class="title"><span class="section-number">14.1.1.3.5.5. </span>Стирание внутренней файловой системы</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="recovery.html">
+      <div class="page-info">
+        <span>Вперёд</span>
+        <div class="title"><span class="section-number">14.1.1.5. </span>Восстановление загрузчика</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    Для прошивки OpenMV v5.0.0 &middot; на основе MicroPython v1.28 &middot; документация собрана 19 июня 2026 г. &middot; Авторские права &copy; 2014-2026 OpenMV, Damien P. George и другие.
+  </p>
+  <p>
+    
+    Создано с помощью <a href="https://www.sphinx-doc.org/">Sphinx</a> с использованием <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=5e17ce58"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cd1d70c9"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

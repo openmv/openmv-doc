@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MicroPython 交互式解释器模式（即 REPL） - OpenMV MicroPython 1.28 文档</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="索引" href="../genindex.html" /><link rel="search" title="搜索" href="../search.html" /><link rel="next" title="复位与启动序列" href="reset_boot.html" /><link rel="prev" title="术语表" href="glossary.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/reference/repl.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/reference/repl.html"/>
+  <meta property="og:title" content="MicroPython 交互式解释器模式（即 REPL）"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/reference/repl.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/reference/repl.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/reference/repl.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/reference/repl.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/reference/repl.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/reference/repl.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/reference/repl.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/reference/repl.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/reference/repl.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/reference/repl.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/reference/repl.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/reference/repl.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/reference/repl.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/reference/repl.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/reference/repl.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/reference/repl.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/reference/repl.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/reference/repl.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/reference/repl.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/reference/repl.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/reference/repl.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/reference/repl.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/reference/repl.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/reference/repl.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/reference/repl.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/reference/repl.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/reference/repl.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">首页</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">教程</a></li><li class="link"><a href="../library/index.html">核心库</a></li><li class="link"><a href="../openmvcam/quickref.html">开发板</a></li><li class="link"><a href="../openmvcam/shields.html">扩展板</a></li><li class="link"><a href="../openmvcam/sensors.html">传感器</a></li><li class="link"><a href="index.html">语言</a></li><li class="link"><a href="../develop/index.html">内部结构</a></li><li class="link"><a href="../changelog/index.html">更新日志</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="搜索" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="版本">
+      <span class="md:hidden">版本</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻译</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/reference/repl.html">English</a></li><li><a href="/dev/ar/reference/repl.html">العربية</a></li><li><a href="/dev/zh_CN/reference/repl.html">简体中文</a></li><li><a href="/dev/zh_TW/reference/repl.html">繁體中文</a></li><li><a href="/dev/hr/reference/repl.html">Hrvatski</a></li><li><a href="/dev/cs/reference/repl.html">Čeština</a></li><li><a href="/dev/nl/reference/repl.html">Nederlands</a></li><li><a href="/dev/fi/reference/repl.html">Suomi</a></li><li><a href="/dev/fr/reference/repl.html">Français</a></li><li><a href="/dev/de/reference/repl.html">Deutsch</a></li><li><a href="/dev/he/reference/repl.html">עברית</a></li><li><a href="/dev/hu/reference/repl.html">Magyar</a></li><li><a href="/dev/id/reference/repl.html">Bahasa Indonesia</a></li><li><a href="/dev/it/reference/repl.html">Italiano</a></li><li><a href="/dev/ja/reference/repl.html">日本語</a></li><li><a href="/dev/ko/reference/repl.html">한국어</a></li><li><a href="/dev/pl/reference/repl.html">Polski</a></li><li><a href="/dev/pt_BR/reference/repl.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/reference/repl.html">Português (Portugal)</a></li><li><a href="/dev/ro/reference/repl.html">Română</a></li><li><a href="/dev/ru/reference/repl.html">Русский</a></li><li><a href="/dev/es/reference/repl.html">Español</a></li><li><a href="/dev/sv/reference/repl.html">Svenska</a></li><li><a href="/dev/th/reference/repl.html">ไทย</a></li><li><a href="/dev/tr/reference/repl.html">Türkçe</a></li><li><a href="/dev/uk/reference/repl.html">Українська</a></li><li><a href="/dev/vi/reference/repl.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切换到浅色模式"
+data-aria-light="切换到深色模式"
+data-aria-dark="切换到自动颜色模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">讨论</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">&#25945;&#31243;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">&#24211;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">&#24320;&#21457;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">&#25193;&#23637;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">&#35821;&#35328;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="glossary.html">&#26415;&#35821;&#34920;</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">MicroPython &#20132;&#20114;&#24335;&#35299;&#37322;&#22120;&#27169;&#24335;&#65288;&#21363; REPL&#65289;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reset_boot.html">&#22797;&#20301;&#19982;&#21551;&#21160;&#24207;&#21015;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpremote.html">MicroPython &#36828;&#31243;&#25511;&#21046;&#65306;mpremote</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpyfiles.html">MicroPython .mpy &#25991;&#20214;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="isr_rules.html">&#32534;&#20889;&#20013;&#26029;&#22788;&#29702;&#31243;&#24207;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="speed_python.html">&#26368;&#22823;&#21270; MicroPython &#36816;&#34892;&#36895;&#24230;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="constrained.html">&#22312;&#24494;&#25511;&#21046;&#22120;&#19978;&#36816;&#34892; MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="manifest.html">MicroPython &#28165;&#21333;&#65288;manifest&#65289;&#25991;&#20214;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="packages.html">&#21253;&#31649;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="asm_thumb2_index.html">&#38754;&#21521; Thumb2 &#26550;&#26500;&#30340;&#20869;&#32852;&#27719;&#32534;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="filesystem.html">&#20351;&#29992;&#25991;&#20214;&#31995;&#32479;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="romfs.html">&#20351;&#29992; ROMFS</a></li>
+<li class="toctree-l2"><a class="reference internal" href="micropython2_migration.html">MicroPython 2.0 &#36801;&#31227;&#25351;&#21335;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../develop/index.html">&#20869;&#37096;&#23454;&#29616;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">&#26356;&#26032;&#26085;&#24535;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">&#35768;&#21487;&#35777;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>本页内容</h3><ul>
+<li><a class="reference internal" href="#auto-indent">&#33258;&#21160;&#32553;&#36827;</a></li>
+<li><a class="reference internal" href="#auto-completion">&#33258;&#21160;&#34917;&#20840;</a></li>
+<li><a class="reference internal" href="#interrupting-a-running-program">&#20013;&#26029;&#27491;&#22312;&#36816;&#34892;&#30340;&#31243;&#24207;</a></li>
+<li><a class="reference internal" href="#paste-mode">&#31896;&#36148;&#27169;&#24335;</a></li>
+<li><a class="reference internal" href="#soft-reset">&#36719;&#22797;&#20301;</a></li>
+<li><a class="reference internal" href="#the-special-variable-underscore">&#29305;&#27530;&#21464;&#37327; _&#65288;&#19979;&#21010;&#32447;&#65289;</a></li>
+<li><a class="reference internal" href="#raw-mode-and-raw-paste-mode">&#21407;&#22987;&#27169;&#24335;&#19982;&#21407;&#22987;&#31896;&#36148;&#27169;&#24335;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/reference/repl.rst">编辑此页</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython 语言与实现</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">MicroPython 交互式解释器模式（即 REPL）</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/reference/repl.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>复制页面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/reference/repl.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>复制页面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/reference/repl.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>查看源码</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/reference/repl.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中打开</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/reference/repl.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中打开</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/reference/repl.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中打开</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="the-micropython-interactive-interpreter-mode-aka-repl">
+<h1>MicroPython 交互式解释器模式（即 REPL）<a class="headerlink" href="#the-micropython-interactive-interpreter-mode-aka-repl" title="链接到此标题。">¶</a></h1>
+<p>本节介绍 MicroPython 交互式解释器模式的一些特性。它常被称为 REPL（read-eval-print-loop，读取-求值-打印循环），后文将用该名称指代这一交互式提示符。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>OpenMV Cam 通过其 USB 串口（CDC）暴露此 REPL。它仅在你使用串口终端模拟器（或诸如 <a class="reference internal" href="mpremote.html#mpremote"><span class="std std-ref">MicroPython 远程控制：mpremote</span></a> 之类的工具）直接连接摄像头时才相关。<strong>OpenMV IDE 并不使用 REPL</strong> —— 它通过一套独立的调试协议与摄像头通信，以运行脚本、传输文件并串流帧缓冲区。本页所述内容仅适用于直接的终端会话。</p>
+</div>
+<section id="auto-indent">
+<h2>自动缩进<a class="headerlink" href="#auto-indent" title="链接到此标题。">¶</a></h2>
+<p>当你输入以冒号结尾的 Python 语句（例如 if、for、while）时，提示符会变为三个点（...），光标会缩进 4 个空格。当你按下回车时，对于普通语句，下一行会继续保持相同的缩进级别，而在适当的情况下则会再增加一级缩进。如果你按下退格键，则会撤销一级缩进。</p>
+<p>如果光标已经回到行首，此时按回车将执行你已输入的代码。下面展示了输入一条 for 语句后你会看到的内容（下划线表示光标最终所在的位置）：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+</span><span data-line="2"><span class="gp">... </span>    <span class="n">_</span>
+</span></pre></div>
+</div>
+<p>如果你接着输入一条 if 语句，将会再提供一级缩进：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+</span><span data-line="2"><span class="gp">... </span>    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+</span><span data-line="3"><span class="gp">... </span>        <span class="n">_</span>
+</span></pre></div>
+</div>
+<p>现在输入 <code class="docutils literal notranslate"><span class="pre">break</span></code> 并按回车，再按退格键：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+</span><span data-line="2"><span class="gp">... </span>    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+</span><span data-line="3"><span class="gp">... </span>        <span class="k">break</span>
+</span><span data-line="4"><span class="gp">... </span>    <span class="n">_</span>
+</span></pre></div>
+</div>
+<p>最后输入 <code class="docutils literal notranslate"><span class="pre">print(i)</span></code>，按回车，再按退格，然后再次按回车：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span><span class="p">):</span>
+</span><span data-line="2"><span class="gp">... </span>    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+</span><span data-line="3"><span class="gp">... </span>        <span class="k">break</span>
+</span><span data-line="4"><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span><span data-line="5"><span class="gp">...</span>
+</span><span data-line="6"><span class="go">0</span>
+</span><span data-line="7"><span class="go">1</span>
+</span><span data-line="8"><span class="go">2</span>
+</span><span data-line="9"><span class="go">3</span>
+</span><span data-line="10"><span class="gp">&gt;&gt;&gt;</span>
+</span></pre></div>
+</div>
+<p>如果前两行都是空格，则不会应用自动缩进。这意味着你可以通过按两次回车来结束一条复合语句的输入，第三次按回车则会完成并执行。</p>
+</section>
+<section id="auto-completion">
+<h2>自动补全<a class="headerlink" href="#auto-completion" title="链接到此标题。">¶</a></h2>
+<p>在 REPL 中输入命令时，如果目前已输入的内容对应于某个名称的开头，那么按 TAB 键将显示所有可能输入的内容。例如，先通过输入 <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">machine</span></code> 并按回车来导入 <a class="reference internal" href="../library/machine.html#module-machine" title="machine: functions related to the hardware"><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code></a> 模块。然后输入 <code class="docutils literal notranslate"><span class="pre">m</span></code> 并按 TAB，它应当扩展为 <code class="docutils literal notranslate"><span class="pre">machine</span></code>。输入一个点 <code class="docutils literal notranslate"><span class="pre">.</span></code> 并再次按 TAB，你应当会看到类似如下的内容：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">machine</span><span class="o">.</span>
+</span><span data-line="2"><span class="go">__name__        info            unique_id       reset</span>
+</span><span data-line="3"><span class="go">bootloader      freq            rng             idle</span>
+</span><span data-line="4"><span class="go">sleep           deepsleep       disable_irq     enable_irq</span>
+</span><span data-line="5"><span class="go">Pin</span>
+</span></pre></div>
+</div>
+<p>该词将被尽可能地扩展，直到存在多种可能为止。例如，输入 <code class="docutils literal notranslate"><span class="pre">machine.Pin.PULL</span></code> 并按 TAB，它会扩展为 <code class="docutils literal notranslate"><span class="pre">machine.Pin.PULL_</span></code>。再按一次 TAB 将显示所有可能的扩展：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">machine</span><span class="o">.</span><span class="n">Pin</span><span class="o">.</span><span class="n">PULL_</span>
+</span><span data-line="2"><span class="go">PULL_DOWN       PULL_UP</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">machine</span><span class="o">.</span><span class="n">Pin</span><span class="o">.</span><span class="n">PULL_</span>
+</span></pre></div>
+</div>
+</section>
+<section id="interrupting-a-running-program">
+<h2>中断正在运行的程序<a class="headerlink" href="#interrupting-a-running-program" title="链接到此标题。">¶</a></h2>
+<p>你可以通过按 Ctrl-C 来中断正在运行的程序。这将引发 KeyboardInterrupt，使你回到 REPL，前提是你的程序没有拦截 KeyboardInterrupt 异常。</p>
+<p>例如：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000000</span><span class="p">):</span>
+</span><span data-line="2"><span class="gp">... </span>    <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span><span data-line="3"><span class="gp">...</span>
+</span><span data-line="4"><span class="go">0</span>
+</span><span data-line="5"><span class="go">1</span>
+</span><span data-line="6"><span class="go">2</span>
+</span><span data-line="7"><span class="go">3</span>
+</span><span data-line="8"><span class="go">...</span>
+</span><span data-line="9"><span class="go">6466</span>
+</span><span data-line="10"><span class="go">6467</span>
+</span><span data-line="11"><span class="go">6468</span>
+</span><span data-line="12"><span class="gt">Traceback (most recent call last):</span>
+</span><span data-line="13">  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">2</span>, in <span class="n">&lt;module&gt;</span>
+</span><span data-line="14"><span class="gr">KeyboardInterrupt</span><span class="w">:</span>
+</span><span data-line="15"><span class="gp">&gt;&gt;&gt;</span>
+</span></pre></div>
+</div>
+</section>
+<section id="paste-mode">
+<h2>粘贴模式<a class="headerlink" href="#paste-mode" title="链接到此标题。">¶</a></h2>
+<p>如果你想把一些代码粘贴到终端窗口中，自动缩进功能会把内容弄乱。例如，假设你有如下 Python 代码：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">foo</span><span class="p">():</span>
+</span><span data-line="2">    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;This is a test to show paste mode&#39;</span><span class="p">)</span>
+</span><span data-line="3">    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Here is a second line&#39;</span><span class="p">)</span>
+</span><span data-line="4"><span class="n">foo</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>而你试图将它粘贴到普通的 REPL 中，那么你会看到类似这样的内容：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="k">def</span><span class="w"> </span><span class="nf">foo</span><span class="p">():</span>
+</span><span data-line="2"><span class="gp">... </span>        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;This is a test to show paste mode&#39;</span><span class="p">)</span>
+</span><span data-line="3"><span class="gp">... </span>            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Here is a second line&#39;</span><span class="p">)</span>
+</span><span data-line="4"><span class="gp">... </span>            <span class="n">foo</span><span class="p">()</span>
+</span><span data-line="5"><span class="gp">...</span>
+</span><span data-line="6"><span class="gt">Traceback (most recent call last):</span>
+</span><span data-line="7">  File <span class="nb">&quot;&lt;stdin&gt;&quot;</span>, line <span class="m">3</span>
+</span><span data-line="8"><span class="gr">IndentationError</span>: <span class="n">unexpected indent</span>
+</span></pre></div>
+</div>
+<p>如果你按下 Ctrl-E，就会进入粘贴模式，它实质上关闭了自动缩进功能，并将提示符从 <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> 变为 <code class="docutils literal notranslate"><span class="pre">===</span></code>。例如：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt;</span>
+</span><span data-line="2"><span class="go">paste mode; Ctrl-C to cancel, Ctrl-D to finish</span>
+</span><span data-line="3"><span class="go">=== def foo():</span>
+</span><span data-line="4"><span class="go">===     print(&#39;This is a test to show paste mode&#39;)</span>
+</span><span data-line="5"><span class="go">===     print(&#39;Here is a second line&#39;)</span>
+</span><span data-line="6"><span class="go">=== foo()</span>
+</span><span data-line="7"><span class="go">===</span>
+</span><span data-line="8"><span class="go">This is a test to show paste mode</span>
+</span><span data-line="9"><span class="go">Here is a second line</span>
+</span><span data-line="10"><span class="gp">&gt;&gt;&gt;</span>
+</span></pre></div>
+</div>
+<p>粘贴模式允许粘贴空行。粘贴的文本会像文件一样被编译。按 Ctrl-D 退出粘贴模式并开始编译。</p>
+</section>
+<section id="soft-reset">
+<span id="repl-soft-reset"></span><h2>软复位<a class="headerlink" href="#soft-reset" title="链接到此标题。">¶</a></h2>
+<p><a class="reference internal" href="reset_boot.html#soft-reset"><span class="std std-ref">软复位</span></a> 会重置 Python 解释器，但会尽量不重置你连接 OpenMV Cam 所用的方式（USB）。</p>
+<p>你可以在 REPL 中按 Ctrl-D 来执行软复位，或者在 Python 代码中执行如下语句：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">machine</span><span class="o">.</span><span class="n">soft_reset</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>例如，如果你复位 OpenMV Cam 并执行 dir() 命令，你会看到类似这样的内容：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">()</span>
+</span><span data-line="2"><span class="go">[&#39;__name__&#39;]</span>
+</span></pre></div>
+</div>
+<p>现在创建一些变量并重复执行 dir() 命令：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span>
+</span><span data-line="2"><span class="gp">&gt;&gt;&gt; </span><span class="n">j</span> <span class="o">=</span> <span class="mi">23</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="s1">&#39;abc&#39;</span>
+</span><span data-line="4"><span class="gp">&gt;&gt;&gt; </span><span class="nb">dir</span><span class="p">()</span>
+</span><span data-line="5"><span class="go">[&#39;j&#39;, &#39;x&#39;, &#39;__name__&#39;, &#39;i&#39;]</span>
+</span><span data-line="6"><span class="gp">&gt;&gt;&gt;</span>
+</span></pre></div>
+</div>
+<p>现在如果你按下 Ctrl-D，并重复执行 dir() 命令，你会看到你的变量已不再存在：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">MPY</span><span class="p">:</span> <span class="n">sync</span> <span class="n">filesystems</span>
+</span><span data-line="2"><span class="n">MPY</span><span class="p">:</span> <span class="n">soft</span> <span class="n">reboot</span>
+</span><span data-line="3"><span class="n">MicroPython</span> <span class="n">v1</span><span class="mf">.25.0</span> <span class="n">on</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">05</span><span class="o">-</span><span class="mi">15</span><span class="p">;</span> <span class="n">OpenMV</span> <span class="n">Cam</span> <span class="n">H7</span> <span class="k">with</span> <span class="n">STM32H743</span>
+</span><span data-line="4"><span class="n">Type</span> <span class="s2">&quot;help()&quot;</span> <span class="k">for</span> <span class="n">more</span> <span class="n">information</span><span class="o">.</span>
+</span><span data-line="5"><span class="o">&gt;&gt;&gt;</span> <span class="nb">dir</span><span class="p">()</span>
+</span><span data-line="6"><span class="p">[</span><span class="s1">&#39;__name__&#39;</span><span class="p">]</span>
+</span><span data-line="7"><span class="o">&gt;&gt;&gt;</span>
+</span></pre></div>
+</div>
+<p>有关复位类型和启动过程的更多信息，请参阅 <a class="reference internal" href="reset_boot.html"><span class="doc">复位与启动序列</span></a>。</p>
+</section>
+<section id="the-special-variable-underscore">
+<h2>特殊变量 _（下划线）<a class="headerlink" href="#the-special-variable-underscore" title="链接到此标题。">¶</a></h2>
+<p>当你使用 REPL 时，你可能会进行一些计算并查看结果。MicroPython 会把上一条语句的结果存储在变量 _（下划线）中。因此你可以使用下划线把结果保存到一个变量中。例如：</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">5</span>
+</span><span data-line="2"><span class="go">15</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="n">_</span>
+</span><span data-line="4"><span class="gp">&gt;&gt;&gt; </span><span class="n">x</span>
+</span><span data-line="5"><span class="go">15</span>
+</span><span data-line="6"><span class="gp">&gt;&gt;&gt;</span>
+</span></pre></div>
+</div>
+</section>
+<section id="raw-mode-and-raw-paste-mode">
+<span id="raw-repl"></span><h2>原始模式与原始粘贴模式<a class="headerlink" href="#raw-mode-and-raw-paste-mode" title="链接到此标题。">¶</a></h2>
+<p>原始模式（也称为 raw REPL）通常不是供人直接使用的。它面向程序化使用，本质上其行为类似于关闭了回显的粘贴模式，并带有可选的流控制。</p>
+<p>通过 Ctrl-A 进入原始模式。然后发送你的 Python 代码，接着发送 Ctrl-D。设备会以 'OK' 来确认 Ctrl-D，随后会编译并执行该 Python 代码。任何输出（或错误）都会被发回。按 Ctrl-B 将离开原始模式并返回常规（即友好）REPL。</p>
+<p>原始粘贴模式是 raw REPL 中的一种附加模式，它包含流控制，并且在接收代码的同时进行编译。这使得它在向设备高速传输代码时更为稳健，并且在接收时占用更少的 RAM，因为它无需在编译前存储一份代码的逐字副本（这与标准原始模式不同）。</p>
+<p>原始粘贴模式使用以下协议：</p>
+<ol class="arabic simple">
+<li><p>像往常一样通过 ctrl-A 进入 raw REPL。</p></li>
+<li><p>写入 3 个字节：<code class="docutils literal notranslate"><span class="pre">b&quot;\x05A\x01&quot;</span></code>（即 ctrl-E，然后是 &quot;A&quot;，再是 ctrl-A）。</p></li>
+<li><p>读取 2 个字节以确定设备是否进入了原始粘贴模式：</p>
+<ul class="simple">
+<li><p>如果结果是 <code class="docutils literal notranslate"><span class="pre">b&quot;R\x00&quot;</span></code>，则设备能理解该命令但不支持原始粘贴。</p></li>
+<li><p>如果结果是 <code class="docutils literal notranslate"><span class="pre">b&quot;R\x01&quot;</span></code>，则设备确实支持原始粘贴并已进入此模式。</p></li>
+<li><p>否则结果应为 <code class="docutils literal notranslate"><span class="pre">b&quot;ra&quot;</span></code>，表示设备不支持原始粘贴，此时应读取并丢弃字符串 <code class="docutils literal notranslate"><span class="pre">b&quot;w</span> <span class="pre">REPL;</span> <span class="pre">CTRL-B</span> <span class="pre">to</span> <span class="pre">exit\r\n&gt;&quot;</span></code>。</p></li>
+</ul>
+</li>
+<li><p>如果设备处于原始粘贴模式则继续，否则回退到标准原始模式。</p></li>
+<li><p>读取 2 个字节，这是流控制的窗口大小增量（以字节为单位），存储为 16 位无符号小端整数。剩余窗口大小变量的初始值应设为该数值。</p></li>
+<li><p>将代码写出到设备：</p>
+<ul class="simple">
+<li><p>只要还有字节要发送，就写入最多剩余窗口大小数量的字节，并将剩余窗口大小减去已写入的字节数。</p></li>
+<li><p>如果剩余窗口大小为 0，或者有一个字节等待读取，则读取 1 个字节。如果该字节是 <code class="docutils literal notranslate"><span class="pre">b&quot;\x01&quot;</span></code>，则将剩余窗口大小增加第 5 步中的窗口大小增量。如果该字节是 <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code>，则表示设备希望结束数据接收，此时应向设备写入 <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code>，之后不再发送任何代码。（注意：如果有一个字节等待从设备读取，无需立即读取并响应它，只要剩余窗口大小大于 0，设备就会持续消费传入的字节。）</p></li>
+</ul>
+</li>
+<li><p>当所有代码都已写出到设备后，写入 <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code> 以表示数据结束。</p></li>
+<li><p>从设备读取，直到收到 <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code>。此时设备已接收并编译了所发送的全部代码，并正在执行它。</p></li>
+<li><p>设备会输出执行代码所产生的任何字符。当（如果）代码执行完毕时，将输出 <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code>，随后是任何未捕获的异常，再之后又是 <code class="docutils literal notranslate"><span class="pre">b&quot;\x04&quot;</span></code>。然后它会返回标准 raw REPL 并输出 <code class="docutils literal notranslate"><span class="pre">b&quot;&gt;&quot;</span></code>。</p></li>
+</ol>
+<p>例如，在正常（友好）REPL 中从新的一行开始，如果你写入:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01\x05</span><span class="s2">A</span><span class="se">\x01</span><span class="s2">print(123)</span><span class="se">\x04</span><span class="s2">&quot;</span>
+</span></pre></div>
+</div>
+<p>那么设备将以类似如下的内容作出响应:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">raw REPL; CTRL-B to exit</span><span class="se">\r\n</span><span class="s2">&gt;R</span><span class="se">\x01\x80\x00\x01\x04</span><span class="s2">123</span><span class="se">\r\n\x04\x04</span><span class="s2">&gt;&quot;</span>
+</span></pre></div>
+</div>
+<p>按时间分解开来，看起来是这样的:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># Step 1: enter raw REPL</span>
+</span><span data-line="2"><span class="n">write</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x01</span><span class="s2">&quot;</span>
+</span><span data-line="3"><span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\r\n</span><span class="s2">raw REPL; CTRL-B to exit</span><span class="se">\r\n</span><span class="s2">&gt;&quot;</span>
+</span><span data-line="4">
+</span><span data-line="5"><span class="c1"># Step 2-5: enter raw-paste mode</span>
+</span><span data-line="6"><span class="n">write</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x05</span><span class="s2">A</span><span class="se">\x01</span><span class="s2">&quot;</span>
+</span><span data-line="7"><span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;R</span><span class="se">\x01\x80\x00\x01</span><span class="s2">&quot;</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="c1"># Step 6-8: write out code</span>
+</span><span data-line="10"><span class="n">write</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;print(123)</span><span class="se">\x04</span><span class="s2">&quot;</span>
+</span><span data-line="11"><span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x04</span><span class="s2">&quot;</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="c1"># Step 9: code executes and result is read</span>
+</span><span data-line="14"><span class="n">read</span><span class="p">:</span> <span class="sa">b</span><span class="s2">&quot;123</span><span class="se">\r\n\x04\x04</span><span class="s2">&gt;&quot;</span>
+</span></pre></div>
+</div>
+<p>在此例中，流控制的窗口大小增量为 128，且在开始时立即有两个窗口大小的数据可用，一个来自初始的窗口大小增量值，另一个来自发送的显式 <code class="docutils literal notranslate"><span class="pre">b&quot;\x01&quot;</span></code> 值。因此这意味着一开始最多可写入 256 个字节，然后再等待或检查更多传入的流控制字符。</p>
+<p><a class="reference internal" href="mpremote.html#mpremote"><span class="std std-ref">MicroPython 远程控制：mpremote</span></a> 工具使用 raw REPL（包括原始粘贴模式）在 OpenMV Cam 上执行 Python 代码。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>返回顶部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="glossary.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一页</span><div class="title">术语表</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="reset_boot.html">
+      <div class="page-info">
+        <span>下一页</span>
+        <div class="title">复位与启动序列</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    适用于 OpenMV 固件 v5.0.0 &middot; 基于 MicroPython v1.28 &middot; 文档构建于 2026年6月19日 &middot; 版权 &copy; 2014-2026 OpenMV、Damien P. George 及其他贡献者。
+  </p>
+  <p>
+    
+    使用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 和 <a href="https://shibuya.lepture.com">Shibuya theme</a> 主题构建。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=6c58574e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=540d3cec"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

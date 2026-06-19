@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>11.12. 同時に複数のロールと複数の接続を扱う - OpenMV MicroPython 1.28 ドキュメント</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="検索" href="../../../../search.html" /><link rel="next" title="11.13. ペアリングとボンディング" href="../security/pairing-and-bonding.html" /><link rel="prev" title="11.11. L2CAP チャネル" href="l2cap.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/bluetooth/aioble/concurrency.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/bluetooth/aioble/concurrency.html"/>
+  <meta property="og:title" content="11.12. 同時に複数のロールと複数の接続を扱う"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/bluetooth/aioble/concurrency.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">ホーム</a></li><li class="link"><a href="../../index.html">チュートリアル</a></li><li class="link"><a href="../../../../library/index.html">コアライブラリ</a></li><li class="link"><a href="../../../quickref.html">ボード</a></li><li class="link"><a href="../../../shields.html">シールド</a></li><li class="link"><a href="../../../sensors.html">センサー</a></li><li class="link"><a href="../../../../reference/index.html">言語</a></li><li class="link"><a href="../../../../develop/index.html">内部構造</a></li><li class="link"><a href="../../../../changelog/index.html">変更履歴</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="検索" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="バージョン">
+      <span class="md:hidden">バージョン</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻訳</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/bluetooth/aioble/concurrency.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/bluetooth/aioble/concurrency.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/bluetooth/aioble/concurrency.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/bluetooth/aioble/concurrency.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/bluetooth/aioble/concurrency.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/bluetooth/aioble/concurrency.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/bluetooth/aioble/concurrency.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/bluetooth/aioble/concurrency.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/bluetooth/aioble/concurrency.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="ライトカラーモードに切り替え"
+data-aria-light="ダークカラーモードに切り替え"
+data-aria-dark="自動カラーモードに切り替え">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">ディスカッション</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#12481;&#12517;&#12540;&#12488;&#12522;&#12450;&#12523;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#12463;&#12452;&#12483;&#12463;&#12473;&#12479;&#12540;&#12488;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python&#27010;&#35201;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#12495;&#12540;&#12489;&#12454;&#12455;&#12450;&#21046;&#24481;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#12499;&#12472;&#12519;&#12531;&#12475;&#12531;&#12469;&#12540;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#30011;&#20687;&#20966;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#26800;&#23398;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#12493;&#12483;&#12488;&#12527;&#12540;&#12461;&#12531;&#12464;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web&#12469;&#12540;&#12496;&#12540;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">11. Bluetooth</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-bluetooth.html">11.1. &#12394;&#12380;Bluetooth&#12394;&#12398;&#12363;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-model.html">11.2. BLE &#12473;&#12479;&#12483;&#12463;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../radio/physical-and-link.html">11.3. &#28961;&#32218;&#12392;&#12522;&#12531;&#12463;&#23652;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gap/advertising-and-scanning.html">11.4. &#12450;&#12489;&#12496;&#12479;&#12452;&#12472;&#12531;&#12464;&#12392;&#12473;&#12461;&#12515;&#12531;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gap/connections.html">11.5. &#25509;&#32154;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gatt/services-and-characteristics.html">11.6. &#12469;&#12540;&#12499;&#12473;&#12392;&#12461;&#12515;&#12521;&#12463;&#12479;&#12522;&#12473;&#12486;&#12451;&#12483;&#12463;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gatt/operations.html">11.7. GATT&#25805;&#20316;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="overview.html">11.8. aioble &#12514;&#12472;&#12517;&#12540;&#12523;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="peripheral.html">11.9. &#12506;&#12522;&#12501;&#12455;&#12521;&#12523;&#12392;&#12375;&#12390;&#21205;&#20316;&#12377;&#12427;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="central.html">11.10. &#12475;&#12531;&#12488;&#12521;&#12523;&#12392;&#12375;&#12390;&#21205;&#20316;&#12377;&#12427;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="l2cap.html">11.11. L2CAP &#12481;&#12515;&#12493;&#12523;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">11.12. &#21516;&#26178;&#12395;&#35079;&#25968;&#12398;&#12525;&#12540;&#12523;&#12392;&#35079;&#25968;&#12398;&#25509;&#32154;&#12434;&#25201;&#12358;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../security/pairing-and-bonding.html">11.13. &#12506;&#12450;&#12522;&#12531;&#12464;&#12392;&#12508;&#12531;&#12487;&#12451;&#12531;&#12464;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">11.14. &#12414;&#12392;&#12417;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#12507;&#12473;&#12488;&#12503;&#12525;&#12488;&#12467;&#12523;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#12484;&#12540;&#12523;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29987;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#12521;&#12452;&#12502;&#12521;&#12522;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#12508;&#12540;&#12489;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#12471;&#12540;&#12523;&#12489;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#12475;&#12531;&#12469;&#12540;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35328;&#35486;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20869;&#37096;&#23455;&#35013;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#22793;&#26356;&#23653;&#27508;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#12521;&#12452;&#12475;&#12531;&#12473;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>このページの内容</h3><ul>
+<li><a class="reference internal" href="#multiple-clients-connecting-to-one-peripheral">11.12.1. 1&#12388;&#12398;&#12506;&#12522;&#12501;&#12455;&#12521;&#12523;&#12395;&#35079;&#25968;&#12398;&#12463;&#12521;&#12452;&#12450;&#12531;&#12488;&#12364;&#25509;&#32154;&#12377;&#12427;</a></li>
+<li><a class="reference internal" href="#peripheral-and-central-at-the-same-time">11.12.2. &#12506;&#12522;&#12501;&#12455;&#12521;&#12523;&#12392;&#12475;&#12531;&#12488;&#12521;&#12523;&#12434;&#21516;&#26178;&#12395;&#25201;&#12358;</a></li>
+<li><a class="reference internal" href="#coordinating-multiple-connections-from-one-task">11.12.3. 1&#12388;&#12398;&#12479;&#12473;&#12463;&#12363;&#12425;&#35079;&#25968;&#12398;&#25509;&#32154;&#12434;&#35519;&#25972;&#12377;&#12427;</a></li>
+<li><a class="reference internal" href="#when-one-role-finishes-per-cycle-and-the-other-does-not">11.12.4. &#19968;&#26041;&#12398;&#12525;&#12540;&#12523;&#12364;&#12469;&#12452;&#12463;&#12523;&#12372;&#12392;&#12395;&#23436;&#20102;&#12375;&#12289;&#12418;&#12358;&#19968;&#26041;&#12399;&#23436;&#20102;&#12375;&#12394;&#12356;&#22580;&#21512;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/bluetooth/aioble/concurrency.rst">このページを編集</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam チュートリアル</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">11. </span>Bluetooth</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">11.12. </span>同時に複数のロールと複数の接続を扱う</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/bluetooth/aioble/concurrency.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>ページをコピー</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="その他の操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/bluetooth/aioble/concurrency.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>ページをコピー</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/bluetooth/aioble/concurrency.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>ソースを表示</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/bluetooth/aioble/concurrency.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT で開く</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/bluetooth/aioble/concurrency.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude で開く</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/bluetooth/aioble/concurrency.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity で開く</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="concurrent-roles-and-multiple-connections">
+<h1><span class="section-number">11.12. </span>同時に複数のロールと複数の接続を扱う<a class="headerlink" href="#concurrent-roles-and-multiple-connections" title="Link to this heading">¶</a></h1>
+<p>ペリフェラルとセントラルのページでは、いずれも単一のロールが一度に単一の接続を処理する様子を示しています。しかし実際のアプリケーションがそこまで単純であることはまれです。カメラが電話機にセンサーサービスを公開する<em>と同時に</em>、心拍数センサーストラップから値を読み取ったり、同時にペアリングされた2台の電話機からの接続を受け入れたりすることもあります。<a class="reference internal" href="../../../../library/aioble.html#module-aioble" title="aioble: Async BLE library"><code class="xref py py-mod docutils literal notranslate"><span class="pre">aioble</span></code></a> API はこのどちらのパターンもサポートします。無線が内部で多重化を行い、すべての操作がすでにコルーチンになっているためです。コルーチンを増やせば、その作業は1つのイベントループ上で並行して実行されます。</p>
+<p>このページでは、よく登場するパターンをまとめます。</p>
+<section id="multiple-clients-connecting-to-one-peripheral">
+<h2><span class="section-number">11.12.1. </span>1つのペリフェラルに複数のクライアントが接続する<a class="headerlink" href="#multiple-clients-connecting-to-one-peripheral" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="peripheral.html"><span class="doc">ペリフェラルとして動作する</span></a> のシンプルなペリフェラルループは、一度に1つの接続済みセントラルを処理します。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">serve</span><span class="p">():</span>
+</span><span data-line="2">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="3">        <span class="n">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioble</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</span><span data-line="4">        <span class="k">async</span> <span class="k">with</span> <span class="n">connection</span><span class="p">:</span>
+</span><span data-line="5">            <span class="k">await</span> <span class="n">connection</span><span class="o">.</span><span class="n">disconnected</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p><em>複数の</em>クライアントを受け入れられるようにするパターンは、接続ごとのタスクを起動し、すぐに <a class="reference internal" href="../../../../library/aioble.html#aioble.advertise" title="aioble.advertise"><code class="xref py py-func docutils literal notranslate"><span class="pre">aioble.advertise()</span></code></a> へとループバックして次のクライアントも接続できるようにすることです:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle_client</span><span class="p">(</span><span class="n">connection</span><span class="p">):</span>
+</span><span data-line="2">    <span class="k">async</span> <span class="k">with</span> <span class="n">connection</span><span class="p">:</span>
+</span><span data-line="3">        <span class="c1"># ... per-client work: subscribe their CCCDs,</span>
+</span><span data-line="4">        <span class="c1"># push notifications, await writes ...</span>
+</span><span data-line="5">        <span class="k">await</span> <span class="n">connection</span><span class="o">.</span><span class="n">disconnected</span><span class="p">()</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">serve</span><span class="p">():</span>
+</span><span data-line="8">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="9">        <span class="n">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioble</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span>
+</span><span data-line="10">            <span class="n">interval_us</span><span class="o">=</span><span class="mi">250000</span><span class="p">,</span>
+</span><span data-line="11">            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;openmv-env&quot;</span><span class="p">,</span>
+</span><span data-line="12">            <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">ENV_SERVICE</span><span class="p">],</span>
+</span><span data-line="13">        <span class="p">)</span>
+</span><span data-line="14">        <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">handle_client</span><span class="p">(</span><span class="n">connection</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>各接続は専用のタスク内で実行されます。GATT データベースは共有され、すべてのクライアントが同じサービスとキャラクタリスティックを参照しますが、接続ごとの状態はそのタスク内に存在します。<a class="reference internal" href="../../../../library/aioble.html#aioble.Characteristic.write" title="aioble.Characteristic.write"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write()</span></code></a> を <code class="docutils literal notranslate"><span class="pre">send_update=True</span></code> 付きで呼び出すと、通知は<em>すべての</em>サブスクライブ済みクライアントに送られます。1つのクライアントにのみ届くべき指向プッシュには、特定の <a class="reference internal" href="../../../../library/aioble.html#aioble.DeviceConnection" title="aioble.DeviceConnection"><code class="xref py py-class docutils literal notranslate"><span class="pre">DeviceConnection</span></code></a> 引数を指定して <a class="reference internal" href="../../../../library/aioble.html#aioble.Characteristic.notify" title="aioble.Characteristic.notify"><code class="xref py py-meth docutils literal notranslate"><span class="pre">notify()</span></code></a> / <a class="reference internal" href="../../../../library/aioble.html#aioble.Characteristic.indicate" title="aioble.Characteristic.indicate"><code class="xref py py-meth docutils literal notranslate"><span class="pre">indicate()</span></code></a> を使用します。</p>
+<p>ファンアウトは小さく保ってください。保持している各接続は無線時間、RAM、そしてコントローラの接続テーブルのスロットを消費します。カメラは数十ものクライアントを束ねるハブとして設計されているわけではありません。2、3台のセントラル（電話機、タブレット、コンパニオンマイクロコントローラ）であれば十分に対応できますが、それ以上を必要とする設計は、カメラ上ではなく専用の BLE ゲートウェイに任せるべきです。</p>
+</section>
+<section id="peripheral-and-central-at-the-same-time">
+<h2><span class="section-number">11.12.2. </span>ペリフェラルとセントラルを同時に扱う<a class="headerlink" href="#peripheral-and-central-at-the-same-time" title="Link to this heading">¶</a></h2>
+<p>カメラは、ウェアラブルデバイスに対してセントラルとして振る舞いながら、<em>同時に</em>自身のサービスを電話機にアドバタイズすることができます。<a class="reference internal" href="../../../../library/aioble.html#module-aioble" title="aioble: Async BLE library"><code class="xref py py-mod docutils literal notranslate"><span class="pre">aioble</span></code></a> には「モード」の切り替えはありません。アドバタイズループとスキャン・接続ループは、単に独立したコルーチンにすぎません:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">be_peripheral</span><span class="p">():</span>
+</span><span data-line="2">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="3">        <span class="n">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioble</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span>
+</span><span data-line="4">            <span class="n">interval_us</span><span class="o">=</span><span class="mi">250000</span><span class="p">,</span>
+</span><span data-line="5">            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;openmv-hub&quot;</span><span class="p">,</span>
+</span><span data-line="6">            <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">ENV_SERVICE</span><span class="p">],</span>
+</span><span data-line="7">        <span class="p">)</span>
+</span><span data-line="8">        <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">handle_client</span><span class="p">(</span><span class="n">connection</span><span class="p">))</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">be_central</span><span class="p">():</span>
+</span><span data-line="11">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="12">        <span class="n">sensor</span> <span class="o">=</span> <span class="k">await</span> <span class="n">find_sensor</span><span class="p">()</span>
+</span><span data-line="13">        <span class="k">if</span> <span class="n">sensor</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="14">            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span data-line="15">            <span class="k">continue</span>
+</span><span data-line="16">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="17">            <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">sensor</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+</span><span data-line="18">                <span class="k">await</span> <span class="n">stream_from_sensor</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</span><span data-line="19">        <span class="k">except</span> <span class="n">aioble</span><span class="o">.</span><span class="n">DeviceDisconnectedError</span><span class="p">:</span>
+</span><span data-line="20">            <span class="k">pass</span>
+</span><span data-line="21">
+</span><span data-line="22"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="23">    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">be_peripheral</span><span class="p">(),</span> <span class="n">be_central</span><span class="p">())</span>
+</span><span data-line="24">
+</span><span data-line="25"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>無線は2つのロール間で時間を分割します。ここでスキャンウィンドウ、あちらでアドバタイズのバースト、そしてどちらかの側の接続が有効になったときには接続イベント、という具合です。無線は文字通り同時に2つのことを行えないため、両方が有効なときには各ロールのスループットは低下します。しかし BLE が想定して設計された低帯域幅のやり取りであれば、そのコストは通常目に見えないほどです。</p>
+<p>心に留めておくべき実用的な点が2つあります。</p>
+<ul class="simple">
+<li><p><strong>両方のロールはそれぞれ専用のコルーチン内に置く必要があります。</strong> 接続済みセントラルを処理する接続ごとのタスクの内部から <a class="reference internal" href="../../../../library/aioble.html#aioble.scan" title="aioble.scan"><code class="xref py py-func docutils literal notranslate"><span class="pre">aioble.scan()</span></code></a> を呼び出すこと自体は機能しますが、スキャンが終わるまでそのクライアントの通知をブロックしてしまいます。代わりにスキャンは専用のタスクで実行してください。</p></li>
+<li><p><strong>スキャンは一度に1つしか実行できません。</strong> 2つの異なる場所からスキャンする必要がある場合は、スキャンイテレータを共有するか、アクセスを調整してください。2つの <a class="reference internal" href="../../../../library/aioble.html#aioble.scan" title="aioble.scan"><code class="xref py py-func docutils literal notranslate"><span class="pre">aioble.scan()</span></code></a> コンテキストマネージャを並行して開始してはいけません。</p></li>
+</ul>
+</section>
+<section id="coordinating-multiple-connections-from-one-task">
+<h2><span class="section-number">11.12.3. </span>1つのタスクから複数の接続を調整する<a class="headerlink" href="#coordinating-multiple-connections-from-one-task" title="Link to this heading">¶</a></h2>
+<p>複数の接続を1つの論理的な操作にまとめる必要がある場合、たとえばカメラが同時に2つのセンサーと通信し、両方が応答した後にのみ結果を報告するような場合には、標準の <a class="reference internal" href="../../../../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> プリミティブをそのまま適用できます。<a class="reference internal" href="../../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.gather()</span></code></a> は接続ごとのコルーチンを並行して実行し、すべてが完了した時点で返ります。<a class="reference internal" href="../../../../library/asyncio.html#asyncio.wait_for" title="asyncio.wait_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.wait_for()</span></code></a> は期限を追加します。</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_pair</span><span class="p">():</span>
+</span><span data-line="2">    <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">sensor_a</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">a</span><span class="p">:</span>
+</span><span data-line="3">        <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">sensor_b</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">b</span><span class="p">:</span>
+</span><span data-line="4">            <span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+</span><span data-line="5">                <span class="n">read_value</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">A_SERVICE</span><span class="p">,</span> <span class="n">A_CHAR</span><span class="p">),</span>
+</span><span data-line="6">                <span class="n">read_value</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">B_SERVICE</span><span class="p">,</span> <span class="n">B_CHAR</span><span class="p">),</span>
+</span><span data-line="7">            <span class="p">)</span>
+</span><span data-line="8">            <span class="k">return</span> <span class="n">value_a</span><span class="p">,</span> <span class="n">value_b</span>
+</span></pre></div>
+</div>
+<p>asyncio の章（<a class="reference internal" href="../../asyncio/index.html"><span class="doc">Asyncio</span></a>）がネットワーク処理に用いるのと同じパターンです。BLE コルーチンは、TCP のコルーチンとまったく同じように <code class="docutils literal notranslate"><span class="pre">gather</span></code> / <code class="docutils literal notranslate"><span class="pre">wait_for</span></code> / <code class="docutils literal notranslate"><span class="pre">Event</span></code> / <code class="docutils literal notranslate"><span class="pre">Lock</span></code> に組み込めます。</p>
+</section>
+<section id="when-one-role-finishes-per-cycle-and-the-other-does-not">
+<h2><span class="section-number">11.12.4. </span>一方のロールがサイクルごとに完了し、もう一方は完了しない場合<a class="headerlink" href="#when-one-role-finishes-per-cycle-and-the-other-does-not" title="Link to this heading">¶</a></h2>
+<p>バッテリー駆動のカメラのサイクルは、次のような形になるかもしれません。</p>
+<ul class="simple">
+<li><p>起動する。</p></li>
+<li><p>セントラルとして、ペアリング済みのセンサーストラップから最新の値を読み取る。</p></li>
+<li><p>ペリフェラルとして、電話機がその日の計測値をダウンロードできるようアドバタイズする。</p></li>
+<li><p>両方がアイドル状態になったら、<a class="reference internal" href="../../../../library/aioble.html#aioble.stop" title="aioble.stop"><code class="xref py py-func docutils literal notranslate"><span class="pre">aioble.stop()</span></code></a> を呼び出してスリープする。</p></li>
+</ul>
+<p>この順序づけは、2つのタスクと1つの <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Event" title="asyncio.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">asyncio.Event</span></code></a> を使えば簡単です:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">phone_done</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">serve_phone</span><span class="p">():</span>
+</span><span data-line="4">    <span class="n">connection</span> <span class="o">=</span> <span class="k">await</span> <span class="n">aioble</span><span class="o">.</span><span class="n">advertise</span><span class="p">(</span>
+</span><span data-line="5">        <span class="n">interval_us</span><span class="o">=</span><span class="mi">250000</span><span class="p">,</span>
+</span><span data-line="6">        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;openmv-hub&quot;</span><span class="p">,</span>
+</span><span data-line="7">        <span class="n">services</span><span class="o">=</span><span class="p">[</span><span class="n">ENV_SERVICE</span><span class="p">],</span>
+</span><span data-line="8">    <span class="p">)</span>
+</span><span data-line="9">    <span class="k">async</span> <span class="k">with</span> <span class="n">connection</span><span class="p">:</span>
+</span><span data-line="10">        <span class="k">await</span> <span class="n">stream_measurements</span><span class="p">(</span><span class="n">connection</span><span class="p">)</span>
+</span><span data-line="11">    <span class="n">phone_done</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_strap</span><span class="p">():</span>
+</span><span data-line="14">    <span class="k">async</span> <span class="k">with</span> <span class="k">await</span> <span class="n">strap</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+</span><span data-line="15">        <span class="k">await</span> <span class="n">pull_fresh_values</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">cycle</span><span class="p">():</span>
+</span><span data-line="18">    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">read_strap</span><span class="p">(),</span> <span class="n">serve_phone</span><span class="p">())</span>
+</span><span data-line="19">    <span class="n">aioble</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>                              <span class="c1"># radio off until next wake</span>
+</span></pre></div>
+</div>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>先頭に戻る</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="l2cap.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>前へ</span><div class="title"><span class="section-number">11.11. </span>L2CAP チャネル</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../security/pairing-and-bonding.html">
+      <div class="page-info">
+        <span>次へ</span>
+        <div class="title"><span class="section-number">11.13. </span>ペアリングとボンディング</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    OpenMV ファームウェア v5.0.0 向け &middot; MicroPython v1.28 ベース &middot; ドキュメント生成日 2026年6月19日 &middot; 著作権 &copy; 2014-2026 OpenMV、Damien P. George およびその他。
+  </p>
+  <p>
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> と <a href="https://shibuya.lepture.com">Shibuya theme</a> を使用して作成されました。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=a90b5739"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=4755f45a"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>MicroPython 外部 C 模块 - OpenMV MicroPython 1.28 文档</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="索引" href="../genindex.html" /><link rel="search" title="搜索" href="../search.html" /><link rel="next" title=".mpy 文件中的原生机器码" href="natmod.html" /><link rel="prev" title="用 C 扩展 MicroPython" href="extendingmicropython.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/develop/cmodules.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/develop/cmodules.html"/>
+  <meta property="og:title" content="MicroPython 外部 C 模块"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/develop/cmodules.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/develop/cmodules.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/develop/cmodules.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/develop/cmodules.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/develop/cmodules.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/develop/cmodules.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/develop/cmodules.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/develop/cmodules.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/develop/cmodules.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/develop/cmodules.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/develop/cmodules.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/develop/cmodules.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/develop/cmodules.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/develop/cmodules.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/develop/cmodules.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/develop/cmodules.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/develop/cmodules.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/develop/cmodules.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/develop/cmodules.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/develop/cmodules.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/develop/cmodules.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/develop/cmodules.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/develop/cmodules.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/develop/cmodules.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/develop/cmodules.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/develop/cmodules.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/develop/cmodules.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">首页</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">教程</a></li><li class="link"><a href="../library/index.html">核心库</a></li><li class="link"><a href="../openmvcam/quickref.html">开发板</a></li><li class="link"><a href="../openmvcam/shields.html">扩展板</a></li><li class="link"><a href="../openmvcam/sensors.html">传感器</a></li><li class="link"><a href="../reference/index.html">语言</a></li><li class="link"><a href="index.html">内部结构</a></li><li class="link"><a href="../changelog/index.html">更新日志</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="搜索" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="版本">
+      <span class="md:hidden">版本</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻译</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/develop/cmodules.html">English</a></li><li><a href="/dev/ar/develop/cmodules.html">العربية</a></li><li><a href="/dev/zh_CN/develop/cmodules.html">简体中文</a></li><li><a href="/dev/zh_TW/develop/cmodules.html">繁體中文</a></li><li><a href="/dev/hr/develop/cmodules.html">Hrvatski</a></li><li><a href="/dev/cs/develop/cmodules.html">Čeština</a></li><li><a href="/dev/nl/develop/cmodules.html">Nederlands</a></li><li><a href="/dev/fi/develop/cmodules.html">Suomi</a></li><li><a href="/dev/fr/develop/cmodules.html">Français</a></li><li><a href="/dev/de/develop/cmodules.html">Deutsch</a></li><li><a href="/dev/he/develop/cmodules.html">עברית</a></li><li><a href="/dev/hu/develop/cmodules.html">Magyar</a></li><li><a href="/dev/id/develop/cmodules.html">Bahasa Indonesia</a></li><li><a href="/dev/it/develop/cmodules.html">Italiano</a></li><li><a href="/dev/ja/develop/cmodules.html">日本語</a></li><li><a href="/dev/ko/develop/cmodules.html">한국어</a></li><li><a href="/dev/pl/develop/cmodules.html">Polski</a></li><li><a href="/dev/pt_BR/develop/cmodules.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/develop/cmodules.html">Português (Portugal)</a></li><li><a href="/dev/ro/develop/cmodules.html">Română</a></li><li><a href="/dev/ru/develop/cmodules.html">Русский</a></li><li><a href="/dev/es/develop/cmodules.html">Español</a></li><li><a href="/dev/sv/develop/cmodules.html">Svenska</a></li><li><a href="/dev/th/develop/cmodules.html">ไทย</a></li><li><a href="/dev/tr/develop/cmodules.html">Türkçe</a></li><li><a href="/dev/uk/develop/cmodules.html">Українська</a></li><li><a href="/dev/vi/develop/cmodules.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切换到浅色模式"
+data-aria-light="切换到深色模式"
+data-aria-dark="切换到自动颜色模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">讨论</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">&#25945;&#31243;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../library/index.html">&#24211;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">&#24320;&#21457;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">&#25193;&#23637;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../reference/index.html">&#35821;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">&#20869;&#37096;&#23454;&#29616;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="gettingstarted.html">&#20837;&#38376;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="writingtests.html">&#32534;&#20889;&#27979;&#35797;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="compiler.html">&#32534;&#35793;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="memorymgt.html">&#20869;&#23384;&#31649;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="library.html">&#23454;&#29616;&#19968;&#20010;&#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="optimizations.html">&#20248;&#21270;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="qstr.html">MicroPython &#23383;&#31526;&#20018;&#39547;&#30041;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="maps.html">&#26144;&#23556;&#19982;&#23383;&#20856;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="publiccapi.html">&#20844;&#20849; C API</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="extendingmicropython.html">&#29992; C &#25193;&#23637; MicroPython</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">MicroPython &#22806;&#37096; C &#27169;&#22359;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="natmod.html">.mpy &#25991;&#20214;&#20013;&#30340;&#21407;&#29983;&#26426;&#22120;&#30721;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="porting.html">&#31227;&#26893; MicroPython</a></li>
+<li class="toctree-l2"><a class="reference internal" href="support_tiers.html">MicroPython &#25903;&#25345;&#23618;&#32423;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">&#26356;&#26032;&#26085;&#24535;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">&#35768;&#21487;&#35777;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>本页内容</h3><ul>
+<li><a class="reference internal" href="#structure-of-an-external-c-module">&#22806;&#37096; C &#27169;&#22359;&#30340;&#32467;&#26500;</a></li>
+<li><a class="reference internal" href="#basic-example">&#22522;&#26412;&#31034;&#20363;</a></li>
+<li><a class="reference internal" href="#compiling-the-cmodule-into-micropython">&#23558; cmodule &#32534;&#35793;&#36827; MicroPython</a></li>
+<li><a class="reference internal" href="#module-usage-in-micropython">&#22312; MicroPython &#20013;&#20351;&#29992;&#27169;&#22359;</a></li>
+<li><a class="reference internal" href="#c-dynamic-memory-allocation">C &#21160;&#24577;&#20869;&#23384;&#20998;&#37197;</a><ul>
+<li><a class="reference internal" href="#python-heap-as-c-heap">&#23558; Python &#22534;&#29992;&#20316; C &#22534;</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#c-modules">C++ &#27169;&#22359;</a><ul>
+<li><a class="reference internal" href="#id1">C++ &#21160;&#24577;&#20869;&#23384;&#20998;&#37197;</a></li>
+<li><a class="reference internal" href="#linkage-considerations">&#38142;&#25509;&#30456;&#20851;&#27880;&#24847;&#20107;&#39033;</a></li>
+</ul>
+</li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/develop/cmodules.rst">编辑此页</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython 内部原理</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="extendingmicropython.html"><span itemprop="name">用 C 扩展 MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">MicroPython 外部 C 模块</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/develop/cmodules.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>复制页面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/develop/cmodules.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>复制页面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/develop/cmodules.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>查看源码</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/develop/cmodules.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中打开</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/develop/cmodules.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中打开</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/develop/cmodules.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中打开</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="micropython-external-c-modules">
+<span id="cmodules"></span><h1>MicroPython 外部 C 模块<a class="headerlink" href="#micropython-external-c-modules" title="链接到此标题。">¶</a></h1>
+<p>在为 MicroPython 开发模块时，你可能会发现自己受到 Python 环境的限制，这通常是由于无法访问某些硬件资源或受到 Python 速度的限制。</p>
+<p>如果你的限制无法通过 <a class="reference internal" href="../reference/speed_python.html#speed-python"><span class="std std-ref">最大化 MicroPython 运行速度</span></a> 中的建议解决，那么用 C（和/或 <a class="reference internal" href="#cxx-support"><span class="std std-ref">如果你的移植版本实现了 C++</span></a>）编写部分或全部模块是一个可行的选择。</p>
+<p>如果你的模块旨在访问或配合常见硬件或库使用，请考虑在 MicroPython 源代码树中与类似模块一起实现，并以拉取请求（pull request）的形式提交。但如果你针对的是冷门或专有系统，那么将其保留在主 MicroPython 仓库之外可能更合理。</p>
+<p>本章介绍如何将这类外部模块编译进 MicroPython 可执行文件或固件镜像中。Make 和 CMake 两种构建工具都受支持，在编写外部模块时，最好同时为这两种工具添加构建文件，以便该模块可以在所有移植版本上使用。但在编译某个特定移植版本时，你只需使用其中一种构建方式，Make 或 CMake 均可。</p>
+<p>另一种方法是使用 <a class="reference internal" href="natmod.html#natmod"><span class="std std-ref">.mpy 文件中的原生机器码</span></a>，它允许编写自定义 C 代码并放入 .mpy 文件中，该文件可以动态导入到正在运行的 MicroPython 系统中，而无需重新编译主固件。</p>
+<section id="structure-of-an-external-c-module">
+<h2>外部 C 模块的结构<a class="headerlink" href="#structure-of-an-external-c-module" title="链接到此标题。">¶</a></h2>
+<p>一个 MicroPython 用户 C 模块是一个包含以下文件的目录：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">*.c</span></code> / <code class="docutils literal notranslate"><span class="pre">*.cpp</span></code> / <code class="docutils literal notranslate"><span class="pre">*.h</span></code> 模块的源代码文件。</p>
+<p>这些文件通常包含正在实现的底层功能，以及用于暴露这些函数和模块的 MicroPython 绑定函数。</p>
+<p>目前，编写这些函数/模块的最佳参考方式是在 MicroPython 源码树中找到类似的模块，并以它们作为示例。</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> 包含本模块的 Makefile 片段。</p>
+<p><code class="docutils literal notranslate"><span class="pre">$(USERMOD_DIR)</span></code> 在 <code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> 中可用，表示你的模块目录路径。由于它会为每个 C 模块重新定义，因此应在你的 <code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> 中将其展开为一个局部 make 变量，例如 <code class="docutils literal notranslate"><span class="pre">EXAMPLE_MOD_DIR</span> <span class="pre">:=</span> <span class="pre">$(USERMOD_DIR)</span></code></p>
+<p>你的 <code class="docutils literal notranslate"><span class="pre">micropython.mk</span></code> 必须将模块的源文件添加到 <code class="docutils literal notranslate"><span class="pre">SRC_USERMOD_C</span></code> 或 <code class="docutils literal notranslate"><span class="pre">SRC_USERMOD_LIB_C</span></code> 变量中。前者会被处理以查找 <code class="docutils literal notranslate"><span class="pre">MP_QSTR_</span></code> 和 <code class="docutils literal notranslate"><span class="pre">MP_REGISTER_MODULE</span></code> 定义，后者则不会（例如非 MicroPython 专用的辅助代码和库代码）。这些路径应包含你展开后的 <code class="docutils literal notranslate"><span class="pre">$(USERMOD_DIR)</span></code> 副本，例如:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">SRC_USERMOD_C += $(EXAMPLE_MOD_DIR)/modexample.c
+</span><span data-line="2">SRC_USERMOD_LIB_C += $(EXAMPLE_MOD_DIR)/utils/algorithm.c
+</span></pre></div>
+</div>
+<p>类似地，对于 C++ 源文件，使用 <code class="docutils literal notranslate"><span class="pre">SRC_USERMOD_CXX</span></code> 和 <code class="docutils literal notranslate"><span class="pre">SRC_USERMOD_LIB_CXX</span></code>。如果要包含汇编文件，请使用 <code class="docutils literal notranslate"><span class="pre">SRC_USERMOD_LIB_ASM</span></code>。</p>
+<p>如果你有自定义的编译器选项（例如用 <code class="docutils literal notranslate"><span class="pre">-I</span></code> 添加搜索头文件的目录），对于 C 代码应将它们添加到 <code class="docutils literal notranslate"><span class="pre">CFLAGS_USERMOD</span></code>，对于 C++ 代码则添加到 <code class="docutils literal notranslate"><span class="pre">CXXFLAGS_USERMOD</span></code>。</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">micropython.cmake</span></code> 包含本模块的 CMake 配置。</p>
+<p>在 <code class="docutils literal notranslate"><span class="pre">micropython.cmake</span></code> 中，你可以使用 <code class="docutils literal notranslate"><span class="pre">${CMAKE_CURRENT_LIST_DIR}</span></code> 作为当前模块的路径。</p>
+<p>你的 <code class="docutils literal notranslate"><span class="pre">micropython.cmake</span></code> 应定义一个 <code class="docutils literal notranslate"><span class="pre">INTERFACE</span></code> 库，并将你的源文件、编译定义和包含目录与其关联。然后应将该库链接到 <code class="docutils literal notranslate"><span class="pre">usermod</span></code> 目标。</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">add_library</span><span class="p">(</span><span class="s">usermod_cexample</span><span class="w"> </span><span class="s">INTERFACE</span><span class="p">)</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="nb">target_sources</span><span class="p">(</span><span class="s">usermod_cexample</span><span class="w"> </span><span class="s">INTERFACE</span>
+</span><span data-line="4"><span class="w">    </span><span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/examplemodule.c</span>
+</span><span data-line="5"><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="nb">target_include_directories</span><span class="p">(</span><span class="s">usermod_cexample</span><span class="w"> </span><span class="s">INTERFACE</span>
+</span><span data-line="8"><span class="w">    </span><span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span>
+</span><span data-line="9"><span class="p">)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">usermod</span><span class="w"> </span><span class="s">INTERFACE</span><span class="w"> </span><span class="s">usermod_cexample</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>完整使用示例见下文。</p>
+</li>
+</ul>
+</section>
+<section id="basic-example">
+<h2>基本示例<a class="headerlink" href="#basic-example" title="链接到此标题。">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">cexample</span></code> 模块提供了一个函数和一个类的示例。<code class="docutils literal notranslate"><span class="pre">cexample.add_ints(a,</span> <span class="pre">b)</span></code> 函数将两个整数参数相加并返回结果。<code class="docutils literal notranslate"><span class="pre">cexample.Timer()</span></code> 类型创建计时器，可用于测量自对象实例化以来经过的时间。</p>
+<p>该模块位于 MicroPython 源码树的 <a class="reference external" href="https://github.com/micropython/micropython/tree/master/examples/usercmodule/cexample">examples 目录中</a>，包含一个源文件和一个 Makefile 片段，其内容如上所述:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">micropython/
+</span><span data-line="2">└──examples/
+</span><span data-line="3">   └──usercmodule/
+</span><span data-line="4">      └──cexample/
+</span><span data-line="5">         ├── examplemodule.c
+</span><span data-line="6">         ├── micropython.mk
+</span><span data-line="7">         └── micropython.cmake
+</span></pre></div>
+</div>
+<p>请参阅这些文件中的注释以获得更多说明。在 <code class="docutils literal notranslate"><span class="pre">cexample</span></code> 模块旁边还有一个 <code class="docutils literal notranslate"><span class="pre">cppexample</span></code>，它的工作方式相同，但展示了在 MicroPython 中混合使用 C 和 C++ 代码的一种方式。</p>
+</section>
+<section id="compiling-the-cmodule-into-micropython">
+<h2>将 cmodule 编译进 MicroPython<a class="headerlink" href="#compiling-the-cmodule-into-micropython" title="链接到此标题。">¶</a></h2>
+<p>要构建这样一个模块，请编译 MicroPython（参见 <a class="reference external" href="https://github.com/micropython/micropython/wiki/Getting-Started">入门指南</a>），并进行 2 处修改：</p>
+<ol class="arabic simple">
+<li><p>设置构建时标志 <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code>，使其指向你想要包含的模块。对于使用 Make 的移植版本，该变量应是一个目录，系统会自动在其中搜索模块。对于使用 CMake 的移植版本，该变量应是一个包含待构建模块的文件。详见下文。</p></li>
+<li><p>通过将相应的 C 预处理器宏设置为 1 来启用模块。仅当你正在构建的模块未被自动启用时才需要这样做。</p></li>
+</ol>
+<p>要构建 MicroPython 自带的示例模块，对于 Make，请将 <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">examples/usercmodule</span></code> 目录；对于 CMake，则设置为 <code class="docutils literal notranslate"><span class="pre">examples/usercmodule/micropython.cmake</span></code>。</p>
+<p>例如，下面演示了如何为 unix 移植版本构建带示例模块的版本：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>micropython/ports/unix
+</span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../examples/usercmodule
+</span></pre></div>
+</div>
+<p>在构建中包含新的用户模块时，你可能需要在开始时运行一次 <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">clean</span></code>。构建输出会显示找到的模块:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="o">...</span>
+</span><span data-line="2"><span class="n">Including</span> <span class="n">User</span> <span class="n">C</span> <span class="n">Module</span> <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="o">/../</span><span class="n">examples</span><span class="o">/</span><span class="n">usercmodule</span><span class="o">/</span><span class="n">cexample</span>
+</span><span data-line="3"><span class="n">Including</span> <span class="n">User</span> <span class="n">C</span> <span class="n">Module</span> <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="o">/../</span><span class="n">examples</span><span class="o">/</span><span class="n">usercmodule</span><span class="o">/</span><span class="n">cppexample</span>
+</span><span data-line="4"><span class="o">...</span>
+</span></pre></div>
+</div>
+<p>对于基于 CMake 的移植版本（例如 rp2），情况会略有不同（注意 CMake 实际上是由 <code class="docutils literal notranslate"><span class="pre">make</span></code> 调用的）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>micropython/ports/rp2
+</span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../examples/usercmodule/micropython.cmake
+</span></pre></div>
+</div>
+<p>同样，你可能需要先运行 <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">clean</span></code> 以便 CMake 识别用户模块。CMake 构建输出会按名称列出这些模块:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="o">...</span>
+</span><span data-line="2"><span class="n">Including</span> <span class="n">User</span> <span class="n">C</span> <span class="n">Module</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">..</span><span class="o">/../</span><span class="n">examples</span><span class="o">/</span><span class="n">usercmodule</span><span class="o">/</span><span class="n">micropython</span><span class="o">.</span><span class="n">cmake</span>
+</span><span data-line="3"><span class="n">Found</span> <span class="n">User</span> <span class="n">C</span> <span class="n">Module</span><span class="p">(</span><span class="n">s</span><span class="p">):</span> <span class="n">usermod_cexample</span><span class="p">,</span> <span class="n">usermod_cppexample</span>
+</span><span data-line="4"><span class="o">...</span>
+</span></pre></div>
+</div>
+<p>顶层 <code class="docutils literal notranslate"><span class="pre">micropython.cmake</span></code> 的内容可用于控制启用哪些模块。</p>
+<p>对于你自己的项目，将自定义代码保留在主 MicroPython 源码树之外会更方便，因此典型的项目目录结构如下所示:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">my_project/
+</span><span data-line="2">├── modules/
+</span><span data-line="3">│   ├── example1/
+</span><span data-line="4">│   │   ├── example1.c
+</span><span data-line="5">│   │   ├── micropython.mk
+</span><span data-line="6">│   │   └── micropython.cmake
+</span><span data-line="7">│   ├── example2/
+</span><span data-line="8">│   │   ├── example2.c
+</span><span data-line="9">│   │   ├── micropython.mk
+</span><span data-line="10">│   │   └── micropython.cmake
+</span><span data-line="11">│   └── micropython.cmake
+</span><span data-line="12">└── micropython/
+</span><span data-line="13">    ├──ports/
+</span><span data-line="14">   ... ├──stm32/
+</span><span data-line="15">      ...
+</span></pre></div>
+</div>
+<p>使用 Make 构建时，将 <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">my_project/modules</span></code> 目录。例如，构建 stm32 移植版本：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>my_project/micropython/ports/stm32
+</span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../../modules
+</span></pre></div>
+</div>
+<p>使用 CMake 构建时，顶层 <code class="docutils literal notranslate"><span class="pre">micropython.cmake</span></code>（直接位于 <code class="docutils literal notranslate"><span class="pre">my_project/modules</span></code> 目录中）应 <code class="docutils literal notranslate"><span class="pre">include</span></code> 你想要提供的所有模块：</p>
+<blockquote>
+<div><div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">include</span><span class="p">(</span><span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/example1/micropython.cmake</span><span class="p">)</span>
+</span><span data-line="2"><span class="nb">include</span><span class="p">(</span><span class="o">${</span><span class="nv">CMAKE_CURRENT_LIST_DIR</span><span class="o">}</span><span class="s">/example2/micropython.cmake</span><span class="p">)</span>
+</span></pre></div>
+</div>
+</div></blockquote>
+<p>然后使用以下命令构建：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">cd</span><span class="w"> </span>my_project/micropython/ports/rp2
+</span><span data-line="2">make<span class="w"> </span><span class="nv">USER_C_MODULES</span><span class="o">=</span>../../../modules/micropython.cmake
+</span></pre></div>
+</div>
+<p>你也可以为 <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> 指定绝对路径。</p>
+<p>由 <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> 变量指定的所有模块（使用 Make 时在该目录中找到的，或使用 CMake 时通过 <code class="docutils literal notranslate"><span class="pre">include</span></code> 添加的）都会被编译，但只有那些已启用的模块才可供导入。用户模块通常默认启用（由模块开发者决定），在这种情况下，除了如上所述设置 <code class="docutils literal notranslate"><span class="pre">USER_C_MODULES</span></code> 之外无需再做任何事情。</p>
+<p>如果某个模块默认未启用，则必须启用相应的 C 预处理器宏。可以通过在模块源代码中搜索 <code class="docutils literal notranslate"><span class="pre">MP_REGISTER_MODULE</span></code> 这一行来找到该宏名（它通常出现在主源文件的末尾）。该宏应被一对 <code class="docutils literal notranslate"><span class="pre">#if</span> <span class="pre">X</span></code> / <code class="docutils literal notranslate"><span class="pre">#endif</span></code> 包围，并且必须使用 <code class="docutils literal notranslate"><span class="pre">CFLAGS_EXTRA</span></code> 将配置选项 <code class="docutils literal notranslate"><span class="pre">X</span></code> 设置为 1 才能使该模块可用。如果没有 <code class="docutils literal notranslate"><span class="pre">#if</span> <span class="pre">X</span></code> / <code class="docutils literal notranslate"><span class="pre">#endif</span></code> 这一对，则该模块默认启用。</p>
+<p>例如，<code class="docutils literal notranslate"><span class="pre">examples/usercmodule/cexample</span></code> 模块默认启用，因此其源代码中有如下一行：</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">MP_REGISTER_MODULE</span><span class="p">(</span><span class="n">MP_QSTR_cexample</span><span class="p">,</span><span class="w"> </span><span class="n">example_user_cmodule</span><span class="p">);</span>
+</span></pre></div>
+</div>
+</div></blockquote>
+<p>或者，要使该模块默认禁用但可通过预处理器配置选项进行选择，则应为：</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="cp">#if MODULE_CEXAMPLE_ENABLED</span>
+</span><span data-line="2"><span class="n">MP_REGISTER_MODULE</span><span class="p">(</span><span class="n">MP_QSTR_cexample</span><span class="p">,</span><span class="w"> </span><span class="n">example_user_cmodule</span><span class="p">);</span>
+</span><span data-line="3"><span class="cp">#endif</span>
+</span></pre></div>
+</div>
+</div></blockquote>
+<p>在这种情况下，通过在 <code class="docutils literal notranslate"><span class="pre">make</span></code> 命令中添加 <code class="docutils literal notranslate"><span class="pre">CFLAGS_EXTRA=-DMODULE_CEXAMPLE_ENABLED=1</span></code>，或编辑 <code class="docutils literal notranslate"><span class="pre">mpconfigport.h</span></code> 或 <code class="docutils literal notranslate"><span class="pre">mpconfigboard.h</span></code> 来添加以下内容，即可启用该模块</p>
+<blockquote>
+<div><div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="cp">#define MODULE_CEXAMPLE_ENABLED (1)</span>
+</span></pre></div>
+</div>
+</div></blockquote>
+<p>请注意，确切的方法取决于移植版本，因为它们具有不同的结构。如果操作不正确，它仍能编译通过，但导入时将找不到该模块。</p>
+</section>
+<section id="module-usage-in-micropython">
+<h2>在 MicroPython 中使用模块<a class="headerlink" href="#module-usage-in-micropython" title="链接到此标题。">¶</a></h2>
+<p>一旦编译进你的 MicroPython 副本中，该模块现在就可以像任何其他内置模块一样在 Python 中访问，例如</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">cexample</span>
+</span><span data-line="2"><span class="nb">print</span><span class="p">(</span><span class="n">cexample</span><span class="o">.</span><span class="n">add_ints</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+</span><span data-line="3"><span class="c1"># should display 4</span>
+</span></pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">cexample</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timer</span>
+</span><span data-line="2"><span class="kn">from</span><span class="w"> </span><span class="nn">time</span><span class="w"> </span><span class="kn">import</span> <span class="n">sleep_ms</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">watch</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
+</span><span data-line="5"><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+</span><span data-line="6"><span class="nb">print</span><span class="p">(</span><span class="n">watch</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+</span><span data-line="7"><span class="c1"># should display approximately 1000</span>
+</span></pre></div>
+</div>
+</section>
+<section id="c-dynamic-memory-allocation">
+<span id="c-heap"></span><h2>C 动态内存分配<a class="headerlink" href="#c-dynamic-memory-allocation" title="链接到此标题。">¶</a></h2>
+<p>MicroPython 为 <a class="reference internal" href="memorymgt.html#memorymanagement"><span class="std std-ref">内存管理</span></a> 使用其自己的“Python 堆”，它与 C 库函数 <code class="docutils literal notranslate"><span class="pre">malloc()</span></code>、<code class="docutils literal notranslate"><span class="pre">free()</span></code> 等所使用的“C 堆”不同。并非每个 MicroPython 移植版本都自带“C 堆”。</p>
+<p>第 1 级和第 2 级移植版本对通过“C 堆”进行 C 动态内存分配的支持程度各不相同：</p>
+<ul class="simple">
+<li><p>unix、windows、esp32 和 webassembly 移植版本支持 C 动态内存分配。</p></li>
+<li><p>rp2 移植版本在运行时将无法分配任何内存，除非使用 <code class="docutils literal notranslate"><span class="pre">MICROPY_C_HEAP_SIZE=n</span></code> 构建固件，为 C 堆预留 <code class="docutils literal notranslate"><span class="pre">n</span></code> 个字节的内存。这块内存将无法供 Python 代码使用。</p></li>
+<li><p>alif、mimxrt、nrf、renesas-ra、samd 和 stm32 端口构建中若包含动态 C 内存分配，将在链接时报错，例如 <code class="docutils literal notranslate"><span class="pre">undefined</span> <span class="pre">reference</span> <span class="pre">to</span> <span class="pre">`malloc'</span></code>。MicroPython 在这些端口上不内置支持动态 C 内存分配，任何解决方案都需要手动向自定义构建中添加 C 堆实现。</p></li>
+<li><p>zephyr 移植版本目前不支持使用用户模块进行构建。</p></li>
+</ul>
+<section id="python-heap-as-c-heap">
+<h3>将 Python 堆用作 C 堆<a class="headerlink" href="#python-heap-as-c-heap" title="链接到此标题。">¶</a></h3>
+<p>对 C 代码来说，改为调用诸如 <code class="docutils literal notranslate"><span class="pre">m_malloc()</span></code>、<code class="docutils literal notranslate"><span class="pre">m_malloc0()</span></code> 和 <code class="docutils literal notranslate"><span class="pre">m_free()</span></code> 之类的“Python 堆”动态分配函数可能更为实用。</p>
+<p>有关此方法的更多信息，请参阅 <a class="reference internal" href="memorymgt.html#python-memory-from-c"><span class="std std-ref">从 C 代码使用 MicroPython 内存</span></a>。</p>
+</section>
+</section>
+<section id="c-modules">
+<span id="cxx-support"></span><h2>C++ 模块<a class="headerlink" href="#c-modules" title="链接到此标题。">¶</a></h2>
+<p>大多数第 1 级和第 2 级 MicroPython 移植版本（以及部分第 3 级）支持构建 C++ 用户模块，使用上文所述的 C++ 专用环境变量。</p>
+<p>成功集成 C++ 和 MicroPython 需要考虑一些额外的因素：</p>
+<section id="id1">
+<h3>C++ 动态内存分配<a class="headerlink" href="#id1" title="链接到此标题。">¶</a></h3>
+<p>C++ 程序（以及 C++ 标准库特性）通常使用动态内存分配。C++ 默认内存分配器（即 <code class="docutils literal notranslate"><span class="pre">new</span></code> 和 <code class="docutils literal notranslate"><span class="pre">delete</span></code> 运算符）通常实现为 <a class="reference internal" href="#c-heap"><span class="std std-ref">C 动态内存分配</span></a> 之上的一层。</p>
+<p>对于不包含 C 动态内存分配支持的 MicroPython 移植版本，可以通过以下两种方式之一支持 C++ 动态内存分配：</p>
+<ul class="simple">
+<li><p>在你的自定义构建中实现 C 动态内存分配。</p></li>
+<li><p>在你的自定义构建中实现自定义 C++ 分配器。</p></li>
+</ul>
+</section>
+<section id="linkage-considerations">
+<h3>链接相关注意事项<a class="headerlink" href="#linkage-considerations" title="链接到此标题。">¶</a></h3>
+<p>由于 MicroPython 是基于 C 的项目，任何链接到 MicroPython 或从 MicroPython 链接出去的符号在 C++ 代码中都需要用 <code class="docutils literal notranslate"><span class="pre">extern</span> <span class="pre">&quot;C&quot;</span></code> 限定。</p>
+<p>强烈建议遵循 <a class="reference external" href="https://github.com/micropython/micropython/blob/master/examples/usercmodule/cppexample">examples/usercmodule/cppexample</a> 中演示的模式，即 Python 模块在一个极简的 C 文件中实现，该文件对 C++ 代码进行了封装。</p>
+</section>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>返回顶部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="extendingmicropython.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一页</span><div class="title">用 C 扩展 MicroPython</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="natmod.html">
+      <div class="page-info">
+        <span>下一页</span>
+        <div class="title">.mpy 文件中的原生机器码</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    适用于 OpenMV 固件 v5.0.0 &middot; 基于 MicroPython v1.28 &middot; 文档构建于 2026年6月19日 &middot; 版权 &copy; 2014-2026 OpenMV、Damien P. George 及其他贡献者。
+  </p>
+  <p>
+    
+    使用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 和 <a href="https://shibuya.lepture.com">Shibuya theme</a> 主题构建。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=6c58574e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=540d3cec"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

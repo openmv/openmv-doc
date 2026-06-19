@@ -1,0 +1,109 @@
+.. _changelog_v3_1_0:
+
+v3.1.0
+======
+
+v3.1.0 introduces the :mod:`fir` thermopile module (MLX90620 / MLX90640 /
+AMG8833), **WiFi IDE debugging and discovery** over the WINC1500, a **UVC
+webcam** firmware, :func:`sensor.shutdown`, ``image.selective_search()``, and
+the :mod:`uctypes` and :class:`pyb.CAN` modules. Some :mod:`image` methods were dropped on
+the OpenMV Cam M4 — read the breaking changes below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- :mod:`fir` module — MLX90620 / MLX90640 / AMG8833 thermopile thermal-camera
+  support.
+- **WiFi IDE** — debug and program over WiFi (WINC1500) with UDP broadcast
+  discovery (no hardcoded IP needed).
+- **UVC webcam** — a USB Video Class firmware to use the cam as a webcam.
+- **New APIs** — :func:`sensor.shutdown`, ``image.selective_search()``, and the
+  :mod:`uctypes` / :class:`pyb.CAN` modules.
+- **Breaking:** ``image.mean()`` and ``image.morph()`` are no longer
+  available on the OpenMV Cam M4 — see the breaking changes.
+
+New features
+------------
+
+- :mod:`fir` — added the thermopile module with MLX90620 / MLX90640 /
+  AMG8833 support: :func:`fir.init`, :func:`fir.snapshot`, :func:`fir.read_ir`,
+  :func:`fir.draw_ir` and the ``FIR_MLX90640`` / ``FIR_AMG8833`` constants, with
+  per-sensor Thermopile-Shield examples.
+- **WiFi IDE** — WiFi programming/debug over the WINC1500 with UDP broadcast
+  discovery so OpenMV IDE can auto-find cameras (firmware reads STA/AP
+  settings from the IDE).
+- **UVC webcam** — added a USB Video Class webcam firmware.
+- :func:`sensor.shutdown` — power the camera down via the PWDN pin.
+- ``image.selective_search()`` — region-proposal rectangles, with a
+  ``selective_search.py`` example.
+- **Modules** — enabled the :mod:`uctypes` module, re-enabled :class:`pyb.CAN`, and
+  enabled additional MicroPython modules; added a USB-HID example and a
+  function to check whether the IDE is connected.
+
+Other changes and improvements
+------------------------------
+
+- Added a per-socket receive buffer for more reliable WiFi socket ``recv``;
+  the :mod:`image` math methods (``top_hat`` / ``black_hat`` / ``negate`` /
+  ``replace`` / ``add`` / ``sub`` / ``mul`` / ``div`` / ``min`` / ``max`` /
+  ``difference`` / ``blend``) are now behind an ``IMLIB_ENABLE_MATH_OPS``
+  build flag (enabled by default on standard firmware).
+
+Bug fixes
+---------
+
+Imaging and camera:
+
+- Fixed ``image.save()`` not closing the file after writing raw images
+  (truncated/corrupt saves) and the FLIR Lepton SPI GPIO configuration.
+
+System and connectivity:
+
+- Worked around the STM32F7 SPI BUSY-flag errata (2.11.2), fixed the WiFi
+  IDE-debug broadcast interval / socket cleanup / debug timer, the
+  ``openmv.ini`` integer parsing, and H7 flash latency.
+
+Hardware and board support
+--------------------------
+
+- **MLX90620 / MLX90640 / AMG8833** thermopile (FIR) sensors.
+- **UVC webcam** — USB Video Class firmware.
+- **WINC1500** — WiFi IDE debugging and discovery.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v3.0.0 and v3.1.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+The breaking changes are *behavior* changes scoped to the OpenMV Cam M4 — re-
+check affected scripts. Each commit hash links to its diff on GitHub.
+
+.. _v3_1_0_m4methods:
+
+``image.mean()`` / ``image.morph()`` removed on the OpenMV Cam M4 *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To fit flash/RAM on the OpenMV Cam M4 (OMV2), ``image.mean()`` and
+``image.morph()`` were compiled out on that board; calling them now raises an
+"unavailable" error. Use a different filter (e.g. ``image.median()`` /
+``image.midpoint()``) or run the morphology / mean filtering on a newer
+camera (M7 / H7). Other boards are unaffected.
+
+*Commits:* `abe97a73b <https://github.com/openmv/openmv/commit/abe97a73b>`__,
+`4e34b32ec <https://github.com/openmv/openmv/commit/4e34b32ec>`__
+
+.. _v3_1_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+On the OpenMV Cam M4, replace ``image.mean()`` / ``image.morph()`` with
+another filter or move that processing to an M7 / H7 camera
+(:ref:`the M4 method removal <v3_1_0_m4methods>`). All other scripts run
+unchanged.

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="vi" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>8.4. Gather - Tài liệu OpenMV MicroPython 1.28</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Index" href="../../../../genindex.html" /><link rel="search" title="Tìm Kiếm" href="../../../../search.html" /><link rel="next" title="8.5. Hết thời gian chờ và hủy tác vụ" href="timeouts-and-cancellation.html" /><link rel="prev" title="8.3. Vòng lặp sự kiện" href="../basics/the-event-loop.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/asyncio/coordination/gather.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/asyncio/coordination/gather.html"/>
+  <meta property="og:title" content="8.4. Gather"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/asyncio/coordination/gather.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/asyncio/coordination/gather.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Trang chủ</a></li><li class="link"><a href="../../index.html">Hướng dẫn</a></li><li class="link"><a href="../../../../library/index.html">Thư viện</a></li><li class="link"><a href="../../../quickref.html">Bo mạch</a></li><li class="link"><a href="../../../shields.html">Shield</a></li><li class="link"><a href="../../../sensors.html">Cảm biến</a></li><li class="link"><a href="../../../../reference/index.html">Ngôn ngữ</a></li><li class="link"><a href="../../../../develop/index.html">Nội bộ</a></li><li class="link"><a href="../../../../changelog/index.html">Nhật ký thay đổi</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Tìm Kiếm" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Phiên bản">
+      <span class="md:hidden">Phiên bản</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Bản dịch</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/asyncio/coordination/gather.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/asyncio/coordination/gather.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/asyncio/coordination/gather.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/asyncio/coordination/gather.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/asyncio/coordination/gather.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/asyncio/coordination/gather.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/asyncio/coordination/gather.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/asyncio/coordination/gather.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/asyncio/coordination/gather.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/asyncio/coordination/gather.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/asyncio/coordination/gather.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/asyncio/coordination/gather.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/asyncio/coordination/gather.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/asyncio/coordination/gather.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/asyncio/coordination/gather.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/asyncio/coordination/gather.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/asyncio/coordination/gather.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/asyncio/coordination/gather.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/asyncio/coordination/gather.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/asyncio/coordination/gather.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/asyncio/coordination/gather.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/asyncio/coordination/gather.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/asyncio/coordination/gather.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/asyncio/coordination/gather.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/asyncio/coordination/gather.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/asyncio/coordination/gather.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/asyncio/coordination/gather.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Chuyển sang chế độ sáng"
+data-aria-light="Chuyển sang chế độ tối"
+data-aria-dark="Chuyển sang chế độ màu tự động">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Thảo luận</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">H&#432;&#7899;ng d&#7851;n</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. B&#7855;t &#273;&#7847;u nhanh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. T&#7893;ng quan v&#7873; Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#272;i&#7873;u khi&#7875;n ph&#7847;n c&#7913;ng</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. C&#7843;m bi&#7871;n th&#7883; gi&#225;c</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. X&#7917; l&#253; &#7843;nh</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. H&#7885;c m&#225;y</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">8. Asyncio</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/cooperative-concurrency.html">8.1. &#272;&#7891;ng th&#7901;i h&#7907;p t&#225;c</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/coroutines-and-tasks.html">8.2. Coroutine v&#224; task</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/the-event-loop.html">8.3. V&#242;ng l&#7863;p s&#7921; ki&#7879;n</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">8.4. Gather</a></li>
+<li class="toctree-l3"><a class="reference internal" href="timeouts-and-cancellation.html">8.5. H&#7871;t th&#7901;i gian ch&#7901; v&#224; h&#7911;y t&#225;c v&#7909;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="exceptions.html">8.6. Ngo&#7841;i l&#7879;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../primitives/events.html">8.7. Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../primitives/locks.html">8.8. Lock</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../primitives/threadsafe-flag.html">8.9. ThreadSafeFlag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom/awaitable-classes.html">8.10. C&#225;c l&#7899;p awaitable</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom/async-iterators.html">8.11. B&#7897; l&#7863;p b&#7845;t &#273;&#7891;ng b&#7897;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom/async-context-managers.html">8.12. Tr&#236;nh qu&#7843;n l&#253; ng&#7919; c&#7843;nh b&#7845;t &#273;&#7891;ng b&#7897;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../loop/loop-control.html">8.13. &#272;i&#7873;u khi&#7875;n v&#242;ng l&#7863;p</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../capstone/snapshot-loop.html">8.14. AsyncCSI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pitfalls.html">8.15. Nh&#7919;ng B&#7851;y Th&#432;&#7901;ng G&#7863;p</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">8.16. T&#7893;ng k&#7871;t</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. K&#7871;t n&#7889;i m&#7841;ng</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web Server</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Giao th&#7913;c Host</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. C&#244;ng c&#7909;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Production</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Th&#432; vi&#7879;n</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">C&#7843;m bi&#7871;n</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Ng&#244;n ng&#7919;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">N&#7897;i b&#7897;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Gi&#7845;y ph&#233;p</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Trên trang này</h3><ul>
+<li><a class="reference internal" href="#the-basic-shape">8.4.1. H&#236;nh d&#7841;ng c&#417; b&#7843;n</a></li>
+<li><a class="reference internal" href="#when-to-reach-for-it">8.4.2. Khi n&#224;o n&#234;n d&#249;ng</a></li>
+<li><a class="reference internal" href="#exceptions-in-the-group">8.4.3. Ngo&#7841;i l&#7879; trong nh&#243;m</a></li>
+<li><a class="reference internal" href="#cancellation">8.4.4. H&#7911;y</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/asyncio/coordination/gather.rst">Chỉnh sửa trang này</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">Hướng Dẫn OpenMV Cam</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">8. </span>Asyncio</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">8.4. </span>Gather</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/coordination/gather.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Sao chép trang</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Thêm hành động"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/coordination/gather.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Sao chép trang</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/coordination/gather.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Xem nguồn</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/coordination/gather.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>Mở trong ChatGPT</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/coordination/gather.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Mở trong Claude</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/coordination/gather.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Mở trong Perplexity</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="gather">
+<h1><span class="section-number">8.4. </span>Gather<a class="headerlink" href="#gather" title="Link to this heading">¶</a></h1>
+<p>Chương trước đã chỉ ra cách <a class="reference internal" href="../../../../library/asyncio.html#asyncio.create_task" title="asyncio.create_task"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.create_task()</span></code></a> lên lịch một coroutine và <em>không</em> chờ nó. Thao tác bổ sung -- <em>chạy nhiều awaitable đồng thời và chờ tất cả chúng</em> -- là <a class="reference internal" href="../../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.gather()</span></code></a>.</p>
+<section id="the-basic-shape">
+<h2><span class="section-number">8.4.1. </span>Hình dạng cơ bản<a class="headerlink" href="#the-basic-shape" title="Link to this heading">¶</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">fetch</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">delay_ms</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">delay_ms</span><span class="p">)</span>
+</span><span data-line="5">    <span class="k">return</span> <span class="n">name</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="8">    <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+</span><span data-line="9">        <span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span>
+</span><span data-line="10">        <span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">),</span>
+</span><span data-line="11">        <span class="n">fetch</span><span class="p">(</span><span class="s2">&quot;c&quot;</span><span class="p">,</span> <span class="mi">50</span><span class="p">),</span>
+</span><span data-line="12">    <span class="p">)</span>
+</span><span data-line="13">    <span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Đầu ra:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
+</span></pre></div>
+</div>
+<p>Có hai điều cần chú ý. Thứ nhất, danh sách kết quả theo thứ tự của <em>đối số truyền vào gather</em>, không phải thứ tự mà các coroutine hoàn thành -- <code class="docutils literal notranslate"><span class="pre">&quot;c&quot;</span></code> trả về trước nhưng vẫn là mục thứ ba. Thứ hai, lần gọi mất tổng cộng <code class="docutils literal notranslate"><span class="pre">200</span> <span class="pre">ms</span></code>, không phải <code class="docutils literal notranslate"><span class="pre">350</span> <span class="pre">ms</span></code>: ba lần sleep chạy đồng thời, và <a class="reference internal" href="../../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">gather()</span></code></a> trả về ngay khi lần chậm nhất hoàn thành.</p>
+<p>Cả hai sự thật đều xuất phát từ cùng một nguồn. <a class="reference internal" href="../../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">gather()</span></code></a> bọc từng đối số chưa phải là task (các coroutine trong ví dụ), lên lịch chúng trên vòng lặp, tạm dừng coroutine đang gọi cho đến khi <em>tất cả</em> chúng hoàn thành, rồi trả về kết quả của chúng theo thứ tự ban đầu.</p>
+</section>
+<section id="when-to-reach-for-it">
+<h2><span class="section-number">8.4.2. </span>Khi nào nên dùng<a class="headerlink" href="#when-to-reach-for-it" title="Link to this heading">¶</a></h2>
+<p>Bất cứ khi nào ứng dụng có <em>N</em> thao tác awaitable và muốn kết quả của tất cả chúng trước khi tiếp tục. Các ví dụ điển hình:</p>
+<ul class="simple">
+<li><p>Phát nhiều yêu cầu mạng song song và chờ tất cả phản hồi.</p></li>
+<li><p>Đọc từ nhiều cảm biến đồng thời trước khi xử lý kết quả kết hợp.</p></li>
+<li><p>Kết hợp nhiều task trợ giúp tồn tại ngắn ở cuối một giai đoạn ứng dụng.</p></li>
+</ul>
+<p>Đây <em>không</em> phải công cụ phù hợp cho các task nền chạy lâu dài mà ứng dụng khởi động và để chạy suốt vòng đời chương trình -- những task đó vẫn là công việc của <a class="reference internal" href="../../../../library/asyncio.html#asyncio.create_task" title="asyncio.create_task"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_task()</span></code></a>. <a class="reference internal" href="../../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">gather()</span></code></a> dành cho mẫu <em>fan-out / fan-in</em>: chia nhỏ công việc, thực hiện đồng thời, tập hợp lại.</p>
+</section>
+<section id="exceptions-in-the-group">
+<h2><span class="section-number">8.4.3. </span>Ngoại lệ trong nhóm<a class="headerlink" href="#exceptions-in-the-group" title="Link to this heading">¶</a></h2>
+<p>Nếu bất kỳ awaitable nào trong nhóm phát ra ngoại lệ, hành vi mặc định là <em>phát lại ngoại lệ ra khỏi lệnh gọi gather</em>. Các coroutine anh em chưa hoàn thành sẽ bị hủy trong nền.</p>
+<p>Đó thường là điều mà ứng dụng muốn -- một trong <em>N</em> công việc song song thất bại, vì vậy thao tác kết hợp đã thất bại, vì vậy không tiếp tục lãng phí thời gian vào phần còn lại. Đôi khi ứng dụng muốn ngược lại: để mỗi awaitable hoàn thành (hoặc thất bại) độc lập, và kiểm tra kết quả sau. Truyền <code class="docutils literal notranslate"><span class="pre">return_exceptions=True</span></code> cho trường hợp đó:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+</span><span data-line="2">    <span class="n">fetch_or_fail</span><span class="p">(</span><span class="s2">&quot;ok&quot;</span><span class="p">),</span>
+</span><span data-line="3">    <span class="n">fetch_or_fail</span><span class="p">(</span><span class="s2">&quot;bad&quot;</span><span class="p">),</span>
+</span><span data-line="4">    <span class="n">return_exceptions</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="5"><span class="p">)</span>
+</span><span data-line="6"><span class="c1"># results == [&quot;ok-value&quot;, OSError(...)]</span>
+</span></pre></div>
+</div>
+<p>Mỗi mục trong danh sách được trả về giờ đây là giá trị trả về bình thường <em>hoặc</em> ngoại lệ mà awaitable tương ứng đã phát ra. Người gọi kiểm tra <code class="docutils literal notranslate"><span class="pre">isinstance(r,</span> <span class="pre">Exception)</span></code> để phân biệt chúng.</p>
+</section>
+<section id="cancellation">
+<h2><span class="section-number">8.4.4. </span>Hủy<a class="headerlink" href="#cancellation" title="Link to this heading">¶</a></h2>
+<p>Hủy bản thân gather -- bằng cách hủy task nào đang await nó -- sẽ hủy mọi awaitable vẫn đang chạy bên trong nó. Trang <a class="reference internal" href="timeouts-and-cancellation.html"><span class="doc">timeouts và hủy</span></a> đề cập đến cách hủy lan truyền qua chuỗi gọi một cách chi tiết.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Quay lại đầu trang</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="../basics/the-event-loop.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Trước</span><div class="title"><span class="section-number">8.3. </span>Vòng lặp sự kiện</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="timeouts-and-cancellation.html">
+      <div class="page-info">
+        <span>Tiếp theo</span>
+        <div class="title"><span class="section-number">8.5. </span>Hết thời gian chờ và hủy tác vụ</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    Dành cho OpenMV firmware v5.0.0 &middot; dựa trên MicroPython v1.28 &middot; tài liệu được xây dựng 19 tháng 6, 2026 &middot; Bản quyền &copy; 2014-2026 bởi OpenMV, Damien P. George và những người khác.
+  </p>
+  <p>
+    
+    Được tạo bằng <a href="https://www.sphinx-doc.org/">Sphinx</a> sử dụng <a href="https://shibuya.lepture.com">chủ đề Shibuya</a>.
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=bab09030"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=4c1d55b0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

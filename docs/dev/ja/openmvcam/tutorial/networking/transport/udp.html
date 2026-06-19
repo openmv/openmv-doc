@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>9.9. UDP -- パケットを送って最善を祈る - OpenMV MicroPython 1.28 ドキュメント</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="検索" href="../../../../search.html" /><link rel="next" title="9.10. TCP -- 信頼性の高いバイトストリーム" href="tcp.html" /><link rel="prev" title="9.8. ポート" href="ports.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/networking/transport/udp.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/networking/transport/udp.html"/>
+  <meta property="og:title" content="9.9. UDP -- パケットを送って最善を祈る"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/networking/transport/udp.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/networking/transport/udp.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">ホーム</a></li><li class="link"><a href="../../index.html">チュートリアル</a></li><li class="link"><a href="../../../../library/index.html">コアライブラリ</a></li><li class="link"><a href="../../../quickref.html">ボード</a></li><li class="link"><a href="../../../shields.html">シールド</a></li><li class="link"><a href="../../../sensors.html">センサー</a></li><li class="link"><a href="../../../../reference/index.html">言語</a></li><li class="link"><a href="../../../../develop/index.html">内部構造</a></li><li class="link"><a href="../../../../changelog/index.html">変更履歴</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="検索" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="バージョン">
+      <span class="md:hidden">バージョン</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻訳</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/networking/transport/udp.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/networking/transport/udp.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/networking/transport/udp.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/networking/transport/udp.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/networking/transport/udp.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/networking/transport/udp.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/networking/transport/udp.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/networking/transport/udp.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/networking/transport/udp.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/networking/transport/udp.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/networking/transport/udp.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/networking/transport/udp.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/networking/transport/udp.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/networking/transport/udp.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/networking/transport/udp.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/networking/transport/udp.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/networking/transport/udp.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/networking/transport/udp.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/networking/transport/udp.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/networking/transport/udp.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/networking/transport/udp.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/networking/transport/udp.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/networking/transport/udp.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/networking/transport/udp.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/networking/transport/udp.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/networking/transport/udp.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/networking/transport/udp.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="ライトカラーモードに切り替え"
+data-aria-light="ダークカラーモードに切り替え"
+data-aria-dark="自動カラーモードに切り替え">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">ディスカッション</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#12481;&#12517;&#12540;&#12488;&#12522;&#12450;&#12523;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#12463;&#12452;&#12483;&#12463;&#12473;&#12479;&#12540;&#12488;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python&#27010;&#35201;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#12495;&#12540;&#12489;&#12454;&#12455;&#12450;&#21046;&#24481;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#12499;&#12472;&#12519;&#12531;&#12475;&#12531;&#12469;&#12540;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#30011;&#20687;&#20966;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#26800;&#23398;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">9. &#12493;&#12483;&#12488;&#12527;&#12540;&#12461;&#12531;&#12464;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-networks.html">9.1. &#12394;&#12380;&#12493;&#12483;&#12488;&#12527;&#12540;&#12463;&#12364;&#24517;&#35201;&#12363;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-protocols.html">9.2. &#38542;&#23652;&#21270;&#12373;&#12428;&#12383;&#12503;&#12525;&#12488;&#12467;&#12523;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/physical-and-link.html">9.3. &#12465;&#12540;&#12502;&#12523;&#12392;&#12501;&#12524;&#12540;&#12512;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/bringing-the-link-up.html">9.4. &#12522;&#12531;&#12463;&#12434;&#30906;&#31435;&#12377;&#12427;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/ip-addresses.html">9.5. IP&#12450;&#12489;&#12524;&#12473;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/packets-and-routing.html">9.6. &#12497;&#12465;&#12483;&#12488;&#12392;&#12523;&#12540;&#12486;&#12451;&#12531;&#12464;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/private-networks.html">9.7. &#12503;&#12521;&#12452;&#12505;&#12540;&#12488;&#12493;&#12483;&#12488;&#12527;&#12540;&#12463;&#12392;NAT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ports.html">9.8. &#12509;&#12540;&#12488;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">9.9. UDP -- &#12497;&#12465;&#12483;&#12488;&#12434;&#36865;&#12387;&#12390;&#26368;&#21892;&#12434;&#31048;&#12427;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tcp.html">9.10. TCP -- &#20449;&#38972;&#24615;&#12398;&#39640;&#12356;&#12496;&#12452;&#12488;&#12473;&#12488;&#12522;&#12540;&#12512;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/socket-objects.html">9.11. &#12477;&#12465;&#12483;&#12488;&#12458;&#12502;&#12472;&#12455;&#12463;&#12488;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/udp-sockets.html">9.12. UDP &#12477;&#12465;&#12483;&#12488;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/tcp-sockets.html">9.13. TCP &#12477;&#12465;&#12483;&#12488;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sockets/async-sockets.html">9.14. asyncio&#12434;&#20351;&#12387;&#12383;&#12477;&#12465;&#12483;&#12488;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/dns.html">9.15. &#21517;&#21069;&#12392; DNS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/ntp.html">9.16. &#26178;&#21051;&#12392;NTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../encrypted-sockets.html">9.17. &#26263;&#21495;&#21270;&#12477;&#12465;&#12483;&#12488;&#12392;TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mqtt/protocol-on-the-wire.html">9.18. MQTT &#12434;&#12496;&#12452;&#12488;&#21336;&#20301;&#12391;&#35211;&#12427;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mqtt/mqtt-in-python.html">9.19. Python&#12391;&#12398;MQTT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">9.20. &#12414;&#12392;&#12417;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web&#12469;&#12540;&#12496;&#12540;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#12507;&#12473;&#12488;&#12503;&#12525;&#12488;&#12467;&#12523;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#12484;&#12540;&#12523;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29987;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#12521;&#12452;&#12502;&#12521;&#12522;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#12508;&#12540;&#12489;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#12471;&#12540;&#12523;&#12489;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#12475;&#12531;&#12469;&#12540;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35328;&#35486;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20869;&#37096;&#23455;&#35013;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#22793;&#26356;&#23653;&#27508;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#12521;&#12452;&#12475;&#12531;&#12473;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>このページの内容</h3><ul>
+<li><a class="reference internal" href="#what-udp-adds-to-ip">9.9.1. UDP &#12364; IP &#12395;&#36861;&#21152;&#12377;&#12427;&#12418;&#12398;</a></li>
+<li><a class="reference internal" href="#why-anyone-would-use-it">9.9.2. &#12394;&#12380;&#12381;&#12428;&#12434;&#20351;&#12358;&#12398;&#12363;</a></li>
+<li><a class="reference internal" href="#when-not-to-use-it">9.9.3. &#20351;&#12358;&#12409;&#12365; <em>&#12391;&#12394;&#12356;</em> &#22580;&#21512;</a></li>
+<li><a class="reference internal" href="#concrete-examples-on-a-camera">9.9.4. &#12459;&#12513;&#12521;&#12391;&#12398;&#20855;&#20307;&#20363;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/networking/transport/udp.rst">このページを編集</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam チュートリアル</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">9. </span>ネットワーキング</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">9.9. </span>UDP -- パケットを送って最善を祈る</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/transport/udp.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>ページをコピー</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="その他の操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/transport/udp.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>ページをコピー</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/transport/udp.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>ソースを表示</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/transport/udp.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT で開く</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/transport/udp.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude で開く</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/transport/udp.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity で開く</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="udp-send-a-packet-hope-for-the-best">
+<h1><span class="section-number">9.9. </span>UDP -- パケットを送って最善を祈る<a class="headerlink" href="#udp-send-a-packet-hope-for-the-best" title="Link to this heading">¶</a></h1>
+<p>UDP（User Datagram Protocol）は、トランスポート層が提供する 2 つのサービスのうちより単純なものです。各 UDP 送信は 1 つの <em>データグラム</em> -- IP とポート宛てに送られる自己完結型のバイトのかたまり -- であり、単独でネットワークに投入されます。プロトコルは可能であればそれを配信します。できなければ再試行せず、送信側に警告もせず、データグラム間の順序も一切保持しません。</p>
+<section id="what-udp-adds-to-ip">
+<h2><span class="section-number">9.9.1. </span>UDP が IP に追加するもの<a class="headerlink" href="#what-udp-adds-to-ip" title="Link to this heading">¶</a></h2>
+<p>UDP は IP の上の薄い層です。生の IP 配信に 3 つのものを追加します。</p>
+<ul class="simple">
+<li><p>両端の <strong>ポート番号</strong>。これにより、データグラムを宛先ホスト上の単なるホストではなく、適切な <em>プログラム</em> に配信できます（<a class="reference internal" href="ports.html"><span class="doc">ポート</span></a> を参照）。</p></li>
+<li><p>受信側がペイロードを正確に何バイト読み取ればよいかを知るための <strong>長さフィールド</strong>。</p></li>
+<li><p>ヘッダーとペイロードにわたる <strong>小さなチェックサム</strong>。これにより受信側は破損したデータグラムを検出して破棄できます。</p></li>
+</ul>
+<p>それだけです。IP が行ったこと、行わなかったことのその他すべてを UDP は引き継ぎます。データグラムは再試行されません。順序どおりでなく到着することがあります。基盤となるネットワークのクセによって重複することがあります。ネットワークが輻輳していたり、宛先のバッファが満杯だったり、途中のルーターの 1 つがそう判断したりすると、何の通知もなくドロップされることがあります。</p>
+<figure class="align-default" id="id1">
+<img alt="A diagram with sender on the left and receiver on the right. Three arrows point from sender to receiver, labelled &quot;datagram 1&quot;, &quot;datagram 2&quot;, &quot;datagram 3&quot;. The arrow for datagram 2 is shown as a dashed line with an X over it, indicating loss." src="../../../../_images/udp.svg" />
+<figcaption>
+<p><span class="caption-text">各 UDP データグラムは独立して送信されます。途中で 1 つが失われても、送信側にも受信側にも何も伝えられません -- そのギャップは無言です。</span><a class="headerlink" href="#id1" title="Link to this image">¶</a></p>
+</figcaption>
+</figure>
+</section>
+<section id="why-anyone-would-use-it">
+<h2><span class="section-number">9.9.2. </span>なぜそれを使うのか<a class="headerlink" href="#why-anyone-would-use-it" title="Link to this heading">¶</a></h2>
+<p>UDP がそれほど信頼できないなら、そもそもなぜ存在するのでしょうか。理由は 3 つあります。</p>
+<ul class="simple">
+<li><p><strong>速度とオーバーヘッド。</strong> UDP 送信は 1 つのパケットが出ていくだけです。ハンドシェイクも、確認応答も、維持すべき接続状態もありません。レイテンシと帯域幅のコストは最小限です。</p></li>
+<li><p><strong>独立したメッセージ。</strong> 一部のトラフィックは <em>ステータス更新</em> のストリームであり、すべてのメッセージが新しいスナップショットで、古いものは無価値です。「私はまだ生きています、これが現在の測定値です」と毎秒公開するカメラは、各 <em>新しい</em> 測定値を配信することを気にかけるのであって、失われた測定値を再生することは気にかけません。</p></li>
+<li><p><strong>マルチキャスト。</strong> 1 つの UDP データグラムを一度に多数の受信側へ送信できます。（TCP はそれができません。すべての TCP 接続はちょうど 2 つのエンドポイント間のものです。）サービスディスカバリ、多数のリスナーへのテレメトリ、ビデオストリーミングに有用です。</p></li>
+</ul>
+<p>ネットワークが良好で、送信側の損失への許容度が高い場合、UDP は正しい答えです。配信と順序を保証しなければならない場合、UDP はその上にもう一層の信頼性が必要になるか、あるいはアプリケーションは単に代わりに TCP を使うべきです。</p>
+</section>
+<section id="when-not-to-use-it">
+<h2><span class="section-number">9.9.3. </span>使うべき <em>でない</em> 場合<a class="headerlink" href="#when-not-to-use-it" title="Link to this heading">¶</a></h2>
+<p>逆についても明確にしておく価値があります。UDP が間違った選択となるのは次の場合です。</p>
+<ul class="simple">
+<li><p><strong>すべてのバイトが重要。</strong> 設定データ、コード更新、署名付きトランザクション -- バイトが 1 つ欠けると結果が誤りになるあらゆるケース。</p></li>
+<li><p><strong>順序が重要。</strong> UDP データグラム 2 がデータグラム 1 より先に到着することがあります。</p></li>
+<li><p><strong>メッセージが大きい。</strong> 大きなペイロードはアプリケーションによってより小さなデータグラムに分割する必要があります。トランスポート層はそれをやってくれません。どれか 1 つでも失われると、メッセージ全体が不完全になります。</p></li>
+</ul>
+<p>これらのいずれかに当てはまる場合は、代わりに TCP に頼りましょう。</p>
+</section>
+<section id="concrete-examples-on-a-camera">
+<h2><span class="section-number">9.9.4. </span>カメラでの具体例<a class="headerlink" href="#concrete-examples-on-a-camera" title="Link to this heading">¶</a></h2>
+<p>実際の場面における UDP トラフィックのカメラ側の例。</p>
+<ul class="simple">
+<li><p><strong>ディスカバリ。</strong> カメラは起動時にローカルネットワークへ「誰がいますか」というデータグラムをブロードキャストし、他のデバイスが応答します。</p></li>
+<li><p><strong>テレメトリ。</strong> 毎秒 1 回、カメラは現在のセンサーの測定値を含む小さなデータグラムを収集側に送ります。たまにサンプルを失っても、どのみち次のものが 1 秒後に到着するので問題ありません。</p></li>
+<li><p><strong>時刻同期。</strong> NTP（ネットワークタイムプロトコル）は UDP 上で動作します。クライアントが小さなリクエストを送り、サーバーが現在時刻で応答します。応答が失われた場合、クライアントは単に後でもう一度尋ねるだけです。</p></li>
+<li><p><strong>DNS 検索。</strong> ネットワークに「この名前はどの IP に対応するか」を尋ねるのは UDP 上で行われます。（<a class="reference internal" href="../names/dns.html"><span class="doc">名前と DNS</span></a> で扱います。）</p></li>
+</ul>
+<p>データグラムを送受信するための Python API は、トランスポート層の残りの話が整った後で <a class="reference internal" href="../sockets/udp-sockets.html"><span class="doc">UDP ソケット</span></a> にあります。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>先頭に戻る</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="ports.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>前へ</span><div class="title"><span class="section-number">9.8. </span>ポート</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="tcp.html">
+      <div class="page-info">
+        <span>次へ</span>
+        <div class="title"><span class="section-number">9.10. </span>TCP -- 信頼性の高いバイトストリーム</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    OpenMV ファームウェア v5.0.0 向け &middot; MicroPython v1.28 ベース &middot; ドキュメント生成日 2026年6月19日 &middot; 著作権 &copy; 2014-2026 OpenMV、Damien P. George およびその他。
+  </p>
+  <p>
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> と <a href="https://shibuya.lepture.com">Shibuya theme</a> を使用して作成されました。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=a90b5739"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=4755f45a"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

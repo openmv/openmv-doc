@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-accent-color="blue" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>asyncio --- 异步 I/O 调度器 - OpenMV MicroPython 1.28 文档</title><link rel="shortcut icon" href="../_static/openmv.ico"/><link rel="index" title="索引" href="../genindex.html" /><link rel="search" title="搜索" href="../search.html" /><link rel="next" title="binascii --- 二进制/ASCII 转换" href="binascii.html" /><link rel="prev" title="array --- 数值数据数组" href="array.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/library/asyncio.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/library/asyncio.html"/>
+  <meta property="og:title" content="asyncio --- 异步 I/O 调度器"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/library/asyncio.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/library/asyncio.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/library/asyncio.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/library/asyncio.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/library/asyncio.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/library/asyncio.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/library/asyncio.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/library/asyncio.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/library/asyncio.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/library/asyncio.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/library/asyncio.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/library/asyncio.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/library/asyncio.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/library/asyncio.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/library/asyncio.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/library/asyncio.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/library/asyncio.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/library/asyncio.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/library/asyncio.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/library/asyncio.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/library/asyncio.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/library/asyncio.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/library/asyncio.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/library/asyncio.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/library/asyncio.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/library/asyncio.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/library/asyncio.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      <img class="light-logo" src="../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../index.html">首页</a></li><li class="link"><a href="../openmvcam/tutorial/index.html">教程</a></li><li class="link"><a href="index.html">核心库</a></li><li class="link"><a href="../openmvcam/quickref.html">开发板</a></li><li class="link"><a href="../openmvcam/shields.html">扩展板</a></li><li class="link"><a href="../openmvcam/sensors.html">传感器</a></li><li class="link"><a href="../reference/index.html">语言</a></li><li class="link"><a href="../develop/index.html">内部结构</a></li><li class="link"><a href="../changelog/index.html">更新日志</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="搜索" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="版本">
+      <span class="md:hidden">版本</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻译</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/library/asyncio.html">English</a></li><li><a href="/dev/ar/library/asyncio.html">العربية</a></li><li><a href="/dev/zh_CN/library/asyncio.html">简体中文</a></li><li><a href="/dev/zh_TW/library/asyncio.html">繁體中文</a></li><li><a href="/dev/hr/library/asyncio.html">Hrvatski</a></li><li><a href="/dev/cs/library/asyncio.html">Čeština</a></li><li><a href="/dev/nl/library/asyncio.html">Nederlands</a></li><li><a href="/dev/fi/library/asyncio.html">Suomi</a></li><li><a href="/dev/fr/library/asyncio.html">Français</a></li><li><a href="/dev/de/library/asyncio.html">Deutsch</a></li><li><a href="/dev/he/library/asyncio.html">עברית</a></li><li><a href="/dev/hu/library/asyncio.html">Magyar</a></li><li><a href="/dev/id/library/asyncio.html">Bahasa Indonesia</a></li><li><a href="/dev/it/library/asyncio.html">Italiano</a></li><li><a href="/dev/ja/library/asyncio.html">日本語</a></li><li><a href="/dev/ko/library/asyncio.html">한국어</a></li><li><a href="/dev/pl/library/asyncio.html">Polski</a></li><li><a href="/dev/pt_BR/library/asyncio.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/library/asyncio.html">Português (Portugal)</a></li><li><a href="/dev/ro/library/asyncio.html">Română</a></li><li><a href="/dev/ru/library/asyncio.html">Русский</a></li><li><a href="/dev/es/library/asyncio.html">Español</a></li><li><a href="/dev/sv/library/asyncio.html">Svenska</a></li><li><a href="/dev/th/library/asyncio.html">ไทย</a></li><li><a href="/dev/tr/library/asyncio.html">Türkçe</a></li><li><a href="/dev/uk/library/asyncio.html">Українська</a></li><li><a href="/dev/vi/library/asyncio.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切换到浅色模式"
+data-aria-light="切换到深色模式"
+data-aria-dark="切换到自动颜色模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">讨论</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/tutorial/index.html">&#25945;&#31243;</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">&#24211;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="array.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">array</span></code> --- &#25968;&#20540;&#25968;&#25454;&#25968;&#32452;</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code> --- &#24322;&#27493; I/O &#35843;&#24230;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="binascii.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">binascii</span></code> --- &#20108;&#36827;&#21046;/ASCII &#36716;&#25442;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="builtins.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">builtins</span></code> --- &#20869;&#32622;&#20989;&#25968;&#21644;&#24322;&#24120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cmath.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cmath</span></code> --- &#22797;&#25968;&#25968;&#23398;&#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="collections.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">collections</span></code> --- &#38598;&#21512;&#19982;&#23481;&#22120;&#31867;&#22411;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="errno.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">errno</span></code> --- &#31995;&#32479;&#38169;&#35823;&#30721;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gc.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gc</span></code> --- &#25511;&#21046;&#22403;&#22334;&#22238;&#25910;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gzip.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gzip</span></code> --- gzip &#21387;&#32553;&#19982;&#35299;&#21387;&#32553;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hashlib.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">hashlib</span></code> --- &#21704;&#24076;&#31639;&#27861;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="heapq.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">heapq</span></code> --- &#22534;&#38431;&#21015;&#31639;&#27861;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="io.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">io</span></code> --- &#36755;&#20837;/&#36755;&#20986;&#27969;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="json.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">json</span></code> --- JSON &#32534;&#30721;&#19982;&#35299;&#30721;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="marshal.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">marshal</span></code> --- Python &#23545;&#35937;&#24207;&#21015;&#21270;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="math.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">math</span></code> --- &#25968;&#23398;&#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="os.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">os</span></code> --- &#22522;&#26412;&#30340;&#8220;&#25805;&#20316;&#31995;&#32479;&#8221;&#26381;&#21153;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="platform.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">platform</span></code> --- &#35775;&#38382;&#24213;&#23618;&#24179;&#21488;&#30340;&#26631;&#35782;&#25968;&#25454;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="random.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">random</span></code> --- &#29983;&#25104;&#38543;&#26426;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="re.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">re</span></code> --- &#31616;&#21333;&#27491;&#21017;&#34920;&#36798;&#24335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="select.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">select</span></code> --- &#31561;&#24453;&#19968;&#32452;&#27969;&#19978;&#30340;&#20107;&#20214;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="socket.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">socket</span></code> --- socket &#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ssl.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ssl</span></code> --- SSL/TLS &#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="string.templatelib.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">string.templatelib</span></code> --- &#27169;&#26495;&#23383;&#31526;&#20018;&#25903;&#25345;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="struct.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code> --- &#25171;&#21253;&#21644;&#35299;&#21253;&#22522;&#26412;&#25968;&#25454;&#31867;&#22411;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sys.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sys</span></code> --- &#31995;&#32479;&#30456;&#20851;&#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="time.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">time</span></code> --- &#26102;&#38388;&#30456;&#20851;&#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="types.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">types</span></code> --- &#20869;&#32622;&#31867;&#22411;&#30340;&#21517;&#31216;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="zlib.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">zlib</span></code> --- zlib &#21387;&#32553;&#19982;&#35299;&#21387;&#32553;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bluetooth.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bluetooth</span></code> --- &#24213;&#23618;&#34013;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cryptolib.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">cryptolib</span></code> --- &#21152;&#23494;&#31639;&#27861;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deflate.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">deflate</span></code> --- deflate &#21387;&#32553;&#19982;&#35299;&#21387;&#32553;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="framebuf.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">framebuf</span></code> --- &#24103;&#32531;&#20914;&#21306;&#25805;&#20316;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="machine.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">machine</span></code> --- &#19982;&#30828;&#20214;&#30456;&#20851;&#30340;&#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="micropython.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">micropython</span></code> --- &#35775;&#38382;&#21644;&#25511;&#21046; MicroPython &#20869;&#37096;&#26426;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="network.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">network</span></code> --- &#32593;&#32476;&#37197;&#32622;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="openamp.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">openamp</span></code> --- &#25552;&#20379;&#26631;&#20934;&#30340;&#38750;&#23545;&#31216;&#22810;&#22788;&#29702;&#65288;AMP&#65289;&#25903;&#25345;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="uctypes.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">uctypes</span></code> --- &#20197;&#32467;&#26500;&#21270;&#26041;&#24335;&#35775;&#38382;&#20108;&#36827;&#21046;&#25968;&#25454;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vfs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vfs</span></code> --- &#34394;&#25311;&#25991;&#20214;&#31995;&#32479;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.csi.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">csi</span></code> --- &#25668;&#20687;&#22836;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.sensor.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">sensor</span></code> --- &#25668;&#20687;&#22836;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.image.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">image</span></code> --- &#26426;&#22120;&#35270;&#35273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.gif.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gif</span></code> --- gif &#24405;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.mjpeg.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mjpeg</span></code> --- mjpeg &#24405;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.audio.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">audio</span></code> --- &#38899;&#39057;&#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.display.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">display</span></code> --- &#26174;&#31034;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.fir.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">fir</span></code> --- &#28909;&#25104;&#20687;&#20256;&#24863;&#22120;&#39537;&#21160;&#65288;fir == &#36828;&#32418;&#22806;&#65289;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.tof.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tof</span></code> --- &#39134;&#34892;&#26102;&#38388;&#20256;&#24863;&#22120;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.imu.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">imu</span></code> --- imu &#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.omv.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">omv</span></code> --- OpenMV Cam &#20449;&#24687;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.crc.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">crc</span></code> --- CRC &#35745;&#31639;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.ml.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ml</span></code> --- &#26426;&#22120;&#23398;&#20064;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.ulab.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ulab</span></code> --- &#19982; numpy &#20860;&#23481;&#30340;&#25968;&#32452;&#24211;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.protocol.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">protocol</span></code> --- OpenMV &#21327;&#35758;&#36890;&#36947;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="logging.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">logging</span></code> --- &#20107;&#20214;&#26085;&#24535;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="senml.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">senml</span></code> --- &#20256;&#24863;&#22120;&#26631;&#35760;&#35821;&#35328;&#65288;Sensor Markup Language&#65289;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="aioble.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">aioble</span></code> --- &#24322;&#27493; BLE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.rpc.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rpc</span></code> --- rpc &#24211;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.rtsp.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rtsp</span></code> --- rtsp &#24211;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.mqtt.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mqtt</span></code> --- &#31616;&#26131; MQTT &#23458;&#25143;&#31471;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.requests.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">requests</span></code> --- HTTP &#23458;&#25143;&#31471;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.mutex.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mutex</span></code> --- mutex &#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.pid.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pid</span></code> --- &#27604;&#20363;-&#31215;&#20998;-&#24494;&#20998;&#25511;&#21046;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.bno055.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bno055</span></code> --- BNO055 IMU &#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.modbus.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">modbus</span></code> --- Modbus RTU &#20174;&#31449;&#21327;&#35758;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.vl53l1x.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">vl53l1x</span></code> --- VL53L1X ToF &#36317;&#31163;&#20256;&#24863;&#22120;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ntptime.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ntptime</span></code> --- &#31616;&#21333;&#30340; NTP &#23458;&#25143;&#31471;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="webrepl.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">webrepl</span></code> --- WebREPL &#26381;&#21153;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jwt.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">jwt</span></code> --- JSON Web Token</a></li>
+<li class="toctree-l2"><a class="reference internal" href="microdot.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">microdot</span></code> --- &#26497;&#31616; HTTP &#26694;&#26550;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pyb.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pyb</span></code> --- &#19982;&#24320;&#21457;&#26495;&#30456;&#20851;&#30340;&#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stm.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">stm</span></code> --- STM32 MCU &#19987;&#29992;&#21151;&#33021;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mimxrt.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">mimxrt</span></code> --- NXP i.MXRT &#19987;&#23646;&#21151;&#33021;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.alif.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">alif</span></code> --- Alif Ensemble SoC &#20989;&#25968;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="rp2.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">rp2</span></code> --- RP2040 &#19987;&#29992;&#21151;&#33021;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ubluepy.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ubluepy</span></code> --- Bluetooth LE &#22806;&#35774;&#19982;&#20013;&#24515;&#35774;&#22791;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dht.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dht</span></code> --- DHT11 &#21644; DHT22 &#28201;&#28287;&#24230;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="onewire.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">onewire</span></code> --- 1-Wire &#24635;&#32447;&#21327;&#35758;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ds18x20.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ds18x20</span></code> --- DS18x20 &#28201;&#24230;&#20256;&#24863;&#22120;&#39537;&#21160;&#31243;&#24207;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neopixel.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">neopixel</span></code> --- &#25511;&#21046; WS2812 / NeoPixel LED</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lsm6dsox.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lsm6dsox</span></code> --- LSM6DSOX 6 &#36724; IMU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bmi270.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bmi270</span></code> --- BMI270 &#20845;&#36724; IMU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="bmm150.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">bmm150</span></code> --- BMM150 &#19977;&#36724;&#30913;&#21147;&#35745;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lsm9ds1.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lsm9ds1</span></code> --- LSM9DS1 9 &#36724; IMU</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hts221.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">hts221</span></code> --- HTS221 &#28287;&#24230;/&#28201;&#24230;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="lps22h.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lps22h</span></code> --- LPS22HB/HH &#21387;&#21147;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hs3003.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">hs3003</span></code> --- HS3003 &#28287;&#24230;/&#28201;&#24230;&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="espflash.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">espflash</span></code> --- ESP32 ROM &#24341;&#23548;&#21152;&#36733;&#31243;&#24207;&#22266;&#20214;&#28903;&#24405;&#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="imu.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">imu</span></code> --- &#29992;&#20110; Arduino Nano 33 BLE Sense &#30340; IMU &#36741;&#21161;&#27169;&#22359;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.ssd1306.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ssd1306</span></code> --- OLED &#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.tb6612.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tb6612</span></code> --- TB6612 &#30005;&#26426;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.pca9674a.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pca9674a</span></code> --- I2C &#25193;&#23637;&#22120;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.tfp410.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tfp410</span></code> --- DVI/HDMI &#25511;&#21046;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.ft5x06.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">ft5x06</span></code> --- &#35302;&#25720;&#23631;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.gt911.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">gt911</span></code> --- GT911 &#20116;&#28857;&#30005;&#23481;&#24335;&#35302;&#25720;&#25511;&#21046;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.lora.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">lora</span></code> --- LoRa &#35843;&#21046;&#35299;&#35843;&#22120;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.apds9960.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">apds9960</span></code> --- &#25509;&#36817;&#12289;&#25163;&#21183;&#21644;&#39068;&#33394;&#20256;&#24863;&#22120;&#39537;&#21160;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="omv.romfs.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">romfs</span></code> --- ROMFS &#36741;&#21161;&#24037;&#20855;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/quickref.html">&#24320;&#21457;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/shields.html">&#25193;&#23637;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../openmvcam/sensors.html">&#20256;&#24863;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../reference/index.html">&#35821;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../develop/index.html">&#20869;&#37096;&#23454;&#29616;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../changelog/index.html">&#26356;&#26032;&#26085;&#24535;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../license.html">&#35768;&#21487;&#35777;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>本页内容</h3><ul>
+<li><a class="reference internal" href="#core-functions">&#26680;&#24515;&#20989;&#25968;</a><ul>
+<li><a class="reference internal" href="#asyncio.create_task"><code class="docutils literal notranslate"><span class="pre">create_task()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.current_task"><code class="docutils literal notranslate"><span class="pre">current_task()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.sleep"><code class="docutils literal notranslate"><span class="pre">sleep()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.sleep_ms"><code class="docutils literal notranslate"><span class="pre">sleep_ms()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-functions">&#38468;&#21152;&#20989;&#25968;</a><ul>
+<li><a class="reference internal" href="#asyncio.wait_for"><code class="docutils literal notranslate"><span class="pre">wait_for()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.wait_for_ms"><code class="docutils literal notranslate"><span class="pre">wait_for_ms()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.gather"><code class="docutils literal notranslate"><span class="pre">gather()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#class-task">class Task</a><ul>
+<li><a class="reference internal" href="#asyncio.Task"><code class="docutils literal notranslate"><span class="pre">Task</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.Task.cancel"><code class="docutils literal notranslate">cancel()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#class-event">class Event</a><ul>
+<li><a class="reference internal" href="#asyncio.Event"><code class="docutils literal notranslate"><span class="pre">Event</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.Event.is_set"><code class="docutils literal notranslate">is_set()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Event.set"><code class="docutils literal notranslate">set()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Event.clear"><code class="docutils literal notranslate">clear()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Event.wait"><code class="docutils literal notranslate">wait()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#class-threadsafeflag">class ThreadSafeFlag</a><ul>
+<li><a class="reference internal" href="#asyncio.ThreadSafeFlag"><code class="docutils literal notranslate"><span class="pre">ThreadSafeFlag</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.ThreadSafeFlag.set"><code class="docutils literal notranslate">set()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.ThreadSafeFlag.clear"><code class="docutils literal notranslate">clear()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.ThreadSafeFlag.wait"><code class="docutils literal notranslate">wait()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#class-lock">class Lock</a><ul>
+<li><a class="reference internal" href="#asyncio.Lock"><code class="docutils literal notranslate"><span class="pre">Lock</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.Lock.locked"><code class="docutils literal notranslate">locked()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Lock.acquire"><code class="docutils literal notranslate">acquire()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Lock.release"><code class="docutils literal notranslate">release()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tcp-stream-connections">TCP &#27969;&#36830;&#25509;</a><ul>
+<li><a class="reference internal" href="#asyncio.open_connection"><code class="docutils literal notranslate"><span class="pre">open_connection()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.start_server"><code class="docutils literal notranslate"><span class="pre">start_server()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream"><code class="docutils literal notranslate"><span class="pre">Stream</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.Stream.get_extra_info"><code class="docutils literal notranslate">get_extra_info()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.close"><code class="docutils literal notranslate">close()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.wait_closed"><code class="docutils literal notranslate">wait_closed()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.read"><code class="docutils literal notranslate">read()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.readinto"><code class="docutils literal notranslate">readinto()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.readexactly"><code class="docutils literal notranslate">readexactly()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.readline"><code class="docutils literal notranslate">readline()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.write"><code class="docutils literal notranslate">write()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Stream.drain"><code class="docutils literal notranslate">drain()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#asyncio.Server"><code class="docutils literal notranslate"><span class="pre">Server</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.Server.close"><code class="docutils literal notranslate">close()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Server.wait_closed"><code class="docutils literal notranslate">wait_closed()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#event-loop">&#20107;&#20214;&#24490;&#29615;</a><ul>
+<li><a class="reference internal" href="#asyncio.get_event_loop"><code class="docutils literal notranslate"><span class="pre">get_event_loop()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.new_event_loop"><code class="docutils literal notranslate"><span class="pre">new_event_loop()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop"><code class="docutils literal notranslate"><span class="pre">Loop</span></code></a><ul>
+<li><a class="reference internal" href="#asyncio.Loop.create_task"><code class="docutils literal notranslate">create_task()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.run_forever"><code class="docutils literal notranslate">run_forever()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.run_until_complete"><code class="docutils literal notranslate">run_until_complete()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.stop"><code class="docutils literal notranslate">stop()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.close"><code class="docutils literal notranslate">close()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.set_exception_handler"><code class="docutils literal notranslate">set_exception_handler()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.get_exception_handler"><code class="docutils literal notranslate">get_exception_handler()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.default_exception_handler"><code class="docutils literal notranslate">default_exception_handler()</span></code></a></li>
+<li><a class="reference internal" href="#asyncio.Loop.call_exception_handler"><code class="docutils literal notranslate">call_exception_handler()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/library/asyncio.rst">编辑此页</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name">OpenMV MicroPython 库</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code> --- 异步 I/O 调度器</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/library/asyncio.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>复制页面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/library/asyncio.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>复制页面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/library/asyncio.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>查看源码</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/library/asyncio.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中打开</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/library/asyncio.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中打开</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/library/asyncio.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中打开</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="module-asyncio">
+<span id="asyncio-asynchronous-i-o-scheduler"></span><h1><a class="reference internal" href="#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> --- 异步 I/O 调度器<a class="headerlink" href="#module-asyncio" title="链接到此标题。">¶</a></h1>
+<p>本模块为 <code class="docutils literal notranslate"><span class="pre">async</span></code>/<code class="docutils literal notranslate"><span class="pre">await</span></code> 协程提供了一个协作式多任务调度器，并提供了用于同步的原语（锁、事件）以及通过流读取器和写入器实现的非阻塞 TCP 网络功能。任务在单个事件循环上并发运行；当前正在运行的任务通过 <code class="docutils literal notranslate"><span class="pre">await</span></code> 将控制权交还给循环。</p>
+<p>示例:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">blink</span><span class="p">(</span><span class="n">led</span><span class="p">,</span> <span class="n">period_ms</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">        <span class="n">led</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+</span><span data-line="6">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span data-line="7">        <span class="n">led</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+</span><span data-line="8">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">period_ms</span><span class="p">)</span>
+</span><span data-line="9">
+</span><span data-line="10"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">led1</span><span class="p">,</span> <span class="n">led2</span><span class="p">):</span>
+</span><span data-line="11">    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">blink</span><span class="p">(</span><span class="n">led1</span><span class="p">,</span> <span class="mi">700</span><span class="p">))</span>
+</span><span data-line="12">    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">blink</span><span class="p">(</span><span class="n">led2</span><span class="p">,</span> <span class="mi">400</span><span class="p">))</span>
+</span><span data-line="13">    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">10_000</span><span class="p">)</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="c1"># Running on an OpenMV Cam</span>
+</span><span data-line="16"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">LED</span>
+</span><span data-line="17"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">(</span><span class="n">LED</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">LED</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+</span></pre></div>
+</div>
+<section id="core-functions">
+<h2>核心函数<a class="headerlink" href="#core-functions" title="链接到此标题。">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.create_task">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">create_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coro</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Coroutine</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#asyncio.Task" title="asyncio.Task"><span class="pre">Task</span></a></span></span><a class="headerlink" href="#asyncio.create_task" title="链接到此定义。">¶</a></dt>
+<dd><p>从给定的协程创建一个新任务，并将其调度运行。</p>
+<p>返回对应的 <a class="reference internal" href="#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 对象。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.current_task">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">current_task</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#asyncio.Task" title="asyncio.Task"><span class="pre">Task</span></a></span></span><a class="headerlink" href="#asyncio.current_task" title="链接到此定义。">¶</a></dt>
+<dd><p>返回与当前正在运行的任务关联的 <a class="reference internal" href="#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 对象。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.run">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coro</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Coroutine</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#asyncio.run" title="链接到此定义。">¶</a></dt>
+<dd><p>从给定的协程创建一个新任务，并运行它直到完成。</p>
+<p>返回 <em>coro</em> 所返回的值。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.sleep">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">sleep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#float" title="float"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.sleep" title="链接到此定义。">¶</a></dt>
+<dd><p>休眠 <em>t</em> 秒（可以是浮点数）。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.sleep_ms">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">sleep_ms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.sleep_ms" title="链接到此定义。">¶</a></dt>
+<dd><p>休眠 <em>t</em> 毫秒。</p>
+<p>这是一个协程，也是 MicroPython 的扩展。</p>
+</dd></dl>
+
+</section>
+<section id="additional-functions">
+<h2>附加函数<a class="headerlink" href="#additional-functions" title="链接到此标题。">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.wait_for">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">wait_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">awaitable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#float" title="float"><span class="pre">float</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#asyncio.wait_for" title="链接到此定义。">¶</a></dt>
+<dd><p>等待 <em>awaitable</em> 完成，但如果其耗时超过 <em>timeout</em> 秒，则将其取消。如果 <em>awaitable</em> 不是任务，则会从它创建一个任务。</p>
+<p>如果发生超时，则会取消该任务并抛出 <code class="docutils literal notranslate"><span class="pre">asyncio.TimeoutError</span></code>：调用方应捕获此异常。任务会收到 <code class="docutils literal notranslate"><span class="pre">asyncio.CancelledError</span></code>，可以忽略它，也可以使用 <code class="docutils literal notranslate"><span class="pre">try...except</span></code> 或 <code class="docutils literal notranslate"><span class="pre">try...finally</span></code> 捕获它以运行清理代码。</p>
+<p>返回 <em>awaitable</em> 的返回值。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.wait_for_ms">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">wait_for_ms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">awaitable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#asyncio.wait_for_ms" title="链接到此定义。">¶</a></dt>
+<dd><p>类似于 <a class="reference internal" href="#asyncio.wait_for" title="asyncio.wait_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">wait_for()</span></code></a>，但 <em>timeout</em> 是以毫秒为单位的整数。</p>
+<p>这是一个协程，也是 MicroPython 的扩展。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.gather">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">gather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">awaitables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_exceptions</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span></span></span><a class="headerlink" href="#asyncio.gather" title="链接到此定义。">¶</a></dt>
+<dd><p>并发运行所有 <em>awaitables</em>。任何不是任务的 <em>awaitables</em> 都会被提升为任务。</p>
+<p>返回所有 <em>awaitables</em> 的返回值组成的列表。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+</section>
+<section id="class-task">
+<h2>class Task<a class="headerlink" href="#class-task" title="链接到此标题。">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.Task">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">Task</span></span><a class="headerlink" href="#asyncio.Task" title="链接到此定义。">¶</a></dt>
+<dd><p>该对象将一个协程包装为正在运行的任务。可以使用 <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">task</span></code> 等待任务，这将等待任务完成并返回任务的返回值。</p>
+<p>不应直接创建任务，而应使用 <a class="reference internal" href="#asyncio.create_task" title="asyncio.create_task"><code class="xref py py-func docutils literal notranslate"><span class="pre">create_task()</span></code></a> 来创建它们。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Task.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Task.cancel" title="链接到此定义。">¶</a></dt>
+<dd><p>通过向任务注入 <code class="docutils literal notranslate"><span class="pre">asyncio.CancelledError</span></code> 来取消该任务。任务可以忽略此异常。可以通过捕获它，或通过 <code class="docutils literal notranslate"><span class="pre">try</span> <span class="pre">...</span> <span class="pre">finally</span></code> 来运行清理代码。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="class-event">
+<h2>class Event<a class="headerlink" href="#class-event" title="链接到此标题。">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.Event">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">Event</span></span><a class="headerlink" href="#asyncio.Event" title="链接到此定义。">¶</a></dt>
+<dd><p>创建一个可用于同步任务的新事件。事件初始处于清除状态。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Event.is_set">
+<span class="sig-name descname"><span class="pre">is_set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#asyncio.Event.is_set" title="链接到此定义。">¶</a></dt>
+<dd><p>如果事件已设置，则返回 <code class="docutils literal notranslate"><span class="pre">True</span></code>，否则返回 <code class="docutils literal notranslate"><span class="pre">False</span></code>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Event.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Event.set" title="链接到此定义。">¶</a></dt>
+<dd><p>设置该事件。所有等待该事件的任务都将被调度运行。</p>
+<p>注意：必须在任务内部调用此方法。从 IRQ、调度器回调或其他线程调用它是不安全的。请参阅 <a class="reference internal" href="#asyncio.ThreadSafeFlag" title="asyncio.ThreadSafeFlag"><code class="xref py py-class docutils literal notranslate"><span class="pre">ThreadSafeFlag</span></code></a>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Event.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Event.clear" title="链接到此定义。">¶</a></dt>
+<dd><p>清除该事件。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Event.wait">
+<span class="sig-name descname"><span class="pre">wait</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Event.wait" title="链接到此定义。">¶</a></dt>
+<dd><p>等待事件被设置。如果事件已经设置，则立即返回。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="class-threadsafeflag">
+<h2>class ThreadSafeFlag<a class="headerlink" href="#class-threadsafeflag" title="链接到此标题。">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.ThreadSafeFlag">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">ThreadSafeFlag</span></span><a class="headerlink" href="#asyncio.ThreadSafeFlag" title="链接到此定义。">¶</a></dt>
+<dd><p>创建一个新标志，可用于将一个任务与在 asyncio 循环之外运行的代码（例如其他线程、IRQ 或调度器回调）进行同步。标志初始处于清除状态。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.ThreadSafeFlag.set">
+<span class="sig-name descname"><span class="pre">set</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.ThreadSafeFlag.set" title="链接到此定义。">¶</a></dt>
+<dd><p>设置该标志。如果有任务正在等待该标志，它将被调度运行。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.ThreadSafeFlag.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.ThreadSafeFlag.clear" title="链接到此定义。">¶</a></dt>
+<dd><p>清除该标志。这可用于确保在等待之前清除一个可能先前已设置的标志。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.ThreadSafeFlag.wait">
+<span class="sig-name descname"><span class="pre">wait</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.ThreadSafeFlag.wait" title="链接到此定义。">¶</a></dt>
+<dd><p>等待标志被设置。如果标志已经设置，则立即返回。从 <code class="docutils literal notranslate"><span class="pre">wait</span></code> 返回时，标志会自动重置。</p>
+<p>同一时间只能有一个任务等待某个标志。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="class-lock">
+<h2>class Lock<a class="headerlink" href="#class-lock" title="链接到此标题。">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.Lock">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">Lock</span></span><a class="headerlink" href="#asyncio.Lock" title="链接到此定义。">¶</a></dt>
+<dd><p>创建一个可用于协调任务的新锁。锁初始处于未锁定状态。</p>
+<p>除了下面的方法之外，锁还可以在 <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">with</span></code> 语句中使用。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Lock.locked">
+<span class="sig-name descname"><span class="pre">locked</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#asyncio.Lock.locked" title="链接到此定义。">¶</a></dt>
+<dd><p>如果锁已锁定，则返回 <code class="docutils literal notranslate"><span class="pre">True</span></code>，否则返回 <code class="docutils literal notranslate"><span class="pre">False</span></code>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Lock.acquire">
+<span class="sig-name descname"><span class="pre">acquire</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#asyncio.Lock.acquire" title="链接到此定义。">¶</a></dt>
+<dd><p>等待锁处于未锁定状态，然后以原子方式将其锁定。任何时刻只有一个任务能够获取该锁。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Lock.release">
+<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Lock.release" title="链接到此定义。">¶</a></dt>
+<dd><p>释放该锁。如果有任务正在等待该锁，则队列中的下一个任务将被调度运行，且锁保持锁定状态。否则，没有任务在等待，锁变为未锁定状态。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="tcp-stream-connections">
+<h2>TCP 流连接<a class="headerlink" href="#tcp-stream-connections" title="链接到此标题。">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.open_connection">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">open_connection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#str" title="str"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ssl.html#ssl.SSLContext" title="ssl.SSLContext"><span class="pre">ssl.SSLContext</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#bool" title="bool"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#asyncio.Stream" title="asyncio.Stream"><span class="pre">Stream</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#asyncio.Stream" title="asyncio.Stream"><span class="pre">Stream</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#asyncio.open_connection" title="链接到此定义。">¶</a></dt>
+<dd><p>打开到给定 <em>host</em> 和 <em>port</em> 的 TCP 连接。<em>host</em> 地址将使用 <a class="reference internal" href="socket.html#socket.getaddrinfo" title="socket.getaddrinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">socket.getaddrinfo()</span></code></a> 进行解析，该调用目前是阻塞调用。如果 <em>ssl</em> 是一个 <a class="reference internal" href="ssl.html#ssl.SSLContext" title="ssl.SSLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ssl.SSLContext</span></code></a> 对象，则使用此上下文来创建传输；如果 <em>ssl</em> 为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，则使用默认上下文。</p>
+<p>返回一对流：一个读取器流和一个写入器流。如果无法解析主机或无法建立连接，将抛出特定于套接字的 <code class="docutils literal notranslate"><span class="pre">OSError</span></code>。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.start_server">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">start_server</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#str" title="str"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">backlog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="ssl.html#ssl.SSLContext" title="ssl.SSLContext"><span class="pre">ssl.SSLContext</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#asyncio.Server" title="asyncio.Server"><span class="pre">Server</span></a></span></span><a class="headerlink" href="#asyncio.start_server" title="链接到此定义。">¶</a></dt>
+<dd><p>在给定的 <em>host</em> 和 <em>port</em> 上启动一个 TCP 服务器。对于传入的、已接受的连接，将调用 <em>callback</em>，并向其传递 2 个参数：该连接的读取器流和写入器流。</p>
+<p>如果 <em>ssl</em> 是一个 <a class="reference internal" href="ssl.html#ssl.SSLContext" title="ssl.SSLContext"><code class="xref py py-class docutils literal notranslate"><span class="pre">ssl.SSLContext</span></code></a> 对象，则使用此上下文来创建传输。</p>
+<p>返回一个 <a class="reference internal" href="#asyncio.Server" title="asyncio.Server"><code class="xref py py-class docutils literal notranslate"><span class="pre">Server</span></code></a> 对象。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.Stream">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">Stream</span></span><a class="headerlink" href="#asyncio.Stream" title="链接到此定义。">¶</a></dt>
+<dd><p>这表示一个 TCP 流连接。为了精简代码，该类同时实现了读取器和写入器，并且 <code class="docutils literal notranslate"><span class="pre">StreamReader</span></code> 和 <code class="docutils literal notranslate"><span class="pre">StreamWriter</span></code> 都是该类的别名。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.get_extra_info">
+<span class="sig-name descname"><span class="pre">get_extra_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#str" title="str"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#asyncio.Stream.get_extra_info" title="链接到此定义。">¶</a></dt>
+<dd><p>获取关于该流的额外信息，由 <em>v</em> 指定。<em>v</em> 的有效值为：<code class="docutils literal notranslate"><span class="pre">peername</span></code>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Stream.close" title="链接到此定义。">¶</a></dt>
+<dd><p>关闭该流。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.wait_closed">
+<span class="sig-name descname"><span class="pre">wait_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Stream.wait_closed" title="链接到此定义。">¶</a></dt>
+<dd><p>等待流关闭。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#bytes" title="bytes"><span class="pre">bytes</span></a></span></span><a class="headerlink" href="#asyncio.Stream.read" title="链接到此定义。">¶</a></dt>
+<dd><p>读取最多 <em>n</em> 个字节并返回它们。如果未提供 <em>n</em> 或为 -1，则读取所有字节直到 EOF。如果在读取任何字节之前遇到 EOF，则返回值将是一个空的 bytes 对象。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.readinto">
+<span class="sig-name descname"><span class="pre">readinto</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bytearray" title="bytearray"><span class="pre">bytearray</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="builtins.html#memoryview" title="memoryview"><span class="pre">memoryview</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></span><a class="headerlink" href="#asyncio.Stream.readinto" title="链接到此定义。">¶</a></dt>
+<dd><p>将最多 n 个字节读取到 <em>buf</em> 中，其中 n 等于 <em>buf</em> 的长度。</p>
+<p>返回读取到 <em>buf</em> 中的字节数。</p>
+<p>这是一个协程，也是 MicroPython 的扩展。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.readexactly">
+<span class="sig-name descname"><span class="pre">readexactly</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#int" title="int"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#bytes" title="bytes"><span class="pre">bytes</span></a></span></span><a class="headerlink" href="#asyncio.Stream.readexactly" title="链接到此定义。">¶</a></dt>
+<dd><p>精确读取 <em>n</em> 个字节并将它们作为 bytes 对象返回。</p>
+<p>如果流在读取 <em>n</em> 个字节之前结束，则抛出 <code class="docutils literal notranslate"><span class="pre">EOFError</span></code> 异常。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.readline">
+<span class="sig-name descname"><span class="pre">readline</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="builtins.html#bytes" title="bytes"><span class="pre">bytes</span></a></span></span><a class="headerlink" href="#asyncio.Stream.readline" title="链接到此定义。">¶</a></dt>
+<dd><p>读取一行并返回它。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">buf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#bytes" title="bytes"><span class="pre">bytes</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Stream.write" title="链接到此定义。">¶</a></dt>
+<dd><p>将 <em>buf</em> 累加到输出缓冲区。仅当调用 <a class="reference internal" href="#asyncio.Stream.drain" title="asyncio.Stream.drain"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Stream.drain()</span></code></a> 时才会刷新数据。建议在调用此函数后立即调用 <a class="reference internal" href="#asyncio.Stream.drain" title="asyncio.Stream.drain"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Stream.drain()</span></code></a>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Stream.drain">
+<span class="sig-name descname"><span class="pre">drain</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Stream.drain" title="链接到此定义。">¶</a></dt>
+<dd><p>将所有缓冲的输出数据排空（写出）到流中。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.Server">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">Server</span></span><a class="headerlink" href="#asyncio.Server" title="链接到此定义。">¶</a></dt>
+<dd><p>这表示由 <a class="reference internal" href="#asyncio.start_server" title="asyncio.start_server"><code class="xref py py-func docutils literal notranslate"><span class="pre">start_server()</span></code></a> 返回的服务器类。它可以在 <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">with</span></code> 语句中使用，以在退出时关闭服务器。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Server.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Server.close" title="链接到此定义。">¶</a></dt>
+<dd><p>关闭该服务器。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Server.wait_closed">
+<span class="sig-name descname"><span class="pre">wait_closed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Server.wait_closed" title="链接到此定义。">¶</a></dt>
+<dd><p>等待服务器关闭。</p>
+<p>这是一个协程。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="event-loop">
+<h2>事件循环<a class="headerlink" href="#event-loop" title="链接到此标题。">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.get_event_loop">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">get_event_loop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#asyncio.Loop" title="asyncio.Loop"><span class="pre">Loop</span></a></span></span><a class="headerlink" href="#asyncio.get_event_loop" title="链接到此定义。">¶</a></dt>
+<dd><p>返回用于调度和运行任务的事件循环。请参阅 <a class="reference internal" href="#asyncio.Loop" title="asyncio.Loop"><code class="xref py py-class docutils literal notranslate"><span class="pre">Loop</span></code></a>。</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="asyncio.new_event_loop">
+<span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">new_event_loop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#asyncio.Loop" title="asyncio.Loop"><span class="pre">Loop</span></a></span></span><a class="headerlink" href="#asyncio.new_event_loop" title="链接到此定义。">¶</a></dt>
+<dd><p>重置事件循环并返回它。</p>
+<p>注意：由于 MicroPython 只有一个事件循环，此函数仅重置循环的状态，而不会创建新的循环。</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="asyncio.Loop">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">asyncio.</span></span><span class="sig-name descname"><span class="pre">Loop</span></span><a class="headerlink" href="#asyncio.Loop" title="链接到此定义。">¶</a></dt>
+<dd><p>这表示调度和运行任务的对象。它无法被创建，请改用 <a class="reference internal" href="#asyncio.get_event_loop" title="asyncio.get_event_loop"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_event_loop()</span></code></a>。</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.create_task">
+<span class="sig-name descname"><span class="pre">create_task</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coro</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Coroutine</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#asyncio.Task" title="asyncio.Task"><span class="pre">Task</span></a></span></span><a class="headerlink" href="#asyncio.Loop.create_task" title="链接到此定义。">¶</a></dt>
+<dd><p>从给定的 <em>coro</em> 创建一个任务并返回新的 <a class="reference internal" href="#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 对象。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.run_forever">
+<span class="sig-name descname"><span class="pre">run_forever</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.run_forever" title="链接到此定义。">¶</a></dt>
+<dd><p>运行事件循环，直到调用 <a class="reference internal" href="#asyncio.Loop.stop" title="asyncio.Loop.stop"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stop()</span></code></a>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.run_until_complete">
+<span class="sig-name descname"><span class="pre">run_until_complete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">awaitable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Awaitable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#asyncio.Loop.run_until_complete" title="链接到此定义。">¶</a></dt>
+<dd><p>运行给定的 <em>awaitable</em> 直到它完成。如果 <em>awaitable</em> 不是任务，则会将其提升为任务。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.stop" title="链接到此定义。">¶</a></dt>
+<dd><p>停止事件循环。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.close" title="链接到此定义。">¶</a></dt>
+<dd><p>关闭事件循环。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.set_exception_handler">
+<span class="sig-name descname"><span class="pre">set_exception_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">handler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.set_exception_handler" title="链接到此定义。">¶</a></dt>
+<dd><p>设置异常处理器，当某个任务抛出未被捕获的异常时调用它。<em>handler</em> 应接受两个参数：<code class="docutils literal notranslate"><span class="pre">(loop,</span> <span class="pre">context)</span></code>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.get_exception_handler">
+<span class="sig-name descname"><span class="pre">get_exception_handler</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.get_exception_handler" title="链接到此定义。">¶</a></dt>
+<dd><p>获取当前的异常处理器。返回该处理器，如果未设置自定义处理器，则返回 <code class="docutils literal notranslate"><span class="pre">None</span></code>。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.default_exception_handler">
+<span class="sig-name descname"><span class="pre">default_exception_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#dict" title="dict"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.default_exception_handler" title="链接到此定义。">¶</a></dt>
+<dd><p>被调用的默认异常处理器。</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="asyncio.Loop.call_exception_handler">
+<span class="sig-name descname"><span class="pre">call_exception_handler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="builtins.html#dict" title="dict"><span class="pre">dict</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(位于 Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#asyncio.Loop.call_exception_handler" title="链接到此定义。">¶</a></dt>
+<dd><p>调用当前的异常处理器。参数 <em>context</em> 会被透传，它是一个包含以下键的字典：<code class="docutils literal notranslate"><span class="pre">'message'</span></code>、<code class="docutils literal notranslate"><span class="pre">'exception'</span></code>、<code class="docutils literal notranslate"><span class="pre">'future'</span></code>。</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>返回顶部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="array.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一页</span><div class="title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">array</span></code> --- 数值数据数组</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="binascii.html">
+      <div class="page-info">
+        <span>下一页</span>
+        <div class="title"><code class="xref py py-mod docutils literal notranslate"><span class="pre">binascii</span></code> --- 二进制/ASCII 转换</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    适用于 OpenMV 固件 v5.0.0 &middot; 基于 MicroPython v1.28 &middot; 文档构建于 2026年6月19日 &middot; 版权 &copy; 2014-2026 OpenMV、Damien P. George 及其他贡献者。
+  </p>
+  <p>
+    
+    使用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 和 <a href="https://shibuya.lepture.com">Shibuya theme</a> 主题构建。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=6c58574e"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/translations.js?v=540d3cec"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script>
+      <script src="../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

@@ -1,0 +1,126 @@
+.. _changelog_v4_3_0:
+
+v4.3.0
+======
+
+v4.3.0 adds hardware-accelerated JPEG decoding, FLIR Lepton high-temperature
+mode and model detection, new JPEG color-space conversions, and MicroPython
+1.18, plus a batch of RTC and WiFi fixes. The Lepton measurement-mode API
+changed — read the breaking changes below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **Hardware JPEG decoding** on STM32 (H7) — faster JPEG decompression.
+- **FLIR Lepton high-temperature mode** (up to ~600 °C on Lepton 3.5) and
+  automatic model detection (1.5–3.5).
+- **New JPEG conversions** — decode YCbCr JPEGs to grayscale and grayscale
+  JPEGs to RGB565.
+- **MicroPython updated to 1.18.**
+- **Breaking:** the Lepton measurement-mode ioctl changed — see the breaking
+  changes.
+
+New features
+------------
+
+- **Hardware-accelerated JPEG decoding** — the STM32 on-chip JPEG codec is
+  now used for decompression.
+- **JPEG color-space conversions** — the decoder can decode YCbCr JPEGs to
+  GRAYSCALE and GRAYSCALE JPEGs to RGB565.
+- **Lepton high-temperature mode** — a new ``high_temp`` measurement mode
+  uses low-gain to extend the range to roughly 600 °C on the Lepton 3.5.
+- **Arduino Nano RP2040 Connect** — the :mod:`onewire`, :mod:`dht`, and
+  :mod:`neopixel` driver modules are now frozen into the firmware.
+
+Other changes and improvements
+------------------------------
+
+- **MicroPython updated to 1.18.**
+- The FLIR Lepton driver now detects and reports the specific Lepton model
+  (1.5 / 1.6 / 2.0 / 2.5 / 3.0 / 3.5) to the IDE.
+
+Bug fixes
+---------
+
+Image processing:
+
+- ``Image.to_grayscale()`` / L-channel conversion no longer returns negative
+  L values for dark RGB565 pixels; the JPEG decoder no longer faults
+  (MemManage) on odd-dimension images.
+
+Camera and sensors:
+
+- Fixed GC2145 window subsampling ratios and Bayer pixel order for correct
+  image quality at sub-QVGA resolutions and in BAYER mode.
+
+Networking and storage:
+
+- Corrected WINC1500 non-blocking socket timeout handling and added proper
+  MicroPython errno mapping for socket errors; fixed the STM32 OpenMV
+  USB-disk file handling.
+
+Real-time clock:
+
+- Fixed the RTC clock source / LSE-vs-LSI selection and LSE oscillator errata
+  across the OpenMV Cam H7 Plus and Pure Thermal boards.
+
+Hardware and board support
+--------------------------
+
+- **STM32 (H7)** — hardware JPEG decoding.
+- **OpenMV Cam H7 Plus / Pure Thermal** — RTC clock-source fixes.
+- **Arduino Nano RP2040 Connect** — frozen :mod:`onewire` / :mod:`dht` /
+  :mod:`neopixel` drivers.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v4.2.3 and v4.3.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Both breaking changes affect the FLIR Lepton thermal sensor only. Each commit
+hash links to its diff on GitHub.
+
+.. _v4_3_0_lepton_mode:
+
+Lepton measurement-mode ioctl *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``sensor.ioctl(SET_MEASUREMENT_MODE, ...)`` accepts a new optional
+``high_temp`` argument, and ``GET_MEASUREMENT_MODE`` now returns a 2-tuple
+``(enabled, high_temp)`` instead of a single boolean. Code that read the
+previous boolean return value must be updated to unpack the tuple.
+
+*Commit:* `6b2cd1008 <https://github.com/openmv/openmv/commit/6b2cd1008>`__
+
+.. _v4_3_0_lepton_range:
+
+Lepton default temperature range *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The FLIR Lepton default temperature range changed from −17.78 °C…37.78 °C to
+−10.0 °C…40.0 °C. The color mapping and reported temperatures for scenes that
+relied on the old default range will differ — set an explicit range if you
+need the previous behavior.
+
+*Commit:* `bc07e0131 <https://github.com/openmv/openmv/commit/bc07e0131>`__
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Only FLIR Lepton scripts are affected: unpack the new
+``GET_MEASUREMENT_MODE`` ``(enabled, high_temp)`` tuple
+(:ref:`the measurement-mode change <v4_3_0_lepton_mode>`) and set an explicit
+temperature range if you depended on the old default
+(:ref:`the default-range change <v4_3_0_lepton_range>`). All other scripts run
+unchanged.

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja" data-accent-color="blue" data-content_root="../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>6.19. パフォーマンス - OpenMV MicroPython 1.28 ドキュメント</title><link rel="shortcut icon" href="../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../genindex.html" /><link rel="search" title="検索" href="../../../search.html" /><link rel="next" title="6.20. まとめ" href="wrap-up.html" /><link rel="prev" title="6.18. 画像と ndarray" href="images.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/numpy/performance.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/numpy/performance.html"/>
+  <meta property="og:title" content="6.19. パフォーマンス"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/numpy/performance.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/numpy/performance.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../index.html">
+      <img class="light-logo" src="../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../index.html">ホーム</a></li><li class="link"><a href="../index.html">チュートリアル</a></li><li class="link"><a href="../../../library/index.html">コアライブラリ</a></li><li class="link"><a href="../../quickref.html">ボード</a></li><li class="link"><a href="../../shields.html">シールド</a></li><li class="link"><a href="../../sensors.html">センサー</a></li><li class="link"><a href="../../../reference/index.html">言語</a></li><li class="link"><a href="../../../develop/index.html">内部構造</a></li><li class="link"><a href="../../../changelog/index.html">変更履歴</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../search.html" method="get">
+  <input type="text" name="q" placeholder="検索" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="バージョン">
+      <span class="md:hidden">バージョン</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻訳</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/numpy/performance.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/numpy/performance.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/numpy/performance.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/numpy/performance.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/numpy/performance.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/numpy/performance.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/numpy/performance.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/numpy/performance.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/numpy/performance.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/numpy/performance.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/numpy/performance.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/numpy/performance.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/numpy/performance.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/numpy/performance.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/numpy/performance.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/numpy/performance.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/numpy/performance.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/numpy/performance.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/numpy/performance.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/numpy/performance.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/numpy/performance.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/numpy/performance.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/numpy/performance.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/numpy/performance.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/numpy/performance.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/numpy/performance.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/numpy/performance.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="ライトカラーモードに切り替え"
+data-aria-light="ダークカラーモードに切り替え"
+data-aria-dark="自動カラーモードに切り替え">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">ディスカッション</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">&#12481;&#12517;&#12540;&#12488;&#12522;&#12450;&#12523;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../quickstart.html">1. &#12463;&#12452;&#12483;&#12463;&#12473;&#12479;&#12540;&#12488;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../python/index.html">2. Python&#27010;&#35201;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware/index.html">3. &#12495;&#12540;&#12489;&#12454;&#12455;&#12450;&#21046;&#24481;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../vision/index.html">4. &#12499;&#12472;&#12519;&#12531;&#12475;&#12531;&#12469;&#12540;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../image/index.html">5. &#30011;&#20687;&#20966;&#29702;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">6. NumPy</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="basics/why-arrays.html">6.1. &#12394;&#12380;&#37197;&#21015;&#12363;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/the-ndarray.html">6.2. ndarray</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/making-arrays.html">6.3. &#37197;&#21015;&#12398;&#20316;&#25104;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="basics/dtypes.html">6.4. Dtype</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/shape-and-strides.html">6.5. &#24418;&#29366;&#12392;&#12473;&#12488;&#12521;&#12452;&#12489;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/indexing-and-slicing.html">6.6. &#12452;&#12531;&#12487;&#12483;&#12463;&#12473;&#12392;&#12473;&#12521;&#12452;&#12473;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="shape/views-and-copies.html">6.7. &#12499;&#12517;&#12540;&#12392;&#12467;&#12500;&#12540;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/operators.html">6.8. &#28436;&#31639;&#23376;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/universal-functions.html">6.9. &#12518;&#12491;&#12496;&#12540;&#12469;&#12523;&#38306;&#25968;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/broadcasting.html">6.10. &#12502;&#12525;&#12540;&#12489;&#12461;&#12515;&#12473;&#12488;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/reductions.html">6.11. &#12522;&#12480;&#12463;&#12471;&#12519;&#12531;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="math/selection.html">6.12. &#36984;&#25246;&#12392;&#20006;&#12409;&#26367;&#12360;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linalg.html">6.13. &#32218;&#24418;&#20195;&#25968;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="signals/fft.html">6.14. FFT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="signals/filtering.html">6.15. &#12501;&#12451;&#12523;&#12479;&#12522;&#12531;&#12464;&#12392;&#12473;&#12506;&#12463;&#12488;&#12525;&#12464;&#12521;&#12512;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="numerical.html">6.16. &#26354;&#32218;&#12392;&#31309;&#20998;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="solvers-and-random.html">6.17. &#12477;&#12523;&#12496;&#12540;&#12392;&#20081;&#25968;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="images.html">6.18. &#30011;&#20687;&#12392; ndarray</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">6.19. &#12497;&#12501;&#12457;&#12540;&#12510;&#12531;&#12473;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wrap-up.html">6.20. &#12414;&#12392;&#12417;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../ml/index.html">7. &#27231;&#26800;&#23398;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../networking/index.html">9. &#12493;&#12483;&#12488;&#12527;&#12540;&#12461;&#12531;&#12464;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../webservers/index.html">10. Web&#12469;&#12540;&#12496;&#12540;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../protocol/index.html">12. &#12507;&#12473;&#12488;&#12503;&#12525;&#12488;&#12467;&#12523;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/index.html">13. &#12484;&#12540;&#12523;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../production/index.html">14. &#37327;&#29987;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../library/index.html">&#12521;&#12452;&#12502;&#12521;&#12522;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../quickref.html">&#12508;&#12540;&#12489;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../shields.html">&#12471;&#12540;&#12523;&#12489;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../sensors.html">&#12475;&#12531;&#12469;&#12540;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../reference/index.html">&#35328;&#35486;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../develop/index.html">&#20869;&#37096;&#23455;&#35013;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../changelog/index.html">&#22793;&#26356;&#23653;&#27508;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../license.html">&#12521;&#12452;&#12475;&#12531;&#12473;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>このページの内容</h3><ul>
+<li><a class="reference internal" href="#pick-a-reasonable-dtype">6.19.1. &#36969;&#20999;&#12394; dtype &#12434;&#36984;&#12406;</a></li>
+<li><a class="reference internal" href="#prefer-an-ndarray-to-an-iterable">6.19.2. &#12452;&#12486;&#12521;&#12502;&#12523;&#12424;&#12426; ndarray &#12434;&#20778;&#20808;&#12377;&#12427;</a></li>
+<li><a class="reference internal" href="#prefer-views-to-copies">6.19.3. &#12467;&#12500;&#12540;&#12424;&#12426;&#12499;&#12517;&#12540;&#12434;&#20778;&#20808;&#12377;&#12427;</a></li>
+<li><a class="reference internal" href="#allocate-once-then-write">6.19.4. &#19968;&#24230;&#12450;&#12525;&#12465;&#12540;&#12488;&#12375;&#12390;&#12289;&#12381;&#12398;&#24460;&#12395;&#26360;&#12365;&#36796;&#12416;</a></li>
+<li><a class="reference internal" href="#use-in-place-operators">6.19.5. &#12452;&#12531;&#12503;&#12524;&#12540;&#12473;&#28436;&#31639;&#23376;&#12434;&#20351;&#12358;</a></li>
+<li><a class="reference internal" href="#build-the-result-do-not-append-to-it">6.19.6. &#32080;&#26524;&#12434;&#27083;&#31689;&#12377;&#12427;&#12290;&#36861;&#35352;&#12375;&#12394;&#12356;</a></li>
+<li><a class="reference internal" href="#slice-assignment-instead-of-new-arrays">6.19.7. &#26032;&#12375;&#12356;&#37197;&#21015;&#12391;&#12399;&#12394;&#12367;&#12473;&#12521;&#12452;&#12473;&#20195;&#20837;&#12434;&#20351;&#12358;</a></li>
+<li><a class="reference internal" href="#watch-out-for-boolean-masks-in-streaming-loops">6.19.8. &#12473;&#12488;&#12522;&#12540;&#12511;&#12531;&#12464;&#12523;&#12540;&#12503;&#12391;&#12398;&#12502;&#12540;&#12523;&#12510;&#12473;&#12463;&#12395;&#27880;&#24847;&#12377;&#12427;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/numpy/performance.rst">このページを編集</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">OpenMV Cam チュートリアル</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">6. </span>NumPy</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">6.19. </span>パフォーマンス</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/numpy/performance.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>ページをコピー</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="その他の操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/numpy/performance.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>ページをコピー</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/numpy/performance.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>ソースを表示</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT で開く</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude で開く</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/numpy/performance.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity で開く</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="performance">
+<h1><span class="section-number">6.19. </span>パフォーマンス<a class="headerlink" href="#performance" title="Link to this heading">¶</a></h1>
+<p><a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> をカメラ上で高速に動作させるための設計判断（配列全体に対するライブラリ呼び出し、パックされた型付きバッファ、ソースとデータを共有するビュー）は、同時に知っておく価値のある一連の習慣も浮き彫りにします。<a class="reference internal" href="shape/shape-and-strides.html"><span class="doc">形状とストライド</span></a> のページでは最終軸のレイアウト規則をすでに扱いました。このページでは、ストリーミングループで最も重要となるアロケーションと dtype の習慣をまとめます。</p>
+<section id="pick-a-reasonable-dtype">
+<h2><span class="section-number">6.19.1. </span>適切な dtype を選ぶ<a class="headerlink" href="#pick-a-reasonable-dtype" title="Link to this heading">¶</a></h2>
+<p>すべてのコンストラクタのデフォルト dtype は <code class="docutils literal notranslate"><span class="pre">float</span></code> です。本来 8 ビットや 16 ビットであるデータ（ADC サンプル、画像ピクセル、センサーの読み取り値）に対しては、整数型のいずれかを <code class="docutils literal notranslate"><span class="pre">dtype=</span></code> で明示的に渡してください:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">adc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">adc_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>4 バイトの <code class="docutils literal notranslate"><span class="pre">float</span></code> デフォルトと比べて、RAM の節約は <code class="docutils literal notranslate"><span class="pre">uint16</span></code> で 2 倍、<code class="docutils literal notranslate"><span class="pre">uint8</span></code> で 4 倍になります。<a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> 内部の整数コードパスは汎用的な float のものよりタイトなため、演算も高速に実行されます。<a class="reference internal" href="basics/dtypes.html"><span class="doc">Dtype</span></a> で扱った整数オーバーフロー規則が適用されます。オーバーフローする可能性のある算術演算の前には、より広い型へキャストしてください。</p>
+</section>
+<section id="prefer-an-ndarray-to-an-iterable">
+<h2><span class="section-number">6.19.2. </span>イテラブルより ndarray を優先する<a class="headerlink" href="#prefer-an-ndarray-to-an-iterable" title="Link to this heading">¶</a></h2>
+<p>ほとんどのリダクションやユニバーサル関数は、イテラブルと <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> のどちらも受け付けます:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>               <span class="c1"># works, but slow</span>
+</span><span data-line="2"><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]))</span>     <span class="c1"># ~3x faster</span>
+</span></pre></div>
+</div>
+<p>イテラブル形式では、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> は入力を一度に 1 つの Python オブジェクトずつたどり、使用する前にそれぞれを数値へ変換せざるを得ません。<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> に対しては変換がすでに済んでいるため、呼び出しはパックされたバッファをそのまま処理して進みます。</p>
+<p>同じデータを複数回使う場合は、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> を一度だけ構築して渡し回してください。データが Python のリストとしてのみ存在し一度しか消費されない場合は、変換コストが高速化分を上回ることがあります。<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.array" title="numpy.array"><code class="xref py py-func docutils literal notranslate"><span class="pre">array()</span></code></a> コンストラクタ自体がリストをたどってアロケーションを行う必要があるためです。</p>
+</section>
+<section id="prefer-views-to-copies">
+<h2><span class="section-number">6.19.3. </span>コピーよりビューを優先する<a class="headerlink" href="#prefer-views-to-copies" title="Link to this heading">¶</a></h2>
+<p>スライス、高ランク配列の単一軸インデックス、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.reshape" title="numpy.ndarray.reshape"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reshape()</span></code></a>、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.transpose" title="numpy.ndarray.transpose"><code class="xref py py-meth docutils literal notranslate"><span class="pre">transpose()</span></code></a>、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.frombuffer" title="numpy.frombuffer"><code class="xref py py-func docutils literal notranslate"><span class="pre">frombuffer()</span></code></a> はいずれも、ソースとデータを共有する <em>ビュー</em> を返します。これらは事実上コストがかかりません。</p>
+<p><a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.copy" title="numpy.ndarray.copy"><code class="xref py py-meth docutils literal notranslate"><span class="pre">copy()</span></code></a>、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray.flatten" title="numpy.ndarray.flatten"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flatten()</span></code></a>、ブールインデックス（<code class="docutils literal notranslate"><span class="pre">a[mask]</span></code>）、およびあらゆる算術式は <em>コピー</em> をアロケートします。これらに頼るのは、独立したバッファが本当に必要なときだけにしてください。</p>
+<p>迷ったときは、<a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndinfo" title="numpy.ndinfo"><code class="xref py py-func docutils literal notranslate"><span class="pre">ndinfo()</span></code></a> が基盤バッファの位置を表示します。同じアドレスを報告する 2 つの配列はデータを共有しています。ビューとコピーの完全な対応表は <a class="reference internal" href="shape/views-and-copies.html"><span class="doc">ビューとコピー</span></a> にあります。</p>
+</section>
+<section id="allocate-once-then-write">
+<h2><span class="section-number">6.19.4. </span>一度アロケートして、その後に書き込む<a class="headerlink" href="#allocate-once-then-write" title="Link to this heading">¶</a></h2>
+<p>カメラ上で最大のパフォーマンス上の落とし穴は、毎秒何度も実行されるループの内側で新しい配列をアロケートすることです。新しい <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> はそれぞれカメラに RAM を要求し、頻繁な新規アロケーションは RAM を浪費します。</p>
+<p>ほとんどのユニバーサル関数は <code class="docutils literal notranslate"><span class="pre">out=</span></code> を受け付けるため、結果をすでに存在する配列へ書き込めます:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+</span><span data-line="2"><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">512</span><span class="p">)</span>        <span class="c1"># allocate once</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">y</span><span class="p">)</span>
+</span><span data-line="6">    <span class="c1"># use y ...</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../library/omv.image.Image.html#image.Image.to_ndarray" title="image.Image.to_ndarray"><code class="xref py py-meth docutils literal notranslate"><span class="pre">image.Image.to_ndarray()</span></code></a> は同じ理由で <code class="docutils literal notranslate"><span class="pre">buffer=</span></code> を受け付けます。<a class="reference internal" href="../../../library/omv.ulab.utils.html#ulab.utils.spectrogram" title="ulab.utils.spectrogram"><code class="xref py py-func docutils literal notranslate"><span class="pre">spectrogram()</span></code></a> および <a class="reference internal" href="../../../library/omv.ulab.utils.html#ulab.utils.from_int32_buffer" title="ulab.utils.from_int32_buffer"><code class="xref py py-func docutils literal notranslate"><span class="pre">from_int32_buffer()</span></code></a> 系の変換関数は <code class="docutils literal notranslate"><span class="pre">out=</span></code> と <code class="docutils literal notranslate"><span class="pre">scratchpad=</span></code> の両方を受け付けます。すべてを一度だけアロケートして再利用してください。</p>
+</section>
+<section id="use-in-place-operators">
+<h2><span class="section-number">6.19.5. </span>インプレース演算子を使う<a class="headerlink" href="#use-in-place-operators" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">=</span> <span class="pre">b</span> <span class="pre">+</span> <span class="pre">1</span></code> は <code class="docutils literal notranslate"><span class="pre">b</span></code> と同じサイズの一時オブジェクトをアロケートし、コピーして再代入します。<code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">+=</span> <span class="pre">1</span></code> は <code class="docutils literal notranslate"><span class="pre">b</span></code> を直接変更します:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># makes a temporary</span>
+</span><span data-line="2"><span class="n">b</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="c1"># no temporary</span>
+</span><span data-line="5"><span class="n">b</span> <span class="o">+=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+<p>同じ考え方が複合式にも当てはまります。<code class="docutils literal notranslate"><span class="pre">a</span> <span class="pre">+</span> <span class="pre">b</span> <span class="pre">*</span> <span class="pre">c</span></code> は <code class="docutils literal notranslate"><span class="pre">b</span> <span class="pre">*</span> <span class="pre">c</span></code> のための一時オブジェクトをアロケートします。式を事前アロケートしたバッファへ書き込む単純なサブ代入に分割すれば、一時オブジェクトを排除できます:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="c1"># one temporary for (a + b), another for the ``* 2``</span>
+</span><span data-line="2"><span class="n">out</span> <span class="o">=</span> <span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="c1"># zero temporaries</span>
+</span><span data-line="5"><span class="n">out</span><span class="p">[:]</span>  <span class="o">=</span> <span class="n">a</span>
+</span><span data-line="6"><span class="n">out</span>    <span class="o">+=</span> <span class="n">b</span>
+</span><span data-line="7"><span class="n">out</span>    <span class="o">*=</span> <span class="mi">2</span>
+</span></pre></div>
+</div>
+</section>
+<section id="build-the-result-do-not-append-to-it">
+<h2><span class="section-number">6.19.6. </span>結果を構築する。追記しない<a class="headerlink" href="#build-the-result-do-not-append-to-it" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.ndarray" title="numpy.ndarray"><code class="xref py py-class docutils literal notranslate"><span class="pre">ndarray</span></code></a> には <code class="docutils literal notranslate"><span class="pre">append</span></code> がありません。これは意図的なものです。配列を拡張するには、新しいより大きなバッファをアロケートし、古い内容をそこへコピーする必要があります。マイクロコントローラ上では、最終サイズを事前にアロケートして <em>埋めて</em> ください:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+</span><span data-line="2"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+</span><span data-line="3">    <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">some_calculation</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">N</span></code> が本当に事前に分からない場合は、Python の <a class="reference internal" href="../../../library/builtins.html#list" title="list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a> に書き込み、最後に <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.array" title="numpy.array"><code class="xref py py-func docutils literal notranslate"><span class="pre">array()</span></code></a> で一度だけ変換してください。</p>
+</section>
+<section id="slice-assignment-instead-of-new-arrays">
+<h2><span class="section-number">6.19.7. </span>新しい配列ではなくスライス代入を使う<a class="headerlink" href="#slice-assignment-instead-of-new-arrays" title="Link to this heading">¶</a></h2>
+<p>「他の配列の断片から新しい配列を構築する」という多くのパターンは、呼び出しごとの新規アロケーションではなく、事前アロケートしたバッファへのスライス代入として表現できます。</p>
+<p>サンプルのストリームに対するローリングウィンドウ（移動平均フィルタの基礎）が代表的な例です。バッファは最新の <code class="docutils literal notranslate"><span class="pre">N</span></code> サンプルを保持し、反復ごとに最も古いものを捨てて最も新しいものを追加します。素直な書き方では反復ごとにバッファを再構築します:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">sample</span> <span class="o">=</span> <span class="n">read_sample</span><span class="p">()</span>
+</span><span data-line="3">    <span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>              <span class="c1"># new buffer every loop</span>
+</span><span data-line="4">                          <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">sample</span><span class="p">])))</span>
+</span><span data-line="5">    <span class="n">avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>これはサンプルごとの新規アロケーション、そして <code class="docutils literal notranslate"><span class="pre">N</span> <span class="pre">-</span> <span class="pre">1</span></code> 個の要素のコピーです。スライス代入形式ではインプレースでシフトします:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">N</span>   <span class="o">=</span> <span class="mi">16</span>
+</span><span data-line="2"><span class="n">buf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>               <span class="c1"># allocate once</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">sample</span>   <span class="o">=</span> <span class="n">read_sample</span><span class="p">()</span>
+</span><span data-line="6">    <span class="n">buf</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>                          <span class="c1"># shift left by one</span>
+</span><span data-line="7">    <span class="n">buf</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="o">=</span> <span class="n">sample</span>                           <span class="c1"># append at the end</span>
+</span><span data-line="8">    <span class="n">avg</span>      <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">buf[:-1]</span> <span class="pre">=</span> <span class="pre">buf[1:]</span></code> が興味深い行です。同じバッファへの 2 つの重なり合うビューであり、右辺のスライスは一方の端から読み取られ、もう一方の端へ書き込まれます。<a class="reference internal" href="../../../library/omv.ulab.numpy.html#module-numpy" title="numpy: numpy-compatible array operations"><code class="xref py py-mod docutils literal notranslate"><span class="pre">numpy</span></code></a> はインプレースのシフトが安全になる順序で基盤メモリをたどります。ループの内側で新しい配列がアロケートされることは一切ありません。</p>
+</section>
+<section id="watch-out-for-boolean-masks-in-streaming-loops">
+<h2><span class="section-number">6.19.8. </span>ストリーミングループでのブールマスクに注意する<a class="headerlink" href="#watch-out-for-boolean-masks-in-streaming-loops" title="Link to this heading">¶</a></h2>
+<p>ブールインデックスと <a class="reference internal" href="../../../library/omv.ulab.numpy.html#numpy.where" title="numpy.where"><code class="xref py py-func docutils literal notranslate"><span class="pre">where()</span></code></a> は呼び出しごとに新しい配列を生成します。結果のサイズはデータに依存するため、事前アロケートしたバッファではアロケーションを吸収できません。ストリーミングループで繰り返しマスクを構築すると、使い捨ての配列で RAM が埋まります。定期的な <code class="docutils literal notranslate"><span class="pre">gc.collect()</span></code> がその領域を回収します:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">mask</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+</span><span data-line="5">    <span class="n">_</span>    <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+</span><span data-line="6">    <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+</span><span data-line="7">        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+</span></pre></div>
+</div>
+<p>同じ注意点が <code class="docutils literal notranslate"><span class="pre">(a</span> <span class="pre">&gt;</span> <span class="pre">lo)</span> <span class="pre">&amp;</span> <span class="pre">(a</span> <span class="pre">&lt;</span> <span class="pre">hi)</span></code> のような複合ブール式にも当てはまります。各演算子が新しいブール配列をアロケートします。マスクを再利用する場合は、一度構築して保持してください:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">mask</span> <span class="o">=</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">threshold</span>
+</span><span data-line="2"><span class="n">foo</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="3"><span class="n">bar</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+</span></pre></div>
+</div>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>先頭に戻る</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="images.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>前へ</span><div class="title"><span class="section-number">6.18. </span>画像と ndarray</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="wrap-up.html">
+      <div class="page-info">
+        <span>次へ</span>
+        <div class="title"><span class="section-number">6.20. </span>まとめ</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    OpenMV ファームウェア v5.0.0 向け &middot; MicroPython v1.28 ベース &middot; ドキュメント生成日 2026年6月19日 &middot; 著作権 &copy; 2014-2026 OpenMV、Damien P. George およびその他。
+  </p>
+  <p>
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> と <a href="https://shibuya.lepture.com">Shibuya theme</a> を使用して作成されました。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../_static/documentation_options.js?v=a90b5739"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=4755f45a"></script>
+      <script src="../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

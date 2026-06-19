@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="de" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>9.14. Sockets mit asyncio - OpenMV MicroPython 1.28 Dokumentation</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Stichwortverzeichnis" href="../../../../genindex.html" /><link rel="search" title="Suche" href="../../../../search.html" /><link rel="next" title="9.15. Namen und DNS" href="../names/dns.html" /><link rel="prev" title="9.13. TCP-Sockets" href="tcp-sockets.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/networking/sockets/async-sockets.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/networking/sockets/async-sockets.html"/>
+  <meta property="og:title" content="9.14. Sockets mit asyncio"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/networking/sockets/async-sockets.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Startseite</a></li><li class="link"><a href="../../index.html">Tutorial</a></li><li class="link"><a href="../../../../library/index.html">Kernbibliotheken</a></li><li class="link"><a href="../../../quickref.html">Boards</a></li><li class="link"><a href="../../../shields.html">Shields</a></li><li class="link"><a href="../../../sensors.html">Sensoren</a></li><li class="link"><a href="../../../../reference/index.html">Sprache</a></li><li class="link"><a href="../../../../develop/index.html">Interna</a></li><li class="link"><a href="../../../../changelog/index.html">Änderungsprotokoll</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Suche" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Versionen">
+      <span class="md:hidden">Versionen</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Übersetzungen</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/networking/sockets/async-sockets.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/networking/sockets/async-sockets.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/networking/sockets/async-sockets.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/networking/sockets/async-sockets.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/networking/sockets/async-sockets.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/networking/sockets/async-sockets.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/networking/sockets/async-sockets.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/networking/sockets/async-sockets.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/networking/sockets/async-sockets.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/networking/sockets/async-sockets.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/networking/sockets/async-sockets.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/networking/sockets/async-sockets.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/networking/sockets/async-sockets.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/networking/sockets/async-sockets.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/networking/sockets/async-sockets.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/networking/sockets/async-sockets.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/networking/sockets/async-sockets.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/networking/sockets/async-sockets.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/networking/sockets/async-sockets.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/networking/sockets/async-sockets.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/networking/sockets/async-sockets.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/networking/sockets/async-sockets.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/networking/sockets/async-sockets.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/networking/sockets/async-sockets.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/networking/sockets/async-sockets.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/networking/sockets/async-sockets.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/networking/sockets/async-sockets.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Zum hellen Farbmodus wechseln"
+data-aria-light="Zum dunklen Farbmodus wechseln"
+data-aria-dark="Zum automatischen Farbmodus wechseln">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Diskussion</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">Tutorial</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. Schnellstart</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python-&#220;berblick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Hardwaresteuerung</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. Vision-Sensoren</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. Bildverarbeitung</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Maschinelles Lernen</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">9. Netzwerke</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../basics/why-networks.html">9.1. Warum Netzwerke</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../basics/layered-protocols.html">9.2. Schichtenprotokolle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/physical-and-link.html">9.3. Das Kabel und das Einzelbild</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lower-layers/bringing-the-link-up.html">9.4. Die Verbindung herstellen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/ip-addresses.html">9.5. IP-Adressen</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/packets-and-routing.html">9.6. Pakete und Routing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../network/private-networks.html">9.7. Private Netzwerke und NAT</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/ports.html">9.8. Ports</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/udp.html">9.9. UDP &#8211; sende ein Paket, hoffe auf das Beste</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../transport/tcp.html">9.10. TCP &#8211; ein zuverl&#228;ssiger Strom von Bytes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="socket-objects.html">9.11. Socket-Objekte</a></li>
+<li class="toctree-l3"><a class="reference internal" href="udp-sockets.html">9.12. UDP-Sockets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tcp-sockets.html">9.13. TCP-Sockets</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">9.14. Sockets mit asyncio</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/dns.html">9.15. Namen und DNS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../names/ntp.html">9.16. Zeit und NTP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../encrypted-sockets.html">9.17. Verschl&#252;sselte Sockets und TLS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mqtt/protocol-on-the-wire.html">9.18. MQTT, Byte f&#252;r Byte</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../mqtt/mqtt-in-python.html">9.19. MQTT in Python</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">9.20. Zusammenfassung</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Webserver</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Host-Protokoll</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Tools</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. Produktion</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">Bibliotheken</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Boards</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shields</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sensoren</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Sprache</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">Interna</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">Changelog</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Lizenz</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Auf dieser Seite</h3><ul>
+<li><a class="reference internal" href="#a-client-with-asyncio">9.14.1. Ein Client mit asyncio</a></li>
+<li><a class="reference internal" href="#a-server-with-asyncio">9.14.2. Ein Server mit asyncio</a></li>
+<li><a class="reference internal" href="#concurrent-work-alongside-networking">9.14.3. Gleichzeitige Arbeit neben dem Netzwerk</a></li>
+<li><a class="reference internal" href="#udp-with-asyncio">9.14.4. UDP mit asyncio</a></li>
+<li><a class="reference internal" href="#timeouts-and-cancellation">9.14.5. Timeouts und Abbruch</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/networking/sockets/async-sockets.rst">Diese Seite bearbeiten</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Tutorial</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">9. </span>Netzwerke</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">9.14. </span>Sockets mit asyncio</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/sockets/async-sockets.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Seite kopieren</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Weitere Aktionen"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/sockets/async-sockets.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Seite kopieren</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/sockets/async-sockets.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Quelltext anzeigen</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/sockets/async-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>In ChatGPT öffnen</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/sockets/async-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>In Claude öffnen</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/networking/sockets/async-sockets.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>In Perplexity öffnen</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="sockets-with-asyncio">
+<h1><span class="section-number">9.14. </span>Sockets mit asyncio<a class="headerlink" href="#sockets-with-asyncio" title="Link to this heading">¶</a></h1>
+<p>Ein blockierender <a class="reference internal" href="../../../../library/socket.html#socket.socket.recv" title="socket.socket.recv"><code class="xref py py-meth docutils literal notranslate"><span class="pre">recv()</span></code></a>-Aufruf friert das gesamte Skript ein, bis ein Byte eintrifft. Ein blockierender <a class="reference internal" href="../../../../library/socket.html#socket.socket.accept" title="socket.socket.accept"><code class="xref py py-meth docutils literal notranslate"><span class="pre">accept()</span></code></a>-Aufruf bedient immer nur einen Client gleichzeitig. Beide sind genau die Art von „Warten auf I/O“-Situation, für deren Bewältigung <a class="reference internal" href="../../../../library/asyncio.html#module-asyncio" title="asyncio: asynchronous I/O scheduler for writing concurrent code"><code class="xref py py-mod docutils literal notranslate"><span class="pre">asyncio</span></code></a> existiert. Das <a class="reference internal" href="../../asyncio/index.html"><span class="doc">asyncio-Kapitel</span></a> behandelt die Ereignisschleife, Coroutinen und die Synchronisierungsprimitive; diese Seite behandelt die netzwerkspezifischen Teile.</p>
+<p>Das asyncio-Modul stellt Netzwerkfunktionalität über eine kleine Anzahl von Hilfsfunktionen bereit, die <em>Streams</em> entgegennehmen und zurückgeben – hochstufige Objekte, die einen Socket umschließen und <code class="docutils literal notranslate"><span class="pre">await</span></code>-bare Versionen von Lesen und Schreiben bieten. Der zugrunde liegende Socket ist weiterhin vorhanden; die Anwendung greift nur nicht direkt auf ihn zu.</p>
+<section id="a-client-with-asyncio">
+<h2><span class="section-number">9.14.1. </span>Ein Client mit asyncio<a class="headerlink" href="#a-client-with-asyncio" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/asyncio.html#asyncio.open_connection" title="asyncio.open_connection"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.open_connection()</span></code></a> ist das asyncio-Gegenstück zu <a class="reference internal" href="../../../../library/socket.html#socket.socket.connect" title="socket.socket.connect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">socket.socket.connect()</span></code></a>. Es öffnet eine TCP-Verbindung und gibt zwei Stream-Objekte zurück: einen <em>Reader</em> und einen <em>Writer</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">client</span><span class="p">():</span>
+</span><span data-line="4">    <span class="n">reader</span><span class="p">,</span> <span class="n">writer</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">open_connection</span><span class="p">(</span><span class="s2">&quot;192.168.1.20&quot;</span><span class="p">,</span> <span class="mi">9000</span><span class="p">)</span>
+</span><span data-line="5">
+</span><span data-line="6">    <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;hello</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span data-line="7">    <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>                   <span class="c1"># wait until bytes have been sent</span>
+</span><span data-line="8">
+</span><span data-line="9">    <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span>
+</span><span data-line="10">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;reply:&quot;</span><span class="p">,</span> <span class="n">reply</span><span class="p">)</span>
+</span><span data-line="11">
+</span><span data-line="12">    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span data-line="13">    <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">client</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Drei Dinge sind zu beachten:</p>
+<ul class="simple">
+<li><p>Der Verbindungsaufbau ist ein einziges <code class="docutils literal notranslate"><span class="pre">await</span></code> statt eines blockierenden Aufrufs. Während der Handshake unterwegs ist, kann die Ereignisschleife andere Coroutinen ausführen.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.write" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write()</span></code></a> legt Bytes in einen ausgehenden Puffer; <a class="reference external" href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamWriter.drain" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">drain()</span></code></a> ist das <code class="docutils literal notranslate"><span class="pre">await</span></code>, das an die Schleife zurückgibt, bis diese Bytes tatsächlich über das Netzwerk gesendet wurden.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.readline" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">readline()</span></code></a> liest Bytes, bis ein Zeilenumbruch eintrifft. Die Stream-Klasse enthält außerdem <a class="reference external" href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.read" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read()</span></code></a> (liest bis zu N Bytes) und <a class="reference external" href="https://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader.readexactly" title="(in Python v3.14)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">readexactly()</span></code></a> (liest genau N Bytes), die TCPs Problem der Nachrichtengrenzen lösen, ohne die Framing-Schleifen von Hand zu schreiben.</p></li>
+</ul>
+</section>
+<section id="a-server-with-asyncio">
+<h2><span class="section-number">9.14.2. </span>Ein Server mit asyncio<a class="headerlink" href="#a-server-with-asyncio" title="Link to this heading">¶</a></h2>
+<p><a class="reference internal" href="../../../../library/asyncio.html#asyncio.start_server" title="asyncio.start_server"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.start_server()</span></code></a> ist das asyncio-Gegenstück zum bind/listen/accept-Tanz. Es nimmt ein Callback entgegen, das einmal pro eingehender Verbindung ausgeführt wird, mit demselben Reader/Writer-Paar, das die Client-Seite verwendet:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+</span><span data-line="4">    <span class="n">addr</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s2">&quot;peername&quot;</span><span class="p">)</span>
+</span><span data-line="5">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;connection from&quot;</span><span class="p">,</span> <span class="n">addr</span><span class="p">)</span>
+</span><span data-line="6">
+</span><span data-line="7">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="8">        <span class="n">data</span> <span class="o">=</span> <span class="k">await</span> <span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+</span><span data-line="9">        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="10">            <span class="k">break</span>
+</span><span data-line="11">        <span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>                 <span class="c1"># echo back</span>
+</span><span data-line="12">        <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+</span><span data-line="13">
+</span><span data-line="14">    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span><span data-line="15">    <span class="k">await</span> <span class="n">writer</span><span class="o">.</span><span class="n">wait_closed</span><span class="p">()</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="18">    <span class="n">server</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="mi">9000</span><span class="p">)</span>
+</span><span data-line="19">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;listening on&quot;</span><span class="p">,</span> <span class="n">server</span><span class="o">.</span><span class="n">sockets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">getsockname</span><span class="p">())</span>
+</span><span data-line="20">    <span class="k">async</span> <span class="k">with</span> <span class="n">server</span><span class="p">:</span>
+</span><span data-line="21">        <span class="k">await</span> <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">()</span>
+</span><span data-line="22">
+</span><span data-line="23"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>Jede angenommene Verbindung wird zu einer eigenen Task, die <code class="docutils literal notranslate"><span class="pre">handle</span></code> ausführt. Die Ereignisschleife verteilt zwischen ihnen ganz natürlich – ein langsamer Client kann die anderen nicht blockieren, denn während er auf <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">reader.read(...)</span></code> wartet, kann die Schleife bei jeder anderen Verbindung Fortschritte machen. Zehn gleichzeitige Clients hinzuzufügen erfordert nicht zehn Threads; dieselbe single-threaded Ereignisschleife treibt sie alle an.</p>
+<p>Das ist der praktische Grund, warum für asyncio geschriebene Kamera-Netzwerkanwendungen so viel besser skalieren als der entsprechende blockierende Code: Das Server-Bild auf <a class="reference internal" href="tcp-sockets.html"><span class="doc">TCP-Sockets</span></a> war ein-Client-nach-dem-anderen; dieses hier ist viele-Clients-auf-einmal ohne zusätzlichen Aufwand.</p>
+</section>
+<section id="concurrent-work-alongside-networking">
+<h2><span class="section-number">9.14.3. </span>Gleichzeitige Arbeit neben dem Netzwerk<a class="headerlink" href="#concurrent-work-alongside-networking" title="Link to this heading">¶</a></h2>
+<p>Der große Gewinn ist die Verbindung von Netzwerk mit dem Rest der Kamera-Arbeit in derselben Schleife. Die Kamera kann ein Einzelbild aufnehmen, Bildverarbeitung ausführen <em>und</em> ein Netzwerkprotokoll bedienen, alles verschachtelt:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">capture_loop</span><span class="p">():</span>
+</span><span data-line="4">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">        <span class="n">img</span> <span class="o">=</span> <span class="k">await</span> <span class="n">camera</span><span class="o">.</span><span class="n">snapshot</span><span class="p">()</span>
+</span><span data-line="6">        <span class="c1"># process img ...</span>
+</span><span data-line="7">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span> <span class="n">writer</span><span class="p">):</span>
+</span><span data-line="10">    <span class="o">...</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="13">    <span class="n">server</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">start_server</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="mi">9000</span><span class="p">)</span>
+</span><span data-line="14">    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+</span><span data-line="15">        <span class="n">server</span><span class="o">.</span><span class="n">serve_forever</span><span class="p">(),</span>
+</span><span data-line="16">        <span class="n">capture_loop</span><span class="p">(),</span>
+</span><span data-line="17">    <span class="p">)</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../../library/asyncio.html#asyncio.gather" title="asyncio.gather"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.gather()</span></code></a> führt die beiden Coroutinen auf derselben Ereignisschleife aus. Während die Kamera in <a class="reference internal" href="../../../../library/asyncio.html#asyncio.sleep_ms" title="asyncio.sleep_ms"><code class="xref py py-func docutils literal notranslate"><span class="pre">sleep_ms()</span></code></a> zwischen Einzelbildern schläft, darf der Server Netzwerkverkehr verteilen. Während der Server auf das nächste Byte wartet, darf die Kamera aufnehmen. Beide machen Fortschritte auf einem einzigen MicroPython-Thread.</p>
+</section>
+<section id="udp-with-asyncio">
+<h2><span class="section-number">9.14.4. </span>UDP mit asyncio<a class="headerlink" href="#udp-with-asyncio" title="Link to this heading">¶</a></h2>
+<p>Das asyncio-Modul bietet für UDP <em>nicht</em> dieselben hochstufigen Streams – Datagramme passen nicht in die Lese/Schreib-Form eines Streams. Der praktische Ansatz auf der Kamera besteht darin, die UDP-Arbeit in eine eigene Coroutine zu legen, den Socket in den nicht-blockierenden Modus zu schalten und zwischen Leseversuchen an die Ereignisschleife zurückzugeben:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">udp_listener</span><span class="p">(</span><span class="n">port</span><span class="p">):</span>
+</span><span data-line="5">    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
+</span><span data-line="6">    <span class="n">s</span><span class="o">.</span><span class="n">setblocking</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="7">    <span class="n">s</span><span class="o">.</span><span class="n">bind</span><span class="p">((</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="p">))</span>
+</span><span data-line="8">
+</span><span data-line="9">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="10">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="11">            <span class="n">data</span><span class="p">,</span> <span class="n">src</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">recvfrom</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+</span><span data-line="12">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="13">            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span data-line="14">            <span class="k">continue</span>
+</span><span data-line="15">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;got&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s2">&quot;from&quot;</span><span class="p">,</span> <span class="n">src</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Der Socket wird mit <code class="docutils literal notranslate"><span class="pre">s.setblocking(False)</span></code> auf nicht-blockierend gesetzt, sodass <a class="reference internal" href="../../../../library/socket.html#socket.socket.recvfrom" title="socket.socket.recvfrom"><code class="xref py py-meth docutils literal notranslate"><span class="pre">recvfrom()</span></code></a> sofort <a class="reference internal" href="../../../../library/builtins.html#OSError" title="OSError"><code class="xref py py-exc docutils literal notranslate"><span class="pre">OSError</span></code></a> auslöst, wenn kein Datagramm wartet, anstatt die gesamte Ereignisschleife zu blockieren. Das <code class="docutils literal notranslate"><span class="pre">await</span> <span class="pre">asyncio.sleep_ms(10)</span></code> im leeren Zweig gibt die Kontrolle bis zur nächsten Abfrage an die Ereignisschleife zurück.</p>
+<p>Das Senden folgt derselben Form: <a class="reference internal" href="../../../../library/socket.html#socket.socket.sendto" title="socket.socket.sendto"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sendto()</span></code></a> auf einem nicht-blockierenden Socket gelingt entweder sofort oder löst aus. Es gibt kein <code class="docutils literal notranslate"><span class="pre">sendallto</span></code> – UDP-Datagramme sind atomar, sodass jeder Sendevorgang ein ganzes Datagramm oder keines ist. Wenn der Sendepuffer voll ist, besteht der richtige Schritt bei UDP meist darin, das Datagramm zu verwerfen und das nächste beim nächsten Schleifendurchlauf hinauszulassen:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">udp_telemetry</span><span class="p">(</span><span class="n">target_addr</span><span class="p">,</span> <span class="n">period_ms</span><span class="p">):</span>
+</span><span data-line="2">    <span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SOCK_DGRAM</span><span class="p">)</span>
+</span><span data-line="3">    <span class="n">s</span><span class="o">.</span><span class="n">setblocking</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="4">
+</span><span data-line="5">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="6">        <span class="n">payload</span> <span class="o">=</span> <span class="n">collect_telemetry</span><span class="p">()</span>
+</span><span data-line="7">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="8">            <span class="n">s</span><span class="o">.</span><span class="n">sendto</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">target_addr</span><span class="p">)</span>
+</span><span data-line="9">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="10">            <span class="k">pass</span>                <span class="c1"># buffer full -- skip this one</span>
+</span><span data-line="11">
+</span><span data-line="12">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">period_ms</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Der fehlschlagende Zweig ist in der Praxis selten. UDP hat keine Flusssteuerung, sodass <a class="reference internal" href="../../../../library/socket.html#socket.socket.sendto" title="socket.socket.sendto"><code class="xref py py-meth docutils literal notranslate"><span class="pre">sendto()</span></code></a> fast immer beim ersten Versuch gelingt; das <code class="docutils literal notranslate"><span class="pre">except</span></code> existiert hauptsächlich, damit ein kurzer Netzwerkaussetzer die Coroutine nicht zum Absturz bringt.</p>
+<p>Der Abschnitt <a class="reference internal" href="../../asyncio/index.html"><span class="doc">Asyncio</span></a> behandelt die breiteren Muster zum Einbinden von blockierendem I/O in ein asyncio-Programm; dieselben Muster gelten direkt für einen UDP-Socket.</p>
+</section>
+<section id="timeouts-and-cancellation">
+<h2><span class="section-number">9.14.5. </span>Timeouts und Abbruch<a class="headerlink" href="#timeouts-and-cancellation" title="Link to this heading">¶</a></h2>
+<p>Das Einwickeln eines Netzwerkaufrufs in <a class="reference internal" href="../../../../library/asyncio.html#asyncio.wait_for" title="asyncio.wait_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.wait_for()</span></code></a> setzt ihm eine Frist:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">try</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">reply</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">readline</span><span class="p">(),</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+</span><span data-line="3"><span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
+</span><span data-line="4">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;server is slow&quot;</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>Eine Coroutine, die zu lange dauert, kann auch von anderer Stelle mit <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Task.cancel" title="asyncio.Task.cancel"><code class="xref py py-meth docutils literal notranslate"><span class="pre">cancel()</span></code></a> abgebrochen werden. Beide Mechanismen werden im <a class="reference internal" href="../../asyncio/coordination/timeouts-and-cancellation.html"><span class="doc">Koordinations-Kapitel</span></a> ausführlich behandelt; sie gelten unverändert für Streams, die von <a class="reference internal" href="../../../../library/asyncio.html#asyncio.open_connection" title="asyncio.open_connection"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.open_connection()</span></code></a> und <a class="reference internal" href="../../../../library/asyncio.html#asyncio.start_server" title="asyncio.start_server"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.start_server()</span></code></a> zurückgegeben werden.</p>
+<p>Für die vollständige <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Stream" title="asyncio.Stream"><code class="xref py py-class docutils literal notranslate"><span class="pre">Stream</span></code></a>-Referenz (die Klasse hinter den Readern und Writern sowie die auf dieser Seite beiläufig verwendeten Hilfsfunktionen) siehe <a class="reference internal" href="../../../../library/asyncio.html"><span class="doc">asyncio — asynchroner I/O-Scheduler</span></a>.</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Nach oben</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="tcp-sockets.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Zurück</span><div class="title"><span class="section-number">9.13. </span>TCP-Sockets</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../names/dns.html">
+      <div class="page-info">
+        <span>Weiter</span>
+        <div class="title"><span class="section-number">9.15. </span>Namen und DNS</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    Für OpenMV-Firmware v5.0.0 &middot; basierend auf MicroPython v1.28 &middot; Dokumentation erstellt 19. Juni 2026 &middot; Copyright &copy; 2014-2026 von OpenMV, Damien P. George und anderen.
+  </p>
+  <p>
+    
+    Erstellt mit <a href="https://www.sphinx-doc.org/">Sphinx</a> unter Verwendung des <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=4d6e379d"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=9bf55d28"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>8.2. 協程與任務 - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="8.3. 事件迴圈" href="the-event-loop.html" /><link rel="prev" title="8.1. 協作式並行" href="cooperative-concurrency.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html"/>
+  <meta property="og:title" content="8.2. 協程與任務"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">首頁</a></li><li class="link"><a href="../../index.html">教學</a></li><li class="link"><a href="../../../../library/index.html">核心函式庫</a></li><li class="link"><a href="../../../quickref.html">開發板</a></li><li class="link"><a href="../../../shields.html">擴充板</a></li><li class="link"><a href="../../../sensors.html">感測器</a></li><li class="link"><a href="../../../../reference/index.html">語言</a></li><li class="link"><a href="../../../../develop/index.html">內部結構</a></li><li class="link"><a href="../../../../changelog/index.html">更新記錄</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="版本">
+      <span class="md:hidden">版本</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換至淺色模式"
+data-aria-light="切換至深色模式"
+data-aria-dark="切換至自動色彩模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. &#30828;&#39636;&#25511;&#21046;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">8. Asyncio</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="cooperative-concurrency.html">8.1. &#21332;&#20316;&#24335;&#20006;&#34892;</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">8.2. &#21332;&#31243;&#33287;&#20219;&#21209;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="the-event-loop.html">8.3. &#20107;&#20214;&#36852;&#22280;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../coordination/gather.html">8.4. Gather</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../coordination/timeouts-and-cancellation.html">8.5. &#36926;&#26178;&#33287;&#21462;&#28040;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../coordination/exceptions.html">8.6. &#20363;&#22806;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../primitives/events.html">8.7. &#20107;&#20214;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../primitives/locks.html">8.8. &#37782;&#65288;Locks&#65289;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../primitives/threadsafe-flag.html">8.9. ThreadSafeFlag</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom/awaitable-classes.html">8.10. &#21487;&#31561;&#24453;&#39006;&#21029;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom/async-iterators.html">8.11. &#38750;&#21516;&#27493;&#36845;&#20195;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../custom/async-context-managers.html">8.12. &#38750;&#21516;&#27493;&#24773;&#22659;&#31649;&#29702;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../loop/loop-control.html">8.13. &#36852;&#22280;&#25511;&#21046;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../capstone/snapshot-loop.html">8.14. AsyncCSI</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pitfalls.html">8.15. &#38519;&#38449;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">8.16. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>本頁目錄</h3><ul>
+<li><a class="reference internal" href="#coroutines">8.2.1. &#21332;&#31243;</a></li>
+<li><a class="reference internal" href="#tasks">8.2.2. &#20219;&#21209;</a></li>
+<li><a class="reference internal" href="#the-two-line-rule">8.2.3. &#20841;&#34892;&#35215;&#21063;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst">編輯本頁</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">8. </span>Asyncio</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">8.2. </span>協程與任務</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/asyncio/basics/coroutines-and-tasks.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="coroutines-and-tasks">
+<h1><span class="section-number">8.2. </span>協程與任務<a class="headerlink" href="#coroutines-and-tasks" title="連結到這個標頭">¶</a></h1>
+<p>協程是 asyncio 程式賴以建構的工作單元；任務則是應用程式並行運行數個協程的方式。</p>
+<section id="coroutines">
+<h2><span class="section-number">8.2.1. </span>協程<a class="headerlink" href="#coroutines" title="連結到這個標頭">¶</a></h2>
+<p><em>協程</em>是以 <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span></code> 宣告的函式:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">heartbeat</span><span class="p">(</span><span class="n">interval_ms</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;tick&quot;</span><span class="p">)</span>
+</span><span data-line="6">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">interval_ms</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>其主體看起來像一個普通函式，但多了一項要素：<code class="docutils literal notranslate"><span class="pre">await</span></code>。每當協程必須等待某事物時 — 一次睡眠、一次網路讀取、一個事件被設定 — 它會 <code class="docutils literal notranslate"><span class="pre">await</span></code>一個知道如何將協程暫停直到所等待的事物就緒的運算式。在每一個 <code class="docutils literal notranslate"><span class="pre">await</span></code> 處，協程都會將控制權交還給 asyncio；一旦所等待的操作完成，asyncio 便從同一個位置恢復它。</p>
+<p>asyncio 模組隨附兩種睡眠：</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../../../library/asyncio.html#asyncio.sleep" title="asyncio.sleep"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.sleep()</span></code></a> — 引數以秒為單位，接受浮點數。</p></li>
+<li><p><a class="reference internal" href="../../../../library/asyncio.html#asyncio.sleep_ms" title="asyncio.sleep_ms"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.sleep_ms()</span></code></a> — 引數以毫秒為單位，接受整數。這是 MicroPython 的擴充；在相機上通常是正確的選擇，因為韌體中的時序調節項都是以毫秒為單位的。</p></li>
+</ul>
+<p>單純的 <code class="docutils literal notranslate"><span class="pre">async</span> <span class="pre">def</span></code> 本身<em>什麼也不做</em>。呼叫 <code class="docutils literal notranslate"><span class="pre">heartbeat(500)</span></code> 並不會執行其主體；它會回傳一個協程<em>物件</em>，必須由 asyncio 來排程。最簡單的排程方式是 <a class="reference internal" href="../../../../library/asyncio.html#asyncio.run" title="asyncio.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.run()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">heartbeat</span><span class="p">(</span><span class="mi">500</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p><a class="reference internal" href="../../../../library/asyncio.html#asyncio.run" title="asyncio.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.run()</span></code></a> 啟動事件迴圈，將交給它的協程排程為頂層進入點，驅動迴圈直到該協程回傳，然後將迴圈拆除。對於單一協程，這就是整個程式。對於數個協程，應用程式則會運用任務。</p>
+</section>
+<section id="tasks">
+<h2><span class="section-number">8.2.2. </span>任務<a class="headerlink" href="#tasks" title="連結到這個標頭">¶</a></h2>
+<p><em>任務</em>是 asyncio 包覆在協程外的封裝，表示<em>將其與當前協程並行排程，並讓我繼續執行</em>。<a class="reference internal" href="../../../../library/asyncio.html#asyncio.create_task" title="asyncio.create_task"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.create_task()</span></code></a> 會建立一個任務，並<em>回傳</em>一個代表所排程工作的 <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 物件:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">heartbeat</span><span class="p">(</span><span class="s2">&quot;fast&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+</span></pre></div>
+</div>
+<p>現在該協程已在迴圈的排程上了；呼叫端並未等待它。回傳的 <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 是呼叫端之後用來與那個正在運行的工作互動的控制代碼。</p>
+<p>一旦應用程式取得了控制代碼，便可對它做三件事：</p>
+<ul class="simple">
+<li><p><strong>等待任務完成。</strong> <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a> 本身就是可等待的。<code class="docutils literal notranslate"><span class="pre">result</span> <span class="pre">=</span> <span class="pre">await</span> <span class="pre">task</span></code> 會暫停當前協程，直到 <code class="docutils literal notranslate"><span class="pre">task</span></code> 的協程回傳，然後以該協程所回傳的任何值恢復執行（或重新引發它所引發的任何例外）。</p></li>
+<li><p><strong>取消任務。</strong> <code class="docutils literal notranslate"><span class="pre">task.cancel()</span></code> 會排程在任務協程的下一個 <code class="docutils literal notranslate"><span class="pre">await</span></code> 處於其內部引發 <a class="reference external" href="https://docs.python.org/3/library/asyncio-exceptions.html#asyncio.CancelledError" title="(in Python v3.14)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">asyncio.CancelledError</span></code></a>，讓它有機會在 <code class="docutils literal notranslate"><span class="pre">finally</span></code> 區塊中執行清理程式碼。<a class="reference internal" href="../coordination/timeouts-and-cancellation.html"><span class="doc">逾時與取消</span></a> 一頁涵蓋了相關細節。</p></li>
+<li><p><strong>稍後識別它。</strong> <a class="reference internal" href="../../../../library/asyncio.html#asyncio.current_task" title="asyncio.current_task"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.current_task()</span></code></a> 會回傳當前正在執行的協程所對應的 <a class="reference internal" href="../../../../library/asyncio.html#asyncio.Task" title="asyncio.Task"><code class="xref py py-class docutils literal notranslate"><span class="pre">Task</span></code></a>。大多數指令碼從不呼叫它；它出現在偵測工具與例外處理常式中。</p></li>
+</ul>
+<p>指令碼不必每次都擷取控制代碼。應用程式啟動後便放任其運行的拋棄式背景任務，可以丟棄回傳值 — 迴圈仍會排程它們:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">heartbeat</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">interval_ms</span><span class="p">):</span>
+</span><span data-line="4">    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="5">        <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="6">        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="n">interval_ms</span><span class="p">)</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="9">    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">heartbeat</span><span class="p">(</span><span class="s2">&quot;fast&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+</span><span data-line="10">    <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">heartbeat</span><span class="p">(</span><span class="s2">&quot;slow&quot;</span><span class="p">,</span> <span class="mi">500</span><span class="p">))</span>
+</span><span data-line="11">    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>這兩個 <code class="docutils literal notranslate"><span class="pre">create_task</span></code> 呼叫會排程兩個 heartbeat，而不等待其中任何一個。控制權立即返回 <code class="docutils literal notranslate"><span class="pre">main</span></code>，後者接著 <code class="docutils literal notranslate"><span class="pre">await</span></code>一個五秒的睡眠。在它睡眠期間，那兩個 heartbeat 任務會持續推進；迴圈會輪流執行任何已準備好的任務。五秒後 <code class="docutils literal notranslate"><span class="pre">main</span></code> 回傳，迴圈拆除所有仍存活的任務，然後 <a class="reference internal" href="../../../../library/asyncio.html#asyncio.run" title="asyncio.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.run()</span></code></a> 返回呼叫端。</p>
+<p>每當應用程式確實需要上述三項操作之一時，就擷取控制代碼。實務上這意味著<em>幾乎總是如此</em>，因為要乾淨地關閉應用程式，就代表要取消它所衍生的背景任務 — 取消那一頁涵蓋了此模式。</p>
+</section>
+<section id="the-two-line-rule">
+<h2><span class="section-number">8.2.3. </span>兩行規則<a class="headerlink" href="#the-two-line-rule" title="連結到這個標頭">¶</a></h2>
+<p>最精簡的 asyncio 程式就是上述範例最後結尾的<em>那兩行</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+</span><span data-line="2">    <span class="o">...</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</span></pre></div>
+</div>
+<p>其他一切 — 應用程式建立的任務、用來協調它們的原語、它開啟的串流 — 都發生在 <code class="docutils literal notranslate"><span class="pre">main</span></code> <em>內部</em>（以及 <code class="docutils literal notranslate"><span class="pre">main</span></code> 衍生的協程內部）。當指令碼超出了相機經典的 <code class="docutils literal notranslate"><span class="pre">while</span> <span class="pre">True:</span> <span class="pre">csi0.snapshot()</span></code> 迴圈所能負荷時，答案不是在數個地方呼叫 <a class="reference internal" href="../../../../library/asyncio.html#asyncio.run" title="asyncio.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">asyncio.run()</span></code></a>；而是將新的工作作為更多任務折疊進 <code class="docutils literal notranslate"><span class="pre">main</span></code> 中。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="cooperative-concurrency.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">8.1. </span>協作式並行</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="the-event-loop.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">8.3. </span>事件迴圈</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    適用於 OpenMV 韌體 v5.0.0 &middot; 基於 MicroPython v1.28 &middot; 文件編譯於 2026年6月19日 &middot; 版權 &copy; 2014-2026 OpenMV、Damien P. George 及其他貢獻者。
+  </p>
+  <p>
+    
+    使用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 與 <a href="https://shibuya.lepture.com">Shibuya theme</a> 主題編譯。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

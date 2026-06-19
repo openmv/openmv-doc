@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="tr" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>14.1.1.4. Aygıt yazılımının hata ayıklaması - OpenMV MicroPython 1.28 belgelendirmesi</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="Dizin" href="../../../../genindex.html" /><link rel="search" title="Ara" href="../../../../search.html" /><link rel="next" title="14.1.1.5. Önyükleyiciyi (bootloader) geri yükleme" href="recovery.html" /><link rel="prev" title="14.1.1.3.5.5. Dahili dosya sistemini silme" href="flashing/erasing.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/production/firmware/debugging.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/production/firmware/debugging.html"/>
+  <meta property="og:title" content="14.1.1.4. Aygıt yazılımının hata ayıklaması"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/production/firmware/debugging.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/production/firmware/debugging.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">Ana sayfa</a></li><li class="link"><a href="../../index.html">Öğretici</a></li><li class="link"><a href="../../../../library/index.html">Temel kütüphaneler</a></li><li class="link"><a href="../../../quickref.html">Kartlar</a></li><li class="link"><a href="../../../shields.html">Kalkanlar</a></li><li class="link"><a href="../../../sensors.html">Sensörler</a></li><li class="link"><a href="../../../../reference/index.html">Dil</a></li><li class="link"><a href="../../../../develop/index.html">İç yapı</a></li><li class="link"><a href="../../../../changelog/index.html">Değişiklik günlüğü</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="Ara" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="Sürümler">
+      <span class="md:hidden">Sürümler</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">Çeviriler</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/production/firmware/debugging.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/production/firmware/debugging.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/production/firmware/debugging.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/production/firmware/debugging.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/production/firmware/debugging.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/production/firmware/debugging.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/production/firmware/debugging.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/production/firmware/debugging.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/production/firmware/debugging.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/production/firmware/debugging.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/production/firmware/debugging.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/production/firmware/debugging.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/production/firmware/debugging.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/production/firmware/debugging.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/production/firmware/debugging.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/production/firmware/debugging.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/production/firmware/debugging.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/production/firmware/debugging.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/production/firmware/debugging.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/production/firmware/debugging.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/production/firmware/debugging.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/production/firmware/debugging.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/production/firmware/debugging.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/production/firmware/debugging.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/production/firmware/debugging.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/production/firmware/debugging.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/production/firmware/debugging.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Açık renk moduna geç"
+data-aria-light="Koyu renk moduna geç"
+data-aria-dark="Otomatik renk moduna geç">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">Tartışma</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#214;&#287;retici</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. H&#305;zl&#305; ba&#351;lang&#305;&#231;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python&#8217;a Genel Bak&#305;&#351;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../hardware/index.html">3. Donan&#305;m Kontrol&#252;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. G&#246;r&#252;nt&#252; Sens&#246;rleri</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. G&#246;r&#252;nt&#252; &#304;&#351;leme</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. Makine &#214;&#287;renmesi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. A&#287; &#304;leti&#351;imi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web Sunucular&#305;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. Bluetooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. Ana Bilgisayar Protokol&#252;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. Ara&#231;lar</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">14. &#220;retim</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="index.html">14.1. Ayg&#305;t yaz&#305;l&#305;m&#305; geli&#351;tirme</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="setup.html">14.1.1.1. Geli&#351;tirme ortam&#305;n&#305; kurma</a></li>
+<li class="toctree-l4"><a class="reference internal" href="building.html">14.1.1.2. Ayg&#305;t yaz&#305;l&#305;m&#305;n&#305; derleme</a></li>
+<li class="toctree-l4"><a class="reference internal" href="flashing/index.html">14.1.1.3. Ayg&#305;t yaz&#305;l&#305;m&#305;n&#305; flash&#8217;lama</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">14.1.1.4. Ayg&#305;t yaz&#305;l&#305;m&#305;n&#305;n hata ay&#305;klamas&#305;</a></li>
+<li class="toctree-l4"><a class="reference internal" href="recovery.html">14.1.1.5. &#214;ny&#252;kleyiciyi (bootloader) geri y&#252;kleme</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../shipping/index.html">14.2. Uygulaman&#305;n sevki</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../hardening/index.html">14.3. &#220;retim i&#231;in sa&#287;lamla&#351;t&#305;rma</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../tls/index.html">14.4. TLS sertifikalar&#305;yla &#231;al&#305;&#351;ma</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">14.5. &#214;zet</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">K&#252;t&#252;phaneler</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">Kartlar</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">Shield'lar</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">Sens&#246;rler</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">Dil</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#304;&#231; Yap&#305;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">De&#287;i&#351;iklik G&#252;nl&#252;&#287;&#252;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">Lisans</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>Bu sayfada</h3><ul>
+<li><a class="reference internal" href="#build-for-debugging">14.1.1.4.1. Hata ay&#305;klama i&#231;in derleme</a></li>
+<li><a class="reference internal" href="#the-hardware-j-link-over-swd">14.1.1.4.2. Donan&#305;m: SWD &#252;zerinden J-Link</a></li>
+<li><a class="reference internal" href="#vs-code-cortex-debug-setup">14.1.1.4.3. VS Code Cortex-Debug kurulumu</a></li>
+<li><a class="reference internal" href="#peripheral-register-view-svd">14.1.1.4.4. &#199;evre birimi yazma&#231; g&#246;r&#252;n&#252;m&#252; (SVD)</a></li>
+<li><a class="reference internal" href="#windows-the-wsl-windows-j-link-bridge">14.1.1.4.5. Windows: WSL &#8596; Windows J-Link k&#246;pr&#252;s&#252;</a></li>
+<li><a class="reference internal" href="#command-line-debugging-with-gdbrunner">14.1.1.4.6. gdbrunner ile komut sat&#305;r&#305; hata ay&#305;klamas&#305;</a></li>
+<li><a class="reference internal" href="#using-the-debugger">14.1.1.4.7. Hata ay&#305;klay&#305;c&#305;n&#305;n kullan&#305;m&#305;</a></li>
+<li><a class="reference internal" href="#debugging-pitfalls">14.1.1.4.8. Hata ay&#305;klama tuzaklar&#305;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/production/firmware/debugging.rst">Bu sayfayı düzenle</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam Eğitimi</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">14. </span>Üretim</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="index.html"><span itemprop="name"><span class="section-number">14.1. </span>Aygıt yazılımı geliştirme</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="4" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">14.1.1.4. </span>Aygıt yazılımının hata ayıklaması</strong>
+        <meta itemprop="position" content="5" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>Sayfayı kopyala</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="Diğer eylemler"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>Sayfayı kopyala</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>Kaynağı görüntüle</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>ChatGPT'de aç</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>Claude'da aç</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/production/firmware/debugging.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>Perplexity'de aç</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="debugging-the-firmware">
+<span id="firmware-debugging"></span><h1><span class="section-number">14.1.1.4. </span>Aygıt yazılımının hata ayıklaması<a class="headerlink" href="#debugging-the-firmware" title="Link to this heading">¶</a></h1>
+<p>Donanım üzerinde hata ayıklama, işlemciyi durdurmak, C kaynağında kesme noktaları ayarlamak, tek adım adım ilerlemek ve değişkenleri, belleği, yazmaçları ve çevre birimlerini incelemek anlamına gelir – hepsi VS Code içinden. Bunun için üç şey gerekir: bir <strong>hata ayıklama derlemesi (debug build)</strong>, bir <strong>SWD hata ayıklama probu</strong> (bir Segger J-Link) ve bir J-Link GDB sunucusuna karşı <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> çalıştıran <strong>Cortex-Debug</strong> uzantısı.</p>
+<section id="build-for-debugging">
+<h2><span class="section-number">14.1.1.4.1. </span>Hata ayıklama için derleme<a class="headerlink" href="#build-for-debugging" title="Link to this heading">¶</a></h2>
+<p>Hedefi her zaman <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> ile yeniden derleyin:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">make -j$(nproc) TARGET=&lt;TARGET&gt; DEBUG=1
+</span></pre></div>
+</div>
+<p>Bir sürüm (<code class="docutils literal notranslate"><span class="pre">DEBUG=0</span></code>) imajı <code class="docutils literal notranslate"><span class="pre">-O2</span></code> ile derlenir; hata ayıklayıcıda birçok değişken için <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code> görürsünüz, satır içine alınmış işlevler çağıranların içinde toplanır ve adım adım ilerleme öngörülemez biçimde sıçrar. <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> ise <code class="docutils literal notranslate"><span class="pre">-Og</span> <span class="pre">-ggdb3</span></code> ile derler; bu, kamera üzerinde hâlâ önyükleme yapabilirken hata ayıklanabilir olmasını sağlar. Hata ayıklayıcıyı yönlendirdiğiniz ELF şudur:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">build</span><span class="o">/&lt;</span><span class="n">TARGET</span><span class="o">&gt;/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span></pre></div>
+</div>
+<p>(Alif AE3 için <code class="docutils literal notranslate"><span class="pre">build/OPENMV_AE3/bin/firmware_M55_HP.elf</span></code> dosyasında hata ayıklayın – yüksek performanslı çekirdek.)</p>
+</section>
+<section id="the-hardware-j-link-over-swd">
+<h2><span class="section-number">14.1.1.4.2. </span>Donanım: SWD üzerinden J-Link<a class="headerlink" href="#the-hardware-j-link-over-swd" title="Link to this heading">¶</a></h2>
+<p>Bir Segger J-Link’i kameranın <strong>SWD</strong> pinlerine bağlayın (SWDIO, SWCLK, GND ve referans için hedef VCC; kamera her zamanki gibi USB üzerinden güç alır). Bir J-Link EDU / Base / Pro hepsi çalışır. Hata ayıklama pinlerinin yüzeye çıktığı yer her kamerada farklılık gösterir – birçok kartta özel bir JTAG/SWD konektörü vardır, diğerleri SWD’yi G/Ç başlığında veya test pedlerinde açığa çıkarır – bu nedenle hangi pinleri bağlamanız gerektiğini OpenMV donanım belgelerindeki ilgili kartın pin çıkış diyagramında ve şemasında kontrol edin. Probun fiziksel olarak takılı olduğu makineye <a class="reference external" href="https://www.segger.com/downloads/jlink/">segger.com</a> adresinden <strong>J-Link Software and Documentation Pack</strong>‘i kurun. Bunu makul ölçüde güncel tutun – eski J-Link yazılımı yeni cihaz adlarını (STM32N6, MIMXRT, Alif) bilmeyecektir.</p>
+<p>Her MCU, probun doğru flash yükleyiciyi ve bellek haritasını yüklemesi için kendi tam J-Link <strong>cihaz adına</strong> ihtiyaç duyar:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 34.0%" />
+<col style="width: 26.0%" />
+<col style="width: 40.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Kamera (<code class="docutils literal notranslate"><span class="pre">TARGET</span></code>)</p></th>
+<th class="head"><p>MCU</p></th>
+<th class="head"><p>J-Link <code class="docutils literal notranslate"><span class="pre">device</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV2</span></code></p></td>
+<td><p>STM32F427</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32F427VG</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV3</span></code></p></td>
+<td><p>STM32F765</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32F765VI</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV4</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMV4P</span></code> / <code class="docutils literal notranslate"><span class="pre">OPENMVPT</span></code></p></td>
+<td><p>STM32H743</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32H743VI</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_N6</span></code></p></td>
+<td><p>STM32N657</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32N657L0</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_RT1060</span></code></p></td>
+<td><p>MIMXRT1062</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">MIMXRT1062xxx6A</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">OPENMV_AE3</span></code></p></td>
+<td><p>Alif Ensemble (M55-HP)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">AE302F80F55D5_HP</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ARDUINO_PORTENTA_H7</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_GIGA</span></code> / <code class="docutils literal notranslate"><span class="pre">ARDUINO_NICLA_VISION</span></code></p></td>
+<td><p>STM32H747</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">STM32H747XI</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="vs-code-cortex-debug-setup">
+<h2><span class="section-number">14.1.1.4.3. </span>VS Code Cortex-Debug kurulumu<a class="headerlink" href="#vs-code-cortex-debug-setup" title="Link to this heading">¶</a></h2>
+<p>Depoda <code class="docutils literal notranslate"><span class="pre">.vscode/launch.json</span></code> oluşturun. En basit durum – VS Code, J-Link ve derlemenin tümü <strong>aynı</strong> Linux / macOS makinesinde olduğunda – Cortex-Debug’ın kendisinin bir J-Link GDB sunucusu başlatmasını sağlayan <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> kullanır:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2">  <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.2.0&quot;</span><span class="p">,</span>
+</span><span data-line="3">  <span class="s2">&quot;configurations&quot;</span><span class="p">:</span> <span class="p">[</span>
+</span><span data-line="4">    <span class="p">{</span>
+</span><span data-line="5">      <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;OpenMV J-Link&quot;</span><span class="p">,</span>
+</span><span data-line="6">      <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cortex-debug&quot;</span><span class="p">,</span>
+</span><span data-line="7">      <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+</span><span data-line="8">      <span class="s2">&quot;cwd&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span data-line="9">      <span class="s2">&quot;executable&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">/build/OPENMV4/bin/firmware.elf&quot;</span><span class="p">,</span>
+</span><span data-line="10">      <span class="s2">&quot;servertype&quot;</span><span class="p">:</span> <span class="s2">&quot;jlink&quot;</span><span class="p">,</span>
+</span><span data-line="11">      <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;STM32H743VI&quot;</span><span class="p">,</span>
+</span><span data-line="12">      <span class="s2">&quot;interface&quot;</span><span class="p">:</span> <span class="s2">&quot;swd&quot;</span><span class="p">,</span>
+</span><span data-line="13">      <span class="s2">&quot;runToEntryPoint&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+</span><span data-line="14">      <span class="s2">&quot;armToolchainPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin&quot;</span><span class="p">,</span>
+</span><span data-line="15">      <span class="s2">&quot;gdbPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin/arm-none-eabi-gdb&quot;</span>
+</span><span data-line="16">    <span class="p">}</span>
+</span><span data-line="17">  <span class="p">]</span>
+</span><span data-line="18"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>Kartınıza göre <code class="docutils literal notranslate"><span class="pre">executable</span></code> ve <code class="docutils literal notranslate"><span class="pre">device</span></code> değerlerini değiştirin (yukarıdaki tabloya bakın). <code class="docutils literal notranslate"><span class="pre">main</span></code> işlevine kadar derle-flash’la-ve-çalıştır işlemini yapıp orada durmak için <kbd class="kbd docutils literal notranslate">F5</kbd> tuşuna basın.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tüyo</p>
+<p>Hata ayıklamayı her başlattığınızda otomatik olarak yeniden derlemek için <code class="docutils literal notranslate"><span class="pre">.vscode/tasks.json</span></code> dosyasına bir derleme görevi ekleyin ve başlatma yapılandırmasından <code class="docutils literal notranslate"><span class="pre">&quot;preLaunchTask&quot;</span></code> ile ona referans verin. Örneğin, <code class="docutils literal notranslate"><span class="pre">&quot;build-firmware&quot;</span></code> adında <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">-j$(nproc)</span> <span class="pre">TARGET=OPENMV4</span> <span class="pre">DEBUG=1</span></code> çalıştıran bir görev ile yukarıdaki yapılandırmadaki <code class="docutils literal notranslate"><span class="pre">&quot;preLaunchTask&quot;:</span> <span class="pre">&quot;build-firmware&quot;</span></code> birlikte, böylece <kbd class="kbd docutils literal notranslate">F5</kbd> tek bir adımda yeniden derler, flash’lar ve hata ayıklayıcıyı başlatır.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Uyarı</p>
+<p>Cortex-Debug <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> gerektirir. SDK’da <code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/gcc/bin</span></code> konumunda gelir ancak varsayılan olarak <code class="docutils literal notranslate"><span class="pre">PATH</span></code> üzerinde <strong>değildir</strong>, bu nedenle hata ayıklama <em>“GDB executable ‘arm-none-eabi-gdb’ was not found”</em> hatasıyla başarısız olur. Bunu ya yukarıda gösterildiği gibi <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code> / <code class="docutils literal notranslate"><span class="pre">gdbPath</span></code> ayarlayarak ya da <code class="docutils literal notranslate"><span class="pre">PATH</span></code> ortam değişkeninize <code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/gcc/bin</span></code> ekleyerek düzeltin (<code class="docutils literal notranslate"><span class="pre">printenv</span> <span class="pre">PATH</span></code> o zaman onu listelemelidir).</p>
+</div>
+</section>
+<section id="peripheral-register-view-svd">
+<h2><span class="section-number">14.1.1.4.4. </span>Çevre birimi yazmaç görünümü (SVD)<a class="headerlink" href="#peripheral-register-view-svd" title="Link to this heading">¶</a></h2>
+<p>Çözümlenmiş bir çevre birimi yazmaç görünümü (zamanlayıcılar, DMA, kamera arabirimi vb.) ada ve bit alanına göre elde etmek için Cortex-Debug’ı bir CMSIS <strong>SVD</strong> dosyasına yönlendirin:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="s2">&quot;svdFile&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/STM32H743.svd&quot;</span>
+</span></pre></div>
+</div>
+<p>STM32 ve MIMXRT için SVD’yi ST / NXP CMSIS paketlerinden veya Cortex-Debug SVD kayıt defterinden alın. Alif SVD’leri, aygıt yazılımı deposunda <code class="docutils literal notranslate"><span class="pre">lib/micropython/lib/alif_ensemble-cmsis-dfp/Debug/SVD/</span></code> konumunda dahili olarak yer alır (AE3 HP çekirdeği için <code class="docutils literal notranslate"><span class="pre">..._CM55_HP_View.svd</span></code> kullanın).</p>
+</section>
+<section id="windows-the-wsl-windows-j-link-bridge">
+<span id="firmware-debugging-wsl"></span><h2><span class="section-number">14.1.1.4.5. </span>Windows: WSL ↔ Windows J-Link köprüsü<a class="headerlink" href="#windows-the-wsl-windows-j-link-bridge" title="Link to this heading">¶</a></h2>
+<p>WSL 2, J-Link’in USB cihazını doğrudan göremez, bu nedenle bölünme şöyledir: <strong>Windows probu sunar</strong> (takılı olduğu yer) ve <strong>VS Code + gdb WSL içinde çalışır</strong> ve ona TCP üzerinden erişir.</p>
+<ol class="arabic">
+<li><p><strong>Windows’ta</strong>, Segger J-Link paketini kurun ve J-Link’i bir Windows USB bağlantı noktasına takın.</p></li>
+<li><p><strong>Windows’ta</strong>, <strong>J-Link Remote Server</strong>‘ı başlatın (J-Link paketiyle birlikte gelir): J-Link takılıyken başlatın ve <strong>OK</strong>‘a tıklayın. İstendiğinde Windows güvenlik duvarından geçmesine izin verin. Pencere, probu sunduğu <strong>IP adresini</strong> gösterir – bunu not edin.</p></li>
+<li><p><strong>WSL’de</strong>, <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> ile derleyin ve <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> erişilebilir olduğundan emin olun (yukarıdaki gibi <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code> ayarlayın).</p></li>
+<li><p><strong>WSL VS Code’da</strong>, <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> değerini koruyun – GDB sunucusu WSL’de çalışır ve proba Remote Server aracılığıyla erişir – ve <code class="docutils literal notranslate"><span class="pre">serverpath</span></code> + <code class="docutils literal notranslate"><span class="pre">ipAddress</span></code> ekleyin:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span>
+</span><span data-line="2">  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;OpenMV J-Link (Windows host)&quot;</span><span class="p">,</span>
+</span><span data-line="3">  <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;cortex-debug&quot;</span><span class="p">,</span>
+</span><span data-line="4">  <span class="s2">&quot;request&quot;</span><span class="p">:</span> <span class="s2">&quot;launch&quot;</span><span class="p">,</span>
+</span><span data-line="5">  <span class="s2">&quot;cwd&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span data-line="6">  <span class="s2">&quot;executable&quot;</span><span class="p">:</span> <span class="s2">&quot;$</span><span class="si">{workspaceFolder}</span><span class="s2">/build/OPENMV4/bin/firmware.elf&quot;</span><span class="p">,</span>
+</span><span data-line="7">  <span class="s2">&quot;servertype&quot;</span><span class="p">:</span> <span class="s2">&quot;jlink&quot;</span><span class="p">,</span>
+</span><span data-line="8">  <span class="s2">&quot;serverpath&quot;</span><span class="p">:</span> <span class="s2">&quot;/opt/SEGGER/JLink/JLinkGDBServer&quot;</span><span class="p">,</span>
+</span><span data-line="9">  <span class="s2">&quot;ipAddress&quot;</span><span class="p">:</span> <span class="s2">&quot;192.168.x.x&quot;</span><span class="p">,</span>
+</span><span data-line="10">  <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="s2">&quot;STM32H743VI&quot;</span><span class="p">,</span>
+</span><span data-line="11">  <span class="s2">&quot;interface&quot;</span><span class="p">:</span> <span class="s2">&quot;swd&quot;</span><span class="p">,</span>
+</span><span data-line="12">  <span class="s2">&quot;runToEntryPoint&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+</span><span data-line="13">  <span class="s2">&quot;armToolchainPath&quot;</span><span class="p">:</span> <span class="s2">&quot;${env:HOME}/openmv-sdk-1.6.0/gcc/bin&quot;</span>
+</span><span data-line="14"><span class="p">}</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ipAddress</span></code> değerini Remote Server penceresinin gösterdiği adrese ayarlayın. Köprünün tamamı budur.</p>
+</li>
+</ol>
+<div class="admonition tip">
+<p class="admonition-title">Tüyo</p>
+<p><strong>GDB sunucu köprüsüne alternatif: usbipd-win.</strong> Windows’ta bir sunucu çalıştırmak yerine J-Link’in USB cihazını <a class="reference external" href="https://github.com/dorssel/usbipd-win">usbipd-win</a> ile doğrudan WSL’ye bağlayabilirsiniz. Yönetici PowerShell’inden:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">winget</span> <span class="n">install</span> <span class="n">usbipd</span>
+</span><span data-line="2"><span class="n">usbipd</span> <span class="nb">list</span>
+</span><span data-line="3"><span class="n">usbipd</span> <span class="n">bind</span> <span class="o">--</span><span class="n">busid</span> <span class="o">&lt;</span><span class="n">busid</span><span class="o">&gt;</span>
+</span><span data-line="4"><span class="n">usbipd</span> <span class="n">attach</span> <span class="o">--</span><span class="n">wsl</span> <span class="o">--</span><span class="n">busid</span> <span class="o">&lt;</span><span class="n">busid</span><span class="o">&gt;</span>
+</span></pre></div>
+</div>
+<p>(<code class="docutils literal notranslate"><span class="pre">&lt;busid&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">usbipd</span> <span class="pre">list</span></code> çıktısındaki J-Link’in veri yolu kimliğidir.) Prob ardından WSL <em>içinde</em> görünür ve <a class="reference internal" href="#vs-code-cortex-debug-setup">VS Code Cortex-Debug setup</a> bölümündeki düz aynı makine <code class="docutils literal notranslate"><span class="pre">servertype:</span> <span class="pre">&quot;jlink&quot;</span></code> yapılandırmasını, IP adresi ve ayrı bir Windows sunucusu olmadan kullanırsınız. GDB sunucu köprüsü ara sıra kullanım için daha az kurulum gerektirir; usbipd-win ise rutin geliştirme için daha kullanışlıdır.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tüyo</p>
+<p>Aygıt yazılımını sıfırlamadan veya yeniden flash’lamadan <em>zaten çalışırken</em> hata ayıklamak için <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;attach&quot;</span></code> kullanın – sahada bir takılmayı yakalamak için idealdir. Sıfırlamak, ELF’i flash’lamak ve <code class="docutils literal notranslate"><span class="pre">runToEntryPoint</span></code> noktasından yeniden başlamak için <code class="docutils literal notranslate"><span class="pre">&quot;request&quot;:</span> <span class="pre">&quot;launch&quot;</span></code> kullanın.</p>
+</div>
+</section>
+<section id="command-line-debugging-with-gdbrunner">
+<h2><span class="section-number">14.1.1.4.6. </span>gdbrunner ile komut satırı hata ayıklaması<a class="headerlink" href="#command-line-debugging-with-gdbrunner" title="Link to this heading">¶</a></h2>
+<p>Gömülü bir hedefe karşı bir GDB oturumunu elle kurmak beş adımlı bir danstır: J-Link / ST-Link GDB sunucusunu bir pencerede doğru cihaz, bağlantı noktası ve arabirim bayraklarıyla başlatın; <em>Waiting for GDB connection</em> yazdırmasını bekleyin; ikinci bir pencerede <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> çalıştırın; <code class="docutils literal notranslate"><span class="pre">target</span> <span class="pre">remote</span> <span class="pre">localhost:&lt;port&gt;</span></code> yazın; gdb’yi ELF’e yönlendirin. gdb oturumu sona erdiğinde sunucu penceresini kapatmayı unutmayın. <a class="reference external" href="https://github.com/openmv/gdbrunner">gdbrunner</a>, tüm bunları tek bir ön plan komutunda toplayan küçük bir CLI’dir. OpenMV SDK’sının Python ortamında gelir, bu nedenle kurulacak bir şey yoktur; her zamanki giriş noktası aygıt yazılımı deposunun <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> hedefidir:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">make -j$(nproc) TARGET=&lt;TARGET&gt; DEBUG=1 debug
+</span></pre></div>
+</div>
+<p>Bu, gdbrunner’ı kartın yapılandırmasındaki hata ayıklayıcı argümanlarıyla – J-Link cihaz adı ve gerektiğinde ST-Link harici flash yükleyici – ve SDK’nın <code class="docutils literal notranslate"><span class="pre">arm-none-eabi-gdb</span></code> aracı zaten <code class="docutils literal notranslate"><span class="pre">PATH</span></code> üzerindeyken çalıştırır. Varsayılan arka uç J-Link’tir; <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">DEBUGGER=STLINK</span> <span class="pre">debug</span></code> ise bunun yerine bir ST-Link probuyla çalışır.</p>
+<p>gdbrunner doğrudan da çağrılabilir (SDK dışında, <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">gdbrunner</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">gdbrunner</span> <span class="n">jlink</span> <span class="o">--</span><span class="n">device</span> <span class="n">STM32H743VI</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span><span data-line="2"><span class="n">gdbrunner</span> <span class="n">stlink</span> <span class="n">build</span><span class="o">/</span><span class="n">OPENMV4</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span><span data-line="3"><span class="n">gdbrunner</span> <span class="n">qemu</span> <span class="o">--</span><span class="n">machine</span> <span class="n">mps2</span><span class="o">-</span><span class="n">an500</span> <span class="n">build</span><span class="o">/</span><span class="n">MPS2_AN500</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">firmware</span><span class="o">.</span><span class="n">elf</span>
+</span></pre></div>
+</div>
+<p>İlk konumsal argüman sunucu arka ucunu seçer (<code class="docutils literal notranslate"><span class="pre">jlink</span></code>, <code class="docutils literal notranslate"><span class="pre">stlink</span></code>, <code class="docutils literal notranslate"><span class="pre">qemu</span></code>); geri kalanlar, OpenMV kameraları için çalışan varsayılanlarla birlikte o arka uca iletilir. <code class="docutils literal notranslate"><span class="pre">gdbrunner</span> <span class="pre">--help</span></code> her arka uca özel tam bayrak listesini gösterir; her arka ucun argüman tablosu JSON tabanlıdır (<code class="docutils literal notranslate"><span class="pre">src/gdbrunner/backends.json</span></code>), bu nedenle yeni bir sunucu eklemek kod değişikliği yerine bir yapılandırma düzenlemesidir.</p>
+<p>gdbrunner’ın komut satırı çalışmaları için yaptıkları:</p>
+<ul class="simple">
+<li><p><strong>Tek işlem, temiz yaşam döngüsü.</strong> Sunucu başlar, bağlantı noktası açıldığında gdb bağlanır, gdb çıktığında sunucu temiz biçimde sonlandırılır. Oturumdan sağ kalan başıboş bir <code class="docutils literal notranslate"><span class="pre">JLinkGDBServer</span></code> yok, yönetilecek iki terminal yok.</p></li>
+<li><p><strong>STM32CubeProgrammer otomatik keşfi.</strong> <code class="docutils literal notranslate"><span class="pre">stlink</span></code> arka ucu, STM32CubeProgrammer araçları için her zamanki kurulum konumlarını (<code class="docutils literal notranslate"><span class="pre">~/STM32CubeProgrammer/</span></code>, <code class="docutils literal notranslate"><span class="pre">/opt/st/</span></code>, STM32CubeIDE eklenti ağacı) arar, böylece uzun <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code> yolunun her seferinde yazılması gerekmez. SDK, <code class="docutils literal notranslate"><span class="pre">~/openmv-sdk-&lt;version&gt;/stcubeprog/bin</span></code> konumunda kendi kopyasını paketler – sistemde kurulu bir kopya yoksa <code class="docutils literal notranslate"><span class="pre">--cube-prog</span></code> öğesini buraya yönlendirin.</p></li>
+<li><p><strong>Proje başına gdbinit dikkate alınır.</strong> Geçerli dizindeki bir <code class="docutils literal notranslate"><span class="pre">.gdbinit</span></code> dosyası <code class="docutils literal notranslate"><span class="pre">-ix</span></code> ile yüklenir – kullanıcı genelindeki <code class="docutils literal notranslate"><span class="pre">~/.gdbinit</span></code> dosyasını geçersiz kılarak – böylece proje başına gdb betikleme (pretty-printer’lar, karta özgü makrolar, kesme noktası kümeleri) çalışma dizininde bulunarak devreye girer. <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">debug</span></code> depo kökünden çalışır, bu nedenle oradaki bir <code class="docutils literal notranslate"><span class="pre">.gdbinit</span></code> geçerli olur.</p></li>
+<li><p><strong>Kuru çalıştırma.</strong> <code class="docutils literal notranslate"><span class="pre">--dryrun</span></code> sunucu komutunu çalıştırmadan yazdırır; çağrıyı bir sarmalayıcı betiğe uyarlamak, bir IDE başlatıcı yapılandırmasına kopyalamak veya yalnızca gdbrunner’ın hangi argümanları oluşturduğunu kontrol etmek için yararlıdır.</p></li>
+<li><p><strong>Sunucu çıktısı görünür.</strong> <code class="docutils literal notranslate"><span class="pre">--show-output</span></code> sunucunun stdout / stderr çıktısını görünür tutar. Varsayılan bunu bastırır (böylece gdb’nin arabirimi temiz kalır); hatalı davranan şeyin sunucunun kendisi olduğu durumlarda bayrağı açın.</p></li>
+<li><p><strong>QEMU arka ucu.</strong> <code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> hiçbir kart takılı olmadan bir aygıt yazılımı derlemesinde hata ayıklar. <code class="docutils literal notranslate"><span class="pre">MPS2_AN500</span></code> hedefi, kart yapılandırmasında bu arka ucu seçer, böylece <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">TARGET=MPS2_AN500</span> <span class="pre">DEBUG=1</span> <span class="pre">debug</span></code> QEMU’nun <code class="docutils literal notranslate"><span class="pre">mps2-an500</span></code> makinesi için derleme yapar ve platformdan bağımsız kodda – kameraya özgü çevre birimlerine dokunmayan her şey – adım adım ilerler; uçuş halindeyken. (<code class="docutils literal notranslate"><span class="pre">qemu-system-arm</span></code> bir host kurulumudur, SDK’nın parçası değildir.)</p></li>
+</ul>
+<p>Kesme noktası kenarlıkları ve bir çevre birimi yazmaç görünümüyle kaynak düzeyinde adım adım ilerlemek için yukarıdaki VS Code Cortex-Debug kurulumu daha iyi bir araçtır; gdbrunner ise komut satırında yaşayan her şey için doğru olandır.</p>
+</section>
+<section id="using-the-debugger">
+<h2><span class="section-number">14.1.1.4.7. </span>Hata ayıklayıcının kullanımı<a class="headerlink" href="#using-the-debugger" title="Link to this heading">¶</a></h2>
+<p>Bir oturum çalışmaya başladığında (işlemci <code class="docutils literal notranslate"><span class="pre">main</span></code> işlevinde durdurulmuş halde):</p>
+<ul class="simple">
+<li><p><strong>Kesme noktaları</strong> – bir C satırının yanındaki kenarlığa tıklayın veya Debug Console’da <code class="docutils literal notranslate"><span class="pre">break</span> <span class="pre">&lt;file&gt;:&lt;line&gt;</span></code> / <code class="docutils literal notranslate"><span class="pre">break</span> <span class="pre">&lt;function&gt;</span></code> yazın. Cortex-M çekirdeklerinde az sayıda <em>donanımsal</em> kesme noktası karşılaştırıcısı bulunur (genellikle M7 / H7 üzerinde 6–8, M55 üzerinde 8). Flash’taki kod üzerinde bunu aşmak sessizce başarısız olur – etkin kesme noktası sayısını mütevazı tutun.</p></li>
+<li><p><strong>Adım adım ilerleme</strong> – <kbd class="kbd docutils literal notranslate">F10</kbd> üzerinden geç (<code class="docutils literal notranslate"><span class="pre">next</span></code>), <kbd class="kbd docutils literal notranslate">F11</kbd> içine gir (<code class="docutils literal notranslate"><span class="pre">step</span></code>), <kbd class="kbd docutils literal notranslate">Shift</kbd>+<kbd class="kbd docutils literal notranslate">F11</kbd> dışarı çık (<code class="docutils literal notranslate"><span class="pre">finish</span></code>), <kbd class="kbd docutils literal notranslate">F5</kbd> devam et. Komut düzeyinde adım adım ilerleme Debug Console’da <code class="docutils literal notranslate"><span class="pre">stepi</span></code> / <code class="docutils literal notranslate"><span class="pre">nexti</span></code> ile yapılır.</p></li>
+<li><p><strong>Değişkenler / izleme / çağrı yığını</strong> – <em>Variables</em> ve <em>Call Stack</em> bölmeleri yerel değişkenleri ve geri izlemeyi gösterir; <em>Watch</em> öğesine ifadeler ekleyin. Değerini görmek için kaynaktaki bir değişkenin üzerine gelin. <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code> gösteren her şey, bir <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> derlemesinde olmadığınız anlamına gelir.</p></li>
+<li><p><strong>İzleme noktaları (veri kesme noktaları)</strong> – <code class="docutils literal notranslate"><span class="pre">watch</span> <span class="pre">&lt;expr&gt;</span></code> bir değişkene yazıldığında durur, <code class="docutils literal notranslate"><span class="pre">rwatch</span></code> okumada, <code class="docutils literal notranslate"><span class="pre">awatch</span></code> ise her ikisinde de durur. Cortex-M DWT birimi ~4 donanımsal izleme noktasını destekler – bir değişkeni <em>kimin</em> bozduğunu yakalamak için paha biçilmezdir.</p></li>
+<li><p><strong>Yazmaçlar ve çevre birimleri</strong> – <em>Cortex Registers</em> görünümü çekirdek yazmaçlarını gösterir; <code class="docutils literal notranslate"><span class="pre">svdFile</span></code> ayarlandığında <em>Peripherals</em> görünümü her çevre birimi yazmacını ve bit alanını çözümler (DMA, zamanlayıcılar, kamera / CSI arabirimi, XSPI vb.) – bir sürücünün neden hatalı davrandığını görmenin en hızlı yolu.</p></li>
+<li><p><strong>Bellek</strong> – çerçeve arabelleklerini, DMA arabelleklerini ve yapıları doğrudan incelemek için Cortex-Debug bellek görüntüleyicisini veya gdb <code class="docutils literal notranslate"><span class="pre">x/</span></code> komutunu kullanın.</p></li>
+<li><p><strong>Durdurma olmadan printf (SWO/RTT)</strong> – zamanlamaya duyarlı sorunlar için Segger <strong>RTT</strong> veya <strong>SWO</strong>, hedef çalışırken neredeyse sıfır ek yüklü <code class="docutils literal notranslate"><span class="pre">printf</span></code> sağlar. <code class="docutils literal notranslate"><span class="pre">DEBUG_PRINTF=1</span></code> ile derleyin ve Cortex-Debug’ın <code class="docutils literal notranslate"><span class="pre">rttConfig</span></code> (RTT) veya <code class="docutils literal notranslate"><span class="pre">swoConfig</span></code> (SWO, çekirdek saatine ihtiyaç duyar) yapılandırmasını ekleyin. Bir kesme noktasının gözlemlemeye çalıştığınız zamanlamayı değiştireceği durumlarda doğru araç budur.</p></li>
+<li><p><strong>Bağlantıyı kesme</strong> – bir <code class="docutils literal notranslate"><span class="pre">launch</span></code> oturumunda <em>Stop</em> hedefi durdurur; bir <code class="docutils literal notranslate"><span class="pre">attach</span></code> oturumunda <em>Disconnect</em> kamerayı çalışır halde bırakır. Daha sonra normal çalışmasına döndürmek için kameranın gücünü kapatıp açın.</p></li>
+</ul>
+</section>
+<section id="debugging-pitfalls">
+<h2><span class="section-number">14.1.1.4.8. </span>Hata ayıklama tuzakları<a class="headerlink" href="#debugging-pitfalls" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><strong>Optimize edilerek çıkarılmış değişkenler.</strong> Her şey <code class="docutils literal notranslate"><span class="pre">&lt;optimized</span> <span class="pre">out&gt;</span></code> gösteriyor – <code class="docutils literal notranslate"><span class="pre">DEBUG=0</span></code> ile derlediniz. <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> ile yeniden derleyin.</p></li>
+<li><p><strong>“GDB executable not found”</strong> – SDK <code class="docutils literal notranslate"><span class="pre">gcc/bin</span></code> <code class="docutils literal notranslate"><span class="pre">PATH</span></code> üzerinde değil; <code class="docutils literal notranslate"><span class="pre">armToolchainPath</span></code> / <code class="docutils literal notranslate"><span class="pre">gdbPath</span></code> ayarlayın.</p></li>
+<li><p><strong>“Cannot connect” / yanlış bellek haritası</strong> – yanlış veya eksik <code class="docutils literal notranslate"><span class="pre">device</span></code> adı; tablodaki tam dizeyi kullanın.</p></li>
+<li><p><strong>Kesme noktalarına sessizce ulaşılmıyor</strong> – flash’ta yer alan kod üzerinde çok fazla donanımsal kesme noktası var; bunları azaltın.</p></li>
+<li><p><strong>Kaynak yolları eşleşmiyor (Docker ile derlenmiş ELF)</strong> – Docker <code class="docutils literal notranslate"><span class="pre">build-firmware-dev</span></code> hedefiyle derleyin (kapsayıcının içinde ve dışında aynı mutlak yol) veya gdb <code class="docutils literal notranslate"><span class="pre">set</span> <span class="pre">substitute-path</span></code> ayarlayın.</p></li>
+</ul>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Başa dön</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="flashing/erasing.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Önceki</span><div class="title"><span class="section-number">14.1.1.3.5.5. </span>Dahili dosya sistemini silme</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="recovery.html">
+      <div class="page-info">
+        <span>Sonraki</span>
+        <div class="title"><span class="section-number">14.1.1.5. </span>Önyükleyiciyi (bootloader) geri yükleme</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    OpenMV donanım yazılımı v5.0.0 için &middot; MicroPython v1.28 tabanlı &middot; belgeler 19 Haziran 2026 tarihinde oluşturuldu &middot; Telif hakkı &copy; 2014-2026 OpenMV, Damien P. George ve diğerleri.
+  </p>
+  <p>
+    
+    <a href="https://www.sphinx-doc.org/">Sphinx</a> kullanılarak <a href="https://shibuya.lepture.com">Shibuya theme</a> temasıyla oluşturuldu.
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=0b15aba8"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=b0f24d8d"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

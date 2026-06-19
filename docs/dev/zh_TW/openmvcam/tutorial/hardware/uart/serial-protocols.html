@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-accent-color="blue" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3.20. 序列協定、訊框與 CRC - OpenMV MicroPython 1.28 說明文件</title><link rel="shortcut icon" href="../../../../_static/openmv.ico"/><link rel="index" title="索引" href="../../../../genindex.html" /><link rel="search" title="搜尋" href="../../../../search.html" /><link rel="next" title="3.21. SPI 基礎" href="../spi/spi-basics.html" /><link rel="prev" title="3.19. 程式碼中的 UART" href="uart-code.html" />
+      <link rel="canonical" href="https://docs.openmv.io/dev/openmvcam/tutorial/hardware/uart/serial-protocols.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=e1a1ceaf" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/shibuya.css?v=9454f7d5" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../../../_static/print.css?v=20ff2c19" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=0166669e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/rtl.css?v=a0ea7a54" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://docs.openmv.io/dev/openmvcam/tutorial/hardware/uart/serial-protocols.html"/>
+  <meta property="og:title" content="3.20. 序列協定、訊框與 CRC"/>
+    <meta name="twitter:card" content="summary"/>
+  
+    <link rel="alternate" hreflang="en" href="/dev/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ar" href="/dev/ar/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="zh-Hans" href="/dev/zh_CN/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="zh-Hant" href="/dev/zh_TW/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="hr" href="/dev/hr/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="cs" href="/dev/cs/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="nl" href="/dev/nl/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="fi" href="/dev/fi/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="fr" href="/dev/fr/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="de" href="/dev/de/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="he" href="/dev/he/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="hu" href="/dev/hu/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="id" href="/dev/id/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="it" href="/dev/it/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ja" href="/dev/ja/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ko" href="/dev/ko/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="pl" href="/dev/pl/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="pt-BR" href="/dev/pt_BR/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="pt-PT" href="/dev/pt_PT/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ro" href="/dev/ro/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="ru" href="/dev/ru/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="es" href="/dev/es/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="sv" href="/dev/sv/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="th" href="/dev/th/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="tr" href="/dev/tr/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="uk" href="/dev/uk/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+    <link rel="alternate" hreflang="vi" href="/dev/vi/openmvcam/tutorial/hardware/uart/serial-protocols.html" />
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../../../index.html">
+      <img class="light-logo" src="../../../../_static/openmv-logo-light.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <img class="dark-logo" src="../../../../_static/openmv-logo-dark.png" alt="OpenMV MicroPython" height="28" loading="lazy" />
+      <strong>OpenMV MicroPython</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"><ul><li class="link"><a href="../../../../index.html">首頁</a></li><li class="link"><a href="../../index.html">教學</a></li><li class="link"><a href="../../../../library/index.html">核心函式庫</a></li><li class="link"><a href="../../../quickref.html">開發板</a></li><li class="link"><a href="../../../shields.html">擴充板</a></li><li class="link"><a href="../../../sensors.html">感測器</a></li><li class="link"><a href="../../../../reference/index.html">語言</a></li><li class="link"><a href="../../../../develop/index.html">內部結構</a></li><li class="link"><a href="../../../../changelog/index.html">更新記錄</a></li></ul></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../../../search.html" method="get">
+  <input type="text" name="q" placeholder="搜尋" />
+  <kbd>/</kbd>
+</form><div class="nav-versions">
+    <button type="button" aria-label="版本">
+      <span class="md:hidden">版本</span>
+      <span class="hidden md:inline">dev</span>
+      <i class="i-lucide chevron-down"></i>
+    </button>
+    <div class="nav-versions-choices"><ul><li><a href="">dev</a></li></ul></div>
+  </div><div class="nav-languages">
+  <button type="button">
+    <span class="md:hidden">翻譯</span>
+    <iconify-icon icon="lucide:languages"></iconify-icon>
+  </button>
+  <div class="nav-languages-choices">
+    <ul><li><a href="/dev/openmvcam/tutorial/hardware/uart/serial-protocols.html">English</a></li><li><a href="/dev/ar/openmvcam/tutorial/hardware/uart/serial-protocols.html">العربية</a></li><li><a href="/dev/zh_CN/openmvcam/tutorial/hardware/uart/serial-protocols.html">简体中文</a></li><li><a href="/dev/zh_TW/openmvcam/tutorial/hardware/uart/serial-protocols.html">繁體中文</a></li><li><a href="/dev/hr/openmvcam/tutorial/hardware/uart/serial-protocols.html">Hrvatski</a></li><li><a href="/dev/cs/openmvcam/tutorial/hardware/uart/serial-protocols.html">Čeština</a></li><li><a href="/dev/nl/openmvcam/tutorial/hardware/uart/serial-protocols.html">Nederlands</a></li><li><a href="/dev/fi/openmvcam/tutorial/hardware/uart/serial-protocols.html">Suomi</a></li><li><a href="/dev/fr/openmvcam/tutorial/hardware/uart/serial-protocols.html">Français</a></li><li><a href="/dev/de/openmvcam/tutorial/hardware/uart/serial-protocols.html">Deutsch</a></li><li><a href="/dev/he/openmvcam/tutorial/hardware/uart/serial-protocols.html">עברית</a></li><li><a href="/dev/hu/openmvcam/tutorial/hardware/uart/serial-protocols.html">Magyar</a></li><li><a href="/dev/id/openmvcam/tutorial/hardware/uart/serial-protocols.html">Bahasa Indonesia</a></li><li><a href="/dev/it/openmvcam/tutorial/hardware/uart/serial-protocols.html">Italiano</a></li><li><a href="/dev/ja/openmvcam/tutorial/hardware/uart/serial-protocols.html">日本語</a></li><li><a href="/dev/ko/openmvcam/tutorial/hardware/uart/serial-protocols.html">한국어</a></li><li><a href="/dev/pl/openmvcam/tutorial/hardware/uart/serial-protocols.html">Polski</a></li><li><a href="/dev/pt_BR/openmvcam/tutorial/hardware/uart/serial-protocols.html">Português (Brasil)</a></li><li><a href="/dev/pt_PT/openmvcam/tutorial/hardware/uart/serial-protocols.html">Português (Portugal)</a></li><li><a href="/dev/ro/openmvcam/tutorial/hardware/uart/serial-protocols.html">Română</a></li><li><a href="/dev/ru/openmvcam/tutorial/hardware/uart/serial-protocols.html">Русский</a></li><li><a href="/dev/es/openmvcam/tutorial/hardware/uart/serial-protocols.html">Español</a></li><li><a href="/dev/sv/openmvcam/tutorial/hardware/uart/serial-protocols.html">Svenska</a></li><li><a href="/dev/th/openmvcam/tutorial/hardware/uart/serial-protocols.html">ไทย</a></li><li><a href="/dev/tr/openmvcam/tutorial/hardware/uart/serial-protocols.html">Türkçe</a></li><li><a href="/dev/uk/openmvcam/tutorial/hardware/uart/serial-protocols.html">Українська</a></li><li><a href="/dev/vi/openmvcam/tutorial/hardware/uart/serial-protocols.html">Tiếng Việt</a></li></ul>
+  </div>
+</div><div class="sy-head-socials">
+  <a href="https://github.com/openmv/openmv" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="切換至淺色模式"
+data-aria-light="切換至深色模式"
+data-aria-dark="切換至自動色彩模式">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6"><div class="sidebar-links">
+  <ul>
+    <li><a class="icon-link" href="https://forums.openmv.io/">
+  <span class="icon">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path fill="var(--accent-9)" fill-rule="evenodd" clip-rule="evenodd" d="M11 5a6 6 0 0 0-4.687 9.746c.215.27.315.62.231.954l-.514 2.058a1 1 0 0 0 1.485 1.1l2.848-1.71c.174-.104.374-.15.576-.148H13a6 6 0 0 0 0-12h-2Z"/>
+      <circle fill="white" cx="12" cy="11" r="1"/>
+      <circle fill="white" cx="9" cy="11" r="1"/>
+      <circle fill="white" cx="15" cy="11" r="1"/>
+    </svg>
+  </span>
+  <span class="text">討論</span>
+</a></li>
+  </ul>
+</div>
+        <div class="globaltoc" data-expand-depth="1"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">&#25945;&#23416;</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../quickstart.html">1. &#24555;&#36895;&#20837;&#38272;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../python/index.html">2. Python &#27010;&#35264;</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html">3. &#30828;&#39636;&#25511;&#21046;</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../foundations/microcontrollers.html">3.1. &#24494;&#25511;&#21046;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/timing.html">3.2. &#35336;&#26178;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/virtual-timers.html">3.3. &#34395;&#25836;&#35336;&#26178;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../foundations/pins-and-peripherals.html">3.4. &#25509;&#33139;&#33287;&#21608;&#37002;&#35037;&#32622;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/led-class.html">3.5. LED &#39006;&#21029;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/electronics-basics.html">3.6. &#38651;&#23376;&#23416;&#22522;&#30990;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/gpio-output.html">3.7. GPIO &#36664;&#20986;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-output/level-shifting.html">3.8. &#38651;&#22739;&#20301;&#28310;&#36681;&#25563;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/electronics-input.html">3.9. &#38283;&#38364;&#33287;&#19978;&#19979;&#25289;&#38651;&#38459;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/gpio-input.html">3.10. GPIO &#36664;&#20837;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../gpio-input/debouncing.html">3.11. &#21435;&#24392;&#36339;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/adc.html">3.12. &#20351;&#29992; ADC &#35712;&#21462;&#39006;&#27604;&#35338;&#34399;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analog/analog-output.html">3.13. &#20351;&#29992; PWM &#33287; RC &#28670;&#27874;&#22120;&#29986;&#29983;&#39006;&#27604;&#35338;&#34399;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/led-dimming.html">3.14. &#20197; PWM &#35519;&#31680; LED &#20142;&#24230;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/dc-motors.html">3.15. &#30452;&#27969;&#39340;&#36948;&#25511;&#21046;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pwm/servos.html">3.16. &#20282;&#26381;&#39340;&#36948;&#25511;&#21046;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../pulse-io/pulse-io.html">3.17. &#20301;&#20803;&#20018;&#27969;&#33287;&#33032;&#34909;&#28204;&#37327;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="uart-basics.html">3.18. UART &#22522;&#30990;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="uart-code.html">3.19. &#31243;&#24335;&#30908;&#20013;&#30340; UART</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">3.20. &#24207;&#21015;&#21332;&#23450;&#12289;&#35338;&#26694;&#33287; CRC</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-basics.html">3.21. SPI &#22522;&#30990;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../spi/spi-code.html">3.22. SPI &#31243;&#24335;&#30908;&#23526;&#20316;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-basics.html">3.23. I2C &#22522;&#30990;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../i2c/i2c-code.html">3.24. &#20197;&#31243;&#24335;&#30908;&#25805;&#20316; I2C</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-basics.html">3.25. CAN &#21295;&#27969;&#25490;&#22522;&#30990;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../can/can-code.html">3.26. &#31243;&#24335;&#30908;&#20013;&#30340; CAN &#21295;&#27969;&#25490;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/watchdog.html">3.27. &#30475;&#38272;&#29399;&#35336;&#26178;&#22120;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/rtc.html">3.28. &#21363;&#26178;&#26178;&#37912;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../production/low-power.html">3.29. &#20302;&#21151;&#32791;&#33287;&#30561;&#30496;&#27169;&#24335;</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../wrap-up.html">3.30. &#32317;&#32080;</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../vision/index.html">4. &#35222;&#35258;&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../image/index.html">5. &#24433;&#20687;&#34389;&#29702;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../numpy/index.html">6. NumPy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../ml/index.html">7. &#27231;&#22120;&#23416;&#32722;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../asyncio/index.html">8. Asyncio</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../networking/index.html">9. &#32178;&#36335;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../webservers/index.html">10. Web &#20282;&#26381;&#22120;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../bluetooth/index.html">11. &#34253;&#29273;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../protocol/index.html">12. &#20027;&#27231;&#21332;&#23450;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tools/index.html">13. &#24037;&#20855;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../production/index.html">14. &#37327;&#29986;</a></li>
+</ul>
+</li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../library/index.html">&#20989;&#24335;&#24235;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../quickref.html">&#38283;&#30332;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../shields.html">&#25844;&#20805;&#26495;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../sensors.html">&#24863;&#28204;&#22120;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../reference/index.html">&#35486;&#35328;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../genrst/index.html">CPython</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../develop/index.html">&#20839;&#37096;&#27231;&#21046;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../changelog/index.html">&#35722;&#26356;&#26085;&#35468;</a></li>
+<li class="toctree-l1 _expand"><a class="reference internal" href="../../../../license.html">&#25480;&#27402;</a></li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>本頁目錄</h3><ul>
+<li><a class="reference internal" href="#packet-framing">3.20.1. &#23553;&#21253;&#35338;&#26694;</a></li>
+<li><a class="reference internal" href="#crcs">3.20.2. CRC</a><ul>
+<li><a class="reference internal" href="#why-two-crcs">3.20.2.1. &#28858;&#20309;&#35201;&#20841;&#20491; CRC</a></li>
+<li><a class="reference internal" href="#helpers">3.20.2.2. &#36628;&#21161;&#20989;&#24335;</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#a-state-machine-receiver">3.20.3. &#29376;&#24907;&#27231;&#24335;&#25509;&#25910;&#31471;</a></li>
+<li><a class="reference internal" href="#beyond-the-baseline">3.20.4. &#36229;&#36234;&#22522;&#30990;</a></li>
+</ul>
+</div><a class="js-repo-stats repo-stats flex items-center" href="https://github.com/openmv/micropython-doc"
+  data-type="github" data-user="openmv" data-repo="micropython-doc">
+  <span class="w-8 flex items-center justify-around shrink-0 text-3xl">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </span>
+  <span class="flex-grow px-2 break-all">
+    
+    
+      <span>micropython-doc</span>
+    
+    <span class="flex text-sm repo-stats-count">
+      <span class="flex items-center pr-3">
+        <iconify-icon icon="lucide:star"></iconify-icon>
+        <strong class="js-repo-stars ml-1">0</strong>
+      </span>
+      <span class="flex items-center">
+        <iconify-icon icon="lucide:git-fork"></iconify-icon>
+        <strong class="js-repo-forks ml-1">0</strong>
+      </span>
+    </span>
+  </span>
+</a><div class="edit-this-page">
+  <a href="https://github.com/openmv/micropython-doc/blob/0a8363374fea0d6ab6820d0138a1d47ace274359/docs/openmvcam/tutorial/hardware/uart/serial-protocols.rst">編輯本頁</a>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../../../index.html"><span itemprop="name">OpenMV MicroPython</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">OpenMV Cam 教學</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name"><span class="section-number">3. </span>硬體控制</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name"><span class="section-number">3.20. </span>序列協定、訊框與 CRC</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <div class="copy-page-wrapper relative pb-4 lg:absolute lg:top-8 lg:right-6 xl:right-12">
+  <div id="copy-page-trigger">
+    <button
+      type="button"
+      class="js-copy px-3 py-1 inline-flex items-center gap-1"
+      data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt"
+    >
+      <i class="i-lucide" data-icon="copy"></i>
+      <span>複製頁面</span>
+    </button>
+    <button class="js-menu px-2 py-1" type="button" aria-label="更多操作"
+      aria-haspopup="menu" aria-expanded="false" aria-controls="copy-page-content">
+      <i class="i-lucide chevron-down"></i>
+    </button>
+  </div>
+  <div id="copy-page-content" role="menu" aria-orientation="vertical" aria-hidden="true">
+    <div role="presentation">
+      <div class="flex flex-col" role="group">
+        <button class="js-copy" type="button" role="menuitem"
+          data-url="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt">
+          <span class="iconify-icon">
+            <i class="i-lucide" data-icon="copy"></i>
+          </span>
+          <span>複製頁面</span>
+        </button>
+        <a role="menuitem" href="https://docs.openmv.io/dev/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt" target="_blank" rel="nofollow"><iconify-icon icon="bi:code-slash"></iconify-icon>
+            <span>檢視原始碼</span></a><a role="menuitem" href="https://chatgpt.com/?hints=search&q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:openai"></iconify-icon>
+          <span>在 ChatGPT 中開啟</span>
+        </a><a role="menuitem" href="https://claude.ai/new?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:claude"></iconify-icon>
+          <span>在 Claude 中開啟</span>
+        </a><a role="menuitem" href="https://www.perplexity.ai/search?q=Read%20https%3A//docs.openmv.io/dev/_sources/openmvcam/tutorial/hardware/uart/serial-protocols.rst.txt%20so%20I%20can%20ask%20questions%20about%20it." target="_blank" rel="nofollow">
+          <iconify-icon icon="bi:perplexity"></iconify-icon>
+          <span>在 Perplexity 中開啟</span>
+        </a></div>
+    </div>
+  </div>
+</div><article class="yue" role="main">
+          <section id="serial-protocols-framing-and-crcs">
+<h1><span class="section-number">3.20. </span>序列協定、訊框與 CRC<a class="headerlink" href="#serial-protocols-framing-and-crcs" title="連結到這個標頭">¶</a></h1>
+<p><a class="reference internal" href="uart-code.html"><span class="doc">程式碼中的 UART</span></a> 已能在兩端之間搬移位元組。但光是這樣還不足以建立一條可靠的連結。當電線另一端真的接上一個裝置時，立刻會出現三個問題：</p>
+<ul class="simple">
+<li><p><strong>一則訊息從哪裡開始、到哪裡結束？</strong> 位元組是以串流方式抵達，本身並沒有內建的分隔符。如果接收端漏掉了第一個位元組（在傳送端啟動之後才上電；或是線路上出現短暫的電氣干擾），那麼其後的每個位元組都會錯位一格，直到接收端找到新的重新同步點為止。</p></li>
+<li><p><strong>每則訊息有多長？</strong> 一筆 32 位元組的感測器讀數和一則 4 位元組的狀態回覆，在位元組層級上看起來一模一樣。接收端需要某種方式來得知有多少位元組屬於目前這則訊息。</p></li>
+<li><p><strong>位元組是否完整無誤地抵達？</strong> 雜訊可能翻轉個別的位元。少了檢查機制，接收端就會欣然地對損毀的資料採取動作。</p></li>
+</ul>
+<p>針對這三個問題的標準解答，就是把資料包裝進一個封包訊框：開頭放一段已知的位元組序列、一個長度欄位、酬載本身，以及結尾的一個檢查碼。</p>
+<section id="packet-framing">
+<h2><span class="section-number">3.20.1. </span>封包訊框<a class="headerlink" href="#packet-framing" title="連結到這個標頭">¶</a></h2>
+<p>一種典型的訊框格式：</p>
+<figure class="align-default" id="id1">
+<img alt="Six fields drawn in sequence: a two-byte HEADER labelled 0xAA 0x55, a one-byte CMD field selecting which command this packet carries, a two-byte LEN field giving the payload size, a one-byte HCRC field covering HEADER plus CMD plus LEN, a variable-length PAYLOAD of LEN bytes whose format depends on the CMD, and a four-byte DCRC field covering the payload." src="../../../../_images/packet-frame.svg" />
+<figcaption>
+<p><span class="caption-text">一個具有獨立標頭與資料 CRC 的訊框封包：標頭（魔術位元組）、命令、長度、標頭 CRC、酬載、資料 CRC。</span><a class="headerlink" href="#id1" title="連結到這個圖片">¶</a></p>
+</figcaption>
+</figure>
+<p>每個欄位各司其職：</p>
+<ul class="simple">
+<li><p><strong>標頭（魔術位元組）。</strong> 一段固定、不尋常的位元組序列——通常是兩個位元組，例如 <code class="docutils literal notranslate"><span class="pre">0xAA</span> <span class="pre">0x55</span></code>——接收端會在傳入的串流中掃描它。當找到這段序列時，它便知道一個新封包正要開始，並且可以丟棄先前出現的任何垃圾資料。</p></li>
+<li><p><strong>命令。</strong> 一個位元組，說明這個封包<em>是什麼</em>。不同的命令值會使用不同的酬載格式——某個命令可能代表「設定伺服角度」並帶兩個酬載位元組，另一個可能代表「讀取感測器」而沒有酬載，又一個可能是「記錄訊息」並帶一個字串。接收端會依命令位元組進行分派，以得知該如何解讀封包的其餘部分。</p></li>
+<li><p><strong>長度。</strong> 兩個位元組，給出酬載的大小（單位為位元組，此處為小端序），允許酬載大小最多約 64 KiB。一旦標頭 CRC 通過驗證，接收端便會精確地讀取這麼多個位元組。</p></li>
+<li><p><strong>標頭 CRC。</strong> 一個一位元組的檢查碼，涵蓋 HEADER、CMD 與 LEN 欄位。接收端會在讀取任何酬載之前先檢查它，因此一個損毀的 LEN 只要經過寥寥數個位元組就會被抓出來（為何這很重要，請見下方的 CRC 段落）。</p></li>
+<li><p><strong>酬載。</strong> 命令專屬的應用資料，長度恰為 LEN 個位元組。其格式由命令位元組決定：可以是一筆以 <a class="reference internal" href="../../../../library/struct.html#module-struct" title="struct: pack and unpack primitive data types"><code class="xref py py-mod docutils literal notranslate"><span class="pre">struct</span></code></a> 打包、由固定寬度欄位組成的記錄、一個字串、原始記憶體——只要雙方對該命令有所共識即可。</p></li>
+<li><p><strong>資料 CRC。</strong> 一個四位元組的 CRC，涵蓋酬載位元組。接收端會根據它剛讀入的位元組重新計算一次，若不相符便丟棄該封包。</p></li>
+</ul>
+</section>
+<section id="crcs">
+<h2><span class="section-number">3.20.2. </span>CRC<a class="headerlink" href="#crcs" title="連結到這個標頭">¶</a></h2>
+<p>最簡單的「檢查碼」就是所有位元組的總和，再對 256 或 65536 取模。它能抓出大多數的單一位元翻轉，但會漏掉許多多位元錯誤，而且忽略位元組的順序。</p>
+<p><em>循環冗餘檢查</em>（CRC）是標準的進階做法。它把輸入視為一個很長的二進位數字，並（以一種特殊方式）將它除以一個固定的<em>多項式</em>；相除的餘數就是 CRC。不同的多項式能抓出不同類別的錯誤；常見的 8、16 與 32 位元多項式，各自都能抓出所有短於其位寬的錯誤叢發，外加很大比例的較長叢發。</p>
+<section id="why-two-crcs">
+<h3><span class="section-number">3.20.2.1. </span>為何要兩個 CRC<a class="headerlink" href="#why-two-crcs" title="連結到這個標頭">¶</a></h3>
+<p>上方的封包圖攜帶了<em>兩個</em>獨立的 CRC——一個涵蓋標頭（HEADER、CMD、LEN），另一個涵蓋酬載。這正是一個健全的訊框真正需要的，原因在於當 LEN 欄位本身在傳輸途中損毀時，單一的結尾 CRC 會如何失效：</p>
+<ul class="simple">
+<li><p>接收端會依照損毀的 LEN 採取動作，從線路上讀取那麼多個位元組——很可能遠多於傳送端原本想要的數量。</p></li>
+<li><p>只有結尾的那個 CRC 最終才會告訴接收端出了問題，而且還要等到所有那些位元組都被消耗完之後。</p></li>
+<li><p>在剖析器卡住等待錯誤數量的位元組的同時，緊接在損毀封包後抵達的真實封包會被當成酬載吞掉，於是接收端會損失好幾個封包，而不只是那一個。</p></li>
+</ul>
+<p>把 CRC 拆開就能解決這個問題：</p>
+<ul class="simple">
+<li><p><strong>標頭 CRC</strong> 涵蓋 HEADER、CMD 與 LEN。接收端會在讀取任何酬載之前先檢查它，因此一個損毀的 LEN 只要經過寥寥數個位元組就會被抓出來，剖析器立即重新同步，只會犧牲那一個壞封包。</p></li>
+<li><p><strong>資料 CRC</strong> 涵蓋酬載。一旦標頭 CRC 通過，接收端便知道可以信任 LEN，於是精確地讀取那麼多個酬載位元組，並對照資料 CRC 加以驗證。</p></li>
+</ul>
+<p>一種常見的尺寸配置——也是本頁所採用的——是標頭 CRC 用一個位元組（對於五位元組的標頭，一個 CRC-8 綽綽有餘），資料 CRC 用四個位元組（一個 CRC-32 能涵蓋好幾 KB 的酬載，碰撞率低到幾乎可以忽略）。</p>
+</section>
+<section id="helpers">
+<h3><span class="section-number">3.20.2.2. </span>輔助函式<a class="headerlink" href="#helpers" title="連結到這個標頭">¶</a></h3>
+<p>MicroPython 直接內附 <a class="reference internal" href="../../../../library/binascii.html#binascii.crc32" title="binascii.crc32"><code class="xref py py-func docutils literal notranslate"><span class="pre">binascii.crc32()</span></code></a> 可用於四位元組的 CRC。至於一位元組的標頭 CRC，使用 Maxim 1-wire 裝置所採用的多項式（反射形式為 <code class="docutils literal notranslate"><span class="pre">0x8C</span></code>）寫成一個小巧的輔助函式，短到足以直接寫進程式中：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">crc8</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="2">    <span class="n">crc</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="3">    <span class="k">for</span> <span class="n">byte</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+</span><span data-line="4">        <span class="n">crc</span> <span class="o">^=</span> <span class="n">byte</span>
+</span><span data-line="5">        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+</span><span data-line="6">            <span class="n">crc</span> <span class="o">=</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">^</span> <span class="mh">0x8C</span> <span class="k">if</span> <span class="n">crc</span> <span class="o">&amp;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
+</span><span data-line="7">    <span class="k">return</span> <span class="n">crc</span> <span class="o">&amp;</span> <span class="mh">0xFF</span>
+</span></pre></div>
+</div>
+<p>一個完整的編碼器在單一函式中結合了這兩個 CRC：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">encode_packet</span><span class="p">(</span><span class="n">cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span data-line="5">    <span class="n">header</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xAA\x55</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">cmd</span><span class="p">])</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+</span><span data-line="6">    <span class="n">hcrc</span>   <span class="o">=</span> <span class="n">crc8</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+</span><span data-line="7">    <span class="n">dcrc</span>   <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span><span data-line="8">    <span class="k">return</span> <span class="n">header</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">hcrc</span><span class="p">])</span> <span class="o">+</span> <span class="n">payload</span> <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">dcrc</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>其反向函式則從一個完整封包中還原出命令與酬載，或在任一個 CRC 檢查失敗時回傳 <code class="docutils literal notranslate"><span class="pre">None</span></code>：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="k">def</span><span class="w"> </span><span class="nf">decode_packet</span><span class="p">(</span><span class="n">packet</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">):</span>
+</span><span data-line="2">    <span class="c1"># Layout: HEADER(2) + CMD(1) + LEN(2) + HCRC(1) + PAYLOAD(LEN) + DCRC(4)</span>
+</span><span data-line="3">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="ow">or</span> <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xAA\x55</span><span class="s2">&quot;</span><span class="p">:</span>
+</span><span data-line="4">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="5">
+</span><span data-line="6">    <span class="n">header</span> <span class="o">=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">5</span><span class="p">]</span>
+</span><span data-line="7">    <span class="k">if</span> <span class="n">crc8</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="o">!=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">5</span><span class="p">]:</span>
+</span><span data-line="8">        <span class="k">return</span> <span class="kc">None</span>                       <span class="c1"># header CRC mismatch</span>
+</span><span data-line="9">
+</span><span data-line="10">    <span class="n">cmd</span>    <span class="o">=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</span><span data-line="11">    <span class="n">length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="n">packet</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">5</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="12">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">6</span> <span class="o">+</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">4</span><span class="p">:</span>
+</span><span data-line="13">        <span class="k">return</span> <span class="kc">None</span>                       <span class="c1"># truncated or oversized</span>
+</span><span data-line="14">
+</span><span data-line="15">    <span class="n">payload</span>       <span class="o">=</span> <span class="n">packet</span><span class="p">[</span><span class="mi">6</span><span class="p">:</span><span class="mi">6</span> <span class="o">+</span> <span class="n">length</span><span class="p">]</span>
+</span><span data-line="16">    <span class="n">received_dcrc</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">packet</span><span class="p">[</span><span class="mi">6</span> <span class="o">+</span> <span class="n">length</span><span class="p">:])[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="17">    <span class="k">if</span> <span class="n">binascii</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">!=</span> <span class="n">received_dcrc</span><span class="p">:</span>
+</span><span data-line="18">        <span class="k">return</span> <span class="kc">None</span>                       <span class="c1"># data CRC mismatch</span>
+</span><span data-line="19">
+</span><span data-line="20">    <span class="k">return</span> <span class="n">cmd</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p>實務上，接收端並不會拿到一個完整的封包——位元組是透過 UART 一次一個地抵達，而一個在封包中途暫停的傳送端（或是一條會遺失位元組的雜訊線路），無法就這樣直接被 <code class="docutils literal notranslate"><span class="pre">read()</span></code> 讀進一個大小恰好的緩衝區中。下一節會以狀態機的形式，把同樣的解碼邏輯逐位元組地執行一遍。</p>
+</section>
+</section>
+<section id="a-state-machine-receiver">
+<h2><span class="section-number">3.20.3. </span>狀態機式接收端<a class="headerlink" href="#a-state-machine-receiver" title="連結到這個標頭">¶</a></h2>
+<p>接收端無法只是針對某個固定的 <code class="docutils literal notranslate"><span class="pre">N</span></code> 去呼叫 <code class="docutils literal notranslate"><span class="pre">uart.read(N)</span></code>——它並不知道下一個封包會有多少位元組，而且線路上的任何垃圾都會打亂對齊。解法是用一個小型狀態機，一次消耗一個位元組，並依據它目前位於封包中的哪個位置來做出反應。主迴圈會輪詢 <a class="reference internal" href="../../../../library/machine.UART.html#machine.UART.any" title="machine.UART.any"><code class="xref py py-meth docutils literal notranslate"><span class="pre">any()</span></code></a> 以查看緩衝了多少位元組，在單一次 <a class="reference internal" href="../../../../library/machine.UART.html#machine.UART.read" title="machine.UART.read"><code class="xref py py-meth docutils literal notranslate"><span class="pre">read()</span></code></a> 呼叫中把它們抽乾，並把每個位元組餵進狀態機：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+</span><span data-line="2"><span class="kn">import</span><span class="w"> </span><span class="nn">binascii</span>
+</span><span data-line="3"><span class="kn">import</span><span class="w"> </span><span class="nn">struct</span>
+</span><span data-line="4"><span class="kn">from</span><span class="w"> </span><span class="nn">machine</span><span class="w"> </span><span class="kn">import</span> <span class="n">UART</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="n">HEADER</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;</span><span class="se">\xAA\x55</span><span class="s2">&quot;</span>
+</span><span data-line="7"><span class="n">HEADER_LEN</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">HEADER</span><span class="p">)</span>
+</span><span data-line="8">
+</span><span data-line="9"><span class="c1"># States, in the order the receiver walks through them per packet.</span>
+</span><span data-line="10"><span class="n">HUNT_FOR_HEADER</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="11"><span class="n">READ_COMMAND</span>    <span class="o">=</span> <span class="mi">1</span>
+</span><span data-line="12"><span class="n">READ_LENGTH</span>     <span class="o">=</span> <span class="mi">2</span>
+</span><span data-line="13"><span class="n">READ_HEADER_CRC</span> <span class="o">=</span> <span class="mi">3</span>
+</span><span data-line="14"><span class="n">READ_PAYLOAD</span>    <span class="o">=</span> <span class="mi">4</span>
+</span><span data-line="15"><span class="n">READ_DATA_CRC</span>   <span class="o">=</span> <span class="mi">5</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="n">uart</span> <span class="o">=</span> <span class="n">UART</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">baudrate</span><span class="o">=</span><span class="mi">115200</span><span class="p">)</span>
+</span><span data-line="18">
+</span><span data-line="19"><span class="c1"># Receiver state plus partial-field buffers.</span>
+</span><span data-line="20"><span class="n">state</span>        <span class="o">=</span> <span class="n">HUNT_FOR_HEADER</span>
+</span><span data-line="21"><span class="n">matched</span>      <span class="o">=</span> <span class="mi">0</span>              <span class="c1"># bytes of HEADER matched so far</span>
+</span><span data-line="22"><span class="n">cmd</span>          <span class="o">=</span> <span class="mi">0</span>              <span class="c1"># CMD captured in READ_COMMAND</span>
+</span><span data-line="23"><span class="n">length_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>    <span class="c1"># raw LEN bytes (kept for the header CRC)</span>
+</span><span data-line="24"><span class="n">length</span>       <span class="o">=</span> <span class="mi">0</span>              <span class="c1"># unpacked LEN</span>
+</span><span data-line="25"><span class="n">payload</span>      <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>    <span class="c1"># payload bytes accumulated in READ_PAYLOAD</span>
+</span><span data-line="26"><span class="n">crc_bytes</span>    <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>    <span class="c1"># DCRC bytes accumulated in READ_DATA_CRC</span>
+</span><span data-line="27">
+</span><span data-line="28"><span class="k">def</span><span class="w"> </span><span class="nf">handle_packet</span><span class="p">(</span><span class="n">cmd</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="29">    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;cmd&quot;</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="s2">&quot;payload&quot;</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+</span><span data-line="30">
+</span><span data-line="31"><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+</span><span data-line="32">    <span class="c1"># Drain whatever bytes have arrived since the last poll. Idle</span>
+</span><span data-line="33">    <span class="c1"># briefly when the line is quiet so the loop is not a busy spin.</span>
+</span><span data-line="34">    <span class="n">n</span> <span class="o">=</span> <span class="n">uart</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+</span><span data-line="35">    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span><span class="p">:</span>
+</span><span data-line="36">        <span class="n">time</span><span class="o">.</span><span class="n">sleep_ms</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="37">        <span class="k">continue</span>
+</span><span data-line="38">
+</span><span data-line="39">    <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">uart</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+</span><span data-line="40">        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">HUNT_FOR_HEADER</span><span class="p">:</span>
+</span><span data-line="41">            <span class="c1"># Walk the magic bytes. On a mismatch, back off by one</span>
+</span><span data-line="42">            <span class="c1"># so a stray HEADER[0] in the noise still counts as a</span>
+</span><span data-line="43">            <span class="c1"># possible start.</span>
+</span><span data-line="44">            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">HEADER</span><span class="p">[</span><span class="n">matched</span><span class="p">]:</span>
+</span><span data-line="45">                <span class="n">matched</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span data-line="46">                <span class="k">if</span> <span class="n">matched</span> <span class="o">==</span> <span class="n">HEADER_LEN</span><span class="p">:</span>
+</span><span data-line="47">                    <span class="n">state</span> <span class="o">=</span> <span class="n">READ_COMMAND</span>
+</span><span data-line="48">                    <span class="n">matched</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span data-line="49">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="50">                <span class="n">matched</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">HEADER</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+</span><span data-line="51">
+</span><span data-line="52">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_COMMAND</span><span class="p">:</span>
+</span><span data-line="53">            <span class="n">cmd</span> <span class="o">=</span> <span class="n">b</span>
+</span><span data-line="54">            <span class="n">length_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+</span><span data-line="55">            <span class="n">state</span> <span class="o">=</span> <span class="n">READ_LENGTH</span>
+</span><span data-line="56">
+</span><span data-line="57">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_LENGTH</span><span class="p">:</span>
+</span><span data-line="58">            <span class="c1"># LEN is two bytes little-endian.</span>
+</span><span data-line="59">            <span class="n">length_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="60">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">length_bytes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+</span><span data-line="61">                <span class="n">length</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;H&quot;</span><span class="p">,</span> <span class="n">length_bytes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="62">                <span class="n">state</span> <span class="o">=</span> <span class="n">READ_HEADER_CRC</span>
+</span><span data-line="63">
+</span><span data-line="64">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_HEADER_CRC</span><span class="p">:</span>
+</span><span data-line="65">            <span class="c1"># Verify the CRC over HEADER + CMD + LEN before</span>
+</span><span data-line="66">            <span class="c1"># committing to read LEN payload bytes. A mismatch</span>
+</span><span data-line="67">            <span class="c1"># aborts here, after just five header bytes -- the</span>
+</span><span data-line="68">            <span class="c1"># next valid header re-syncs quickly.</span>
+</span><span data-line="69">            <span class="n">expected</span> <span class="o">=</span> <span class="n">crc8</span><span class="p">(</span><span class="n">HEADER</span> <span class="o">+</span> <span class="nb">bytes</span><span class="p">([</span><span class="n">cmd</span><span class="p">])</span> <span class="o">+</span> <span class="n">length_bytes</span><span class="p">)</span>
+</span><span data-line="70">            <span class="k">if</span> <span class="n">b</span> <span class="o">==</span> <span class="n">expected</span><span class="p">:</span>
+</span><span data-line="71">                <span class="n">payload</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+</span><span data-line="72">                <span class="n">state</span> <span class="o">=</span> <span class="n">READ_PAYLOAD</span>
+</span><span data-line="73">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="74">                <span class="n">state</span> <span class="o">=</span> <span class="n">HUNT_FOR_HEADER</span>
+</span><span data-line="75">
+</span><span data-line="76">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_PAYLOAD</span><span class="p">:</span>
+</span><span data-line="77">            <span class="n">payload</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="78">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">==</span> <span class="n">length</span><span class="p">:</span>
+</span><span data-line="79">                <span class="n">crc_bytes</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+</span><span data-line="80">                <span class="n">state</span> <span class="o">=</span> <span class="n">READ_DATA_CRC</span>
+</span><span data-line="81">
+</span><span data-line="82">        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="n">READ_DATA_CRC</span><span class="p">:</span>
+</span><span data-line="83">            <span class="c1"># Verify the CRC over the payload and either deliver</span>
+</span><span data-line="84">            <span class="c1"># the packet or drop it. Either way, go back to</span>
+</span><span data-line="85">            <span class="c1"># looking for the next header.</span>
+</span><span data-line="86">            <span class="n">crc_bytes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="87">            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">crc_bytes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+</span><span data-line="88">                <span class="n">expected</span> <span class="o">=</span> <span class="n">binascii</span><span class="o">.</span><span class="n">crc32</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+</span><span data-line="89">                <span class="n">received</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;I&quot;</span><span class="p">,</span> <span class="n">crc_bytes</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="90">                <span class="k">if</span> <span class="n">expected</span> <span class="o">==</span> <span class="n">received</span><span class="p">:</span>
+</span><span data-line="91">                    <span class="n">handle_packet</span><span class="p">(</span><span class="n">cmd</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+</span><span data-line="92">                <span class="n">state</span> <span class="o">=</span> <span class="n">HUNT_FOR_HEADER</span>
+</span></pre></div>
+</div>
+<p>每個位元組會讓狀態機前進一步，或是在一個完整封包、一個錯誤的標頭 CRC 或一個錯誤的資料 CRC 之後退回 <code class="docutils literal notranslate"><span class="pre">HUNT_FOR_HEADER</span></code>。線路上不符合標頭的垃圾會被默默丟棄；下一個有效的標頭會讓接收端重新同步。關鍵的安全特性來自標頭 CRC：如果 LEN 欄位損毀，剖析器會在標頭 CRC 檢查之後（寥寥數個位元組）就抓到它，而不是在已經決定要讀取一個錯得離譜的酬載位元組數量之後。</p>
+</section>
+<section id="beyond-the-baseline">
+<h2><span class="section-number">3.20.4. </span>超越基礎<a class="headerlink" href="#beyond-the-baseline" title="連結到這個標頭">¶</a></h2>
+<p>上述的訊框是一條序列連結要從線路雜訊中復原所需的<em>最低限度</em>：標頭魔術位元組、長度、命令，以及兩個 CRC。它能偵測損毀並在亂碼位元組之後重新同步，但它是放棄受損的封包，而不是想辦法讓它們通過；而且它讓傳送端對接收端究竟收到了什麼毫無頭緒。</p>
+<p>現實世界的序列協定會在那條基礎之上層層堆疊功能。並非每一條嵌入式連結都需要全部的功能——挑選應用程式真正需要的即可：</p>
+<ul class="simple">
+<li><p><strong>序號。</strong> 一個小型計數器，每次傳送時遞增。接收端可藉此偵測缺口（某個封包遺失了）、重複（傳送端重傳了，但接收端早已接受第一份副本），以及——在通道可能重新排序的情況下——亂序抵達。</p></li>
+<li><p><strong>確認（ACK）。</strong> 一個專用的 ACK 封包（或回覆中夾帶的一個位元），由接收端送回，用以確認每個封包。少了 ACK，傳送端就無從得知它的資料是否抵達。</p></li>
+<li><p><strong>否定確認（NACK）。</strong> 當接收端看到一次 CRC 失敗或一個序號缺口時送出的 NACK。傳送端會立即重傳，而不必等到 ACK 逾時觸發。</p></li>
+<li><p><strong>重傳。</strong> 傳送端會把每個尚未被確認的封包保留在一個小型佇列中，並在逾時之後（或收到 NACK 時）重新送出。一個重試上限以及重試之間的某種退避，可避免一條永久損壞的連結無止盡地迴圈下去。</p></li>
+<li><p><strong>滑動視窗。</strong> 在要求 ACK 之前允許多個封包同時在傳輸途中，可在來回時間相較於每封包傳送時間較長的連結上維持吞吐量。代價是傳送端需要更多狀態——每個傳輸途中的封包各占一個槽位。</p></li>
+<li><p><strong>流量控制。</strong> 一個來自接收端的訊號，在其緩衝區快要被填滿時告訴傳送端放慢或暫停。實作方式各異——明確的 XON / XOFF 位元組、以額度為基礎的授予（接收端一次核准再多 N 個封包），或是電線本身上的 RTS / CTS 硬體線路。少了流量控制，一個快速的傳送端最終會壓垮一個緩慢的接收端，封包就會被丟棄。</p></li>
+<li><p><strong>協定版本。</strong> 在封包前段放一個版本欄位，可讓格式得以演進。雙方可以在啟動時協商出兩者皆支援的最高版本，或拒絕來自不相容對端的封包。</p></li>
+<li><p><strong>分片與重組。</strong> 兩位元組的 LEN 把封包上限定在 64 KiB；大於此值的訊息會被切分成多個封包，並在另一端重組。分片的中介資料（分片索引、總數，或一個「還有更多分片」旗標）位於酬載內部。</p></li>
+<li><p><strong>心跳。</strong> 一個小型的週期性封包，說著「我還在這裡」。當心跳停止時，另一端會注意到並重新連線（或大聲報錯），而不是默默地卡住不動。</p></li>
+<li><p><strong>通道。</strong> 在標頭中放一個通道或串流 ID，讓單一條實體連結承載數條邏輯串流——一條控制通道、一條遙測通道、一條記錄通道——僅憑該欄位加以區分。</p></li>
+<li><p><strong>身分驗證。</strong> 一個短標籤，由酬載與一個只有合法的傳送端與接收端才知道的祕密值計算而得。接收端會根據它收到的位元組再計算一次該標籤，若兩者不符便拒絕該封包。這能抓出兩種情況：竄改（攻擊者修改了位元組），以及——如果標籤所涵蓋的內容包含序號或時間戳——重放，亦即攻擊者從線路上錄下一個真實封包，稍後再重新送出，以使接收端對它動作兩次。</p></li>
+<li><p><strong>加密。</strong> 用一把共享的祕密金鑰把酬載位元組打亂，使得任何在沒有該金鑰的情況下讀取線路的人，只會看到雜訊。通常會與上述的身分驗證標籤搭配使用——少了它，攻擊者就能餵入剛好能通過 CRC 的垃圾，使接收端浪費運算週期去試圖解密一堆無意義的內容。</p></li>
+</ul>
+<p>一個針對工業設備的典型「優良」協定，最終會具備訊框、雙重 CRC、序號、附帶重傳的 ACK / NACK，以及心跳。值得一看的現實世界範例：<em>MAVLink</em>（無人機遙測，具有序號、系統／元件 ID，以及選用的封包簽章）、<em>Modbus</em>（工業 PLC，具有功能碼與 CRC），以及 <em>NMEA 0183</em>（每一台消費級 GPS 接收器都會使用的 ASCII 協定——以行為單位的訊息，在一個星號分隔符之後接一個檢查碼）。</p>
+</section>
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>回到頂部</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="uart-code.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>上一頁</span><div class="title"><span class="section-number">3.19. </span>程式碼中的 UART</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="../spi/spi-basics.html">
+      <div class="page-info">
+        <span>下一頁</span>
+        <div class="title"><span class="section-number">3.21. </span>SPI 基礎</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p class="omv-build-stamp">
+    適用於 OpenMV 韌體 v5.0.0 &middot; 基於 MicroPython v1.28 &middot; 文件編譯於 2026年6月19日 &middot; 版權 &copy; 2014-2026 OpenMV、Damien P. George 及其他貢獻者。
+  </p>
+  <p>
+    
+    使用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 與 <a href="https://shibuya.lepture.com">Shibuya theme</a> 主題編譯。
+    
+  </p>
+</div>
+      <div class="sy-foot-socials">
+<a href="https://github.com/openmv/openmv" aria-label="GitHub">
+  <iconify-icon icon="simple-icons:github"></iconify-icon>
+</a>
+<a href="https://x.com/openmvcam" aria-label="X (Twitter)">
+  <iconify-icon icon="prime:twitter"></iconify-icon>
+</a>
+<a href="https://www.youtube.com/channel/UCk43Dxy_qcwwYyLsP6EWatQ" aria-label="YouTube">
+  <iconify-icon icon="simple-icons:youtube"></iconify-icon>
+</a>
+<a href="https://www.linkedin.com/company/16193624/" aria-label="LinkedIn">
+  <iconify-icon icon="simple-icons:linkedin"></iconify-icon>
+</a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../../../_static/documentation_options.js?v=1c4777b9"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../../_static/translations.js?v=cbf116e0"></script>
+      <script src="../../../../_static/shibuya.js?v=50760d75"></script>
+      <script src="../../../../_static/lang-redirect.js?v=51fde6fc"></script>
+      <script src="../../../../_static/navbar-height.js?v=45931de4"></script>
+      <script src="../../../../_static/nav-versions.js?v=293e1f85"></script></body>
+</html>

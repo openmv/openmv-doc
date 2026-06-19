@@ -1,0 +1,115 @@
+.. _changelog_v4_2_2:
+
+v4.2.2
+======
+
+v4.2.2 adds **PNG image support** (decode/encode via lodepng), a table-driven
+built-in-model loader, Portenta OV5640 support, an Edge-Impulse TensorFlow
+update, and ulab 4.0. The RPC CAN configuration API changed — read the
+breaking changes below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **PNG support** — ``Image.to_png()``, ``image.PNG``, and PNG file
+  read/write.
+- ``tf.load_builtin_model()`` — table-driven built-in models that can be
+  replaced or added at build time.
+- **Portenta H7** — OV5640 camera support (with autofocus).
+- **MicroPython/ulab** — ulab updated to 4.0.0.
+- **Breaking:** the RPC CAN configuration API changed — see the breaking
+  changes.
+
+New features
+------------
+
+- **PNG image format** — a new ``Image.to_png()`` method, an ``image.PNG`` /
+  ``PIXFORMAT_PNG`` constant, PNG file load/save (read/write ``.png``), and
+  PNG output in ``image.to()`` conversions, via the integrated lodepng codec.
+- ``tf.load_builtin_model(path)`` — loads a firmware-built-in model and
+  returns a ``(labels, net)`` tuple; built-in models are now table-driven so
+  they can be replaced or added at build time.
+
+Other changes and improvements
+------------------------------
+
+- **TensorFlow / Edge Impulse** — the bundled inference library was updated to
+  Edge Impulse ei-V2.5.0, the ``person_detection`` model moved into the
+  built-in model table, and missing TensorFlow operators were added across all
+  Cortex-M0+/M4/M7/M55 builds so more Edge Impulse models run.
+- **ulab updated to 4.0.0.**
+- Opening the USB virtual serial port at 1200 bps now triggers an
+  Arduino-style touch reset into the bootloader.
+- The WINC1500 WiFi module firmware was updated to 19.7.6 (with the updater
+  script), and it now reports the actual host-driver version.
+- The RP2 port prints "MPY: soft reboot" and gained UART init/de-init.
+
+Bug fixes
+---------
+
+- Fixed the Arduino Nano RP2040 Connect raw frame-buffer size and the Arduino
+  Nicla Vision USB Product ID (correct USB enumeration).
+
+Hardware and board support
+--------------------------
+
+- **Arduino Portenta H7** — OV5640 camera support (with autofocus); the
+  GC2145 is disabled on the Portenta.
+- **Arduino Nano RP2040 Connect** — memory configuration and fresh-filesystem
+  templates.
+- **WiFi Shield (WINC1500)** — firmware updated to 19.7.6.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v4.2.1 and v4.2.2. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Changes are grouped by impact in that order. Each commit hash links to its
+diff on GitHub.
+
+.. _v4_2_2_rpc_can:
+
+RPC CAN configuration API *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In the :mod:`rpc` library, the ``rpc_can_master`` / ``rpc_can_slave`` CAN keyword
+argument ``sampling_point`` was renamed to ``sample_point`` (to match upstream
+MicroPython), and the manual CAN bit-timing helper was removed — the CAN bus
+is now configured via ``CAN(..., baudrate=, sample_point=)``. Scripts that
+passed ``sampling_point`` or relied on the old bit-timing computation must be
+updated.
+
+*Commits:* `b565eca58 <https://github.com/openmv/openmv/commit/b565eca58>`__,
+`06d716986 <https://github.com/openmv/openmv/commit/06d716986>`__
+
+.. _v4_2_2_format:
+
+``image.format()`` and compressed images *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With the unified compressed-image path added for PNG, ``image.format()`` now
+returns ``PIXFORMAT_INVALID`` for an unknown format, and compressed-image
+indexing / iteration / printing now covers PNG as well as JPEG. Code that
+inspected the previous return value for unknown formats should be re-checked.
+
+*Commit:* `f12a4659c <https://github.com/openmv/openmv/commit/f12a4659c>`__
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v4.2.2: rename RPC CAN ``sampling_point`` → ``sample_point``
+and drop any manual CAN bit-timing setup
+(:ref:`the RPC CAN change <v4_2_2_rpc_can>`), and re-check any code that
+inspected ``image.format()`` for unknown formats
+(:ref:`the format() change <v4_2_2_format>`).
