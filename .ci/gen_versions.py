@@ -60,12 +60,7 @@ latest = next((r for r in current if r not in aliases), None)
 ordered = (["dev"] if "dev" in present else []) + current + legacy
 versions = []
 for v in ordered:
-    if v == latest:
-        label = v + " (latest)"
-    elif v in legacy:
-        label = v + " (legacy)"
-    else:
-        label = v
+    label = v + " (latest)" if v == latest else v
     entry = {"id": v, "label": label}
     if v in aliases:
         entry["snapshot"] = aliases[v]  # switcher/404 link here instead of /v/
