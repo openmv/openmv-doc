@@ -226,22 +226,6 @@ jobs:
         GH_TOKEN: ${{ steps.studio-token.outputs.token }}
       run: gh workflow run resources.yml --repo ${{ github.repository_owner }}/openmv-studio
 
-    # Bundle the docs into the (legacy) OpenMV IDE / Qt Creator. Tag-gated, so
-    # this only runs on a release build (the gate already blocks tags < v5.0.0).
-    # Ships the committed offline/ bundle the Sync step just rebuilt for this
-    # release: English-only, both switchers hidden, English HTML the IDE renders.
-    - name: Push release docs into the OpenMV IDE
-      if: startsWith(github.ref, 'refs/tags/v')
-      uses: cpina/github-action-push-to-another-repository@main
-      env:
-        SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
-      with:
-        source-directory: 'offline'
-        destination-github-username: 'openmv'
-        destination-repository-name: 'qt-creator'
-        target-branch: openmv-qtc-14.0.2
-        target-directory: 'share/qtcreator/html'
-
     # ---- Downloadable html bundle (GitHub Release) --------------------------
     # Package the offline English bundle as html.zip -- it extracts to html/,
     # the exact layout the Qt IDE drops into share/qtcreator/. Published the
@@ -285,3 +269,20 @@ jobs:
           --title "$GITHUB_REF_NAME" \
           --notes "Offline OpenMV documentation (English) for $GITHUB_REF_NAME. Unzips to html/ for the OpenMV IDE. Changelog: https://docs.openmv.io/$GITHUB_REF_NAME/changelog/" \
           || gh release upload "$GITHUB_REF_NAME" openmv-doc-html.zip --clobber --repo "$GITHUB_REPOSITORY"
+
+    # Bundle the docs into the (legacy) OpenMV IDE / Qt Creator. Tag-gated, so
+    # this only runs on a release build (the gate already blocks tags < v5.0.0).
+    # Ships the committed offline/ bundle the Sync step just rebuilt for this
+    # release. LAST step on purpose: a failed IDE push (e.g. a bad SSH key) must
+    # not skip the html.zip GitHub Release above it.
+    - name: Push release docs into the OpenMV IDE
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: cpina/github-action-push-to-another-repository@main
+      env:
+        SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+      with:
+        source-directory: 'offline'
+        destination-github-username: 'openmv'
+        destination-repository-name: 'qt-creator'
+        target-branch: openmv-qtc-14.0.2
+        target-directory: 'share/qtcreator/html'
