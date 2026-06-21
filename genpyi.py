@@ -702,6 +702,18 @@ def _emit_callable(lines, name, overloads, doc, indent, is_method):
         lines.append(f"{' ' * body_indent}...")
 
 
+def _ensure_blank(lines, n):
+    """Ensure exactly ``n`` blank lines at the end of ``lines`` (PEP 8 blank-line
+    spacing before a definition: 2 before a top-level def/class, 1 between
+    methods). No-op at the very start of the file."""
+    if not lines:
+        return
+    while lines and lines[-1] == "":
+        lines.pop()
+    if lines:
+        lines.extend([""] * n)
+
+
 def emit_pyi(mod_name, module, out_path, all_module_names):
     """Write a .pyi stub file for one module."""
     module["_name"] = mod_name
@@ -724,28 +736,20 @@ def emit_pyi(mod_name, module, out_path, all_module_names):
         lines.append(f"{name}: {ctype or 'int'}")
         lines.extend(format_docstring(doc, indent=0))
 
-    if module["constants"]:
-        lines.append("")
-
     for name, overloads, doc in module["functions"]:
+        _ensure_blank(lines, 2)
         _emit_callable(lines, name, overloads, doc, indent=0, is_method=False)
 
-    if module["functions"]:
-        lines.append("")
-
     for ename, doc in module.get("exceptions", []):
+        _ensure_blank(lines, 2)
         lines.append(f"class {ename}(Exception):")
         ds = format_docstring(doc, indent=4)
         if ds:
             lines.extend(ds)
-            lines.append("    ...")
-        else:
-            lines.append("    ...")
-
-    if module.get("exceptions"):
-        lines.append("")
+        lines.append("    ...")
 
     for cls_name, cls in sorted(module["classes"].items()):
+        _ensure_blank(lines, 2)
         lines.append(f"class {cls_name}:")
         lines.extend(format_docstring(cls.get("doc", ""), indent=4))
 
@@ -769,9 +773,8 @@ def emit_pyi(mod_name, module, out_path, all_module_names):
             lines.extend(format_docstring(adoc, indent=4))
 
         for mname, overloads, doc in cls["methods"]:
+            _ensure_blank(lines, 1)
             _emit_callable(lines, mname, overloads, doc, indent=4, is_method=True)
-
-        lines.append("")
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
