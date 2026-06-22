@@ -11,6 +11,7 @@ numpy.ndarray objects, and the functions return a 2-tuple
 
 from typing import Any
 
+
 def fft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     """
     Compute the one-dimensional discrete Fourier Transform of r.
@@ -34,6 +35,8 @@ def fft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     ValueError – if the length of the input is not a power of two.
     """
     ...
+
+
 def ifft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     """
     Compute the one-dimensional inverse discrete Fourier Transform.
@@ -59,4 +62,3 @@ def ifft(r: ndarray, c: ndarray | None = None) -> tuple[ndarray, ndarray]:
     ValueError – if the length of the input is not a power of two.
     """
     ...
-

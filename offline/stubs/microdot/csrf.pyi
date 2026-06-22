@@ -9,6 +9,7 @@ instance).
 
 from typing import Any
 
+
 class CSRF:
     """
     app
@@ -44,6 +45,7 @@ class CSRF:
     Class attribute listing methods that are not protected by default
     – ['GET', 'HEAD', 'OPTIONS'].
     """
+
     def exempt(self, f) -> Any:
         """
         Decorator that exempts a route from CSRF protection. Place it
@@ -55,9 +57,11 @@ class CSRF:
                 # accepts cross-site POSTs
         """
         ...
+
     def initialize(self, app: Microdot, cors=None) -> Any:
         """Attach to app if construction was deferred."""
         ...
+
     def protect(self, f) -> Any:
         """
         Decorator that forces CSRF protection on a route that would
@@ -65,4 +69,3 @@ class CSRF:
         protect_all=False).
         """
         ...
-

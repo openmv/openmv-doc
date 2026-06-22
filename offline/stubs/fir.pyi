@@ -46,9 +46,12 @@ FIR_MLX90641: int
 FIR_SHIELD: int
 """The OpenMV Cam Thermopile Shield (MLX90621). Alias for fir.FIR_MLX90621."""
 
+
 def deinit() -> None:
     """Deinitializes the thermal sensor and frees up resources."""
     ...
+
+
 def draw_ir(image: image.Image, ir: list[float], x: int = 0, y: int = 0, x_scale: float | None = None, y_scale: float | None = None, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | None = image.PALETTE_RAINBOW, alpha_palette: int | None = None, hint: int = 0, scale: tuple[float, float] | None = None) -> None:
     """
     Draws the ir array onto image with its top-left corner at (x, y).
@@ -97,9 +100,13 @@ def draw_ir(image: image.Image, ir: list[float], x: int = 0, y: int = 0, x_scale
     scale the ir array. Defaults to the actual ir min and max.
     """
     ...
+
+
 def height() -> int:
     """Returns the vertical resolution (in pixels) of the thermal sensor in-use."""
     ...
+
+
 def init(type: int = -1, refresh: int | None = None, resolution: int | None = None) -> None:
     """
     Initializes an attached thermal sensor.
@@ -136,6 +143,8 @@ def init(type: int = -1, refresh: int | None = None, resolution: int | None = No
     A higher resolution lowers the maximum temperature range and vice-versa.
     """
     ...
+
+
 def read_ir(hmirror: bool = False, vflip: bool = False, transpose: bool = False, timeout: int = -1) -> tuple[float, list[float], float, float]:
     """
     Returns a 4-tuple (ta, ir, to_min, to_max) containing the ambient temperature, a flat
@@ -151,15 +160,23 @@ def read_ir(hmirror: bool = False, vflip: bool = False, transpose: bool = False,
     timeout if not -1, the number of milliseconds to wait for a new frame.
     """
     ...
+
+
 def read_ta() -> float:
     """Returns the ambient temperature (i.e. sensor temperature) in celsius as a float."""
     ...
+
+
 def refresh() -> int:
     """Returns the current refresh rate (Hz) set during the fir.init() call."""
     ...
+
+
 def resolution() -> int:
     """Returns the current resolution (bits) set during the fir.init() call."""
     ...
+
+
 def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False, x_scale: float | None = None, y_scale: float | None = None, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | None = image.PALETTE_RAINBOW, alpha_palette: int | None = None, hint: int = 0, scale: tuple[float, float] | None = None, pixformat: int = image.RGB565, copy_to_fb: bool = False, timeout: int = -1) -> image.Image:
     """
     Captures a frame from the thermal sensor and returns it as an image.Image. Works similarly to
@@ -218,13 +235,16 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
     timeout if not -1, the number of milliseconds to wait for a new frame.
     """
     ...
+
+
 def type() -> int:
     """
     Returns the type of the thermal sensor in-use. One of fir.FIR_MLX90621,
     fir.FIR_MLX90640, fir.FIR_MLX90641, or fir.FIR_AMG8833.
     """
     ...
+
+
 def width() -> int:
     """Returns the horizontal resolution (in pixels) of the thermal sensor in-use."""
     ...
-

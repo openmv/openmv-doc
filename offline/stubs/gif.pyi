@@ -4,6 +4,7 @@
 from typing import Any
 import image
 
+
 class Gif:
     """
     Creates a Gif object which frames can be added to. filename is the path
@@ -21,6 +22,7 @@ class Gif:
     loop when True results in the gif automatically looping on playback.
     """
     def __init__(self, filename: str, width: int | None = None, height: int | None = None, color: bool | None = None, loop: bool = True) -> None: ...
+
     def add_frame(self, image: image.Image, delay: int = 10) -> None:
         """
         Adds an image to the gif recording. The image width, height, and color mode
@@ -30,25 +32,30 @@ class Gif:
         after the previous frame.
         """
         ...
+
     def close(self) -> None:
         """
         Finalizes the gif recording. This method must be called once the recording
         is complete to make the file viewable.
         """
         ...
+
     def format(self) -> int:
         """Returns sensor.RGB565 if color is True or sensor.GRAYSCALE otherwise."""
         ...
+
     def height(self) -> int:
         """Returns the height (vertical resolution) of the gif."""
         ...
+
     def loop(self) -> bool:
         """Returns whether the gif object was constructed with loop enabled."""
         ...
+
     def size(self) -> int:
         """Returns the file size of the gif so far. This value is updated after adding frames."""
         ...
+
     def width(self) -> int:
         """Returns the width (horizontal resolution) of the gif."""
         ...
-

@@ -27,6 +27,7 @@ GESTURE_ZOOM_IN: int
 GESTURE_ZOOM_OUT: int
 """Touch screen zoom out gesture."""
 
+
 class FT5X06:
     """
     Creates a touch screen controller object.
@@ -34,6 +35,7 @@ class FT5X06:
     i2c_addr is the I2C address of the FT5x06 controller.
     """
     def __init__(self, i2c_addr: int = 0x38) -> None: ...
+
     def get_gesture(self) -> int:
         """
         Returns the current gesture. The return value is one of the
@@ -43,6 +45,7 @@ class FT5X06:
         should only be called from within the callback.
         """
         ...
+
     def get_point_flag(self, index: int) -> int:
         """
         Returns the current state of the touch point at index (0-4). The return
@@ -52,6 +55,7 @@ class FT5X06:
         should only be called from within the callback.
         """
         ...
+
     def get_point_id(self, index: int) -> int:
         """
         Returns the id of the touch point at index (0-4). The id is a numeric
@@ -62,6 +66,7 @@ class FT5X06:
         should only be called from within the callback.
         """
         ...
+
     def get_point_x(self, index: int) -> int:
         """
         Returns the x pixel position of the touch point at index (0-4).
@@ -70,6 +75,7 @@ class FT5X06:
         should only be called from within the callback.
         """
         ...
+
     def get_point_y(self, index: int) -> int:
         """
         Returns the y pixel position of the touch point at index (0-4).
@@ -78,6 +84,7 @@ class FT5X06:
         should only be called from within the callback.
         """
         ...
+
     def get_points(self) -> int:
         """
         Returns the current number of touch points (0-5).
@@ -86,6 +93,7 @@ class FT5X06:
         should only be called from within the callback.
         """
         ...
+
     def touch_callback(self, callback: object) -> None:
         """
         Registers callback to be invoked on a touch event. The callback receives
@@ -95,7 +103,7 @@ class FT5X06:
         registered, do not call FT5X06.update_points() outside of the callback.
         """
         ...
+
     def update_points(self) -> int:
         """Reads the touch screen state and returns the number of touch points (0-5)."""
         ...
-

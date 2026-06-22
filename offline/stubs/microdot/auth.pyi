@@ -13,6 +13,7 @@ auth instance.
 
 from typing import Any, Callable
 
+
 class BaseAuth:
     """
     Common base for BasicAuth and TokenAuth. Custom auth
@@ -32,6 +33,7 @@ class BaseAuth:
     response; replace it via errorhandler on TokenAuth, or directly on
     a custom BaseAuth subclass.
     """
+
 
 class BasicAuth:
     """
@@ -57,6 +59,7 @@ class BasicAuth:
     HTTP status returned on failed authentication. Default 401.
     """
     def __init__(self, realm: str = 'Please login', charset: str = 'UTF-8', scheme: str = 'Basic', error_status: int = 401) -> None: ...
+
     def __call__(self, f) -> Any:
         """
         Decorating a route with the BasicAuth instance protects
@@ -68,6 +71,7 @@ class BasicAuth:
                 return 'hello ' + request.g.current_user.name
         """
         ...
+
     def authenticate(self, f) -> Any:
         """
         Decorator that registers the credential check. f takes
@@ -84,6 +88,7 @@ class BasicAuth:
                     return user
         """
         ...
+
     def optional(self, f) -> Any:
         """
         Like __call__(), but does not reject requests that lack
@@ -92,6 +97,7 @@ class BasicAuth:
         None.
         """
         ...
+
 
 class TokenAuth:
     """
@@ -115,6 +121,7 @@ class TokenAuth:
     HTTP status on auth failure. Default 401.
     """
     def __init__(self, header: str = 'Authorization', scheme: str = 'Bearer', error_status: int = 401) -> None: ...
+
     def __call__(self, f: Callable) -> Callable:
         """
         Decorating a route with the TokenAuth instance protects
@@ -130,6 +137,7 @@ class TokenAuth:
         Returns the wrapped handler.
         """
         ...
+
     def authenticate(self, f) -> Any:
         """
         Decorator that registers the token check. f takes
@@ -148,12 +156,14 @@ class TokenAuth:
                 return claims['sub']
         """
         ...
+
     def errorhandler(self, f) -> Any:
         """
         Decorator that overrides the default 401 response. f takes the
         request object and returns a response (or aborts).
         """
         ...
+
     def optional(self, f: Callable) -> Callable:
         """
         Like __call__(), but does not reject requests that lack a
@@ -172,4 +182,3 @@ class TokenAuth:
         Returns the wrapped handler.
         """
         ...
-

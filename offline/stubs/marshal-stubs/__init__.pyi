@@ -9,6 +9,7 @@ versioned as the mpy file version, see mpy_files).
 
 from typing import Any
 
+
 def dumps(value: Any, /) -> bytes:
     """
     Convert the given value to binary format and return a corresponding bytes
@@ -17,10 +18,11 @@ def dumps(value: Any, /) -> bytes:
     Currently, code objects are the only supported values that can be converted.
     """
     ...
+
+
 def loads(data: bytes, /) -> Any:
     """
     Convert the given bytes-like data to its corresponding Python object, and
     return it.
     """
     ...
-

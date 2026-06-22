@@ -16,6 +16,7 @@ Example:
 
 from typing import Any
 
+
 def crc16(data: bytes, *, value: int = None) -> int:
     """
     Computes a CRC16 checksum over data, which must be a buffer-like
@@ -30,6 +31,8 @@ def crc16(data: bytes, *, value: int = None) -> int:
     Returns the resulting CRC16 as an int.
     """
     ...
+
+
 def crc32(data: bytes, *, value: int = None) -> int:
     """
     Computes a CRC32 checksum over data, which must be a buffer-like
@@ -43,4 +46,3 @@ def crc32(data: bytes, *, value: int = None) -> int:
     Returns the resulting CRC32 as an int.
     """
     ...
-

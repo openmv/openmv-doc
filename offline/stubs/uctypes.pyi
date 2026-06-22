@@ -128,6 +128,7 @@ Alias for UINT8. Provided so that C-style void * fields
 can be described idiomatically as (uctypes.PTR, uctypes.VOID).
 """
 
+
 def addressof(obj: Any) -> int:
     """
     Return address of an object. Argument should be bytes, bytearray or
@@ -135,6 +136,8 @@ def addressof(obj: Any) -> int:
     is what actually returned).
     """
     ...
+
+
 def bytearray_at(addr: int, size: int) -> bytearray:
     """
     Capture memory at the given address and size as bytearray object.
@@ -143,6 +146,8 @@ def bytearray_at(addr: int, size: int) -> bytearray:
     at the given memory address.
     """
     ...
+
+
 def bytes_at(addr: int, size: int) -> bytes:
     """
     Capture memory at the given address and size as bytes object. As bytes
@@ -151,6 +156,8 @@ def bytes_at(addr: int, size: int) -> bytes:
     retains original value.
     """
     ...
+
+
 def sizeof(struct: dict | Any, layout_type: int = NATIVE, /) -> int:
     """
     Return size of data structure in bytes. The struct argument can be
@@ -159,10 +166,10 @@ def sizeof(struct: dict | Any, layout_type: int = NATIVE, /) -> int:
     """
     ...
 
+
 class struct:
     """
     Instantiate a “foreign data structure” object based on structure address in
     memory, descriptor (encoded as a dictionary), and layout type (see below).
     """
     def __init__(self, addr: int, descriptor: dict, layout_type: int = NATIVE, /) -> None: ...
-

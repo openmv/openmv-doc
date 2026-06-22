@@ -31,6 +31,7 @@ Example usage:
 from typing import Any
 import image
 
+
 class Mjpeg:
     """
     Create a Mjpeg object which you can add frames to.
@@ -44,6 +45,7 @@ class Mjpeg:
     main framebuffer height when not specified.
     """
     def __init__(self, path: str, width: int | None = None, height: int | None = None) -> None: ...
+
     def add_frame(self, image: image.Image, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0, quality: int = 90) -> None:
         """
         Append image to the mjpeg recording. The image is automatically
@@ -94,37 +96,44 @@ class Mjpeg:
         source images.
         """
         ...
+
     def close(self) -> None:
         """
         Finalizes the mjpeg recording. Must be called once recording is
         complete to make the file viewable.
         """
         ...
+
     def count(self) -> int:
         """Returns the number of frames written to the mjpeg file."""
         ...
+
     def height(self) -> int:
         """Returns the vertical resolution of the mjpeg file."""
         ...
+
     def is_closed(self) -> bool:
         """
         Returns True if the file has been closed. No more data can be written
         to a closed file.
         """
         ...
+
     def size(self) -> int:
         """Returns the size of the mjpeg file in bytes."""
         ...
+
     def sync(self) -> None:
         """
         Flushes the mjpeg file to disk while keeping it open for further
         writes. Call periodically to ensure data is saved.
         """
         ...
+
     def width(self) -> int:
         """Returns the horizontal resolution of the mjpeg file."""
         ...
+
     def write(self, image: image.Image, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0, quality: int = 90) -> None:
         """Alias for Mjpeg.add_frame()."""
         ...
-

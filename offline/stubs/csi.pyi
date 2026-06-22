@@ -451,9 +451,11 @@ YUV422 pixel format. Each pixel is stored as a grayscale 8-bit Y value followed 
 processing methods work with YUV422.
 """
 
+
 def devices() -> list[int]:
     """Returns a list of the detected sensor chip IDs."""
     ...
+
 
 class CSI:
     """
@@ -476,6 +478,7 @@ class CSI:
     stream source unchanged.
     """
     def __init__(self, cid: int = -1, delays: bool = True, fflush: bool = True, stream: bool | None = None) -> None: ...
+
     def __read_reg(self, address: int) -> int:
         """
         Read the camera register at address.
@@ -483,6 +486,7 @@ class CSI:
         See the camera data sheet for register info.
         """
         ...
+
     def __write_reg(self, address: int, value: int) -> None:
         """
         Write value to the camera register at address.
@@ -490,6 +494,7 @@ class CSI:
         See the camera data sheet for register info.
         """
         ...
+
     def auto_blc(self, enable: bool, regs: list[int] | None = None) -> None:
         """
         Sets the auto black-level calibration (BLC) on the camera.
@@ -501,6 +506,7 @@ class CSI:
         to CSI.blc_regs.
         """
         ...
+
     def auto_exposure(self, enable: bool, exposure_us: int = -1) -> None:
         """
         enable turns auto exposure control on (True) or off (False). The camera starts
@@ -514,6 +520,7 @@ class CSI:
         they change the gain value a lot to deal with changing lighting.
         """
         ...
+
     def auto_gain(self, enable: bool, gain_db: float | None = None, gain_db_ceiling: float | None = None) -> None:
         """
         enable turns auto gain control on (True) or off (False). The camera starts up
@@ -527,6 +534,7 @@ class CSI:
         You need to turn off white balance too if you want to track colors.
         """
         ...
+
     def auto_rotation(self, enable: bool | None = None) -> bool | None:
         """
         Turns auto rotation mode on (True) or off (False). Defaults to off.
@@ -537,6 +545,7 @@ class CSI:
         automatically.
         """
         ...
+
     def auto_whitebal(self, enable: bool, rgb_gain_db: tuple[float, float, float] | None = None) -> None:
         """
         enable turns auto white balance on (True) or off (False). The camera starts up
@@ -548,9 +557,11 @@ class CSI:
         You need to turn off gain control too if you want to track colors.
         """
         ...
+
     def blc_regs(self) -> list[int]:
         """Returns the sensor BLC registers as a list of integers. For use with CSI.auto_blc."""
         ...
+
     def brightness(self, brightness: int) -> bool:
         """
         Set the camera image brightness.
@@ -558,6 +569,7 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def cid(self) -> int:
         """
         Returns the camera module chip ID. Compare against any of csi.OV2640, csi.OV5640,
@@ -567,6 +579,7 @@ class CSI:
         csi.PAG7936, csi.PAJ6100, csi.FROGEYE2020, or csi.SOFTCSI.
         """
         ...
+
     def color_palette(self, palette: int | None = None) -> int | None:
         """
         Sets the color palette to use for things like FLIR Lepton grayscale to RGB565 conversion or
@@ -577,6 +590,7 @@ class CSI:
         Returns the current setting if called with no arguments.
         """
         ...
+
     def colorbar(self, enable: bool) -> bool:
         """
         Turns color bar mode on (True) or off (False). Defaults to off.
@@ -584,6 +598,7 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def contrast(self, contrast: int) -> bool:
         """
         Set the camera image contrast.
@@ -591,15 +606,18 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def exposure_us(self) -> int:
         """Returns the current camera exposure value in microseconds."""
         ...
+
     def flush(self) -> None:
         """
         Copies the current frame buffer contents to the IDE preview. Call this after the last
         CSI.snapshot if the script terminates so the IDE shows the last frame.
         """
         ...
+
     def frame_callback(self, cb: Callable[[], None] | None = None) -> Callable[[], None] | None:
         """
         Registers callback cb to be executed (in interrupt context) whenever the camera module
@@ -612,6 +630,7 @@ class CSI:
         the callback.
         """
         ...
+
     def framebuffers(self, count: int | None = None) -> int | None:
         """
         Sets the number of frame buffers used to receive image data. By default the OpenMV Cam will
@@ -627,6 +646,7 @@ class CSI:
         Returns the current count if called with no arguments.
         """
         ...
+
     def framerate(self, rate: int | None = None) -> int | None:
         """
         Sets the frame rate in Hz for the camera module.
@@ -641,6 +661,7 @@ class CSI:
         some cameras.
         """
         ...
+
     def framesize(self, framesize: int | tuple[int, int] | None = None) -> int | None:
         """
         Sets the frame size for the camera module to one of the size constants (e.g. csi.QVGA,
@@ -653,9 +674,11 @@ class CSI:
         Returns the current framesize if called with no arguments.
         """
         ...
+
     def gain_db(self) -> float:
         """Returns the current camera gain value in decibels."""
         ...
+
     def gainceiling(self, gainceiling: int) -> bool:
         """
         Set the camera image gainceiling to one of 2, 4, 8, 16, 32, 64, or 128.
@@ -663,9 +686,11 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def height(self) -> int:
         """Returns the sensor resolution height."""
         ...
+
     def hmirror(self, enable: bool | None = None) -> bool | None:
         """
         Turns horizontal mirror mode on (True) or off (False). Defaults to off.
@@ -673,6 +698,7 @@ class CSI:
         Returns the current setting if called with no arguments.
         """
         ...
+
     def ioctl(self, request: int, *args) -> Any:
         """
         Execute a sensor-specific request. request is one of the
@@ -919,6 +945,7 @@ class CSI:
         passes. Returns the number of pixels disabled.
         """
         ...
+
     def lens_correction(self, enable: bool, radi: int, coef: int) -> bool:
         """
         enable True to enable, False to disable.
@@ -928,6 +955,7 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def pixformat(self, pixformat: int | None = None) -> int | None:
         """
         Sets the pixel format for the camera module to one of csi.GRAYSCALE, csi.RGB565,
@@ -936,6 +964,7 @@ class CSI:
         Returns the current pixformat if called with no arguments.
         """
         ...
+
     def quality(self, quality: int) -> bool:
         """
         Set the camera image JPEG compression quality. 0 - 100.
@@ -945,12 +974,14 @@ class CSI:
         Only for the OV2640/OV5640 cameras.
         """
         ...
+
     def readable(self) -> bool:
         """
         Returns True if there is an image ready to be returned by CSI.snapshot so a call to
         snapshot will not block.
         """
         ...
+
     def reset(self, hard: bool = True) -> None:
         """
         Initializes the camera sensor. Performs a hardware reset by toggling the RESET signal GPIO
@@ -958,12 +989,14 @@ class CSI:
         auxiliary camera sensors that share the same RESET signal GPIO as the primary module.
         """
         ...
+
     def rgb_gain_db(self) -> tuple[float, float, float]:
         """
         Returns a tuple (r, g, b) of the current camera red, green, and blue gain values in
         decibels.
         """
         ...
+
     def saturation(self, saturation: int) -> bool:
         """
         Set the camera image saturation.
@@ -971,15 +1004,18 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def shutdown(self, enable: bool) -> None:
         """
         Puts the camera into a lower power mode than sleep (but the camera must be reset on being
         woken up).
         """
         ...
+
     def sleep(self, enable: bool) -> None:
         """Puts the camera to sleep if enable is True. Otherwise, wakes it back up."""
         ...
+
     def snapshot(self, time: int = -1, frames: int = -1, blocking: bool = True, image: image.Image | None = None) -> image.Image | None:
         """
         Takes a picture using the camera and returns an image.Image object.
@@ -998,6 +1034,7 @@ class CSI:
         If CSI.auto_rotation is enabled this method will return an already-rotated image.Image.
         """
         ...
+
     def special_effect(self, effect: int) -> bool:
         """
         Sets the special digital effect (one of csi.NORMAL or csi.NEGATIVE).
@@ -1005,6 +1042,7 @@ class CSI:
         Returns True on success and False on failure.
         """
         ...
+
     def transpose(self, enable: bool | None = None) -> bool | None:
         """
         Turns transpose mode on (True) or off (False). Defaults to off.
@@ -1017,6 +1055,7 @@ class CSI:
         Returns the current setting if called with no arguments.
         """
         ...
+
     def vflip(self, enable: bool | None = None) -> bool | None:
         """
         Turns vertical flip mode on (True) or off (False). Defaults to off.
@@ -1024,6 +1063,7 @@ class CSI:
         Returns the current setting if called with no arguments.
         """
         ...
+
     def vsync_callback(self, cb: Callable[[int], None] | None = None) -> Callable[[int], None] | None:
         """
         Registers callback cb to be executed (in interrupt context) whenever the camera module
@@ -1035,9 +1075,11 @@ class CSI:
         the callback.
         """
         ...
+
     def width(self) -> int:
         """Returns the sensor resolution width."""
         ...
+
     def window(self, roi: tuple[int, int] | tuple[int, int, int, int] | None = None) -> tuple[int, int, int, int] | None:
         """
         Sets the resolution of the camera to a sub-region of the current resolution. roi is a
@@ -1046,4 +1088,3 @@ class CSI:
         Returns the current (x, y, w, h) tuple if called with no arguments.
         """
         ...
-

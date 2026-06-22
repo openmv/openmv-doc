@@ -5,6 +5,7 @@ from typing import Any
 import ml
 import numpy
 
+
 class MicroSpeech:
     """
     Creates a MicroSpeech object.
@@ -36,6 +37,7 @@ class MicroSpeech:
     """Number of features per spectrogram slice (40)."""
     _SLICE_TIME_MS: int
     """Time span of one slice in milliseconds (30)."""
+
     def audio_callback(self, buf: bytes) -> None:
         """
         Internal audio streaming callback. Appends new samples from buf into the rolling audio
@@ -44,6 +46,7 @@ class MicroSpeech:
         Not normally called directly.
         """
         ...
+
     def listen(self, timeout: int = 0, callback: callable = None, threshold: float = 0.65, filter: list[str] = ['Yes', 'No']) -> tuple[str, numpy.ndarray]:
         """
         Listens for a spoken word and returns a tuple of (label, average_scores) once a label whose
@@ -65,13 +68,14 @@ class MicroSpeech:
         filter is the list of label strings to accept. Recognitions outside this list are ignored.
         """
         ...
+
     def start_audio_streaming(self) -> None:
         """
         Clears the spectrogram and prediction history, then starts audio streaming with
         MicroSpeech.audio_callback as the callback. No-op if streaming is already started.
         """
         ...
+
     def stop_audio_streaming(self) -> None:
         """Stops audio streaming."""
         ...
-

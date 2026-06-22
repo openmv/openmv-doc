@@ -8,6 +8,7 @@ from typing import Any
 import ml
 import numpy
 
+
 class YoloLC:
     """
     Create a YOLO LC postprocessor.
@@ -23,9 +24,11 @@ class YoloLC:
     nms_sigma Sigma value passed to non-maximum suppression.
     """
     def __init__(self, threshold: float = 0.6, anchors: numpy.ndarray = None, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """Inherited from YoloV2. See YoloV2.__call__()."""
         ...
+
 
 class YoloV2:
     """
@@ -42,6 +45,7 @@ class YoloV2:
     nms_sigma Sigma value passed to non-maximum suppression.
     """
     def __init__(self, threshold: float = 0.6, anchors: numpy.ndarray = None, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """
         Invoked by ml.Model.predict() to post-process model outputs.
@@ -58,4 +62,3 @@ class YoloV2:
         tuple () when no detection clears the score threshold.
         """
         ...
-

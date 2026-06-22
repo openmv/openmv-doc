@@ -7,6 +7,7 @@ machine learning models.
 from typing import Any, overload
 import image
 
+
 class Normalization:
     """
     Creates a Normalization object.
@@ -30,6 +31,7 @@ class Normalization:
     input tensor dimensions.
     """
     def __init__(self, scale: tuple[float, float] = (0.0, 1.0), mean: tuple[float, float, float] = (0.0, 0.0, 0.0), stdev: tuple[float, float, float] = (1.0, 1.0, 1.0), roi: tuple[int, int, int, int] = None) -> None: ...
+
     @overload
     def __call__(self, image: image.Image) -> Normalization:
         ...
@@ -49,4 +51,3 @@ class Normalization:
         stdev; integer tensors are written directly (with an offset for int8).
         """
         ...
-

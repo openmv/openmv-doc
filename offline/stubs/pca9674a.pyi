@@ -20,6 +20,7 @@ A0/A1/A2 strap pins; 0x3F (63) is the default
 from typing import Any, Callable
 import machine
 
+
 class PCA9674A:
     """
     Create an interface to a PCA9674A I/O expander.
@@ -36,13 +37,15 @@ class PCA9674A:
       read(). Pass None (the default) for polled use.
     """
     def __init__(self, bus: machine.I2C, irq_pin: str, address: int = 63, callback: Callable | None = None) -> None: ...
+
     def read(self) -> int:
         """Returns the 8-bit value of the I/O expander pins."""
         ...
+
     def reset(self) -> None:
         """Resets and re-initializes the I/O expander, and re-attaches the IRQ callback if one was provided."""
         ...
+
     def write(self, value: int) -> None:
         """Writes the 8-bit value to the I/O expander pins."""
         ...
-

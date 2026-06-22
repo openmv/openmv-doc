@@ -14,6 +14,7 @@ the dashboard having to poll.
 
 from typing import Any
 
+
 def sse_response(request, event_function, *args, **kwargs) -> Any:
     """
     Low-level entry point: returns the response tuple that
@@ -35,6 +36,8 @@ def sse_response(request, event_function, *args, **kwargs) -> Any:
     await sse.send(...) to push events.
     """
     ...
+
+
 def with_sse(f) -> Any:
     """
     Decorator that turns a route into an SSE endpoint. The handler
@@ -60,12 +63,14 @@ def with_sse(f) -> Any:
     """
     ...
 
+
 class SSE:
     """
     The handle the route receives. Passed to handlers as the second
     argument when with_sse() is in use.
     """
     def __init__(self) -> None: ...
+
     def send(self, data, event: str | None = None, event_id: str | None = None, retry: int | None = None, comment: bool = False) -> Any:
         """
         Push a single event to the client.
@@ -100,4 +105,3 @@ class SSE:
         to stop NAT timeouts from closing an otherwise-idle stream.
         """
         ...
-

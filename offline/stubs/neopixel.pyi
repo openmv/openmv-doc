@@ -37,6 +37,7 @@ tuples are transmitted as G R B [W]. Subclasses may override
 ORDER to support strips with a different wire order.
 """
 
+
 class NeoPixel:
     """
     Construct a NeoPixel object for a strip of LEDs connected to pin.
@@ -53,31 +54,35 @@ class NeoPixel:
       machine.bitstream().
     """
     def __init__(self, pin: 'machine.Pin', n: int, bpp: int = 3, timing: int | tuple[int, int, int, int] = 1) -> None: ...
+
     def __getitem__(self, index: int) -> tuple[int, ...]:
         """
         Return the pixel at index from the local buffer as an RGB or RGBW
         tuple in the user-facing channel order.
         """
         ...
+
     def __len__(self) -> int:
         """Return the number of LEDs in the strip."""
         ...
+
     def __setitem__(self, index: int, val: tuple[int, ...]) -> None:
         """
         Set the pixel at index to val, an RGB or RGBW tuple. The data is
         only buffered; call write() to push it to the strip.
         """
         ...
+
     def fill(self, pixel: tuple[int, ...]) -> None:
         """
         Set every pixel in the strip to pixel, an RGB or RGBW tuple of
         integers in the range 0-255.
         """
         ...
+
     def write(self) -> None:
         """
         Transmit the buffered pixel data to the strip using
         machine.bitstream().
         """
         ...
-

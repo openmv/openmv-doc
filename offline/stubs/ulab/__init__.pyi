@@ -26,4 +26,3 @@ __version__: str
 Version string of the ulab build, including the maximum
 supported number of array dimensions, e.g. "6.7.3-2D".
 """
-

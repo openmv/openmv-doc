@@ -43,12 +43,17 @@ uint16: int
 uint8: int
 """Dtype code for unsigned 8-bit integer arrays."""
 
+
 def acos(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse cosine (arc cosine) of each element of x; result is in radians."""
     ...
+
+
 def acosh(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse hyperbolic cosine of each element of x."""
     ...
+
+
 def all(a: ndarray | list | tuple, *, axis: int | None = None) -> ndarray | bool:
     """
     Test whether all elements along axis evaluate to True. With
@@ -56,12 +61,16 @@ def all(a: ndarray | list | tuple, *, axis: int | None = None) -> ndarray | bool
     bool is returned.
     """
     ...
+
+
 def any(a: ndarray | list | tuple, *, axis: int | None = None) -> ndarray | bool:
     """
     Test whether any element along axis evaluates to True. With
     axis=None the flattened array is tested.
     """
     ...
+
+
 def arange(start: int | float, stop: int | float | None = None, step: int | float = 1, *, dtype: int | None = None) -> ndarray:
     """
     Return evenly spaced values over the half-open interval [start, stop).
@@ -70,21 +79,29 @@ def arange(start: int | float, stop: int | float | None = None, step: int | floa
     (integer if all of start, stop, step are ints and within range).
     """
     ...
+
+
 def arctan2(y: ndarray | float, x: ndarray | float, /) -> ndarray | float:
     """Compute the two-argument inverse tangent atan2(y, x) element-wise; supports broadcasting between the two inputs."""
     ...
+
+
 def argmax(a: ndarray | list | tuple, *, axis: int | None = None) -> ndarray | int:
     """
     Return the index of the maximum element along axis. With axis=None
     the array is flattened and a single integer is returned.
     """
     ...
+
+
 def argmin(a: ndarray | list | tuple, *, axis: int | None = None) -> ndarray | int:
     """
     Return the index of the minimum element along axis. With axis=None
     the array is flattened and a single integer is returned.
     """
     ...
+
+
 def argsort(a: ndarray, *, axis: int = -1) -> ndarray:
     """
     Return an unsigned integer index ndarray whose entries sort a in
@@ -92,15 +109,21 @@ def argsort(a: ndarray, *, axis: int = -1) -> ndarray:
     may exceed 65535 elements. axis=None is not supported.
     """
     ...
+
+
 def around(x: ndarray, /, decimals: int = 0) -> ndarray:
     """Round the elements of the ndarray x to the given number of decimals; the first argument must be an ndarray."""
     ...
+
+
 def array(values: ndarray | list | tuple, *, dtype: int = float) -> ndarray:
     """
     Construct a new ndarray from a nested iterable of numbers. Equivalent
     alternate constructor for numpy.ndarray.
     """
     ...
+
+
 def asarray(a: ndarray | list | tuple, *, dtype: int | None = None) -> ndarray:
     """
     If a is already an ndarray whose dtype matches dtype (or dtype is
@@ -109,18 +132,28 @@ def asarray(a: ndarray | list | tuple, *, dtype: int | None = None) -> ndarray:
     numpy.array.
     """
     ...
+
+
 def asin(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse sine (arc sine) of each element of x; result is in radians."""
     ...
+
+
 def asinh(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse hyperbolic sine of each element of x."""
     ...
+
+
 def atan(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse tangent (arc tangent) of each element of x; result is in radians."""
     ...
+
+
 def atanh(x: ndarray | float, /) -> ndarray | float:
     """Compute the inverse hyperbolic tangent of each element of x."""
     ...
+
+
 def bincount(x: ndarray, *, weights: ndarray | None = None, minlength: int | None = None) -> ndarray:
     """
     Count the number of occurrences of each value in the one-dimensional,
@@ -132,21 +165,31 @@ def bincount(x: ndarray, *, weights: ndarray | None = None, minlength: int | Non
     elements (extra entries are zero).
     """
     ...
+
+
 def bitwise_and(x1: ndarray, x2: ndarray) -> ndarray:
     """
     Element-wise bitwise AND of two integer arrays; broadcasting is supported.
     A non-integer dtype raises an exception.
     """
     ...
+
+
 def bitwise_or(x1: ndarray, x2: ndarray) -> ndarray:
     """Element-wise bitwise OR of two integer arrays."""
     ...
+
+
 def bitwise_xor(x1: ndarray, x2: ndarray) -> ndarray:
     """Element-wise bitwise XOR of two integer arrays."""
     ...
+
+
 def ceil(x: ndarray | float, /) -> ndarray | float:
     """Compute the ceiling (smallest integer not less than the value) of each element of x."""
     ...
+
+
 def clip(a: ndarray | int | float, a_min: ndarray | int | float, a_max: ndarray | int | float) -> ndarray | int | float:
     """
     Clip the values of a so that a_min <= result <= a_max. Equivalent to
@@ -154,12 +197,16 @@ def clip(a: ndarray | int | float, a_min: ndarray | int | float, a_max: ndarray 
     as minimum.
     """
     ...
+
+
 def compress(condition: ndarray | list | tuple, a: ndarray, *, axis: int | None = None) -> ndarray:
     """
     Return slices of a selected along axis by the boolean condition.
     With axis=None the flattened array is used.
     """
     ...
+
+
 def concatenate(arrays: tuple, *, axis: int = 0) -> ndarray:
     """
     Join a sequence of ndarray along an existing axis. All input arrays
@@ -167,6 +214,8 @@ def concatenate(arrays: tuple, *, axis: int = 0) -> ndarray:
     axis.
     """
     ...
+
+
 def convolve(a: ndarray, v: ndarray) -> ndarray:
     """
     Return the discrete linear convolution of two 1-D arrays. Only "full"
@@ -175,18 +224,28 @@ def convolve(a: ndarray, v: ndarray) -> ndarray:
     len(a) + len(v) - 1.
     """
     ...
+
+
 def cos(x: ndarray | float, /) -> ndarray | float:
     """Compute the cosine of each element of x (in radians)."""
     ...
+
+
 def cosh(x: ndarray | float, /) -> ndarray | float:
     """Compute the hyperbolic cosine of each element of x."""
     ...
+
+
 def cross(a: ndarray, b: ndarray) -> ndarray:
     """Return the cross product of two 1-D arrays of length 3."""
     ...
+
+
 def degrees(x: ndarray | float, /) -> ndarray | float:
     """Convert each element of x from radians to degrees."""
     ...
+
+
 def delete(a: ndarray, indices: int | ndarray | list | tuple | range, *, axis: int | None = None) -> ndarray:
     """
     Return a copy of a with the entries at indices removed along axis.
@@ -194,6 +253,8 @@ def delete(a: ndarray, indices: int | ndarray | list | tuple | range, *, axis: i
     from the end of axis; indices is sorted internally before deletion.
     """
     ...
+
+
 def diag(a: ndarray, *, k: int = 0) -> ndarray:
     """
     For a 2-D a, return a 1-D array containing the k-th diagonal. For a
@@ -201,6 +262,8 @@ def diag(a: ndarray, *, k: int = 0) -> ndarray:
     k may be positive (above main diagonal) or negative (below).
     """
     ...
+
+
 def diff(a: ndarray, *, n: int = 1, axis: int = -1) -> ndarray:
     """
     Return the n-th discrete forward difference of a along axis. n
@@ -209,6 +272,8 @@ def diff(a: ndarray, *, n: int = 1, axis: int = -1) -> ndarray:
     append keywords are not implemented.
     """
     ...
+
+
 def dot(m1: ndarray, m2: ndarray) -> ndarray | float:
     """
     Return the dot product of two arrays. For two 1-D arrays this is the
@@ -217,12 +282,16 @@ def dot(m1: ndarray, m2: ndarray) -> ndarray | float:
     dtype float.
     """
     ...
+
+
 def empty(shape: int | tuple[int, ...], *, dtype: int = float) -> ndarray:
     """
     Alias for zeros; returns a zero-filled array of shape and dtype.
     (ulab does not leave the buffer uninitialised.)
     """
     ...
+
+
 def equal(x1: ndarray | int | float, x2: ndarray | int | float) -> ndarray | bool:
     """
     Element-wise x1 == x2; returns a boolean ndarray (or a bool scalar
@@ -230,27 +299,39 @@ def equal(x1: ndarray | int | float, x2: ndarray | int | float) -> ndarray | boo
     on arrays gives the same result.
     """
     ...
+
+
 def exp(x: ndarray | float, /) -> ndarray | float:
     """Compute the exponential e**x of each element of x."""
     ...
+
+
 def expm1(x: ndarray | float, /) -> ndarray | float:
     """Compute exp(x) - 1 of each element of x with improved precision near zero."""
     ...
+
+
 def eye(N: int, M: int | None = None, k: int = 0, *, dtype: int = float) -> ndarray:
     """
     Return a 2-D N x M array (square N x N if M is None) with
     ones on the k-th diagonal and zeros elsewhere.
     """
     ...
+
+
 def flip(a: ndarray, *, axis: int | None = None) -> ndarray:
     """
     Return a new array with the order of elements reversed along axis; with
     axis=None the array is reversed along every axis.
     """
     ...
+
+
 def floor(x: ndarray | float, /) -> ndarray | float:
     """Compute the floor (largest integer not greater than the value) of each element of x."""
     ...
+
+
 def frombuffer(buffer: bytes, *, dtype: int = float, count: int = -1, offset: int = 0) -> ndarray:
     """
     Interpret a buffer-protocol object as a 1-D ndarray of dtype. count
@@ -258,18 +339,24 @@ def frombuffer(buffer: bytes, *, dtype: int = float, count: int = -1, offset: in
     offset skips that many bytes at the start of the buffer.
     """
     ...
+
+
 def full(shape: int | tuple[int, ...], fill_value: int | float | bool, *, dtype: int = float) -> ndarray:
     """
     Return a new array of shape and dtype with every element set to
     fill_value.
     """
     ...
+
+
 def get_printoptions() -> dict:
     """
     Return the current array printing options as a dict with keys
     threshold and edgeitems.
     """
     ...
+
+
 def interp(x: ndarray, xp: ndarray, fp: ndarray, *, left: float | None = None, right: float | None = None) -> ndarray:
     """
     One-dimensional linear interpolation. xp must be a monotonically
@@ -280,24 +367,32 @@ def interp(x: ndarray, xp: ndarray, fp: ndarray, *, left: float | None = None, r
     fp[-1]).
     """
     ...
+
+
 def isfinite(x: ndarray | int | float) -> ndarray | bool:
     """
     Return a boolean array (or scalar) that is True where the input is
     finite. Integer inputs are always finite.
     """
     ...
+
+
 def isinf(x: ndarray | int | float) -> ndarray | bool:
     """
     Return a boolean array (or scalar) that is True where the input is
     infinite. Integer inputs are never infinite.
     """
     ...
+
+
 def left_shift(x1: ndarray, x2: ndarray) -> ndarray:
     """
     Element-wise bitwise shift of x1 left by x2 bits; both arrays must
     have integer dtype.
     """
     ...
+
+
 def linspace(start: float, stop: float, num: int = 50, *, endpoint: bool = True, retstep: bool = False, dtype: int = float) -> ndarray | tuple[ndarray, float]:
     """
     Return num evenly spaced samples over the closed interval [start, stop]
@@ -305,6 +400,8 @@ def linspace(start: float, stop: float, num: int = 50, *, endpoint: bool = True,
     a tuple (samples, step).
     """
     ...
+
+
 def load(file: str) -> ndarray:
     """
     Read an array previously written with save from file (numpy’s
@@ -312,6 +409,8 @@ def load(file: str) -> ndarray:
     if the file’s byte order differs from the host’s.
     """
     ...
+
+
 def loadtxt(file: str, *, delimiter: str | None = None, comments: str = '#', max_rows: int = -1, usecols: int | ndarray | list | tuple | None = None, dtype: int = float, skiprows: int = 0) -> ndarray:
     """
     Read numeric data from a text file and return it as an ndarray.
@@ -321,21 +420,31 @@ def loadtxt(file: str, *, delimiter: str | None = None, comments: str = '#', max
     rows. If dtype is not float, values are converted by rounding.
     """
     ...
+
+
 def log(x: ndarray | float, /) -> ndarray | float:
     """Compute the natural logarithm of each element of x."""
     ...
+
+
 def log10(x: ndarray | float, /) -> ndarray | float:
     """Compute the base-10 logarithm of each element of x."""
     ...
+
+
 def log2(x: ndarray | float, /) -> ndarray | float:
     """Compute the base-2 logarithm of each element of x."""
     ...
+
+
 def logspace(start: float, stop: float, num: int = 50, *, base: float = 10.0, endpoint: bool = True, dtype: int = float) -> ndarray:
     """
     Return num samples spaced evenly on a log scale: the result starts at
     base ** start and ends at base ** stop.
     """
     ...
+
+
 def max(a: ndarray | list | tuple, *, axis: int | None = None, keepdims: bool = False) -> ndarray | int | float:
     """
     Return the maximum element along axis. With axis=None (the default)
@@ -343,24 +452,32 @@ def max(a: ndarray | list | tuple, *, axis: int | None = None, keepdims: bool = 
     not implemented.
     """
     ...
+
+
 def maximum(x1: ndarray | int | float, x2: ndarray | int | float) -> ndarray | int | float:
     """
     Element-wise maximum of two arrays / scalars. The arguments are broadcast
     together; if dtypes differ, the output is upcast.
     """
     ...
+
+
 def mean(a: ndarray | list | tuple, *, axis: int | None = None, keepdims: bool = False) -> ndarray | float:
     """
     Return the arithmetic mean along axis. With axis=None (the default)
     the flattened array’s mean is returned as a float.
     """
     ...
+
+
 def median(a: ndarray, *, axis: int | None = None) -> ndarray | float:
     """
     Return the median along axis. With axis=None the array is flattened
     first. The output dtype is always float.
     """
     ...
+
+
 def meshgrid(*xi: ndarray, indexing: str = 'xy') -> tuple[ndarray, ...]:
     """
     Return a tuple of coordinate matrices from a sequence of one-dimensional
@@ -371,51 +488,73 @@ def meshgrid(*xi: ndarray, indexing: str = 'xy') -> tuple[ndarray, ...]:
     sparse=False.
     """
     ...
+
+
 def min(a: ndarray | list | tuple, *, axis: int | None = None, keepdims: bool = False) -> ndarray | int | float:
     """Return the minimum element along axis; counterpart to max."""
     ...
+
+
 def minimum(x1: ndarray | int | float, x2: ndarray | int | float) -> ndarray | int | float:
     """Element-wise minimum of two arrays / scalars; counterpart to maximum."""
     ...
+
+
 def ndinfo(array: ndarray) -> None:
     """
     Print diagnostic information (shape, strides, dtype, itemsize, …) about
     array.
     """
     ...
+
+
 def nonzero(a: ndarray) -> tuple[ndarray, ...]:
     """
     Return a tuple of ndarray, one per dimension of a, containing the
     indices of the non-zero elements of a.
     """
     ...
+
+
 def not_equal(x1: ndarray | int | float, x2: ndarray | int | float) -> ndarray | bool:
     """Element-wise x1 != x2; the boolean counterpart to equal."""
     ...
+
+
 def ones(shape: int | tuple[int, ...], *, dtype: int = float) -> ndarray:
     """Return a new array of shape and dtype filled with ones."""
     ...
+
+
 @overload
 def polyfit(x: ndarray | list | tuple, y: ndarray | list | tuple, deg: int) -> ndarray:
     ...
 @overload
 def polyfit(y: ndarray | list | tuple, deg: int) -> ndarray:
     ...
+
+
 def polyval(p: ndarray | list | tuple, x: ndarray | list | tuple | int | float) -> ndarray | float:
     """
     Evaluate the polynomial whose coefficients are p (highest degree first)
     at x. If x is a scalar a float is returned, otherwise an ndarray.
     """
     ...
+
+
 def radians(x: ndarray | float, /) -> ndarray | float:
     """Convert each element of x from degrees to radians."""
     ...
+
+
 def right_shift(x1: ndarray, x2: ndarray) -> ndarray:
     """
     Element-wise bitwise shift of x1 right by x2 bits; both arrays must
     have integer dtype.
     """
     ...
+
+
 def roll(a: ndarray, shift: int, *, axis: int | None = None) -> ndarray:
     """
     Return a with its elements rolled (cyclically shifted) by shift
@@ -423,9 +562,13 @@ def roll(a: ndarray, shift: int, *, axis: int | None = None) -> ndarray:
     Negative shifts roll in the opposite direction.
     """
     ...
+
+
 def save(file: str, a: ndarray) -> None:
     """Save a to file in numpy’s platform-independent .npy format."""
     ...
+
+
 def savetxt(file: str, a: ndarray, *, delimiter: str = ' ', header: str | None = None, footer: str | None = None, comments: str = '# ') -> None:
     """
     Write a to file as text. delimiter separates values within a row;
@@ -433,6 +576,8 @@ def savetxt(file: str, a: ndarray, *, delimiter: str = ' ', header: str | None =
     each prefixed by comments. Values are written as floating point.
     """
     ...
+
+
 def set_printoptions(*, threshold: int | None = None, edgeitems: int | None = None) -> None:
     """
     Set array printing options. threshold is the maximum number of array
@@ -440,21 +585,31 @@ def set_printoptions(*, threshold: int | None = None, edgeitems: int | None = No
     each end of an axis when the array is summarised.
     """
     ...
+
+
 def sin(x: ndarray | float, /) -> ndarray | float:
     """Compute the sine of each element of x (in radians)."""
     ...
+
+
 def sinc(x: ndarray | float, /) -> ndarray | float:
     """Compute the normalized sinc function sin(pi*x) / (pi*x) of each element of x."""
     ...
+
+
 def sinh(x: ndarray | float, /) -> ndarray | float:
     """Compute the hyperbolic sine of each element of x."""
     ...
+
+
 def size(a: ndarray, *, axis: int | None = None) -> int:
     """
     Return the number of elements of a along axis; if axis is None,
     return the total number of elements (the product of ndarray.shape).
     """
     ...
+
+
 def sort(a: ndarray, *, axis: int = -1) -> ndarray:
     """
     Return a sorted copy of a along axis using heap sort. With
@@ -462,21 +617,29 @@ def sort(a: ndarray, *, axis: int = -1) -> ndarray:
     order keywords are not implemented.
     """
     ...
+
+
 def sqrt(x: ndarray | float, /, *, dtype: int = float) -> ndarray | float:
     """Compute the square root of each element of x."""
     ...
+
+
 def std(a: ndarray | list | tuple, *, axis: int | None = None, ddof: int = 0, keepdims: bool = False) -> ndarray | float:
     """
     Return the standard deviation along axis. ddof is the delta degrees of
     freedom – the divisor used is N - ddof.
     """
     ...
+
+
 def sum(a: ndarray | list | tuple, *, axis: int | None = None, keepdims: bool = False) -> ndarray | int | float:
     """
     Return the sum along axis. With axis=None the flattened array’s
     total is returned as a scalar.
     """
     ...
+
+
 def take(a: ndarray, indices: ndarray | list | tuple, *, axis: int | None = None, out: ndarray | None = None, mode: str | None = None) -> ndarray:
     """
     Take elements from a at the given indices along axis. With
@@ -487,12 +650,18 @@ def take(a: ndarray, indices: ndarray | list | tuple, *, axis: int | None = None
     is written into it.
     """
     ...
+
+
 def tan(x: ndarray | float, /) -> ndarray | float:
     """Compute the tangent of each element of x (in radians)."""
     ...
+
+
 def tanh(x: ndarray | float, /) -> ndarray | float:
     """Compute the hyperbolic tangent of each element of x."""
     ...
+
+
 def trace(m: ndarray) -> int | float:
     """
     Return the sum of the diagonal elements of the square matrix m. The
@@ -500,6 +669,8 @@ def trace(m: ndarray) -> int | float:
     float arrays a float).
     """
     ...
+
+
 def trapz(y: ndarray, x: ndarray | None = None, dx: float = 1.0) -> float:
     """
     Integrate y using the composite trapezoidal rule. If x is given it
@@ -507,9 +678,13 @@ def trapz(y: ndarray, x: ndarray | None = None, dx: float = 1.0) -> float:
     dx is used. y (and x) must be 1-D.
     """
     ...
+
+
 def vectorize(f: Callable[[float], float], /, *, otypes: int | None = None) -> Callable:
     """Return a callable that applies the Python function f element-wise to a scalar, iterable, or ndarray; otypes selects the output dtype (default float)."""
     ...
+
+
 def where(condition: ndarray | int | float, x: ndarray | int | float, y: ndarray | int | float) -> ndarray:
     """
     Return an ndarray whose elements come from x where condition is
@@ -517,9 +692,12 @@ def where(condition: ndarray | int | float, x: ndarray | int | float, y: ndarray
     the output dtype is the upcast of x and y.
     """
     ...
+
+
 def zeros(shape: int | tuple[int, ...], *, dtype: int = float) -> ndarray:
     """Return a new array of shape and dtype filled with zeros."""
     ...
+
 
 class ndarray:
     """
@@ -580,6 +758,7 @@ class ndarray:
     Number of bytes to step in memory along each axis to reach the
     next element along that axis.
     """
+
     def byteswap(self, *, inplace: bool = False) -> ndarray:
         """
         Swap the byte order of every element. For uint16, int16,
@@ -595,12 +774,14 @@ class ndarray:
         of self is returned.
         """
         ...
+
     def copy(self) -> ndarray:
         """
         Return a new dense, deep copy of the array. The copy owns its
         own data; modifications to it do not affect the original.
         """
         ...
+
     def flatten(self, *, order: str = 'C') -> ndarray:
         """
         Return a new one-dimensional copy of the array.
@@ -612,6 +793,7 @@ class ndarray:
         (first axis varies fastest).
         """
         ...
+
     def reshape(self, shape: int | tuple[int, ...]) -> ndarray:
         """
         Return a view of the array with a new shape. The total number
@@ -620,6 +802,7 @@ class ndarray:
         assigning to shape.
         """
         ...
+
     def sort(self, *, axis: int | None = -1) -> None:
         """
         Sort the array in place.
@@ -631,6 +814,7 @@ class ndarray:
         and then sorts.
         """
         ...
+
     def tobytes(self) -> bytearray:
         """
         Return a bytearray that aliases the array’s underlying data
@@ -639,12 +823,14 @@ class ndarray:
         dense (e.g. a sliced view).
         """
         ...
+
     def tolist(self) -> list:
         """
         Return the contents of the array as a (possibly nested) Python
         list. The nesting depth equals ndim.
         """
         ...
+
     def transpose(self) -> ndarray:
         """
         Return the transpose of the array (axes reversed). For
@@ -653,4 +839,3 @@ class ndarray:
         shorthand for this method.
         """
         ...
-

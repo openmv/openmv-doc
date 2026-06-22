@@ -6,6 +6,7 @@ solvers that operate on numpy.ndarray objects.
 
 from typing import Any
 
+
 def cho_solve(c: ndarray, b: ndarray) -> ndarray:
     """
     Solve the linear system A @ x = b given the Cholesky
@@ -26,6 +27,8 @@ def cho_solve(c: ndarray, b: ndarray) -> ndarray:
     the solution vector x as a float numpy.ndarray.
     """
     ...
+
+
 def solve_triangular(a: ndarray, b: ndarray, lower: bool = False) -> ndarray:
     """
     Solve the linear system a @ x = b for x assuming that a
@@ -52,4 +55,3 @@ def solve_triangular(a: ndarray, b: ndarray, lower: bool = False) -> ndarray:
     reproduce b.
     """
     ...
-

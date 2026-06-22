@@ -10,6 +10,7 @@ peripheral buffers, allocation-free magnitude spectra.
 from typing import Any
 import numpy
 
+
 def from_int16_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: numpy.ndarray | None = None, byteswap: bool = False) -> numpy.ndarray:
     """
     Convert a buffer of int16 samples into a float
@@ -41,6 +42,8 @@ def from_int16_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: n
     -1).
     """
     ...
+
+
 def from_int32_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: numpy.ndarray | None = None, byteswap: bool = False) -> numpy.ndarray:
     """
     Convert a buffer of int32 samples into a float
@@ -72,6 +75,8 @@ def from_int32_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: n
     -1).
     """
     ...
+
+
 def from_uint16_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: numpy.ndarray | None = None, byteswap: bool = False) -> numpy.ndarray:
     """
     Convert a buffer of uint16 samples into a float
@@ -103,6 +108,8 @@ def from_uint16_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: 
     -1).
     """
     ...
+
+
 def from_uint32_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: numpy.ndarray | None = None, byteswap: bool = False) -> numpy.ndarray:
     """
     Convert a buffer of uint32 samples into a float
@@ -134,6 +141,8 @@ def from_uint32_buffer(buffer: bytes, *, count: int = -1, offset: int = 0, out: 
     -1).
     """
     ...
+
+
 def spectrogram(r: numpy.ndarray, imag: numpy.ndarray | None = None, *, scratchpad: numpy.ndarray | None = None, out: numpy.ndarray | None = None, log: bool = False) -> numpy.ndarray:
     """
     Return the magnitude of the discrete Fourier transform of the
@@ -170,4 +179,3 @@ def spectrogram(r: numpy.ndarray, imag: numpy.ndarray | None = None, *, scratchp
     frequency bin.
     """
     ...
-

@@ -12,6 +12,7 @@ building-blocks for higher-level abstractions such as specific device types.
 
 from typing import Any, Callable, Sequence, overload
 
+
 class BLE:
     """
     Returns the singleton BLE object.
@@ -19,6 +20,7 @@ class BLE:
     Configuration
     """
     def __init__(self) -> None: ...
+
     def active(self, active: bool | None = None, /) -> bool:
         """
         Optionally changes the active state of the BLE radio, and returns the
@@ -27,6 +29,7 @@ class BLE:
         The radio must be made active before using any other methods on this class.
         """
         ...
+
     @overload
     def config(self, param: str, /) -> Any:
         ...
@@ -105,6 +108,7 @@ class BLE:
           false (i.e. allow “Legacy Pairing”).
         """
         ...
+
     def gap_advertise(self, interval_us: int | None, adv_data: bytes | None = None, *, resp_data: bytes | None = None, connectable: bool = True) -> None:
         """
         Starts advertising at the specified interval (in microseconds). This
@@ -121,6 +125,7 @@ class BLE:
         To clear the advertising payload pass an empty bytes, i.e. b''.
         """
         ...
+
     def gap_connect(self, addr_type: int | None, addr: bytes | None = None, scan_duration_ms: int = 2000, min_conn_interval_us: int | None = None, max_conn_interval_us: int | None = None, /) -> None:
         """
         Connect to a peripheral.
@@ -144,6 +149,7 @@ class BLE:
         of power usage.
         """
         ...
+
     def gap_disconnect(self, conn_handle: int, /) -> bool:
         """
         Disconnect the specified connection handle. This can either be a
@@ -158,6 +164,7 @@ class BLE:
         otherwise.
         """
         ...
+
     def gap_pair(self, conn_handle: int, /) -> None:
         """
         Initiate pairing with the remote device.
@@ -168,6 +175,7 @@ class BLE:
         On successful pairing, the _IRQ_ENCRYPTION_UPDATE event will be raised.
         """
         ...
+
     def gap_passkey(self, conn_handle: int, action: int, passkey: int, /) -> None:
         """
         Respond to a _IRQ_PASSKEY_ACTION event for the specified conn_handle
@@ -192,6 +200,7 @@ class BLE:
         _IRQ_PASSKEY_ACTION event, or 0 to cancel pairing.
         """
         ...
+
     def gap_scan(self, duration_ms: int | None, interval_us: int = 1280000, window_us: int = 11250, active: bool = False, /) -> None:
         """
         Run a scan operation lasting for the specified duration (in milliseconds).
@@ -274,6 +283,7 @@ class BLE:
         explicitly stopped), the _IRQ_SCAN_DONE event will be raised.
         """
         ...
+
     def gattc_discover_characteristics(self, conn_handle: int, start_handle: int, end_handle: int, uuid: UUID | None = None, /) -> None:
         """
         Query a connected server for characteristics in the specified range.
@@ -289,6 +299,7 @@ class BLE:
         event will be raised, followed by _IRQ_GATTC_CHARACTERISTIC_DONE on completion.
         """
         ...
+
     def gattc_discover_descriptors(self, conn_handle: int, start_handle: int, end_handle: int, /) -> None:
         """
         Query a connected server for descriptors in the specified range.
@@ -297,6 +308,7 @@ class BLE:
         will be raised, followed by _IRQ_GATTC_DESCRIPTOR_DONE on completion.
         """
         ...
+
     def gattc_discover_services(self, conn_handle: int, uuid: UUID | None = None, /) -> None:
         """
         Query a connected server for its services.
@@ -307,6 +319,7 @@ class BLE:
         be raised, followed by _IRQ_GATTC_SERVICE_DONE on completion.
         """
         ...
+
     def gattc_exchange_mtu(self, conn_handle: int, /) -> None:
         """
         Initiate MTU exchange with a connected server, using the preferred MTU
@@ -319,6 +332,7 @@ class BLE:
         supports both roles.
         """
         ...
+
     def gattc_read(self, conn_handle: int, value_handle: int, /) -> None:
         """
         Issue a remote read to a connected server for the specified
@@ -328,6 +342,7 @@ class BLE:
         be raised, followed by _IRQ_GATTC_READ_DONE on completion.
         """
         ...
+
     def gattc_write(self, conn_handle: int, value_handle: int, data: bytes, mode: int = 0, /) -> None:
         """
         Issue a remote write to a connected server for the specified
@@ -347,6 +362,7 @@ class BLE:
         _IRQ_GATTC_WRITE_DONE event will be raised.
         """
         ...
+
     def gatts_indicate(self, conn_handle: int, value_handle: int, data: bytes | None = None, /) -> None:
         """
         Sends an indication request to a connected client.
@@ -364,6 +380,7 @@ class BLE:
         status of the client to this characteristic.
         """
         ...
+
     def gatts_notify(self, conn_handle: int, value_handle: int, data: bytes | None = None, /) -> None:
         """
         Sends a notification request to a connected client.
@@ -378,12 +395,14 @@ class BLE:
         status of the client to this characteristic.
         """
         ...
+
     def gatts_read(self, value_handle: int, /) -> bytes:
         """
         Reads the local value for this handle (which has either been written by
         gatts_write or by a remote client).
         """
         ...
+
     def gatts_register_services(self, services_definition: Sequence[Sequence], /) -> Sequence[Sequence[int]]:
         """
         Configures the server with the specified services, replacing any
@@ -540,6 +559,7 @@ class BLE:
         program.
         """
         ...
+
     def gatts_set_buffer(self, value_handle: int, len: int, append: bool = False, /) -> None:
         """
         Sets the internal buffer size for a value in bytes. This will limit
@@ -553,6 +573,7 @@ class BLE:
         like the Nordic UART Service.
         """
         ...
+
     def gatts_write(self, value_handle: int, data: bytes, send_update: bool = False, /) -> None:
         """
         Writes the local value for this handle, which can be read by a client.
@@ -562,6 +583,7 @@ class BLE:
         the characteristic supports) about this write.
         """
         ...
+
     def irq(self, handler: Callable[[int, tuple], Any | None], /) -> None:
         """
         Registers a callback for events from the BLE stack. The handler takes two
@@ -973,6 +995,7 @@ class BLE:
         from the lists above to your program.
         """
         ...
+
     def l2cap_connect(self, conn_handle: int, psm: int, mtu: int, /) -> None:
         """
         Connect to a listening peer on the specified psm with local MTU set to mtu.
@@ -984,12 +1007,14 @@ class BLE:
         with a non-zero status.
         """
         ...
+
     def l2cap_disconnect(self, conn_handle: int, cid: int, /) -> None:
         """
         Disconnect an active L2CAP channel with the specified conn_handle and
         cid.
         """
         ...
+
     def l2cap_listen(self, psm: int, mtu: int, /) -> None:
         """
         Start listening for incoming L2CAP channel requests on the specified psm
@@ -1006,6 +1031,7 @@ class BLE:
         Note: It is not currently possible to stop listening.
         """
         ...
+
     def l2cap_recvinto(self, conn_handle: int, cid: int, buf: Any | None, /) -> int:
         """
         Receive data from the specified conn_handle and cid into the provided
@@ -1025,6 +1051,7 @@ class BLE:
         more channel credits and will be unable to send any more data.
         """
         ...
+
     def l2cap_send(self, conn_handle: int, cid: int, buf: bytes, /) -> bool:
         """
         Send the specified buf (which must support the buffer protocol) on the
@@ -1040,6 +1067,7 @@ class BLE:
         processed the data).
         """
         ...
+
 
 class UUID:
     r"""
@@ -1075,4 +1103,3 @@ class UUID:
     128-bit UUIDs are normally vendor-defined.
     """
     def __init__(self, value: int | bytes | str, /) -> None: ...
-

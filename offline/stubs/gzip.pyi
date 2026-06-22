@@ -21,15 +21,21 @@ Availability:
 
 from typing import Any
 
+
 def compress(data: bytes, /) -> bytes:
     """Compresses data into a bytes object."""
     ...
+
+
 def decompress(data: bytes, /) -> bytes:
     """Decompresses data into a bytes object."""
     ...
+
+
 def open(filename: str, mode: str, /) -> GzipFile:
     """Wrapper around built-in open() returning a GzipFile instance."""
     ...
+
 
 class GzipFile:
     """
@@ -54,4 +60,3 @@ class GzipFile:
     arguments.
     """
     def __init__(self, *, fileobj, mode: str) -> None: ...
-

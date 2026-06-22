@@ -38,6 +38,7 @@ Example usage:
 
 from typing import Any
 
+
 class SenmlBase:
     """
     Common base class shared by SenmlPack and SenmlRecord. It exposes no
@@ -45,6 +46,7 @@ class SenmlBase:
     that an item belongs to the SenML hierarchy.
     """
     def __init__(self) -> None: ...
+
 
 class SenmlPack:
     """
@@ -86,6 +88,7 @@ class SenmlPack:
     """
     name: str
     """The pack’s base name (bn)."""
+
     def add(self, item: SenmlRecord | SenmlPack) -> None:
         """
         Append item to this pack. item must be a SenmlRecord or another
@@ -93,12 +96,14 @@ class SenmlPack:
         otherwise Exception is raised.
         """
         ...
+
     def clear(self) -> None:
         """
         Remove every record/sub-pack from this pack and detach them from
         their parent reference.
         """
         ...
+
     def do_actuate(self, raw: dict, naming_map: dict, device: SenmlPack | None = None) -> None:
         """
         Internal helper invoked while parsing inbound data when no existing
@@ -106,9 +111,11 @@ class SenmlPack:
         this pack) and forwards it to the callback.
         """
         ...
+
     def from_cbor(self, data: bytes) -> None:
         """Parse a SenML/CBOR byte string and merge the records into this pack."""
         ...
+
     def from_json(self, data: str) -> None:
         """
         Parse a SenML/JSON document and merge the records into this pack.
@@ -117,18 +124,22 @@ class SenmlPack:
         pack-level callback is invoked.
         """
         ...
+
     def remove(self, item: SenmlRecord | SenmlPack) -> None:
         """
         Remove item from this pack. Exception is raised if item is
         not a child of this pack.
         """
         ...
+
     def to_cbor(self) -> bytes:
         """Render the pack and its children to a SenML/CBOR byte string."""
         ...
+
     def to_json(self) -> str:
         """Render the pack and its children to a SenML/JSON string."""
         ...
+
 
 class SenmlRecord:
     """
@@ -177,12 +188,14 @@ class SenmlRecord:
     rendered precision of a float value, round before assignment, e.g.
     record.value = round(x, 2).
     """
+
     def do_actuate(self, raw: dict, naming_map: dict) -> None:
         """
         Update this record from a raw inbound SenML dictionary and, if
         present, invoke the actuate callback.
         """
         ...
+
 
 class SenmlUnits:
     """
@@ -306,4 +319,3 @@ class SenmlUnits:
     """"W/m2" – irradiance."""
     SENML_UNIT_WEBER: str
     """"Wb" – weber."""
-

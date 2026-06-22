@@ -8,6 +8,7 @@ queue (deque), a tuple-with-named-fields factory
 
 from typing import Any, Iterable, Sequence
 
+
 def namedtuple(name: str, fields: str | Sequence[str]) -> type:
     """
     This is a factory function to create a new namedtuple type with a specific
@@ -29,6 +30,7 @@ def namedtuple(name: str, fields: str | Sequence[str]) -> type:
     Instances also provide the following method:
     """
     ...
+
 
 class OrderedDict:
     """
@@ -56,6 +58,7 @@ class OrderedDict:
         b 3
     """
     def __init__(self, *args: Any, **kwargs: Any) -> None: ...
+
     def popitem(self) -> tuple:
         """
         Remove and return a (key, value) pair from the dictionary.
@@ -72,6 +75,7 @@ class OrderedDict:
         d.pop(first_key)
         """
         ...
+
 
 class deque:
     """
@@ -91,6 +95,7 @@ class deque:
     They also have the following methods:
     """
     def __init__(self, iterable: Iterable, maxlen: int, flags: int = 0) -> None: ...
+
     def append(self, x: Any) -> None:
         """
         Add x to the right side of the deque.
@@ -98,6 +103,7 @@ class deque:
         no more room in the queue.
         """
         ...
+
     def appendleft(self, x: Any) -> None:
         """
         Add x to the left side of the deque.
@@ -105,6 +111,7 @@ class deque:
         no more room in the queue.
         """
         ...
+
     def extend(self, iterable: Iterable) -> None:
         """
         Extend the deque by appending all the items from iterable to
@@ -113,16 +120,17 @@ class deque:
         no more room in the deque.
         """
         ...
+
     def pop(self) -> Any:
         """
         Remove and return an item from the right side of the deque.
         Raises IndexError if no items are present.
         """
         ...
+
     def popleft(self) -> Any:
         """
         Remove and return an item from the left side of the deque.
         Raises IndexError if no items are present.
         """
         ...
-

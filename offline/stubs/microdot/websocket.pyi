@@ -9,6 +9,7 @@ HTTP polling cannot give them cheaply.
 
 from typing import Any
 
+
 def websocket_upgrade(request) -> Any:
     """
     Low-level upgrade helper. Use this inside a route when the upgrade
@@ -29,6 +30,8 @@ def websocket_upgrade(request) -> Any:
     done – microdot has already taken over the socket.
     """
     ...
+
+
 def with_websocket(f) -> Any:
     """
     Decorator that turns a route into a WebSocket endpoint. The handler
@@ -51,6 +54,7 @@ def with_websocket(f) -> Any:
     """
     ...
 
+
 class WebSocketError(Exception):
     """
     Raised inside WebSocket.receive() when the connection ends or
@@ -63,6 +67,7 @@ class WebSocketError(Exception):
             # client closed the connection
     """
     ...
+
 
 class WebSocket:
     """
@@ -130,12 +135,14 @@ class WebSocket:
     The originating microdot.Request – the same object the
     route handler received.
     """
+
     def close(self) -> Any:
         """
         Send a close frame and mark the connection as closed. Called
         automatically when with_websocket()’s wrapper exits.
         """
         ...
+
     def receive(self) -> Any:
         """
         Wait for and return the next message from the client. The return
@@ -146,10 +153,10 @@ class WebSocket:
         closed”).
         """
         ...
+
     def send(self, data, opcode: int | None = None) -> Any:
         """
         Send data to the client. Strings are sent as text frames,
         bytes as binary frames; pass opcode explicitly to override.
         """
         ...
-

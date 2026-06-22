@@ -22,6 +22,7 @@ Example:
 from typing import Any
 import machine
 
+
 class HTS221:
     """
     Construct an HTS221 instance.
@@ -41,6 +42,7 @@ class HTS221:
     address used by all HTS221 parts.
     """
     def __init__(self, bus: machine.I2C, data_rate: int = 1, address: int = 0x5F) -> None: ...
+
     def humidity(self) -> float:
         """
         Read the humidity output registers and return the relative humidity
@@ -48,6 +50,7 @@ class HTS221:
         stored on the device.
         """
         ...
+
     def temperature(self) -> float:
         """
         Read the temperature output registers and return the temperature in
@@ -55,4 +58,3 @@ class HTS221:
         stored on the device.
         """
         ...
-

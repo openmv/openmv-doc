@@ -97,6 +97,7 @@ NDOF_MODE: int
 This is the default mode used by the constructor.
 """
 
+
 class BNO055:
     """
     Construct a BNO055 driver instance.
@@ -115,12 +116,14 @@ class BNO055:
     the expected ID register values are not read back.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x28, mode: int = NDOF_MODE, axis: bytes = AXIS_P4) -> None: ...
+
     def accelerometer(self) -> list:
         """
         Return the accelerometer reading as a 3-element list [x, y, z] of
         floats in m/s^2.
         """
         ...
+
     def axis(self, placement: bytes = None) -> bytes:
         """
         Get or set the axis remap configuration. With no argument, returns the
@@ -129,36 +132,42 @@ class BNO055:
         AXIS_P0..``AXIS_P7`` constants below.
         """
         ...
+
     def euler(self) -> list:
         """
         Return the fused orientation as a 3-element list [yaw, roll, pitch]
         of floats in degrees.
         """
         ...
+
     def gravity(self) -> list:
         """
         Return the gravity vector as a 3-element list [x, y, z] of floats
         in m/s^2.
         """
         ...
+
     def gyroscope(self) -> list:
         """
         Return the gyroscope reading as a 3-element list [x, y, z] of
         floats in degrees per second.
         """
         ...
+
     def linear_acceleration(self) -> list:
         """
         Return the gravity-compensated linear acceleration as a 3-element list
         [x, y, z] of floats in m/s^2.
         """
         ...
+
     def magnetometer(self) -> list:
         """
         Return the magnetometer reading as a 3-element list [x, y, z] of
         floats in micro-Tesla.
         """
         ...
+
     def operation_mode(self, mode: int = None) -> int:
         """
         Get or set the operation mode register. With no argument, returns the
@@ -166,12 +175,14 @@ class BNO055:
         mode to the device. See the operation-mode constants below.
         """
         ...
+
     def page(self, num: int = None) -> None:
         """
         Get or set the register page. With no argument, reads the current page
         register. With a num argument, selects the page.
         """
         ...
+
     def power_mode(self, mode: int = None) -> bytes:
         """
         Get or set the power mode register. With no argument, returns the
@@ -179,24 +190,28 @@ class BNO055:
         the new power mode to the device.
         """
         ...
+
     def quaternion(self) -> list:
         """
         Return the fused orientation as a 4-element list [w, x, y, z] of
         floats scaled to the unit quaternion range.
         """
         ...
+
     def read_id(self) -> bytes:
         r"""
         Return the 4-byte ID block read from register 0x00. The expected
         value is b'\xA0\xFB\x32\x0F'.
         """
         ...
+
     def read_registers(self, register: int, size: int = 1) -> bytes:
         """
         Read size bytes from the given device register and return them as
         a bytes object.
         """
         ...
+
     def system_trigger(self, data: int) -> None:
         """
         Write data to the system trigger register (0x3F). This is used
@@ -204,10 +219,11 @@ class BNO055:
         oscillator (0x80).
         """
         ...
+
     def temperature(self) -> int:
         """Return the chip temperature register value as an unsigned byte."""
         ...
+
     def write_registers(self, register: int, data: bytes) -> None:
         """Write the given data bytes to the device starting at register."""
         ...
-

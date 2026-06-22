@@ -36,6 +36,7 @@ Connect a client to rtsp://<camera-ip>:554/ to view the stream.
 from typing import Any, Callable
 import image
 
+
 class rtsp_server:
     """
     Creates an RTSP server bound to network_if.
@@ -46,6 +47,7 @@ class rtsp_server:
     port is the TCP port to listen on. The default RTSP port is 554.
     """
     def __init__(self, network_if: Any, port: int = 554) -> None: ...
+
     def register_pause_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client pauses streaming.
@@ -56,6 +58,7 @@ class rtsp_server:
         register_setup_cb().
         """
         ...
+
     def register_play_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client starts streaming.
@@ -64,6 +67,7 @@ class rtsp_server:
         register_setup_cb().
         """
         ...
+
     def register_setup_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client sets up an RTSP connection.
@@ -72,6 +76,7 @@ class rtsp_server:
         and session (a random session id).
         """
         ...
+
     def register_teardown_cb(self, cb: Callable[[str, int], None]) -> None:
         """
         Bind a callback cb to be invoked when a client tears down the RTSP connection.
@@ -80,6 +85,7 @@ class rtsp_server:
         register_setup_cb().
         """
         ...
+
     def stream(self, image_callback: Callable[[str, int], image.Image], quality: int = 90) -> None:
         """
         Starts running the rtsp_server logic and does not return.
@@ -90,4 +96,3 @@ class rtsp_server:
         quality is the JPEG compression quality used while streaming.
         """
         ...
-

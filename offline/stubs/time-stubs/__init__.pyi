@@ -26,6 +26,7 @@ the current absolute time will not behave as expected.
 
 from typing import Any
 
+
 def gmtime(secs: int | None = None) -> tuple[int, int, int, int, int, int, int, int]:
     """
     Convert the time secs expressed in seconds since the Epoch (see above) into an
@@ -47,6 +48,8 @@ def gmtime(secs: int | None = None) -> tuple[int, int, int, int, int, int, int, 
     - yearday is 1-366
     """
     ...
+
+
 def localtime(secs: int | None = None) -> tuple[int, int, int, int, int, int, int, int]:
     """
     Convert the time secs expressed in seconds since the Epoch (see above) into an
@@ -68,6 +71,8 @@ def localtime(secs: int | None = None) -> tuple[int, int, int, int, int, int, in
     - yearday is 1-366
     """
     ...
+
+
 def mktime(date_time_tuple: tuple[int, int, int, int, int, int, int, int]) -> int:
     """
     This is inverse function of localtime. It’s argument is a full 8-tuple
@@ -75,6 +80,8 @@ def mktime(date_time_tuple: tuple[int, int, int, int, int, int, int, int]) -> in
     the number of seconds since the time epoch.
     """
     ...
+
+
 def sleep(seconds: float) -> None:
     """
     Sleep for the given number of seconds. seconds may be a floating-point
@@ -85,6 +92,8 @@ def sleep(seconds: float) -> None:
     functions.
     """
     ...
+
+
 def sleep_ms(ms: int) -> None:
     """
     Delay for given number of milliseconds, should be positive or 0.
@@ -98,6 +107,8 @@ def sleep_ms(ms: int) -> None:
     pending callback functions.
     """
     ...
+
+
 def sleep_us(us: int) -> None:
     """
     Delay for given number of microseconds, should be positive or 0.
@@ -107,6 +118,8 @@ def sleep_us(us: int) -> None:
     processing to perform.
     """
     ...
+
+
 def ticks_add(ticks: int, delta: int) -> int:
     """
     Offset ticks value by a given number, which can be either positive or negative.
@@ -133,6 +146,8 @@ def ticks_add(ticks: int, delta: int) -> int:
         print(ticks_add(0, -1))
     """
     ...
+
+
 def ticks_cpu() -> int:
     """
     Similar to ticks_ms() and ticks_us(), but with the highest possible resolution
@@ -145,6 +160,8 @@ def ticks_cpu() -> int:
     Avoid using it in portable code. It is available on all OpenMV Cams.
     """
     ...
+
+
 def ticks_diff(ticks1: int, ticks2: int) -> int:
     """
     Measure ticks difference between values returned from ticks_ms(), ticks_us(),
@@ -207,6 +224,8 @@ def ticks_diff(ticks1: int, ticks2: int) -> int:
     also overflow. This is known as https://en.wikipedia.org/wiki/Year_2038_problem .
     """
     ...
+
+
 def ticks_ms() -> int:
     """
     Returns an increasing millisecond counter with an arbitrary reference point, that
@@ -230,9 +249,13 @@ def ticks_ms() -> int:
     invalid results from the latter functions.
     """
     ...
+
+
 def ticks_us() -> int:
     """Just like ticks_ms() above, but in microseconds."""
     ...
+
+
 def time() -> int:
     """
     Returns the number of seconds, as an integer, since the Epoch, assuming that
@@ -256,6 +279,8 @@ def time() -> int:
     been set, it instead counts seconds since power-up/reset.
     """
     ...
+
+
 def time_ns() -> int:
     """
     Similar to time() but returns nanoseconds since the Epoch, as an integer (usually
@@ -263,9 +288,11 @@ def time_ns() -> int:
     """
     ...
 
+
 class clock:
     """Returns a clock object."""
     def __init__(self) -> None: ...
+
     def avg(self) -> float:
         """
         Stops tracking the elapsed time and returns the current average elapsed time
@@ -274,6 +301,7 @@ class clock:
         Always call tick first before calling this function.
         """
         ...
+
     def fps(self) -> float:
         """
         Stops tracking the elapsed time and returns the current FPS
@@ -282,10 +310,11 @@ class clock:
         Always call tick first before calling this function.
         """
         ...
+
     def reset(self) -> None:
         """Resets the clock object."""
         ...
+
     def tick(self) -> None:
         """Starts tracking elapsed time."""
         ...
-

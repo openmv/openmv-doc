@@ -27,6 +27,7 @@ Example:
 from typing import Any
 import machine
 
+
 class BMI270:
     """
     Construct a BMI270 instance and run the full configuration-load
@@ -76,18 +77,21 @@ class BMI270:
     returns zeros.
     """
     def __init__(self, bus: machine.I2C, cs: machine.Pin | None = None, address: int = 0x68, gyro_odr: float = 100, gyro_scale: int = 2000, accel_odr: float = 100, accel_scale: int = 4, bmm_magnet: BMM150 | None = None) -> None: ...
+
     def accel(self) -> tuple[float, float, float]:
         """
         Return the acceleration vector (x, y, z) in units of standard
         gravity (1 g = 9.81 m/s²), scaled according to accel_scale.
         """
         ...
+
     def gyro(self) -> tuple[float, float, float]:
         """
         Return the gyroscope vector (x, y, z) in degrees per second,
         scaled according to gyro_scale.
         """
         ...
+
     def magnet(self) -> tuple[float, float, float]:
         """
         If a bmm_magnet was supplied at construction, return the latest
@@ -95,10 +99,10 @@ class BMI270:
         (0.0, 0.0, 0.0).
         """
         ...
+
     def reset(self) -> None:
         """
         Issue the BMI270 soft-reset command. After calling this the device
         must be re-initialised before further use.
         """
         ...
-

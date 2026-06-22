@@ -21,6 +21,7 @@ Availability:
 
 from typing import Any
 
+
 def compress(data: bytes, wbits: int = 15, /) -> bytes:
     """
     Compresses data into a bytes object.
@@ -50,6 +51,8 @@ def compress(data: bytes, wbits: int = 15, /) -> bytes:
     in the deflate module documentation.
     """
     ...
+
+
 def decompress(data: bytes, wbits: int = 15, /) -> bytes:
     """
     Decompresses data into a bytes object.
@@ -71,4 +74,3 @@ def decompress(data: bytes, wbits: int = 15, /) -> bytes:
     fail during decompression.
     """
     ...
-

@@ -27,6 +27,7 @@ import machine
 _DEFAULT_ADDR: int
 """Default I2C address (0x5D) of the GT911 controller."""
 
+
 class GT911:
     """
     Creates a GT911 touch screen controller object.
@@ -65,9 +66,11 @@ class GT911:
     the IRQ pin when a touch event occurs. Pass None to use polling mode.
     """
     def __init__(self, bus: machine.I2C, reset_pin: int | str, irq_pin: int | str, address: int = _DEFAULT_ADDR, width: int = 800, height: int = 480, touch_points: int = 1, reverse_x: bool = False, reverse_y: bool = False, reverse_axis: bool = True, sito: bool = True, refresh_rate: int = 240, touch_callback: Callable | None = None) -> None: ...
+
     def read_id(self) -> bytes:
         """Returns 4 bytes containing the GT911 product ID."""
         ...
+
     def read_points(self) -> tuple:
         """
         Returns a tuple (n, points) where n is the number of active touch
@@ -79,10 +82,10 @@ class GT911:
         Only the first n entries of points contain valid data.
         """
         ...
+
     def reset(self) -> None:
         """
         Resets the GT911 controller and re-arms the IRQ handler if a
         touch_callback was supplied.
         """
         ...
-

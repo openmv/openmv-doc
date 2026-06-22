@@ -75,6 +75,7 @@ Disable Nagle’s algorithm. An IPPROTO_TCP-level
 setsockopt() option.
 """
 
+
 def getaddrinfo(host: str, port: int, af: int = 0, type: int = 0, proto: int = 0, flags: int = 0, /) -> list[tuple]:
     """
     Translate the host/port argument into a sequence of 5-tuples that contain all the
@@ -115,6 +116,8 @@ def getaddrinfo(host: str, port: int, af: int = 0, type: int = 0, proto: int = 0
     detail which may change in the future.
     """
     ...
+
+
 def inet_ntop(af: int, bin_addr: bytes) -> str:
     r"""
     Convert a binary network address bin_addr of the given address family af
@@ -124,6 +127,8 @@ def inet_ntop(af: int, bin_addr: bytes) -> str:
         '127.0.0.1'
     """
     ...
+
+
 def inet_pton(af: int, txt_addr: str) -> bytes:
     r"""
     Convert a textual network address txt_addr of the given address family af
@@ -133,6 +138,7 @@ def inet_pton(af: int, txt_addr: str) -> bytes:
         b'\x01\x02\x03\x04'
     """
     ...
+
 
 class socket:
     """
@@ -147,6 +153,7 @@ class socket:
         socket(AF_INET, SOCK_DGRAM)
     """
     def __init__(self, af: int = AF_INET, type: int = SOCK_STREAM, proto: int = IPPROTO_TCP, /) -> None: ...
+
     def accept(self) -> tuple['socket', tuple]:
         """
         Accept a connection. The socket must be bound to an address and listening for connections.
@@ -155,9 +162,11 @@ class socket:
         other end of the connection.
         """
         ...
+
     def bind(self, address: Any) -> None:
         """Bind the socket to address. The socket must not already be bound."""
         ...
+
     def close(self) -> None:
         """
         Mark the socket closed and release all resources. Once that happens, all future operations
@@ -168,9 +177,11 @@ class socket:
         to close() them explicitly as soon you finished working with them.
         """
         ...
+
     def connect(self, address: Any) -> None:
         """Connect to a remote socket at address."""
         ...
+
     def listen(self, backlog: int = 2) -> None:
         """
         Enable a server to accept connections. If backlog is specified, it must be at least 0
@@ -179,6 +190,7 @@ class socket:
         reasonable value is chosen.
         """
         ...
+
     def makefile(self, mode: str = 'rb', buffering: int = 0, /) -> Any:
         """
         Return a file object associated with the socket. The exact returned type depends on the arguments
@@ -196,6 +208,7 @@ class socket:
         original socket as well.
         """
         ...
+
     def read(self, size: int | None = None) -> bytes:
         """
         Read up to size bytes from the socket. Return a bytes object. If size is not given, it
@@ -205,6 +218,7 @@ class socket:
         non-blocking socket though, and then less data will be returned.
         """
         ...
+
     def readinto(self, buf: bytearray | memoryview, nbytes: int | None = None) -> int:
         """
         Read bytes into the buf.  If nbytes is specified then read at most
@@ -214,6 +228,7 @@ class socket:
         Return value: number of bytes read and stored into buf.
         """
         ...
+
     def readline(self) -> bytes:
         """
         Read a line, ending in a newline character.
@@ -221,6 +236,7 @@ class socket:
         Return value: the line read.
         """
         ...
+
     def recv(self, bufsize: int, flags: int = 0) -> bytes:
         """
         Receive data from the socket. The return value is a bytes object representing the data
@@ -231,6 +247,7 @@ class socket:
         in CPython.
         """
         ...
+
     def recvfrom(self, bufsize: int, flags: int = 0) -> tuple[bytes, tuple]:
         """
         Receive data from the socket. The return value is a pair (bytes, address) where bytes is a
@@ -240,6 +257,7 @@ class socket:
         See the recv() function for an explanation of the optional flags argument.
         """
         ...
+
     def send(self, bytes: bytes) -> int:
         """
         Send data to the socket. The socket must be connected to a remote socket.
@@ -247,6 +265,7 @@ class socket:
         (“short write”).
         """
         ...
+
     def sendall(self, bytes: bytes) -> None:
         """
         Send all data to the socket. The socket must be connected to a remote socket.
@@ -259,12 +278,14 @@ class socket:
         number of bytes sent on non-blocking sockets.
         """
         ...
+
     def sendto(self, bytes: bytes, address: Any) -> int:
         """
         Send data to the socket. The socket should not be connected to a remote socket, since the
         destination socket is specified by address.
         """
         ...
+
     def setblocking(self, flag: bool) -> None:
         """
         Set blocking or non-blocking mode of the socket: if flag is false, the socket is set to non-blocking,
@@ -276,6 +297,7 @@ class socket:
         - sock.setblocking(False) is equivalent to sock.settimeout(0)
         """
         ...
+
     def setsockopt(self, level: int, optname: int, value: int | bytes) -> None:
         """
         Set the value of the given socket option. The needed symbolic constants are defined in the
@@ -283,6 +305,7 @@ class socket:
         a buffer.
         """
         ...
+
     def settimeout(self, value: float | None) -> None:
         """
         Set a timeout on blocking socket operations. The value argument can be a nonnegative floating
@@ -315,6 +338,7 @@ class socket:
         your code will work both in MicroPython and CPython.
         """
         ...
+
     def write(self, buf: bytes) -> int:
         """
         Write the buffer of bytes to the socket. This function will try to
@@ -325,4 +349,3 @@ class socket:
         Return value: number of bytes written.
         """
         ...
-

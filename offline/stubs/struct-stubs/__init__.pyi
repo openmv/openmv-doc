@@ -14,15 +14,20 @@ The following data types are supported:
 
 from typing import Any
 
+
 def calcsize(fmt: str) -> int:
     """Return the number of bytes needed to store the given fmt."""
     ...
+
+
 def pack(fmt: str, *values: Any) -> bytes:
     """
     Pack the values according to the format string fmt. The return value
     is a bytes object encoding the values.
     """
     ...
+
+
 def pack_into(fmt: str, buffer: Any, offset: int, *values: Any) -> None:
     """
     Pack the values according to the format string fmt into a buffer
@@ -30,12 +35,16 @@ def pack_into(fmt: str, buffer: Any, offset: int, *values: Any) -> None:
     buffer.
     """
     ...
+
+
 def unpack(fmt: str, data: bytes) -> tuple:
     """
     Unpack from the data according to the format string fmt.
     The return value is a tuple of the unpacked values.
     """
     ...
+
+
 def unpack_from(fmt: str, data: bytes, offset: int = 0, /) -> tuple:
     """
     Unpack from the data starting at offset according to the format string
@@ -43,4 +52,3 @@ def unpack_from(fmt: str, data: bytes, offset: int = 0, /) -> tuple:
     value is a tuple of the unpacked values.
     """
     ...
-

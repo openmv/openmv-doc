@@ -17,6 +17,7 @@ Example:
 
 from typing import Any
 
+
 class PID:
     """
     Construct a PID controller.
@@ -32,6 +33,7 @@ class PID:
     filter with a cutoff frequency of 20 Hz.
     """
     def __init__(self, p: float = 0, i: float = 0, d: float = 0, imax: float = 0) -> None: ...
+
     def get_pid(self, error: float, scaler: float) -> float:
         """
         Compute and return the PID controller output for the given error.
@@ -48,6 +50,7 @@ class PID:
         Returns the PID output as a float.
         """
         ...
+
     def reset_I(self) -> None:
         """
         Reset the integrator state. Clears the accumulated integral term to
@@ -56,4 +59,3 @@ class PID:
         filter.
         """
         ...
-

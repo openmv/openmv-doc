@@ -6,6 +6,7 @@ i.MXRT family of microcontrollers.
 
 from typing import Any, overload
 
+
 class Flash:
     """
     Get the singleton object that exposes the user-storage region of the
@@ -32,6 +33,7 @@ class Flash:
     runtime with ioctl(5, 0).
     """
     def __init__(self) -> None: ...
+
     def ioctl(self, cmd: int, arg: int) -> int | None:
         """
         Standard vfs.AbstractBlockDev ioctl entry point. See
@@ -40,6 +42,7 @@ class Flash:
         erases the block with index arg.
         """
         ...
+
     @overload
     def readblocks(self, block_num: int, buf: bytearray) -> None:
         ...
@@ -59,6 +62,7 @@ class Flash:
         len(buf) has no alignment constraint.
         """
         ...
+
     @overload
     def writeblocks(self, block_num: int, buf: bytes) -> None:
         ...
@@ -84,4 +88,3 @@ class Flash:
         operation fails.
         """
         ...
-

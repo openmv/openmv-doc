@@ -10,9 +10,12 @@ from typing import Any, Iterator, overload
 sep: str
 """The path-component separator used by the filesystem, the string '/'."""
 
+
 def chdir(path: str) -> None:
     """Change current directory."""
     ...
+
+
 def dupterm(stream_object: Any, index: int = 0, /) -> Any:
     """
     Duplicate or switch the MicroPython terminal (the REPL) on the given stream-like
@@ -35,6 +38,8 @@ def dupterm(stream_object: Any, index: int = 0, /) -> Any:
     The function returns the previous stream-like object in the given slot.
     """
     ...
+
+
 def dupterm_notify(obj_in: Any, /) -> None:
     """
     Notify the MicroPython REPL that input is available on a stream-like object
@@ -64,9 +69,13 @@ def dupterm_notify(obj_in: Any, /) -> None:
     non-standard REPL connections, where automatic notification is not guaranteed.
     """
     ...
+
+
 def getcwd() -> str:
     """Get the current directory."""
     ...
+
+
 def ilistdir(dir: str | None = None) -> Iterator[tuple]:
     """
     This function returns an iterator which then yields tuples corresponding to
@@ -86,12 +95,18 @@ def ilistdir(dir: str | None = None) -> Iterator[tuple]:
       Its meaning is currently undefined for directory entries.
     """
     ...
+
+
 def listdir(dir: str | None = None) -> list[str]:
     """With no argument, list the current directory.  Otherwise list the given directory."""
     ...
+
+
 def mkdir(path: str) -> None:
     """Create a new directory."""
     ...
+
+
 @overload
 def mount(fsobj: Any, mount_point: str, *, readonly: bool = False) -> None:
     ...
@@ -113,18 +128,28 @@ def mount() -> list[tuple[Any, str]]:
     Will raise OSError(EPERM) if mount_point is already mounted.
     """
     ...
+
+
 def remove(path: str) -> None:
     """Remove a file."""
     ...
+
+
 def rename(old_path: str, new_path: str) -> None:
     """Rename a file."""
     ...
+
+
 def rmdir(path: str) -> None:
     """Remove a directory."""
     ...
+
+
 def stat(path: str) -> tuple:
     """Get the status of a file or directory."""
     ...
+
+
 def statvfs(path: str) -> tuple:
     """
     Get the status of a filesystem.
@@ -147,9 +172,13 @@ def statvfs(path: str) -> tuple:
     in a port-specific implementation.
     """
     ...
+
+
 def sync() -> None:
     """Sync all filesystems."""
     ...
+
+
 def umount(mount_point: str | Any) -> None:
     """
     Unmount a filesystem. mount_point can be a string naming the mount
@@ -159,6 +188,8 @@ def umount(mount_point: str | Any) -> None:
     Will raise OSError(EINVAL) if mount_point is not found.
     """
     ...
+
+
 def uname() -> tuple[str, str, str, str, str]:
     """
     Return a tuple (possibly a named tuple) containing information about the
@@ -172,9 +203,13 @@ def uname() -> tuple[str, str, str, str, str]:
     - machine – An identifier for the underlying hardware (e.g. board, CPU)
     """
     ...
+
+
 def unlink(path: str) -> None:
     """Remove a file. This is an alias for remove()."""
     ...
+
+
 def urandom(n: int) -> bytes:
     """
     Return a bytes object with n random bytes. The source is
@@ -194,6 +229,7 @@ def urandom(n: int) -> bytes:
     """
     ...
 
+
 class VfsFat:
     """
     Create a filesystem object that uses the FAT filesystem format.  Storage of
@@ -201,9 +237,11 @@ class VfsFat:
     Objects created by this constructor can be mounted using mount().
     """
     def __init__(self, block_dev: AbstractBlockDev) -> None: ...
+
     def mkfs(self, block_dev: AbstractBlockDev) -> None:
         """Build a FAT filesystem on block_dev."""
         ...
+
 
 class VfsPosix:
     """
@@ -216,4 +254,3 @@ class VfsPosix:
     present on the OpenMV Cam.
     """
     def __init__(self, root: str | None = None) -> None: ...
-

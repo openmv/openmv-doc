@@ -29,6 +29,7 @@ Example:
 from typing import Any
 import machine
 
+
 class LSM6DSOX:
     """
     Construct an LSM6DSOX instance. The bus type is auto-detected: if
@@ -80,15 +81,18 @@ class LSM6DSOX:
     construction by way of load_mlc().
     """
     def __init__(self, bus: machine.I2C | machine.SPI, cs: machine.Pin | None = None, address: int = 0x6A, gyro_odr: float = 104, accel_odr: float = 104, gyro_scale: int = 2000, accel_scale: int = 4, ucf: str | None = None) -> None: ...
+
     def accel(self) -> tuple[float, float, float]:
         """
         Return the acceleration vector (x, y, z) in units of standard
         gravity (1 g = 9.81 m/s²).
         """
         ...
+
     def gyro(self) -> tuple[float, float, float]:
         """Return the gyroscope vector (x, y, z) in degrees per second."""
         ...
+
     def load_mlc(self, ucf: str) -> None:
         """
         Apply an MLC UCF program from the file at path ucf. The driver
@@ -97,6 +101,7 @@ class LSM6DSOX:
         the embedded functions back on.
         """
         ...
+
     def mlc_output(self) -> bytes | None:
         """
         If new MLC results are available (MLC_STATUS bit set), return
@@ -104,6 +109,7 @@ class LSM6DSOX:
         bytes-like object. Otherwise return None.
         """
         ...
+
     def pedometer_config(self, enable: bool = True, debounce: int = 10, int1_enable: bool = False, int2_enable: bool = False) -> None:
         """
         Configure the embedded pedometer.
@@ -125,9 +131,11 @@ class LSM6DSOX:
         If True, route pedometer events to the INT2 pin.
         """
         ...
+
     def pedometer_reset(self) -> None:
         """Reset the step counter back to zero."""
         ...
+
     def reset(self) -> None:
         """
         Issue a software reset via CTRL3_C and block until the reset
@@ -135,6 +143,7 @@ class LSM6DSOX:
         within ten retries.
         """
         ...
+
     def set_embedded_functions(self, enable: bool, emb_ab: tuple[int, int] | None = None) -> tuple[int, int]:
         """
         Enable or disable the embedded-function block. When enable is
@@ -144,6 +153,7 @@ class LSM6DSOX:
         previous values are returned so they can be restored later.
         """
         ...
+
     def set_mem_bank(self, bank: int) -> None:
         """
         Switch the FUNC_CFG register bank. Used internally to access the
@@ -151,7 +161,7 @@ class LSM6DSOX:
         application code.
         """
         ...
+
     def steps(self) -> int:
         """Return the current value of the 16-bit step counter."""
         ...
-

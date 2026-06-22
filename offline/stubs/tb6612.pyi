@@ -22,6 +22,7 @@ Example:
 
 from typing import Any, Generator
 
+
 class Motor:
     """
     Construct a DC motor controller bound to one of the two TB6612 channels.
@@ -31,6 +32,7 @@ class Motor:
       P1/P0 and PWM pin P8 (timer 4, channel 2).
     """
     def __init__(self, channel: int) -> None: ...
+
     def set_speed(self, pwm: int) -> None:
         """
         Set the motor speed and direction.
@@ -41,6 +43,7 @@ class Motor:
           power pin.
         """
         ...
+
 
 class Stepper:
     """
@@ -57,6 +60,7 @@ class Stepper:
       channels. Forwarded to set_power().
     """
     def __init__(self, stepnumber: int = 200, rpms: int = 2, power: int = 50) -> None: ...
+
     def phase_list(self) -> Generator[tuple[int, int, int, int], None, None]:
         """
         Generator that endlessly yields the four-phase drive pattern
@@ -65,6 +69,7 @@ class Stepper:
         pin1, pin2, pin3, pin4 respectively.
         """
         ...
+
     def set_power(self, power: int) -> None:
         """
         Set the PWM duty cycle applied to both power channels.
@@ -72,6 +77,7 @@ class Stepper:
         - power: Duty cycle percentage in the range 0 to 100.
         """
         ...
+
     def set_speed(self, rpms: int) -> None:
         """
         Update the stepping speed.
@@ -81,6 +87,7 @@ class Stepper:
           1000000 / (rpms * stepnumber) / 2.
         """
         ...
+
     def step(self, num: int) -> None:
         """
         Advance the stepper by num phase transitions, applying the next
@@ -92,4 +99,3 @@ class Stepper:
           phase generator only iterates forward).
         """
         ...
-

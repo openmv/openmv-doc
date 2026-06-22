@@ -427,6 +427,7 @@ range 0-255 from the byte at addr; mem8[addr] = value writes the
 low 8 bits of value. addr must be aligned to 1 byte (any address).
 """
 
+
 def bitstream(pin: Pin, encoding: int, timing: tuple, data: bytes, /) -> None:
     """
     Transmits data by bit-banging the specified pin. The encoding argument
@@ -449,6 +450,8 @@ def bitstream(pin: Pin, encoding: int, timing: tuple, data: bytes, /) -> None:
     module for a higher-level API.
     """
     ...
+
+
 def bootloader(value: int | None = None, /) -> NoReturn:
     """
     Reset the camera into its DFU / serial-download bootloader, ready
@@ -459,6 +462,8 @@ def bootloader(value: int | None = None, /) -> NoReturn:
     but is ignored on every OpenMV-supported board.
     """
     ...
+
+
 def deepsleep(time_ms: int | None = None, /) -> NoReturn:
     """
     Stop execution and enter the deepest available low-power state.
@@ -477,6 +482,8 @@ def deepsleep(time_ms: int | None = None, /) -> NoReturn:
     the main script, gated on reset_cause().
     """
     ...
+
+
 def disable_irq() -> int:
     """
     Disable interrupt requests.
@@ -485,6 +492,8 @@ def disable_irq() -> int:
     interrupts to their original state, before disable_irq() was called.
     """
     ...
+
+
 def enable_irq(state: int) -> None:
     """
     Re-enable interrupt requests.
@@ -492,6 +501,8 @@ def enable_irq(state: int) -> None:
     recent call to the disable_irq() function.
     """
     ...
+
+
 def freq(hz: int | None = None, /) -> int | tuple[int, ...]:
     """
     Return the MCU clock frequencies.
@@ -510,6 +521,8 @@ def freq(hz: int | None = None, /) -> int | tuple[int, ...]:
     on every OpenMV-supported board.
     """
     ...
+
+
 def idle() -> None:
     """
     Gates the clock to the CPU, useful to reduce power consumption at any time
@@ -524,6 +537,8 @@ def idle() -> None:
     time.sleep() and time.sleep_ms() functions.
     """
     ...
+
+
 def lightsleep(time_ms: int | None = None, /) -> None:
     """
     Stop execution and enter a low-power state with full RAM and
@@ -541,24 +556,34 @@ def lightsleep(time_ms: int | None = None, /) -> None:
     wake-up is instantaneous and no state is lost.
     """
     ...
+
+
 def reset() -> None:
     """
     Hard resets the device in a manner similar to pushing the
     external RESET button.
     """
     ...
+
+
 def reset_cause() -> int:
     """Get the reset cause. See constants for the possible return values."""
     ...
+
+
 def sleep() -> None:
     """This function is deprecated, use lightsleep() instead with no arguments."""
     ...
+
+
 def soft_reset() -> None:
     """
     Performs a soft reset of the interpreter, deleting all
     Python objects and resetting the Python heap.
     """
     ...
+
+
 def time_pulse_us(pin: Pin, pulse_level: int, timeout_us: int = 1000000, /) -> int:
     """
     Measure the width of a single pulse on pin and return its
@@ -586,6 +611,8 @@ def time_pulse_us(pin: Pin, pulse_level: int, timeout_us: int = 1000000, /) -> i
       was longer than timeout_us).
     """
     ...
+
+
 def unique_id() -> bytes:
     """
     Return a bytes object containing a unique identifier for this
@@ -598,6 +625,7 @@ def unique_id() -> bytes:
     fixed-length ID, slice or hash the returned value.
     """
     ...
+
 
 class ADC:
     """
@@ -614,6 +642,7 @@ class ADC:
       STM32 only.
     """
     def __init__(self, id: int | str | Pin) -> None: ...
+
     def read_u16(self) -> int:
         """
         Sample the analog channel once and return the result as an
@@ -622,6 +651,7 @@ class ADC:
         port-specific raw resolution is hidden.
         """
         ...
+
     def read_uv(self) -> int:
         """
         Sample the analog channel and return the result in microvolts.
@@ -629,6 +659,7 @@ class ADC:
         hardware supports it. mimxrt port only.
         """
         ...
+
 
 class CAN:
     """
@@ -643,6 +674,7 @@ class CAN:
     implemented.
     """
     def __init__(self, id: int, *args, **kwargs) -> None: ...
+
     def cancel_send(self, index: int) -> bool:
         """
         Request the CAN controller to cancel sending a message onto the bus.
@@ -663,6 +695,7 @@ class CAN:
         message (especially if the CAN controller IRQ is not “hard”).
         """
         ...
+
     def deinit(self) -> None:
         """
         De-initialises a previously active CAN instance. All pending messages
@@ -675,6 +708,7 @@ class CAN:
         See also CAN.restart().
         """
         ...
+
     def get_counters(self, list: list | None = None, /) -> list:
         """
         Returns controller’s error counter values. The result is a list of eight
@@ -699,6 +733,7 @@ class CAN:
         None for that list element.
         """
         ...
+
     def get_timings(self, list: list | None = None, /) -> list:
         """
         Returns a list of elements indicating the current timings configured in the
@@ -732,6 +767,7 @@ class CAN:
         internals and may not be accurate.
         """
         ...
+
     def init(self, bitrate: int, mode: int = CAN.MODE_NORMAL, sample_point: int = 75, sjw: int = 1, tseg1: int | None = None, tseg2: int | None = None) -> None:
         """
         Initialise the CAN bus with the given parameters:
@@ -772,6 +808,7 @@ class CAN:
         keyword parameters for hardware-specific features such as oversampling.
         """
         ...
+
     def irq(self, handler: Callable[[CAN], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Sets an interrupt handler function to be called when one or more of the
@@ -802,6 +839,7 @@ class CAN:
         See machine_can_irq_flags for an example.
         """
         ...
+
     def recv(self, arg: list | None = None) -> list | None:
         """
         Return a CAN message that has been received by the controller, according to
@@ -841,6 +879,7 @@ class CAN:
           time this function returns.
         """
         ...
+
     def restart(self) -> None:
         """
         Causes the controller to exit STATE_BUS_OFF without clearing any other
@@ -856,6 +895,7 @@ class CAN:
         TEC and REC or not.
         """
         ...
+
     def send(self, id: int, data: bytes, flags: int = 0) -> int | None:
         """
         Copy a new CAN message into the controller’s hardware transmit queue to be
@@ -896,6 +936,7 @@ class CAN:
         which can be queued at the same time.
         """
         ...
+
     def set_filters(self, filters: list | tuple | None) -> None:
         """
         Set receive filters in the CAN controller. filters can be:
@@ -935,6 +976,7 @@ class CAN:
         will be raised.
         """
         ...
+
     def state(self) -> int:
         """
         Returns an integer value indicating the current state of the controller.
@@ -945,6 +987,7 @@ class CAN:
         CAN.restart().
         """
         ...
+
 
 class Counter:
     """
@@ -982,6 +1025,7 @@ class Counter:
     the position counter equals match and low otherwise.
     """
     def __init__(self, id: int, src: Pin | None = None, *, direction: int | Pin = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None: ...
+
     @overload
     def cycles(self) -> int:
         ...
@@ -999,6 +1043,7 @@ class Counter:
         the previous count.
         """
         ...
+
     def deinit(self) -> None:
         """
         Stop the counter, disable any pending interrupts and release
@@ -1006,6 +1051,7 @@ class Counter:
         Counter instances automatically.
         """
         ...
+
     def init(self, src: Pin | None = None, *, direction: int | Pin = UP, filter_ns: int = 0, max: int | None = None, min: int = 0, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None:
         """
         Re-initialise the counter with the given parameters and reset
@@ -1013,6 +1059,7 @@ class Counter:
         arguments as the constructor.
         """
         ...
+
     def irq(self, handler: Callable[[Counter], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Register a callback to be invoked when one of the supported
@@ -1039,6 +1086,7 @@ class Counter:
         interrupt.
         """
         ...
+
     @overload
     def value(self) -> int:
         ...
@@ -1055,6 +1103,7 @@ class Counter:
         a measurement window.
         """
         ...
+
 
 class Encoder:
     """
@@ -1095,6 +1144,7 @@ class Encoder:
     the position counter equals match and low otherwise.
     """
     def __init__(self, id: int, phase_a: Pin | None = None, phase_b: Pin | None = None, *, phases: int = 1, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None: ...
+
     @overload
     def cycles(self) -> int:
         ...
@@ -1112,6 +1162,7 @@ class Encoder:
         the previous count.
         """
         ...
+
     def deinit(self) -> None:
         """
         Stop the encoder, disable any pending interrupts and release
@@ -1119,6 +1170,7 @@ class Encoder:
         Encoder instances automatically.
         """
         ...
+
     def init(self, phase_a: Pin | None = None, phase_b: Pin | None = None, *, phases: int = 1, filter_ns: int = 0, max: int | None = None, min: int = 0, index: Pin | None = None, reset: Pin | None = None, match: int | None = None, match_pin: Pin | None = None) -> None:
         """
         Re-initialise the encoder with the given parameters and reset
@@ -1126,6 +1178,7 @@ class Encoder:
         arguments as the constructor.
         """
         ...
+
     def irq(self, handler: Callable[[Encoder], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Register a callback to be invoked when one of the supported
@@ -1152,6 +1205,7 @@ class Encoder:
         interrupt.
         """
         ...
+
     @overload
     def value(self) -> int:
         ...
@@ -1168,6 +1222,7 @@ class Encoder:
         measurement window.
         """
         ...
+
 
 class I2C:
     """
@@ -1187,6 +1242,7 @@ class I2C:
     of scl and sda that cannot be changed.
     """
     def __init__(self, id: int, *, scl: Pin | None = None, sda: Pin | None = None, freq: int = 400000, timeout: int = 50000) -> None: ...
+
     def init(self, scl: Pin, sda: Pin, *, freq: int = 400000) -> None:
         """
         Initialise the I2C bus with the given arguments:
@@ -1200,6 +1256,7 @@ class I2C:
         rate may be determined by printing the I2C object.
         """
         ...
+
     def readfrom(self, addr: int, nbytes: int, stop: bool = True, /) -> bytes:
         """
         Read nbytes from the peripheral specified by addr.
@@ -1207,6 +1264,7 @@ class I2C:
         Returns a bytes object with the data read.
         """
         ...
+
     def readfrom_into(self, addr: int, buf: bytearray, stop: bool = True, /) -> None:
         """
         Read into buf from the peripheral specified by addr.
@@ -1216,6 +1274,7 @@ class I2C:
         The method returns None.
         """
         ...
+
     def readfrom_mem(self, addr: int, memaddr: int, nbytes: int, *, addrsize: int = 8) -> bytes:
         """
         Read nbytes from the peripheral specified by addr starting from the memory
@@ -1224,6 +1283,7 @@ class I2C:
         Returns a bytes object with the data read.
         """
         ...
+
     def readfrom_mem_into(self, addr: int, memaddr: int, buf: bytearray, *, addrsize: int = 8) -> None:
         """
         Read into buf from the peripheral specified by addr starting from the
@@ -1234,6 +1294,7 @@ class I2C:
         The method returns None.
         """
         ...
+
     def readinto(self, buf: bytearray, nack: bool = True, /) -> None:
         """
         Reads bytes from the bus and stores them into buf.  The number of bytes
@@ -1243,6 +1304,7 @@ class I2C:
         case the peripheral assumes more bytes are going to be read in a later call).
         """
         ...
+
     def scan(self) -> list[int]:
         """
         Scan all I2C addresses between 0x08 and 0x77 inclusive and return a list of
@@ -1250,12 +1312,15 @@ class I2C:
         its address (including a write bit) is sent on the bus.
         """
         ...
+
     def start(self) -> None:
         """Generate a START condition on the bus (SDA transitions to low while SCL is high)."""
         ...
+
     def stop(self) -> None:
         """Generate a STOP condition on the bus (SDA transitions to high while SCL is high)."""
         ...
+
     def write(self, buf: bytes) -> int:
         """
         Write the bytes from buf to the bus.  Checks that an ACK is received
@@ -1263,6 +1328,7 @@ class I2C:
         received.  The function returns the number of ACKs that were received.
         """
         ...
+
     def writeto(self, addr: int, buf: bytes, stop: bool = True, /) -> int:
         """
         Write the bytes from buf to the peripheral specified by addr.  If a
@@ -1272,6 +1338,7 @@ class I2C:
         The function returns the number of ACKs that were received.
         """
         ...
+
     def writeto_mem(self, addr: int, memaddr: int, buf: bytes, *, addrsize: int = 8) -> None:
         """
         Write buf to the peripheral specified by addr starting from the
@@ -1281,6 +1348,7 @@ class I2C:
         The method returns None.
         """
         ...
+
     def writevto(self, addr: int, vector: tuple | list, stop: bool = True, /) -> int:
         """
         Write the bytes contained in vector to the peripheral specified by addr.
@@ -1296,6 +1364,7 @@ class I2C:
         returns the number of ACKs that were received.
         """
         ...
+
 
 class I2CTarget:
     """
@@ -1325,12 +1394,14 @@ class I2CTarget:
     The integer value of the most recent memory address that was selected by the I2C
     controller (only valid if mem was specified in the constructor).
     """
+
     def deinit(self) -> None:
         """
         Deinitialise the I2C target.  After this method is called the hardware will no
         longer respond to requests on the I2C bus, and no other methods can be called.
         """
         ...
+
     def irq(self, handler: Callable[[I2CTarget], None] | None = None, trigger: int = IRQ_END_READ | IRQ_END_WRITE, hard: bool = False) -> None:
         """
         Install an IRQ handler that is invoked when one of the
@@ -1358,12 +1429,14 @@ class I2CTarget:
         scheduler defers the callback.
         """
         ...
+
     def readinto(self, buf: bytearray) -> int:
         """
         Read into the given buffer any pending bytes written by the I2C controller.
         Returns the number of bytes read.
         """
         ...
+
     def write(self, buf: bytes) -> int:
         """
         Write out the bytes from the given buffer, to be passed to the I2C controller
@@ -1371,6 +1444,7 @@ class I2CTarget:
         only accept one byte at a time to this method.
         """
         ...
+
 
 class I2S:
     """
@@ -1398,12 +1472,15 @@ class I2S:
     before underflow (e.g. write method) or overflow (e.g. readinto method).
     """
     def __init__(self, id: int, *, sck: Pin, ws: Pin, sd: Pin, mck: Pin | None = None, mode: int, bits: int, format: int, rate: int, ibuf: int) -> None: ...
+
     def deinit(self) -> None:
         """Deinitialize the I2S bus"""
         ...
+
     def init(self, *, sck: Pin, ws: Pin, sd: Pin, mck: Pin | None = None, mode: int, bits: int, format: int, rate: int, ibuf: int) -> None:
         """see Constructor for argument descriptions"""
         ...
+
     def irq(self, handler: Callable[[I2S], None]) -> None:
         """
         Set a callback. handler is called when buf is emptied (write method) or becomes full (readinto method).
@@ -1411,6 +1488,7 @@ class I2S:
         handler is called in the context of the MicroPython scheduler.
         """
         ...
+
     def readinto(self, buf: bytearray) -> int:
         """
         Read audio samples into the buffer specified by buf.  buf must support the buffer protocol, such as bytearray or array.
@@ -1419,6 +1497,7 @@ class I2S:
         Returns number of bytes read
         """
         ...
+
     def shift(self, *, buf: bytearray, bits: int, shift: int) -> None:
         """
         bitwise shift of all samples contained in buf. bits specifies sample size in bits. shift specifies the number of bits to shift each sample.
@@ -1426,6 +1505,7 @@ class I2S:
         Typically used for volume control.  Each bit shift changes sample volume by 6dB.
         """
         ...
+
     def write(self, buf: bytes) -> int:
         """
         Write audio samples contained in buf. buf must support the buffer protocol, such as bytearray or array.
@@ -1434,6 +1514,7 @@ class I2S:
         Returns number of bytes written
         """
         ...
+
 
 class LED:
     """
@@ -1448,6 +1529,7 @@ class LED:
     on/off levels without worrying about polarity.
     """
     def __init__(self, pin_name: str | Pin) -> None: ...
+
     def boardname(self) -> str:
         """
         Return the board name string (the prefix of
@@ -1455,15 +1537,19 @@ class LED:
         pick the right active-level convention for the LED.
         """
         ...
+
     def off(self) -> None:
         """Drive the LED to its off state."""
         ...
+
     def on(self) -> None:
         """Drive the LED to its on state."""
         ...
+
     def toggle(self) -> None:
         """Flip the LED’s current state."""
         ...
+
     def value(self, v: int | None = None, /) -> int | None:
         """
         Get or set the LED state.
@@ -1476,6 +1562,7 @@ class LED:
         1 is always “on” regardless of polarity.
         """
         ...
+
 
 class PWM:
     """
@@ -1494,12 +1581,14 @@ class PWM:
     channel of a given TIM runs at the same frequency).
     """
     def __init__(self, dest: Pin | int, *, freq: int | None = None, duty_u16: int | None = None, duty_ns: int | None = None, invert: bool = False) -> None: ...
+
     def deinit(self) -> None:
         """
         Disable the PWM output and release the timer channel it
         occupied.
         """
         ...
+
     @overload
     def duty_ns(self) -> int:
         ...
@@ -1516,6 +1605,7 @@ class PWM:
         the duty ratio.
         """
         ...
+
     @overload
     def duty_u16(self) -> int:
         ...
@@ -1532,6 +1622,7 @@ class PWM:
         65535 is always high.
         """
         ...
+
     @overload
     def freq(self) -> int:
         ...
@@ -1547,6 +1638,7 @@ class PWM:
         outside the range achievable by the underlying timer.
         """
         ...
+
     def init(self, *, freq: int | None = None, duty_u16: int | None = None, duty_ns: int | None = None) -> None:
         """
         Reconfigure the PWM output. Only arguments supplied are
@@ -1554,6 +1646,7 @@ class PWM:
         constructor for the meaning of each argument.
         """
         ...
+
 
 class Pin:
     """
@@ -1607,6 +1700,7 @@ class Pin:
     Pin.OPEN_DRAIN, the alternate function will be removed from the pin.
     """
     def __init__(self, id: int | str, mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1) -> None: ...
+
     def __call__(self, x: Any = None, /) -> int | None:
         """
         Pin objects are callable.  The call method provides a (fast) shortcut to set
@@ -1614,9 +1708,11 @@ class Pin:
         See Pin.value() for more details.
         """
         ...
+
     def high(self) -> None:
         """Set pin to “1” output level. Alias of on()."""
         ...
+
     def init(self, mode: int = -1, pull: int = -1, *, value: Any = None, drive: int = 0, alt: int = -1) -> None:
         """
         Re-initialise the pin using the given parameters.  Only those arguments that
@@ -1626,6 +1722,7 @@ class Pin:
         Returns None.
         """
         ...
+
     def irq(self, handler: Callable[[Pin], None] | None = None, trigger: int = Pin.IRQ_FALLING | Pin.IRQ_RISING, *, priority: int = 1, wake: int | None = None, hard: bool = False) -> None:
         """
         Configure an interrupt handler to be called when the trigger source of the
@@ -1658,9 +1755,11 @@ class Pin:
         This method returns a callback object.
         """
         ...
+
     def low(self) -> None:
         """Set pin to “0” output level. Alias of off()."""
         ...
+
     @overload
     def mode(self, mode: int | None = None, /) -> int:
         ...
@@ -1671,12 +1770,15 @@ class Pin:
         for details of the mode argument.
         """
         ...
+
     def off(self) -> None:
         """Set pin to “0” output level."""
         ...
+
     def on(self) -> None:
         """Set pin to “1” output level."""
         ...
+
     @overload
     def pull(self, pull: int | None = None, /) -> int:
         ...
@@ -1687,6 +1789,7 @@ class Pin:
         documentation for details of the pull argument.
         """
         ...
+
     def toggle(self) -> None:
         """
         Toggle the output pin – flip “0” to “1” or vice-versa. Not
@@ -1694,6 +1797,7 @@ class Pin:
         on STM32).
         """
         ...
+
     def value(self, x: Any = None, /) -> int | None:
         """
         This method allows to set and get the value of the pin, depending on whether
@@ -1728,6 +1832,7 @@ class Pin:
         """
         ...
 
+
 class RTC:
     """
     Return the RTC singleton. id is accepted for cross-
@@ -1737,6 +1842,7 @@ class RTC:
     The methods below are grouped by which OpenMV ports expose them.
     """
     def __init__(self, id: int = 0) -> None: ...
+
     def alarm(self, id: int, time: int | tuple, *, repeat: bool = False) -> None:
         """
         Arm the RTC alarm. id selects the alarm channel (use
@@ -1748,15 +1854,18 @@ class RTC:
         On alif only the millisecond-count form is supported.
         """
         ...
+
     def alarm_cancel(self, alarm_id: int = 0, /) -> None:
         """Cancel a previously-armed alarm."""
         ...
+
     def alarm_left(self, alarm_id: int = 0, /) -> int:
         """
         Return the number of milliseconds remaining before the alarm
         identified by alarm_id fires.
         """
         ...
+
     def calibration(self, value: int | None = None, /) -> int | None:
         """
         Get or set the RTC’s calibration offset (used to compensate
@@ -1768,12 +1877,14 @@ class RTC:
         reference manual for the exact encoding.
         """
         ...
+
     def cancel(self, alarm_id: int = 0, /) -> None:
         """
         Deprecated alias for alarm_cancel(), kept for backwards
         compatibility. Scheduled for removal in MicroPython 2.0.
         """
         ...
+
     def datetime(self, datetimetuple: tuple | None = None, /) -> tuple | None:
         """
         Get or set the current date and time.
@@ -1789,6 +1900,7 @@ class RTC:
         STM32; on mimxrt and alif it is always 0.
         """
         ...
+
     def info(self) -> int:
         """
         Return packed RTC startup status as a 32-bit integer.
@@ -1801,6 +1913,7 @@ class RTC:
         from the previous power-on).
         """
         ...
+
     def init(self, datetime: tuple) -> None:
         """
         Initialise the RTC.
@@ -1814,6 +1927,7 @@ class RTC:
         untouched.
         """
         ...
+
     def irq(self, *, trigger: int = ALARM0, handler: Callable[[RTC], None] | None = None, wake: int = 0, hard: bool = False) -> None:
         """
         Register a callback for the RTC alarm.
@@ -1825,6 +1939,7 @@ class RTC:
         accepted for cross-port compatibility but has no effect.
         """
         ...
+
     def wakeup(self, timeout_ms: int | None, callback: Callable[[RTC], None] | None = None, /) -> None:
         """
         Schedule a periodic wakeup interrupt.
@@ -1840,6 +1955,7 @@ class RTC:
         """
         ...
 
+
 class SDCard:
     """
     Return the SDCard singleton for the SD slot identified
@@ -1851,6 +1967,7 @@ class SDCard:
     id argument is accepted but only 1 is valid.
     """
     def __init__(self, id: int = 1) -> None: ...
+
     def deinit(self) -> None:
         """
         De-initialise the SD interface, releasing the SDMMC/USDHC
@@ -1861,6 +1978,7 @@ class SDCard:
         application. mimxrt port only.
         """
         ...
+
     def info(self) -> tuple[int, int, int]:
         """
         Return a 3-tuple describing the currently-inserted card:
@@ -1880,6 +1998,7 @@ class SDCard:
         to display free-space figures relative to total capacity.
         """
         ...
+
     def init(self, *args, **kwargs) -> None:
         """
         Re-initialise the SD interface from scratch. Accepts the same
@@ -1889,6 +2008,7 @@ class SDCard:
         time. mimxrt port only.
         """
         ...
+
     def ioctl(self, cmd: int, arg: int) -> int | None:
         """
         Standard vfs.AbstractBlockDev control entry point.
@@ -1912,6 +2032,7 @@ class SDCard:
         automatically once the SDCard is mounted.
         """
         ...
+
     def power(self, state: bool, /) -> None:
         """
         Turn the card slot’s power rail on or off. STM32 firmware
@@ -1921,6 +2042,7 @@ class SDCard:
         MicroPython STM32 reference boards. STM32 port only.
         """
         ...
+
     def present(self) -> bool:
         """
         Return True if a card is currently detected in the slot,
@@ -1937,6 +2059,7 @@ class SDCard:
         init() is called on mimxrt).
         """
         ...
+
     def read(self, block_num: int, /) -> bytes:
         """
         Read a single 512-byte block from the card and return it as a
@@ -1950,6 +2073,7 @@ class SDCard:
         port only.
         """
         ...
+
     @overload
     def readblocks(self, block_num: int, buf: bytearray) -> None:
         ...
@@ -1971,6 +2095,7 @@ class SDCard:
         filesystems.
         """
         ...
+
     def write(self, block_num: int, data: bytes, /) -> None:
         """
         Write a single 512-byte block to the card. data must be
@@ -1982,6 +2107,7 @@ class SDCard:
         contiguous blocks per call. STM32 port only.
         """
         ...
+
     @overload
     def writeblocks(self, block_num: int, buf: bytes | bytearray) -> None:
         ...
@@ -2005,6 +2131,7 @@ class SDCard:
         """
         ...
 
+
 class SPI:
     """
     Construct an SPI object on the given bus, id. Values of id depend
@@ -2017,9 +2144,11 @@ class SPI:
     See init for parameters of initialisation.
     """
     def __init__(self, id: int, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None: ...
+
     def deinit(self) -> None:
         """Turn off the SPI bus."""
         ...
+
     def init(self, baudrate: int = 1000000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None:
         """
         Initialise the SPI bus with the given parameters:
@@ -2041,6 +2170,7 @@ class SPI:
         rate may be determined by printing the SPI object.
         """
         ...
+
     def read(self, nbytes: int, write: int = 0x00) -> bytes:
         """
         Read a number of bytes specified by nbytes while continuously writing
@@ -2048,6 +2178,7 @@ class SPI:
         Returns a bytes object with the data that was read.
         """
         ...
+
     def readinto(self, buf: bytearray, write: int = 0x00) -> None:
         """
         Read into the buffer specified by buf while continuously writing the
@@ -2055,12 +2186,14 @@ class SPI:
         Returns None.
         """
         ...
+
     def write(self, buf: bytes) -> None:
         """
         Write the bytes contained in buf.
         Returns None.
         """
         ...
+
     def write_readinto(self, write_buf: bytes, read_buf: bytearray) -> None:
         """
         Write the bytes from write_buf while reading into read_buf.  The
@@ -2069,6 +2202,7 @@ class SPI:
         Returns None.
         """
         ...
+
 
 class Signal:
     """
@@ -2091,12 +2225,15 @@ class Signal:
     def __init__(self, pin_obj: Pin, *, invert: bool = False) -> None: ...
     @overload
     def __init__(self, *pin_args: Any, invert: bool = False, **pin_kwargs: Any) -> None: ...
+
     def off(self) -> None:
         """Deactivate signal."""
         ...
+
     def on(self) -> None:
         """Activate signal."""
         ...
+
     def value(self, x: Any = None, /) -> int | None:
         """
         This method allows to set and get the value of the signal, depending on whether
@@ -2117,6 +2254,7 @@ class Signal:
         """
         ...
 
+
 class SoftI2C:
     """
     Construct a software I2C bus driven by scl / sda.
@@ -2129,6 +2267,7 @@ class SoftI2C:
     expiry an OSError(ETIMEDOUT) is raised.
     """
     def __init__(self, scl: Pin, sda: Pin, *, freq: int = 400000, timeout: int = 50000) -> None: ...
+
     def init(self, scl: Pin, sda: Pin, *, freq: int = 400000) -> None:
         """
         Re-initialise the software I2C bus with the given pins and
@@ -2136,6 +2275,7 @@ class SoftI2C:
         on the same object.
         """
         ...
+
     def readfrom(self, addr: int, nbytes: int, stop: bool = True, /) -> bytes:
         """
         Read nbytes from the device at 7-bit address addr. If
@@ -2143,6 +2283,7 @@ class SoftI2C:
         the transfer.
         """
         ...
+
     def readfrom_into(self, addr: int, buf: bytearray, stop: bool = True, /) -> None:
         """
         Read len(buf) bytes from the device at addr into
@@ -2150,6 +2291,7 @@ class SoftI2C:
         the end of the transfer.
         """
         ...
+
     def readfrom_mem(self, addr: int, memaddr: int, nbytes: int, *, addrsize: int = 8) -> bytes:
         """
         Read nbytes from the device at addr starting at
@@ -2157,12 +2299,14 @@ class SoftI2C:
         width in bits (typically 8 or 16).
         """
         ...
+
     def readfrom_mem_into(self, addr: int, memaddr: int, buf: bytearray, *, addrsize: int = 8) -> None:
         """
         Read into buf from the device at addr starting at
         register memaddr.
         """
         ...
+
     def readinto(self, buf: bytearray, nack: bool = True, /) -> None:
         """
         Read bytes from the bus into buf. len(buf) bytes are
@@ -2172,24 +2316,28 @@ class SoftI2C:
         stays selected for a subsequent readinto().
         """
         ...
+
     def scan(self) -> list[int]:
         """
         Scan all I2C addresses between 0x08 and 0x77 inclusive and
         return a list of those that responded.
         """
         ...
+
     def start(self) -> None:
         """
         Generate a START condition on the bus (SDA transitions to low
         while SCL is high).
         """
         ...
+
     def stop(self) -> None:
         """
         Generate a STOP condition on the bus (SDA transitions to high
         while SCL is high).
         """
         ...
+
     def write(self, buf: bytes) -> int:
         """
         Write buf to the bus, checking for ACK after every byte.
@@ -2197,6 +2345,7 @@ class SoftI2C:
         ACKs received.
         """
         ...
+
     def writeto(self, addr: int, buf: bytes, stop: bool = True, /) -> int:
         """
         Write buf to the device at addr. Transmission stops on
@@ -2205,12 +2354,14 @@ class SoftI2C:
         Returns the number of ACKs received.
         """
         ...
+
     def writeto_mem(self, addr: int, memaddr: int, buf: bytes, *, addrsize: int = 8) -> None:
         """
         Write buf to the device at addr starting at register
         memaddr.
         """
         ...
+
     def writevto(self, addr: int, vector: tuple | list, stop: bool = True, /) -> int:
         """
         Write the concatenation of the buffers in vector to the
@@ -2219,6 +2370,7 @@ class SoftI2C:
         and return value.
         """
         ...
+
 
 class SoftSPI:
     """
@@ -2229,12 +2381,14 @@ class SoftSPI:
     because the bit-bang loop has more overhead.
     """
     def __init__(self, baudrate: int = 500000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None: ...
+
     def deinit(self) -> None:
         """
         Release the GPIO pins claimed by the bit-bang driver and stop
         driving the bus.
         """
         ...
+
     def init(self, baudrate: int = 500000, *, polarity: int = 0, phase: int = 0, bits: int = 8, firstbit: int = SoftSPI.MSB, sck: Pin | None = None, mosi: Pin | None = None, miso: Pin | None = None) -> None:
         """
         Re-initialise the software SPI bus with the given parameters.
@@ -2243,6 +2397,7 @@ class SoftSPI:
         argument.
         """
         ...
+
     def read(self, nbytes: int, write: int = 0x00) -> bytes:
         """
         Read nbytes bytes while continuously writing the single
@@ -2250,21 +2405,25 @@ class SoftSPI:
         received data.
         """
         ...
+
     def readinto(self, buf: bytearray, write: int = 0x00) -> None:
         """
         Read into buf while continuously writing the single byte
         write. Returns None.
         """
         ...
+
     def write(self, buf: bytes) -> None:
         """Write buf to the bus. Received bytes are discarded."""
         ...
+
     def write_readinto(self, write_buf: bytes, read_buf: bytearray) -> None:
         """
         Simultaneously write write_buf and read into read_buf.
         Both buffers must be the same length; they may alias.
         """
         ...
+
 
 class Timer:
     """
@@ -2273,9 +2432,11 @@ class Timer:
     init() so the timer can be configured in a single call.
     """
     def __init__(self, id: int = -1, /, *, mode: int = PERIODIC, period: int = -1, callback: Callable[[Timer], None] | None = None) -> None: ...
+
     def deinit(self) -> None:
         """Stop the timer and cancel any pending callback."""
         ...
+
     def init(self, *, mode: int = PERIODIC, period: int = -1, callback: Callable[[Timer], None] | None = None) -> None:
         """
         Initialise / re-initialise the timer.
@@ -2288,9 +2449,11 @@ class Timer:
         """
         ...
 
+
 class UART:
     """Construct a UART object of the given id."""
     def __init__(self, id: int, baudrate: int = 9600, bits: int = 8, parity: int | None = None, stop: int = 1, *, tx: Pin | None = None, rx: Pin | None = None, rts: Pin | None = None, cts: Pin | None = None, txbuf: int | None = None, rxbuf: int | None = None, timeout: int | None = None, timeout_char: int | None = None, invert: int = 0, flow: int = 0) -> None: ...
+
     def any(self) -> int:
         """
         Returns an integer counting the number of characters that can be read without
@@ -2305,6 +2468,7 @@ class UART:
             poll.poll(timeout)
         """
         ...
+
     def deinit(self) -> None:
         """
         Turn off the UART bus.
@@ -2313,6 +2477,7 @@ class UART:
         A new instance needs to be created in that case.
         """
         ...
+
     def flush(self) -> None:
         """
         Block until every byte currently in the transmit buffer has
@@ -2322,6 +2487,7 @@ class UART:
         stalls, the call returns well before the timeout.
         """
         ...
+
     def init(self, baudrate: int = 9600, bits: int = 8, parity: int | None = None, stop: int = 1, *, tx: Pin | None = None, rx: Pin | None = None, rts: Pin | None = None, cts: Pin | None = None, txbuf: int | None = None, rxbuf: int | None = None, timeout: int | None = None, timeout_char: int | None = None, invert: int = 0, flow: int = 0) -> None:
         """
         Initialise the UART bus with the given parameters:
@@ -2363,6 +2529,7 @@ class UART:
         again.
         """
         ...
+
     def irq(self, handler: Callable[[UART], None] | None = None, trigger: int = 0, hard: bool = False) -> None:
         """
         Install a callback to fire on UART events.
@@ -2384,6 +2551,7 @@ class UART:
         individual IRQ_* constants for per-port availability.
         """
         ...
+
     def read(self, nbytes: int | None = None, /) -> bytes | None:
         """
         Read characters.  If nbytes is specified then read at most that many bytes,
@@ -2394,6 +2562,7 @@ class UART:
         on timeout.
         """
         ...
+
     def readchar(self) -> int:
         """
         Read a single character from the UART and return it as an
@@ -2402,6 +2571,7 @@ class UART:
         STM32 only.
         """
         ...
+
     def readinto(self, buf: bytearray, nbytes: int | None = None, /) -> int | None:
         """
         Read bytes into the buf.  If nbytes is specified then read at most
@@ -2412,6 +2582,7 @@ class UART:
         timeout.
         """
         ...
+
     def readline(self) -> bytes | None:
         """
         Read a line, ending in a newline character. It may return sooner if a timeout
@@ -2420,6 +2591,7 @@ class UART:
         Return value: the line read or None on timeout.
         """
         ...
+
     def sendbreak(self) -> None:
         """
         Send a break condition on the bus – drive TX low for longer
@@ -2427,6 +2599,7 @@ class UART:
         not exposed on alif.
         """
         ...
+
     def txdone(self) -> bool:
         """
         Return True when no transmission is in flight (the TX
@@ -2435,6 +2608,7 @@ class UART:
         flush().
         """
         ...
+
     def write(self, buf: bytes) -> int | None:
         """
         Write the buffer of bytes to the bus.
@@ -2442,6 +2616,7 @@ class UART:
         Return value: number of bytes written or None on timeout.
         """
         ...
+
     def writechar(self, char: int) -> None:
         """
         Write the single character char (an integer in the range
@@ -2450,6 +2625,7 @@ class UART:
         """
         ...
 
+
 class WDT:
     """
     Create a WDT object and start it. timeout is given in
@@ -2457,6 +2633,7 @@ class WDT:
     timeout_ms() to change the window at runtime.
     """
     def __init__(self, id: int = 0, timeout: int = 5000) -> None: ...
+
     def feed(self) -> None:
         """
         Feed the WDT to prevent it from resetting the system. The application
@@ -2464,6 +2641,7 @@ class WDT:
         only fed after verifying that everything is functioning correctly.
         """
         ...
+
     def timeout_ms(self, timeout: int) -> None:
         """
         Change the watchdog timeout to timeout milliseconds and
@@ -2472,4 +2650,3 @@ class WDT:
         new timeout takes effect immediately. STM32 only.
         """
         ...
-

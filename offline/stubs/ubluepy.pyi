@@ -221,6 +221,7 @@ AD_TYPE_MANUFACTURER_SPECIFIC_DATA
 0xFF
 """
 
+
 class Characteristic:
     """
     Define a GATT characteristic. Add it to a Service with
@@ -244,9 +245,11 @@ class Characteristic:
     PROP_NOTIFY / PROP_INDICATE characteristics work.
     """
     def __init__(self, uuid: UUID, *, props: int = PROP_READ | PROP_WRITE, attrs: int = 0) -> None: ...
+
     def properties(self) -> int:
         """Return the props bitmask set at construction time."""
         ...
+
     def read(self) -> bytearray:
         """
         Central role only. Read the characteristic’s value from
@@ -254,9 +257,11 @@ class Characteristic:
         value. On a peripheral this is a no-op and returns None.
         """
         ...
+
     def uuid(self) -> UUID:
         """Return the characteristic’s UUID instance."""
         ...
+
     def write(self, data, *, with_response: bool = False) -> None:
         """
         Write to the characteristic.
@@ -275,6 +280,7 @@ class Characteristic:
         """
         ...
 
+
 class DefaultDelegate:
     """
     Base class for objects passed to Peripheral.withDelegate().
@@ -282,18 +288,21 @@ class DefaultDelegate:
     handleNotification() to react to GATT events.
     """
     def __init__(self) -> None: ...
+
     def handleConnection(self) -> None:
         """
         Called on GAP connect / disconnect events. The default
         implementation is empty.
         """
         ...
+
     def handleNotification(self) -> None:
         """
         Called on incoming GATT notifications. The default
         implementation is empty.
         """
         ...
+
 
 class Descriptor:
     """
@@ -304,6 +313,7 @@ class Descriptor:
     """
     def __init__(self, uuid: UUID) -> None: ...
 
+
 class Peripheral:
     """
     The local Bluetooth LE device. The same class is used for both
@@ -312,12 +322,14 @@ class Peripheral:
     connect() selects central).
     """
     def __init__(self) -> None: ...
+
     def addService(self, service: Service) -> None:
         """
         Register a Service (and all its previously added
         characteristics) with the local GATT server.
         """
         ...
+
     def advertise(self, *, device_name: str | None = None, services: list | None = None, data: bytes | None = None, connectable: bool = True) -> None:
         """
         Start advertising in peripheral role.
@@ -348,9 +360,11 @@ class Peripheral:
         attached and the device cannot be connected to.
         """
         ...
+
     def advertise_stop(self) -> None:
         """Stop any in-progress advertisement."""
         ...
+
     def connect(self, addr, *, addr_type: int = constants.ADDR_TYPE_PUBLIC) -> None:
         """
         Central role only. Connect to the peer with the given
@@ -371,18 +385,21 @@ class Peripheral:
         constants.ADDR_TYPE_RANDOM_STATIC.
         """
         ...
+
     def disconnect(self) -> None:
         """
         Drop the active connection (currently a no-op stub in this
         build).
         """
         ...
+
     def getServices(self) -> list:
         """
         Return the list of services currently registered with this
         Peripheral.
         """
         ...
+
     def setConnectionHandler(self, func) -> None:
         """
         Register a callback invoked on GAP and GATTS events. The
@@ -396,18 +413,21 @@ class Peripheral:
         as a bytearray (or None for connect / disconnect).
         """
         ...
+
     def setNotificationHandler(self, func) -> None:
         """
         Register a callback for notification events received in
         central role.
         """
         ...
+
     def withDelegate(self, delegate: DefaultDelegate) -> None:
         """
         Attach a DefaultDelegate instance to receive
         decoded GATT events.
         """
         ...
+
 
 class ScanEntry:
     """
@@ -416,12 +436,14 @@ class ScanEntry:
     — there is no public constructor.
     """
     def __init__(self) -> None: ...
+
     def addr(self) -> str:
         """
         Return the peer address as a 17-character
         "xx:xx:xx:xx:xx:xx" string.
         """
         ...
+
     def addr_type(self) -> int:
         """
         Return the peer address type
@@ -429,6 +451,7 @@ class ScanEntry:
         constants.ADDR_TYPE_RANDOM_STATIC).
         """
         ...
+
     def getScanData(self) -> list:
         """
         Decode the advertisement payload into a list of
@@ -440,9 +463,11 @@ class ScanEntry:
         bytearray.
         """
         ...
+
     def rssi(self) -> int:
         """Return the signal-strength indicator in dBm."""
         ...
+
 
 class Scanner:
     """
@@ -451,6 +476,7 @@ class Scanner:
     SoftDevice with central support (s132 / s140).
     """
     def __init__(self) -> None: ...
+
     def scan(self, timeout: int) -> list:
         """
         Run a passive scan for timeout milliseconds and return
@@ -458,6 +484,7 @@ class Scanner:
         advertisement report received during the window.
         """
         ...
+
 
 class Service:
     """
@@ -476,12 +503,14 @@ class Service:
     ValueError.
     """
     def __init__(self, uuid: UUID, type: int = Service.PRIMARY) -> None: ...
+
     def addCharacteristic(self, characteristic: Characteristic) -> None:
         """
         Register a Characteristic with the service. The
         characteristic’s GATT handle is assigned during this call.
         """
         ...
+
     def getCharacteristic(self, uuid: UUID) -> Characteristic | None:
         """
         Look up a previously added Characteristic by UUID.
@@ -489,12 +518,15 @@ class Service:
         match is found.
         """
         ...
+
     def getCharacteristics(self) -> list:
         """Return the list of every characteristic added to the service."""
         ...
+
     def uuid(self) -> UUID:
         """Return the service’s UUID instance."""
         ...
+
 
 class UUID:
     """
@@ -519,6 +551,7 @@ class UUID:
     length").
     """
     def __init__(self, value) -> None: ...
+
     def binVal(self) -> int:
         """
         Return the low 16 bits of the UUID as an int. For
@@ -527,4 +560,3 @@ class UUID:
         accessible only via the SoftDevice’s vendor-specific index).
         """
         ...
-

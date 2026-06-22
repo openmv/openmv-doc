@@ -18,6 +18,7 @@ This MicroPython port is intentionally tiny:
 
 from typing import Any
 
+
 def decode(token: str, key: bytes | str, algorithms: list = ['HS256']) -> dict:
     """
     Verify token’s signature and (if present) its exp claim, and
@@ -56,6 +57,8 @@ def decode(token: str, key: bytes | str, algorithms: list = ['HS256']) -> dict:
       ntptime.settime().
     """
     ...
+
+
 def encode(payload: dict, key: bytes | str, algorithm: str = 'HS256') -> str:
     """
     Encode payload into a signed JWT and return the resulting compact
@@ -80,6 +83,7 @@ def encode(payload: dict, key: bytes | str, algorithm: str = 'HS256') -> str:
     """
     ...
 
+
 class ExpiredSignatureError(Exception):
     """
     The token’s exp claim is in the past. Subclass of
@@ -87,6 +91,8 @@ class ExpiredSignatureError(Exception):
     set (via ntptime.settime()) for this check to be meaningful.
     """
     ...
+
+
 class InvalidAlgorithmError(Exception):
     """
     The token’s algorithm is not in the caller-accepted list, or the
@@ -94,6 +100,8 @@ class InvalidAlgorithmError(Exception):
     exceptions.PyJWTError.
     """
     ...
+
+
 class InvalidSignatureError(Exception):
     """
     The token’s signature does not match the HMAC computed from the
@@ -101,6 +109,8 @@ class InvalidSignatureError(Exception):
     exceptions.PyJWTError.
     """
     ...
+
+
 class InvalidTokenError(Exception):
     """
     The token is structurally invalid – wrong number of segments, a
@@ -108,10 +118,11 @@ class InvalidTokenError(Exception):
     Subclass of exceptions.PyJWTError.
     """
     ...
+
+
 class PyJWTError(Exception):
     """
     Base class for every JWT failure. Catch this if you do not need to
     distinguish among the cases below.
     """
     ...
-

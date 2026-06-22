@@ -181,6 +181,7 @@ Back-compat alias for SEC_WPA_WPA2. New code should
 use SEC_WPA_WPA2. NINA-only.
 """
 
+
 def country(code: str | None = None) -> str | None:
     """
     Get or set the two-letter ISO 3166-1 Alpha-2 country code to be used for
@@ -193,6 +194,8 @@ def country(code: str | None = None) -> str | None:
     The default code "XX" represents the “worldwide” region.
     """
     ...
+
+
 def hostname(name: str | None = None) -> str | None:
     """
     Get or set the hostname that will identify this device on the network. It will
@@ -222,6 +225,8 @@ def hostname(name: str | None = None) -> str | None:
     The default hostname is typically the name of the board.
     """
     ...
+
+
 @overload
 def ipconfig(param: str) -> Any:
     ...
@@ -241,6 +246,7 @@ def ipconfig(**kwargs: Any) -> None:
     """
     ...
 
+
 class AbstractNIC:
     """
     Instantiate a network interface object. Parameters are network interface
@@ -248,6 +254,7 @@ class AbstractNIC:
     parameter should be id.
     """
     def __init__(self, id: int | None = None, *args: Any, **kwargs: Any) -> None: ...
+
     def active(self, is_active: bool | None = None, /) -> bool:
         """
         Bring the network interface up or down.
@@ -269,6 +276,7 @@ class AbstractNIC:
         undefined.
         """
         ...
+
     @overload
     def config(self, param: str) -> Any:
         ...
@@ -290,6 +298,7 @@ class AbstractNIC:
             print(ap.config('channel'))
         """
         ...
+
     def connect(self, service_id: str | None = None, key: str | None = None, *, bssid: bytes | None = None, **kwargs: Any) -> None:
         """
         Connect the interface to a network. This method is optional, and
@@ -307,9 +316,11 @@ class AbstractNIC:
         - WiFi: bssid keyword to connect to a specific BSSID (MAC address)
         """
         ...
+
     def disconnect(self) -> None:
         """Disconnect from network."""
         ...
+
     def ifconfig(self, config: tuple[str, str, str, str] | None = None) -> tuple[str, str, str, str] | None:
         """
         This function is deprecated, use ipconfig() instead.
@@ -322,6 +333,7 @@ class AbstractNIC:
             nic.ifconfig(('192.168.0.4', '255.255.255.0', '192.168.0.1', '8.8.8.8'))
         """
         ...
+
     @overload
     def ipconfig(self, param: str) -> Any:
         ...
@@ -362,9 +374,11 @@ class AbstractNIC:
           address, by setting this parameter to the address, like fe80::1234:5678.
         """
         ...
+
     def isconnected(self) -> bool:
         """Returns True if connected to network, otherwise returns False."""
         ...
+
     def scan(self, **kwargs: Any) -> list[tuple]:
         """
         Scan for the available network services/connections. Returns a
@@ -382,6 +396,7 @@ class AbstractNIC:
         should match those in connect().
         """
         ...
+
     def status(self, param: str | None = None) -> Any:
         """
         Query dynamic status information of the interface.  When called with no
@@ -398,6 +413,7 @@ class AbstractNIC:
           (MAC, RSSI).
         """
         ...
+
 
 class LAN:
     """
@@ -420,6 +436,7 @@ class LAN:
     (IN). Ignored on STM32 boards.
     """
     def __init__(self, id: int = 0, *, phy_type: int | None = None, phy_addr: int | None = None, ref_clk_mode: int | None = None) -> None: ...
+
     def active(self, is_active: bool | None = None) -> bool:
         """
         Bring the Ethernet MAC up or down.
@@ -438,6 +455,7 @@ class LAN:
         active(False) stops the MAC and tears down the netif.
         """
         ...
+
     @overload
     def config(self, param: str) -> Any:
         ...
@@ -461,6 +479,7 @@ class LAN:
           IEEE 802.3az (Energy Efficient Ethernet) low-power mode.
         """
         ...
+
     def ifconfig(self, config: tuple[str, str, str, str] | None = None) -> tuple[str, str, str, str] | None:
         """
         Get or set IPv4 interface parameters as a 4-tuple of
@@ -472,6 +491,7 @@ class LAN:
         network.ipconfig(dns="8.8.8.8")
         """
         ...
+
     @overload
     def ipconfig(self, param: str) -> Any:
         ...
@@ -484,12 +504,14 @@ class LAN:
         gw4, autoconf6, addr6, …).
         """
         ...
+
     def isconnected(self) -> bool:
         """
         Return True when the PHY has negotiated link-up and the
         interface is in the fully-up state (link status value 3).
         """
         ...
+
     def status(self) -> int:
         """
         Return the raw PHY link status as an integer:
@@ -501,6 +523,7 @@ class LAN:
           the interface up.
         """
         ...
+
 
 class WINC:
     """
@@ -529,6 +552,7 @@ class WINC:
     re-open it.
     """
     def __init__(self, mode: int = WINC.MODE_STA) -> None: ...
+
     def active(self, is_active: bool | None = None) -> bool:
         """
         Bring the WiFi shield up or down.
@@ -548,12 +572,14 @@ class WINC:
         BSP-only mode) and releases the SPI pins.
         """
         ...
+
     def config(self, ssid: str, key: str | None = None, *, security: int = WINC.WPA_PSK, channel: int = 1) -> None:
         """
         Alias of connect(). Provided for compatibility with code
         that calls config on other network interfaces.
         """
         ...
+
     def connect(self, ssid: str, key: str | None = None, *, security: int = WINC.WPA_PSK, channel: int = 1) -> None:
         """
         Associate with the WiFi network ssid using password key,
@@ -567,6 +593,7 @@ class WINC:
         This method blocks until the association completes or fails.
         """
         ...
+
     def connected_sta(self) -> list[str]:
         """
         In AP mode, return a list containing the IP address of the
@@ -574,6 +601,7 @@ class WINC:
         connected).
         """
         ...
+
     def disconnect(self) -> None:
         """
         In STA mode, disassociate from the currently associated access
@@ -581,6 +609,7 @@ class WINC:
         re-associate. No-op when not currently associated.
         """
         ...
+
     def fw_dump(self, path: str) -> None:
         """
         Read the WINC1500’s internal flash and write the resulting
@@ -592,6 +621,7 @@ class WINC:
         mode=MODE_FIRMWARE.
         """
         ...
+
     def fw_update(self, path: str) -> None:
         """
         Erase the WINC1500’s internal flash and program it with the
@@ -607,6 +637,7 @@ class WINC:
         mode=MODE_FIRMWARE.
         """
         ...
+
     def fw_version(self) -> tuple[int, int, int, int, int, int, int]:
         """
         Return a 7-tuple describing the WINC1500 firmware and driver
@@ -621,6 +652,7 @@ class WINC:
         - [6] Chip hardware revision.
         """
         ...
+
     def ifconfig(self, config: tuple[str, str, str, str] | None = None) -> tuple[str, str, str, str]:
         """
         Get or set IPv4 interface parameters. The 4-tuple contains
@@ -642,6 +674,7 @@ class WINC:
         AbstractNIC.ipconfig() API; use ifconfig() here.
         """
         ...
+
     def isconnected(self) -> bool:
         """
         In STA mode return True when associated with an access
@@ -650,6 +683,7 @@ class WINC:
         authenticating / associating / DHCP phase.
         """
         ...
+
     def netinfo(self) -> tuple[int, int, str, str, str]:
         """
         Return a 5-tuple describing the current association:
@@ -661,6 +695,7 @@ class WINC:
         - [4] IPv4 address as a dotted-quad string.
         """
         ...
+
     def rssi(self) -> int:
         """
         Return the RSSI in dBm of the currently associated access
@@ -670,6 +705,7 @@ class WINC:
         True.
         """
         ...
+
     def scan(self) -> list[tuple[str, str, int, int, int, int]]:
         """
         Scan for nearby access points. Returns a list of 6-tuples:
@@ -684,6 +720,7 @@ class WINC:
         Can be called without first associating with a network.
         """
         ...
+
     def start_ap(self, ssid: str, key: str | None = None, *, security: int = WINC.OPEN, channel: int = 1) -> None:
         """
         Alias of connect() used after constructing the object
@@ -692,6 +729,7 @@ class WINC:
         used key is required.
         """
         ...
+
     def wait_for_sta(self, timeout: int | None) -> list[str]:
         """
         In AP mode, block until a client connects and return a list
@@ -699,6 +737,7 @@ class WINC:
         wait in milliseconds; pass None to wait indefinitely.
         """
         ...
+
 
 class WLAN:
     """
@@ -716,6 +755,7 @@ class WLAN:
     does not preclude the other.
     """
     def __init__(self, interface_id: int = WLAN.IF_STA) -> None: ...
+
     def active(self, is_active: bool | None = None) -> bool:
         """
         Bring the WiFi radio up or down.
@@ -735,6 +775,7 @@ class WLAN:
         releases the netif.
         """
         ...
+
     @overload
     def config(self, param: str) -> Any:
         ...
@@ -799,6 +840,7 @@ class WLAN:
         the AP interface.
         """
         ...
+
     def connect(self, ssid: str, key: str | None = None, *, security: int = -1, bssid: bytes | None = None, channel: int = -1) -> None:
         """
         Associate the STA interface with the given access point.
@@ -820,6 +862,7 @@ class WLAN:
         is “let the driver choose”.
         """
         ...
+
     def deinit(self) -> None:
         """
         Power-cycle the WiFi MCU and release every resource the driver
@@ -831,6 +874,7 @@ class WLAN:
         state). CYW43 only.
         """
         ...
+
     def disconnect(self) -> None:
         """
         In STA mode, disassociate from the currently associated access
@@ -839,6 +883,7 @@ class WLAN:
         radio down completely. No-op when not currently associated.
         """
         ...
+
     def ifconfig(self, config: tuple[str, str, str, str] | None = None) -> tuple[str, str, str, str] | None:
         """
         Get or set IPv4 interface parameters as a 4-tuple of
@@ -850,6 +895,7 @@ class WLAN:
         network.ipconfig(dns="8.8.8.8")
         """
         ...
+
     def ioctl(self, cmd: int, buf: bytearray) -> None:
         """
         Issue a driver-specific control command. cmd is the
@@ -860,6 +906,7 @@ class WLAN:
         mostly by low-level test scripts and chip-bring-up code.
         """
         ...
+
     @overload
     def ipconfig(self, param: str) -> Any:
         ...
@@ -874,6 +921,7 @@ class WLAN:
         gw4 for get / set.
         """
         ...
+
     def isconnected(self) -> bool:
         """
         In STA mode return True when associated with an access
@@ -886,6 +934,7 @@ class WLAN:
         joined.
         """
         ...
+
     def scan(self, *, passive: bool = False, ssid: bytes | None = None, bssid: bytes | None = None) -> list[tuple[bytes, bytes, int, int, int, int]]:
         """
         Scan for nearby access points and return a list of 6-tuples:
@@ -909,6 +958,7 @@ class WLAN:
         Scanning is only meaningful on a STA interface.
         """
         ...
+
     def send_ethernet(self, buf: bytes) -> None:
         """
         Inject the raw Ethernet frame buf directly into the
@@ -918,6 +968,7 @@ class WLAN:
         EtherType (no FCS – the hardware appends it). CYW43 only.
         """
         ...
+
     @overload
     def status(self) -> int:
         ...
@@ -937,4 +988,3 @@ class WLAN:
           returns [ip_string, ...].
         """
         ...
-

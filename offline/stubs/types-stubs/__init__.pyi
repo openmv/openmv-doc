@@ -76,6 +76,7 @@ Placeholder for the type of traceback objects. Always None in this
 implementation.
 """
 
+
 def new_class(name: str, bases: tuple = (), kwds: dict | None = None, exec_body: Callable[[dict], None] | None = None) -> type:
     """
     Create a class object dynamically in a way that mirrors the
@@ -92,6 +93,8 @@ def new_class(name: str, bases: tuple = (), kwds: dict | None = None, exec_body:
     Returns the newly constructed class.
     """
     ...
+
+
 def prepare_class(name: str, bases: tuple = (), kwds: dict | None = None) -> tuple[type, dict, dict]:
     """
     Compute the appropriate metaclass and prepare the namespace for a new
@@ -110,4 +113,3 @@ def prepare_class(name: str, bases: tuple = (), kwds: dict | None = None) -> tup
     removed.
     """
     ...
-

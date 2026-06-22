@@ -31,9 +31,12 @@ Example:
 
 from typing import Any, Callable
 
+
 def compile(regex_str: str, flags: int = 0) -> 'regex':
     """Compile regular expression, return regex <regex> object."""
     ...
+
+
 def search(regex_str: str, string: str) -> 'match | None':
     """
     Compile regex_str and search it in a string. Unlike match, this will search
@@ -41,6 +44,8 @@ def search(regex_str: str, string: str) -> 'match | None':
     0 if regex is anchored).
     """
     ...
+
+
 def sub(regex_str: str, replace: str | Callable, string: str, count: int = 0, flags: int = 0, /) -> str:
     r"""
     Compile regex_str and search for it in string, replacing all matches
@@ -57,6 +62,7 @@ def sub(regex_str: str, replace: str | Callable, string: str, count: int = 0, fl
     """
     ...
 
+
 class match:
     """
     Match regex_str against string, anchored at the start of the string,
@@ -69,6 +75,7 @@ class match:
     to the replacement function used by sub().
     """
     def __init__(self, regex_str: str, string: str) -> None: ...
+
     def group(self, index: int) -> str:
         """
         Return matching (sub)string. index is 0 for entire match,
@@ -76,8 +83,10 @@ class match:
         """
         ...
 
+
 class regex:
     def __init__(self) -> None: ...
+
     def match(self, string: str, pos: int = 0, endpos: int | None = None) -> 'match | None':
         """
         Apply this compiled regex to string, anchored at the start of the
@@ -98,6 +107,7 @@ class regex:
         None (the default) the whole string is searched.
         """
         ...
+
     def search(self, string: str, pos: int = 0, endpos: int | None = None) -> 'match | None':
         """
         Scan through string looking for the first location where this compiled
@@ -118,6 +128,7 @@ class regex:
         None (the default) the whole string is searched.
         """
         ...
+
     def split(self, string: str, max_split: int = -1, /) -> list[str]:
         """
         Split a string using regex. If max_split is given, it specifies
@@ -125,6 +136,7 @@ class regex:
         may be up to max_split+1 elements if it’s specified).
         """
         ...
+
     def sub(self, replace: str | Callable, string: str, count: int = 0, flags: int = 0, /) -> str:
         r"""
         Search for this compiled regex in string, replacing all matches with
@@ -142,4 +154,3 @@ class regex:
         this many substitutions are made. The flags argument is ignored.
         """
         ...
-

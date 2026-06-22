@@ -32,12 +32,15 @@ WARNING).
 WARNING: int
 """Numeric value 30. Default level for a freshly-configured root logger."""
 
+
 def addLevelName(level: int, name: str) -> None:
     """
     Associate the textual name with the numeric level so that
     Formatter can render it via %(levelname)s.
     """
     ...
+
+
 def basicConfig(filename: str | None = None, filemode: str = 'a', format: str | None = None, datefmt: str | None = None, level: int = WARNING, stream=None, encoding: str = 'UTF-8', force: bool = False) -> None:
     """
     Configure the root logger with a single handler.
@@ -55,15 +58,23 @@ def basicConfig(filename: str | None = None, filemode: str = 'a', format: str | 
     replaced.
     """
     ...
+
+
 def critical(msg: str, *args) -> None:
     """Equivalent to getLogger().critical(msg, *args)."""
     ...
+
+
 def debug(msg: str, *args) -> None:
     """Equivalent to getLogger().debug(msg, *args)."""
     ...
+
+
 def error(msg: str, *args) -> None:
     """Equivalent to getLogger().error(msg, *args)."""
     ...
+
+
 def exception(msg: str, *args, exc_info: bool | BaseException = True) -> None:
     """
     Equivalent to getLogger().exception(msg, *args, exc_info=exc_info).
@@ -73,6 +84,8 @@ def exception(msg: str, *args, exc_info: bool | BaseException = True) -> None:
     sys.exc_info() is consulted when available.
     """
     ...
+
+
 def getLogger(name: str | None = None) -> Logger:
     """
     Return the Logger registered under name, creating it on first use.
@@ -81,9 +94,13 @@ def getLogger(name: str | None = None) -> Logger:
     to attach a default StreamHandler writing to sys.stderr.
     """
     ...
+
+
 def info(msg: str, *args) -> None:
     """Equivalent to getLogger().info(msg, *args)."""
     ...
+
+
 def log(level: int, msg: str, *args) -> None:
     """
     Log a message at level on the root logger. args are interpolated
@@ -91,6 +108,8 @@ def log(level: int, msg: str, *args) -> None:
     is used as the mapping.
     """
     ...
+
+
 def shutdown() -> None:
     """
     Close every handler attached to every known logger and forget the
@@ -98,9 +117,12 @@ def shutdown() -> None:
     is available.
     """
     ...
+
+
 def warning(msg: str, *args) -> None:
     """Equivalent to getLogger().warning(msg, *args)."""
     ...
+
 
 class FileHandler:
     """
@@ -109,6 +131,7 @@ class FileHandler:
     is closed on close().
     """
     def __init__(self, filename: str, mode: str = 'a', encoding: str = 'UTF-8') -> None: ...
+
 
 class Formatter:
     """
@@ -122,21 +145,25 @@ class Formatter:
     %(asctime)s. Defaults to "%Y-%m-%d %H:%M:%S".
     """
     def __init__(self, fmt: str | None = None, datefmt: str | None = None) -> None: ...
+
     def format(self, record: LogRecord) -> str:
         """
         Render record. If the template uses asctime,
         formatTime() is invoked first to populate record.asctime.
         """
         ...
+
     def formatTime(self, datefmt: str, record: LogRecord) -> str | None:
         """
         Format record.ct using time.strftime and datefmt. Returns
         None on platforms where time.strftime is not available.
         """
         ...
+
     def usesTime(self) -> bool:
         """Return True if the format template references asctime."""
         ...
+
 
 class Handler:
     """Base class for all handlers. Sub-classes implement emit()."""
@@ -145,21 +172,26 @@ class Handler:
     """The active Formatter, or None."""
     level: int
     """The handler’s threshold level."""
+
     def close(self) -> None:
         """
         Release resources held by the handler. Called by shutdown and by
         FileHandler when it is closed.
         """
         ...
+
     def format(self, record: LogRecord) -> str:
         """Render record using the configured formatter."""
         ...
+
     def setFormatter(self, formatter: Formatter) -> None:
         """Attach formatter to this handler."""
         ...
+
     def setLevel(self, level: int) -> None:
         """Set the handler’s threshold level."""
         ...
+
 
 class LogRecord:
     """
@@ -182,12 +214,14 @@ class LogRecord:
     """Millisecond component of ct."""
     name: str
     """The originating logger’s name."""
+
     def set(self, name: str, level: int, message: str) -> None:
         """
         Initialise the record with the given values and capture the current
         time.
         """
         ...
+
 
 class Logger:
     """
@@ -207,18 +241,23 @@ class Logger:
     """
     name: str
     """The logger’s dotted name."""
+
     def addHandler(self, handler: Handler) -> None:
         """Attach handler to this logger."""
         ...
+
     def critical(self, msg: str, *args) -> None:
         """Log msg at CRITICAL."""
         ...
+
     def debug(self, msg: str, *args) -> None:
         """Log msg at DEBUG."""
         ...
+
     def error(self, msg: str, *args) -> None:
         """Log msg at ERROR."""
         ...
+
     def exception(self, msg: str, *args, exc_info: bool | BaseException = True) -> None:
         """
         Log msg at ERROR and, when exc_info is truthy, append the
@@ -227,24 +266,29 @@ class Logger:
         exception is consulted via sys.exc_info().
         """
         ...
+
     def getEffectiveLevel(self) -> int:
         """
         Return the first non-zero of: this logger’s level, the root logger’s
         level, or WARNING.
         """
         ...
+
     def hasHandlers(self) -> bool:
         """Return True if any handlers are attached to this logger."""
         ...
+
     def info(self, msg: str, *args) -> None:
         """Log msg at INFO."""
         ...
+
     def isEnabledFor(self, level: int) -> bool:
         """
         Return True if a message of level would be processed by this
         logger.
         """
         ...
+
     def log(self, level: int, msg: str, *args) -> None:
         """
         Log msg at level. args are interpolated into msg with the
@@ -252,12 +296,15 @@ class Logger:
         as a mapping.
         """
         ...
+
     def setLevel(self, level: int) -> None:
         """Set the logger’s threshold level."""
         ...
+
     def warning(self, msg: str, *args) -> None:
         """Log msg at WARNING."""
         ...
+
 
 class StreamHandler:
     r"""
@@ -269,13 +316,14 @@ class StreamHandler:
     """The destination stream object."""
     terminator: str
     r"""String appended after every formatted record. Defaults to "\n"."""
+
     def close(self) -> None:
         """Flush the underlying stream when it exposes a flush method."""
         ...
+
     def emit(self, record: LogRecord) -> None:
         """
         Write record to stream if its level meets the handler
         threshold.
         """
         ...
-

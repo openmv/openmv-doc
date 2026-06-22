@@ -6,6 +6,7 @@ mounting/unmounting them in the Virtual Filesystem.
 
 from typing import Any, overload
 
+
 @overload
 def mount(fsobj: Any, mount_point: str, *, readonly: bool = False) -> None:
     ...
@@ -27,6 +28,8 @@ def mount() -> list[tuple[Any, str]]:
     Will raise OSError(EPERM) if mount_point is already mounted.
     """
     ...
+
+
 def rom_ioctl(op: int, *args: Any) -> Any:
     """
     Low-level interface for accessing the read-only memory (ROM)
@@ -64,6 +67,8 @@ def rom_ioctl(op: int, *args: Any) -> Any:
     applications do not need to call them directly.
     """
     ...
+
+
 def umount(mount_point: str | Any) -> None:
     """
     Unmount a filesystem. mount_point can be a string naming the mount location,
@@ -74,6 +79,7 @@ def umount(mount_point: str | Any) -> None:
     """
     ...
 
+
 class AbstractBlockDev:
     """
     Documentation template for the block-device protocol. MicroPython does
@@ -83,6 +89,7 @@ class AbstractBlockDev:
     flash bus, chip-select pin, sector size, etc.).
     """
     def __init__(self) -> None: ...
+
     def ioctl(self, op: int, arg: int) -> int | None:
         """
         Control the block device and query its parameters.  The operation to
@@ -115,6 +122,7 @@ class AbstractBlockDev:
         for failure, with the value returned being an OSError errno code.
         """
         ...
+
     @overload
     def readblocks(self, block_num: int, buf: bytearray) -> None:
         ...
@@ -135,6 +143,7 @@ class AbstractBlockDev:
         Use this form when the filesystem needs sub-block read access.
         """
         ...
+
     @overload
     def writeblocks(self, block_num: int, buf: bytes) -> None:
         ...
@@ -161,6 +170,7 @@ class AbstractBlockDev:
         """
         ...
 
+
 class VfsFat:
     """
     Create a filesystem object that uses the FAT filesystem format.  Storage of
@@ -168,9 +178,11 @@ class VfsFat:
     Objects created by this constructor can be mounted using mount().
     """
     def __init__(self, block_dev: AbstractBlockDev) -> None: ...
+
     def mkfs(self, block_dev: AbstractBlockDev) -> None:
         """Build a FAT filesystem on block_dev."""
         ...
+
 
 class VfsPosix:
     """
@@ -183,6 +195,7 @@ class VfsPosix:
     is not present in OpenMV Cam firmware.
     """
     def __init__(self, root: str | None = None) -> None: ...
+
 
 class VfsRom:
     """
@@ -197,4 +210,3 @@ class VfsRom:
     ROMFS images with mpremote.
     """
     def __init__(self, buffer: bytes | bytearray | memoryview) -> None: ...
-

@@ -7,6 +7,7 @@ external displays (OLEDs, LCDs, e-paper, etc.).
 
 from typing import Any
 
+
 def FrameBuffer1(buffer: Any, width: int, height: int, stride: int | None = None, /) -> FrameBuffer:
     """
     Deprecated shortcut for FrameBuffer(buffer, width, height,
@@ -14,6 +15,7 @@ def FrameBuffer1(buffer: Any, width: int, height: int, stride: int | None = None
     use the full FrameBuffer constructor instead.
     """
     ...
+
 
 class FrameBuffer:
     """
@@ -37,6 +39,7 @@ class FrameBuffer:
     combination.
     """
     def __init__(self, buffer: Any, width: int, height: int, format: int, stride: int | None = None, /) -> None: ...
+
     def blit(self, fbuf: FrameBuffer | tuple, x: int, y: int, key: int = -1, palette: FrameBuffer | None = None) -> None:
         """
         Draw another frame buffer fbuf on top of this one with its
@@ -63,6 +66,7 @@ class FrameBuffer:
         with the colour at palette[i, 0] before drawing.
         """
         ...
+
     def ellipse(self, x: int, y: int, xr: int, yr: int, c: int, f: bool = False, m: int = 0) -> None:
         """
         Draw an ellipse centred on (x, y) with x-radius xr and
@@ -105,15 +109,18 @@ class FrameBuffer:
         The default m=0 draws all four quadrants.
         """
         ...
+
     def fill(self, c: int) -> None:
         """Fill the entire frame buffer with colour c."""
         ...
+
     def fill_rect(self, x: int, y: int, w: int, h: int, c: int) -> None:
         """
         Fill a w x h rectangle at (x, y) with colour c.
         Equivalent to rect() with f=True.
         """
         ...
+
     def hline(self, x: int, y: int, w: int, c: int) -> None:
         """
         Draw a 1-pixel-thick line in colour c. hline() and
@@ -121,6 +128,7 @@ class FrameBuffer:
         line() draws a line between two arbitrary points.
         """
         ...
+
     def line(self, x1: int, y1: int, x2: int, y2: int, c: int) -> None:
         """
         Draw a 1-pixel-thick line in colour c. hline() and
@@ -128,12 +136,14 @@ class FrameBuffer:
         line() draws a line between two arbitrary points.
         """
         ...
+
     def pixel(self, x: int, y: int, c: int | None = None) -> int | None:
         """
         With no c argument, return the colour value of the pixel at
         (x, y). With c given, set that pixel to colour c.
         """
         ...
+
     def poly(self, x: int, y: int, coords: Any, c: int, f: bool = False) -> None:
         """
         Draw an arbitrary closed polygon (convex or concave) at offset
@@ -143,6 +153,7 @@ class FrameBuffer:
         polygon instead of just outlining it.
         """
         ...
+
     def rect(self, x: int, y: int, w: int, h: int, c: int, f: bool = False) -> None:
         """
         Draw a rectangle at (x, y) of size w x h in colour c.
@@ -150,6 +161,7 @@ class FrameBuffer:
         outline is drawn.
         """
         ...
+
     def scroll(self, xstep: int, ystep: int) -> None:
         """
         Shift the buffer contents by (xstep, ystep). Pixels shifted in
@@ -157,6 +169,7 @@ class FrameBuffer:
         previous contents may remain at the trailing edge.
         """
         ...
+
     def text(self, s: str, x: int, y: int, c: int = 1) -> None:
         """
         Draw the string s with its top-left corner at (x, y) in
@@ -164,6 +177,7 @@ class FrameBuffer:
         be changed. c defaults to 1.
         """
         ...
+
     def vline(self, x: int, y: int, h: int, c: int) -> None:
         """
         Draw a 1-pixel-thick line in colour c. hline() and
@@ -171,4 +185,3 @@ class FrameBuffer:
         line() draws a line between two arbitrary points.
         """
         ...
-

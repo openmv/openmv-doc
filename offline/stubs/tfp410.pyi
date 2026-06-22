@@ -6,6 +6,7 @@ drive an external DVI/HDMI display via a 24-bit parallel LCD bus.
 
 from typing import Any, Callable
 
+
 class TFP410:
     """
     Initializes the TFP410 DVI/HDMI controller chip.
@@ -13,6 +14,7 @@ class TFP410:
     i2c_addr is the I2C address of the TFP410.
     """
     def __init__(self, *, i2c_addr: int = 0x3F) -> None: ...
+
     def hotplug_callback(self, callback: Callable[[bool], None] | None) -> None:
         """
         Registers a callback function that will be called whenever the connection
@@ -24,7 +26,7 @@ class TFP410:
         While a callback is registered, do not call TFP410.isconnected().
         """
         ...
+
     def isconnected(self) -> bool:
         """Returns True if an external display is connected, False otherwise."""
         ...
-

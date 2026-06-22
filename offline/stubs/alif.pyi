@@ -20,12 +20,14 @@ Present and set to True only when the firmware is built with USB
 Mass Storage Class support enabled. The attribute is absent otherwise.
 """
 
+
 def info() -> None:
     """
     Dumps device information collected from the Alif Secure Enclave services
     (SE services) to the serial terminal.
     """
     ...
+
 
 class Flash:
     """
@@ -55,6 +57,7 @@ class Flash:
         magic = bytes(view[:4])      # read the first 4 bytes directly from XIP
     """
     def __init__(self, *, start: int = -1, len: int = -1) -> None: ...
+
     def ioctl(self, cmd: int, arg: int) -> int:
         """
         Performs a block-device control operation. cmd is one of the
@@ -72,6 +75,7 @@ class Flash:
         Other cmd values return None.
         """
         ...
+
     @overload
     def readblocks(self, block_num: int, buf: bytearray) -> int:
         ...
@@ -97,6 +101,7 @@ class Flash:
         errors.
         """
         ...
+
     @overload
     def writeblocks(self, block_num: int, buf: bytes) -> int:
         ...
@@ -122,4 +127,3 @@ class Flash:
         readblocks() for the rationale).
         """
         ...
-

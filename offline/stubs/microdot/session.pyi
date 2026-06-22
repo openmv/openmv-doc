@@ -8,6 +8,7 @@ the payload without the server detecting it.
 
 from typing import Any
 
+
 def with_session(f) -> Any:
     """
     Decorator that passes the session dictionary to the route handler as
@@ -30,6 +31,7 @@ def with_session(f) -> Any:
     when the session was modified.
     """
     ...
+
 
 class Session:
     """
@@ -66,12 +68,14 @@ class Session:
     Settable post-construction. None until set; reading the
     session without it raises ValueError.
     """
+
     def decode(self, session: str, secret_key=None) -> dict:
         """
         Verify and decode a JWT-string session value. Returns {} on
         any verification failure.
         """
         ...
+
     def encode(self, payload: dict, secret_key=None) -> str:
         """
         Encode payload as a JWT with the session’s secret. Used
@@ -79,6 +83,7 @@ class Session:
         tokens.
         """
         ...
+
     def get(self, request) -> SessionDict:
         """
         Return the session dictionary for request. The dictionary is
@@ -87,12 +92,14 @@ class Session:
         Tampered / unsignable cookies return an empty dict.
         """
         ...
+
     def initialize(self, app: Microdot, secret_key=None, cookie_options=None) -> Any:
         """
         Attach to app if construction was deferred. secret_key /
         cookie_options override constructor values if given.
         """
         ...
+
 
 class SessionDict:
     """
@@ -101,12 +108,14 @@ class SessionDict:
     the changes back into the response.
     """
     def __init__(self, request, session_dict) -> None: ...
+
     def delete(self) -> Any:
         """
         Remove the session by emitting a cookie-deletion header on the
         response.
         """
         ...
+
     def save(self) -> Any:
         """
         Write the (possibly mutated) session back into the response as a
@@ -114,4 +123,3 @@ class SessionDict:
         lost when the request ends.
         """
         ...
-

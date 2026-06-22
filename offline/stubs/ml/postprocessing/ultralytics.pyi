@@ -4,6 +4,7 @@
 from typing import Any
 import ml
 
+
 class YoloV5:
     """
     Create a YOLO V5 postprocessor.
@@ -15,6 +16,7 @@ class YoloV5:
     nms_sigma Sigma value used by Soft-NMS for score decay.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """
         Post-process the outputs list of arrays produced by model for the given
@@ -24,6 +26,7 @@ class YoloV5:
         model output.
         """
         ...
+
 
 class YoloV8:
     """
@@ -36,6 +39,7 @@ class YoloV8:
     nms_sigma Sigma value used by Soft-NMS for score decay.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """
         Post-process the outputs list of arrays produced by model for the given
@@ -45,4 +49,3 @@ class YoloV8:
         model output.
         """
         ...
-

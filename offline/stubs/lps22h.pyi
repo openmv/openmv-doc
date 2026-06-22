@@ -23,6 +23,7 @@ Example:
 from typing import Any
 import machine
 
+
 class LPS22H:
     """
     Construct an LPS22H instance and configure the device with BDU enabled
@@ -45,6 +46,7 @@ class LPS22H:
     readings return the most recent continuous sample.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x5C, oneshot: bool = False) -> None: ...
+
     def altitude(self) -> float:
         """
         Return an estimated altitude in metres derived from the current
@@ -52,6 +54,7 @@ class LPS22H:
         formula referenced to a sea-level pressure of 1013.25 hPa.
         """
         ...
+
     def pressure(self) -> float:
         """
         Return the absolute atmospheric pressure in hectopascals (hPa). In
@@ -59,12 +62,14 @@ class LPS22H:
         pressure data-ready flag is set.
         """
         ...
+
     def set_oneshot_mode(self, oneshot: bool) -> None:
         """
         Switch the device between continuous and one-shot acquisition modes
         at runtime. Updates the ODR field of CTRL_REG1 accordingly.
         """
         ...
+
     def temperature(self) -> float:
         """
         Return the die temperature in degrees Celsius. In one-shot mode this
@@ -72,4 +77,3 @@ class LPS22H:
         data-ready flag is set.
         """
         ...
-

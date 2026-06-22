@@ -53,51 +53,67 @@ RF_MODE_PABOOST: int
 RF_MODE_RFO: int
 """Use the modem’s RFO (low-power) RF output."""
 
+
 class LoraError(Exception):
     """Base exception raised for any error returned by the modem or the driver."""
     ...
+
+
 class LoraErrorBusy(Exception):
     """
     Raised on a +ERR_BUSY response when the modem is busy processing a
     previous command.
     """
     ...
+
+
 class LoraErrorNoNetwork(Exception):
     """
     Raised on a +ERR_NO_NETWORK response when the modem has not joined a
     network.
     """
     ...
+
+
 class LoraErrorOverflow(Exception):
     """
     Raised on a +ERR_PARAM_OVERFLOW response when a parameter exceeds the
     maximum allowed length.
     """
     ...
+
+
 class LoraErrorParam(Exception):
     """
     Raised on a +ERR_PARAM response when an AT command was issued with an
     invalid parameter.
     """
     ...
+
+
 class LoraErrorRX(Exception):
     """
     Raised on a +ERR_RX response when an error occurs while receiving a
     downlink.
     """
     ...
+
+
 class LoraErrorTimeout(Exception):
     """
     Raised when the modem does not respond within the configured timeout
     (the receive buffer is empty).
     """
     ...
+
+
 class LoraErrorUnknown(Exception):
     """
     Raised on a +ERR_UNKNOWN response or when the modem reports an
     undocumented error.
     """
     ...
+
 
 class Lora:
     """
@@ -127,12 +143,14 @@ class Lora:
     debug – When True, all UART traffic is printed via print().
     """
     def __init__(self, uart: machine.UART | None = None, rst_pin: machine.Pin | None = None, boot_pin: machine.Pin | None = None, band: int = BAND_EU868, poll_ms: int = 300000, debug: bool = False) -> None: ...
+
     def available(self) -> int:
         """
         Return the number of bytes currently available in the modem’s UART
         receive buffer.
         """
         ...
+
     def change_mode(self, mode: int) -> None:
         """
         Switch the activation mode.
@@ -142,6 +160,7 @@ class Lora:
         mode – One of MODE_ABP, MODE_OTAA.
         """
         ...
+
     def configure_band(self, band: int) -> bool:
         """
         Configure the regional band and, on Arduino firmware with
@@ -153,6 +172,7 @@ class Lora:
         band – One of the BAND_* constants.
         """
         ...
+
     def configure_class(self, _class: str) -> None:
         """
         Configure the LoRaWAN device class.
@@ -162,15 +182,18 @@ class Lora:
         _class – One of CLASS_A, CLASS_B, CLASS_C.
         """
         ...
+
     def debug_print(self, data: str) -> None:
         """
         Print data if debug was enabled at construction time, otherwise
         do nothing.
         """
         ...
+
     def factory_default(self) -> None:
         """Restore factory defaults via AT+FACNEW."""
         ...
+
     def format(self, hexMode: bool) -> None:
         """
         Select the data format used over the UART for payload bytes.
@@ -181,51 +204,65 @@ class Lora:
         binary.
         """
         ...
+
     def get_adr(self) -> int:
         """Return the current ADR setting (1 if enabled, 0 otherwise)."""
         ...
+
     def get_appskey(self) -> str:
         """Return the current Application Session Key as a hex string."""
         ...
+
     def get_datarate(self) -> int:
         """Return the current LoRaWAN data rate index."""
         ...
+
     def get_devaddr(self) -> str:
         """Return the current 32-bit DevAddr as a hex string."""
         ...
+
     def get_device_eui(self) -> str:
         """Return the modem’s 64-bit Device EUI as a hex string."""
         ...
+
     def get_ex2freq(self) -> int:
         """Return the frequency, in Hz, used for the RX2 receive window."""
         ...
+
     def get_fcd(self) -> int:
         """Return the current downlink frame counter."""
         ...
+
     def get_fcu(self) -> int:
         """Return the current uplink frame counter."""
         ...
+
     def get_fw_version(self) -> str:
         """
         Query the modem device string (AT+DEV?) and firmware version
         (AT+VER?) and return them as a single space-separated string.
         """
         ...
+
     def get_join_status(self) -> bool:
         """Return True if the modem is currently joined to a network."""
         ...
+
     def get_max_size(self) -> int:
         """
         Return the maximum LoRaWAN payload size, in bytes, for the current data
         rate. On Arduino firmware this is fixed at 64.
         """
         ...
+
     def get_nwk_skey(self) -> str:
         """Return the current Network Session Key as a hex string."""
         ...
+
     def get_rx2dr(self) -> int:
         """Return the data rate index used for the RX2 receive window."""
         ...
+
     def handle_error(self, command: str, data: str) -> None:
         """
         Inspect a modem response and raise the matching LoraError
@@ -240,6 +277,7 @@ class Lora:
         data – The response string returned by the modem.
         """
         ...
+
     def init_modem(self) -> None:
         """
         Lazy-initialize self.uart, self.rst_pin and self.boot_pin to
@@ -247,12 +285,14 @@ class Lora:
         from the constructor; not normally invoked by user code.
         """
         ...
+
     def is_arduino_firmware(self) -> bool:
         """
         Return True if the modem is running the Arduino MKRWAN ARD-078
         firmware (detected from the cached fw_version string).
         """
         ...
+
     def join(self, timeout_ms: int) -> bool:
         """
         Issue an AT+JOIN and wait for the join-accept event. Returns True
@@ -265,6 +305,7 @@ class Lora:
         subsequent join event, in milliseconds.
         """
         ...
+
     def join_ABP(self, nwkId: int, devAddr: str, nwkSKey: str, appSKey: str, timeout: int = 60000) -> bool:
         """
         Switch the modem to ABP mode, program the supplied addresses and keys,
@@ -283,6 +324,7 @@ class Lora:
         timeout – Join timeout, in milliseconds.
         """
         ...
+
     def join_OTAA(self, appEui: str, appKey: str, devEui: str = None, timeout: int = 60000) -> bool:
         """
         Switch the modem to OTAA mode, program the supplied keys and EUIs, then
@@ -300,6 +342,7 @@ class Lora:
         timeout – Join timeout, in milliseconds.
         """
         ...
+
     def poll(self) -> None:
         """
         If more than poll_ms milliseconds have passed since the last call,
@@ -307,6 +350,7 @@ class Lora:
         called frequently from the application’s main loop.
         """
         ...
+
     def receive(self, delimiter: str | list | None = None, max_bytes: int | None = None, timeout: int = 1000) -> str:
         r"""
         Low-level UART read. Reads characters from the modem until a delimiter
@@ -326,6 +370,7 @@ class Lora:
         timeout – Overall read timeout, in milliseconds.
         """
         ...
+
     def receive_data(self, timeout: int = 1000) -> dict | None:
         """
         Wait for a downlink. Returns None if no +RECV event was received
@@ -337,6 +382,7 @@ class Lora:
         timeout – Maximum time to wait, in milliseconds.
         """
         ...
+
     def restart(self) -> None:
         """
         Re-synchronize the baud rate, reboot the modem, re-read the firmware
@@ -344,6 +390,7 @@ class Lora:
         LoraError on failure.
         """
         ...
+
     def send_command(self, cmd: str, *args, delimiter: str = '\\r', data: bytes = None, timeout: int = 1000, raise_error: bool = True) -> str:
         r"""
         Build an AT command from cmd and args, optionally append a raw
@@ -371,6 +418,7 @@ class Lora:
         returned to the caller.
         """
         ...
+
     def send_data(self, buff: bytes, confirmed: bool = True) -> bool:
         """
         Transmit a LoRaWAN uplink. Raises LoraError if buff is larger
@@ -390,6 +438,7 @@ class Lora:
         uplinks, the network acknowledged it), False otherwise.
         """
         ...
+
     def set_adr(self, adr: bool) -> None:
         """
         Enable or disable Adaptive Data Rate.
@@ -399,6 +448,7 @@ class Lora:
         adr – True to enable ADR, False to disable it.
         """
         ...
+
     def set_autobaud(self, timeout: int = 10000) -> bool:
         """
         Send empty AT commands until the modem responds with +OK or until
@@ -410,6 +460,7 @@ class Lora:
         timeout – Maximum time to spend trying, in milliseconds.
         """
         ...
+
     def set_baudrate(self, baudrate: int) -> None:
         """
         Change the modem’s UART baud rate (AT+UART).
@@ -419,6 +470,7 @@ class Lora:
         baudrate – New baud rate, in bits per second.
         """
         ...
+
     def set_datarate(self, dr: int) -> None:
         """
         Set the LoRaWAN data rate index (AT+DR).
@@ -428,6 +480,7 @@ class Lora:
         dr – Region-specific data rate index.
         """
         ...
+
     def set_fcd(self, fcd: int) -> None:
         """
         Set the downlink frame counter (AT+FCD).
@@ -437,6 +490,7 @@ class Lora:
         fcd – New downlink frame counter value.
         """
         ...
+
     def set_fcu(self, fcu: int) -> None:
         """
         Set the uplink frame counter (AT+FCU).
@@ -446,6 +500,7 @@ class Lora:
         fcu – New uplink frame counter value.
         """
         ...
+
     def set_port(self, port: int) -> None:
         """
         Configure the LoRaWAN application port (1..223) used by subsequent
@@ -456,6 +511,7 @@ class Lora:
         port – LoRaWAN FPort.
         """
         ...
+
     def set_public_network(self, enable: bool) -> None:
         """
         Enable or disable the public-network sync word.
@@ -466,6 +522,7 @@ class Lora:
         the private one.
         """
         ...
+
     def set_rf_power(self, mode: int, power: int) -> None:
         """
         Configure the modem RF output stage (AT+RFPOWER).
@@ -477,6 +534,7 @@ class Lora:
         power – Output power index, in firmware-specific units.
         """
         ...
+
     def set_rx2dr(self, dr: int) -> None:
         """
         Set the data rate index used for the RX2 receive window.
@@ -486,6 +544,7 @@ class Lora:
         dr – Region-specific data rate index.
         """
         ...
+
     def set_rx2freq(self, freq: int) -> None:
         """
         Set the frequency used for the RX2 receive window.
@@ -495,7 +554,7 @@ class Lora:
         freq – Frequency in Hz.
         """
         ...
+
     def sleep(self, enable: bool) -> None:
         """Put the modem into low-power sleep (True) or wake it up (False)."""
         ...
-

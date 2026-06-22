@@ -8,6 +8,7 @@ a stream such as a file or socket.
 
 from typing import Any
 
+
 def dump(obj: Any, stream: Any, separators: tuple[str, str] | None = None) -> None:
     """
     Serialise obj to a JSON string, writing it to the given stream.
@@ -17,6 +18,8 @@ def dump(obj: Any, stream: Any, separators: tuple[str, str] | None = None) -> No
     representation, you should specify (',', ':') to eliminate whitespace.
     """
     ...
+
+
 def dumps(obj: Any, separators: tuple[str, str] | None = None) -> str:
     """
     Return obj represented as a JSON string.
@@ -24,6 +27,8 @@ def dumps(obj: Any, separators: tuple[str, str] | None = None) -> str:
     The arguments have the same meaning as in dump().
     """
     ...
+
+
 def load(stream: Any) -> Any:
     """
     Parse the given stream, interpreting it as a JSON string and
@@ -34,10 +39,11 @@ def load(stream: Any) -> Any:
     A ValueError is raised if the data in stream is not correctly formed.
     """
     ...
+
+
 def loads(str: str | bytes) -> Any:
     """
     Parse the JSON str and return an object.  Raises ValueError if the
     string is not correctly formed.
     """
     ...
-

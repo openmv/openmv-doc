@@ -35,6 +35,7 @@ Skip ROM command (0xCC). Addresses all devices on the bus
 simultaneously, skipping ROM matching.
 """
 
+
 class OneWireError(Exception):
     """
     Raised when a 1-Wire operation fails. Currently raised by
@@ -42,6 +43,7 @@ class OneWireError(Exception):
     to the reset pulse.
     """
     ...
+
 
 class OneWire:
     """
@@ -51,6 +53,7 @@ class OneWire:
     ROM command constants:
     """
     def __init__(self, pin: machine.Pin) -> None: ...
+
     def crc8(self, data: bytes | bytearray) -> int:
         """
         Compute the Maxim/Dallas 8-bit CRC over data. The result is 0
@@ -58,21 +61,25 @@ class OneWire:
         used to validate received scratchpad contents.
         """
         ...
+
     def readbit(self) -> int:
         """Read a single bit from the bus and return it as 0 or 1."""
         ...
+
     def readbyte(self) -> int:
         """
         Read a single byte from the bus and return it as an integer
         (0–255).
         """
         ...
+
     def readinto(self, buf: bytearray) -> None:
         """
         Read len(buf) bytes from the bus into the given pre-allocated
         buffer.
         """
         ...
+
     def reset(self, required: bool = False) -> bool:
         """
         Issue a reset pulse on the bus. Returns True if at least one slave
@@ -80,6 +87,7 @@ class OneWire:
         required is True and no device responds, raises OneWireError.
         """
         ...
+
     def scan(self) -> list[bytearray]:
         """
         Search the bus and return a list of 8-byte ROM codes (one
@@ -87,19 +95,22 @@ class OneWire:
         devices are present.
         """
         ...
+
     def select_rom(self, rom: bytes | bytearray) -> None:
         """
         Issue a reset followed by a MATCH ROM command to address the device
         whose 64-bit ROM code is in rom (an 8-byte buffer).
         """
         ...
+
     def write(self, buf: bytes | bytearray) -> None:
         """Write the bytes in buf to the bus."""
         ...
+
     def writebit(self, value: int) -> None:
         """Write a single bit (0 or 1) to the bus."""
         ...
+
     def writebyte(self, value: int) -> None:
         """Write a single byte (0–255) to the bus."""
         ...
-

@@ -17,9 +17,11 @@ Cam provides three algorithms:
 
 from typing import Any
 
+
 class md5:
     """Create an MD5 hasher object and optionally feed data into it."""
     def __init__(self, data: bytes = b'') -> None: ...
+
     def digest(self) -> bytes:
         """
         Return the hash of all data passed through it so far, as a bytes
@@ -27,13 +29,16 @@ class md5:
         hash.
         """
         ...
+
     def update(self, data: bytes) -> None:
         """Feed more binary data into the hash."""
         ...
+
 
 class sha1:
     """Create an SHA1 hasher object and optionally feed data into it."""
     def __init__(self, data: bytes = b'') -> None: ...
+
     def digest(self) -> bytes:
         """
         Return the hash of all data passed through it so far, as a bytes
@@ -41,13 +46,16 @@ class sha1:
         hash.
         """
         ...
+
     def update(self, data: bytes) -> None:
         """Feed more binary data into the hash."""
         ...
+
 
 class sha256:
     """Create an SHA256 hasher object and optionally feed data into it."""
     def __init__(self, data: bytes = b'') -> None: ...
+
     def digest(self) -> bytes:
         """
         Return the hash of all data passed through it so far, as a bytes
@@ -55,7 +63,7 @@ class sha256:
         hash.
         """
         ...
+
     def update(self, data: bytes) -> None:
         """Feed more binary data into the hash."""
         ...
-

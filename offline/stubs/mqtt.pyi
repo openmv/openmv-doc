@@ -23,6 +23,7 @@ Example:
 
 from typing import Any
 
+
 class MQTTException(Exception):
     """
     Raised when the broker rejects the CONNECT request or when a SUBSCRIBE
@@ -30,6 +31,7 @@ class MQTTException(Exception):
     return code.
     """
     ...
+
 
 class MQTTClient:
     """
@@ -55,6 +57,7 @@ class MQTTClient:
       with set_callback().
     """
     def __init__(self, client_id: bytes | str, server: str, port: int, ssl_params: dict | None = None, user: bytes | str | None = None, password: bytes | str | None = None, keepalive: int = 0, callback: callable | None = None) -> None: ...
+
     def check_msg(self) -> int | None:
         """
         Non-blocking variant of wait_msg(). Polls the socket for at
@@ -63,6 +66,7 @@ class MQTTClient:
         returns None.
         """
         ...
+
     def connect(self, clean_session: bool = True, timeout: float = 5.0) -> int:
         """
         Open a TCP (and optionally TLS) connection to the broker and send
@@ -80,9 +84,11 @@ class MQTTClient:
         CONNACK return code.
         """
         ...
+
     def disconnect(self) -> None:
         """Send a DISCONNECT packet and close the underlying socket."""
         ...
+
     def ping(self) -> None:
         """
         Send a PINGREQ packet to the broker. Should be called periodically
@@ -90,6 +96,7 @@ class MQTTClient:
         connection.
         """
         ...
+
     def publish(self, topic: bytes | str, msg: bytes | str, retain: bool = False, qos: int = 0) -> None:
         """
         Publish msg to topic.
@@ -109,6 +116,7 @@ class MQTTClient:
         bytes.
         """
         ...
+
     def set_callback(self, f: callable) -> None:
         """
         Set the callback invoked by wait_msg() and check_msg()
@@ -116,6 +124,7 @@ class MQTTClient:
         f(topic, msg) with both arguments as bytes.
         """
         ...
+
     def set_last_will(self, topic: bytes | str, msg: bytes | str, retain: bool = False, qos: int = 0) -> None:
         """
         Configure the MQTT Last Will and Testament. The broker publishes
@@ -131,6 +140,7 @@ class MQTTClient:
         - qos – last-will QoS level. Must be 0, 1 or 2.
         """
         ...
+
     def subscribe(self, topic: bytes | str, qos: int = 0) -> None:
         """
         Subscribe to topic at the given qos level. A callback must
@@ -142,6 +152,7 @@ class MQTTClient:
         (return code 0x80).
         """
         ...
+
     def wait_msg(self) -> int | None:
         """
         Block waiting for a single incoming MQTT packet and process it.
@@ -151,4 +162,3 @@ class MQTTClient:
         or if a PINGRESP was processed.
         """
         ...
-

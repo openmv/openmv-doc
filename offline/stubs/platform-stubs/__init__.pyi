@@ -6,6 +6,7 @@ makes this information available via function APIs.
 
 from typing import Any
 
+
 def libc_ver() -> tuple[str, str]:
     """
     Returns a tuple of strings (lib, version), where lib is the name of the
@@ -13,6 +14,8 @@ def libc_ver() -> tuple[str, str]:
     of this libc.
     """
     ...
+
+
 def platform() -> str:
     """
     Returns a string identifying the underlying platform. This string is composed
@@ -29,6 +32,8 @@ def platform() -> str:
     "MicroPython-1.25.0-armv7emsp".
     """
     ...
+
+
 def processor() -> str:
     """
     Returns a string with a detailed name of the processor, if one is available.
@@ -39,7 +44,8 @@ def processor() -> str:
     currently only reported on RISC-V targets.
     """
     ...
+
+
 def python_compiler() -> str:
     """Returns a string identifying the compiler used for compiling MicroPython."""
     ...
-

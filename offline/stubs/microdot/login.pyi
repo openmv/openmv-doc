@@ -14,6 +14,7 @@ user-id is stored.
 
 from typing import Any
 
+
 class Login:
     """
     login_url
@@ -23,6 +24,7 @@ class Login:
     route. Default '/login'.
     """
     def __init__(self, login_url: str = '/login') -> None: ...
+
     def __call__(self, f) -> Any:
         """
         Decorating a route with the Login instance gates it
@@ -39,6 +41,7 @@ class Login:
         can send the user back where they came from.
         """
         ...
+
     def fresh(self, f) -> Any:
         """
         Like __call__(), but rejects sessions restored from a
@@ -48,6 +51,7 @@ class Login:
         cookie cannot reach them.
         """
         ...
+
     def get_current_user(self, request) -> Any:
         """
         Return the currently logged-in user object (or None).
@@ -55,6 +59,7 @@ class Login:
         one request hit the loader only once.
         """
         ...
+
     def login_user(self, request, user, remember: bool | int = False, redirect_url: str = '/') -> Any:
         """
         Mark user as logged in for request. Stores the user id in
@@ -80,6 +85,7 @@ class Login:
         route handler.
         """
         ...
+
     def logout_user(self, request) -> Any:
         """
         Clear the user id from the session and remove any
@@ -91,6 +97,7 @@ class Login:
                 return redirect('/')
         """
         ...
+
     def user_loader(self, f) -> Any:
         """
         Decorator that registers the user-resolver callback. f takes
@@ -105,4 +112,3 @@ class Login:
                 return users.get(user_id)
         """
         ...
-

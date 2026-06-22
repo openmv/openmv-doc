@@ -12,6 +12,7 @@ Cams.
 
 from typing import Any, Iterator
 
+
 class Interpolation:
     """
     Represents an interpolated expression within a template string. All
@@ -33,6 +34,7 @@ class Interpolation:
     value: Any
     """The evaluated value of the interpolated expression."""
 
+
 class Template:
     """
     Represents a template string. Template objects are typically created by
@@ -52,6 +54,7 @@ class Template:
     A read-only property that returns a tuple containing the value
     attribute from each interpolation in the template.
     """
+
     def __add__(self, other: Template) -> Template:
         """
         Concatenate two templates. Returns a new Template combining
@@ -72,6 +75,7 @@ class Template:
             result = t1 + "World"
         """
         ...
+
     def __iter__(self) -> Iterator:
         """
         Iterate over the template contents, yielding string parts and
@@ -79,4 +83,3 @@ class Template:
         are omitted.
         """
         ...
-

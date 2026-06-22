@@ -38,6 +38,7 @@ RX = GPIO 9):
 from typing import Any
 import machine
 
+
 class ESPFlash:
     """
     Construct an ESPFlash object that drives the ESP32 ROM bootloader.
@@ -52,6 +53,7 @@ class ESPFlash:
     will be computed automatically while writing.
     """
     def __init__(self, reset: 'machine.Pin', gpio0: 'machine.Pin', uart: 'machine.UART', log_enabled: bool = False) -> None: ...
+
     def bootloader(self, retry: int = 6) -> bool:
         """
         Drive RESET and GPIO0 to enter the ESP32 ROM download mode and
@@ -62,12 +64,14 @@ class ESPFlash:
         Returns True on success, otherwise raises an Exception.
         """
         ...
+
     def flash_attach(self) -> None:
         """
         Attach to the SPI flash. Must be called once after bootloader() and
         before any flash read/write operation.
         """
         ...
+
     def flash_config(self, flash_size: int = 2 * 1024 * 1024) -> None:
         """
         Configure the SPI flash parameters.
@@ -79,6 +83,7 @@ class ESPFlash:
         respectively.
         """
         ...
+
     def flash_read_size(self) -> int:
         """
         Read the SPI flash JEDEC ID and return the flash size in bytes.
@@ -87,6 +92,7 @@ class ESPFlash:
         expected 0x12-0x19 range.
         """
         ...
+
     def flash_verify_file(self, path: str, digest: bytes | None = None, offset: int = 0) -> None:
         """
         Verify the contents of flash against a firmware file.
@@ -103,6 +109,7 @@ class ESPFlash:
         contents do not match the reference digest.
         """
         ...
+
     def flash_write_file(self, path: str, blksize: int = 0x1000) -> None:
         """
         Write a firmware image to flash starting at offset 0.
@@ -116,6 +123,7 @@ class ESPFlash:
         write so that flash_verify_file() can be called without arguments.
         """
         ...
+
     def reboot(self) -> None:
         """
         Send a FLASH_END command that instructs the ROM bootloader to
@@ -123,6 +131,7 @@ class ESPFlash:
         read.
         """
         ...
+
     def set_baudrate(self, baudrate: int, timeout: int = 350) -> None:
         """
         Change the bootloader UART baudrate.
@@ -136,4 +145,3 @@ class ESPFlash:
         init() method.
         """
         ...
-

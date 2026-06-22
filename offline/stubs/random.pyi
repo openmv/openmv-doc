@@ -9,21 +9,30 @@ seed.
 
 from typing import Any
 
+
 def choice(sequence: Any) -> Any:
     """
     Chooses and returns one item at random from sequence (tuple, list or
     any object that supports the subscript operation).
     """
     ...
+
+
 def getrandbits(n: int) -> int:
     """Return an integer with n random bits (0 <= n <= 32)."""
     ...
+
+
 def randint(a: int, b: int) -> int:
     """Return a random integer in the range [a, b]."""
     ...
+
+
 def random() -> float:
     """Return a random floating point number in the range [0.0, 1.0)."""
     ...
+
+
 def randrange(start: int, stop: int | None = None, step: int = 1) -> int:
     """
     The first form returns a random integer from the range [0, stop).
@@ -33,6 +42,8 @@ def randrange(start: int, stop: int | None = None, step: int = 1) -> int:
     return odd numbers between 1 and 9 inclusive.
     """
     ...
+
+
 def seed(n: int | None = None, /) -> None:
     """
     Initialise the random number generator module with the seed n,
@@ -41,10 +52,11 @@ def seed(n: int | None = None, /) -> None:
     source os.urandom() uses.
     """
     ...
+
+
 def uniform(a: float, b: float) -> float:
     """
     Return a random floating point number N such that a <= N <= b for a <= b,
     and b <= N <= a for b < a.
     """
     ...
-

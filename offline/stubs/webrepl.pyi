@@ -42,6 +42,7 @@ BASE in webrepl_cfg.py or by re-assigning the module attribute
 directly.
 """
 
+
 def accept_conn(listen_sock) -> bool:
     """
     Accept a pending TCP connection on listen_sock and complete the
@@ -54,6 +55,8 @@ def accept_conn(listen_sock) -> bool:
     accept_handler argument to start.
     """
     ...
+
+
 def send_html(cl) -> None:
     """
     Reply to the HTTP request on cl with a minimal HTML document that loads
@@ -61,6 +64,8 @@ def send_html(cl) -> None:
     socket.
     """
     ...
+
+
 def server_handshake(cl) -> bool:
     """
     Read the HTTP request on the freshly-accepted socket cl and reply with
@@ -70,6 +75,8 @@ def server_handshake(cl) -> bool:
     send_html).
     """
     ...
+
+
 def start(port: int = 8266, password: str | None = None, accept_handler=accept_conn) -> None:
     """
     Start the WebREPL listener.
@@ -86,16 +93,19 @@ def start(port: int = 8266, password: str | None = None, accept_handler=accept_c
     mode (equivalent to start_foreground).
     """
     ...
+
+
 def start_foreground(port: int = 8266, password: str | None = None) -> None:
     """
     Convenience wrapper around start that runs the accept loop synchronously
     in the foreground until a client connects.
     """
     ...
+
+
 def stop() -> None:
     """
     Close the listening socket and any active client connection, and detach
     the WebREPL from the duplicated terminal via os.dupterm(None).
     """
     ...
-

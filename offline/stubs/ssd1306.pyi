@@ -58,6 +58,7 @@ SET_SEG_REMAP: int
 SET_VCOM_DESEL: int
 """Command 0xDB – VCOMH deselect level."""
 
+
 class SSD1306:
     """
     Base class for SSD1306 OLED displays. Subclasses must initialize
@@ -79,6 +80,7 @@ class SSD1306:
     - pages – Number of 8-pixel-tall pages (height // 8).
     """
     def __init__(self, width: int, height: int, external_vcc: bool) -> None: ...
+
     def contrast(self, contrast: int) -> None:
         """
         Set the display contrast.
@@ -86,6 +88,7 @@ class SSD1306:
         - contrast – Contrast value in the range 0–255.
         """
         ...
+
     def fill(self, col: int) -> None:
         """
         Fill the entire framebuffer with a single color.
@@ -93,6 +96,7 @@ class SSD1306:
         - col – Color value (0 for off, 1 for on).
         """
         ...
+
     def init_display(self) -> None:
         """
         Send the initialization command sequence to the display, clear
@@ -100,6 +104,7 @@ class SSD1306:
         __init__.
         """
         ...
+
     def invert(self, invert: int) -> None:
         """
         Invert the display colors.
@@ -108,6 +113,7 @@ class SSD1306:
           output. Only the least significant bit is used.
         """
         ...
+
     def pixel(self, x: int, y: int, col: int) -> None:
         """
         Set the color of a single pixel.
@@ -117,9 +123,11 @@ class SSD1306:
         - col – Color value (0 or 1).
         """
         ...
+
     def poweroff(self) -> None:
         """Turn the display off (sleep mode)."""
         ...
+
     def scroll(self, dx: int, dy: int) -> None:
         """
         Shift the framebuffer contents by the given offsets. Pixels
@@ -130,9 +138,11 @@ class SSD1306:
         - dy – Vertical shift in pixels.
         """
         ...
+
     def show(self) -> None:
         """Flush the internal framebuffer to the display."""
         ...
+
     def text(self, string: str, x: int, y: int, col: int = 1) -> None:
         """
         Draw a string using the built-in 8x8 font.
@@ -143,6 +153,7 @@ class SSD1306:
         - col – Foreground color (default 1).
         """
         ...
+
 
 class SSD1306_I2C:
     """
@@ -158,12 +169,15 @@ class SSD1306_I2C:
       the internal charge pump.
     """
     def __init__(self, width: int, height: int, i2c: machine.I2C, addr: int = 0x3C, external_vcc: bool = False) -> None: ...
+
     def write_cmd(self, cmd: int) -> None:
         """Send a single command byte to the display over I2C."""
         ...
+
     def write_data(self, buf: bytes) -> None:
         """Send a buffer of pixel data to the display over I2C."""
         ...
+
 
 class SSD1306_SPI:
     """
@@ -182,13 +196,15 @@ class SSD1306_SPI:
       the internal charge pump.
     """
     def __init__(self, width: int, height: int, spi: machine.SPI, dc: machine.Pin, res: machine.Pin, cs: machine.Pin, external_vcc: bool = False) -> None: ...
+
     def poweron(self) -> None:
         """Toggle the reset line to power the display on."""
         ...
+
     def write_cmd(self, cmd: int) -> None:
         """Send a single command byte to the display over SPI."""
         ...
+
     def write_framebuf(self) -> None:
         """Transmit the entire framebuffer to the display over SPI."""
         ...
-

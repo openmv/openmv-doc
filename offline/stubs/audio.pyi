@@ -7,6 +7,7 @@ which can be passed to a user callback or read directly into a buffer.
 
 from typing import Any, Callable
 
+
 def get_buffer(timeout: int = 0) -> bytearray:
     """
     Returns the next available PCM buffer. Blocks until a buffer is ready or until
@@ -17,6 +18,8 @@ def get_buffer(timeout: int = 0) -> bytearray:
     Available on the Alif and RP2 ports.
     """
     ...
+
+
 def init(channels: int = 1, frequency: int = 16000, gain_db: int = 24, highpass: float | bool = 0.9883, samples: int = -1, buffers: int = 16, overflow: bool = True, clkdiv: int = 0) -> None:
     """
     Initializes the audio module. Must be called first before using the audio module.
@@ -48,6 +51,8 @@ def init(channels: int = 1, frequency: int = 16000, gain_db: int = 24, highpass:
     the divider is computed from the requested frequency. Available on the RP2 port.
     """
     ...
+
+
 def overflow() -> bool:
     """
     Returns True if a buffer overflow has occurred since the last call to
@@ -56,6 +61,8 @@ def overflow() -> bool:
     Available on the RP2 port only.
     """
     ...
+
+
 def read_pdm(buf: bytearray) -> None:
     """
     Reads raw PDM samples from the microphone directly into buf. buf must be
@@ -65,6 +72,8 @@ def read_pdm(buf: bytearray) -> None:
     Available on the STM32 port (SAI-based boards) only.
     """
     ...
+
+
 def samples() -> int:
     """
     Returns the total number of PCM samples captured since the last call to
@@ -73,6 +82,8 @@ def samples() -> int:
     Available on the RP2 port only.
     """
     ...
+
+
 def start_streaming(callback: Callable[[bytearray], None] | None) -> None:
     """
     Starts audio capture.
@@ -89,7 +100,8 @@ def start_streaming(callback: Callable[[bytearray], None] | None) -> None:
     with audio.get_buffer() instead.
     """
     ...
+
+
 def stop_streaming() -> None:
     """Stops audio capture and clears any installed callback."""
     ...
-

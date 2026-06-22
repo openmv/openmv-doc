@@ -6,6 +6,7 @@ routine.
 
 from typing import Any
 
+
 def sosfilt(sos: ndarray, x: ndarray, *, zi: ndarray | None = None) -> ndarray | tuple[ndarray, ndarray]:
     """
     Filter the one-dimensional, uniformly sampled data x using the
@@ -31,4 +32,3 @@ def sosfilt(sos: ndarray, x: ndarray, *, zi: ndarray | None = None) -> ndarray |
     shape as zi.
     """
     ...
-

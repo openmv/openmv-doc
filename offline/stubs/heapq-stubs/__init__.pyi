@@ -11,9 +11,12 @@ convenient priority-queue implementation built on a plain list.
 
 from typing import Any
 
+
 def heapify(x: list) -> None:
     """Convert the list x into a heap.  This is an in-place operation."""
     ...
+
+
 def heappop(heap: list) -> Any:
     """
     Pop the first item from the heap, and return it.  Raise IndexError if
@@ -22,7 +25,8 @@ def heappop(heap: list) -> Any:
     The returned item will be the smallest item in the heap.
     """
     ...
+
+
 def heappush(heap: list, item: Any) -> None:
     """Push the item onto the heap."""
     ...
-

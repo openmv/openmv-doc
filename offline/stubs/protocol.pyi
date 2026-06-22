@@ -35,6 +35,7 @@ CHANNEL_ID_STREAM: int
 CHANNEL_ID_TRANSPORT: int
 """Reserved channel ID for the active transport."""
 
+
 def init(crc: bool = True, seq: bool = True, ack: bool = True, events: bool = True, max_payload: int = ..., rtx_retries: int = 3, rtx_timeout_ms: int = 500, lock_interval_ms: int = 10, poll_ms: int = 0) -> None:
     """
     Initialize (or reconfigure) the protocol stack and register the default
@@ -140,12 +141,16 @@ def init(crc: bool = True, seq: bool = True, ack: bool = True, events: bool = Tr
     disables timer polling.
     """
     ...
+
+
 def is_active() -> bool:
     """
     Return True if a host is currently connected and the protocol stack
     is active, otherwise False.
     """
     ...
+
+
 def register(name: str, *, backend: object, flags: int = 0) -> ProtocolChannel:
     """
     Register a Python backend object as a new logical channel and return
@@ -169,6 +174,7 @@ def register(name: str, *, backend: object, flags: int = 0) -> ProtocolChannel:
     """
     ...
 
+
 class CBORChannel:
     """
     A higher-level Python backend (provided by the frozen protocol
@@ -184,12 +190,14 @@ class CBORChannel:
     invoked when the host writes a new value for a named field.
     """
     def __init__(self, on_read: Callable | None = None, on_write: Callable | None = None) -> None: ...
+
     def __getitem__(self, name: str) -> object:
         """
         Return the current value of the named field. For depth fields
         the binary data buffer is returned, otherwise the scalar value.
         """
         ...
+
     def __setitem__(self, name: str, value: Any) -> None:
         """
         Set the value of the named field. For slider fields, a
@@ -198,6 +206,7 @@ class CBORChannel:
         buffer.
         """
         ...
+
     def add(self, name: str, type: str, value: Any = None, unit: str | None = None, min: int | float | None = None, max: int | float | None = None, step: int | float | None = None, options: list | None = None, width: int | None = None, height: int | None = None) -> None:
         """
         Add a named field to the channel.
@@ -225,21 +234,25 @@ class CBORChannel:
         height is the pixel height (depth).
         """
         ...
+
     def poll(self) -> bool:
         """
         Backend interface method. Returns True when serialized data is
         available for the host.
         """
         ...
+
     def read(self, offset: int, size: int) -> bytes:
         """Backend interface method. Returns a slice of the serialized buffer."""
         ...
+
     def size(self) -> int:
         """
         Backend interface method. Invokes on_read (if set) and returns
         the size of the serialized buffer.
         """
         ...
+
     def write(self, offset: int, data: bytearray) -> int:
         """
         Backend interface method. Decodes a CBOR update list and applies
@@ -247,12 +260,14 @@ class CBORChannel:
         """
         ...
 
+
 class ProtocolChannel:
     """
     Handle returned by protocol.register. Instances are not constructed
     directly.
     """
     def __init__(self) -> None: ...
+
     def send_event(self, event: int, wait_ack: bool = False) -> None:
         """
         Send a channel event notification to the host.
@@ -265,21 +280,25 @@ class ProtocolChannel:
         """
         ...
 
+
 class backend:
     """
     Channel backend object passed to protocol.register. The methods below
     describe the optional interface a Python backend may implement.
     """
     def __init__(self) -> None: ...
+
     def flush(self) -> object:
         """Flush any pending data. Return any non-None value on success."""
         ...
+
     def init(self) -> object:
         """
         Called once when the channel is initialized. Return any non-None
         value on success; an exception or missing return is treated as an error.
         """
         ...
+
     def ioctl(self, cmd: int, length: int, arg: bytearray | None) -> int:
         """
         Handle an ioctl. arg is None if length is zero, otherwise a
@@ -287,24 +306,29 @@ class backend:
         success, or a negative integer on error.
         """
         ...
+
     def is_active(self) -> bool:
         """
         For transport channels, return True if the underlying transport is
         currently connected.
         """
         ...
+
     def lock(self) -> bool:
         """Acquire the channel for a transfer. Return True on success."""
         ...
+
     def poll(self) -> bool:
         """Return True if the channel has data ready to be read by the host."""
         ...
+
     def read(self, offset: int, size: int) -> bytes:
         """
         Return up to size bytes starting at offset as a bytes-like
         object that supports the buffer protocol.
         """
         ...
+
     def readp(self, offset: int, size: int) -> bytes:
         """
         Zero-copy variant of read. Returns a buffer whose underlying memory
@@ -312,6 +336,7 @@ class backend:
         for the duration of the transfer.
         """
         ...
+
     def shape(self) -> tuple:
         """
         Return a tuple of up to four integers describing the data shape (e.g.
@@ -319,12 +344,15 @@ class backend:
         layer.
         """
         ...
+
     def size(self) -> int:
         """Return the number of bytes currently readable from the channel."""
         ...
+
     def unlock(self) -> bool:
         """Release the channel after a transfer. Return True on success."""
         ...
+
     def write(self, offset: int, data: bytearray) -> int:
         """
         Write data at offset. data is a bytearray referencing
@@ -332,4 +360,3 @@ class backend:
         default success.
         """
         ...
-

@@ -9,6 +9,7 @@ returns a new numpy.ndarray of dtype float.
 
 from typing import Any, Iterable
 
+
 def erf(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise Gauss error function,
@@ -25,6 +26,8 @@ def erf(x: ndarray | Iterable[float] | float) -> ndarray:
     input.
     """
     ...
+
+
 def erfc(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise complementary error function, erfc(x) = 1 - erf(x),
@@ -41,6 +44,8 @@ def erfc(x: ndarray | Iterable[float] | float) -> ndarray:
     input.
     """
     ...
+
+
 def gamma(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise Gamma function.
@@ -56,6 +61,8 @@ def gamma(x: ndarray | Iterable[float] | float) -> ndarray:
     input.
     """
     ...
+
+
 def gammaln(x: ndarray | Iterable[float] | float) -> ndarray:
     """
     Element-wise natural logarithm of the absolute value of the Gamma
@@ -72,4 +79,3 @@ def gammaln(x: ndarray | Iterable[float] | float) -> ndarray:
     input.
     """
     ...
-

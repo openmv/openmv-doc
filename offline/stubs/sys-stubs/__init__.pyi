@@ -142,6 +142,7 @@ Only the first three version numbers (major, minor, micro) are supported and
 they can be referenced only by index, not by name.
 """
 
+
 def atexit(func: Callable[[], None] | None) -> Callable[[], None] | None:
     """
     Register func to be called upon termination.  func must be a callable
@@ -155,6 +156,8 @@ def atexit(func: Callable[[], None] | None) -> Callable[[], None] | None:
     functionality to the atexit module in CPython.
     """
     ...
+
+
 def exit(retval: object = 0, /) -> NoReturn:
     """
     Terminate current program with a given exit code. Underlyingly, this
@@ -165,6 +168,8 @@ def exit(retval: object = 0, /) -> NoReturn:
     soft_reset of MicroPython.
     """
     ...
+
+
 def print_exception(exc: BaseException, file: Any = sys.stdout, /) -> None:
     """
     Print exception with a traceback to a file-like object file (or
@@ -180,6 +185,8 @@ def print_exception(exc: BaseException, file: Any = sys.stdout, /) -> None:
     traceback module can be found in micropython-lib.
     """
     ...
+
+
 def settrace(tracefunc: Callable | None) -> None:
     """
     Enable tracing of bytecode execution.  For details see the CPython
@@ -190,4 +197,3 @@ def settrace(tracefunc: Callable | None) -> None:
     custom firmware.
     """
     ...
-

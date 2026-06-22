@@ -28,6 +28,7 @@ Example usage:
 
 from typing import Any, Callable
 
+
 def new_service_callback(ns_callback: Callable[[str, int], Any]) -> None:
     """
     Set the new service callback.
@@ -40,6 +41,7 @@ def new_service_callback(ns_callback: Callable[[str, int], Any]) -> None:
     the service.
     """
     ...
+
 
 class Endpoint:
     """
@@ -59,12 +61,15 @@ class Endpoint:
       destination address will be assigned by the library when the endpoint is bound.
     """
     def __init__(self, name: str, callback: Callable[[int, bytes], Any], src: int = ENDPOINT_ADDR_ANY, dest: int = ENDPOINT_ADDR_ANY) -> None: ...
+
     def deinit(self) -> None:
         """Destroy the endpoint and release all of its resources."""
         ...
+
     def is_ready(self) -> bool:
         """Returns True if the endpoint is ready to send (i.e., has both a source and destination addresses)"""
         ...
+
     def send(self, buffer: bytes, *, src: int = -1, dest: int = -1, timeout: int = -1) -> int:
         """
         Send a message to the remote processor over this endpoint.
@@ -82,6 +87,7 @@ class Endpoint:
         """
         ...
 
+
 class RemoteProc:
     """
     The RemoteProc object provides processor Life Cycle Management (LCM) support, such as
@@ -92,6 +98,7 @@ class RemoteProc:
     firmware must be loaded already at the given address.
     """
     def __init__(self, entry: str | int) -> None: ...
+
     def shutdown(self) -> None:
         """
         Shutdown stops the remote processor and releases all of its resources. The exact behavior
@@ -100,10 +107,11 @@ class RemoteProc:
         collected).
         """
         ...
+
     def start(self) -> None:
         """Starts the remote processor."""
         ...
+
     def stop(self) -> None:
         """Stops the remote processor. The exact behavior is platform-dependent."""
         ...
-

@@ -260,6 +260,7 @@ Y1, U, Y2, V per pixel pair. Only some image processing methods
 work directly on YUV422.
 """
 
+
 def HaarCascade(path: str, stages: int = -1) -> Cascade:
     """
     Load a Haar Cascade and return a Cascade handle for
@@ -277,24 +278,36 @@ def HaarCascade(path: str, stages: int = -1) -> Cascade:
     speeds up detection at the cost of more false positives.
     """
     ...
+
+
 def binary_to_grayscale(value: int) -> int:
     """Convert a binary value to a grayscale value."""
     ...
+
+
 def binary_to_lab(value: int) -> tuple[int, int, int]:
     """Convert a binary value to a LAB tuple."""
     ...
+
+
 def binary_to_rgb(value: int) -> tuple[int, int, int]:
     """Convert a binary value to an RGB tuple."""
     ...
+
+
 def binary_to_yuv(value: int) -> tuple[int, int, int]:
     """Convert a binary value to a YUV tuple."""
     ...
+
+
 def get_convexity(blob: blob) -> float:
     """
     Return the convexity (convex_hull_perimeter / blob.perimeter) of
     blob. Float, 0 – 1; 1.0 is a perfectly convex blob.
     """
     ...
+
+
 def get_enclosed_ellipse(blob: blob) -> tuple[int, int, int, int, int]:
     """
     Return a 5-tuple (cx, cy, a, b, rotation) describing the ellipse
@@ -308,9 +321,13 @@ def get_enclosed_ellipse(blob: blob) -> tuple[int, int, int, int, int]:
     only by index.
     """
     ...
+
+
 def get_enclosing_circle(blob: blob) -> circle:
     """Return a Circle that encloses blob."""
     ...
+
+
 def get_major_axis_line(blob: blob) -> line:
     """
     Return a Line along the major axis of blob (the
@@ -318,6 +335,8 @@ def get_major_axis_line(blob: blob) -> line:
     rectangle).
     """
     ...
+
+
 def get_minor_axis_line(blob: blob) -> line:
     """
     Return a Line along the minor axis of blob (the
@@ -325,36 +344,56 @@ def get_minor_axis_line(blob: blob) -> line:
     rectangle).
     """
     ...
+
+
 def get_solidity(blob: blob) -> float:
     """
     Return the solidity (blob.pixels / convex_hull_area) of blob.
     Float, 0 – 1; 1.0 means the blob fully fills its convex hull.
     """
     ...
+
+
 def grayscale_to_binary(value: int) -> int:
     """Convert a grayscale value to a binary value."""
     ...
+
+
 def grayscale_to_lab(value: int) -> tuple[int, int, int]:
     """Convert a grayscale value to a LAB tuple."""
     ...
+
+
 def grayscale_to_rgb(value: int) -> tuple[int, int, int]:
     """Convert a grayscale value to an RGB tuple."""
     ...
+
+
 def grayscale_to_yuv(value: int) -> tuple[int, int, int]:
     """Convert a grayscale value to a YUV tuple."""
     ...
+
+
 def lab_to_binary(value: tuple[int, int, int]) -> int:
     """Convert a LAB tuple to a binary value."""
     ...
+
+
 def lab_to_grayscale(value: tuple[int, int, int]) -> int:
     """Convert a LAB tuple to a grayscale value."""
     ...
+
+
 def lab_to_rgb(value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Convert a LAB tuple to an RGB tuple."""
     ...
+
+
 def lab_to_yuv(value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Convert a LAB tuple to a YUV tuple."""
     ...
+
+
 def load_descriptor(path: str) -> kp_desc | lbp_desc:
     """
     Load a descriptor from the file at path and return it. The file’s
@@ -366,6 +405,8 @@ def load_descriptor(path: str) -> kp_desc | lbp_desc:
       image.save_descriptor().
     """
     ...
+
+
 def match_descriptor(descriptor0, descriptor1, threshold: int = 85, filter_outliers: bool = False) -> int | kptmatch:
     """
     Match two descriptors of the same type.
@@ -386,18 +427,28 @@ def match_descriptor(descriptor0, descriptor1, threshold: int = 85, filter_outli
     keypoints span multiple objects.
     """
     ...
+
+
 def rgb_to_binary(value: tuple[int, int, int]) -> int:
     """Convert an RGB tuple to a binary value."""
     ...
+
+
 def rgb_to_grayscale(value: tuple[int, int, int]) -> int:
     """Convert an RGB tuple to a grayscale value."""
     ...
+
+
 def rgb_to_lab(value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Convert an RGB tuple to a LAB tuple."""
     ...
+
+
 def rgb_to_yuv(value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Convert an RGB tuple to a YUV tuple."""
     ...
+
+
 def save_descriptor(descriptor: kp_desc | lbp_desc, path: str) -> None:
     """
     Serialise descriptor (an ORB keypoint or LBP descriptor) to the
@@ -405,18 +456,27 @@ def save_descriptor(descriptor: kp_desc | lbp_desc, path: str) -> None:
     can later be reloaded via image.load_descriptor().
     """
     ...
+
+
 def yuv_to_binary(value: tuple[int, int, int]) -> int:
     """Convert a YUV tuple to a binary value."""
     ...
+
+
 def yuv_to_grayscale(value: tuple[int, int, int]) -> int:
     """Convert a YUV tuple to a grayscale value."""
     ...
+
+
 def yuv_to_lab(value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Convert a YUV tuple to a LAB tuple."""
     ...
+
+
 def yuv_to_rgb(value: tuple[int, int, int]) -> tuple[int, int, int]:
     """Convert a YUV tuple to an RGB tuple."""
     ...
+
 
 class Cascade:
     """
@@ -425,6 +485,7 @@ class Cascade:
     Image.find_features().
     """
     def __init__(self) -> None: ...
+
 
 class Image:
     """
@@ -464,6 +525,7 @@ class Image:
     UART/SPI/I2C write functions to be transmitted automatically.
     """
     def __init__(self, arg: str | int | ndarray, height: int = -1, pixformat: int = -1, *, buffer: bytes | bytearray | memoryview | None = None, copy_to_fb: bool = False) -> None: ...
+
     def add(self, image: Image, mask: Image | None = None) -> Image:
         """
         Adds an image pixel-wise to this one.
@@ -479,9 +541,11 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def assign(self, image: Image | None = None, **kwargs) -> Image:
         """Alias for Image.replace()."""
         ...
+
     def awb(self, max: bool = False) -> Image:
         """
         Performs automatic white balance on the image using the gray-world
@@ -495,6 +559,7 @@ class Image:
         Not supported on compressed or yuv images.
         """
         ...
+
     def b_and(self, image: Image, mask: Image | None = None) -> Image:
         """
         Logically ANDs this image with another image.
@@ -510,6 +575,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def b_nand(self, image: Image, mask: Image | None = None) -> Image:
         """
         Logically NANDs this image with another image.
@@ -525,6 +591,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def b_nor(self, image: Image, mask: Image | None = None) -> Image:
         """
         Logically NORs this image with another image.
@@ -540,6 +607,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def b_or(self, image: Image, mask: Image | None = None) -> Image:
         """
         Logically ORs this image with another image.
@@ -555,6 +623,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def b_xnor(self, image: Image, mask: Image | None = None) -> Image:
         """
         Logically XNORs this image with another image.
@@ -570,6 +639,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def b_xor(self, image: Image, mask: Image | None = None) -> Image:
         """
         Logically XORs this image with another image.
@@ -585,6 +655,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def bilateral(self, size: int, color_sigma: float | None = 0.1, space_sigma: float | None = 1.0, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Convolves the image with a bilateral filter (edge-preserving smoothing).
@@ -610,6 +681,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def binary(self, thresholds: list[tuple[int, int]], invert: bool = False, zero: bool = False, mask: Image | None = None, to_bitmap: bool = False, copy: bool = False) -> Image:
         """
         Sets all pixels in the image to black or white depending on whether each
@@ -638,6 +710,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def black_hat(self, size: int, threshold: int | None = None, mask: Image | None = None) -> Image:
         """
         Returns the image difference of the image and the Image.close()-ed image.
@@ -648,6 +721,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def blend(self, image: Image, x: int = 0, y: int = 0, alpha: int = 128, mask: Image | None = None, **kwargs) -> Image:
         """
         Alias for Image.draw_image(). Alpha-blends image into this image.
@@ -655,6 +729,7 @@ class Image:
         Accepts all Image.draw_image() keyword arguments.
         """
         ...
+
     def bytearray(self) -> bytearray:
         """
         Returns a bytearray object that points to the image data for byte-level read/write access.
@@ -664,6 +739,7 @@ class Image:
         Call bytearray() to get read/write access.
         """
         ...
+
     def ccm(self, matrix: list[list[float]]) -> Image:
         """
         Multiplies the passed floating-point color-correction-matrix with the
@@ -679,6 +755,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def clear(self, mask: Image | None = None) -> Image:
         """
         Sets all pixels in the image to zero (very fast).
@@ -693,6 +770,7 @@ class Image:
         Not supported on compressed images.
         """
         ...
+
     def close(self, size: int, threshold: int | None = None, mask: Image | None = None) -> Image:
         """
         Performs dilation then erosion. See Image.dilate() and Image.erode().
@@ -703,6 +781,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def compress(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False, quality: int = 90, subsampling: int = 0) -> Image:
         """
         Converts an image to a JPEG image.
@@ -763,6 +842,7 @@ class Image:
         Image.compress is an alias for Image.to_jpeg.
         """
         ...
+
     def copy(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy_to_fb: bool = False) -> Image:
         """
         Creates a deep copy of the image object.
@@ -808,6 +888,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def crop(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Modifies an image in-place without changing the underlying image type.
@@ -857,6 +938,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def difference(self, image: Image, mask: Image | None = None) -> Image:
         """
         Returns the absolute difference image between two images (e.g. ||a-b||).
@@ -872,6 +954,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def dilate(self, size: int, threshold: int | None = None, mask: Image | None = None) -> Image:
         """
         Adds pixels to the edges of segmented areas. Convolves a
@@ -887,6 +970,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def draw_arrow(self, x0: int, y0: int, x1: int, y1: int, color: int | tuple[int, int, int] | None = None, thickness: int = 1) -> Image:
         """
         Draws an arrow from (x0, y0) to (x1, y1) on the image. You may
@@ -903,6 +987,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_circle(self, x: int, y: int, radius: int, color: int | tuple[int, int, int] | None = None, thickness: int = 1, fill: bool = False) -> Image:
         """
         Draws a circle on the image. You may either pass x, y, radius separately or
@@ -921,6 +1006,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_cross(self, x: int, y: int, color: int | tuple[int, int, int] | None = None, size: int = 5, thickness: int = 1) -> Image:
         """
         Draws a cross at location x, y. You may either pass x, y separately or as a
@@ -939,6 +1025,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_detection(self, detection: tuple[int, int, int, int, int, int], color1: int | tuple[int, int, int] | None = None, color2: int | tuple[int, int, int] | None = None, size: int = 5, thickness: int = 1, fill: bool = False, label: str | None = None, label_offset: tuple[int, int] | None = None) -> Image:
         """
         Draws a detection result onto the image. detection is a 6-tuple
@@ -957,6 +1044,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_edges(self, corners: list[tuple[int, int]], color: int | tuple[int, int, int] | None = None, size: int = 0, thickness: int = 1, fill: bool = False) -> Image:
         """
         Draws line edges between a corner list returned by methods like blob.corners. Coners is
@@ -977,6 +1065,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_ellipse(self, cx: int, cy: int, rx: int, ry: int, rotation: int, color: int | tuple[int, int, int] | None = None, thickness: int = 1, fill: bool = False) -> Image:
         """
         Draws an ellipse on the image. You may either pass cx, cy, rx, ry, and the
@@ -995,6 +1084,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_event_histogram(self, array: ndarray, clear: bool = True, brightness: int = 128, contrast: int = 16) -> Image:
         """
         Rasterizes an event ndarray (as filled by csi.IOCTL_GENX320_READ_EVENTS)
@@ -1017,6 +1107,7 @@ class Image:
         pixel.
         """
         ...
+
     def draw_image(self, image: Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, mask: Image | None = None) -> Image:
         """
         Draws an image whose top-left corner starts at location x, y. You may either pass x, y
@@ -1064,6 +1155,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def draw_keypoints(self, keypoints: kp_desc | list[tuple[int, int, int]], color: int | tuple[int, int, int] | None = None, size: int = 10, thickness: int = 1, fill: bool = False) -> Image:
         """
         Draws the keypoints of a keypoints object on the image. You may also pass a
@@ -1086,6 +1178,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_line(self, x0: int, y0: int, x1: int, y1: int, color: int | tuple[int, int, int] | None = None, thickness: int = 1) -> Image:
         """
         Draws a line from (x0, y0) to (x1, y1) on the image. You may either
@@ -1102,6 +1195,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_rectangle(self, x: int, y: int, w: int, h: int, color: int | tuple[int, int, int] | None = None, thickness: int = 1, fill: bool = False) -> Image:
         """
         Draws a rectangle on the image. You may either pass x, y, w, h separately
@@ -1120,6 +1214,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def draw_string(self, x: int, y: int, text: str, color: int | tuple[int, int, int] | None = None, scale: float = 1, x_spacing: int = 0, y_spacing: int = 0, mono_space: bool = True, char_rotation: int = 0, char_hmirror: bool = False, char_vflip: bool = False, string_rotation: int = 0, string_hmirror: bool = False, string_vflip: bool = False) -> Image:
         r"""
         Draws 8x10 text starting at location (x, y) in the image. You may either pass
@@ -1164,6 +1259,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def erode(self, size: int, threshold: int | None = None, mask: Image | None = None) -> Image:
         """
         Removes pixels from the edges of segmented areas. Convolves a
@@ -1179,6 +1275,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def find_apriltags(self, roi: tuple[int, int, int, int] | None = None, families: int = TAG36H11, fx: float | None = None, fy: float | None = None, cx: float | None = None, cy: float | None = None) -> list[apriltag]:
         """
         Finds all apriltags within the roi and returns a list of
@@ -1213,6 +1310,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_barcodes(self, roi: tuple[int, int, int, int] | None = None) -> list[barcode]:
         """
         Finds all 1D barcodes within the roi and returns a list of
@@ -1230,6 +1328,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_blobs(self, thresholds: list[tuple[int, int]], invert: bool = False, roi: tuple[int, int, int, int] | None = None, x_stride: int = 2, y_stride: int = 1, area_threshold: int = 10, pixels_threshold: int = 10, merge: bool = False, margin: int = 0, threshold_cb: Callable | None = None, merge_cb: Callable | None = None, x_hist_bins_max: int = 0, y_hist_bins_max: int = 0) -> list[blob]:
         """
         Finds all blobs (connected pixel regions that pass a threshold test) in the
@@ -1271,6 +1370,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def find_circles(self, roi: tuple[int, int, int, int] | None = None, x_stride: int = 2, y_stride: int = 1, threshold: int = 2000, x_margin: int = 10, y_margin: int = 10, r_margin: int = 10, r_min: int = 2, r_max: int | None = None, r_step: int = 2) -> list[circle]:
         """
         Finds circles in the image using the hough transform. Returns a list of
@@ -1297,6 +1397,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_datamatrices(self, roi: tuple[int, int, int, int] | None = None, effort: int = 200) -> list[datamatrix]:
         """
         Finds all datamatrices within the roi and returns a list of
@@ -1313,6 +1414,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_displacement(self, template: Image, roi: tuple[int, int, int, int] | None = None, template_roi: tuple[int, int, int, int] | None = None, logpolar: bool = False, fix_rotation_scale: bool = False) -> displacement:
         """
         Find the translation offset of this image from template using phase
@@ -1336,6 +1438,7 @@ class Image:
         Not supported on compressed images or bayer images. Not available on the OpenMV Cam M4.
         """
         ...
+
     def find_edges(self, edge_type: int, threshold: tuple[int, int] = (100, 200)) -> Image:
         """
         Turns the image to black and white leaving only the edges as white pixels.
@@ -1350,6 +1453,7 @@ class Image:
         Only works on grayscale images.
         """
         ...
+
     def find_eye(self, roi: tuple[int, int, int, int]) -> tuple[int, int]:
         """
         Searches for the pupil in a region-of-interest (x, y, w, h) tuple around
@@ -1361,6 +1465,7 @@ class Image:
         Only works on grayscale images.
         """
         ...
+
     def find_features(self, cascade: Cascade, threshold: float = 0.5, scale: float = 1.5, roi: tuple[int, int, int, int] | None = None) -> list[tuple[int, int, int, int]]:
         """
         Searches the image for areas matching the passed Haar cascade and
@@ -1379,6 +1484,7 @@ class Image:
         to the image rectangle.
         """
         ...
+
     def find_hog(self, roi: tuple[int, int, int, int] | None = None, size: int = 8) -> Image:
         """
         Replaces the pixels in the ROI with HOG (histogram of orientated graidients)
@@ -1393,6 +1499,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_keypoints(self, roi: tuple[int, int, int, int] | None = None, threshold: int = 20, normalized: bool = False, scale_factor: float = 1.5, max_keypoints: int = 100, corner_detector: int = CORNER_AGAST) -> kp_descriptor | None:
         """
         Extracts ORB keypoints from the region-of-interest. Use
@@ -1417,6 +1524,7 @@ class Image:
         Only works on grayscale images.
         """
         ...
+
     def find_lbp(self, roi: tuple[int, int, int, int]) -> lbp_descriptor:
         """
         Extracts LBP (local-binary-patterns) keypoints from the
@@ -1428,6 +1536,7 @@ class Image:
         Only works on grayscale images.
         """
         ...
+
     def find_line_segments(self, roi: tuple[int, int, int, int] | None = None, merge_distance: int = 0, max_theta_difference: int = 15) -> list[line]:
         """
         Finds line segments in the image. Returns a list of image.line objects.
@@ -1444,6 +1553,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_lines(self, roi: tuple[int, int, int, int] | None = None, x_stride: int = 2, y_stride: int = 1, threshold: int = 1000, theta_margin: int = 25, rho_margin: int = 25) -> list[line]:
         """
         Finds all infinite lines in the image using the hough transform. Returns
@@ -1466,6 +1576,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_qrcodes(self, roi: tuple[int, int, int, int] | None = None) -> list[qrcode]:
         """
         Finds all qrcodes within the roi and returns a list of image.qrcode
@@ -1477,6 +1588,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_rects(self, roi: tuple[int, int, int, int] | None = None, threshold: int = 1000) -> list[rect]:
         """
         Finds rectangles in the image using the apriltag quad detection algorithm.
@@ -1491,6 +1603,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def find_template(self, template: Image, threshold: float, roi: tuple[int, int, int, int] | None = None, step: int = 2, search: int = SEARCH_EX) -> tuple[int, int, int, int] | None:
         """
         Tries to find the first location in the image where template matches
@@ -1514,6 +1627,7 @@ class Image:
         Only works on grayscale images.
         """
         ...
+
     def flood_fill(self, x: int, y: int, seed_threshold: float = 0.05, floating_threshold: float = 0.05, color: int | tuple[int, int, int] | None = None, invert: bool = False, clear_background: bool = False, mask: Image | None = None) -> Image:
         """
         Flood fills a region of the image starting from location x, y. You may either
@@ -1547,9 +1661,11 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def flush(self) -> None:
         """Updates the frame buffer in the IDE with the image in the frame buffer on the camera."""
         ...
+
     def format(self) -> int:
         """
         Returns image.GRAYSCALE for grayscale images, image.RGB565 for RGB565
@@ -1557,6 +1673,7 @@ class Image:
         images.
         """
         ...
+
     def gamma(self, gamma: float = 1.0, contrast: float = 1.0, brightness: float = 0.0) -> Image:
         """
         Adjusts the image gamma, contrast, and brightness.
@@ -1573,9 +1690,11 @@ class Image:
         Not supported on compressed or bayer/yuv images.
         """
         ...
+
     def gamma_corr(self, gamma: float = 1.0, contrast: float = 1.0, brightness: float = 0.0) -> Image:
         """Alias for Image.gamma."""
         ...
+
     def gaussian(self, size: int, unsharp: bool | None = False, mul: float | None = 1.0, add: float | None = 0.0, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Convolves the image with a smoothing gaussian kernel.
@@ -1602,6 +1721,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def get_histogram(self, thresholds: list[tuple[int, int]] | None = None, invert: bool = False, roi: tuple[int, int, int, int] | None = None, bins: int = -1, l_bins: int = -1, a_bins: int = -1, b_bins: int = -1, difference: Image | None = None) -> histogram:
         """
         Computes the normalized histogram on all color channels for an roi
@@ -1627,6 +1747,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def get_pixel(self, x: int, y: int, rgbtuple: bool | None = None) -> int | tuple[int, int, int]:
         """
         For grayscale images: Returns the grayscale pixel value at location (x, y).
@@ -1651,6 +1772,7 @@ class Image:
         will debayer the source image at that pixel location and return a valid RGB888 tuple for the pixel location.
         """
         ...
+
     def get_regression(self, thresholds: list[tuple[int, int]], invert: bool = False, roi: tuple[int, int, int, int] | None = None, x_stride: int = 2, y_stride: int = 1, area_threshold: int = 10, pixels_threshold: int = 10, target_size: tuple[int, int] = (80, 60)) -> line:
         """
         Computes a linear regression (Theil-Sen) on all the thresholded pixels in the
@@ -1677,6 +1799,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def get_similarity(self, image: Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, dssim: bool = False) -> Similarity:
         """
         Computes the similarity between two images using the Structural
@@ -1694,6 +1817,7 @@ class Image:
         instead, where 0 means identical and 1 means completely different.
         """
         ...
+
     def get_statistics(self, thresholds: list[tuple[int, int]] | None = None, invert: bool = False, roi: tuple[int, int, int, int] | None = None, bins: int = -1, l_bins: int = -1, a_bins: int = -1, b_bins: int = -1, difference: Image | None = None) -> statistics:
         """
         Computes the mean, median, mode, standard deviation, min, max, lower
@@ -1720,9 +1844,11 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def height(self) -> int:
         """Returns the image height in pixels."""
         ...
+
     def histeq(self, adaptive: bool = False, clip_limit: float = -1, mask: Image | None = None) -> Image:
         """
         Runs histogram equalization on the image to normalize contrast and
@@ -1742,6 +1868,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def invert(self) -> Image:
         """
         Inverts all pixel values in the image (each pixel becomes 255 - pixel
@@ -1752,6 +1879,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def laplacian(self, size: int, sharpen: bool | None = False, mul: float | None = 1.0, add: float | None = 0.0, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Convolves the image with an edge-detecting laplacian kernel.
@@ -1778,6 +1906,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def lens_corr(self, strength: float = 1.8, zoom: float = 1.0, x_corr: float = 0.0, y_corr: float = 0.0) -> Image:
         """
         Performs lens correction to un-fisheye the image due to the lens distortion.
@@ -1797,6 +1926,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def linpolar(self, reverse: bool = False, *, x: int | None = None, y: int | None = None) -> Image:
         """
         Re-projects an image from Cartesian coordinates to linear polar coordinates.
@@ -1814,6 +1944,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def logpolar(self, reverse: bool = False, *, x: int | None = None, y: int | None = None) -> Image:
         """
         Re-projects an image from Cartesian coordinates to log polar coordinates.
@@ -1832,6 +1963,7 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def mask_circle(self, x: int, y: int, radius: int) -> Image:
         """
         Zeros a circular part of the image. If no arguments are supplied this
@@ -1842,6 +1974,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def mask_ellipse(self, x: int, y: int, radius_x: int, radius_y: int, rotation_angle_in_degrees: int) -> Image:
         """
         Zeros an ellipsed shaped part of the image. If no arguments are supplied this
@@ -1852,6 +1985,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def mask_rectangle(self, x: int, y: int, w: int, h: int) -> Image:
         """
         Zeros a rectangular part of the image. If no arguments are supplied this
@@ -1862,6 +1996,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def max(self, image: Image, mask: Image | None = None) -> Image:
         """
         Returns the maximum image of two images pixel-wise.
@@ -1877,6 +2012,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def mean(self, size: int, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Standard mean blurring filter using a box filter.
@@ -1896,6 +2032,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def median(self, size: int, percentile: float | None = 0.5, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Runs a percentile filter on the image (median by default).
@@ -1918,6 +2055,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def midpoint(self, size: int, bias: float | None = 0.5, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Runs the midpoint filter on the image. This filter finds the midpoint
@@ -1941,6 +2079,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def min(self, image: Image, mask: Image | None = None) -> Image:
         """
         Returns the minimum image of two images pixel-wise.
@@ -1956,6 +2095,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def mode(self, size: int, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Replaces each pixel with the mode of its neighbors. May produce
@@ -1976,6 +2116,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def morph(self, size: int, kernel: list, mul: float | None = 1.0, add: float | None = 0.0, threshold: bool | None = False, offset: int | None = 0, invert: bool | None = False, mask: Image | None = None) -> Image:
         """
         Convolves the image with an arbitrary filter kernel.
@@ -2004,9 +2145,11 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def negate(self) -> Image:
         """Alias for Image.invert."""
         ...
+
     def open(self, size: int, threshold: int | None = None, mask: Image | None = None) -> Image:
         """
         Performs erosion then dilation. See Image.erode() and Image.dilate().
@@ -2017,6 +2160,7 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def replace(self, image: Image | None = None, **kwargs) -> Image:
         """
         Alias for Image.draw_image(). Replaces this image with image (or
@@ -2026,6 +2170,7 @@ class Image:
         OpenMV cameras with ULAB enabled).
         """
         ...
+
     def rotation_corr(self, x_rotation: float = 0.0, y_rotation: float = 0.0, z_rotation: float = 0.0, x_translation: float = 0.0, y_translation: float = 0.0, zoom: float = 1.0, fov: float = 60.0, corners: list[tuple[int, int]] | None = None) -> Image:
         """
         Corrects perspective issues in the image by doing a 3D rotation of the frame buffer.
@@ -2063,12 +2208,14 @@ class Image:
         This method is not available on the OpenMV Cam M4.
         """
         ...
+
     def rsub(self, image: Image, mask: Image | None = None) -> Image:
         """
         Reverse subtract: replaces this image with image - self pixel-wise.
         Otherwise identical to Image.sub().
         """
         ...
+
     def save(self, path: str, roi: tuple[int, int, int, int] | None = None, quality: int = 50) -> Image:
         """
         Saves a copy of the image to the filesystem at path.
@@ -2086,6 +2233,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def scale(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Modifies an image in-place without changing the underlying image type.
@@ -2137,6 +2285,7 @@ class Image:
         Image.scale is an alias for Image.crop.
         """
         ...
+
     def selective_search(self, threshold: int = 500, size: int = 20, a1: float = 1.0, a2: float = 1.0, a3: float = 1.0) -> list[tuple[int, int, int, int]]:
         """
         Runs selective search on the image and returns a list of bounding box tuples
@@ -2151,9 +2300,11 @@ class Image:
         merging regions.
         """
         ...
+
     def set(self, image: Image | None = None, **kwargs) -> Image:
         """Alias for Image.replace()."""
         ...
+
     def set_pixel(self, x: int, y: int, pixel: int | tuple[int, int, int]) -> Image:
         """
         For grayscale images: Sets the pixel at location (x, y) to the grayscale value pixel.
@@ -2177,9 +2328,11 @@ class Image:
         value of that RGB888 tuple is extracted and set to the pixel location.
         """
         ...
+
     def size(self) -> int:
         """Returns the image size in bytes."""
         ...
+
     def stereo_disparity(self, reversed: bool = False, max_disparity: int = 64, threshold: int = 64) -> Image:
         """
         Takes a double-wide grayscale image containing the output of two side-by-side
@@ -2197,6 +2350,7 @@ class Image:
         or equal to this threshold they are considered matching.
         """
         ...
+
     def sub(self, image: Image, mask: Image | None = None) -> Image:
         """
         Subtracts image pixel-wise from this image (self - image).
@@ -2214,6 +2368,7 @@ class Image:
         Not supported on compressed images or bayer images.
         """
         ...
+
     def to_bitmap(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to a bitmap image (1 bit per pixel).
@@ -2274,6 +2429,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_depth(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image = PALETTE_IRONBOW, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to an RGB565 Depth Image (16-bits per pixel).
@@ -2323,6 +2479,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_evt_dark(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image = PALETTE_IRONBOW, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to an RGB565 Dark Event Image (16-bits per pixel).
@@ -2372,6 +2529,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_evt_light(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image = PALETTE_IRONBOW, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to an RGB565 Light Event Image (16-bits per pixel).
@@ -2421,6 +2579,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_grayscale(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to a grayscale image (8-bits per pixel).
@@ -2470,6 +2629,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_ironbow(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image = PALETTE_IRONBOW, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to an RGB565 ironbow image (16-bits per pixel).
@@ -2519,6 +2679,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_jpeg(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False, quality: int = 90, subsampling: int = 0) -> Image:
         """
         Converts an image to a JPEG image.
@@ -2577,6 +2738,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_ndarray(self, dtype: str, buffer: bytes | bytearray | memoryview | None = None) -> ndarray:
         """
         Returns a ndarray object created from the image.
@@ -2598,6 +2760,7 @@ class Image:
         (height, width, 3) for RGB565 images.
         """
         ...
+
     def to_png(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to a PNG image.
@@ -2647,6 +2810,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_rainbow(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image = PALETTE_RAINBOW, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to an RGB565 rainbow image (16-bits per pixel).
@@ -2696,6 +2860,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def to_rgb565(self, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | Image | None = None, alpha_palette: Image | None = None, hint: int = 0, transform: ndarray | None = None, copy: bool = False, copy_to_fb: bool = False) -> Image:
         """
         Converts an image to an RGB565 image (16-bits per pixel).
@@ -2745,6 +2910,7 @@ class Image:
         Returns the image object so you can call another method using . notation.
         """
         ...
+
     def top_hat(self, size: int, threshold: int | None = None, mask: Image | None = None) -> Image:
         """
         Returns the image difference of the image and the Image.open()-ed image.
@@ -2755,9 +2921,11 @@ class Image:
         Not supported on compressed images or bayer/yuv images.
         """
         ...
+
     def width(self) -> int:
         """Returns the image width in pixels."""
         ...
+
 
 class ImageIO:
     """
@@ -2783,6 +2951,7 @@ class ImageIO:
     estimate raise ValueError at write() time.
     """
     def __init__(self, path: str | tuple[int, int, int], mode: str | int) -> None: ...
+
     def buffer_size(self) -> int | None:
         """
         Return the per-slot pixel buffer size in bytes for memory
@@ -2792,6 +2961,7 @@ class ImageIO:
         size will fit.
         """
         ...
+
     def close(self) -> None:
         """
         Close the stream. Releases the memory buffer (memory streams) or
@@ -2804,6 +2974,7 @@ class ImageIO:
         garbage-collected (it registers a finaliser at construction).
         """
         ...
+
     def count(self) -> int:
         """
         Return the number of frames currently stored in the stream. For
@@ -2811,6 +2982,7 @@ class ImageIO:
         memory streams this is fixed at construction time.
         """
         ...
+
     def is_closed(self) -> bool:
         """
         Return True if close() has been called on this object.
@@ -2818,12 +2990,14 @@ class ImageIO:
         any further read/write/seek.
         """
         ...
+
     def offset(self) -> int:
         """
         Return the current frame index. Incremented by read() and
         write(), reset by seek().
         """
         ...
+
     def read(self, copy_to_fb: bool = True, *, loop: bool = True, pause: bool = True) -> Image | None:
         """
         Read the frame at the current offset(), advance the
@@ -2847,6 +3021,7 @@ class ImageIO:
         False for as-fast-as-possible playback.
         """
         ...
+
     def seek(self, offset: int) -> ImageIO:
         """
         Move offset() to frame offset. offset must be
@@ -2860,6 +3035,7 @@ class ImageIO:
         Returns self so calls can be chained.
         """
         ...
+
     def size(self) -> int:
         """
         Return the total bytes consumed by the stream – the file size
@@ -2868,6 +3044,7 @@ class ImageIO:
         memory streams.
         """
         ...
+
     def sync(self) -> ImageIO:
         """
         Flush pending writes to disk for file streams (calls the
@@ -2876,12 +3053,14 @@ class ImageIO:
         Returns self so calls can be chained.
         """
         ...
+
     def type(self) -> int:
         """
         Return the stream backing store: FILE_STREAM for a file
         stream, MEMORY_STREAM for a memory stream.
         """
         ...
+
     def version(self) -> int | None:
         """
         Return the on-disk format version for file streams (10 for
@@ -2889,6 +3068,7 @@ class ImageIO:
         None for memory streams.
         """
         ...
+
     def write(self, img: Image) -> ImageIO:
         """
         Append (file stream) or store-at-offset (memory stream) img
@@ -2906,6 +3086,7 @@ class ImageIO:
         Returns self so calls can be chained.
         """
         ...
+
 
 class apriltag:
     """Please call Image.find_apriltags() to create this object."""
@@ -3018,6 +3199,7 @@ class apriltag:
     Index [17].
     """
 
+
 class barcode:
     """Please call Image.find_barcodes() to create this object."""
     def __init__(self) -> None: ...
@@ -3078,6 +3260,7 @@ class barcode:
     """Bounding box top-left x coordinate, in pixels. Integer. Index [0]."""
     y: Any
     """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
+
 
 class blob:
     """Please call Image.find_blobs() to create this object."""
@@ -3192,6 +3375,7 @@ class blob:
     y_hist_bins_max > 0; otherwise empty. Index [13].
     """
 
+
 class circle:
     """Please call Image.find_circles() to create this object."""
     def __init__(self) -> None: ...
@@ -3207,6 +3391,7 @@ class circle:
     """Centre x coordinate, in pixels. Integer. Index [0]."""
     y: Any
     """Centre y coordinate, in pixels. Integer. Index [1]."""
+
 
 class datamatrix:
     """Please call Image.find_datamatrices() to create this object."""
@@ -3253,6 +3438,7 @@ class datamatrix:
     y: Any
     """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
+
 class displacement:
     """Please call Image.find_displacement() to create this object."""
     def __init__(self) -> None: ...
@@ -3285,12 +3471,14 @@ class displacement:
     Index [1].
     """
 
+
 class histogram:
     """
     Please call Image.get_histogram() to create this object. It has no public
     constructor.
     """
     def __init__(self) -> None: ...
+
     def a_bins(self) -> list[float]:
         """
         Return the bin list for the LAB A channel of an RGB565 histogram.
@@ -3299,6 +3487,7 @@ class histogram:
         Equivalent to histogram[1].
         """
         ...
+
     def b_bins(self) -> list[float]:
         """
         Return the bin list for the LAB B channel of an RGB565 histogram.
@@ -3307,6 +3496,7 @@ class histogram:
         Equivalent to histogram[2].
         """
         ...
+
     def bins(self) -> list[float]:
         """
         Return the bin list for a grayscale histogram. Each entry is in the
@@ -3315,6 +3505,7 @@ class histogram:
         Equivalent to histogram[0].
         """
         ...
+
     def get_percentile(self, percentile: float) -> image.percentile:
         """
         Compute the CDF of every histogram channel and return the bin value at
@@ -3327,6 +3518,7 @@ class histogram:
         Returns a Percentile attrtuple.
         """
         ...
+
     def get_statistics(self) -> image.statistics:
         """
         Compute the mean, median, mode, standard deviation, min, max, lower
@@ -3335,9 +3527,11 @@ class histogram:
         Returns a Statistics attrtuple.
         """
         ...
+
     def get_stats(self) -> image.statistics:
         """Alias for get_statistics()."""
         ...
+
     def get_threshold(self) -> image.threshold:
         """
         Use Otsu’s Method on every channel to find the threshold value that
@@ -3349,6 +3543,7 @@ class histogram:
         Returns a Threshold attrtuple.
         """
         ...
+
     def l_bins(self) -> list[float]:
         """
         Return the bin list for the LAB L channel of an RGB565 histogram.
@@ -3357,9 +3552,11 @@ class histogram:
         Equivalent to histogram[0].
         """
         ...
+
     def statistics(self) -> image.statistics:
         """Alias for get_statistics()."""
         ...
+
 
 class kptmatch:
     """Please call image.match_descriptor() to create this object."""
@@ -3418,6 +3615,7 @@ class kptmatch:
     pixels. Integer. Index [1].
     """
 
+
 class line:
     """
     Please call Image.find_lines(), Image.find_line_segments(), or
@@ -3453,6 +3651,7 @@ class line:
     y2: Any
     """Y coordinate of the second endpoint. Integer. Index [3]."""
 
+
 class percentile:
     """Please call histogram.get_percentile() to create this object."""
     def __init__(self) -> None: ...
@@ -3476,6 +3675,7 @@ class percentile:
     Grayscale bin value at the requested percentile. Integer 0 – 255.
     Index [0].
     """
+
 
 class qrcode:
     """Please call Image.find_qrcodes() to create this object."""
@@ -3552,6 +3752,7 @@ class qrcode:
     y: Any
     """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
+
 class rect:
     """Please call Image.find_rects() to create this object."""
     def __init__(self) -> None: ...
@@ -3577,6 +3778,7 @@ class rect:
     y: Any
     """Bounding box top-left y coordinate, in pixels. Integer. Index [1]."""
 
+
 class similarity:
     """Please call Image.get_similarity() to create this object."""
     def __init__(self) -> None: ...
@@ -3601,6 +3803,7 @@ class similarity:
     """
     stdev: Any
     """Standard deviation of the per-block SSIM values. Float. Index [1]."""
+
 
 class statistics:
     """
@@ -3688,6 +3891,7 @@ class statistics:
     Integer 0 – 255. Index [7].
     """
 
+
 class threshold:
     """Please call histogram.get_threshold() to create this object."""
     def __init__(self) -> None: ...
@@ -3708,4 +3912,3 @@ class threshold:
     """
     value: Any
     """Grayscale Otsu threshold value. Integer 0 – 255. Index [0]."""
-

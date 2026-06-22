@@ -6,6 +6,7 @@ OpenMV Cams it is included whenever the ssl module is enabled.
 
 from typing import Any
 
+
 class aes:
     """
     Create a new AES cipher object, suitable for encryption or decryption.
@@ -38,9 +39,11 @@ class aes:
       for ECB.
     """
     def __init__(self, key: bytes | bytearray | memoryview, mode: int, IV: bytes | bytearray | memoryview | None = None) -> None: ...
+
     def decrypt(self, in_buf: bytes | bytearray | memoryview, out_buf: bytearray | memoryview | None = None) -> bytes:
         """Like encrypt(), but reverses the operation."""
         ...
+
     def encrypt(self, in_buf: bytes | bytearray | memoryview, out_buf: bytearray | memoryview | None = None) -> bytes:
         """
         Encrypt in_buf. The buffer length must be a multiple of 16
@@ -53,4 +56,3 @@ class aes:
         to the same buffer for in-place encryption.
         """
         ...
-

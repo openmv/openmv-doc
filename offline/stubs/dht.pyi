@@ -16,6 +16,7 @@ Example:
 from typing import Any
 import machine
 
+
 class DHT11:
     """
     Driver for the DHT11 sensor. Connect the sensor’s data line to pin
@@ -23,18 +24,21 @@ class DHT11:
     percent relative humidity and 1 degree Celsius resolution.
     """
     def __init__(self, pin: machine.Pin) -> None: ...
+
     def humidity(self) -> int:
         """
         Return the relative humidity from the most recent measure()
         call, as an integer percentage (0–100).
         """
         ...
+
     def temperature(self) -> int:
         """
         Return the temperature from the most recent measure() call,
         as an integer in degrees Celsius.
         """
         ...
+
 
 class DHT22:
     """
@@ -44,12 +48,14 @@ class DHT22:
     supports negative temperatures.
     """
     def __init__(self, pin: machine.Pin) -> None: ...
+
     def humidity(self) -> float:
         """
         Return the relative humidity from the most recent measure()
         call, as a float percentage (0.0–100.0).
         """
         ...
+
     def temperature(self) -> float:
         """
         Return the temperature from the most recent measure() call,
@@ -57,12 +63,14 @@ class DHT22:
         """
         ...
 
+
 class DHTBase:
     """
     Base class for DHT sensors. Not normally instantiated directly — use
     DHT11 or DHT22 instead.
     """
     def __init__(self, pin: machine.Pin) -> None: ...
+
     def measure(self) -> None:
         """
         Trigger a measurement on the sensor and read the 5-byte response
@@ -74,4 +82,3 @@ class DHTBase:
         (DHT11) or 2 seconds (DHT22) between consecutive measurements.
         """
         ...
-

@@ -44,6 +44,7 @@ and a trailing Adler-32 checksum. Compact and self-describing;
 well suited to embedded use.
 """
 
+
 class DeflateIO:
     """
     This class can be used to wrap a stream which is any
@@ -88,4 +89,3 @@ class DeflateIO:
     directions.
     """
     def __init__(self, stream: Any, format: int = AUTO, wbits: int = 0, close: bool = False, /) -> None: ...
-

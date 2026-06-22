@@ -35,6 +35,7 @@ PROTOCOL_TLS_CLIENT: int
 PROTOCOL_TLS_SERVER: int
 """Supported value for the protocol parameter, selecting TLS server mode."""
 
+
 def wrap_socket(sock: Any, server_side: bool = False, key: bytes | None = None, cert: bytes | None = None, cert_reqs: int = CERT_NONE, cadata: bytes | None = None, server_hostname: str | None = None, do_handshake: bool = True) -> Any:
     """
     Wrap the given sock and return a new wrapped-socket object.  The implementation
@@ -51,6 +52,7 @@ def wrap_socket(sock: Any, server_side: bool = False, key: bytes | None = None, 
     """
     ...
 
+
 class SSLContext:
     """
     Create a new SSLContext instance.  The protocol argument must be one of the PROTOCOL_*
@@ -66,9 +68,11 @@ class SSLContext:
     mpremote rtc –set <mpremote_command_rtc> or ntptime, and server_hostname
     must be specified when on the client side.
     """
+
     def get_ciphers(self) -> list[str]:
         """Get a list of enabled ciphers, returned as a list of strings."""
         ...
+
     def load_cert_chain(self, certfile: str | bytes, keyfile: str | bytes) -> None:
         """
         Load a private key and the corresponding certificate.  The certfile is a string
@@ -81,6 +85,7 @@ class SSLContext:
         strings, in which case they are interpreted as the actual certificate/key data.
         """
         ...
+
     def load_verify_locations(self, cafile: str | None = None, cadata: bytes | None = None) -> None:
         """
         Load the CA certificate chain that will validate the peer’s certificate.
@@ -88,12 +93,14 @@ class SSLContext:
         containing the CA certificates.  Only one of these arguments should be provided.
         """
         ...
+
     def set_ciphers(self, ciphers: list[str]) -> None:
         """
         Set the available ciphers for sockets created with this context.  ciphers should be
         a list of strings in the IANA cipher suite format .
         """
         ...
+
     def wrap_socket(self, sock: Any, *, server_side: bool = False, do_handshake_on_connect: bool = True, server_hostname: str | None = None, client_id: bytes | None = None) -> Any:
         """
         Takes a stream sock (usually socket.socket instance of SOCK_STREAM type),
@@ -128,4 +135,3 @@ class SSLContext:
         these socket methods.
         """
         ...
-

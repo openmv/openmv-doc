@@ -22,6 +22,7 @@ Example:
 from typing import Any
 import machine
 
+
 class BMM150:
     """
     Construct a BMM150 instance, soft-reset the chip, verify its chip
@@ -49,6 +50,7 @@ class BMM150:
     anything else raises ValueError.
     """
     def __init__(self, bus: machine.I2C, cs: machine.Pin | None = None, address: int = 0x10, magnet_odr: int = 30) -> None: ...
+
     def magnet(self) -> tuple[float, float, float]:
         """
         Read a fresh sample via magnet_raw() and return the
@@ -57,6 +59,7 @@ class BMM150:
         C driver supplied by Bosch.
         """
         ...
+
     def magnet_raw(self) -> tuple[int, int, int, int]:
         """
         Poll the data-ready flag and return the raw signed
@@ -65,4 +68,3 @@ class BMM150:
         sample becomes available within ten retries.
         """
         ...
-

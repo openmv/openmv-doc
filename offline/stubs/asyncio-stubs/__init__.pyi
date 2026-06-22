@@ -30,6 +30,7 @@ Example:
 from typing import Any, Awaitable, Callable, Coroutine
 import ssl
 
+
 def create_task(coro: Coroutine) -> Task:
     """
     Create a new task from the given coroutine and schedule it to run.
@@ -37,9 +38,13 @@ def create_task(coro: Coroutine) -> Task:
     Returns the corresponding Task object.
     """
     ...
+
+
 def current_task() -> Task:
     """Return the Task object associated with the currently running task."""
     ...
+
+
 def gather(*awaitables, return_exceptions: bool = False) -> list:
     """
     Run all awaitables concurrently.  Any awaitables that are not tasks are
@@ -50,9 +55,13 @@ def gather(*awaitables, return_exceptions: bool = False) -> list:
     This is a coroutine.
     """
     ...
+
+
 def get_event_loop() -> Loop:
     """Return the event loop used to schedule and run tasks.  See Loop."""
     ...
+
+
 def new_event_loop() -> Loop:
     """
     Reset the event loop and return it.
@@ -61,6 +70,8 @@ def new_event_loop() -> Loop:
     resets the loop’s state, it does not create a new one.
     """
     ...
+
+
 def open_connection(host: str, port: int, ssl: ssl.SSLContext | bool | None = None) -> tuple[Stream, Stream]:
     """
     Open a TCP connection to the given host and port.  The host address will be
@@ -75,6 +86,8 @@ def open_connection(host: str, port: int, ssl: ssl.SSLContext | bool | None = No
     This is a coroutine.
     """
     ...
+
+
 def run(coro: Coroutine) -> Any:
     """
     Create a new task from the given coroutine and run it until it completes.
@@ -82,6 +95,8 @@ def run(coro: Coroutine) -> Any:
     Returns the value returned by coro.
     """
     ...
+
+
 def sleep(t: float) -> None:
     """
     Sleep for t seconds (can be a float).
@@ -89,6 +104,8 @@ def sleep(t: float) -> None:
     This is a coroutine.
     """
     ...
+
+
 def sleep_ms(t: int) -> None:
     """
     Sleep for t milliseconds.
@@ -96,6 +113,8 @@ def sleep_ms(t: int) -> None:
     This is a coroutine, and a MicroPython extension.
     """
     ...
+
+
 def start_server(callback: Callable, host: str, port: int, backlog: int = 5, ssl: ssl.SSLContext | None = None) -> Server:
     """
     Start a TCP server on the given host and port.  The callback will be
@@ -109,6 +128,8 @@ def start_server(callback: Callable, host: str, port: int, backlog: int = 5, ssl
     This is a coroutine.
     """
     ...
+
+
 def wait_for(awaitable: Awaitable, timeout: float) -> Any:
     """
     Wait for the awaitable to complete, but cancel it if it takes longer
@@ -125,6 +146,8 @@ def wait_for(awaitable: Awaitable, timeout: float) -> Any:
     This is a coroutine.
     """
     ...
+
+
 def wait_for_ms(awaitable: Awaitable, timeout: int) -> Any:
     """
     Similar to wait_for() but timeout is an integer in milliseconds.
@@ -133,18 +156,22 @@ def wait_for_ms(awaitable: Awaitable, timeout: int) -> Any:
     """
     ...
 
+
 class Event:
     """
     Create a new event which can be used to synchronise tasks.  Events start
     in the cleared state.
     """
     def __init__(self) -> None: ...
+
     def clear(self) -> None:
         """Clear the event."""
         ...
+
     def is_set(self) -> bool:
         """Returns True if the event is set, False otherwise."""
         ...
+
     def set(self) -> None:
         """
         Set the event.  Any tasks waiting on the event will be scheduled to run.
@@ -153,6 +180,7 @@ class Event:
         from an IRQ, scheduler callback, or other thread. See ThreadSafeFlag.
         """
         ...
+
     def wait(self) -> None:
         """
         Wait for the event to be set.  If the event is already set then it returns
@@ -162,6 +190,7 @@ class Event:
         """
         ...
 
+
 class Lock:
     """
     Create a new lock which can be used to coordinate tasks.  Locks start in
@@ -170,6 +199,7 @@ class Lock:
     In addition to the methods below, locks can be used in an async with statement.
     """
     def __init__(self) -> None: ...
+
     def acquire(self) -> bool:
         """
         Wait for the lock to be in the unlocked state and then lock it in an atomic
@@ -178,9 +208,11 @@ class Lock:
         This is a coroutine.
         """
         ...
+
     def locked(self) -> bool:
         """Returns True if the lock is locked, otherwise False."""
         ...
+
     def release(self) -> None:
         """
         Release the lock.  If any tasks are waiting on the lock then the next one in the
@@ -189,51 +221,62 @@ class Lock:
         """
         ...
 
+
 class Loop:
     """
     This represents the object which schedules and runs tasks.  It cannot be
     created, use get_event_loop() instead.
     """
     def __init__(self) -> None: ...
+
     def call_exception_handler(self, context: dict) -> None:
         """
         Call the current exception handler.  The argument context is passed through and
         is a dictionary containing keys: 'message', 'exception', 'future'.
         """
         ...
+
     def close(self) -> None:
         """Close the event loop."""
         ...
+
     def create_task(self, coro: Coroutine) -> Task:
         """Create a task from the given coro and return the new Task object."""
         ...
+
     def default_exception_handler(self, context: dict) -> None:
         """The default exception handler that is called."""
         ...
+
     def get_exception_handler(self) -> Callable | None:
         """
         Get the current exception handler.  Returns the handler, or None if no
         custom handler is set.
         """
         ...
+
     def run_forever(self) -> None:
         """Run the event loop until stop() is called."""
         ...
+
     def run_until_complete(self, awaitable: Awaitable) -> Any:
         """
         Run the given awaitable until it completes.  If awaitable is not a task
         then it will be promoted to one.
         """
         ...
+
     def set_exception_handler(self, handler: Callable) -> None:
         """
         Set the exception handler to call when a Task raises an exception that is not
         caught.  The handler should accept two arguments: (loop, context).
         """
         ...
+
     def stop(self) -> None:
         """Stop the event loop."""
         ...
+
 
 class Server:
     """
@@ -241,9 +284,11 @@ class Server:
     in an async with statement to close the server upon exit.
     """
     def __init__(self) -> None: ...
+
     def close(self) -> None:
         """Close the server."""
         ...
+
     def wait_closed(self) -> None:
         """
         Wait for the server to close.
@@ -252,6 +297,7 @@ class Server:
         """
         ...
 
+
 class Stream:
     """
     This represents a TCP stream connection.  To minimise code this class implements
@@ -259,9 +305,11 @@ class Stream:
     this class.
     """
     def __init__(self) -> None: ...
+
     def close(self) -> None:
         """Close the stream."""
         ...
+
     def drain(self) -> None:
         """
         Drain (write) all buffered output data out to the stream.
@@ -269,12 +317,14 @@ class Stream:
         This is a coroutine.
         """
         ...
+
     def get_extra_info(self, v: str) -> Any:
         """
         Get extra information about the stream, given by v.  The valid values for v are:
         peername.
         """
         ...
+
     def read(self, n: int = -1) -> bytes:
         """
         Read up to n bytes and return them.  If n is not provided or -1 then read all
@@ -284,6 +334,7 @@ class Stream:
         This is a coroutine.
         """
         ...
+
     def readexactly(self, n: int) -> bytes:
         """
         Read exactly n bytes and return them as a bytes object.
@@ -293,6 +344,7 @@ class Stream:
         This is a coroutine.
         """
         ...
+
     def readinto(self, buf: bytearray | memoryview) -> int:
         """
         Read up to n bytes into buf with n being equal to the length of buf.
@@ -302,6 +354,7 @@ class Stream:
         This is a coroutine, and a MicroPython extension.
         """
         ...
+
     def readline(self) -> bytes:
         """
         Read a line and return it.
@@ -309,6 +362,7 @@ class Stream:
         This is a coroutine.
         """
         ...
+
     def wait_closed(self) -> None:
         """
         Wait for the stream to close.
@@ -316,6 +370,7 @@ class Stream:
         This is a coroutine.
         """
         ...
+
     def write(self, buf: bytes) -> None:
         """
         Accumulated buf to the output buffer.  The data is only flushed when
@@ -323,6 +378,7 @@ class Stream:
         after calling this function.
         """
         ...
+
 
 class Task:
     """
@@ -333,6 +389,7 @@ class Task:
     Tasks should not be created directly, rather use create_task() to create them.
     """
     def __init__(self) -> None: ...
+
     def cancel(self) -> None:
         """
         Cancel the task by injecting asyncio.CancelledError into it.  The task may
@@ -341,6 +398,7 @@ class Task:
         """
         ...
 
+
 class ThreadSafeFlag:
     """
     Create a new flag which can be used to synchronise a task with code running
@@ -348,18 +406,21 @@ class ThreadSafeFlag:
     callbacks.  Flags start in the cleared state.
     """
     def __init__(self) -> None: ...
+
     def clear(self) -> None:
         """
         Clear the flag. This may be used to ensure that a possibly previously-set
         flag is clear before waiting for it.
         """
         ...
+
     def set(self) -> None:
         """
         Set the flag.  If there is a task waiting on the flag, it will be scheduled
         to run.
         """
         ...
+
     def wait(self) -> None:
         """
         Wait for the flag to be set.  If the flag is already set then it returns
@@ -370,4 +431,3 @@ class ThreadSafeFlag:
         This is a coroutine.
         """
         ...
-

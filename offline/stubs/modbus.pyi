@@ -22,6 +22,7 @@ For example:
 from typing import Any
 import machine
 
+
 class ModbusRTU:
     """
     Construct a ModbusRTU slave.
@@ -61,6 +62,7 @@ class ModbusRTU:
     """
     uart: machine.UART
     """The UART instance passed to the constructor, used for all I/O."""
+
     def any(self) -> int:
         """
         Return the number of bytes currently available in the underlying UART’s
@@ -68,9 +70,11 @@ class ModbusRTU:
         incoming request before calling handle().
         """
         ...
+
     def clear(self) -> None:
         """Reset every entry in REGISTER to 0."""
         ...
+
     def crc16(self, data: bytes | bytearray) -> bytes:
         """
         Compute the Modbus CRC-16 of data using CRC16_TABLE and return
@@ -81,6 +85,7 @@ class ModbusRTU:
           containing the bytes to checksum.
         """
         ...
+
     def handle(self, debug: bool = False) -> None:
         """
         Read a single Modbus request from the UART, update the internal
@@ -111,4 +116,3 @@ class ModbusRTU:
           False.
         """
         ...
-

@@ -13,31 +13,47 @@ e: float
 pi: float
 """The ratio of a circle’s circumference to its diameter"""
 
+
 def cos(z: complex) -> complex:
     """Return the cosine of z."""
     ...
+
+
 def exp(z: complex) -> complex:
     """Return the exponential of z."""
     ...
+
+
 def log(z: complex) -> complex:
     """Return the natural logarithm of z.  The branch cut is along the negative real axis."""
     ...
+
+
 def log10(z: complex) -> complex:
     """Return the base-10 logarithm of z.  The branch cut is along the negative real axis."""
     ...
+
+
 def phase(z: complex) -> float:
     """Returns the phase of the number z, in the range (-pi, +pi]."""
     ...
+
+
 def polar(z: complex) -> tuple[float, float]:
     """Returns, as a tuple, the polar form of z."""
     ...
+
+
 def rect(r: float, phi: float) -> complex:
     """Returns the complex number with modulus r and phase phi."""
     ...
+
+
 def sin(z: complex) -> complex:
     """Return the sine of z."""
     ...
+
+
 def sqrt(z: complex) -> complex:
     """Return the square-root of z."""
     ...
-

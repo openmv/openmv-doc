@@ -27,22 +27,30 @@ version_minor: int
 version_patch: int
 """The firmware patch version number."""
 
+
 def arch() -> str:
     """Returns the board architecture string."""
     ...
+
+
 def board_id() -> str:
     """Returns the board id string."""
     ...
+
+
 def board_type() -> str:
     """Returns the board type string."""
     ...
+
+
 def debug_mode() -> bool:
     """
     Returns True if the OpenMV debug protocol is currently active
     (i.e. the cam is connected to the IDE), False otherwise.
     """
     ...
+
+
 def version_string() -> str:
     """Returns the firmware version string (e.g. "2.8.0")."""
     ...
-

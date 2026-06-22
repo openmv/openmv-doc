@@ -8,6 +8,7 @@ binary data over text-only channels.
 
 from typing import Any
 
+
 def a2b_base64(data: str | bytes) -> bytes:
     """
     Decode base64-encoded data, ignoring invalid characters in the input.
@@ -15,12 +16,16 @@ def a2b_base64(data: str | bytes) -> bytes:
     Returns a bytes object.
     """
     ...
+
+
 def b2a_base64(data: bytes, *, newline: bool = True) -> bytes:
     """
     Encode binary data in base64 format, as in RFC 3548. Returns the encoded data
     followed by a newline character if newline is true, as a bytes object.
     """
     ...
+
+
 def crc32(data: bytes, value: int = 0) -> int:
     """
     Compute CRC-32, the 32-bit checksum of data, starting with an initial CRC
@@ -28,6 +33,8 @@ def crc32(data: bytes, value: int = 0) -> int:
     with the ZIP file checksum.
     """
     ...
+
+
 def hexlify(data: bytes, sep: str | bytes | None = None) -> bytes:
     """
     Convert the bytes in the data object to a hexadecimal representation.
@@ -37,10 +44,11 @@ def hexlify(data: bytes, sep: str | bytes | None = None) -> bytes:
     between hexadecimal values.
     """
     ...
+
+
 def unhexlify(data: str | bytes) -> bytes:
     """
     Convert hexadecimal data to binary representation. Returns bytes string.
     (i.e. inverse of hexlify)
     """
     ...
-

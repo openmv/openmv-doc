@@ -54,6 +54,7 @@ POLLIN: int
 POLLOUT: int
 """The stream can accept more data to be written."""
 
+
 def select(rlist: list, wlist: list, xlist: list, timeout: float | None = None) -> tuple[list, list, list]:
     """
     Wait until one or more of the given stream objects is ready, or until
@@ -79,6 +80,7 @@ def select(rlist: list, wlist: list, xlist: list, timeout: float | None = None) 
     """
     ...
 
+
 class poll:
     """
     Create a polling object that maintains a set of registered streams (or any
@@ -93,6 +95,7 @@ class poll:
     variant.
     """
     def __init__(self) -> None: ...
+
     def ipoll(self, timeout: int = -1, flags: int = 0, /) -> Iterator[tuple]:
         """
         Like poll(), but instead of building a list it returns an iterator
@@ -118,6 +121,7 @@ class poll:
         This method is a MicroPython extension.
         """
         ...
+
     def modify(self, obj: Any, eventmask: int) -> None:
         """
         Change the event mask for an already-registered obj to eventmask.
@@ -125,6 +129,7 @@ class poll:
         registered.
         """
         ...
+
     def poll(self, timeout: int = -1, /) -> list[tuple]:
         """
         Block until at least one registered stream becomes ready or signals an
@@ -156,6 +161,7 @@ class poll:
         Returned tuples may contain more than 2 elements, as described above.
         """
         ...
+
     def register(self, obj: Any, eventmask: int = select.POLLIN | select.POLLOUT) -> None:
         """
         Register the stream obj for polling, watching for the
@@ -176,6 +182,7 @@ class poll:
         modify().
         """
         ...
+
     def unregister(self, obj: Any) -> None:
         """
         Remove obj from the set of registered streams. It is not an error to
@@ -183,4 +190,3 @@ class poll:
         effect in that case).
         """
         ...
-

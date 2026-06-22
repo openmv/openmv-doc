@@ -25,6 +25,7 @@ Example:
 from typing import Any, Iterator
 import machine
 
+
 class LSM9DS1:
     """
     Construct an LSM9DS1 instance, verify the WHO_AM_I registers of
@@ -76,12 +77,14 @@ class LSM9DS1:
     8, 12 or 16.
     """
     def __init__(self, bus: machine.I2C, address_imu: int = 0x6B, address_magnet: int = 0x1E, gyro_odr: float = 952, gyro_scale: int = 245, accel_odr: float = 952, accel_scale: int = 4, magnet_odr: int = 80, magnet_scale: int = 4) -> None: ...
+
     def accel(self) -> tuple[float, float, float]:
         """
         Return the acceleration vector (x, y, z) in units of standard
         gravity (1 g = 9.81 m/s²).
         """
         ...
+
     def calibrate_magnet(self, offset: tuple[float, float, float]) -> None:
         """
         Write a hard-iron offset vector into the magnetometer’s
@@ -91,15 +94,18 @@ class LSM9DS1:
         written.
         """
         ...
+
     def gyro(self) -> tuple[float, float, float]:
         """Return the gyroscope vector (x, y, z) in degrees per second."""
         ...
+
     def gyro_id(self) -> bytes:
         """
         Return the single-byte WHO_AM_I register value of the
         accelerometer/gyroscope sub-device.
         """
         ...
+
     def iter_accel_gyro(self) -> Iterator[tuple[tuple[float, float, float], tuple[float, float, float]]]:
         """
         Generator that yields (gyro, accel) tuples for every sample
@@ -108,13 +114,14 @@ class LSM9DS1:
         accel() respectively.
         """
         ...
+
     def magent_id(self) -> bytes:
         """
         Return the single-byte WHO_AM_I register value of the
         magnetometer sub-device.
         """
         ...
+
     def magnet(self) -> tuple[float, float, float]:
         """Return the magnetic-field vector (x, y, z) in gauss."""
         ...
-

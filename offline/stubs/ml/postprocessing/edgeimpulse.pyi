@@ -7,6 +7,7 @@ for Edge Impulse models.
 from typing import Any
 import ml
 
+
 class Fomo:
     """
     Creates a FOMO post-processor.
@@ -26,6 +27,7 @@ class Fomo:
     nms_sigma sigma value passed to non-max-suppression (soft-NMS).
     """
     def __init__(self, threshold: float = 0.4, w_scale: float = 1.414214, h_scale: float = 1.414214, nms_threshold: float = 0.1, nms_sigma: float = 0.001) -> None: ...
+
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """
         Invoked by ml.Model.predict() with the model, its inputs, and its raw
@@ -35,4 +37,3 @@ class Fomo:
         model output. Returns an empty tuple when nothing is detected.
         """
         ...
-

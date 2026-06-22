@@ -32,6 +32,7 @@ user-modifiable; refer to the in-source comments for the user-tunable
 fields.
 """
 
+
 class VL53L1X:
     """
     Construct a VL53L1X driver instance.
@@ -47,6 +48,7 @@ class VL53L1X:
     if the model ID register does not return the expected value 0xEACC.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x29) -> None: ...
+
     def read(self) -> int:
         """
         Trigger a register read of RESULT__RANGE_STATUS (0x0089) and
@@ -54,40 +56,45 @@ class VL53L1X:
         single-zone detector SD0 as an int.
         """
         ...
+
     def readReg(self, reg: int) -> int:
         """
         Read a single 8-bit value from the 16-bit device register address
         reg and return it as an int.
         """
         ...
+
     def readReg16Bit(self, reg: int) -> int:
         """
         Read a 16-bit value (big-endian) from the 16-bit device register
         address reg and return it as an int.
         """
         ...
+
     def read_model_id(self) -> int:
         """
         Return the contents of the 16-bit model-ID register at 0x010F. The
         expected value for a VL53L1X is 0xEACC.
         """
         ...
+
     def reset(self) -> None:
         """
         Perform a soft reset of the device by toggling the soft-reset register
         0x0000. Blocks for 100 ms while the device is held in reset.
         """
         ...
+
     def writeReg(self, reg: int, value: int) -> None:
         """
         Write a single 8-bit value to the 16-bit device register address
         reg.
         """
         ...
+
     def writeReg16Bit(self, reg: int, value: int) -> None:
         """
         Write a 16-bit value (big-endian) to the 16-bit device register
         address reg.
         """
         ...
-

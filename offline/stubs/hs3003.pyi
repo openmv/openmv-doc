@@ -23,6 +23,7 @@ Example:
 from typing import Any
 import machine
 
+
 class HS3003:
     """
     Construct an HS3003 instance.
@@ -37,16 +38,17 @@ class HS3003:
     address used by all HS3003 parts.
     """
     def __init__(self, bus: machine.I2C, address: int = 0x44) -> None: ...
+
     def humidity(self) -> float:
         """
         Trigger a measurement and return the relative humidity in percent
         (%RH), computed as (raw & 0x3FFF) / 16383 * 100.
         """
         ...
+
     def temperature(self) -> float:
         """
         Trigger a measurement and return the temperature in degrees Celsius,
         computed as (raw >> 2) / 16383 * 165 - 40.
         """
         ...
-

@@ -22,12 +22,14 @@ Example:
 
 from typing import Any
 
+
 class DS18X20:
     """
     Construct a DS18x20 driver bound to the given onewire.OneWire bus.
     Multiple DS18x20 sensors may share the same bus.
     """
     def __init__(self, onewire: OneWire) -> None: ...
+
     def convert_temp(self) -> None:
         """
         Issue a temperature conversion command to all DS18x20 sensors on
@@ -36,6 +38,7 @@ class DS18X20:
         default 12-bit resolution) before calling read_temp().
         """
         ...
+
     def read_scratch(self, rom: bytes | bytearray) -> bytearray:
         """
         Read the 9-byte scratchpad from the device addressed by rom and
@@ -47,6 +50,7 @@ class DS18X20:
         overwritten by subsequent calls.
         """
         ...
+
     def read_temp(self, rom: bytes | bytearray) -> float:
         """
         Read the most recently converted temperature from the device
@@ -59,6 +63,7 @@ class DS18X20:
         before calling this method.
         """
         ...
+
     def scan(self) -> list[bytearray]:
         """
         Search the underlying 1-Wire bus and return a list of ROM codes that
@@ -67,6 +72,7 @@ class DS18X20:
         returned; other 1-Wire devices on the same bus are filtered out.
         """
         ...
+
     def write_scratch(self, rom: bytes | bytearray, buf: bytes | bytearray) -> None:
         """
         Write 3 bytes to the scratchpad of the device addressed by rom.
@@ -74,4 +80,3 @@ class DS18X20:
         (TL) and configuration register values.
         """
         ...
-

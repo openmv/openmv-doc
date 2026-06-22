@@ -8,6 +8,7 @@ protocol.
 
 from typing import Any, Iterable
 
+
 class array:
     """
     Create array with elements of given type. Initial contents of the
@@ -19,6 +20,7 @@ class array:
     bytes via a memoryview or other interfaces which use this protocol.
     """
     def __init__(self, typecode: str, iterable: Iterable = ()) -> None: ...
+
     def __add__(self, other: array) -> array:
         """
         Return a new array that is the concatenation of the array with other, called as
@@ -28,6 +30,7 @@ class array:
         is not present in __dict__, however a + other does work.
         """
         ...
+
     def __getitem__(self, index: int | slice) -> Any:
         """
         Indexed read of the array, called as a[index] (where a is an array).
@@ -39,6 +42,7 @@ class array:
         is not present in __dict__, however a[index] does work.
         """
         ...
+
     def __iadd__(self, other: array) -> array:
         """
         Concatenates the array with other in-place, called as a += other (where a and other
@@ -48,6 +52,7 @@ class array:
         is not present in __dict__, however a += other does work.
         """
         ...
+
     def __len__(self) -> int:
         """
         Returns the number of items in the array, called as len(a) (where a is an array).
@@ -56,6 +61,7 @@ class array:
         method is not present in __dict__, however len(a) does work.
         """
         ...
+
     def __repr__(self) -> str:
         """
         Returns the string representation of the array, called as str(a)
@@ -67,6 +73,7 @@ class array:
         is not present in __dict__, however str(a) and repr(a) both work.
         """
         ...
+
     def __setitem__(self, index: int | slice, value: Any) -> None:
         """
         Indexed write into the array, called as a[index] = value (where a is an array).
@@ -77,13 +84,14 @@ class array:
         is not present in __dict__, however a[index] = value does work.
         """
         ...
+
     def append(self, val: Any) -> None:
         """Append new element val to the end of array, growing it."""
         ...
+
     def extend(self, iterable: Iterable) -> None:
         """
         Append new elements as contained in iterable to the end of
         array, growing it.
         """
         ...
-

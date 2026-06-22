@@ -92,6 +92,7 @@ range 0-255 from the byte at addr; mem8[addr] = value writes the
 low 8 bits of value. addr may be any byte-aligned address.
 """
 
+
 def __getattr__(name: str) -> int:
     """
     Dynamic-attribute fallback: any CMSIS symbol exposed by the firmware that
@@ -106,4 +107,3 @@ def __getattr__(name: str) -> int:
     diagnostic.
     """
     ...
-

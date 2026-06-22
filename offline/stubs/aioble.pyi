@@ -40,6 +40,7 @@ ADDR_PUBLIC: int
 ADDR_RANDOM: int
 """Random BLE device address type (1)."""
 
+
 def advertise(interval_us: int, adv_data: bytes | None = None, resp_data: bytes | None = None, connectable: bool = True, limited_disc: bool = False, br_edr: bool = False, name: str | None = None, services: list | None = None, appearance: int = 0, manufacturer: tuple | None = None, timeout_ms: int | None = None) -> DeviceConnection:
     """
     Async coroutine that begins advertising and waits for an incoming
@@ -96,6 +97,8 @@ def advertise(interval_us: int, adv_data: bytes | None = None, resp_data: bytes 
     connection. None means advertise until connected.
     """
     ...
+
+
 def config(*args, **kwargs) -> Any:
     """
     Forwards to bluetooth.BLE.config(), ensuring the BLE radio is
@@ -110,6 +113,8 @@ def config(*args, **kwargs) -> Any:
     Keyword arguments to set configuration values.
     """
     ...
+
+
 def register_services(*services: Service) -> None:
     """
     Register one or more Service objects (and their characteristics
@@ -122,6 +127,8 @@ def register_services(*services: Service) -> None:
     One or more Service instances.
     """
     ...
+
+
 def scan(duration_ms: int, interval_us: int | None = None, window_us: int | None = None, active: bool = False) -> scan:
     """
     Returns a scan async context-manager / async-iterator that yields
@@ -148,6 +155,8 @@ def scan(duration_ms: int, interval_us: int | None = None, window_us: int | None
     data). Defaults to False.
     """
     ...
+
+
 def stop() -> None:
     """
     Deactivate the underlying BLE radio and run any registered
@@ -156,12 +165,15 @@ def stop() -> None:
     """
     ...
 
+
 class DeviceDisconnectedError(Exception):
     """
     Raised inside an async operation (e.g. read, write, notified) when
     the underlying connection drops while waiting.
     """
     ...
+
+
 class GattError(Exception):
     """
     Raised when a remote GATT operation (read / write / indicate)
@@ -169,18 +181,23 @@ class GattError(Exception):
     the _status attribute.
     """
     ...
+
+
 class L2CAPConnectionError(Exception):
     """
     Raised by DeviceConnection.l2cap_connect when establishing the
     channel fails. The Bluetooth status code is the first argument.
     """
     ...
+
+
 class L2CAPDisconnectedError(Exception):
     """
     Raised when an L2CAP channel send/recv/flush operation is
     attempted on (or interrupted by) a disconnected channel.
     """
     ...
+
 
 class BufferedCharacteristic:
     """
@@ -200,6 +217,7 @@ class BufferedCharacteristic:
     Other arguments forward to Characteristic.
     """
     def __init__(self, service: Service, uuid: bluetooth.UUID, max_len: int = 20, append: bool = False, **kwargs) -> None: ...
+
 
 class Characteristic:
     """
@@ -235,6 +253,7 @@ class Characteristic:
     """Bitmask of the GATT property flags built from the constructor."""
     uuid: Any
     """The characteristic UUID."""
+
     def indicate(self, connection: DeviceConnection, data: bytes | None = None, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Send a GATT Indicate to connection and wait for the
@@ -253,6 +272,7 @@ class Characteristic:
         Maximum time to wait for confirmation.
         """
         ...
+
     def notify(self, connection: DeviceConnection, data: bytes | None = None) -> None:
         """
         Send a GATT Notify to connection.
@@ -267,6 +287,7 @@ class Characteristic:
         sent.
         """
         ...
+
     def on_read(self, connection: DeviceConnection) -> int:
         """
         Override hook invoked synchronously when a remote read is
@@ -274,9 +295,11 @@ class Characteristic:
         error code to reject it. Default implementation returns 0.
         """
         ...
+
     def read(self) -> bytes:
         """Read the current value from the local GATT database."""
         ...
+
     def write(self, data: bytes, send_update: bool = False) -> None:
         """
         Update the value in the local GATT database.
@@ -291,6 +314,7 @@ class Characteristic:
         connection.
         """
         ...
+
     def written(self, timeout_ms: int | None = None) -> Awaitable[DeviceConnection | tuple[DeviceConnection, bytes]]:
         """
         Async. Wait for a remote write. Returns the writing
@@ -302,6 +326,7 @@ class Characteristic:
         Maximum time to wait. None waits forever.
         """
         ...
+
 
 class ClientCharacteristic:
     """
@@ -318,18 +343,21 @@ class ClientCharacteristic:
     """The owning ClientService."""
     uuid: Any
     """The characteristic UUID."""
+
     def descriptor(self, uuid: bluetooth.UUID, timeout_ms: int = 2000) -> Awaitable[ClientDescriptor | None]:
         """
         Async. Discover a single descriptor by UUID, or None if
         not found.
         """
         ...
+
     def descriptors(self, timeout_ms: int = 2000) -> ClientDiscover:
         """
         Return an async iterator of ClientDescriptor objects. Use
         with async for and run the loop to completion.
         """
         ...
+
     def indicated(self, timeout_ms: int | None = None) -> Awaitable[bytes]:
         """
         Async. Wait for the next indication on this characteristic and
@@ -340,6 +368,7 @@ class ClientCharacteristic:
         Maximum time to wait.
         """
         ...
+
     def notified(self, timeout_ms: int | None = None) -> Awaitable[bytes]:
         """
         Async. Wait for the next notification on this characteristic
@@ -351,6 +380,7 @@ class ClientCharacteristic:
         Maximum time to wait. None waits forever.
         """
         ...
+
     def read(self, timeout_ms: int = 1000) -> Awaitable[bytes]:
         """
         Async. Issue a GATT Read and return the value. Raises
@@ -361,6 +391,7 @@ class ClientCharacteristic:
         Read timeout.
         """
         ...
+
     def subscribe(self, notify: bool = True, indicate: bool = False) -> Awaitable[None]:
         """
         Async. Write the Client Characteristic Configuration
@@ -376,6 +407,7 @@ class ClientCharacteristic:
         Enable indications.
         """
         ...
+
     def write(self, data: bytes, response: bool | None = None, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Issue a GATT Write.
@@ -397,6 +429,7 @@ class ClientCharacteristic:
         """
         ...
 
+
 class ClientDescriptor:
     """
     A remote GATT descriptor discovered on a peer. Inherits
@@ -409,6 +442,7 @@ class ClientDescriptor:
     """The owning ClientCharacteristic."""
     uuid: Any
     """The descriptor UUID."""
+
 
 class ClientService:
     """
@@ -423,12 +457,14 @@ class ClientService:
     """The owning DeviceConnection."""
     uuid: Any
     """The remote service UUID."""
+
     def characteristic(self, uuid: bluetooth.UUID, timeout_ms: int = 2000) -> Awaitable[ClientCharacteristic | None]:
         """
         Async. Discover a single characteristic by UUID, or None
         if not found.
         """
         ...
+
     def characteristics(self, uuid: bluetooth.UUID | None = None, timeout_ms: int = 2000) -> ClientDiscover:
         """
         Return an async iterator of ClientCharacteristic objects.
@@ -443,6 +479,7 @@ class ClientService:
         Per-discovery timeout.
         """
         ...
+
 
 class Descriptor:
     """
@@ -468,6 +505,7 @@ class Descriptor:
     """
     def __init__(self, characteristic: Characteristic, uuid: bluetooth.UUID, read: bool = False, write: bool = False, initial: bytes | None = None) -> None: ...
 
+
 class Device:
     """
     Represents a remote BLE device by address. Two Device instances
@@ -488,9 +526,11 @@ class Device:
     """The raw six-byte device address."""
     addr_type: Any
     """The address type the device was constructed with."""
+
     def addr_hex(self) -> str:
         """Return the address formatted as a colon-separated hex string."""
         ...
+
     def connect(self, timeout_ms: int = 10000, scan_duration_ms: int | None = None, min_conn_interval_us: int | None = None, max_conn_interval_us: int | None = None) -> Awaitable[DeviceConnection]:
         """
         Async. Initiate a GAP connection to this device and return the
@@ -510,6 +550,7 @@ class Device:
         Optional connection interval bounds, in microseconds.
         """
         ...
+
 
 class DeviceConnection:
     """
@@ -535,6 +576,7 @@ class DeviceConnection:
     """
     mtu: Any
     """Negotiated ATT MTU after exchange_mtu, or None until set."""
+
     def disconnect(self, timeout_ms: int = 2000) -> Awaitable[None]:
         """
         Async. Disconnect and wait for the disconnection IRQ.
@@ -544,6 +586,7 @@ class DeviceConnection:
         Maximum time to wait for the disconnection.
         """
         ...
+
     def disconnected(self, timeout_ms: int | None = None, disconnect: bool = False) -> Awaitable[None]:
         """
         Async. Wait for the connection to be terminated by either
@@ -559,6 +602,7 @@ class DeviceConnection:
         If True, initiate disconnection.
         """
         ...
+
     def exchange_mtu(self, mtu: int | None = None, timeout_ms: int = 1000) -> Awaitable[int]:
         """
         Async. Initiate an ATT MTU exchange and return the negotiated
@@ -574,9 +618,11 @@ class DeviceConnection:
         Timeout for the exchange.
         """
         ...
+
     def is_connected(self) -> bool:
         """Return whether the connection is still active."""
         ...
+
     def l2cap_accept(self, psm: int, mtu: int, timeout_ms: int | None = None) -> Awaitable[L2CAPChannel]:
         """
         Async. Listen on the given PSM and return an L2CAPChannel
@@ -595,6 +641,7 @@ class DeviceConnection:
         Maximum time to wait for the remote to connect.
         """
         ...
+
     def l2cap_connect(self, psm: int, mtu: int, timeout_ms: int = 1000) -> Awaitable[L2CAPChannel]:
         """
         Async. Open an L2CAP channel to the remote on the given PSM.
@@ -612,6 +659,7 @@ class DeviceConnection:
         Connection timeout.
         """
         ...
+
     def pair(self, bond: bool = True, le_secure: bool = True, mitm: bool = False, io: int = 3, timeout_ms: int = 20000) -> Awaitable[None]:
         """
         Async. Initiate pairing on this connection. Updates the
@@ -639,12 +687,14 @@ class DeviceConnection:
         Pairing timeout.
         """
         ...
+
     def service(self, uuid: bluetooth.UUID, timeout_ms: int = 2000) -> Awaitable[ClientService | None]:
         """
         Async. Discover a single remote service matching uuid, or
         None if not found.
         """
         ...
+
     def services(self, uuid: bluetooth.UUID | None = None, timeout_ms: int = 2000) -> ClientDiscover:
         """
         Return an async iterator of remote ClientService objects.
@@ -659,6 +709,7 @@ class DeviceConnection:
         Per-discovery timeout.
         """
         ...
+
     def timeout(self, timeout_ms: int | None) -> DeviceTimeout:
         """
         Return a context manager that cancels its body if either the
@@ -670,6 +721,7 @@ class DeviceConnection:
         Timeout in milliseconds, or None for no timeout.
         """
         ...
+
 
 class L2CAPChannel:
     """
@@ -691,12 +743,14 @@ class L2CAPChannel:
     Maximum size, in bytes, that we may send to the peer in a
     single SDU.
     """
+
     def available(self) -> bool:
         """
         Synchronously return True if buffered receive data is
         ready (i.e. recvinto will not block).
         """
         ...
+
     def disconnect(self, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Disconnect the channel and wait for the disconnection
@@ -707,6 +761,7 @@ class L2CAPChannel:
         Maximum time to wait.
         """
         ...
+
     def disconnected(self, timeout_ms: int = 1000) -> Awaitable[None]:
         """
         Async. Wait until the channel is disconnected by either side.
@@ -716,6 +771,7 @@ class L2CAPChannel:
         Maximum time to wait.
         """
         ...
+
     def flush(self, timeout_ms: int | None = None) -> Awaitable[None]:
         """
         Async. Wait until any stalled send has been drained by the
@@ -726,6 +782,7 @@ class L2CAPChannel:
         Maximum time to wait.
         """
         ...
+
     def recvinto(self, buf: bytearray, timeout_ms: int | None = None) -> Awaitable[int]:
         """
         Async. Receive into buf, returning the number of bytes
@@ -740,6 +797,7 @@ class L2CAPChannel:
         Maximum time to wait. None waits forever.
         """
         ...
+
     def send(self, buf: bytes, timeout_ms: int | None = None, chunk_size: int | None = None) -> Awaitable[None]:
         """
         Async. Send buf on the channel, fragmenting larger payloads
@@ -759,6 +817,7 @@ class L2CAPChannel:
         min(our_mtu * 2, peer_mtu).
         """
         ...
+
 
 class ScanResult:
     """
@@ -781,6 +840,7 @@ class ScanResult:
     """
     rssi: Any
     """Last reported RSSI, in dBm."""
+
     def manufacturer(self, filter: int | None = None) -> Iterator[tuple[int, bytes]]:
         """
         Generator yielding (company_id, data) tuples from
@@ -791,18 +851,21 @@ class ScanResult:
         If given, only yield entries whose company ID matches.
         """
         ...
+
     def name(self) -> str | None:
         """
         Decode the complete (or shortened) advertised local name from
         the payload, or None if not present.
         """
         ...
+
     def services(self) -> Iterator[bluetooth.UUID]:
         """
         Generator yielding each bluetooth.UUID advertised in
         the 16/32/128-bit service-list fields.
         """
         ...
+
 
 class Service:
     """
@@ -818,4 +881,3 @@ class Service:
     """List of Characteristic objects bound to this service."""
     uuid: Any
     """The service UUID."""
-

@@ -9,6 +9,7 @@ headers on normal responses).
 
 from typing import Any
 
+
 class CORS:
     """
     app
@@ -95,6 +96,7 @@ class CORS:
     None to omit the Access-Control-Max-Age header. Mirrors
     the max_age constructor argument.
     """
+
     def get_cors_headers(self, request) -> dict:
         """
         Compute the set of Access-Control-* headers that apply to
@@ -103,7 +105,7 @@ class CORS:
         custom middleware.
         """
         ...
+
     def initialize(self, app: Microdot, handle_cors: bool = True) -> Any:
         """Attach to app if construction was deferred."""
         ...
-

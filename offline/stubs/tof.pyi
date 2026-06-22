@@ -44,9 +44,12 @@ import image
 TOF_VL53LX: int
 """VL53L5CX or VL53L8CX TOF sensor (8x8 pixels)."""
 
+
 def deinit() -> None:
     """Deinitializes the depth sensor freeing up resources."""
     ...
+
+
 def draw_depth(image: image.Image, depth: list[float], x: int = 0, y: int = 0, x_scale: float | None = None, y_scale: float | None = None, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int = image.PALETTE_DEPTH, alpha_palette: int | None = None, hint: int = 0, scale: tuple[float, float] | None = None) -> None:
     """
     Draws a depth array (as returned by read_depth) onto image whose
@@ -102,12 +105,16 @@ def draw_depth(image: image.Image, depth: list[float], x: int = 0, y: int = 0, x
     draw_depth uses that internally to size the source array.
     """
     ...
+
+
 def height() -> int:
     """
     Returns the height (vertical resolution) of the depth sensor in-use.
     Raises a RuntimeError if the sensor is not initialized.
     """
     ...
+
+
 def init(type: int = -1) -> None:
     """
     Initializes an onboard depth sensor.
@@ -120,6 +127,8 @@ def init(type: int = -1) -> None:
     and initialize an attached TOF sensor based on the I2C address.
     """
     ...
+
+
 def read_depth(hmirror: bool = False, vflip: bool = False, transpose: bool = False, timeout: int = 100) -> tuple[list[float], float, float]:
     """
     Returns a tuple containing the depth list (width * height floats in mm),
@@ -135,6 +144,8 @@ def read_depth(hmirror: bool = False, vflip: bool = False, transpose: bool = Fal
     a RuntimeError. If 0 waits forever.
     """
     ...
+
+
 def refresh() -> int:
     """
     Returns the refresh rate (in Hz) of the depth sensor in-use:
@@ -144,9 +155,13 @@ def refresh() -> int:
     Raises a RuntimeError if the sensor is not initialized.
     """
     ...
+
+
 def reset() -> None:
     """Resets the depth sensor state."""
     ...
+
+
 def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False, x_scale: float | None = None, y_scale: float | None = None, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int = image.PALETTE_DEPTH, alpha_palette: int | None = None, hint: int = 0, scale: tuple[float, float] | None = None, pixformat: int = image.RGB565, copy_to_fb: bool = False, timeout: int = 100) -> image.Image:
     """
     Reads a frame from the depth sensor and returns a new image.Image object
@@ -213,6 +228,8 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
     a RuntimeError. If 0 waits forever.
     """
     ...
+
+
 def type() -> int:
     """
     Returns the type of the depth sensor in-use:
@@ -222,10 +239,11 @@ def type() -> int:
     Raises a RuntimeError if the sensor is not initialized.
     """
     ...
+
+
 def width() -> int:
     """
     Returns the width (horizontal resolution) of the depth sensor in-use.
     Raises a RuntimeError if the sensor is not initialized.
     """
     ...
-

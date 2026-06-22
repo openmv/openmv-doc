@@ -30,6 +30,7 @@ Example:
 
 from typing import Any
 
+
 class MutexException(Exception):
     """
     Subclass of OSError. Raised by Mutex.release when the mutex is
@@ -37,15 +38,18 @@ class MutexException(Exception):
     """
     ...
 
+
 class Mutex:
     """Creates an unlocked mutex object."""
     def __init__(self) -> None: ...
+
     def release(self) -> None:
         """
         Unlock the mutex. Raises mutex.MutexException if the mutex is not
         currently locked.
         """
         ...
+
     def test(self) -> bool:
         """
         Try to acquire the mutex in a non-blocking way. Returns True on success
@@ -55,4 +59,3 @@ class Mutex:
         manager (with statement). The mutex is released automatically on exit.
         """
         ...
-

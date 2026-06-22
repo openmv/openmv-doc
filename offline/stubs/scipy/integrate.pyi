@@ -14,6 +14,7 @@ default is the compile-time etolerance value (1e-14 for fp64,
 
 from typing import Any, Callable
 
+
 def quad(f: Callable[[float], float], a: float, b: float, *, order: int = 5, eps: float = etolerance) -> tuple[float, float]:
     """
     Integrate f from a to b using an Adaptive Gauss-Kronrod
@@ -38,6 +39,8 @@ def quad(f: Callable[[float], float], a: float, b: float, *, order: int = 5, eps
     the integral and an error estimate.
     """
     ...
+
+
 def romberg(f: Callable[[float], float], a: float, b: float, *, steps: int = 100, eps: float = etolerance) -> float:
     """
     Integrate f from a to b using Romberg’s method, a Newton-Cotes
@@ -63,6 +66,8 @@ def romberg(f: Callable[[float], float], a: float, b: float, *, steps: int = 100
     the value of the integral as a float.
     """
     ...
+
+
 def simpson(f: Callable[[float], float], a: float, b: float, *, steps: int = 100, eps: float = etolerance) -> float:
     """
     Integrate f from a to b using adaptive Simpson’s rule. Unlike
@@ -87,6 +92,8 @@ def simpson(f: Callable[[float], float], a: float, b: float, *, steps: int = 100
     the value of the integral as a float.
     """
     ...
+
+
 def tanhsinh(f: Callable[[float], float], a: float, b: float, *, levels: int = 6, eps: float = etolerance) -> tuple[float, float]:
     """
     Integrate f from a to b using the Tanh-Sinh, Sinh-Sinh, and
@@ -113,4 +120,3 @@ def tanhsinh(f: Callable[[float], float], a: float, b: float, *, levels: int = 6
     the integral and an error estimate.
     """
     ...
-

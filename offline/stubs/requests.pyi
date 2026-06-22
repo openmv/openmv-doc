@@ -24,6 +24,7 @@ Example:
 
 from typing import Any
 
+
 def delete(url: str, **kw: Any) -> Response:
     """
     Send an HTTP DELETE request and return a Response.
@@ -43,6 +44,8 @@ def delete(url: str, **kw: Any) -> Response:
     request() but rarely used with DELETE.
     """
     ...
+
+
 def get(url: str, **kw: Any) -> Response:
     """
     Send an HTTP GET request and return a Response.
@@ -63,6 +66,8 @@ def get(url: str, **kw: Any) -> Response:
     underlying request() but ignored by most servers.
     """
     ...
+
+
 def head(url: str, **kw: Any) -> Response:
     """
     Send an HTTP HEAD request and return a Response.
@@ -84,6 +89,8 @@ def head(url: str, **kw: Any) -> Response:
     accepted for completeness but rarely make sense for HEAD.
     """
     ...
+
+
 def patch(url: str, **kw: Any) -> Response:
     """
     Send an HTTP PATCH request and return a Response.
@@ -105,6 +112,8 @@ def patch(url: str, **kw: Any) -> Response:
       authentication.
     """
     ...
+
+
 def post(url: str, **kw: Any) -> Response:
     """
     Send an HTTP POST request and return a Response.
@@ -130,6 +139,8 @@ def post(url: str, **kw: Any) -> Response:
     Pass at most one of data / json / files.
     """
     ...
+
+
 def put(url: str, **kw: Any) -> Response:
     """
     Send an HTTP PUT request and return a Response.
@@ -151,6 +162,8 @@ def put(url: str, **kw: Any) -> Response:
     Pass either data or json to carry the new representation.
     """
     ...
+
+
 def request(method: str, url: str, data: bytes | None = None, json: Any | None = None, files: dict | None = None, headers: dict = {}, auth: tuple | None = None, stream: Any | None = None) -> Response:
     """
     Send an HTTP request to url and return a requests.Response.
@@ -169,6 +182,7 @@ def request(method: str, url: str, data: bytes | None = None, json: Any | None =
     - stream — Accepted for API compatibility; not used.
     """
     ...
+
 
 class Response:
     """
@@ -195,10 +209,10 @@ class Response:
     """Reason phrase returned by the server (decoded str)."""
     status_code: int
     """Integer HTTP status code returned by the server."""
+
     def json(self) -> dict:
         """
         Parse requests.Response.content as JSON and return the resulting
         object.
         """
         ...
-

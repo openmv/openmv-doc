@@ -19,6 +19,7 @@ spot-checked from the REPL before relying on zero-copy imports.
 
 from typing import Any
 
+
 def ls_romfs() -> None:
     """
     Lists every file present in the ROMFS mounted at /rom and prints
@@ -39,4 +40,3 @@ def ls_romfs() -> None:
     This function takes no arguments and returns None.
     """
     ...
-

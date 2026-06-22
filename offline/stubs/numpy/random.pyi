@@ -12,6 +12,7 @@ samples. Output arrays are always of dtype numpy.float.
 
 from typing import Any
 
+
 class Generator:
     """
     Construct a new pseudo-random number generator.
@@ -34,6 +35,7 @@ class Generator:
     ValueError – if seed is None and no default seed is configured.
     """
     def __init__(self, seed: int | tuple[int, ...] | None = None) -> None: ...
+
     def normal(self, loc: float = 0.0, scale: float = 1.0, size: int | tuple[int, ...] | None = None) -> float | ndarray:
         """
         Draw samples from a normal (Gaussian) distribution.
@@ -65,6 +67,7 @@ class Generator:
         Samples are generated using the Box-Muller transform.
         """
         ...
+
     def random(self, size: int | tuple[int, ...] | None = None, *, out: ndarray | None = None) -> float | ndarray:
         """
         Draw samples from the uniform distribution over the half-open interval
@@ -96,6 +99,7 @@ class Generator:
         is not contiguous.
         """
         ...
+
     def uniform(self, low: float = 0.0, high: float = 1.0, size: int | tuple[int, ...] | None = None) -> float | ndarray:
         """
         Draw samples from the uniform distribution over the half-open interval
@@ -124,4 +128,3 @@ class Generator:
         TypeError – if size is neither None nor a tuple.
         """
         ...
-

@@ -5,6 +5,7 @@ from typing import Any
 import image
 import ml
 
+
 def dequantize(model: ml.Model, value: ndarray, index: int = 0) -> ndarray:
     """
     Converts the passed ndarray by subtracting the zero point and then multiplying by the scale of the model.
@@ -17,6 +18,8 @@ def dequantize(model: ml.Model, value: ndarray, index: int = 0) -> ndarray:
     index selects which tensor output of the model to dequantize against.
     """
     ...
+
+
 def draw_keypoints(image: image.Image, keypoints: ndarray, radius: int = 4, color: tuple[int, int, int] = (255, 0, 0), thickness: int = 1, fill: bool = False) -> None:
     """
     Draws an ndarray of keypoint (x, y, ...) values on image.
@@ -31,6 +34,8 @@ def draw_keypoints(image: image.Image, keypoints: ndarray, radius: int = 4, colo
     fill if True fills the keypoint circles.
     """
     ...
+
+
 def draw_predictions(image: image.Image, boxes: list[tuple[float, float, float, float]], labels: list[str], colors: list[tuple[int, int, int]], scores: list[float] | None = None, format: str = 'pascal_voc', font_width: int = 8, font_height: int = 10, text_color: tuple[int, int, int] = (255, 255, 255)) -> None:
     """
     Draws bounding boxes (or centerpoint markers) with text labels onto image.
@@ -60,6 +65,8 @@ def draw_predictions(image: image.Image, boxes: list[tuple[float, float, float, 
     text_color is the (r, g, b) color used for the label text.
     """
     ...
+
+
 def draw_skeleton(image: image.Image, keypoints: ndarray, lines: list[tuple[int, int]], kp_radius: int = 4, kp_color: tuple[int, int, int] = (255, 0, 0), kp_thickness: int = 1, kp_fill: bool = False, line_color: tuple[int, int, int] = (0, 255, 0), line_thickness: int = 1) -> None:
     """
     Draws an ndarray of keypoint (x, y, ...) values on image and then connects
@@ -80,9 +87,13 @@ def draw_skeleton(image: image.Image, keypoints: ndarray, lines: list[tuple[int,
     line_thickness is the line thickness.
     """
     ...
+
+
 def logit(x: ndarray) -> ndarray:
     """Returns the logit of all values in the passed ndarray."""
     ...
+
+
 def quantize(model: ml.Model, value: ndarray, index: int = 0) -> ndarray:
     """
     Converts the passed ndarray by dividing by the scale and adding the zero point of the model.
@@ -95,9 +106,13 @@ def quantize(model: ml.Model, value: ndarray, index: int = 0) -> ndarray:
     index selects which tensor output of the model to quantize against.
     """
     ...
+
+
 def sigmoid(x: ndarray) -> ndarray:
     """Returns the sigmoid of all values in the passed ndarray."""
     ...
+
+
 def threshold(scores: ndarray, threshold: float, scale: float, find_max: bool = False, find_max_axis: int = 1) -> ndarray:
     """
     Thresholds scores (a quantized ndarray of int8, uint8, int16, or uint16) by a quantized
@@ -115,6 +130,7 @@ def threshold(scores: ndarray, threshold: float, scale: float, find_max: bool = 
     """
     ...
 
+
 class NMS:
     """
     Creates a NMS object.
@@ -127,6 +143,7 @@ class NMS:
     must be >= 1.
     """
     def __init__(self, window_w: int, window_h: int, roi: tuple[int, int, int, int]) -> None: ...
+
     def add_bounding_box(self, xmin: float, ymin: float, xmax: float, ymax: float, score: float, label_index: int, keypoints: ndarray | None = None) -> None:
         """
         Adds a bounding box to the NMS object. Boxes with score outside [0.0, 1.0]
@@ -143,6 +160,7 @@ class NMS:
         with this bounding box.
         """
         ...
+
     def get_bounding_boxes(self, threshold: float = 0.1, sigma: float = 0.1) -> list[list[tuple]]:
         """
         Performs Soft-NMS over all added boxes and returns a list of per-class lists, indexed
@@ -161,4 +179,3 @@ class NMS:
         disables the Gaussian penalty (scores of overlapping boxes are not decayed).
         """
         ...
-

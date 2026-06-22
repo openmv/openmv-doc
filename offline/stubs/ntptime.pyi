@@ -23,6 +23,7 @@ Socket timeout in seconds applied to the NTP UDP request. Defaults to
 1. Increase on slow or high-latency networks.
 """
 
+
 def settime() -> None:
     """
     Fetch the current time using time() and set the on-board RTC
@@ -32,6 +33,8 @@ def settime() -> None:
     UTC.
     """
     ...
+
+
 def time() -> int:
     """
     Query the configured NTP server (host) and return the current UTC time
@@ -45,4 +48,3 @@ def time() -> int:
     closed before returning.
     """
     ...
-

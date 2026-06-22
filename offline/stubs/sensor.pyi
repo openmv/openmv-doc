@@ -284,6 +284,7 @@ XGA: int
 YUV422: int
 """YUV422 pixel format (8-bits Y1, 8-bits U, 8-bits Y2, 8-bits V, etc.)."""
 
+
 def __read_reg(address: int) -> int:
     """
     Read camera register at address.
@@ -291,6 +292,8 @@ def __read_reg(address: int) -> int:
     See the camera data sheet for register info.
     """
     ...
+
+
 def __write_reg(address: int, value: int) -> None:
     """
     Write value to camera register at address.
@@ -298,18 +301,24 @@ def __write_reg(address: int, value: int) -> None:
     See the camera data sheet for register info.
     """
     ...
+
+
 def alloc_extra_fb(width: int, height: int, pixformat: int) -> image.Image:
     """
     Deprecated since version 4.5: This function is deprecated and will raise OSError. Use the new
     csi module instead.
     """
     ...
+
+
 def dealloc_extra_fb() -> None:
     """
     Deprecated since version 4.5: This function is deprecated and will raise OSError. Use the new
     csi module instead.
     """
     ...
+
+
 def disable_delays(disable: bool | None = None) -> bool | None:
     """
     If disable is True then disable all settling time delays in the
@@ -318,6 +327,8 @@ def disable_delays(disable: bool | None = None) -> bool | None:
     If called with no arguments returns True if delays are disabled.
     """
     ...
+
+
 def disable_full_flush(disable: bool | None = None) -> bool | None:
     """
     If disable is True then automatic framebuffer flushing on frame
@@ -327,78 +338,118 @@ def disable_full_flush(disable: bool | None = None) -> bool | None:
     disabled.
     """
     ...
+
+
 def flush() -> None:
     """Copies whatever was in the frame buffer to the IDE preview."""
     ...
+
+
 def get_auto_rotation() -> bool:
     """Returns True if auto rotation mode is enabled."""
     ...
+
+
 def get_blc_regs() -> list[int]:
     """
     Returns the sensor BLC registers as a list of integers. For use with
     sensor.set_auto_blc().
     """
     ...
+
+
 def get_color_palette() -> int | None:
     """
     Returns the current color palette setting, or None if the active
     palette is unrecognized.
     """
     ...
+
+
 def get_exposure_us() -> int:
     """Returns the current camera exposure value in microseconds."""
     ...
+
+
 def get_fb() -> image.Image | None:
     """
     Returns the image object returned by a previous call of sensor.snapshot().
     Returns None if sensor.snapshot() has not been called before.
     """
     ...
+
+
 def get_frame_available() -> bool:
     """Returns True if a frame is available to read by calling sensor.snapshot()."""
     ...
+
+
 def get_framebuffers() -> int:
     """Returns the current number of frame buffers allocated."""
     ...
+
+
 def get_framerate() -> int:
     """Returns the frame rate in Hz for the camera module."""
     ...
+
+
 def get_framesize() -> int:
     """Returns the current frame size for the camera module."""
     ...
+
+
 def get_gain_db() -> float:
     """Returns the current camera gain value in decibels."""
     ...
+
+
 def get_hmirror() -> bool:
     """Returns True if horizontal mirror mode is enabled."""
     ...
+
+
 def get_id() -> int:
     """Returns the camera module ID. See the sensor constants below."""
     ...
+
+
 def get_pixformat() -> int:
     """Returns the current pixformat for the camera module."""
     ...
+
+
 def get_rgb_gain_db() -> tuple[float, float, float]:
     """
     Returns a tuple with the current camera red, green, and blue gain values
     in decibels.
     """
     ...
+
+
 def get_transpose() -> bool:
     """Returns True if transpose mode is enabled."""
     ...
+
+
 def get_vflip() -> bool:
     """Returns True if vertical flip mode is enabled."""
     ...
+
+
 def get_windowing() -> tuple[int, int, int, int]:
     """
     Returns the roi tuple (x, y, w, h) previously set with
     sensor.set_windowing().
     """
     ...
+
+
 def height() -> int:
     """Returns the sensor resolution height."""
     ...
+
+
 def ioctl(request: int, *args: Any) -> Any:
     """
     Execute a sensor-specific request. request is one of the
@@ -592,9 +643,13 @@ def ioctl(request: int, *args: Any) -> Any:
     optional frequency arguments set the filter passband.
     """
     ...
+
+
 def reset() -> None:
     """Initializes the camera sensor."""
     ...
+
+
 def set_auto_blc(enable: int, regs: list[int] | None = None) -> None:
     """
     Sets the auto black level calibration (BLC) control on the camera.
@@ -606,6 +661,8 @@ def set_auto_blc(enable: int, regs: list[int] | None = None) -> None:
     match the sensor’s BLC register count.
     """
     ...
+
+
 def set_auto_exposure(enable: int, exposure_us: int = -1) -> None:
     """
     enable turns auto exposure control on (1) or off (0).
@@ -614,6 +671,8 @@ def set_auto_exposure(enable: int, exposure_us: int = -1) -> None:
     with exposure_us. exposure_us is a keyword-only argument.
     """
     ...
+
+
 def set_auto_gain(enable: int, gain_db: float | None = None, gain_db_ceiling: float | None = None) -> None:
     """
     enable turns auto gain control on (1) or off (0).
@@ -626,12 +685,16 @@ def set_auto_gain(enable: int, gain_db: float | None = None, gain_db_ceiling: fl
     gain_db and gain_db_ceiling are keyword-only arguments.
     """
     ...
+
+
 def set_auto_rotation(enable: bool) -> None:
     """
     Turns auto rotation mode on (True) or off (False). Defaults to off.
     Only works when the OpenMV Cam has an imu installed.
     """
     ...
+
+
 def set_auto_whitebal(enable: int, rgb_gain_db: tuple[float, float, float] | None = None) -> None:
     """
     enable turns auto white balance on (1) or off (0).
@@ -641,12 +704,16 @@ def set_auto_whitebal(enable: int, rgb_gain_db: tuple[float, float, float] | Non
     rgb_gain_db is a keyword-only argument.
     """
     ...
+
+
 def set_brightness(brightness: int) -> bool:
     """
     Set the camera image brightness. Valid range is -3 to +3. Returns
     True on success.
     """
     ...
+
+
 def set_color_palette(palette: int) -> None:
     """
     Sets the color palette for the FLIR Lepton (and similar) grayscale to
@@ -655,18 +722,24 @@ def set_color_palette(palette: int) -> None:
     or image.PALETTE_EVT_LIGHT.
     """
     ...
+
+
 def set_colorbar(enable: bool) -> bool:
     """
     Turns color bar test mode on (True) or off (False). Returns True
     on success.
     """
     ...
+
+
 def set_contrast(contrast: int) -> bool:
     """
     Set the camera image contrast. Valid range is -3 to +3. Returns
     True on success.
     """
     ...
+
+
 def set_frame_callback(cb: Callable[[], None] | None) -> None:
     """
     Registers callback cb to be executed (in interrupt context) whenever
@@ -678,6 +751,8 @@ def set_frame_callback(cb: Callable[[], None] | None) -> None:
     Pass a non-callable (e.g. None) to unregister.
     """
     ...
+
+
 def set_framebuffers(count: int) -> None:
     """
     Sets the number of frame buffers used to receive image data.
@@ -687,24 +762,34 @@ def set_framebuffers(count: int) -> None:
     FIFO mode where received frames are stored in a FIFO of count buffers.
     """
     ...
+
+
 def set_framerate(rate: int) -> None:
     """Sets the frame rate in Hz for the camera module."""
     ...
+
+
 def set_framesize(framesize: int) -> None:
     """
     Sets the frame size for the camera module. See the framesize constants
     below for valid values.
     """
     ...
+
+
 def set_gainceiling(gainceiling: int) -> bool:
     """
     Set the camera image gain ceiling. Valid values are 2, 4, 8,
     16, 32, 64, or 128. Returns True on success.
     """
     ...
+
+
 def set_hmirror(enable: bool) -> None:
     """Turns horizontal mirror mode on (True) or off (False). Defaults to off."""
     ...
+
+
 def set_lens_correction(enable: bool, radi: int, coef: int) -> bool:
     """
     enable True to enable, False to disable.
@@ -714,6 +799,8 @@ def set_lens_correction(enable: bool, radi: int, coef: int) -> bool:
     Returns True on success.
     """
     ...
+
+
 def set_pixformat(pixformat: int) -> None:
     """
     Sets the pixel format for the camera module. pixformat is one of:
@@ -726,24 +813,32 @@ def set_pixformat(pixformat: int) -> None:
     - sensor.JPEG (only for the OV2640/OV5640)
     """
     ...
+
+
 def set_quality(quality: int) -> bool:
     """
     Set the camera image JPEG compression quality. Valid range is 0 to 100.
     Returns True on success. Only for the OV2640/OV5640 cameras.
     """
     ...
+
+
 def set_saturation(saturation: int) -> bool:
     """
     Set the camera image saturation. Valid range is -3 to +3. Returns
     True on success.
     """
     ...
+
+
 def set_special_effect(sde: int) -> bool:
     """
     Sets the special digital effect (SDE) on the sensor. sde is one of
     sensor.NORMAL or sensor.NEGATIVE. Returns True on success.
     """
     ...
+
+
 def set_transpose(enable: bool) -> None:
     """
     Turns transpose mode on (True) or off (False). Defaults to off.
@@ -754,9 +849,13 @@ def set_transpose(enable: bool) -> None:
     - vflip=False, hmirror=True,  transpose=True  -> 270 degree rotation
     """
     ...
+
+
 def set_vflip(enable: bool) -> None:
     """Turns vertical flip mode on (True) or off (False). Defaults to off."""
     ...
+
+
 def set_vsync_callback(cb: Callable[[int], None] | None) -> None:
     """
     Registers callback cb to be executed (in interrupt context) whenever
@@ -767,6 +866,8 @@ def set_vsync_callback(cb: Callable[[int], None] | None) -> None:
     Pass a non-callable (e.g. None) to unregister.
     """
     ...
+
+
 def set_windowing(roi: tuple[int, int] | tuple[int, int, int, int] | list[int]) -> None:
     """
     Sets the resolution of the camera to a sub-resolution inside of the current
@@ -777,12 +878,16 @@ def set_windowing(roi: tuple[int, int] | tuple[int, int, int, int] | list[int]) 
     passed unpacked as positional integers.
     """
     ...
+
+
 def shutdown(enable: bool) -> None:
     """
     Puts the camera into a lower power mode than sleep. The camera must be
     reset on being woken up.
     """
     ...
+
+
 def skip_frames(n: int | None = None, time: int = 300) -> None:
     """
     Skips n frames or time milliseconds (whichever is specified) to let
@@ -795,9 +900,13 @@ def skip_frames(n: int | None = None, time: int = 300) -> None:
     after time milliseconds.
     """
     ...
+
+
 def sleep(enable: bool) -> None:
     """Puts the camera to sleep if enable is True. Otherwise, wakes it back up."""
     ...
+
+
 def snapshot() -> image.Image:
     """
     Takes a picture using the camera and returns an image.Image object.
@@ -806,7 +915,8 @@ def snapshot() -> image.Image:
     already rotated image.Image object.
     """
     ...
+
+
 def width() -> int:
     """Returns the sensor resolution width."""
     ...
-

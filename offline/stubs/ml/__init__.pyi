@@ -8,6 +8,7 @@ image-to-tensor conversion).
 
 from typing import Any
 
+
 class Model:
     """
     Loads a TensorFlow Lite model from path into memory and prepares it for inference. path
@@ -56,6 +57,7 @@ class Model:
     """The post-processing callable supplied to the constructor, or None."""
     ram: int
     """The amount of RAM used by the model’s tensor arena, in bytes."""
+
     def predict(self, inputs: list, *, callback: object = None) -> list:
         """
         Runs inference on the model and returns the output tensors.
@@ -79,4 +81,3 @@ class Model:
         output tensors (using each tensor’s native dtype) are passed to it instead.
         """
         ...
-

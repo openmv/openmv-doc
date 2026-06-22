@@ -15,6 +15,7 @@ fields. Two flavors of API:
 
 from typing import Any
 
+
 def with_form_data(f) -> Any:
     """
     Decorator that parses the multipart body up front and populates
@@ -42,6 +43,7 @@ def with_form_data(f) -> Any:
     """
     ...
 
+
 class FileUpload:
     """
     A single uploaded file. Instances are yielded by
@@ -67,6 +69,7 @@ class FileUpload:
     copy() switches from in-memory buffering to a temporary
     file. Default 1024.
     """
+
     def close(self) -> Any:
         """
         Release any temporary file created by copy(). Called
@@ -74,6 +77,7 @@ class FileUpload:
         request.files via with_form_data().
         """
         ...
+
     def copy(self, max_memory_size: int | None = None) -> Any:
         """
         Buffer the upload (either in RAM or in a temp file, depending on
@@ -82,15 +86,18 @@ class FileUpload:
         with_form_data() decorator calls this automatically.
         """
         ...
+
     def read(self, n: int = -1) -> Any:
         """Read up to n bytes from the upload stream. -1 reads to end."""
         ...
+
     def save(self, path_or_file) -> Any:
         """
         Save the upload to path_or_file, which can be a filesystem
         path or an already-open file object.
         """
         ...
+
 
 class FormDataIter:
     """
@@ -123,4 +130,3 @@ class FormDataIter:
     stream. Default 256 bytes. Increase for higher throughput at the
     cost of RAM.
     """
-

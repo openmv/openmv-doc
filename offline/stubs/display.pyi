@@ -72,6 +72,7 @@ WSVGA: int
 XGA: int
 """1024x768 resolution for framesize."""
 
+
 class DACBacklight:
     """
     Creates a DAC-driven backlight controller.
@@ -81,12 +82,15 @@ class DACBacklight:
     bits specifies the DAC resolution.
     """
     def __init__(self, channel: int, bits: int = 8) -> None: ...
+
     def backlight(self, value: int) -> None:
         """Sets the backlight strength from 0-100."""
         ...
+
     def deinit(self) -> None:
         """Deinitializes the backlight controller."""
         ...
+
 
 class DSIDisplay:
     """
@@ -110,6 +114,7 @@ class DSIDisplay:
     controlled via a GPIO pin.
     """
     def __init__(self, framesize: int = FWVGA, *, refresh: int = 60, display_on: bool = True, triple_buffer: bool = True, portrait: bool = False, channel: int = 0, controller: Any | None = None, backlight: Any | None = None) -> None: ...
+
     def backlight(self, value: int | None = None) -> int:
         """
         Sets the LCD backlight dimming value, 0 (off) to 100 (on). Pass no arguments to get the
@@ -119,9 +124,11 @@ class DSIDisplay:
         backlight is controlled as a GPIO pin and will only go from 0 (off) to non-zero (on).
         """
         ...
+
     def bgr(self) -> int:
         """Returns whether the display expects BGR ordered pixels."""
         ...
+
     def bus_read(self, cmd: int, len: int, args: int | bytes | None = None, *, dcs: bool = False) -> bytes:
         """
         Read len bytes from the display using DSI command cmd.
@@ -131,6 +138,7 @@ class DSIDisplay:
         dcs if True sends the command as a DCS (Display Command Set) packet.
         """
         ...
+
     def bus_write(self, cmd: int, args: int | bytes | None = None, *, dcs: bool = False) -> None:
         """
         Send DSI command cmd to the display.
@@ -140,9 +148,11 @@ class DSIDisplay:
         dcs if True sends the command as a DCS (Display Command Set) packet.
         """
         ...
+
     def byte_swap(self) -> int:
         """Returns whether the display expects byte-swapped pixels."""
         ...
+
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the LCD framebuffer to black.
@@ -150,30 +160,38 @@ class DSIDisplay:
         display_off if True turns off the display logic instead of clearing the framebuffer.
         """
         ...
+
     def deinit(self) -> None:
         """Releases the I/O pins and RAM used by the class. This is called automatically on destruction."""
         ...
+
     def framesize(self) -> int:
         """Returns the framesize constant the display was initialized with."""
         ...
+
     def height(self) -> int:
         """Returns the height of the screen."""
         ...
+
     def ioctl(self, cmd: int, arg: Any | None = None) -> Any:
         """
         Send a driver-specific ioctl cmd with optional arg to the display. Raises ValueError
         if the display does not support ioctl.
         """
         ...
+
     def refresh(self) -> int:
         """Returns the refresh rate in hertz."""
         ...
+
     def triple_buffer(self) -> int:
         """Returns whether triple buffering is enabled."""
         ...
+
     def width(self) -> int:
         """Returns the width of the screen."""
         ...
+
     def write(self, image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0) -> None:
         """
         Displays an image whose top-left corner starts at location x, y.
@@ -223,6 +241,7 @@ class DSIDisplay:
         """
         ...
 
+
 class DisplayData:
     """
     cec set to True to enable CEC communication with an external display.
@@ -232,6 +251,7 @@ class DisplayData:
     ddc_addr I2C address of the external display EEPROM.
     """
     def __init__(self, *, cec: bool = False, ddc: bool = False, ddc_addr: int = 0x50) -> None: ...
+
     def display_id(self) -> bytes:
         """
         Returns the external display EDID data as a bytes object. EDID headers and
@@ -239,6 +259,7 @@ class DisplayData:
         object. Raises OSError on failure.
         """
         ...
+
     def frame_callback(self, callback: Callable[[int, bytes], None] | None, dst_addr: int) -> None:
         """
         Registers callback to be called when a CEC frame addressed to dst_addr
@@ -249,18 +270,21 @@ class DisplayData:
         registered, do not call DisplayData.receive_frame().
         """
         ...
+
     def receive_frame(self, dst_addr: int, *, timeout: int = 1000) -> tuple[int, bytes]:
         """
         Waits up to timeout milliseconds for a CEC frame addressed to dst_addr.
         Returns a tuple of (src_addr, data). Raises OSError on timeout or failure.
         """
         ...
+
     def send_frame(self, dst_addr: int, src_addr: int, data: bytes) -> None:
         """
         Sends a CEC frame to dst_addr from src_addr containing data. Raises
         OSError on failure.
         """
         ...
+
 
 class PWMBacklight:
     """
@@ -275,12 +299,15 @@ class PWMBacklight:
     frequency specifies the PWM frequency in Hz.
     """
     def __init__(self, pin: pyb.Pin, timer: int = 3, channel: int = 3, frequency: int = 200) -> None: ...
+
     def backlight(self, value: int) -> None:
         """Sets the backlight strength from 0-100."""
         ...
+
     def deinit(self) -> None:
         """Deinitializes the backlight controller."""
         ...
+
 
 class RGBDisplay:
     """
@@ -305,6 +332,7 @@ class RGBDisplay:
     be controlled via a GPIO pin.
     """
     def __init__(self, framesize: int = display.FWVGA, refresh: int = 60, display_on: bool = True, triple_buffer: bool = True, portrait: bool = False, controller: object | None = None, backlight: object | None = None) -> None: ...
+
     def backlight(self, value: int | None = None) -> int:
         """
         Sets the LCD backlight dimming value, from 0 (off) to 100 (on). Pass no arguments to get the
@@ -314,12 +342,15 @@ class RGBDisplay:
         backlight is controlled as a GPIO pin and will only go from 0 (off) to non-zero (on).
         """
         ...
+
     def bgr(self) -> bool:
         """Returns whether the red and blue channels are swapped."""
         ...
+
     def byte_swap(self) -> bool:
         """Returns whether the RGB565 pixel bytes are swapped on output."""
         ...
+
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the LCD screen to black.
@@ -329,24 +360,31 @@ class RGBDisplay:
         many displays are white when only the backlight is on.
         """
         ...
+
     def deinit(self) -> None:
         """Releases the I/O pins and RAM used by the class. This is called automatically on destruction."""
         ...
+
     def framesize(self) -> int:
         """Returns the framesize constant the display was configured with."""
         ...
+
     def height(self) -> int:
         """Returns the height of the screen."""
         ...
+
     def refresh(self) -> int:
         """Returns the refresh rate."""
         ...
+
     def triple_buffer(self) -> bool:
         """Returns whether triple buffering is enabled."""
         ...
+
     def width(self) -> int:
         """Returns the width of the screen."""
         ...
+
     def write(self, image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0) -> None:
         """
         Displays an image whose top-left corner starts at location x, y. A path string may
@@ -394,6 +432,7 @@ class RGBDisplay:
         """
         ...
 
+
 class SPIDisplay:
     """
     width SPI LCD width in pixels (1..32767).
@@ -422,6 +461,7 @@ class SPIDisplay:
     the backlight is controlled via a GPIO pin.
     """
     def __init__(self, width: int = 128, height: int = 160, refresh: int = 60, bgr: bool = False, byte_swap: bool = False, hmirror: bool = True, vflip: bool = True, triple_buffer: bool | None = None, *, controller: object | None = None, backlight: object | None = None) -> None: ...
+
     def backlight(self, value: int | None = None) -> int | None:
         """
         With value, sets the backlight intensity (0=off..100=full). Without arguments,
@@ -431,9 +471,11 @@ class SPIDisplay:
         the backlight is driven as a GPIO pin and only goes from 0 (off) to non-zero (on).
         """
         ...
+
     def bgr(self) -> bool:
         """Returns whether the red and blue channels are swapped."""
         ...
+
     def bus_read(self, cmd: int, len: int, args: int | bytes | None = None, *, dcs: bool = False) -> bytearray:
         """
         Sends cmd over the SPI bus and reads len bytes back, returning them as a
@@ -441,6 +483,7 @@ class SPIDisplay:
         buffer of bytes). dcs selects DCS framing when supported by the controller.
         """
         ...
+
     def bus_write(self, cmd: int, args: int | bytes | None = None, *, dcs: bool = False) -> None:
         """
         Sends cmd to the display over the SPI bus, optionally followed by args
@@ -448,9 +491,11 @@ class SPIDisplay:
         the controller.
         """
         ...
+
     def byte_swap(self) -> bool:
         """Returns whether RGB565 pixels are sent byte-reversed."""
         ...
+
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the LCD screen to black.
@@ -459,27 +504,34 @@ class SPIDisplay:
         framebuffer. The backlight should also be disabled afterwards.
         """
         ...
+
     def framesize(self) -> int:
         """Returns the configured framesize identifier."""
         ...
+
     def height(self) -> int:
         """Returns the height of the screen."""
         ...
+
     def ioctl(self, cmd: int, arg: object | None = None) -> object:
         """
         Issues a controller-specific ioctl cmd with optional arg. Raises
         ValueError if the underlying display does not support ioctl.
         """
         ...
+
     def refresh(self) -> int:
         """Returns the refresh rate."""
         ...
+
     def triple_buffer(self) -> bool:
         """Returns whether triple buffering is enabled."""
         ...
+
     def width(self) -> int:
         """Returns the width of the screen."""
         ...
+
     def write(self, image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 255, color_palette: int | image.Image | None = None, alpha_palette: image.Image | None = None, hint: int = 0) -> None:
         """
         Displays image with its top-left corner at (x, y). A path string may be
@@ -526,6 +578,7 @@ class SPIDisplay:
         """
         ...
 
+
 class SSD1351:
     """Creates an SSD1351 display controller object."""
     def __init__(self) -> None: ...
@@ -557,30 +610,35 @@ class SSD1351:
     """Set re-map / dual COM line mode command (0xA0)."""
     WRITE_RAM: int
     """Write to display RAM command (0x5C)."""
+
     def display_off(self, display_controller: display.SPIDisplay) -> None:
         """
         Issues the display-off command (SSD1351.DISPLAY_OFF) on the display controller bus.
         display_controller must provide a display.SPIDisplay.bus_write() method.
         """
         ...
+
     def display_on(self, display_controller: display.SPIDisplay) -> None:
         """
         Issues the display-on command (SSD1351.DISPLAY_ON) on the display controller bus.
         display_controller must provide a display.SPIDisplay.bus_write() method.
         """
         ...
+
     def init(self, display_controller: display.SPIDisplay) -> None:
         """
         Initializes the display controller. display_controller must provide a
         display.SPIDisplay.bus_write() method. Called by the parent display driver.
         """
         ...
+
     def ram_write(self, display_controller: display.SPIDisplay) -> None:
         """
         Issues the write-to-RAM command (SSD1351.WRITE_RAM) on the display controller bus.
         display_controller must provide a display.SPIDisplay.bus_write() method.
         """
         ...
+
 
 class ST7701:
     """
@@ -644,6 +702,7 @@ class ST7701:
     """Command 2 bank select register (0xFF)."""
     DSI_CMD2_BKX_SEL_NONE: int
     """Bank disable value (0x00)."""
+
     def init(self, dc: display.DSIDisplay, dt: Any) -> None:
         """
         Initializes the display.
@@ -654,9 +713,11 @@ class ST7701:
           display controller.
         """
         ...
+
     def read_id(self) -> bytes:
         """Returns the 3-byte display id read from register 0x04."""
         ...
+
 
 class TVDisplay:
     """
@@ -664,6 +725,7 @@ class TVDisplay:
     display size in RAM. The default is board-dependent.
     """
     def __init__(self, triple_buffer: bool = True) -> None: ...
+
     def clear(self, display_off: bool = False) -> None:
         """
         Clears the screen to black.
@@ -671,12 +733,15 @@ class TVDisplay:
         display_off is accepted for API compatibility with other display classes and is ignored.
         """
         ...
+
     def deinit(self) -> None:
         """Releases the I/O pins and RAM used by the class. This is called automatically on destruction."""
         ...
+
     def height(self) -> int:
         """Returns the height of the screen (240)."""
         ...
+
     def ioctl(self, cmd: int, *args) -> object:
         """
         Generic ioctl entry point.
@@ -686,15 +751,19 @@ class TVDisplay:
         is returned. No channel is selected until the first set call is made.
         """
         ...
+
     def refresh(self) -> int:
         """Returns the refresh rate (60)."""
         ...
+
     def triple_buffer(self) -> bool:
         """Returns if triple buffering is enabled."""
         ...
+
     def width(self) -> int:
         """Returns the width of the screen (352)."""
         ...
+
     def write(self, image: image.Image, x: int = 0, y: int = 0, x_scale: float = 1.0, y_scale: float = 1.0, roi: tuple[int, int, int, int] | None = None, rgb_channel: int = -1, alpha: int = 256, color_palette: int | 'image.Image' | None = None, alpha_palette: 'image.Image' | None = None, hint: int = 0) -> None:
         """
         Displays an image whose top-left corner starts at location x, y.
@@ -738,4 +807,3 @@ class TVDisplay:
         - image.ROTATE_270: Rotate by 270 degrees (HMIRROR | TRANSPOSE).
         """
         ...
-

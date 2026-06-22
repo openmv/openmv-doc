@@ -8,18 +8,25 @@ threshold that triggers collection.
 
 from typing import Any
 
+
 def collect() -> None:
     """Run a garbage collection."""
     ...
+
+
 def disable() -> None:
     """
     Disable automatic garbage collection.  Heap memory can still be allocated,
     and garbage collection can still be initiated manually using gc.collect().
     """
     ...
+
+
 def enable() -> None:
     """Enable automatic garbage collection."""
     ...
+
+
 def mem_alloc() -> int:
     """
     Return the number of bytes of heap RAM that are allocated by Python code.
@@ -29,6 +36,8 @@ def mem_alloc() -> int:
     This function is MicroPython extension.
     """
     ...
+
+
 def mem_free() -> int:
     """
     Return the number of bytes of heap RAM that is available for Python
@@ -39,6 +48,8 @@ def mem_free() -> int:
     This function is MicroPython extension.
     """
     ...
+
+
 def threshold(amount: int | None = None) -> int | None:
     """
     Set or query the additional GC allocation threshold. Normally, a collection
@@ -63,4 +74,3 @@ def threshold(amount: int | None = None) -> int | None:
     implementations, its signature and semantics are different.
     """
     ...
-

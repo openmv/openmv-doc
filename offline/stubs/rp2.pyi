@@ -73,6 +73,7 @@ or StateMachine.init() so shifts move bits towards the
 LSB.
 """
 
+
 def asm_pio(*, out_init: 'int | tuple[int, ...] | None' = None, set_init: 'int | tuple[int, ...] | None' = None, sideset_init: 'int | tuple[int, ...] | None' = None, side_pindir: bool = False, in_shiftdir: int = PIO.SHIFT_LEFT, out_shiftdir: int = PIO.SHIFT_LEFT, autopush: bool = False, autopull: bool = False, push_thresh: int = 32, pull_thresh: int = 32, fifo_join: int = PIO.JOIN_NONE) -> Callable:
     """
     Assemble a PIO program.
@@ -111,6 +112,8 @@ def asm_pio(*, out_init: 'int | tuple[int, ...] | None' = None, set_init: 'int |
       are PIO.JOIN_NONE, PIO.JOIN_RX and PIO.JOIN_TX.
     """
     ...
+
+
 def asm_pio_encode(instr: str, sideset_count: int, sideset_opt: bool = False) -> int:
     """
     Assemble a single PIO instruction. You usually want to use asm_pio()
@@ -120,6 +123,8 @@ def asm_pio_encode(instr: str, sideset_count: int, sideset_opt: bool = False) ->
     57345
     """
     ...
+
+
 def bootsel_button() -> int:
     """
     Temporarily turns the QSPI_SS pin into an input and reads its value,
@@ -132,6 +137,7 @@ def bootsel_button() -> int:
     prevent them from trying to execute code from flash.
     """
     ...
+
 
 class DMA:
     """Claim one of the DMA controller channels for exclusive use."""
@@ -172,6 +178,7 @@ class DMA:
     will write.  It may be written with either an integer or an object
     that supports the buffer protocol and doing so has immediate effect.
     """
+
     def active(self, value: bool | None = None, /) -> bool:
         """
         Gets or sets whether the DMA channel is currently running.
@@ -183,12 +190,14 @@ class DMA:
         ...     pass
         """
         ...
+
     def close(self) -> None:
         """
         Release the claim on the underlying DMA channel and free the interrupt
         handler. The DMA object can not be used after this operation.
         """
         ...
+
     def config(self, read: 'int | _AnyReadableBuf | None' = None, write: 'int | _AnyWritableBuf | None' = None, count: int | None = None, ctrl: int | None = None, trigger: bool = False) -> None:
         """
         Configure the DMA registers for the channel and optionally start the transfer.
@@ -209,9 +218,11 @@ class DMA:
         - trigger: Optionally commence the transfer immediately.
         """
         ...
+
     def irq(self, handler: Callable[[DMA], None] | None = None, hard: bool = False) -> Callable:
         """Returns the IRQ object for this DMA channel and optionally configures it."""
         ...
+
     def pack_ctrl(self, default: int | None = None, **kwargs) -> int:
         """
         Pack the values provided in the keyword arguments into the named fields of a new control
@@ -257,6 +268,7 @@ class DMA:
         datasheet for details of all of these fields.
         """
         ...
+
     def unpack_ctrl(self, value: int) -> dict:
         """
         Unpack a value for a DMA channel control register into a dictionary with key/value pairs
@@ -272,6 +284,7 @@ class DMA:
         """
         ...
 
+
 class Flash:
     """
     Return the singleton Flash block-device object backed
@@ -280,6 +293,7 @@ class Flash:
     the filesystem-eligible area of the chip.
     """
     def __init__(self) -> None: ...
+
     def ioctl(self, cmd: int, arg: int) -> int | None:
         """
         Standard vfs.AbstractBlockDev control entry point.
@@ -303,6 +317,7 @@ class Flash:
         automatically once the Flash is mounted.
         """
         ...
+
     @overload
     def readblocks(self, block_num: int, buf: bytearray) -> None:
         ...
@@ -324,6 +339,7 @@ class Flash:
         filesystems.
         """
         ...
+
     @overload
     def writeblocks(self, block_num: int, buf: bytes) -> None:
         ...
@@ -349,6 +365,7 @@ class Flash:
         """
         ...
 
+
 class PIO:
     """
     Return the singleton PIO object for the PIO block
@@ -356,6 +373,7 @@ class PIO:
     0 and 1. Raises ValueError for any other id.
     """
     def __init__(self, id: int) -> None: ...
+
     def add_program(self, program: Callable) -> None:
         """
         Load program into this PIO’s instruction memory. The
@@ -369,6 +387,7 @@ class PIO:
         memory regions.
         """
         ...
+
     def gpio_base(self, base: machine.Pin | int | None = None, /) -> int:
         """
         Get or set the GPIO base for this PIO block.
@@ -387,6 +406,7 @@ class PIO:
         on this PIO block.
         """
         ...
+
     def irq(self, handler: Callable[[PIO], None] | None = None, trigger: int = IRQ_SM0 | IRQ_SM1 | IRQ_SM2 | IRQ_SM3, hard: bool = False) -> Callable:
         """
         Get or configure the block-level IRQ for this PIO.
@@ -408,6 +428,7 @@ class PIO:
         and not accessible from Python.
         """
         ...
+
     def remove_program(self, program: Callable | None = None, /) -> None:
         """
         Remove program from this PIO’s instruction memory,
@@ -419,6 +440,7 @@ class PIO:
         exception).
         """
         ...
+
     def state_machine(self, id: int, program: Callable | None = None, *args, **kwargs) -> StateMachine:
         """
         Return one of the four StateMachine instances owned
@@ -439,12 +461,14 @@ class PIO:
         """
         ...
 
+
 class PIOASMError:
     """
     This exception is raised from asm_pio() or asm_pio_encode() if there is
     an error assembling a PIO program.
     """
     def __init__(self) -> None: ...
+
 
 class StateMachine:
     """
@@ -456,6 +480,7 @@ class StateMachine:
     StateMachine.init.
     """
     def __init__(self, id: int, program: Callable | None = None, *args, **kwargs) -> None: ...
+
     def active(self, value: bool | int | None = None, /) -> bool:
         """
         Gets or sets whether the state machine is currently running.
@@ -466,6 +491,7 @@ class StateMachine:
         False
         """
         ...
+
     def exec(self, instr: str | int) -> None:
         """
         Execute a single PIO instruction.
@@ -481,6 +507,7 @@ class StateMachine:
         >>> sm.exec(rp2.asm_pio_encode("out(y, 8)", 0))
         """
         ...
+
     def get(self, buf: 'bytearray | array | None' = None, shift: int = 0) -> int:
         """
         Pull a word from the state machine’s RX FIFO.
@@ -492,6 +519,7 @@ class StateMachine:
         return value is word >> shift.
         """
         ...
+
     def init(self, program: Callable, freq: int = -1, *, in_base: machine.Pin | None = None, out_base: machine.Pin | None = None, set_base: machine.Pin | None = None, jmp_pin: machine.Pin | None = None, sideset_base: machine.Pin | None = None, in_shiftdir: int | None = None, out_shiftdir: int | None = None, push_thresh: int | None = None, pull_thresh: int | None = None) -> None:
         """
         Configure the state machine instance to run the given program.
@@ -528,6 +556,7 @@ class StateMachine:
         can also be configured manually, but by default will be an input pin.
         """
         ...
+
     def irq(self, handler: Callable[[StateMachine], None] | None = None, trigger: int = 0 | 1, hard: bool = False) -> Callable:
         """
         Returns the IRQ object for the given StateMachine.
@@ -535,6 +564,7 @@ class StateMachine:
         Optionally configure it.
         """
         ...
+
     def put(self, value: 'int | bytes | bytearray | array', shift: int = 0) -> None:
         """
         Push words onto the state machine’s TX FIFO.
@@ -550,6 +580,7 @@ class StateMachine:
         receives word << shift.
         """
         ...
+
     def restart(self) -> None:
         """
         Restarts the state machine and jumps to the beginning of the program.
@@ -564,6 +595,7 @@ class StateMachine:
         - a stalled instruction run using StateMachine.exec()
         """
         ...
+
     def rx_fifo(self) -> int:
         """
         Returns the number of words in the state machine’s RX FIFO. A value of 0
@@ -573,6 +605,7 @@ class StateMachine:
         StateMachine.get().
         """
         ...
+
     def tx_fifo(self) -> int:
         """
         Returns the number of words in the state machine’s TX FIFO. A value of 0
@@ -582,4 +615,3 @@ class StateMachine:
         StateMachine.put().
         """
         ...
-

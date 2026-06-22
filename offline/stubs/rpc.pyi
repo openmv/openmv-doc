@@ -8,21 +8,25 @@ allows for the reverse too if you want your OpenMV Cam to be able to execute rem
 
 from typing import Any, Callable
 
+
 class rpc:
     """Creates an rpc object. Not meant to be used directly."""
     def __init__(self) -> None: ...
+
     def get_bytes(self, buff: bytearray | memoryview, timeout_ms: int) -> bytes | None:
         """
         Reimplemented by transport-specific subclasses. Fills buff with bytes from the underlying
         interface within timeout_ms milliseconds. Returns None on timeout.
         """
         ...
+
     def put_bytes(self, data: bytes | memoryview, timeout_ms: int) -> None:
         """
         Reimplemented by transport-specific subclasses. Sends data over the underlying interface
         within timeout_ms milliseconds.
         """
         ...
+
     def stream_reader(self, call_back: Callable[[memoryview], None], queue_depth: int = 1, read_timeout_ms: int = 5000) -> None:
         """
         Receives a stream of payloads from a remote rpc.stream_writer. Should be called from inside an
@@ -39,6 +43,7 @@ class rpc:
         timeout.
         """
         ...
+
     def stream_writer(self, call_back: Callable[[], bytes | memoryview], write_timeout_ms: int = 5000) -> None:
         """
         Sends a stream of payloads to a remote rpc.stream_reader. Should be called from inside an
@@ -54,6 +59,7 @@ class rpc:
         """
         ...
 
+
 class rpc_can_master:
     """
     - message_id – 11-bit CAN message id used for data transport.
@@ -66,9 +72,11 @@ class rpc_can_master:
     """
     def __init__(self, message_id: int = 0x7FF, bit_rate: int = 250000, sample_point: float = 75, can_bus: int = 2) -> None: ...
 
+
 class rpc_can_slave:
     """See rpc_can_master for argument descriptions."""
     def __init__(self, message_id: int = 0x7FF, bit_rate: int = 250000, sample_point: float = 75, can_bus: int = 2) -> None: ...
+
 
 class rpc_i2c_master:
     """
@@ -81,6 +89,7 @@ class rpc_i2c_master:
     """
     def __init__(self, slave_addr: int = 0x12, rate: int = 100000, i2c_bus: int = 2) -> None: ...
 
+
 class rpc_i2c_slave:
     """
     - slave_addr – 7-bit I2C address this slave responds to.
@@ -88,9 +97,11 @@ class rpc_i2c_slave:
     """
     def __init__(self, slave_addr: int = 0x12, i2c_bus: int = 2) -> None: ...
 
+
 class rpc_master:
     """Creates an rpc_master object. Not meant to be used directly."""
     def __init__(self) -> None: ...
+
     def call(self, name: str, data: bytes = bytes(), send_timeout: int = 1000, recv_timeout: int = 1000) -> memoryview | None:
         """
         Executes a remote call on the slave device.
@@ -109,9 +120,11 @@ class rpc_master:
         """
         ...
 
+
 class rpc_slave:
     """Creates an rpc_slave object. Not meant to be used directly."""
     def __init__(self) -> None: ...
+
     def loop(self, recv_timeout: int = 1000, send_timeout: int = 1000) -> None:
         """
         Runs the rpc slave dispatch loop. Does not return except by exception raised from a callback.
@@ -121,6 +134,7 @@ class rpc_slave:
           returning to receive.
         """
         ...
+
     def register_callback(self, cb: Callable[[memoryview], bytes | memoryview]) -> None:
         """
         Registers a callback that the master may invoke by name. cb is a callable taking one
@@ -128,6 +142,7 @@ class rpc_slave:
         used as the lookup key.
         """
         ...
+
     def schedule_callback(self, cb: Callable[[], None]) -> None:
         """
         Schedules cb (a callable taking no arguments) to be executed once, immediately after the
@@ -137,6 +152,7 @@ class rpc_slave:
         repeated execution is required.
         """
         ...
+
     def setup_loop_callback(self, cb: Callable[[], None]) -> None:
         """
         Registers cb (a callable taking no arguments) to be invoked on every iteration of
@@ -144,6 +160,7 @@ class rpc_slave:
         Must be non-blocking; the call rate is variable.
         """
         ...
+
 
 class rpc_spi_master:
     """
@@ -158,6 +175,7 @@ class rpc_spi_master:
     """
     def __init__(self, cs_pin: str = 'P3', freq: int = 1000000, clk_polarity: int = 1, clk_phase: int = 0, spi_bus: int = 2) -> None: ...
 
+
 class rpc_spi_slave:
     """
     - cs_pin – chip-select input pin name.
@@ -166,6 +184,7 @@ class rpc_spi_slave:
     - spi_bus – SPI peripheral number.
     """
     def __init__(self, cs_pin: str = 'P3', clk_polarity: int = 1, clk_phase: int = 0, spi_bus: int = 2) -> None: ...
+
 
 class rpc_uart_master:
     """
@@ -177,10 +196,10 @@ class rpc_uart_master:
     """
     def __init__(self, baudrate: int = 9600, uart_port: int = 3) -> None: ...
 
+
 class rpc_uart_slave:
     """
     - baudrate – serial baud rate.
     - uart_port – UART peripheral number.
     """
     def __init__(self, baudrate: int = 9600, uart_port: int = 3) -> None: ...
-

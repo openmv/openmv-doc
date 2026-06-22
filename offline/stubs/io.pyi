@@ -8,6 +8,7 @@ that implement the standard read/write/seek stream interface.
 
 from typing import Any, overload
 
+
 def open(name: str, mode: str = 'r', **kwargs) -> Any:
     """
     Open a file. The builtin open() function is aliased to this function.
@@ -15,6 +16,7 @@ def open(name: str, mode: str = 'r', **kwargs) -> Any:
     vary.
     """
     ...
+
 
 class BytesIO:
     """
@@ -28,36 +30,43 @@ class BytesIO:
     def __init__(self, string: bytes = b'') -> None: ...
     @overload
     def __init__(self, alloc_size: int) -> None: ...
+
     def close(self) -> None:
         """
         Close the stream and free the underlying buffer. Further operations
         on a closed stream raise ValueError.
         """
         ...
+
     def flush(self) -> None:
         """Flush the write buffers. This is a no-op for an in-memory stream."""
         ...
+
     def getvalue(self) -> bytes:
         """Return the current contents of the underlying buffer."""
         ...
+
     def read(self, size: int = -1) -> bytes:
         """
         Read and return up to size bytes. If size is omitted or negative,
         read and return all remaining contents.
         """
         ...
+
     def readinto(self, buf: bytearray) -> int:
         """
         Read into the pre-allocated, writable buffer buf and return the
         number of bytes read.
         """
         ...
+
     def readline(self, size: int = -1) -> bytes:
         """
         Read and return one line. If size is given, at most size bytes
         are read.
         """
         ...
+
     def seek(self, offset: int, whence: int = 0) -> int:
         """
         Change the stream position to offset relative to whence
@@ -65,15 +74,18 @@ class BytesIO:
         absolute position.
         """
         ...
+
     def tell(self) -> int:
         """Return the current stream position."""
         ...
+
     def write(self, b: bytes) -> int:
         """
         Write the bytes-like object b and return the number of bytes
         written.
         """
         ...
+
 
 class IOBase:
     """
@@ -87,6 +99,7 @@ class IOBase:
     Implementation methods (override these in a subclass):
     """
     def __init__(self) -> None: ...
+
     def close(self) -> None:
         """
         Close the stream and release any underlying resources. Operations on
@@ -94,12 +107,14 @@ class IOBase:
         in-memory streams).
         """
         ...
+
     def flush(self) -> None:
         """
         Flush any write buffers, pushing pending data to the underlying
         device or file. A no-op on streams that do not buffer.
         """
         ...
+
     def ioctl(self, request: int, arg: int) -> int:
         """
         Control the underlying stream/device. request is one of the
@@ -107,6 +122,7 @@ class IOBase:
         or a negative errno value on error.
         """
         ...
+
     def read(self, size: int = -1) -> Any:
         """
         Read and return up to size bytes (or characters, in text mode). If
@@ -115,6 +131,7 @@ class IOBase:
         an empty result indicates end of stream.
         """
         ...
+
     def readinto(self, buf: bytearray) -> int | None:
         """
         Read bytes into the writable buffer buf. Return the number of bytes
@@ -122,6 +139,7 @@ class IOBase:
         right now (for a non-blocking stream).
         """
         ...
+
     def readline(self, size: int = -1) -> Any:
         """
         Read and return one line, including the trailing newline character
@@ -130,12 +148,14 @@ class IOBase:
         at end of stream.
         """
         ...
+
     def readlines(self) -> list:
         """
         Read until end of stream and return a list of lines, each
         with its trailing newline.
         """
         ...
+
     def seek(self, offset: int, whence: int = 0) -> int:
         """
         Change the current stream position to offset bytes relative to
@@ -144,12 +164,14 @@ class IOBase:
         OSError on a stream that is not seekable.
         """
         ...
+
     def tell(self) -> int:
         """
         Return the current absolute position in the stream. Equivalent to
         seek(0, 1).
         """
         ...
+
     def write(self, buf: bytes) -> int | None:
         """
         Write the bytes in buf. Return the number of bytes written, or
@@ -157,6 +179,7 @@ class IOBase:
         non-blocking stream).
         """
         ...
+
 
 class StringIO:
     """
@@ -170,36 +193,43 @@ class StringIO:
     def __init__(self, string: str = '') -> None: ...
     @overload
     def __init__(self, alloc_size: int) -> None: ...
+
     def close(self) -> None:
         """
         Close the stream and free the underlying buffer. Further operations
         on a closed stream raise ValueError.
         """
         ...
+
     def flush(self) -> None:
         """Flush the write buffers. This is a no-op for an in-memory stream."""
         ...
+
     def getvalue(self) -> str:
         """Return the current contents of the underlying buffer."""
         ...
+
     def read(self, size: int = -1) -> str:
         """
         Read and return up to size characters. If size is omitted or
         negative, read and return all remaining contents.
         """
         ...
+
     def readinto(self, buf: bytearray) -> int:
         """
         Read into the pre-allocated, writable buffer buf and return the
         number of bytes read.
         """
         ...
+
     def readline(self, size: int = -1) -> str:
         """
         Read and return one line. If size is given, at most size
         characters are read.
         """
         ...
+
     def seek(self, offset: int, whence: int = 0) -> int:
         """
         Change the stream position to offset relative to whence
@@ -207,10 +237,11 @@ class StringIO:
         absolute position.
         """
         ...
+
     def tell(self) -> int:
         """Return the current stream position."""
         ...
+
     def write(self, s: str) -> int:
         """Write the string s and return the number of characters written."""
         ...
-

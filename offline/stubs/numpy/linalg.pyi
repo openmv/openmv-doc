@@ -8,6 +8,7 @@ dimensionality raises a ValueError.
 
 from typing import Any
 
+
 def cholesky(A: ndarray) -> ndarray:
     """
     Compute the Cholesky decomposition of a positive-definite, symmetric square
@@ -28,6 +29,8 @@ def cholesky(A: ndarray) -> ndarray:
     definite.
     """
     ...
+
+
 def det(m: ndarray) -> float:
     """
     Compute the determinant of a square matrix.
@@ -48,6 +51,8 @@ def det(m: ndarray) -> float:
     The computation is performed by Gaussian elimination with partial pivoting.
     """
     ...
+
+
 def eig(m: ndarray) -> tuple[ndarray, ndarray]:
     """
     Compute the eigenvalues and eigenvectors of a real symmetric square matrix.
@@ -69,6 +74,8 @@ def eig(m: ndarray) -> tuple[ndarray, ndarray]:
     Jacobi-rotation iteration fails to converge.
     """
     ...
+
+
 def inv(m: ndarray) -> ndarray:
     """
     Compute the inverse of a square matrix.
@@ -88,6 +95,8 @@ def inv(m: ndarray) -> ndarray:
     The inversion is performed by Gauss-Jordan elimination.
     """
     ...
+
+
 def norm(x: ndarray, axis: int | None = None) -> float | ndarray:
     """
     Compute the 2-norm of a vector or matrix.
@@ -112,6 +121,8 @@ def norm(x: ndarray, axis: int | None = None) -> float | ndarray:
     proportional to the size of the input.
     """
     ...
+
+
 def qr(m: ndarray, mode: str = 'reduced') -> tuple[ndarray, ndarray]:
     """
     Factor a matrix as the product of an orthonormal matrix and an
@@ -142,4 +153,3 @@ def qr(m: ndarray, mode: str = 'reduced') -> tuple[ndarray, ndarray]:
     The decomposition is implemented via successive Givens rotations.
     """
     ...
-

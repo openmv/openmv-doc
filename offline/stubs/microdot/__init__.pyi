@@ -18,21 +18,28 @@ looks like:
 
 from typing import Any, Callable
 
+
 def abort(status_code: int, reason: str | None = None) -> None:
     """
     Shortcut for Microdot.abort(). Never returns normally – raises
     HTTPException. Importable as from microdot import abort.
     """
     ...
+
+
 def redirect(location: str, status_code: int = 302) -> Response:
     """
     Shortcut for Response.redirect(). Importable as from microdot
     import redirect.
     """
     ...
+
+
 def send_file(filename: str, **kwargs) -> Response:
     """Shortcut for Response.send_file()."""
     ...
+
+
 def urldecode(s: str) -> str:
     """
     Percent-decode a URL component – the inverse of urlencode().
@@ -41,6 +48,8 @@ def urldecode(s: str) -> str:
     convention). Returns the decoded str.
     """
     ...
+
+
 def urlencode(s: str) -> str:
     """
     Percent-encode a URL component. Replaces characters that have
@@ -50,6 +59,7 @@ def urlencode(s: str) -> str:
     """
     ...
 
+
 class HTTPException(Exception):
     """
     Raised by abort() to short-circuit a request with a specific
@@ -57,6 +67,7 @@ class HTTPException(Exception):
     error response.
     """
     ...
+
 
 class HTTPException:
     def __init__(self) -> None: ...
@@ -71,6 +82,7 @@ class HTTPException:
     Numeric HTTP status code to return – the value passed to
     abort().
     """
+
 
 class Microdot:
     """
@@ -117,6 +129,7 @@ class Microdot:
     List of registered routes as (methods, URLPattern, handler,
     url_prefix, subapp) tuples.
     """
+
     def abort(self, status_code: int, reason: str | None = None) -> None:
         """
         Raise HTTPException to abort the current request with the
@@ -134,6 +147,7 @@ class Microdot:
                 return user.to_dict()
         """
         ...
+
     def after_error_request(self, f: Callable) -> Callable:
         """
         Decorator that registers f to run after Microdot generates an
@@ -142,6 +156,7 @@ class Microdot:
         response object. Returns f unchanged.
         """
         ...
+
     def after_request(self, f: Callable) -> Callable:
         """
         Decorator that registers f to run after every successful
@@ -149,6 +164,7 @@ class Microdot:
         (possibly modified) response object. Returns f unchanged.
         """
         ...
+
     def before_request(self, f: Callable) -> Callable:
         """
         Decorator that registers f to run before every request. f
@@ -158,6 +174,7 @@ class Microdot:
         skipped and that response is sent. Returns f unchanged.
         """
         ...
+
     def delete(self, url_pattern: str) -> Callable:
         """
         Convenience alias for route(url_pattern, methods=['DELETE']) –
@@ -165,6 +182,7 @@ class Microdot:
         url_pattern. Returns the decorator.
         """
         ...
+
     def errorhandler(self, status_code_or_exception_class) -> Callable:
         """
         Decorator that registers a custom handler for an HTTP status code
@@ -173,6 +191,7 @@ class Microdot:
         Returns the decorator.
         """
         ...
+
     def get(self, url_pattern: str) -> Callable:
         """
         Convenience alias for route(url_pattern, methods=['GET']) –
@@ -180,6 +199,7 @@ class Microdot:
         url_pattern. Returns the decorator.
         """
         ...
+
     def mount(self, subapp: Microdot, url_prefix: str = '', local: bool = False) -> None:
         """
         Attach another Microdot instance’s routes under
@@ -189,6 +209,7 @@ class Microdot:
         None.
         """
         ...
+
     def patch(self, url_pattern: str) -> Callable:
         """
         Convenience alias for route(url_pattern, methods=['PATCH']) –
@@ -196,6 +217,7 @@ class Microdot:
         url_pattern. Returns the decorator.
         """
         ...
+
     def post(self, url_pattern: str) -> Callable:
         """
         Convenience alias for route(url_pattern, methods=['POST']) –
@@ -203,6 +225,7 @@ class Microdot:
         url_pattern. Returns the decorator.
         """
         ...
+
     def put(self, url_pattern: str) -> Callable:
         """
         Convenience alias for route(url_pattern, methods=['PUT']) –
@@ -210,6 +233,7 @@ class Microdot:
         url_pattern. Returns the decorator.
         """
         ...
+
     def route(self, url_pattern: str, methods: list | None = None) -> Callable:
         """
         Decorator that registers a handler for url_pattern under the listed
@@ -236,6 +260,7 @@ class Microdot:
         list (sent as JSON).
         """
         ...
+
     def run(self, host: str = '0.0.0.0', port: int = 5000, debug: bool = False, ssl=None) -> None:
         """
         Block the calling thread, run asyncio.run() on
@@ -246,6 +271,7 @@ class Microdot:
             app.run(host='0.0.0.0', port=80)
         """
         ...
+
     def shutdown(self) -> None:
         """
         Request a graceful server shutdown. Safe to call from a route
@@ -254,6 +280,7 @@ class Microdot:
         in-flight request finishes.
         """
         ...
+
     def start_server(self, host: str = '0.0.0.0', port: int = 5000, debug: bool = False, ssl=None, start_serving: bool = True) -> None:
         """
         Start the server as a coroutine. Use this when integrating with an
@@ -291,6 +318,7 @@ class Microdot:
         """
         ...
 
+
 class MultiDict:
     """
     A dict subclass that stores multiple values per key. Used for query
@@ -298,6 +326,7 @@ class MultiDict:
     more than once (?tag=a&tag=b).
     """
     def __init__(self, initial_dict: dict | None = None) -> None: ...
+
     def get(self, key, default=None, type: Callable | None = None) -> Any:
         """
         Return the first value for key, optionally converted with
@@ -306,6 +335,7 @@ class MultiDict:
         converted) value.
         """
         ...
+
     def getlist(self, key, type: Callable | None = None) -> list:
         """
         Return all values for key as a list, optionally with each
@@ -314,12 +344,14 @@ class MultiDict:
         """
         ...
 
+
 class NoCaseDict:
     """
     A dict subclass with case-insensitive string keys. Used for
     Request.headers and Response.headers.
     """
     def __init__(self) -> None: ...
+
 
 class Request:
     """
@@ -414,6 +446,7 @@ class Request:
     """
     url_prefix: str
     """Prefix the route was mounted under, or ''."""
+
     def after_request(self, f: Callable) -> Callable:
         """
         Register a request-local after-request hook – runs after the
@@ -422,6 +455,7 @@ class Request:
         modified) response object. Returns f unchanged.
         """
         ...
+
 
 class Response:
     """
@@ -475,6 +509,7 @@ class Response:
     type inference. Maps css, gif, html, jpg, js,
     json, png, txt, svg.
     """
+
     def delete_cookie(self, cookie: str, **kwargs) -> None:
         """
         Set a Set-Cookie that expires the given cookie immediately.
@@ -484,6 +519,7 @@ class Response:
         appended to this response in place.
         """
         ...
+
     def redirect(self, location: str, status_code: int = 302) -> Response:
         """
         Return a redirect response:
@@ -493,6 +529,7 @@ class Response:
                 return Response.redirect('/new')
         """
         ...
+
     def send_file(self, filename: str, status_code: int = 200, content_type: str | None = None, stream=None, max_age: int | None = None, compressed: bool | str = False, file_extension: str = '') -> Response:
         """
         Stream a file from the filesystem as the response body.
@@ -505,6 +542,7 @@ class Response:
         disclosure.
         """
         ...
+
     def set_cookie(self, cookie: str, value: str, path: str | None = None, domain: str | None = None, expires=None, max_age: int | None = None, secure: bool = False, http_only: bool = False, partitioned: bool = False) -> None:
         """
         Add a Set-Cookie header. expires may be a pre-formatted
@@ -514,6 +552,7 @@ class Response:
         """
         ...
 
+
 class URLPattern:
     """
     The compiled form of a route’s URL pattern. Constructed automatically
@@ -521,12 +560,14 @@ class URLPattern:
     directly.
     """
     def __init__(self, url_pattern: str) -> None: ...
+
     def match(self, path: str) -> dict | None:
         """
         Match path against the pattern and return a dict of captured
         groups, or None on no match.
         """
         ...
+
     def register_type(self, type_name: str, pattern: str = '[^/]+', parser: Callable | None = None) -> None:
         """
         Register a new dynamic-segment type for use in route patterns.
@@ -539,4 +580,3 @@ class URLPattern:
         before it reaches the handler.
         """
         ...
-

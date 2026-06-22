@@ -9,6 +9,7 @@ speed gain over a pure-Python implementation is modest (typically about
 
 from typing import Any, Callable
 
+
 def bisect(f: Callable[[float], float], a: float, b: float, *, xtol: float = xtolerance, maxiter: int = 100) -> float:
     """
     Find a root of f in the bracket [a, b] using the bisection
@@ -36,6 +37,8 @@ def bisect(f: Callable[[float], float], a: float, b: float, *, xtol: float = xto
     ValueError – if f(a) * f(b) > 0.
     """
     ...
+
+
 def curve_fit(f: Callable[..., float], xdata: ndarray | list | tuple, ydata: ndarray | list | tuple, p0: ndarray | list | tuple, *, xatol: float = xtolerance, fatol: float = xtolerance, maxiter: int | None = None) -> None:
     """
     Stub for non-linear least-squares curve fitting (Levenberg-Marquardt).
@@ -55,6 +58,8 @@ def curve_fit(f: Callable[..., float], xdata: ndarray | list | tuple, ydata: nda
     p0 – 1-D array-like of initial parameter estimates.
     """
     ...
+
+
 def fmin(f: Callable[[float], float], x0: float, *, xatol: float = xtolerance, fatol: float = xtolerance, maxiter: int = 200) -> float:
     """
     Find the position of a local minimum of the scalar function f
@@ -79,6 +84,8 @@ def fmin(f: Callable[[float], float], x0: float, *, xatol: float = xtolerance, f
     the location of the minimum as a float.
     """
     ...
+
+
 def newton(f: Callable[[float], float], x0: float, *, tol: float = xtolerance, rtol: float = rtolerance, maxiter: int = 50) -> float:
     """
     Find a zero of the real-valued, scalar function f by the
@@ -101,4 +108,3 @@ def newton(f: Callable[[float], float], x0: float, *, tol: float = xtolerance, r
     the location of the root as a float.
     """
     ...
-

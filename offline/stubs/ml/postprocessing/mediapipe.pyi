@@ -8,6 +8,7 @@ from typing import Any
 import ml
 import ml.utils
 
+
 class BlazeFace:
     """
     Create a BlazeFace post-processor. Uses an anchor grid of
@@ -28,6 +29,7 @@ class BlazeFace:
     """
     def __init__(self, threshold: float = 0.6, anchors: ndarray | None = None, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
+
 class BlazePalm:
     """
     Create a BlazePalm post-processor. Uses an anchor grid of
@@ -47,6 +49,7 @@ class BlazePalm:
     """
     def __init__(self, threshold: float = 0.6, anchors: ndarray | None = None, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
+
 class FaceLandmarks:
     """
     Create a FaceLandmarks post-processor.
@@ -61,6 +64,7 @@ class FaceLandmarks:
     __call__, where keypoints is a list of (x, y, z) points.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
 
 class HandLandmarks:
     """
@@ -79,6 +83,7 @@ class HandLandmarks:
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
 
+
 class MoveNet:
     """
     Create a MoveNet post-processor.
@@ -95,6 +100,7 @@ class MoveNet:
     in input pixel coordinates.
     """
     def __init__(self, threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
 
 class mediapipe_detection_postprocess:
     """
@@ -118,6 +124,7 @@ class mediapipe_detection_postprocess:
     nms_sigma Sigma for soft-NMS score decay.
     """
     def __init__(self, threshold: float = 0.6, anchors: ndarray | None = None, anchor_grid: list[tuple[int, int]] | None = None, scores: list[int] = [], cords: list[int] = [], nms_threshold: float = 0.1, nms_sigma: float = 0.1) -> None: ...
+
     def __call__(self, model: ml.Model, inputs: list, outputs: list) -> list:
         """
         Run post-processing on model outputs and return a list of
@@ -125,10 +132,10 @@ class mediapipe_detection_postprocess:
         () when no detection clears the score threshold.
         """
         ...
+
     def detection_post_process(self, ih: int, iw: int, nms: ml.utils.NMS, model: ml.Model, inputs: list, outputs: list, score_idx: int, cords_idx: int, t: float, anchors: ndarray) -> None:
         """
         Decode and add bounding boxes from a single (score, cords) output
         pair into the supplied NMS accumulator.
         """
         ...
-
