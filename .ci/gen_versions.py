@@ -16,8 +16,6 @@ import os
 import re
 import json
 
-docs = sys.argv[1] if len(sys.argv) > 1 else "docs"
-
 VERSION_RE = re.compile(r"^v\d+\.\d+")
 
 # The versioning era starts at v5.0.0. Older tags (e.g. v4.8.1) are kept as
@@ -28,49 +26,6 @@ LEGACY_BEFORE = (5, 0, 0)
 
 def version_key(name):
     return tuple(int(n) for n in re.findall(r"\d+", name))
-
-
-present = [
-    name for name in os.listdir(docs)
-    if os.path.isdir(os.path.join(docs, name))
-    and (name == "dev" or VERSION_RE.match(name))
-]
-
-# Alias releases: firmware versions that shipped without their own docs rebuild.
-# They appear in the switcher but reuse an existing snapshot folder (no HTML is
-# duplicated). version_aliases.json maps alias -> target folder; an alias is only
-# honored if its target folder is actually present. Keys starting with "_" (e.g.
-# "_comment") are ignored.
-alias_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "version_aliases.json")
-aliases = {}
-if os.path.exists(alias_file):
-    with open(alias_file, encoding="utf-8") as f:
-        aliases = {a: t for a, t in json.load(f).items()
-                   if not a.startswith("_") and t in present}
-
-folder_releases = [n for n in present if n != "dev"]
-release_ids = folder_releases + [a for a in aliases if a not in present]
-all_releases = sorted(release_ids, key=version_key, reverse=True)
-current = [r for r in all_releases if version_key(r) >= LEGACY_BEFORE]
-legacy = [r for r in all_releases if version_key(r) < LEGACY_BEFORE]
-# "latest" must be a real folder, never an alias (aliases are all legacy anyway).
-latest = next((r for r in current if r not in aliases), None)
-
-# dev first, then current releases newest-first, then legacy snapshots.
-ordered = (["dev"] if "dev" in present else []) + current + legacy
-versions = []
-for v in ordered:
-    label = v + " (latest)" if v == latest else v
-    entry = {"id": v, "label": label}
-    if v in aliases:
-        entry["snapshot"] = aliases[v]  # switcher/404 link here instead of /v/
-    versions.append(entry)
-with open(os.path.join(docs, "versions.json"), "w", encoding="utf-8") as f:
-    json.dump({"versions": versions, "latest": latest}, f, indent=1)
-
-# Root "/" -> "/latest/" (the stable entry point). /latest/ itself resolves to
-# the newest release, or to /dev/ before the first release exists.
-latest_target = "/{}/".format(latest if latest else "dev")
 
 
 def redirect_html(target):
@@ -85,11 +40,71 @@ def redirect_html(target):
     ).format(t=target)
 
 
-with open(os.path.join(docs, "index.html"), "w", encoding="utf-8") as f:
-    f.write(redirect_html("/latest/"))
+def compute_versions(present, aliases):
+    """Pure: from the present version folders and the alias map, build the
+    switcher ``versions`` list (dev, then current releases newest-first, then
+    legacy snapshots) and the ``latest`` release id (a real folder, never an
+    alias; None before the first v5.0.0+ release exists)."""
+    folder_releases = [n for n in present if n != "dev"]
+    release_ids = folder_releases + [a for a in aliases if a not in present]
+    all_releases = sorted(release_ids, key=version_key, reverse=True)
+    current = [r for r in all_releases if version_key(r) >= LEGACY_BEFORE]
+    legacy = [r for r in all_releases if version_key(r) < LEGACY_BEFORE]
+    latest = next((r for r in current if r not in aliases), None)
 
-os.makedirs(os.path.join(docs, "latest"), exist_ok=True)
-with open(os.path.join(docs, "latest", "index.html"), "w", encoding="utf-8") as f:
-    f.write(redirect_html(latest_target))
+    ordered = (["dev"] if "dev" in present else []) + current + legacy
+    versions = []
+    for v in ordered:
+        label = v + " (latest)" if v == latest else v
+        entry = {"id": v, "label": label}
+        if v in aliases:
+            entry["snapshot"] = aliases[v]  # switcher/404 link here instead of /v/
+        versions.append(entry)
+    return versions, latest
 
-print("versions.json:", [v["id"] for v in versions], "latest:", latest)
+
+def load_aliases(present, alias_file=None):
+    # Alias releases: firmware versions that shipped without their own docs
+    # rebuild. They appear in the switcher but reuse an existing snapshot folder
+    # (no HTML is duplicated). version_aliases.json maps alias -> target folder;
+    # an alias is only honored if its target folder is actually present. Keys
+    # starting with "_" (e.g. "_comment") are ignored.
+    if alias_file is None:
+        alias_file = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  "version_aliases.json")
+    if not os.path.exists(alias_file):
+        return {}
+    with open(alias_file, encoding="utf-8") as f:
+        return {a: t for a, t in json.load(f).items()
+                if not a.startswith("_") and t in present}
+
+
+def main(argv=None):
+    argv = sys.argv[1:] if argv is None else argv
+    docs = argv[0] if argv else "docs"
+
+    present = [
+        name for name in os.listdir(docs)
+        if os.path.isdir(os.path.join(docs, name))
+        and (name == "dev" or VERSION_RE.match(name))
+    ]
+    aliases = load_aliases(present)
+    versions, latest = compute_versions(present, aliases)
+
+    with open(os.path.join(docs, "versions.json"), "w", encoding="utf-8") as f:
+        json.dump({"versions": versions, "latest": latest}, f, indent=1)
+
+    # Root "/" -> "/latest/" (the stable entry point). /latest/ itself resolves
+    # to the newest release, or to /dev/ before the first release exists.
+    latest_target = "/{}/".format(latest if latest else "dev")
+    with open(os.path.join(docs, "index.html"), "w", encoding="utf-8") as f:
+        f.write(redirect_html("/latest/"))
+    os.makedirs(os.path.join(docs, "latest"), exist_ok=True)
+    with open(os.path.join(docs, "latest", "index.html"), "w", encoding="utf-8") as f:
+        f.write(redirect_html(latest_target))
+
+    print("versions.json:", [v["id"] for v in versions], "latest:", latest)
+
+
+if __name__ == "__main__":
+    main()

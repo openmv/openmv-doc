@@ -41,6 +41,34 @@ jobs:
         # re-trigger loop and no guard is needed here.
 
   # =========================================================================
+  # TESTS -- unit tests + coverage for the repo's own Python tooling (the .pyi
+  # stub generator/verifier). Independent of the doc build, runs on every push,
+  # and uploads coverage to Codecov. The docs themselves (RST) and the vendored
+  # micropython submodule are out of scope; only first-party tooling is measured.
+  # =========================================================================
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install test dependencies
+      # genpyi imports sphinx/docutils at module load, so they're needed to import
+      # the code under test -- but no submodule / full docs requirements are.
+      run: pip install -U sphinx docutils pytest pytest-cov
+
+    - name: Run tests with coverage
+      run: pytest tests/ --cov=genpyi --cov=verify_stubs --cov=.ci --cov-report=xml
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  # =========================================================================
   # DEV BUILD (master) -- the single heavy Sphinx build. Produces docs/dev/,
   # the offline/ bundle, the rolling "development" html.zip release, and pings
   # Studio. Releases are copies of this, so this is the only place docs are built.
@@ -80,7 +108,13 @@ jobs:
         # Channel-root build: conf.py emits llms.txt/llms-full.txt here only (the
         # per-language builds below leave it unset and skip the ~5 MB x26 dump).
         OPENMV_DOCS_ROOT_BUILD: '1'
-      run: python -m sphinx -b html -d build/doctrees . build/html
+      # -W: fail the build on any Sphinx warning (broken xrefs, bad directives,
+      # dead toctree entries). The English source builds warning-free today, so
+      # this keeps it that way. --keep-going reports every warning before failing.
+      # Only the English build is gated: the per-language builds below can emit
+      # benign i18n markup warnings from translated .po catalogs, so they stay
+      # ungated rather than block CI on translation noise.
+      run: python -m sphinx -W --keep-going -b html -d build/doctrees . build/html
 
     - name: Build translations
       working-directory: micropython/docs
