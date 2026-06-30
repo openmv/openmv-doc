@@ -62,6 +62,7 @@ The pages below walk through each step in order.
 
    setup.rst
    building.rst
+   simulation.rst
    flashing/index.rst
    debugging.rst
    recovery.rst
