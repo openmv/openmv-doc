@@ -33,7 +33,17 @@ status bar reports what the connected camera is doing.
 What is missing is everything you would use to *change*
 the application: the script-authoring features, the
 machine-vision tuning tools, the AI and model tools,
-and the developer settings are all removed.
+and the IDE's own developer settings are all removed.
+
+One editing tool does stay, because it is aimed at
+whoever *uses* a product rather than whoever built it.
+The Viewer can open the settings config stored on the
+connected camera and present it as a form, so an operator
+can change a product's settings -- a threshold, a mode, a
+Wi-Fi password -- without the IDE. It opens an existing
+config only; authoring one is a job for the IDE. See the
+:doc:`settings editor <../ide/settings-editor/index>` for
+what a config can hold.
 
 Keyboard shortcuts in this chapter are written for
 Windows and Linux; on macOS substitute ``Cmd`` for
