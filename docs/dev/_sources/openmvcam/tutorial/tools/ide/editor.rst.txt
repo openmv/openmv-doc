@@ -41,10 +41,12 @@ opens with its functions, methods, and constants; pick
 one and a call tip walks you through the arguments.
 Hover over any API name to see its documentation in a
 tooltip -- the same text as the library reference,
-without leaving the editor. Completion covers the
-camera-specific modules (:mod:`csi`, :mod:`image`,
-:mod:`machine`, and the rest of the library reference)
-as well as the Python language itself.
+without leaving the editor -- or put the cursor on the
+name and press ``F1`` to open the documentation for it.
+Completion covers the camera-specific modules
+(:mod:`csi`, :mod:`image`, :mod:`machine`, and the rest
+of the library reference) as well as the Python
+language itself.
 
 A bundled Python language server checks your code as
 you type, underlining undefined names, unused imports,

@@ -34,6 +34,14 @@ interactive REPL prompt on the camera, open a
 :doc:`standalone terminal window <open-terminal>`
 instead.
 
+A debug-logging toggle in the toolbar interleaves the
+camera debug protocol into the terminal, one
+emoji-tagged line per message, at a few levels of
+detail. It is a diagnostic aid for a connection that
+misbehaves -- a camera that will not connect, or a
+stream that stalls -- and off by default; leave it off
+for normal work, where it only adds noise.
+
 Tracebacks are wired into the editor. When a script
 dies with an unhandled exception, the IDE parses the
 traceback as it prints, jumps the editor to the

@@ -36,9 +36,12 @@ change the font size on the fly with ``Ctrl++`` /
 ``Ctrl+-`` / ``Ctrl+0``, or with the mouse wheel while
 holding ``Ctrl``.
 
-Keyboard shortcuts are fixed in OpenMV IDE. Each one is
-shown beside its menu entry, and this chapter quotes
-the important ones where the feature comes up.
+The Environment → Keyboard page lists every command and
+its shortcut, filtered to the actions you can actually
+reach, so you can search for a command and see (or look
+up) its key binding. Shortcuts are also shown beside
+their menu entries, and this chapter quotes the
+important ones where the feature comes up.
 
 Other categories
 ----------------

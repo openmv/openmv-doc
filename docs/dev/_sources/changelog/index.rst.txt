@@ -13,6 +13,7 @@ matters) exactly how to migrate.
 
    OpenMV Firmware <firmware/index.rst>
    OpenMV IDE <ide/index.rst>
+   OpenMV Viewer <viewer/index.rst>
    OpenMV Python Package <openmv-py/index.rst>
    OpenMV Arduino RPC Library <arduino-rpc/index.rst>
 
@@ -33,6 +34,14 @@ matters) exactly how to migrate.
        <p>The desktop development environment for writing, running, and
        debugging scripts on the OpenMV Cam. New editor, camera, and
        tooling features, bug fixes, and platform support.</p>
+       <span class="card-arrow">View releases →</span>
+     </a>
+     <a class="changelog-product-card icon-coral" href="viewer/index.html">
+       <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+       <h4>OpenMV Viewer</h4>
+       <p>The read-only companion to OpenMV IDE for showing off a finished
+       product. It streams a connected camera's frame buffer, terminal, and
+       histogram and runs a script, with the development tools removed.</p>
        <span class="card-arrow">View releases →</span>
      </a>
      <a class="changelog-product-card icon-purple" href="openmv-py/index.html">

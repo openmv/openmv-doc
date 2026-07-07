@@ -12,6 +12,7 @@ it, or help size the system around it.
    :maxdepth: 1
 
    ide/index.rst
+   viewer/index.rst
    projects-tools/index.rst
 
 .. toctree::

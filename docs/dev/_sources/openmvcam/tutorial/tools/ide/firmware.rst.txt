@@ -49,9 +49,11 @@ Tools → Load Custom Firmware (``Ctrl+Shift+L``) flashes
 a firmware binary from disk instead of the bundled
 release -- the deployment path for firmware built from
 source, with frozen scripts or a custom configuration
-baked in. The dialog takes the firmware file and the
-same erase-filesystem and reset-ROMFS checkboxes as the
-update prompt.
+baked in. The dialog takes either a firmware binary or
+a board's build-output ``.zip`` bundle (the IDE unpacks
+it and flashes the firmware and ROM file system it
+contains), plus the same erase-filesystem and
+reset-ROMFS checkboxes as the update prompt.
 
 .. seealso::
 
