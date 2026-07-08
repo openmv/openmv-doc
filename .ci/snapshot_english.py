@@ -96,9 +96,13 @@ def make_offline(release_dir, out_dir, locs, stubs_dir=None):
     if os.path.exists(out_dir):
         shutil.rmtree(out_dir)
     os.makedirs(out_dir)
-    # copy English root only -- skip the per-language subdirs
+    # The Legacy (CMUcam history) section is preservation-only: it lives on the
+    # website but is deliberately kept OUT of the desktop/IDE bundle so the app
+    # doesn't carry the historical pages and their downloads.
+    OFFLINE_SKIP = set(locs) | {"legacy"}
+    # copy English root only -- skip the per-language subdirs and legacy/
     for entry in os.listdir(release_dir):
-        if entry in locs:
+        if entry in OFFLINE_SKIP:
             continue
         src = os.path.join(release_dir, entry)
         dst = os.path.join(out_dir, entry)
@@ -106,6 +110,41 @@ def make_offline(release_dir, out_dir, locs, stubs_dir=None):
             shutil.copytree(src, dst)
         else:
             shutil.copy2(src, dst)
+    # Drop the assets that ONLY the Legacy pages reference -- the camera photos,
+    # demo videos, and every download file -- from the shared collected dirs, so
+    # the desktop/IDE bundle carries none of the historical downloads. Anything
+    # also referenced by a non-legacy page is kept.
+    import re as _re
+
+    def _asset_refs(html_root, want_legacy):
+        # _downloads files have URL-encoded names in hrefs, so match them at the
+        # per-file hash-dir level (hashes are always clean hex); _images/_sources
+        # match at the full path.
+        refs = set()
+        for root, _dirs, files in os.walk(html_root):
+            rel = os.path.relpath(root, html_root)
+            in_legacy = rel == "legacy" or rel.startswith("legacy" + os.sep)
+            if in_legacy != want_legacy:
+                continue
+            for fn in files:
+                if not fn.endswith(".html"):
+                    continue
+                with open(os.path.join(root, fn), encoding="utf-8",
+                          errors="ignore") as fh:
+                    txt = fh.read()
+                for m in _re.findall(r"_downloads/[0-9a-f]+", txt):
+                    refs.add(m)
+                for m in _re.findall(r"(?:_images|_sources)/[^\s\"'<>()]+", txt):
+                    refs.add(m.split("#")[0].split("?")[0])
+        return refs
+
+    legacy_only = _asset_refs(release_dir, True) - _asset_refs(release_dir, False)
+    for rel in legacy_only:
+        p = os.path.join(out_dir, *rel.split("/"))
+        if os.path.isdir(p):
+            shutil.rmtree(p)
+        elif os.path.isfile(p):
+            os.remove(p)
     # drop llms (unused by either consumer); KEEP _sources for Studio's genpyi
     for rel in ("llms.txt", "llms-full.txt"):
         p = os.path.join(out_dir, rel)
