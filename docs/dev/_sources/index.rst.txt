@@ -13,3 +13,4 @@ OpenMV MicroPython documentation
     Internals <develop/index.rst>
     Changelog <changelog/index.rst>
     License <license.rst>
+    Legacy <legacy/index.rst>
