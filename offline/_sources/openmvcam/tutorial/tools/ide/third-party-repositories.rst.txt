@@ -237,10 +237,11 @@ third-party boards: ``boardFirmwareFolder`` must be unique
 names the folder your binaries live in), each board must
 carry its own ``firmware_version`` (this is what drives
 the update-on-connect prompt), and a board may set
-``exampleBoardType`` to an OpenMV board's firmware-folder
-name to inherit that board's stock examples and models --
-the escape hatch for a board that is firmware-compatible
-with an OpenMV one. Reusing OpenMV bootloader identifiers
+``boardFirmwareFolderAlias`` to an OpenMV board's
+firmware-folder name to inherit that board's stock examples
+and models -- the escape hatch for a board that is
+firmware-compatible with an OpenMV one. Reusing OpenMV
+bootloader identifiers
 is expected (they carry the signed Windows drivers); an
 app identifier that collides with a built-in board
 overrides that board, which the Override warnings panel
