@@ -14,6 +14,23 @@ prompt, whatever firmware the product ships stays in
 place. The firmware operations are available on demand
 from the Tools menu when you do want them.
 
+Third-party boards and fleet updates
+------------------------------------
+
+The Viewer supports :doc:`third-party repositories
+<../ide/third-party-repositories>`, so a company shipping
+its own board in its own Viewer can keep a fleet of those
+cameras current in the field. This is the one exception to
+the no-nagging rule: a third-party board *does* get the
+out-of-date prompt and updates through the Viewer, because
+the update is the vendor's own -- served from the URL in
+the repository's manifest, not from OpenMV. OpenMV's own
+boards still never prompt. The Viewer checks a
+repository's firmware channel at launch and offers newer
+firmware when the vendor publishes it; it does not pull
+down the examples, models, or stubs a repository may also
+carry, since the Viewer has no interface for them.
+
 Loading firmware
 ----------------
 

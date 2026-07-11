@@ -19,8 +19,10 @@ Quick Links
 
 * :doc:`quick-start`
 
-* Arduino Interface Library
+* :download:`Arduino Interface Library <dl/CMUcam4-Arduino-Interface-Library-101.zip>`
 * :doc:`cmucam4-graphical-user-interface`
+
+* :doc:`Documents <documents>`
 
 * :doc:`Black Lextronic Camera Documentation <lextronic-camera>`
 * :doc:`Red SparkFun Camera Documentation <sparkfun-camera>`
@@ -48,12 +50,36 @@ Quick Links
 Cool Videos
 -----------
 
-* `CMU Mechatronics 2012: Team Fun <http://www.youtube.com/watch?v=oLCOUdFDnUc>`__
-* `Demo Mode Object Tracking <http://www.youtube.com/watch?v=ByGZRh62glw>`__
-* `CMUcam4 Video <http://www.youtube.com/watch?v=0UklfX38tfY>`__
-* `Autonomous Vehicle Control using the CMUcam4 -- with music <http://www.youtube.com/watch?v=5j07NPJGnkE>`__
-* `CMUcam4 Object Tracking <http://www.youtube.com/watch?v=XjI2kwcpDAQ>`__
-* `CMUcam4 Skin Tracking <http://www.youtube.com/watch?v=zgVv-cEwN4U>`__
+CMU Mechatronics 2012: Team Fun
+
+.. raw:: html
+
+   <div class="legacy-yt"><iframe src="https://www.youtube.com/embed/oLCOUdFDnUc"
+     title="CMU Mechatronics 2012: Team Fun" frameborder="0"
+     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+     allowfullscreen></iframe></div>
+
+Demo Mode Object Tracking
+
+.. raw:: html
+
+   <div class="legacy-yt"><iframe src="https://www.youtube.com/embed/ByGZRh62glw"
+     title="Demo Mode Object Tracking" frameborder="0"
+     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+     allowfullscreen></iframe></div>
+
+CMUcam4 Video
+
+.. raw:: html
+
+   <div class="legacy-yt"><iframe src="https://www.youtube.com/embed/0UklfX38tfY"
+     title="CMUcam4 Video" frameborder="0"
+     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+     allowfullscreen></iframe></div>
+
+`CMUcam4 Object Tracking <http://www.youtube.com/watch?v=XjI2kwcpDAQ>`__ (watch on YouTube)
+
+`CMUcam4 Skin Tracking <http://www.youtube.com/watch?v=zgVv-cEwN4U>`__ (watch on YouTube)
 
 Cool Projects
 -------------
@@ -99,3 +125,26 @@ synchronized with the data. It is also possible to add a delay between
 individual serial data characters using the "delay mode" command. Due to
 communication delays, both poll mode and delay mode will lower the total number
 of frames that can be processed in one second.
+
+.. toctree::
+   :hidden:
+
+   quick-start
+   cmucam4-graphical-user-interface
+   lextronic-camera
+   sparkfun-camera
+   parallax-camera
+   firmware-source-code-and-binaries
+   ov9665-color-cmos-sxga-sensor
+   how-to-use-the-cmucam4-properly
+   color-tracking-explanation
+   tips-and-tricks
+   frequently-asked-questions
+   troubleshooting
+   gallery
+   people
+   legal-information
+   multi-shot-cannon
+   autonomous-vehicle-control
+   low-power-motion-detection
+   mobot

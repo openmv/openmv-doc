@@ -1,5 +1,7 @@
-Autonomous Vehicle Control - Article By: Haim Baruh, Joshua Metersky, Richard Quan, and David Wu
-================================================================================================
+Autonomous Vehicle Control
+==========================
+
+Article by Haim Baruh, Joshua Metersky, Richard Quan, and David Wu.
 
 Abstract
 --------
@@ -22,11 +24,14 @@ following cars to adjust to any changes in the system.
 Click :download:`here <dl/12-Rutgers-Metersky,-Quan,-Wu.ppt>` to download the
 poster.
 
-`Watch the video on YouTube <http://www.youtube.com/watch?v=5j07NPJGnkE>`__.
-
 Poster
 ------
 
-.. image:: img/12-Rutgers-Metersky,-Quan,-Wu---large.PNG
+.. image:: img/12-Rutgers-Metersky,-Quan,-Wu---small.PNG
+   :target: ../../_images/12-Rutgers-Metersky,-Quan,-Wu---large.PNG
    :alt: Autonomous Vehicle Control poster
    :align: center
+
+.. image:: img/12-Rutgers-Metersky,-Quan,-Wu---large.PNG
+   :class: legacy-collect-only
+   :alt: Autonomous Vehicle Control poster (full size)

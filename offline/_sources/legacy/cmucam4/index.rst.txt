@@ -87,23 +87,5 @@ at Carnegie Mellon University.
    :hidden:
 
    wiki
-   quick-start
-   command-list-user-manual
-   cmucam4-graphical-user-interface
-   lextronic-camera
-   sparkfun-camera
-   parallax-camera
-   firmware-source-code-and-binaries
-   how-to-use-the-cmucam4-properly
-   color-tracking-explanation
-   tips-and-tricks
-   frequently-asked-questions
-   troubleshooting
-   gallery
-   people
-   legal-information
-   multi-shot-cannon
-   autonomous-vehicle-control
-   low-power-motion-detection
-   mobot
-   ov9665-color-cmos-sxga-sensor
+   documents
+   files

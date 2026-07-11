@@ -10,7 +10,3 @@ monitor. The OV7620 camera module will output a standard black and white NTSC
 video signal. To use this output, it is necessary to keep the camera at its
 maximum frame rate (the default) and switch it into YCrCb mode in order to see
 the image on a monitor.
-
-The Analog Output Pinout diagram (``analog_out.png``) and the photo of a CMUcam3
-with the analog header attached (``analog_header.jpg``) were not preserved in the
-archive.

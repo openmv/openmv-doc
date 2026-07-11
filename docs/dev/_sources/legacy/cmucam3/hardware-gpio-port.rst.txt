@@ -15,9 +15,6 @@ internal supply. By removing resistor ``R11`` and adding a jumper resistor in
 place of ``R6``, the pin is connected to the main power before the 5 volt
 regulator.
 
-(GPIO expansion port image ``gpio-expansion.png`` -- not preserved in the
-archive.)
-
 * **POWER ENABLE** -- Pulling this pin low will gate power to the entire camera
   board. This will disable the processor, camera and FIFO causing the board to
   consume less than 1uW of power. This pin is pulled high by default with a

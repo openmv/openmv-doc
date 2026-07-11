@@ -59,3 +59,8 @@ Here is a high resolution JPEG of the current
 Before asking about the source code you might be interested in downloading the
 :download:`SX28 Processor Manual <dl/SX-DDS-SX2028AC-16.pdf>` from
 `Ubicom <http://www.ubicom.com>`__.
+
+.. toctree::
+   :hidden:
+
+   screenshots

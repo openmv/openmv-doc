@@ -9,7 +9,7 @@ CMUcam3 Manuals
 
 * :download:`CMUcam3 Datasheet <dl/CMUcam3_datasheet.pdf>`
 * :download:`CMUcam3 SDK Installation Guide <dl/CMUcam3_sdk_guide.pdf>`
-* :doc:`Quick Start for Advanced Users <quick-start-guide>`
+* :doc:`Quick Start for Advanced Users <quick-start>`
 * :download:`CC3 API Reference Manual <dl/refman.pdf>`
 * :doc:`Virtual-Cam Guide <virtual-cam>`
 

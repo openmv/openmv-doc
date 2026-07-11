@@ -11,6 +11,3 @@ Lua programs and visualizing data coming from the camera.
 * :doc:`Getting Started <camscriptergettingstarted>`
 * :doc:`Lua API <luaapi>`
 * :doc:`Lua Samples <luasamples>`
-
-The ``camscripter_hellopic.gif`` screenshot that accompanied this page was not
-preserved in the archive.

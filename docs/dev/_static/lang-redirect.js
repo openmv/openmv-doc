@@ -16,6 +16,13 @@
 (function () {
   "use strict";
 
+  // Never auto-route on a local preview: the offline build has no version
+  // channel prefix (so the first path segment would be mistaken for the
+  // channel) and no per-language builds exist to route to. Deployed docs are
+  // served from docs.openmv.io, so production is unaffected.
+  var host = window.location.hostname;
+  if (host === "127.0.0.1" || host === "localhost" || host === "" || host === "[::1]") return;
+
   // Language subdirectories that actually exist (mirror conf.py languages).
   var SUBDIRS = ["zh_CN", "zh_TW", "de", "ja", "es", "ru", "fr", "ko", "it", "pt_BR", "nl",
                  "ro", "hr", "cs", "pl", "fi", "sv", "hu", "tr", "ar", "he",

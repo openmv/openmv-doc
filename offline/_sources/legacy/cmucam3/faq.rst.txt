@@ -6,7 +6,7 @@ Is the CMUcam3 completely open source and programmable?
 
 Yes, that's the point! You can use GCC to compile code and the board can be
 flashed over any serial port. No need to buy a jtag dongle or any other
-programming device. This wep page provides all of the code, libraries,
+programming device. This web page provides all of the code, libraries,
 schematics etc. for the CMUcam3. Click on the Browse Source button at the top of
 this page to take a look at the source.
 
@@ -39,8 +39,8 @@ functionality. We ported over the features that we saw people using most often.
 Some of the CMUcam3's other functionality (like the face detector) requires
 flashing the CMUcam with different firmware images. That being said, even the
 CMUcam2 firmware emulation on the CMUcam3 has some extra features like jpeg
-making it more powerful than the original CMUcam2. The CMUcam3 has a more power
-processor and an SD slot for FLASH storage. The original CMUcam is your best bet
-if cost is your main concern. See this
+making it more powerful than the original CMUcam2. The CMUcam3 has a more
+powerful processor and an SD slot for FLASH storage. The original CMUcam is your
+best bet if cost is your main concern. See this
 `webpage <http://www.cs.cmu.edu/~cmucam2/faq.html>`__ for a description of the
 differences between the CMUcam2 and the original CMUcam.

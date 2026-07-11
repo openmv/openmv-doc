@@ -1,8 +1,6 @@
 Testing a spoonBot
 ==================
 
-The ``spoonBot_thumb.jpg`` image for this page was not preserved in the archive.
-
 spoonBot is a simple differential drive robot with a spoon connected to a servo
 that allows it to pan and tilt. See the
 :doc:`spoonBot-Construction <spoonbot>` page for information about building

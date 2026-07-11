@@ -27,7 +27,3 @@ main.c file with the fix. The fix was committed into subversion at r503.
 * Insert the MMC card and turn the CMUcam3 on
 
   * Make sure you see the red led blink if there is motion in front of the camera
-
-The updated ``security-cam_lpc2106-cmucam3.hex`` firmware image and the updated
-``main.c`` source file with the rev 503 bug fix were attached to this page but
-were not preserved in the archive.

@@ -76,9 +76,3 @@ or if you want to enable more debugging you could write something like:
    #ifdef VIRTUAL_CAM
       write_debugging_data_to_file();
    #endif
-
-**Sample Images**
-
-You can find a zip archive with a few virtual-cam sample images on the
-:doc:`Sample Images <sample-imgs>` page. For more images, use the ppm-grab project
-that comes with the CC3 distribution.

@@ -24,7 +24,7 @@ The paper (:download:`viola-ijcv04.pdf <dl/viola-ijcv04.pdf>`) introduces a nove
 technique to detect faces in real-time and with very high detection rate. It is
 essentially a feature-based approach in which a classifier is trained for
 Haar-like rectangular
-`features <http://csdl2.computer.org/persagen/DLAbsToc.jsp?resourcePath=/dl/proceedings/&toc=comp/proceedings/iccv/1998/8295/00/8295toc.xml&DOI=10.1109/ICCV.1998.710772>`__
+`features <https://doi.org/10.1109/ICCV.1998.710772>`__
 selected by `Adaboost <http://en.wikipedia.org/wiki/Adaboost>`__. The test image
 is scanned at different scales and positions using a rectangular window, and the
 regions which pass the classifier are declared as faces. One of the major
@@ -66,5 +66,5 @@ document.
 
 * Test images we used for the viola-jones face detector
 
-  * `Face DB <http://www.cs.ubc.ca/~pcarbo/viola-traindata.tar.gz>`__
-    `Face DB2 <http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar>`__
+  * `Face DB <https://pcarbo.github.io/viola-traindata.tar.gz>`__
+    `Face DB2 <http://www.cs.cmu.edu/afs/cs/project/vision/vasc/idb/images/face/frontal_images/images.tar>`__

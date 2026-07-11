@@ -21,7 +21,7 @@ This tutorial assumes:
 
 * You already have a CMUcam3
 * You've already gotten the camera working, using either the
-  :doc:`Quick Start Guide <quick-start-guide>` or the
+  :doc:`Quick Start Guide <quick-start>` or the
   :download:`SDK installation guide <dl/CMUcam3_sdk_guide.pdf>`
 * You have everything needed to connect the camera to your computer
 
@@ -35,9 +35,9 @@ The CamScripter allows you to program the CMUcam3 using the Lua programming
 language. Before we can do that, we'll need to install this language on your
 computer.
 
-#. Download the appropriate ZIP binary. (For Windows: Lua-Windows (not preserved
-   in the archive) or for other users
-   `http://luabinaries.luaforge.net/download.html <http://luabinaries.luaforge.net/download.html>`__)
+#. Download the appropriate ZIP binary. (For Windows: Lua-Windows or for other
+   users
+   `https://luabinaries.sourceforge.net/download.html <https://luabinaries.sourceforge.net/download.html>`__)
 #. Unzip the Lua binary into ``C:\lua``
 #. Open a command prompt (in Windows, select "Run..." from the Start menu, and
    type 'cmd').
@@ -45,13 +45,12 @@ computer.
 #. Type 'luax.x.exe -v' where x is the Lua version
 
 Assuming everything went smoothly in your installation, you should see the Lua
-version number printed out on your screen like in the screen shot below (not
-preserved in the archive).
+version number printed out on your screen.
 
 If possible, you should install lua from the CMUcam3 web site. If you want to
 recompile it on your own, you need to first patch the normal lua source to not
 use floating point
-(`lua-5.1-no-fp.patch <http://www.ccs.neu.edu/home/ramsdell/tools/lua-5.1-no-fp.patch>`__).
+(`lua-5.1-no-fp.patch <http://lua-users.org/wiki/LuaPowerPatches>`__).
 
 In windows under cygwin, use the following lines to compile:
 
@@ -75,9 +74,9 @@ RXTX
 The CamScripter uses the RXTX serial communication library to communicate with
 the CMUcam3 over your computer's serial port. This library will have to be
 installed on your computer. First, download
-`RXTX <http://users.frii.com/jarvi/rxtx/download.html>`__ (at least version 2.1).
+`RXTX <http://rxtx.qbang.org/wiki/index.php/Download>`__ (at least version 2.1).
 Version 2.1.7 is here:
-`ftp://ftp.qbang.org/pub/rxtx/rxtx-2.1-7-bins-r2.zip <ftp://ftp.qbang.org/pub/rxtx/rxtx-2.1-7-bins-r2.zip>`__.
+`http://rxtx.qbang.org/pub/rxtx/rxtx-2.1-7-bins-r2.zip <http://rxtx.qbang.org/pub/rxtx/rxtx-2.1-7-bins-r2.zip>`__.
 
 To install (*Windows only - for other OS's, follow instructions in the rxtx
 INSTALL file*):
@@ -113,7 +112,7 @@ plugin:
 #. Select the radio button "Search for new features to install", and click Next.
 #. Click the button "New Remote Site..."
 #. For name, enter Camscripter, and for URL enter
-   `http://cmucam.org/~juanpablo/ <http://cmucam.org/~juanpablo/>`__. Click OK.
+   ``http://cmucam.org/~juanpablo/``. Click OK.
 #. Make sure the box next to Camscripter is checked, and click the "Finish"
    button.
 #. Select "Camscripter" as the feature to install, and click Next.
@@ -127,8 +126,7 @@ make sure it is installed, select Window -> Show View -> Other...
 
 Click the plus sign next to CMUcam3, select "CamScripter", and click OK. You
 should see the CamScripter view at the bottom of Eclipse (the area surrounded in
-red in the image below, not preserved in the archive). You can expand the bottom
-area if it is too small.
+red). You can expand the bottom area if it is too small.
 
 #. CamScripter View
 #. Console pane where text messages are displayed
@@ -149,7 +147,7 @@ Load camscripter project onto camera
 Now that we have everything installed, we need to load the camera with our
 CamScripter project. Run make on the camscripter project located in
 projects/camscripter (in the source code tree you checked out in
-:doc:`Quick Start Guide <quick-start-guide>`), and then load the hex file onto
+:doc:`Quick Start Guide <quick-start>`), and then load the hex file onto
 the camera. Turn the camera off once the file is loaded.
 
 Set CamScripter Preferences
@@ -159,8 +157,8 @@ Now go back to Eclipse, and open the CamScripter Preferences screen: Window -->
 Preferences --> CamScripter Setup.
 
 * Set the Luac location to point to your ``luacx.x.exe`` (where x is the Lua
-  version) file (note the 'c') wherever you installed Lua in Installation,
-  Part 1: Lua, Serial Port Communication.
+  version) file (note the 'c') wherever you installed Lua in
+  `Installation, Part 1: Lua, Serial Port Communication`_.
 
   * For those interested, luac simply compiles the lua code, while luax.x.exe
     actually interprets and runs the code. We're compiling the code in Eclipse,
@@ -169,16 +167,14 @@ Preferences --> CamScripter Setup.
 * Provide the name of the serial port you connect your camera to. You can click
   the "See Serial Ports" button to see a list of available serial ports.
 
-The CamScripter preferences screenshot was not preserved in the archive.
-
 Hello, World!
 -------------
 
 Now that we have everything installed and configured properly, let's tackle the
 obligatory Hello, World program. First, you'll have to create a new project.
 Select File --> New --> Project... You'll get a box allowing you to select the
-type of project you'd like to create (see below). Double-click "General", select
-"Project", and click the Next button.
+type of project you'd like to create. Double-click "General", select "Project",
+and click the Next button.
 
 Name your project "Hello", and click the Finish button. Then create a new file
 by clicking File --> New --> File (In Eclipse 3.3. It is File --> New --> Other
@@ -232,10 +228,7 @@ You'll notice that it's a pretty low resolution image. The camera is set to take
 low resolution pictures by default in the CamScripter, as it takes quite a bit
 longer to send high resolution images through the serial port. However, you can
 change the camera to high resolution using function
-:doc:`camera_set_resolution <luaapifunctions>`.
-
-The Eclipse project, file, camera-on and Hello-World screenshots for this section
-were not preserved in the archive.
+:doc:`LuaApiFunctions <luaapifunctions>`.
 
 Useful Links
 ------------
@@ -259,6 +252,6 @@ interpreter to fit in the limited space on the CMUcam3.
   documentation of Lua.
 * `Lua Wiki <http://lua-users.org/wiki/>`__ A useful place to find answers.
   Sample code, FAQ, and links to other resources.
-* `LuaEclipse <http://luaeclipse.luaforge.net/>`__ is a useful Eclipse plug-in
+* `LuaEclipse <https://sourceforge.net/projects/luaeclipse/>`__ is a useful Eclipse plug-in
   that you may find helpful. It provides syntax highlighting and other facilities
   to make writing Lua code easier.

@@ -14,8 +14,6 @@ multitrack will take ~340ms, simple color track ~200ms and bright pixel
 approximately 150ms. I'm sure there are many optimizations to be made, so feel
 free to tinker and improve the algorithm.
 
-If you discover any bugs, please post them in the discussion forums.
-
 A sample calling of multitrack:
 
 .. code-block:: c
@@ -56,6 +54,3 @@ Each multitrack_pkt_t is defined as follows:
 
 Further documentation should be available in the source, as well as a sample main
 file, but if you have any questions feel free to ask in the forums.
-
-The ``multitrack2.zip`` source code (5.4 kB) was attached to this page but was not
-preserved in the archive.

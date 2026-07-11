@@ -7,5 +7,3 @@ LEDS
   LED will flash.
 * **LED 2** -- This pin is shared with the Servo 3 pin. When using Servo 3, the
   LED will flash.
-
-(LEDs image ``leds.png`` -- not preserved in the archive.)

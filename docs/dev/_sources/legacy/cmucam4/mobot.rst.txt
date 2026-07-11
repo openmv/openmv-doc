@@ -22,7 +22,7 @@ information can be found at http://www.cs.cmu.edu/mobot/mobot.html
    :target: ../../_images/2_large.jpg
    :alt: Mobot
 
-.. container:: legacy-center
+.. container:: legacy-center legacy-even-lg
 
    |mobot1| |mobot2|
 

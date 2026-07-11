@@ -1,13 +1,10 @@
 CMUcam3 in Sensor Networks
 ==========================
 
-The FireFly Sensor Mote connection photo (``ff_cmucam3.jpg``) was not preserved in
-the archive.
-
 The CMUcam3 can be used in wireless sensor networking applications as a smart
 sensor. Below is some basic information about interfacing your CMUcam3 to various
 existing wireless sensor networking platforms. We are currently developing a
-sensor networking package for the `Nano-RK <http://www.nanork.org>`__ wireless
+sensor networking package for the `Nano-RK <https://en.wikipedia.org/wiki/Nano-RK>`__ wireless
 sensor network operating system.
 
 * :doc:`Telos Tmote Sky <telos-tmote>`

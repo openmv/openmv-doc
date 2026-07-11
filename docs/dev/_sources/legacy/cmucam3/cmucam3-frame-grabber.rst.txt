@@ -9,7 +9,7 @@ firmware on the camera to use this program. The Frame Grabber requires that you
 install .NET version 2.0 or later which can be found on our :doc:`software
 <software>` page. Unfortunately, the CMUcam3 Frame Grabber only works in Windows.
 The source can be found in the tools directory (called cc3_image_viewer). For
-Linux or Mac, please try using the :doc:`CMUcam2GUI <../cmucam2/wiki>`.
+Linux or Mac, please try using the :doc:`CMUcam2GUI <../cmucam2/downloads>`.
 
 To start the application:
 
@@ -20,10 +20,6 @@ To start the application:
   already on)
 * You should see text appear in the "Terminal Console" window
 * Press "Grab Image" to take a picture
-* You should see something like what is show below
-
-The main Frame Grabber screenshot (``frame-grab.png``) was not preserved in the
-archive.
 
 Here is a description of the fields on the "Main" tab of the interface:
 
@@ -89,8 +85,6 @@ Here is a description of the fields on the "Main" tab of the interface:
 
   * This stops the looped images from being grabbed
 
-The options screenshot (``options.png``) was not preserved in the archive.
-
 The "Settings" tab allows you to set a few common CMUcam3 features. Each button
 that you press is simply transmitting the corresponding CMUcam2 commands over the
 serial port.
@@ -125,16 +119,14 @@ Here is a description of the fields on the "Setting" tab of the interface:
   * This will cause any servos connected to the CMUcam3 to move
   * This corresponds to the "SV" CMUcam2 command
 
-The Get Mean sample screenshot (``gm.png``) was not preserved in the archive.
-
 You can send any CMUcam2 command using the "Send" button and the text input box.
-For example, in the above image we sent "GM" (Get Mean) which returns the mean
-color of the image. To stop the streaming, simply click "Send" or press return.
+For example, sending "GM" (Get Mean) returns the mean color of the image. To stop
+the streaming, simply click "Send" or press return.
 This program does not visualize most of the CMUcam2 commands. For visualization
-try using the :doc:`CMUcam2GUI <../cmucam2/wiki>` java program.
+try using the :doc:`CMUcam2GUI <../cmucam2/downloads>` java program.
 
 Troubleshooting
-===============
+---------------
 
 **Why does the camera freeze when I change properties while grabbing images in a
 loop?**

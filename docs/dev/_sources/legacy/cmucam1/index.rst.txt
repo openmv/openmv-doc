@@ -63,11 +63,4 @@ robotic technologies), part of the
    :hidden:
 
    wiki
-   downloads
-   faq
-   gallery
-   screenshots
-   people
-   publications
-   issues
-   legal
+   files

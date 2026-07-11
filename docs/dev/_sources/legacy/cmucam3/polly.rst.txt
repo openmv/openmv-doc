@@ -20,11 +20,8 @@ For more information, check out Ian's paper
 
 On the CMUcam3, Polly returns histograms that you can use for simple navigation.
 
-Sample images of the polly algorithm running on the CMUcam3
-(``polly_sample.jpg``) were not preserved in the archive. The left column was the
-original image, the middle column was the filtered and edge detected image, and
-the final column showed the histogram. The algorithm is under the assumption that
-the area in front of the camera's view is mostly the same texture. This can be
+The algorithm is under the assumption that the area in front of the camera's view
+is mostly the same texture. This can be
 used for simple visual based obstacle avoidance or even navigation. Try making a
 robot that drives towards the largest peaks in the histogram.
 
@@ -35,12 +32,9 @@ polly-cc2-gui project described below.
 
 **Visualizing Polly with the CMUcam2 GUI**
 
-The following zip file contains a version of polly that works with the CMUcam2
+The polly-cc2-gui project provides a version of polly that works with the CMUcam2
 GUI. This implements the few commands required for the GUI to detect the camera
 and allow you to call the get histogram command. Only Get Histogram is
 implemented, so other CMUcam2 functions will not work correctly. To visualize
 polly, start up the CMUcam2 GUI and then go to the histogram tab and press "Get
 Histogram".
-
-The ``polly-cc2-gui.zip`` firmware image (CMUcam2 GUI Compatible Polly) that could
-test polly inside the CMUcam2 GUI was not preserved in the archive.

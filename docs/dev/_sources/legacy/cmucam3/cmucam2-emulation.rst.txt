@@ -29,14 +29,7 @@ The CMUcam2 has the following capabilities:
 Pre-compiled CMUcam2 Emulation Images
 -------------------------------------
 
-A pre-compiled CMUcam2 emulation image is available:
-:download:`cmucam2_lpc2106-cmucam3.hex <dl/cmucam2_lpc2106-cmucam3.hex>` (CMUcam2
-already compiled hex file).
-
-The per-baud-rate firmware images (115,200 / 57,600 / 38,400 / 19,200 / 9,600 /
-4,800 / 2,400 / 1,200 / 300 8N1), the servo-reverse and servo-normal images, and
-the ``cmucam2.c`` emulation source file were attached to this page but were not
-preserved in the archive.
+:download:`Compiled Firmware Image <dl/cmucam2_lpc2106-cmucam3.hex>`
 
 There are several differences between the CMUcam2 emulation and the actual
 CMUcam2. Below is a list of all CMUcam2 functionality with non-supported features

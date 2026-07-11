@@ -9,7 +9,7 @@ Publications
 * Anthony Rowe, Dhiraj Goel, Raj Rajkumar, "FireFly Mosaic: A Vision-Enabled
   Wireless Sensor Networking System," Real-Time Systems Symposium (RTSS),
   December 2007
-  `PDF <http://www.nanork.org/attachment/wiki/Pubs/rtss-mosaic-07.pdf?format=raw>`__
+  :download:`PDF <dl/rtss-mosaic-07.pdf>`
 
 * Anthony Rowe, Charles Rosenberg, Illah Nourbakhsh, "A Second Generation Low
   Cost Embedded Color Vision System," Embedded Computer Vision Workshop, CVPR

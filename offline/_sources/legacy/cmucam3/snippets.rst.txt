@@ -1,5 +1,8 @@
-Snippets
-========
+Code Snippets
+=============
 
-This wiki page collected small CMUcam3 code snippets, but its content was not
-preserved in the archive.
+This page will contain various short code examples.
+
+**Using the second TTL UART (UART 1)**
+
+* See the discussion forum post on using UART 1.

@@ -2,10 +2,10 @@ New Grabbing Tool
 =================
 
 The new grabbing tool include two parts: the code running in cmucam3
-(Attachment cmucam3.rar) and the software running in PC (Attachment cmucam
-location.rar). You should unzip "cmucam3.rar" and install it on your CMUcam3
-first. And then you should download and un-rar "cmucam location.rar". You should
-be able to execute the software by double clicking on "cmucam location.exe".
+and the software running in PC. You should unzip
+"cmucam3.rar" and install it on your CMUcam3 first. And then you should download
+and un-rar "cmucam location.rar". You should be able to execute the software by
+double clicking on "cmucam location.exe".
 
 The code running in cmucam3 is similiar to the code of cmucam2 project. The soft
 in PC is based on Microsoft Visual C++ 6.0. The new tool includes not only the

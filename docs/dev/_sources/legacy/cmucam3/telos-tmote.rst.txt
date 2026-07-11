@@ -26,7 +26,9 @@ possible to run the CMUcam3 and the sensor board independently by removing both 
 and R11. This can be a useful configuration if you would like the sensor node to
 be able to power the CMUcam3 on and off using the Power Enable pin on the CMUcam3.
 
-The AUX I/O power diagram (``aux_io_power.png``) was not preserved in the archive.
+.. image:: img/aux_io_power.png
+   :alt: AUX I/O power diagram
+   :align: center
 
 Below are two examples of how to power the CMUcam3 and a sensor node from battery
 supplies. The left option allows the sensor board to remain on at all times such
@@ -35,27 +37,15 @@ implement, but does not allow for the camera to be powered down into its lowest
 consuming sleep mode. This option is ideal if the CMUcam3 is getting supplied from
 an AC adapter or other larger source of energy.
 
-The separate-supply and joint-supply diagrams (``seperate_supply.png`` and
-``joint_supply.png``) were not preserved in the archive.
-
 This images shows how to connect a Tmote Sky board to the CMUcam3. Note, that the
 battery has been removed and a receptical (S6105-ND from
 `Digikey <http://www.digikey.com>`__ ) has been soldered onto the bottom side of
 the Tmote Sky board.
 
-The Tmote back and side photos (``tmote_back_sm.jpg`` and ``tmote_side_sm.jpg``)
-were not preserved in the archive.
-
 The 10-pin expansion pinout from the Tmote Sky.
-
-The Tmote Sky connector diagram (``tmote_sky_connector.png``) was not preserved in
-the archive.
 
 The AUX I/O pinout from the CMUcam3 matches in the same way as shown in the above
 photos if the Tmote Sky header is rotated clockwise by 180 degrees.
-
-The CMUcam3 AUX I/O diagram (``CMUcam3_aux_io.png``) was not preserved in the
-archive.
 
 The pin mapping is as follows (CMUcam3 -> Tmote Sky):
 

@@ -10,15 +10,14 @@ from the :doc:`downloads` page.
   * `http://www.cygwin.com <http://www.cygwin.com>`__
   * Make sure to install "Make", "CVS", "openssh"
 
-* Go to `CodeSourcery ARM compiler download site <http://www.codesourcery.com/gnu_toolchains/arm/download.html>`__
+* Go to the `Arm GNU Toolchain download site <https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads>`__
 
   * Get the "EABI" or "Bare Metal" target for Windows
   * Install
 
-* Go to `http://www.lpc2100.com <http://www.lpc2100.com>`__
+* Go to `Flash Magic <https://www.flashmagictool.com>`__
 
   * Download and Install LPC ISP
-  * `http://www.semiconductors.philips.com/files/products/standard/microcontrollers/utilities/lpc2000_flash_utility.zip <http://www.semiconductors.philips.com/files/products/standard/microcontrollers/utilities/lpc2000_flash_utility.zip>`__
 
 * Download cc3 source
 

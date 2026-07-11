@@ -66,3 +66,14 @@ between individual serial data characters using the "delay mode" command. Due to
 communication delays, both poll mode and delay mode will lower the total number
 of frames that can be processed in one second. Frame resolutions are affected by
 serial delays and the baud rate.
+
+.. toctree::
+   :hidden:
+
+   gallery
+   downloads
+   faq
+   publications
+   people
+   issues
+   legal

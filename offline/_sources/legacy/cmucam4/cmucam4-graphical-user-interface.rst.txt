@@ -83,7 +83,9 @@ CMUcam4GUI Manual
 -----------------
 
 The CMUcam4GUI is very intuitive and implements all the same functionality in
-the CMUcam4 Arduino Interface Library. This manual only exists to give an
+the CMUcam4
+:download:`Arduino Interface Library <dl/CMUcam4-Arduino-Interface-Library-101.zip>`.
+This manual only exists to give an
 overview of the CMUcam4GUI and you should read the CMUcam4
 :doc:`Command List User Manual <command-list-user-manual>` if you need more
 information about CMUcam4 commands. If you encounter

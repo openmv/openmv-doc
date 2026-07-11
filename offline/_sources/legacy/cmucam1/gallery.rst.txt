@@ -6,7 +6,7 @@ Here are more photos of the CMOS camera and the CMUcam1 board:
 .. |ri1| image:: img/camfrontleft.jpg
    :alt: Camera Left
 .. |ri2| image:: img/camrearangle.jpg
-   :alt: camera Angle
+   :alt: Camera Angle
 
 .. container:: legacy-center
 
@@ -14,81 +14,84 @@ Here are more photos of the CMOS camera and the CMUcam1 board:
 
 The following images were taken by the CMUcam1 indoors and outdoors:
 
-.. |ri3| image:: img/indoors.jpg
+.. |ri3| image:: img/human2.jpg
    :alt: Indoors
-.. |ri4| image:: img/outdoors.jpg
+.. |ri4| image:: img/human.jpg
+   :alt: Indoors
+.. |ri5| image:: img/trees.jpg
    :alt: Outdoors
 
-.. container:: legacy-center
+.. container:: legacy-center legacy-even
 
-   |ri3| |ri4|
+   |ri3| |ri4| |ri5|
 
 This next CMUcam1 image is shown in color and then as separate R, G and B bands:
 
-.. |ri5| image:: img/colorscolor.jpg
+.. |ri6| image:: img/colorscolor.jpg
    :alt: Color
-.. |ri6| image:: img/colorsbands.jpg
+.. |ri7| image:: img/colorsbands.jpg
    :alt: Bands
 
 .. container:: legacy-center
 
-   |ri5| |ri6|
+   |ri6| |ri7|
 
 This next set of CMUcam1 images are examples of how of our :doc:`java interface
 program <downloads>` can be used to display the color tracking output from the
 CMUcam1:
 
-.. |ri7| image:: img/elmo_bmp_gallery.jpg
-   :alt: Elmo BMP
 .. |ri8| image:: img/elmo_rgb_gallery.jpg
    :alt: Elmo RGB
-.. |ri9| image:: img/hand_bmp_gallery.jpg
-   :alt: Hand BMP
+.. |ri9| image:: img/elmo_bmp_gallery.jpg
+   :alt: Elmo BMP
 .. |ri10| image:: img/hand_rgb_gallery.jpg
    :alt: Hand RGB
+.. |ri11| image:: img/hand_bmp_gallery.jpg
+   :alt: Hand BMP
 
 .. container:: legacy-center
 
-   |ri7| |ri8| |ri9| |ri10|
+   |ri8| |ri9| |ri10| |ri11|
 
-Here is the B2Bot, a robot with the CMUcam1 on a servo head, two DC motors and a custom controller called Cerebellum:
+Here is the B2Bot, a robot with the CMUcam1 on a servo head, two DC motors and a
+custom controller called Cerebellum:
 
-.. |ri11| image:: img/camb2front.jpg
+.. |ri12| image:: img/camb2elmo2.jpg
+   :alt: B2Bot with Elmo
+.. |ri13| image:: img/camb2front.jpg
    :alt: B2Bot Front
-.. |ri12| image:: img/camb2side.jpg
+.. |ri14| image:: img/camb2side.jpg
    :alt: B2Bot Side
-.. |ri13| image:: img/camb2top.jpg
-   :alt: B2Bot Top
 
 .. container:: legacy-center
 
-   |ri11| |ri12| |ri13|
+   |ri12| |ri13| |ri14|
 
 This is the MiniBot, a 2-servo CMUcam1 + Cerebellum robot that is less than 5 inches cubed:
 
-.. |ri14| image:: img/mbot_elmo.jpg
-   :alt: MBot Elmo
-.. |ri15| image:: img/mbot_front.jpg
-   :alt: MBot Front
-.. |ri16| image:: img/mbot_side.jpg
-   :alt: MBot Side
+.. |ri15| image:: img/mbot_elmo.jpg
+   :alt: MiniBot Elmo
+.. |ri16| image:: img/mbot_front.jpg
+   :alt: MiniBot Front
+.. |ri17| image:: img/mbot_side.jpg
+   :alt: MiniBot Side
 
 .. container:: legacy-center
 
-   |ri14| |ri15| |ri16|
+   |ri15| |ri16| |ri17|
 
 The first picture below shows the ServoBot, a CMUcam1 directly controlling a hobby servo. The rest of the pictures show the MiniBot3D, which uses 3 servos to control not just pan but also tilt.
 
-.. |ri17| image:: img/servobot.jpg
+.. |ri18| image:: img/servobot.jpg
    :alt: ServoBot
-.. |ri18| image:: img/mbot3dangle.jpg
-   :alt: MBot3D Angle
-.. |ri19| image:: img/mbot3dside.jpg
-   :alt: MBot3D Side
+.. |ri19| image:: img/mbot3dangle.jpg
+   :alt: MiniBot3D Angle
+.. |ri20| image:: img/mbot3dside.jpg
+   :alt: MiniBot3D Side
 
 .. container:: legacy-center
 
-   |ri17| |ri18| |ri19|
+   |ri18| |ri19| |ri20|
 
 It is easy to program a robot to follow colorful objects using the CMUcam1's
 output. In fact, if you click :download:`here <dl/mbot3d.zip>` you can download

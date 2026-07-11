@@ -11,7 +11,7 @@ Quick Links
 * :doc:`faq`
 * :doc:`downloads`
 * :doc:`people`
-* :doc:`CMUcam1 wiki <../cmucam1/wiki>`
+* :doc:`CMUcam1 <../cmucam1/wiki>`
 * `Toy Robots Initiative <http://www.cs.cmu.edu/~illah/EDUTOY/>`__
 * :doc:`legal`
 
@@ -55,3 +55,11 @@ between individual serial data characters using the "delay mode" command. Due to
 communication delays, both poll mode and delay mode will lower the total number
 of frames that can be processed in one second. Frame resolutions are not
 affected by serial delays or the baud rate as they were in the original CMUcam1.
+
+.. toctree::
+   :hidden:
+
+   faq
+   downloads
+   people
+   legal

@@ -72,6 +72,7 @@ Windows and Linux; on macOS substitute ``Cmd`` for
    firmware.rst
    romfs.rst
    settings-editor/index.rst
+   third-party-repositories.rst
 
 .. toctree::
    :caption: Machine vision tools

@@ -1,15 +1,6 @@
 Hardware Architecture
 =====================
 
-(Hardware architecture diagram ``hw_architecture.gif`` -- not preserved in the
-archive.)
-
-CMUcam3 Board Overview
-----------------------
-
-(Hardware Connections image ``connections.png`` -- not preserved in the
-archive.)
-
 CMUcam3 Hardware Connections
 ----------------------------
 
@@ -82,12 +73,3 @@ Hardware Characteristics
 * qcif image load and pixel touch rate: 26 FPS
 * Servo Frequency: 50 Hz
 * Servo Resolution: 8 or 10 bit
-
-.. code-block:: text
-
-   Misc::
-
-Dimensions
-----------
-
-(CMUcam3 Dimensions image ``dimensions.png`` -- not preserved in the archive.)
