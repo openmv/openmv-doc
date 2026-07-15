@@ -581,10 +581,6 @@ Bus           TX    RX
 CAN1          P1    P3
 ============  ====  ====
 
-.. note::
-
-   CAN is not yet supported on this board in firmware v5.0.0.
-
 ::
 
     from machine import CAN
