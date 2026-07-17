@@ -33,7 +33,7 @@ room.
    :muted:
    :playsinline:
    :nocontrols:
-   :alt: The OpenMV IDE main window with a camera connected and a script running: the script in the editor on the left, the frame buffer on the right tracking a person in live video
+   :alt: The OpenMV IDE main window with a camera connected and a script running: the script in the editor on the left, the frame buffer on the right tracking the joints of a hand in live video
    :caption: The main window with a script running: edit on the left, watch on the right.
 
 Keyboard shortcuts in this chapter are written for

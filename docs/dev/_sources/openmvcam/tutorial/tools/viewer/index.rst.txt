@@ -16,12 +16,16 @@ The Viewer installs and runs on its own, separately
 from OpenMV IDE, and the two can be installed side by
 side.
 
-.. figure:: figures/main-window.png
+.. video:: figures/main-window.mp4
+   :width: 100%
    :class: framed
-   :alt: The OpenMV Viewer main window with a camera connected and a script running: the serial terminal on the left, the live frame buffer top right, the histogram below it, and the status bar reporting the connected camera.
-
-   The OpenMV Viewer main window with a camera connected
-   and its script running.
+   :autoplay:
+   :loop:
+   :muted:
+   :playsinline:
+   :nocontrols:
+   :alt: The OpenMV Viewer main window with a camera connected and a script running: the serial terminal on the left, the live frame buffer top right tracking the joints of a hand, the histogram below it, and the status bar reporting the connected camera.
+   :caption: The OpenMV Viewer main window with a camera connected and its script running.
 
 The window keeps the parts of OpenMV IDE that show what
 the camera is doing. The *frame buffer viewer* shows
