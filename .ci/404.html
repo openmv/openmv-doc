@@ -9,10 +9,14 @@
     * /<alias>/<page>      -> /<snapshot>/<page>         (a firmware release that
                                                           reuses another's docs)
     * an OLD flat URL       -> /<newest-release>/<page>   (pre-versioning links)
-    * a missing page under a real channel -> that channel's home
+    * a missing page under the newest release -> the same page on /dev/ when it
+      exists there (a /latest/ link can point at a page newer than the release
+      snapshot), else that channel's home
+    * a missing page under any other channel -> that channel's home
   Everything is read from /versions.json so this file never needs regenerating.
-  Bounded to at most two hops (an old/flat/alias redirect that still misses lands
-  on a channel home, which always exists).
+  Redirect hops stay bounded: the dev fallback is probed with a HEAD request
+  rather than blindly redirected, and everything else lands on a channel home,
+  which always exists.
 -->
 <script>
 (function () {
@@ -42,8 +46,18 @@
         seg[1] = aliasMap[first];
         go(seg.join("/"));
       } else if (folders.indexOf(first) !== -1) {
-        // a real version channel but the page is missing -> channel home
-        go("/" + first + "/");
+        // A real version channel but the page is missing. For the newest
+        // release the page may simply be newer than the snapshot -- probe the
+        // same path on dev and go there when it exists; otherwise (and for
+        // every other channel) fall back to the channel home.
+        if (first === latest && first !== "dev") {
+          var devPath = "/dev" + path.slice(first.length + 1);
+          fetch(devPath, { method: "HEAD", cache: "no-cache" })
+            .then(function (r) { go(r.ok ? devPath : "/" + first + "/"); })
+            .catch(function () { go("/" + first + "/"); });
+        } else {
+          go("/" + first + "/");
+        }
       } else {
         // an old flat URL (no version prefix) -> the newest release
         go("/" + latest + path);
