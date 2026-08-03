@@ -187,6 +187,21 @@ required, the button is wired straight to a wake input::
 
     machine.deepsleep()   # press SW to wake the board
 
+.. warning::
+
+   To reach the **80 µA** deep sleep figure you must put the IMU to
+   sleep first with :func:`imu.sleep`::
+
+       import imu
+       import machine
+
+       imu.sleep(True)
+       machine.deepsleep()
+
+   With the IMU left running the board draws about **500 µA** in deep
+   sleep. Note that putting the IMU to sleep disables waking the board
+   on IMU interrupts.
+
 You can also wire ``SW`` up as a soft power switch. Trigger on the
 **rising** edge — the line settles high after the user releases the
 button, so the next press is unambiguously a wake event::
