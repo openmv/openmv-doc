@@ -50,6 +50,11 @@ BOSON640: int
 """CSI.cid returns this for the BOSON 640x512 camera."""
 CIF: int
 """352x288 resolution for the camera sensor."""
+CUSTOM: int
+"""
+Returned by CSI.framesize after a custom (w, h) tuple resolution was set. Cannot be
+passed to CSI.framesize itself; pass the tuple instead.
+"""
 EXT_TRIGGER_FALLING: int
 """
 GENX320 event type (column [0]) — the sensor’s external
@@ -671,7 +676,9 @@ class CSI:
         called the custom framesize will be evaluated against DMA rules. Generally framesizes need
         to be a multiple of 8 pixels and/or 16 bytes.
 
-        Returns the current framesize if called with no arguments.
+        Returns the current framesize if called with no arguments. After a custom (w, h) tuple
+        has been set this returns csi.CUSTOM; read the actual size back with CSI.width and
+        CSI.height.
         """
         ...
 

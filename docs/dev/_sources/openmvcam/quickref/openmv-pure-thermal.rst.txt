@@ -26,7 +26,7 @@ Highlights
 * **2 MB internal flash** + **32 MB external QSPI flash** (~50 MB/s
   read).
 * **OV5640** 5MP rolling‑shutter visible‑light sensor.
-* **FLIR® Lepton® socket** — accepts any Lepton 1/2/2.5/3/3.5 module,
+* **FLIR® Lepton® socket** — accepts any Lepton 1/2/2.5/3/3.1R/3.5/UW module,
   radiometric or non‑radiometric, with per‑pixel temperature in
   degrees Celsius.
 * **4.3" 800×480 IPS capacitive touchscreen** (24‑bit colour @ 60 Hz)

@@ -204,7 +204,9 @@ The `CSI` class is used to control a camera sensor.
       called the custom framesize will be evaluated against DMA rules. Generally framesizes need
       to be a multiple of 8 pixels and/or 16 bytes.
 
-      Returns the current framesize if called with no arguments.
+      Returns the current framesize if called with no arguments. After a custom ``(w, h)`` tuple
+      has been set this returns `csi.CUSTOM`; read the actual size back with `CSI.width` and
+      `CSI.height`.
 
    .. method:: framerate(rate:Optional[int]=None) -> Optional[int]
 
@@ -812,6 +814,12 @@ Constants
    :type: int
 
    Negative mode for `CSI.special_effect`.
+
+.. data:: CUSTOM
+   :type: int
+
+   Returned by `CSI.framesize` after a custom ``(w, h)`` tuple resolution was set. Cannot be
+   passed to `CSI.framesize` itself; pass the tuple instead.
 
 .. data:: QCIF
    :type: int

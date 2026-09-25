@@ -14,7 +14,7 @@ For full datasheet, photos, and ordering see the
 Highlights
 ----------
 
-* Compatible with FLIR Lepton 1.x / 2.x / 3.x cores (sold separately)
+* Compatible with FLIR Lepton 1.x / 2.x / 3.x / UW cores (sold separately)
 * Both AGC and direct-thermal modes with temperature mapping
 * Sees in total darkness
 * Compatible with all modular OpenMV Cam base boards
@@ -24,7 +24,7 @@ Usage
 
 Drive the Lepton through `csi.CSI` with ``cid=`` `csi.LEPTON`.
 The driver internally upscales the Lepton's 80x60 (1.x/2.x) or
-160x120 (3.x) native frame to whatever framesize you set::
+160x120 (3.x/UW) native frame to whatever framesize you set::
 
     import csi
     import time
@@ -52,7 +52,7 @@ directly::
 Temperature measurement
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Radiometric Leptons (Lepton 2.5 / 3.5) report calibrated per-pixel
+Radiometric Leptons (Lepton 2.5 / 3.1R / 3.5 / UW) report calibrated per-pixel
 temperature data. Enable measurement mode through `csi.CSI.ioctl`
 with `csi.IOCTL_LEPTON_SET_MODE`, then clamp the temperature window
 with `csi.IOCTL_LEPTON_SET_RANGE` ``(min_celsius, max_celsius)``.

@@ -49,7 +49,9 @@ Classes
           for TLS).
         * *ssl_params* -- if not ``None``, the socket is wrapped with
           :func:`ssl.wrap_socket` and *ssl_params* is forwarded as keyword
-          arguments. Pass ``{}`` to enable TLS with defaults.
+          arguments. Pass ``{}`` to enable TLS with defaults. The :mod:`ssl`
+          module is imported lazily on connect, so plain connections (and
+          the module itself) work on firmware builds without SSL support.
         * *user* -- optional username for broker authentication. If given,
           *password* must also be supplied.
         * *password* -- optional password used together with *user*.

@@ -24,7 +24,9 @@ tested anywhere.
 
 **MPS2_AN500** is the baseline Cortex-M7 target with no NPU. It runs under
 QEMU, which is fast to start and is the lightweight way to exercise the
-platform-independent code and the test suite.
+platform-independent code and the test suite. It also has networking through
+QEMU's user-mode NIC, so :mod:`socket`, :mod:`requests` and :mod:`mqtt`
+scripts can reach the internet from the simulator.
 
 **MPS3_AN547** is a Cortex-M55 with the Ethos-U55 NPU, run on Arm's Fast
 Models -- the FVP, which models the Corstone SSE-300 reference subsystem. This

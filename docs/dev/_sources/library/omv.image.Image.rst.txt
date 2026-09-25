@@ -117,7 +117,13 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
 
    If ``arg`` is a string then this creates a new image object from a file at ``arg`` path.
    Supports loading bmp/pgm/ppm/jpg/jpeg/png image files from disk. If ``copy_to_fb`` is true
-   the image is copied to the frame buffer verus being allocated on the heap.
+   the image is copied to the frame buffer versus being allocated on the heap.
+
+   An image loaded into the frame buffer with ``copy_to_fb=True`` is not sent to the IDE preview
+   immediately. It is flushed -- together with anything drawn on it since -- when the next image
+   overwrites the frame buffer (another ``copy_to_fb`` load, `ImageIO.read`, `fir.snapshot()`,
+   etc.), so a stream of loaded images behaves like `csi.CSI.snapshot()`: draw on the returned
+   image and the drawing shows. To display a single loaded image right away call `Image.flush()`.
 
    If ``arg`` is an ``ndarray`` then this creates a new image object from the ``ndarray``.
    ``ndarray`` objects with a shape of ``(w, h)`` are treated as grayscale images, ``(w, h, 3)`` are treated
@@ -964,8 +970,11 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
 
       Saves a copy of the image to the filesystem at ``path``.
 
-      Supports bmp/pgm/ppm/jpg/jpeg image files. Note that you cannot save jpeg
-      compressed images to an uncompressed format.
+      Supports bmp/pgm/ppm/jpg/jpeg/png image files. Note that you cannot save
+      a compressed (JPEG/PNG) image to an uncompressed format, nor to the other
+      compressed format: saving a JPEG image as ``.png`` or a PNG image as
+      ``.jpg`` raises an exception. An image that is already in the target
+      format is written out as-is.
 
       ``roi`` is the region-of-interest rectangle (x, y, w, h) to save from.
       If not specified, it is equal to the image rectangle which copies the entire
@@ -979,6 +988,10 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
    .. method:: flush() -> None
 
       Updates the frame buffer in the IDE with the image in the frame buffer on the camera.
+
+      Also use this to display an image that was loaded into the frame buffer with
+      ``copy_to_fb=True`` when no further image will overwrite the frame buffer (see the
+      `Image` constructor).
 
    Drawing Methods
    ~~~~~~~~~~~~~~~

@@ -110,6 +110,18 @@ The same call is also useful when a long-running operation
 sits between snapshots and the previewer would otherwise show
 a stale preview the whole time.
 
+Images loaded into the frame buffer rather than captured --
+``image.Image(path, copy_to_fb=True)``,
+:meth:`~image.ImageIO.read`, :func:`fir.snapshot` and
+:func:`tof.snapshot` with ``copy_to_fb=True`` -- follow the
+same rule. The loaded image is not pushed to the previewer
+when it lands; it is flushed, with anything drawn on it since,
+when the next image overwrites the frame buffer. A loop that
+reads frames from an :class:`~image.ImageIO` stream therefore
+previews exactly like a camera loop, while a script that loads
+one image and stops needs an explicit
+:meth:`~image.Image.flush` to show it.
+
 .. note::
 
    The preview application has to read the frame out of the

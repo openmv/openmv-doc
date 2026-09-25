@@ -12850,6 +12850,18 @@ The same call is also useful when a long-running operation
 sits between snapshots and the previewer would otherwise show
 a stale preview the whole time.
 
+Images loaded into the frame buffer rather than captured --
+``image.Image(path, copy_to_fb=True)``,
+:meth:`~image.ImageIO.read`, :func:`fir.snapshot` and
+:func:`tof.snapshot` with ``copy_to_fb=True`` -- follow the
+same rule. The loaded image is not pushed to the previewer
+when it lands; it is flushed, with anything drawn on it since,
+when the next image overwrites the frame buffer. A loop that
+reads frames from an :class:`~image.ImageIO` stream therefore
+previews exactly like a camera loop, while a script that loads
+one image and stops needs an explicit
+:meth:`~image.Image.flush` to show it.
+
 .. note::
 
    The preview application has to read the frame out of the
@@ -32244,9 +32256,10 @@ catching:
 * ``status_code >= 400`` -- the server received the request and
   rejected it. 401 for an expired token, 403 for a revoked one, 413
   for a too-large body, 5xx for the archive being unhealthy.
-* Silent timeout -- ``requests`` uses a default socket timeout (a few
-  seconds); past that it raises :exc:`OSError` with
-  :data:`errno.ETIMEDOUT`.
+* Silent timeout -- ``requests`` applies a 5 second socket timeout by
+  default; past that it raises :exc:`OSError` with
+  :data:`errno.ETIMEDOUT`. Pass ``timeout=`` (seconds, or ``None`` to
+  wait forever) to a slow archive.
 
 For an archive that genuinely matters, you'd queue rejected frames to
 ``/sdcard/pending/`` and retry on a slower loop -- that's a few more
@@ -32261,7 +32274,10 @@ The MicroPython port is deliberately small. A few things the CPython
 * Connection pooling. Every call opens a new TCP connection.
 * Automatic retries on transient errors. Wrap the call yourself.
 * Streaming responses. ``r.content`` is read into RAM in full;
-  there's no ``stream=True`` equivalent.
+  there's no ``stream=True`` equivalent. (Chunked transfer encoding
+  is decoded, so a chunked reply still lands in ``r.content`` whole.)
+* Redirects. A 3xx reply with a ``Location`` header raises
+  ``NotImplementedError``; point the request at the final URL.
 * Automatic decompression of gzipped responses. Set the
   ``Accept-Encoding`` header explicitly only if the server is
   configured for it.
@@ -42176,7 +42192,9 @@ tested anywhere.
 
 **MPS2_AN500** is the baseline Cortex-M7 target with no NPU. It runs under
 QEMU, which is fast to start and is the lightweight way to exercise the
-platform-independent code and the test suite.
+platform-independent code and the test suite. It also has networking through
+QEMU's user-mode NIC, so :mod:`socket`, :mod:`requests` and :mod:`mqtt`
+scripts can reach the internet from the simulator.
 
 **MPS3_AN547** is a Cortex-M55 with the Ethos-U55 NPU, run on Arm's Fast
 Models -- the FVP, which models the Corstone SSE-300 reference subsystem. This
@@ -59141,7 +59159,9 @@ The `CSI` class is used to control a camera sensor.
       called the custom framesize will be evaluated against DMA rules. Generally framesizes need
       to be a multiple of 8 pixels and/or 16 bytes.
 
-      Returns the current framesize if called with no arguments.
+      Returns the current framesize if called with no arguments. After a custom ``(w, h)`` tuple
+      has been set this returns `csi.CUSTOM`; read the actual size back with `CSI.width` and
+      `CSI.height`.
 
    .. method:: framerate(rate:Optional[int]=None) -> Optional[int]
 
@@ -59750,6 +59770,12 @@ Constants
 
    Negative mode for `CSI.special_effect`.
 
+.. data:: CUSTOM
+   :type: int
+
+   Returned by `CSI.framesize` after a custom ``(w, h)`` tuple resolution was set. Cannot be
+   passed to `CSI.framesize` itself; pass the tuple instead.
+
 .. data:: QCIF
    :type: int
 
@@ -60310,6 +60336,14 @@ The function names follow the older ``set_pixformat`` /
 method on :class:`csi.CSI`; see the :mod:`csi` module for the
 complete capability set and per-argument descriptions.
 
+Since firmware v5.0.1 the module is a frozen Python compatibility
+layer implemented on top of :mod:`csi` rather than a native module.
+Importing it prints a deprecation warning to the terminal and creates
+the hidden :class:`csi.CSI` object, so ``import sensor`` raises an
+error when no camera is detected (previously this happened in
+`sensor.reset()`). The handful of functions that the :mod:`csi`
+module cannot support raise ``OSError`` and are marked below.
+
 Example usage::
 
     import sensor
@@ -60370,8 +60404,10 @@ Functions
 
 .. function:: get_fb() -> Optional[image.Image]
 
-   Returns the image object returned by a previous call of `sensor.snapshot()`.
-   Returns ``None`` if `sensor.snapshot()` has not been called before.
+   .. deprecated:: 5.0.1
+
+      This function is deprecated and will raise ``OSError``. Keep the
+      `image.Image` returned by `sensor.snapshot()` instead.
 
 .. function:: get_id() -> int
 
@@ -60410,14 +60446,19 @@ Functions
 
    Returns the current pixformat for the camera module.
 
-.. function:: set_framesize(framesize: int) -> None
+.. function:: set_framesize(framesize: Union[int, Tuple[int, int]]) -> None
 
    Sets the frame size for the camera module. See the framesize constants
-   below for valid values.
+   below for valid values. A custom ``(w, h)`` tuple is also accepted and is
+   passed to :meth:`csi.CSI.framesize` as a custom resolution.
 
-.. function:: get_framesize() -> int
+.. function:: get_framesize() -> Union[int, Tuple[int, int]]
 
-   Returns the current frame size for the camera module.
+   Returns the current frame size for the camera module. If a ``(w, h)``
+   tuple (or one of the tuple-valued constants below) was set and the camera
+   is still at that size, the same tuple is returned so that comparisons
+   against the constants keep working; otherwise the :mod:`csi` framesize
+   constant is returned.
 
 .. function:: set_framerate(rate: int) -> None
 
@@ -60556,12 +60597,16 @@ Functions
 
 .. function:: set_auto_rotation(enable: bool) -> None
 
-   Turns auto rotation mode on (``True``) or off (``False``). Defaults to off.
-   Only works when the OpenMV Cam has an :py:mod:`imu` installed.
+   .. deprecated:: 5.0.1
+
+      This function is deprecated and will raise ``OSError``. Rotate the
+      image yourself based on :func:`imu.roll` / :func:`imu.pitch` instead.
 
 .. function:: get_auto_rotation() -> bool
 
-   Returns ``True`` if auto rotation mode is enabled.
+   .. deprecated:: 5.0.1
+
+      This function is deprecated and will raise ``OSError``.
 
 .. function:: set_framebuffers(count: int) -> None
 
@@ -60577,18 +60622,19 @@ Functions
 
 .. function:: disable_delays(disable: Optional[bool] = None) -> Optional[bool]
 
-   If ``disable`` is ``True`` then disable all settling time delays in the
-   sensor module.
+   .. deprecated:: 5.0.1
 
-   If called with no arguments returns ``True`` if delays are disabled.
+      This function is deprecated and will raise ``OSError``. The :mod:`csi`
+      module only accepts this setting at construction time:
+      ``csi.CSI(delays=False)``.
 
 .. function:: disable_full_flush(disable: Optional[bool] = None) -> Optional[bool]
 
-   If ``disable`` is ``True`` then automatic framebuffer flushing on frame
-   drop is disabled.
+   .. deprecated:: 5.0.1
 
-   If called with no arguments returns ``True`` if automatic flushing is
-   disabled.
+      This function is deprecated and will raise ``OSError``. The :mod:`csi`
+      module only accepts this setting at construction time:
+      ``csi.CSI(fflush=False)``.
 
 .. function:: set_special_effect(sde: int) -> bool
 
@@ -60627,7 +60673,9 @@ Functions
    Execute a sensor-specific request. ``request`` is one of the
    :data:`IOCTL_*` constants; the remaining positional arguments and
    the return value depend on the request. The supported requests
-   are grouped by sensor family below.
+   are grouped by sensor family below. At most four arguments after
+   ``request`` are forwarded to :meth:`csi.CSI.ioctl`; extra ones are
+   ignored as before.
 
    **Generic (any sensor):**
 
@@ -60963,9 +61011,13 @@ Constants
    Pass to `sensor.set_special_effect()` for negative-image output.
 
 .. data:: QQCIF
-   :type: int
+   :type: tuple
 
    88x72 resolution.
+
+   This and the other tuple-valued framesize constants below are not
+   exported by the :mod:`csi` module; they are ``(w, h)`` tuples passed to
+   :meth:`csi.CSI.framesize` as custom resolutions.
 
 .. data:: QCIF
    :type: int
@@ -60978,7 +61030,7 @@ Constants
    352x288 resolution.
 
 .. data:: QQSIF
-   :type: int
+   :type: tuple
 
    88x60 resolution.
 
@@ -60993,7 +61045,7 @@ Constants
    352x240 resolution.
 
 .. data:: QQQQVGA
-   :type: int
+   :type: tuple
 
    40x30 resolution.
 
@@ -61018,17 +61070,17 @@ Constants
    640x480 resolution.
 
 .. data:: HQQQQVGA
-   :type: int
+   :type: tuple
 
    40x20 resolution.
 
 .. data:: HQQQVGA
-   :type: int
+   :type: tuple
 
    80x40 resolution.
 
 .. data:: HQQVGA
-   :type: int
+   :type: tuple
 
    160x80 resolution.
 
@@ -61043,46 +61095,46 @@ Constants
    480x320 resolution.
 
 .. data:: B64X32
-   :type: int
+   :type: tuple
 
    64x32 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B64X64
-   :type: int
+   :type: tuple
 
    64x64 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B128X64
-   :type: int
+   :type: tuple
 
    128x64 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B128X128
-   :type: int
+   :type: tuple
 
    128x128 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B160X160
-   :type: int
+   :type: tuple
 
    160x160 resolution (for the HM01B0).
 
 .. data:: B320X320
-   :type: int
+   :type: tuple
 
    320x320 resolution (for the HM01B0).
 
 .. data:: LCD
-   :type: int
+   :type: tuple
 
    128x160 resolution (for use with the LCD shield).
 
 .. data:: QQVGA2
-   :type: int
+   :type: tuple
 
    128x160 resolution (for use with the LCD shield).
 
@@ -62257,7 +62309,13 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
 
    If ``arg`` is a string then this creates a new image object from a file at ``arg`` path.
    Supports loading bmp/pgm/ppm/jpg/jpeg/png image files from disk. If ``copy_to_fb`` is true
-   the image is copied to the frame buffer verus being allocated on the heap.
+   the image is copied to the frame buffer versus being allocated on the heap.
+
+   An image loaded into the frame buffer with ``copy_to_fb=True`` is not sent to the IDE preview
+   immediately. It is flushed -- together with anything drawn on it since -- when the next image
+   overwrites the frame buffer (another ``copy_to_fb`` load, `ImageIO.read`, `fir.snapshot()`,
+   etc.), so a stream of loaded images behaves like `csi.CSI.snapshot()`: draw on the returned
+   image and the drawing shows. To display a single loaded image right away call `Image.flush()`.
 
    If ``arg`` is an ``ndarray`` then this creates a new image object from the ``ndarray``.
    ``ndarray`` objects with a shape of ``(w, h)`` are treated as grayscale images, ``(w, h, 3)`` are treated
@@ -63104,8 +63162,11 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
 
       Saves a copy of the image to the filesystem at ``path``.
 
-      Supports bmp/pgm/ppm/jpg/jpeg image files. Note that you cannot save jpeg
-      compressed images to an uncompressed format.
+      Supports bmp/pgm/ppm/jpg/jpeg/png image files. Note that you cannot save
+      a compressed (JPEG/PNG) image to an uncompressed format, nor to the other
+      compressed format: saving a JPEG image as ``.png`` or a PNG image as
+      ``.jpg`` raises an exception. An image that is already in the target
+      format is written out as-is.
 
       ``roi`` is the region-of-interest rectangle (x, y, w, h) to save from.
       If not specified, it is equal to the image rectangle which copies the entire
@@ -63119,6 +63180,10 @@ Many `Image` methods accept a ``hint`` argument which is a logical OR of the fol
    .. method:: flush() -> None
 
       Updates the frame buffer in the IDE with the image in the frame buffer on the camera.
+
+      Also use this to display an image that was loaded into the frame buffer with
+      ``copy_to_fb=True`` when no further image will overwrite the frame buffer (see the
+      `Image` constructor).
 
    Drawing Methods
    ~~~~~~~~~~~~~~~
@@ -64666,6 +64731,11 @@ There are two backing stores:
       drawable through the IDE preview. When ``False`` the frame is
       allocated on the MicroPython heap instead.
 
+      The frame is sent to the IDE preview when the next :meth:`read`
+      (or any other ``copy_to_fb`` load) overwrites the frame buffer,
+      so anything drawn on the returned image between reads is shown.
+      Call `Image.flush()` to display the last frame of a stream.
+
       ``loop`` (file streams only) -- when ``True`` (default) reading
       past the last frame seeks back to the first frame and continues.
       When ``False`` the call returns ``None`` once the end of the
@@ -66105,7 +66175,9 @@ Example usage::
    .. method:: add_frame(image:image.Image, delay:int=10) -> None
 
       Adds an image to the gif recording. The image width, height, and color mode
-      must match the values used in the constructor.
+      must match the values used in the constructor. Only `image.GRAYSCALE` and
+      `image.RGB565` images are accepted; convert Bayer or YUV frames first (or
+      set the camera's pixformat to RGB565).
 
       ``delay`` is the number of centi-seconds to wait before displaying this frame
       after the previous frame.
@@ -67766,6 +67838,9 @@ Functions
    ``pixformat`` controls the output pixel format. Must be `image.GRAYSCALE` or `image.RGB565`.
 
    ``copy_to_fb`` if True writes the result into the frame buffer instead of allocating on the heap.
+   The frame is sent to the IDE preview when the next ``copy_to_fb`` snapshot overwrites the frame
+   buffer, so anything drawn on the returned image in between is shown; call `image.Image.flush()`
+   to display a single frame immediately.
 
    ``timeout`` if not -1, the number of milliseconds to wait for a new frame.
 
@@ -68019,7 +68094,10 @@ Functions
    `image.GRAYSCALE` or `image.RGB565`.
 
    ``copy_to_fb`` if ``True`` writes the new image into the frame buffer
-   instead of allocating it on the MicroPython heap.
+   instead of allocating it on the MicroPython heap. The frame is sent to
+   the IDE preview when the next ``copy_to_fb`` snapshot overwrites the
+   frame buffer, so anything drawn on the returned image in between is
+   shown; call `image.Image.flush()` to display a single frame immediately.
 
    ``timeout`` how many milliseconds to wait for the new frame before raising
    a ``RuntimeError``. If ``0`` waits forever.
@@ -68125,9 +68203,14 @@ Functions
 
    Sets the IMU register at ``addr`` to ``val``.
 
-.. function:: __read_reg(addr: int) -> int
+.. function:: __read_reg(addr: int, buf: Optional[bytearray] = None) -> Optional[int]
 
    Returns the value of the IMU register at ``addr``.
+
+   If ``buf`` is given, performs a burst read instead: ``len(buf)`` bytes
+   are read starting at ``addr`` into the writable buffer and ``None`` is
+   returned. Use this to read a block of consecutive registers (for example
+   all six accelerometer output bytes) in a single bus transaction.
 
 
 :mod:`omv` --- OpenMV Cam Information
@@ -68668,6 +68751,55 @@ Post-processor for FOMO (Fast Objects More Objects) model output.
         ``((x, y, w, h), score)`` tuple. Empty class lists are included so that
         the position of each list in the output matches the class index in the
         model output. Returns an empty tuple when nothing is detected.
+
+class YoloPro -- YOLO Pro
+-------------------------
+
+Post-processor for Edge Impulse YOLO Pro object-detection model output. YOLO
+Pro models emit one row per candidate box holding ``xmin, ymin, xmax, ymax``
+(normalized to the input) followed by a per-class score vector. See the
+`YOLO Pro documentation <https://docs.edgeimpulse.com/studio/projects/learning-blocks/blocks/object-detection/yolo-pro>`__
+for training such a model.
+
+.. class:: YoloPro(threshold: float = 0.6, nms_threshold: float = 0.1, nms_sigma: float = 0.1)
+
+    Creates a YOLO Pro post-processor.
+
+    ``threshold`` minimum class score required for a box to be kept before
+    non-max-suppression.
+
+    ``nms_threshold`` IoU threshold passed to non-max-suppression.
+
+    ``nms_sigma`` sigma value passed to non-max-suppression (soft-NMS).
+
+    .. method:: __call__(model: ml.Model, inputs: list, outputs: list) -> list
+
+        Invoked by ``ml.Model.predict()`` with the model, its inputs, and its raw
+        outputs. Returns a list of per-class detection lists. Each detection is a
+        ``((x, y, w, h), score)`` tuple in ROI coordinates. Empty class lists are
+        included so that the position of each list in the output matches the
+        class index in the model output. Returns an empty tuple when nothing is
+        detected.
+
+Example::
+
+    import csi
+    import ml
+    from ml.postprocessing.edgeimpulse import YoloPro
+
+    csi0 = csi.CSI()
+    csi0.reset()
+    csi0.pixformat(csi.RGB565)
+    csi0.framesize(csi.VGA)
+
+    model = ml.Model("/rom/<model_file_name>", postprocess=YoloPro(threshold=0.4))
+
+    while True:
+        img = csi0.snapshot()
+        for i, detections in enumerate(model.predict([img])):
+            for (x, y, w, h), score in detections:
+                img.draw_rectangle(x, y, w, h)
+                print(model.labels[i], score)
 
 
 .. currentmodule:: ml.postprocessing.mediapipe
@@ -70668,7 +70800,9 @@ Functions
    in, ``profile``). Raises ``RuntimeError`` if initialization fails. The
    firmware boots with a default USB protocol stack already running, so
    calling this is needed only to change the transport or override the
-   default framing parameters.
+   default framing parameters. Calling it again re-initializes the stack:
+   the previous polling timer is removed and the channels are registered
+   afresh.
 
    ``crc`` enables CRC validation on protocol frames.
 
@@ -70738,6 +70872,18 @@ Functions
 
    Return ``True`` if a host is currently connected and the protocol stack
    is active, otherwise ``False``.
+
+.. function:: poll() -> int
+
+   Run one iteration of the protocol task: drain the transport's receive
+   buffer, parse any complete frames, dispatch commands and service channel
+   events. The firmware normally does this for you from the USB interrupt
+   and from the ``poll_ms`` timer, so this is only needed for custom
+   transports that are not driven by either -- for example when
+   ``poll_ms=0`` and the transport is polled from the script's main loop.
+
+   Returns ``0`` on success and ``-1`` if no active transport is registered
+   or the call was made from an interrupt context.
 
 .. function:: register(name: str, *, backend: object, flags: int = 0) -> ProtocolChannel
 
@@ -70856,8 +71002,9 @@ disabled.
 
    A higher-level Python backend (provided by the frozen ``protocol``
    package) that serializes named fields to CBOR using SenML-compatible
-   integer keys. Supports display widgets (``label``, ``depth``) and
-   interactive controls (``toggle``, ``slider``, ``select``) with
+   integer keys. Supports display widgets (``label``, ``text``, ``depth``,
+   ``waveform``) and interactive controls (``toggle``, ``pushbutton``,
+   ``slider``, ``spinbox``, ``select``, ``radio``, ``lineedit``) with
    ``on_read``/``on_write`` callbacks.
 
    ``on_read`` is an optional callable ``on_read(channel)`` invoked before
@@ -70866,43 +71013,76 @@ disabled.
    ``on_write`` is an optional callable ``on_write(channel, name, value)``
    invoked when the host writes a new value for a named field.
 
-   .. method:: add(name: str, type: str, value: Any = None, unit: str | None = None, min: int | float | None = None, max: int | float | None = None, step: int | float | None = None, options: list | None = None, width: int | None = None, height: int | None = None) -> None
+   .. method:: add(name: str, type: str, value: Any = None, unit: str | None = None, min: int | float | None = None, max: int | float | None = None, step: int | float | None = None, options: list | None = None, width: int | None = None, height: int | None = None, sample_rate: float | None = None, series: int = 1, typecode: str | None = None) -> None
 
       Add a named field to the channel.
 
       ``name`` is the display name; must be unique within this channel.
 
-      ``type`` is the widget type: ``"label"``, ``"toggle"``, ``"slider"``,
-      ``"select"``, or ``"depth"``.
+      ``type`` is the widget type:
 
-      ``value`` is the initial value. The default depends on ``type``.
+      * ``"label"`` -- read-only numeric display with an optional ``unit``.
+      * ``"text"`` -- read-only string display.
+      * ``"toggle"`` -- boolean switch.
+      * ``"pushbutton"`` -- momentary action (trigger, calibrate, ...). The
+        host writes ``True`` on click and renders no state.
+      * ``"slider"`` -- numeric control with ``min``/``max``/``step``.
+      * ``"spinbox"`` -- precise stepped numeric entry; shares the slider
+        fields and the ``(min, max, value)`` tuple update form.
+      * ``"select"`` -- drop-down of ``options`` strings.
+      * ``"radio"`` -- ``options`` rendered as a group of radio buttons.
+      * ``"lineedit"`` -- writable string input.
+      * ``"depth"`` -- 2D depth-map display of ``width`` x ``height``.
+      * ``"waveform"`` -- 1D time-series plot of interleaved samples.
 
-      ``unit`` is the unit string for ``label``/``slider`` (e.g. ``"Cel"``,
-      ``"%RH"``).
+      ``value`` is the initial value. The default depends on ``type``:
+      ``0`` for ``label``, ``""`` for ``text``/``lineedit``/``select``/
+      ``radio``, ``False`` for ``toggle``/``pushbutton``, ``min`` for
+      ``slider``/``spinbox``.
 
-      ``min`` is the minimum value (slider range or depth range).
+      ``unit`` is the unit string for ``label``/``slider``/``spinbox``/
+      ``waveform`` (e.g. ``"Cel"``, ``"%RH"``).
 
-      ``max`` is the maximum value (slider range or depth range).
+      ``min`` is the minimum value (slider/spinbox range, or depth/waveform
+      display range).
 
-      ``step`` is the step size (slider).
+      ``max`` is the maximum value (slider/spinbox range, or depth/waveform
+      display range).
 
-      ``options`` is the list of option strings (select).
+      ``step`` is the step size (slider/spinbox).
+
+      ``options`` is the list of option strings (select/radio), or the list
+      of per-series names (waveform).
 
       ``width`` is the pixel width (depth).
 
       ``height`` is the pixel height (depth).
 
+      ``sample_rate`` is the sample rate in samples per second (waveform).
+      Sent to the host as the sample period.
+
+      ``series`` is the number of interleaved series in each sample block
+      (waveform), e.g. ``3`` for an XYZ accelerometer trace.
+
+      ``typecode`` is the :mod:`array` typecode of the waveform samples
+      (e.g. ``"H"``, ``"h"``, ``"f"``). Defaults to ``"H"`` (unsigned 16-bit).
+
    .. method:: __getitem__(name: str) -> object
 
-      Return the current value of the named field. For ``depth`` fields
-      the binary data buffer is returned, otherwise the scalar value.
+      Return the current value of the named field. For ``depth`` and
+      ``waveform`` fields the binary data buffer is returned, otherwise the
+      scalar value.
 
    .. method:: __setitem__(name: str, value: Any) -> None
 
-      Set the value of the named field. For ``slider`` fields, a
-      ``(min, max, value)`` tuple updates the range and current value
-      simultaneously. For ``depth`` fields, ``value`` is the binary data
-      buffer.
+      Set the value of the named field. For ``slider`` and ``spinbox``
+      fields, a ``(min, max, value)`` tuple updates the range and current
+      value simultaneously. For ``depth`` fields, ``value`` is the binary
+      data buffer. For ``waveform`` fields, ``value`` is a bytes-like block
+      of interleaved samples in the field's ``typecode``; the samples-per-
+      series count is derived from its length and a monotonic timestamp (in
+      microseconds, accumulated from :func:`time.ticks_us`) is attached so
+      the host can place the chunk on its time axis.
 
    .. method:: poll() -> bool
 
@@ -73094,7 +73274,9 @@ Classes
           for TLS).
         * *ssl_params* -- if not ``None``, the socket is wrapped with
           :func:`ssl.wrap_socket` and *ssl_params* is forwarded as keyword
-          arguments. Pass ``{}`` to enable TLS with defaults.
+          arguments. Pass ``{}`` to enable TLS with defaults. The :mod:`ssl`
+          module is imported lazily on connect, so plain connections (and
+          the module itself) work on firmware builds without SSL support.
         * *user* -- optional username for broker authentication. If given,
           *password* must also be supplied.
         * *password* -- optional password used together with *user*.
@@ -73268,22 +73450,33 @@ Response class
 Functions
 ---------
 
-.. function:: request(method: str, url: str, data: bytes | None = None, json: Any | None = None, files: dict | None = None, headers: dict = {}, auth: tuple | None = None, stream: Any | None = None) -> Response
+.. function:: request(method: str, url: str, data: bytes | str | None = None, json: Any | None = None, files: dict | None = None, headers: dict | None = None, auth: tuple | None = None, stream: Any | None = None, timeout: float | None = 5.0) -> Response
 
    Send an HTTP request to ``url`` and return a `requests.Response`.
 
    - ``method`` --- HTTP method as a ``str`` (e.g. ``"GET"``, ``"POST"``).
    - ``url`` --- Target URL. Must start with ``http://`` or ``https://``.
-   - ``data`` --- Raw request body. If set, ``Content-Length`` is added
-     automatically.
+   - ``data`` --- Raw request body. A ``str`` is UTF-8 encoded before
+     sending. If set, ``Content-Length`` is added automatically.
    - ``json`` --- Object serialized to JSON and sent as the body. Sets
      ``Content-Type: application/json``.
    - ``files`` --- Dict mapping field name to a ``(filename, fileobj)`` tuple.
      Sent as ``multipart/form-data``.
-   - ``headers`` --- Dict of additional request headers.
+   - ``headers`` --- Dict of additional request headers. The dict is copied,
+     so the caller's dict is never modified (and an ``Authorization`` header
+     added for ``auth`` does not leak into later requests that reuse it).
    - ``auth`` --- ``(username, password)`` tuple for HTTP Basic
      authentication.
    - ``stream`` --- Accepted for API compatibility; not used.
+   - ``timeout`` --- Socket timeout in seconds, applied once the connection
+     is established. Defaults to ``5.0``; pass ``None`` to block
+     indefinitely. On expiry an :exc:`OSError` is raised.
+
+   Responses sent with ``Transfer-Encoding: chunked`` are decoded
+   transparently, so `requests.Response.content` always holds the
+   de-chunked body. Response headers are matched case-insensitively.
+   Redirects are not followed: a 3xx response with a ``Location`` header
+   raises ``NotImplementedError``.
 
 .. function:: head(url: str, **kw: Any) -> Response
 
@@ -73320,6 +73513,7 @@ Functions
      example ``Authorization`` or ``Accept``).
    - ``auth`` (kwarg) -- ``(username, password)`` tuple for HTTP Basic
      authentication.
+   - ``timeout`` (kwarg) -- socket timeout in seconds (default ``5.0``).
 
    A request body via ``data`` / ``json`` is permitted by the
    underlying :func:`request` but ignored by most servers.
@@ -73345,6 +73539,8 @@ Functions
    - ``headers`` (kwarg) -- dict of additional request headers.
    - ``auth`` (kwarg) -- ``(username, password)`` tuple for HTTP Basic
      authentication.
+   - ``timeout`` (kwarg) -- socket timeout in seconds (default ``5.0``).
+     Raise it for slow endpoints such as LLM APIs.
 
    Pass at most one of ``data`` / ``json`` / ``files``.
 
@@ -87196,7 +87392,7 @@ Highlights
 * **2 MB internal flash** + **32 MB external QSPI flash** (~50 MB/s
   read).
 * **OV5640** 5MP rolling‑shutter visible‑light sensor.
-* **FLIR® Lepton® socket** — accepts any Lepton 1/2/2.5/3/3.5 module,
+* **FLIR® Lepton® socket** — accepts any Lepton 1/2/2.5/3/3.1R/3.5/UW module,
   radiometric or non‑radiometric, with per‑pixel temperature in
   degrees Celsius.
 * **4.3" 800×480 IPS capacitive touchscreen** (24‑bit colour @ 60 Hz)
@@ -98219,7 +98415,7 @@ upscale.
 Temperature measurement
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Radiometric Leptons (Lepton 2.5 / 3.5) report calibrated per-pixel
+Radiometric Leptons (Lepton 2.5 / 3.1R / 3.5 / UW) report calibrated per-pixel
 temperature data. Enable measurement mode through `csi.CSI.ioctl`
 with `csi.IOCTL_LEPTON_SET_MODE`, then clamp the temperature window
 with `csi.IOCTL_LEPTON_SET_RANGE` ``(min_celsius, max_celsius)``.
@@ -98431,7 +98627,7 @@ one-shot, not continuous.
 Temperature measurement
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Radiometric Leptons (Lepton 2.5 / 3.5) report calibrated per-pixel
+Radiometric Leptons (Lepton 2.5 / 3.1R / 3.5 / UW) report calibrated per-pixel
 temperature data. Enable measurement mode through `csi.CSI.ioctl`
 with `csi.IOCTL_LEPTON_SET_MODE`, then clamp the temperature window
 with `csi.IOCTL_LEPTON_SET_RANGE` ``(min_celsius, max_celsius)``.
@@ -99607,7 +99803,7 @@ For full datasheet, photos, and ordering see the
 Highlights
 ----------
 
-* Compatible with FLIR Lepton 1.x / 2.x / 3.x cores (sold separately)
+* Compatible with FLIR Lepton 1.x / 2.x / 3.x / UW cores (sold separately)
 * Both AGC and direct-thermal modes with temperature mapping
 * Sees in total darkness
 * Compatible with all modular OpenMV Cam base boards
@@ -99617,7 +99813,7 @@ Usage
 
 Drive the Lepton through `csi.CSI` with ``cid=`` `csi.LEPTON`.
 The driver internally upscales the Lepton's 80x60 (1.x/2.x) or
-160x120 (3.x) native frame to whatever framesize you set::
+160x120 (3.x/UW) native frame to whatever framesize you set::
 
     import csi
     import time
@@ -99645,7 +99841,7 @@ directly::
 Temperature measurement
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Radiometric Leptons (Lepton 2.5 / 3.5) report calibrated per-pixel
+Radiometric Leptons (Lepton 2.5 / 3.1R / 3.5 / UW) report calibrated per-pixel
 temperature data. Enable measurement mode through `csi.CSI.ioctl`
 with `csi.IOCTL_LEPTON_SET_MODE`, then clamp the temperature window
 with `csi.IOCTL_LEPTON_SET_RANGE` ``(min_celsius, max_celsius)``.
@@ -106211,7 +106407,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Mon 03 Aug 2026 05:40:41 UTC
+Generated Fri 25 Sep 2026 05:14:51 UTC
 
 Literals
 --------
@@ -106394,7 +106590,7 @@ Sample code::
 Core language
 =============
 
-Generated Mon 03 Aug 2026 05:40:41 UTC
+Generated Fri 25 Sep 2026 05:14:51 UTC
 
 Classes
 -------
@@ -106996,7 +107192,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f76f4205260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7fcd89c05260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -107178,7 +107374,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Mon 03 Aug 2026 05:40:41 UTC
+Generated Fri 25 Sep 2026 05:14:51 UTC
 
 Exception
 ---------
@@ -108045,7 +108241,7 @@ Sample code::
 Modules
 =======
 
-Generated Mon 03 Aug 2026 05:40:41 UTC
+Generated Fri 25 Sep 2026 05:14:51 UTC
 
 .. Preamble section inserted into generated output
 
@@ -108340,15 +108536,15 @@ Sample code::
     x = random.getrandbits(64)
     print("{}".format(x))
 
-+--------------------------+--------------------------------------------+
-| CPython output:          | MicroPython output:                        |
-+--------------------------+--------------------------------------------+
-| ::                       | ::                                         |
-|                          |                                            |
-|     11947790255791459587 |     Traceback (most recent call last):     |
-|                          |       File "<stdin>", line 11, in <module> |
-|                          |     ValueError: bits must be 32 or less    |
-+--------------------------+--------------------------------------------+
++-------------------------+--------------------------------------------+
+| CPython output:         | MicroPython output:                        |
++-------------------------+--------------------------------------------+
+| ::                      | ::                                         |
+|                         |                                            |
+|     1699154324999981465 |     Traceback (most recent call last):     |
+|                         |       File "<stdin>", line 11, in <module> |
+|                         |     ValueError: bits must be 32 or less    |
++-------------------------+--------------------------------------------+
 
 .. _cpydiff_modules_random_randint:
 
@@ -111086,8 +111282,9 @@ Click a version to expand its releases.
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.0.1.html">v5.0.1</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
    </details>
@@ -111221,16 +111418,385 @@ version to open its changelog.
    :maxdepth: 1
    :hidden:
 
+   v5.0.1.rst
    v5.0.0.rst
 
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+     <li><a href="v5.0.1.html">v5.0.1</a></li>
      <li><a href="v5.0.0.html">v5.0.0</a></li>
    </ul>
    </details>
+
+
+.. _changelog_v5_0_1:
+
+v5.0.1
+======
+
+v5.0.1 is a maintenance release on top of v5.0.0 — the legacy ``sensor``
+module becomes a Python compatibility layer over :mod:`csi`, images loaded
+into the frame buffer now preview like camera frames, the JPEG encoders lose
+their 1 MB output limit and handle overflow correctly, and there is a batch
+of camera, protocol, networking, and ML-library fixes. It introduces **no
+breaking API changes** for scripts written against :mod:`csi`; the handful of
+behavior changes are listed under :ref:`breaking API changes <v5_0_1_breaking>`.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **The** ``sensor`` **module is now a frozen Python module** built on
+  :mod:`csi`. It prints a deprecation warning on import; a few functions the
+  :mod:`csi` module cannot support now raise ``OSError``. See
+  :ref:`the sensor module changes <v5_0_1_s1>`.
+- **Loaded images preview like camera frames.** An image placed in the frame
+  buffer with ``copy_to_fb=True`` (:class:`image.Image`,
+  :meth:`image.ImageIO.read`, :func:`fir.snapshot`, :func:`tof.snapshot`) is
+  flushed to the IDE — with anything drawn on it — when the next image
+  overwrites the frame buffer, instead of immediately. See
+  :ref:`the preview changes <v5_0_1_s2>`.
+- **JPEG encoder overhaul.** The 1 MB output-buffer cap is gone (the buffer is
+  sized from free memory), overflow on both the software and hardware paths is
+  handled instead of writing truncated files, and saving a compressed image
+  under the other compressed extension raises instead of writing garbage.
+- **New** :func:`protocol.poll` and **six new CBOR widgets** (``text``,
+  ``lineedit``, ``pushbutton``, ``spinbox``, ``radio``, ``waveform``) for
+  :class:`protocol.CBORChannel`.
+- **YOLO Pro post-processor**, **FLIR Lepton 3.1R / UW** support, **IMU burst
+  reads**, **CAN on the OpenMV N6**, and a **networking-capable simulator**
+  target.
+
+New features
+------------
+
+- :class:`YoloPro <ml.postprocessing.edgeimpulse.YoloPro>` — a new
+  post-processor for Edge Impulse YOLO Pro object-detection models, plus a
+  ``yolo_pro_detector.py`` example.
+  (`f3f150ebd <https://github.com/openmv/openmv/commit/f3f150ebd>`__,
+  `ea7bbb398 <https://github.com/openmv/openmv/commit/ea7bbb398>`__)
+- :func:`protocol.poll` — run one iteration of the protocol task on demand,
+  for custom transports that are not driven by the USB interrupt or the
+  ``poll_ms`` timer. :func:`protocol.init` can also be called again to
+  re-initialize the stack.
+  (`c00c215f9 <https://github.com/openmv/openmv/commit/c00c215f9>`__,
+  `f849ffb1b <https://github.com/openmv/openmv/commit/f849ffb1b>`__)
+- **More CBOR channel widgets** — :meth:`protocol.CBORChannel.add` gains
+  ``text`` (static string), ``lineedit`` (writable string), ``pushbutton``
+  (momentary action), ``spinbox`` (stepped numeric entry), ``radio`` (option
+  group) and ``waveform`` (1D time-series with ``sample_rate``, ``series`` and
+  ``typecode`` arguments; assign interleaved sample bytes to stream it).
+  (`8016d29ba <https://github.com/openmv/openmv/commit/8016d29ba>`__)
+- :data:`csi.CUSTOM` — :meth:`csi.CSI.framesize` now returns a usable constant
+  after a custom ``(w, h)`` resolution has been set, instead of an anonymous
+  integer.
+  (`af8841654 <https://github.com/openmv/openmv/commit/af8841654>`__)
+- **IMU burst read** — :func:`imu.__read_reg` accepts an optional writable
+  buffer and fills it from consecutive registers in one transaction.
+  (`244ca480a <https://github.com/openmv/openmv/commit/244ca480a>`__)
+- **FLIR Lepton 3.1R and Lepton UW** are recognized by the Lepton driver,
+  including their radiometric gain modes.
+  (`0fc356632 <https://github.com/openmv/openmv/commit/0fc356632>`__)
+- **Simulator networking** — the ``MPS2_AN500`` QEMU target now has lwIP and a
+  user-mode NIC, with ``requests``, ``mqtt`` and ``sensor`` frozen in, and a
+  networking unit test.
+  (`23546dfb1 <https://github.com/openmv/openmv/commit/23546dfb1>`__,
+  `61d187305 <https://github.com/openmv/openmv/commit/61d187305>`__,
+  `15096c3a2 <https://github.com/openmv/openmv/commit/15096c3a2>`__)
+- **OpenAI-compatible API example** — ``openai_compatible.py`` snapshots a
+  JPEG and posts it to a chat-completions endpoint for scene description.
+  (`79033c6aa <https://github.com/openmv/openmv/commit/79033c6aa>`__)
+- **SX126x LoRa examples** — micropython-lib's ``lora-sx126x`` driver (with
+  ``lora-sync`` / ``lora-async``) is frozen into the OpenMV RT1062 firmware,
+  with sender/receiver/ping-pong/image-stream examples for wiring an SX1261
+  or SX1262 module to the SPI bus. This is community-contributed support;
+  OpenMV does not sell LoRa hardware.
+  (`19576e1b1 <https://github.com/openmv/openmv/commit/19576e1b1>`__)
+
+Other changes and improvements
+------------------------------
+
+- ``requests`` **library rewrite** — chunked transfer responses are decoded,
+  a ``timeout`` argument (default 5 s) is exposed, JSON and string bodies are
+  serialized/encoded correctly, headers are parsed case-insensitively and the
+  status line by position, the caller's ``headers`` dict is copied (so
+  ``auth`` no longer leaks into later requests), and the body is read in
+  blocks into a ``bytearray``.
+  (`889f0b096 <https://github.com/openmv/openmv/commit/889f0b096>`__)
+- ``mqtt`` imports :mod:`ssl` lazily, so the module and plain (non-TLS)
+  connections work on builds without SSL support.
+  (`c2e0899e8 <https://github.com/openmv/openmv/commit/c2e0899e8>`__)
+- **JPEG output buffer sized from free memory** instead of a fixed 1 MB cap;
+  the encoders trim the buffer to the encoded size before the image is
+  written out, so large-sensor captures at high quality no longer fail.
+  (`aa1ca6776 <https://github.com/openmv/openmv/commit/aa1ca6776>`__)
+- **ML post-processing cleanup** — bounding-box generation is standardized
+  across the Darknet, Edge Impulse and Ultralytics post-processors, and the
+  YOLOv8 output is transposed after thresholding so it is stored one row per
+  detection like the other models.
+  (`b5c7853f2 <https://github.com/openmv/openmv/commit/b5c7853f2>`__,
+  `c45f99cad <https://github.com/openmv/openmv/commit/c45f99cad>`__)
+- **PAG7936 safe shutdown** — a new sensor halt flag puts the PAG7936 to
+  sleep before RESET/PWDN toggle, fixing lock-ups when the sensor is used on
+  an extension cable. The driver also selects its MIPI CSI-2 or parallel
+  register set from the sensor's I2C address at runtime instead of at build
+  time.
+  (`10026530c <https://github.com/openmv/openmv/commit/10026530c>`__,
+  `f6acf14ec <https://github.com/openmv/openmv/commit/f6acf14ec>`__,
+  `5f0251c74 <https://github.com/openmv/openmv/commit/5f0251c74>`__)
+- ``ImageIO`` playback pacing now services pending events while waiting for
+  the inter-frame interval instead of sleeping in ``WFI``.
+  (`a54790193 <https://github.com/openmv/openmv/commit/a54790193>`__)
+- **MicroPython submodule updates** — full networking support on the QEMU
+  port, ``machine.mem_backup`` on STM32 via backup SRAM/BKP registers, SDIO
+  hardware flow control kept disabled on STM32F4, and MPU attribute reuse for
+  non-cacheable regions.
+  (`31ada5626 <https://github.com/openmv/openmv/commit/31ada5626>`__,
+  `ab61d27a6 <https://github.com/openmv/openmv/commit/ab61d27a6>`__,
+  `06bddf13a <https://github.com/openmv/openmv/commit/06bddf13a>`__)
+- ``differential-translation.py`` captures through its :class:`csi.CSI`
+  object instead of the deprecated ``sensor`` module, and example import
+  spacing was normalized.
+  (`68c866e7f <https://github.com/openmv/openmv/commit/68c866e7f>`__,
+  `9ceff4513 <https://github.com/openmv/openmv/commit/9ceff4513>`__)
+
+Bug fixes
+---------
+
+Camera and sensors:
+
+- Setting two custom ``(w, h)`` resolutions in a row left the sensor at the
+  first size while :meth:`csi.CSI.width` / :meth:`~csi.CSI.height` reported
+  the second; the "no change" fast path now excludes custom sizes.
+  (`cfbb70156 <https://github.com/openmv/openmv/commit/cfbb70156>`__)
+- :meth:`csi.CSI.lens_correction` parsed ``radi`` and ``coef`` as booleans,
+  so the values passed to the driver were not the ones given.
+  (`ab44b3a77 <https://github.com/openmv/openmv/commit/ab44b3a77>`__)
+- PAG7936: setting exposure and gain back-to-back clobbered each other
+  (both share one manual mode and the read-back registers lag a frame); the
+  driver now seeds the manual registers only when entering manual mode and
+  writes just the control being set.
+  (`e7a18c0a0 <https://github.com/openmv/openmv/commit/e7a18c0a0>`__)
+- PAG7936 and PS5520 BAYER capture on the OpenMV N6 failed with "Failed to
+  initialize the CSI interface" at any size other than full resolution,
+  because the N6 ISP cannot rescale raw Bayer. The sensors now run at a
+  native mode matching the requested size for BAYER (PS5520: VGA, HD, SXGA-M,
+  FHD, QHD, WQXGA2; QVGA has no native mode and is unsupported).
+  (`fe6790055 <https://github.com/openmv/openmv/commit/fe6790055>`__,
+  `b7622b245 <https://github.com/openmv/openmv/commit/b7622b245>`__)
+
+Image encoding and saving:
+
+- Software JPEG encoder: output-buffer overflow was always fatal because the
+  realloc path was disabled; it now grows the buffer (by half its size at a
+  time) when it owns it, falls back cleanly when memory runs out, and trims
+  the result. ``jpeg_write`` / ``mjpeg_write`` no longer write the buffer out
+  after a failed encode.
+  (`28e1110be <https://github.com/openmv/openmv/commit/28e1110be>`__)
+- Hardware JPEG encoders (STM32): overflow returned a partially encoded image
+  with the allocation size, producing truncated files with no EOI marker
+  (e.g. a 5 MP capture at quality 100 with a blank lower half). They now
+  report overflow, free the buffer on failure, and trim it on success.
+  (`22ce9619c <https://github.com/openmv/openmv/commit/22ce9619c>`__)
+- The VC8000 encoder silently produced 4:2:0 chroma for every request;
+  non-4:2:0 subsampling now falls back to the HW codec that supports it.
+  (`71f2be7f2 <https://github.com/openmv/openmv/commit/71f2be7f2>`__)
+- :meth:`image.Image.save` of a PNG image as ``.jpg`` wrote up to 1 MB of uninitialized
+  heap, and of a JPEG image as ``.png`` wrote an empty file. Both now raise;
+  an image already in the target format is still copied as-is.
+  (`6c1fdf822 <https://github.com/openmv/openmv/commit/6c1fdf822>`__)
+- ``png_write`` now checks the compressor's return value and compresses before
+  creating the file, so a failure no longer leaves an empty file behind.
+  (`557f52d66 <https://github.com/openmv/openmv/commit/557f52d66>`__)
+
+Image module:
+
+- :meth:`image.Image.get_pixel` with ``rgbtuple=True`` on BAYER and YUV images wrote
+  the converted pixel past a stack local at a caller-controlled offset.
+  (`13f2a17b6 <https://github.com/openmv/openmv/commit/13f2a17b6>`__)
+- :meth:`gif.Gif.add_frame` dropped an unreachable Bayer/YUV conversion branch; only
+  GRAYSCALE and RGB565 images are accepted, as the Python API already
+  enforced.
+  (`f20d99d96 <https://github.com/openmv/openmv/commit/f20d99d96>`__)
+
+Protocol:
+
+- Registering a dynamic channel with every slot already in use caused an
+  out-of-bounds write; the channel ID is now checked first, and the reserved
+  channel IDs are statically asserted to fit the channel table.
+  (`68f635d1f <https://github.com/openmv/openmv/commit/68f635d1f>`__)
+- Dynamic channel objects survived a soft reset in root pointers, so the GC
+  kept scanning stale heap blocks from the previous run; the table is now
+  cleared on init.
+  (`ef0ebb03b <https://github.com/openmv/openmv/commit/ef0ebb03b>`__,
+  `e23641145 <https://github.com/openmv/openmv/commit/e23641145>`__)
+
+Ports:
+
+- i.MX RT: added the missing CAN and Encoder de-initialization on soft
+  reset.
+  (`7cb9d3dc2 <https://github.com/openmv/openmv/commit/7cb9d3dc2>`__)
+
+Hardware and board support
+--------------------------
+
+- **OpenMV N6** — CAN is now enabled (:class:`machine.CAN`).
+  (`294f0febd <https://github.com/openmv/openmv/commit/294f0febd>`__,
+  `91e1c9573 <https://github.com/openmv/openmv/commit/91e1c9573>`__)
+- **OpenMV AE3** — the ``sdcard`` SPI driver is frozen in for the microSD
+  socket on the :doc:`AE3 Battery Shield
+  </openmvcam/shields/ae3-battery-shield>`.
+  (`a258f4814 <https://github.com/openmv/openmv/commit/a258f4814>`__)
+- **OpenMV RT1062** — ``lora-sx126x`` / ``lora-sync`` / ``lora-async``
+  frozen in (see New features).
+- **FLIR Lepton 3.1R / UW** — recognized by the Lepton driver on all
+  Lepton-capable boards.
+- **PAG7936** — safe-shutdown halt, runtime interface selection, exposure/gain
+  fix, and BAYER capture on the N6.
+- **PS5520** — BAYER capture on the N6 at native sizes.
+- **Simulator (MPS2_AN500)** — networking.
+- **All boards** — the ``sensor`` compatibility module is frozen into every
+  board's manifest.
+
+.. _v5_0_1_breaking:
+
+Breaking API changes
+--------------------
+
+v5.0.1 introduces **no breaking changes to the** :mod:`csi` **or**
+:mod:`image` **APIs**. Scripts that ran on v5.0.0 run unchanged, with the
+following behavior changes.
+
+.. _v5_0_1_s1:
+
+``sensor`` module *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The native ``sensor`` module (``modules/py_csi.c``) was removed and replaced
+by a frozen Python module that implements the same API on top of :mod:`csi`.
+See :mod:`sensor`.
+
+*Commit:* `5e3d40631 <https://github.com/openmv/openmv/commit/5e3d40631>`__
+
+- ``import sensor`` prints ``WARNING: The sensor module is deprecated and will
+  be removed in a future release. Please use the csi module instead.`` to the
+  terminal.
+- The hidden :class:`csi.CSI` object is created on import, so a missing
+  camera now raises at ``import sensor`` rather than at ``sensor.reset()``.
+- These functions now raise ``OSError`` because :mod:`csi` has no
+  equivalent: ``get_fb()``, ``alloc_extra_fb()``, ``dealloc_extra_fb()``,
+  ``set_auto_rotation()``, ``get_auto_rotation()``, ``disable_delays()``,
+  ``disable_full_flush()``. (The two ``*_extra_fb`` functions already raised
+  in v5.0.0.) Use ``csi.CSI(delays=False)`` / ``csi.CSI(fflush=False)`` for
+  the last two.
+- Framesizes that :mod:`csi` does not export (``QQCIF``, ``QQSIF``,
+  ``QQQQVGA``, ``HQQQQVGA``, ``HQQQVGA``, ``HQQVGA``, ``B64X32``, ``B64X64``,
+  ``B128X64``, ``B128X128``, ``B160X160``, ``B320X320``, ``LCD``, ``QQVGA2``)
+  are now ``(w, h)`` tuples passed through as custom resolutions.
+  ``get_framesize()`` returns the tuple that was set while the camera is still
+  at that size, so equality checks against the constants keep working.
+- ``ioctl()`` forwards at most four arguments after the request.
+- ``sleep()`` / ``shutdown()`` raise ``OSError`` on failure as before (the
+  :mod:`csi` ``RuntimeError`` is translated).
+
+Migrate to :mod:`csi` — see the :ref:`v5.0.0 migration table <v5_0_0_s1>`.
+
+.. _v5_0_1_s2:
+
+Frame-buffer image loading *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Functions that load an image into the frame buffer — :class:`image.Image`
+with ``copy_to_fb=True``, :meth:`image.Image.copy` / :meth:`image.Image.scale`
+and the ``to_*`` conversions with ``copy_to_fb=True``,
+:meth:`image.ImageIO.read`, :func:`fir.snapshot` and :func:`tof.snapshot`
+with ``copy_to_fb=True`` — used to push the new image to the
+IDE preview immediately, so anything drawn on the returned image was never
+seen. They now mark the frame buffer as pending and flush it, with everything
+drawn on it, right before the next image overwrites it — the same behavior
+as :meth:`csi.CSI.snapshot`.
+
+*Commits:* `87b6db5ee <https://github.com/openmv/openmv/commit/87b6db5ee>`__,
+`7b1a35c2f <https://github.com/openmv/openmv/commit/7b1a35c2f>`__,
+`f773c740d <https://github.com/openmv/openmv/commit/f773c740d>`__
+
+Loops that read a stream of images need no change and now show their
+drawing. A script that loads a **single** image and stops must flush it
+explicitly:
+
+.. code-block:: python
+
+   img = image.Image("example.bmp", copy_to_fb=True)
+   img.flush()          # new: send it to the IDE preview now
+   time.sleep_ms(1000)
+
+.. _v5_0_1_s3:
+
+ML library *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Only affects code that subclasses or copies the shipped post-processors.
+:class:`~ml.postprocessing.ultralytics.YoloV8` now transposes the model
+output after thresholding so surviving detections are stored one **row** per
+box (``bb[:, 4:]``), matching the Darknet and Edge Impulse post-processors,
+instead of one column per box (``bb[4:, :]``). The public
+``((x, y, w, h), score)`` results are unchanged.
+
+*Commits:* `c45f99cad <https://github.com/openmv/openmv/commit/c45f99cad>`__,
+`b5c7853f2 <https://github.com/openmv/openmv/commit/b5c7853f2>`__
+
+.. _v5_0_1_s4:
+
+``protocol`` module *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`protocol.poll` is back. v5.0.0 removed it when the protocol task moved
+to the timer; it returns as an explicit way to drive the task for custom
+transports. Nothing else changed — scripts that never called it are
+unaffected.
+
+*Commit:* `c00c215f9 <https://github.com/openmv/openmv/commit/c00c215f9>`__
+
+.. _v5_0_1_tooling:
+
+Build / tooling *(tooling)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+None of this affects MicroPython scripts. ``py_image.c`` was split, with the
+descriptor objects (cascade, keypoints, LBP, keypoint match) moving to
+``py_image_descriptor.c`` and the statistics objects (similarity, statistics,
+percentile, threshold, histogram) to ``py_image_stats.c``. The imlib encoder
+API was aligned with the rest of imlib: ``jpeg_compress`` / ``png_compress``
+return ``0`` on success and ``-1`` on error, and ``jpeg_compress`` lost its
+``realloc`` argument (resizing is gated on buffer ownership).
+``OMV_PROTOCOL_MAX_CHANNELS`` became ``OMV_PROTOCOL_CHANNEL_MAX`` in
+``omv_protocol_channel.h``, and ports now call ``py_protocol_init0()`` on
+init. The ``OMV_PAG7936_MIPI_CSI2`` board define is gone (the interface is
+selected at runtime). CI dependency bumps and an empty-release-changelog fix
+round it out. See the `firmware repository <https://github.com/openmv/openmv>`__
+history for fork-relevant detail.
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- **Still on** ``import sensor``? It works, with a warning. Move to
+  :mod:`csi` (:ref:`v5.0.0 migration <v5_0_0_s1>`); replace
+  ``disable_delays`` / ``disable_full_flush`` with the ``csi.CSI()``
+  constructor arguments and drop ``get_fb`` / auto-rotation calls.
+- **Load a single image with** ``copy_to_fb=True`` **and expect to see it?**
+  Add ``img.flush()`` after loading.
+- **Copied the YOLOv8 post-processor?** Index the thresholded output by row
+  (``bb[:, 4:]``) rather than by column.
+- **Compare** ``csi0.framesize()`` **after setting a tuple?** It now returns
+  :data:`csi.CUSTOM`.
+- Everything else: reflash and run.
 
 
 .. _changelog_v5_0_0:

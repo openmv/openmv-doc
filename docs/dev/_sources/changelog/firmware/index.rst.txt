@@ -21,8 +21,9 @@ Click a version to expand its releases.
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.0.1.html">v5.0.1</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
    </details>

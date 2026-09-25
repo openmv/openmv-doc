@@ -90,6 +90,11 @@ Functions
 
    Sets the IMU register at ``addr`` to ``val``.
 
-.. function:: __read_reg(addr: int) -> int
+.. function:: __read_reg(addr: int, buf: Optional[bytearray] = None) -> Optional[int]
 
    Returns the value of the IMU register at ``addr``.
+
+   If ``buf`` is given, performs a burst read instead: ``len(buf)`` bytes
+   are read starting at ``addr`` into the writable buffer and ``None`` is
+   returned. Use this to read a block of consecutive registers (for example
+   all six accelerometer output bytes) in a single bus transaction.

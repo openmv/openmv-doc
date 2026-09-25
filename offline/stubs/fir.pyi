@@ -231,6 +231,9 @@ def snapshot(hmirror: bool = False, vflip: bool = False, transpose: bool = False
     pixformat controls the output pixel format. Must be image.GRAYSCALE or image.RGB565.
 
     copy_to_fb if True writes the result into the frame buffer instead of allocating on the heap.
+    The frame is sent to the IDE preview when the next copy_to_fb snapshot overwrites the frame
+    buffer, so anything drawn on the returned image in between is shown; call image.Image.flush()
+    to display a single frame immediately.
 
     timeout if not -1, the number of milliseconds to wait for a new frame.
     """

@@ -61,6 +61,7 @@ def get(url: str, **kw: Any) -> Response:
       example Authorization or Accept).
     - auth (kwarg) – (username, password) tuple for HTTP Basic
       authentication.
+    - timeout (kwarg) – socket timeout in seconds (default 5.0).
 
     A request body via data / json is permitted by the
     underlying request() but ignored by most servers.
@@ -135,6 +136,8 @@ def post(url: str, **kw: Any) -> Response:
     - headers (kwarg) – dict of additional request headers.
     - auth (kwarg) – (username, password) tuple for HTTP Basic
       authentication.
+    - timeout (kwarg) – socket timeout in seconds (default 5.0).
+      Raise it for slow endpoints such as LLM APIs.
 
     Pass at most one of data / json / files.
     """
@@ -164,22 +167,33 @@ def put(url: str, **kw: Any) -> Response:
     ...
 
 
-def request(method: str, url: str, data: bytes | None = None, json: Any | None = None, files: dict | None = None, headers: dict = {}, auth: tuple | None = None, stream: Any | None = None) -> Response:
+def request(method: str, url: str, data: bytes | str | None = None, json: Any | None = None, files: dict | None = None, headers: dict | None = None, auth: tuple | None = None, stream: Any | None = None, timeout: float | None = 5.0) -> Response:
     """
     Send an HTTP request to url and return a requests.Response.
 
     - method — HTTP method as a str (e.g. "GET", "POST").
     - url — Target URL. Must start with http:// or https://.
-    - data — Raw request body. If set, Content-Length is added
-      automatically.
+    - data — Raw request body. A str is UTF-8 encoded before
+      sending. If set, Content-Length is added automatically.
     - json — Object serialized to JSON and sent as the body. Sets
       Content-Type: application/json.
     - files — Dict mapping field name to a (filename, fileobj) tuple.
       Sent as multipart/form-data.
-    - headers — Dict of additional request headers.
+    - headers — Dict of additional request headers. The dict is copied,
+      so the caller’s dict is never modified (and an Authorization header
+      added for auth does not leak into later requests that reuse it).
     - auth — (username, password) tuple for HTTP Basic
       authentication.
     - stream — Accepted for API compatibility; not used.
+    - timeout — Socket timeout in seconds, applied once the connection
+      is established. Defaults to 5.0; pass None to block
+      indefinitely. On expiry an OSError is raised.
+
+    Responses sent with Transfer-Encoding: chunked are decoded
+    transparently, so requests.Response.content always holds the
+    de-chunked body. Response headers are matched case-insensitively.
+    Redirects are not followed: a 3xx response with a Location header
+    raises NotImplementedError.
     """
     ...
 

@@ -219,7 +219,10 @@ Functions
    `image.GRAYSCALE` or `image.RGB565`.
 
    ``copy_to_fb`` if ``True`` writes the new image into the frame buffer
-   instead of allocating it on the MicroPython heap.
+   instead of allocating it on the MicroPython heap. The frame is sent to
+   the IDE preview when the next ``copy_to_fb`` snapshot overwrites the
+   frame buffer, so anything drawn on the returned image in between is
+   shown; call `image.Image.flush()` to display a single frame immediately.
 
    ``timeout`` how many milliseconds to wait for the new frame before raising
    a ``RuntimeError``. If ``0`` waits forever.

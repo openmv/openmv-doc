@@ -26,7 +26,9 @@ class Gif:
     def add_frame(self, image: image.Image, delay: int = 10) -> None:
         """
         Adds an image to the gif recording. The image width, height, and color mode
-        must match the values used in the constructor.
+        must match the values used in the constructor. Only image.GRAYSCALE and
+        image.RGB565 images are accepted; convert Bayer or YUV frames first (or
+        set the camera’s pixformat to RGB565).
 
         delay is the number of centi-seconds to wait before displaying this frame
         after the previous frame.

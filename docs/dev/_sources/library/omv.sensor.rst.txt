@@ -22,6 +22,14 @@ The function names follow the older ``set_pixformat`` /
 method on :class:`csi.CSI`; see the :mod:`csi` module for the
 complete capability set and per-argument descriptions.
 
+Since firmware v5.0.1 the module is a frozen Python compatibility
+layer implemented on top of :mod:`csi` rather than a native module.
+Importing it prints a deprecation warning to the terminal and creates
+the hidden :class:`csi.CSI` object, so ``import sensor`` raises an
+error when no camera is detected (previously this happened in
+`sensor.reset()`). The handful of functions that the :mod:`csi`
+module cannot support raise ``OSError`` and are marked below.
+
 Example usage::
 
     import sensor
@@ -82,8 +90,10 @@ Functions
 
 .. function:: get_fb() -> Optional[image.Image]
 
-   Returns the image object returned by a previous call of `sensor.snapshot()`.
-   Returns ``None`` if `sensor.snapshot()` has not been called before.
+   .. deprecated:: 5.0.1
+
+      This function is deprecated and will raise ``OSError``. Keep the
+      `image.Image` returned by `sensor.snapshot()` instead.
 
 .. function:: get_id() -> int
 
@@ -122,14 +132,19 @@ Functions
 
    Returns the current pixformat for the camera module.
 
-.. function:: set_framesize(framesize: int) -> None
+.. function:: set_framesize(framesize: Union[int, Tuple[int, int]]) -> None
 
    Sets the frame size for the camera module. See the framesize constants
-   below for valid values.
+   below for valid values. A custom ``(w, h)`` tuple is also accepted and is
+   passed to :meth:`csi.CSI.framesize` as a custom resolution.
 
-.. function:: get_framesize() -> int
+.. function:: get_framesize() -> Union[int, Tuple[int, int]]
 
-   Returns the current frame size for the camera module.
+   Returns the current frame size for the camera module. If a ``(w, h)``
+   tuple (or one of the tuple-valued constants below) was set and the camera
+   is still at that size, the same tuple is returned so that comparisons
+   against the constants keep working; otherwise the :mod:`csi` framesize
+   constant is returned.
 
 .. function:: set_framerate(rate: int) -> None
 
@@ -268,12 +283,16 @@ Functions
 
 .. function:: set_auto_rotation(enable: bool) -> None
 
-   Turns auto rotation mode on (``True``) or off (``False``). Defaults to off.
-   Only works when the OpenMV Cam has an :py:mod:`imu` installed.
+   .. deprecated:: 5.0.1
+
+      This function is deprecated and will raise ``OSError``. Rotate the
+      image yourself based on :func:`imu.roll` / :func:`imu.pitch` instead.
 
 .. function:: get_auto_rotation() -> bool
 
-   Returns ``True`` if auto rotation mode is enabled.
+   .. deprecated:: 5.0.1
+
+      This function is deprecated and will raise ``OSError``.
 
 .. function:: set_framebuffers(count: int) -> None
 
@@ -289,18 +308,19 @@ Functions
 
 .. function:: disable_delays(disable: Optional[bool] = None) -> Optional[bool]
 
-   If ``disable`` is ``True`` then disable all settling time delays in the
-   sensor module.
+   .. deprecated:: 5.0.1
 
-   If called with no arguments returns ``True`` if delays are disabled.
+      This function is deprecated and will raise ``OSError``. The :mod:`csi`
+      module only accepts this setting at construction time:
+      ``csi.CSI(delays=False)``.
 
 .. function:: disable_full_flush(disable: Optional[bool] = None) -> Optional[bool]
 
-   If ``disable`` is ``True`` then automatic framebuffer flushing on frame
-   drop is disabled.
+   .. deprecated:: 5.0.1
 
-   If called with no arguments returns ``True`` if automatic flushing is
-   disabled.
+      This function is deprecated and will raise ``OSError``. The :mod:`csi`
+      module only accepts this setting at construction time:
+      ``csi.CSI(fflush=False)``.
 
 .. function:: set_special_effect(sde: int) -> bool
 
@@ -339,7 +359,9 @@ Functions
    Execute a sensor-specific request. ``request`` is one of the
    :data:`IOCTL_*` constants; the remaining positional arguments and
    the return value depend on the request. The supported requests
-   are grouped by sensor family below.
+   are grouped by sensor family below. At most four arguments after
+   ``request`` are forwarded to :meth:`csi.CSI.ioctl`; extra ones are
+   ignored as before.
 
    **Generic (any sensor):**
 
@@ -675,9 +697,13 @@ Constants
    Pass to `sensor.set_special_effect()` for negative-image output.
 
 .. data:: QQCIF
-   :type: int
+   :type: tuple
 
    88x72 resolution.
+
+   This and the other tuple-valued framesize constants below are not
+   exported by the :mod:`csi` module; they are ``(w, h)`` tuples passed to
+   :meth:`csi.CSI.framesize` as custom resolutions.
 
 .. data:: QCIF
    :type: int
@@ -690,7 +716,7 @@ Constants
    352x288 resolution.
 
 .. data:: QQSIF
-   :type: int
+   :type: tuple
 
    88x60 resolution.
 
@@ -705,7 +731,7 @@ Constants
    352x240 resolution.
 
 .. data:: QQQQVGA
-   :type: int
+   :type: tuple
 
    40x30 resolution.
 
@@ -730,17 +756,17 @@ Constants
    640x480 resolution.
 
 .. data:: HQQQQVGA
-   :type: int
+   :type: tuple
 
    40x20 resolution.
 
 .. data:: HQQQVGA
-   :type: int
+   :type: tuple
 
    80x40 resolution.
 
 .. data:: HQQVGA
-   :type: int
+   :type: tuple
 
    160x80 resolution.
 
@@ -755,46 +781,46 @@ Constants
    480x320 resolution.
 
 .. data:: B64X32
-   :type: int
+   :type: tuple
 
    64x32 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B64X64
-   :type: int
+   :type: tuple
 
    64x64 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B128X64
-   :type: int
+   :type: tuple
 
    128x64 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B128X128
-   :type: int
+   :type: tuple
 
    128x128 resolution. For use with `Image.find_displacement()` and other FFT
    based algorithms.
 
 .. data:: B160X160
-   :type: int
+   :type: tuple
 
    160x160 resolution (for the HM01B0).
 
 .. data:: B320X320
-   :type: int
+   :type: tuple
 
    320x320 resolution (for the HM01B0).
 
 .. data:: LCD
-   :type: int
+   :type: tuple
 
    128x160 resolution (for use with the LCD shield).
 
 .. data:: QQVGA2
-   :type: int
+   :type: tuple
 
    128x160 resolution (for use with the LCD shield).
 

@@ -121,6 +121,11 @@ There are two backing stores:
       drawable through the IDE preview. When ``False`` the frame is
       allocated on the MicroPython heap instead.
 
+      The frame is sent to the IDE preview when the next :meth:`read`
+      (or any other ``copy_to_fb`` load) overwrites the frame buffer,
+      so anything drawn on the returned image between reads is shown.
+      Call `Image.flush()` to display the last frame of a stream.
+
       ``loop`` (file streams only) -- when ``True`` (default) reading
       past the last frame seeks back to the first frame and continues.
       When ``False`` the call returns ``None`` once the end of the

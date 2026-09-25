@@ -109,7 +109,7 @@ one-shot, not continuous.
 Temperature measurement
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Radiometric Leptons (Lepton 2.5 / 3.5) report calibrated per-pixel
+Radiometric Leptons (Lepton 2.5 / 3.1R / 3.5 / UW) report calibrated per-pixel
 temperature data. Enable measurement mode through `csi.CSI.ioctl`
 with `csi.IOCTL_LEPTON_SET_MODE`, then clamp the temperature window
 with `csi.IOCTL_LEPTON_SET_RANGE` ``(min_celsius, max_celsius)``.

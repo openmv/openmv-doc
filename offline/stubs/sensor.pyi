@@ -12,6 +12,14 @@ set_framesize style. Each function corresponds one-to-one to a
 method on csi.CSI; see the csi module for the
 complete capability set and per-argument descriptions.
 
+Since firmware v5.0.1 the module is a frozen Python compatibility
+layer implemented on top of csi rather than a native module.
+Importing it prints a deprecation warning to the terminal and creates
+the hidden csi.CSI object, so import sensor raises an
+error when no camera is detected (previously this happened in
+sensor.reset()). The handful of functions that the csi
+module cannot support raise OSError and are marked below.
+
 Example usage:
 
     import sensor
@@ -28,26 +36,26 @@ Example usage:
 from typing import Any, Callable
 import image
 
-B128X128: int
+B128X128: tuple
 """
 128x128 resolution. For use with Image.find_displacement() and other FFT
 based algorithms.
 """
-B128X64: int
+B128X64: tuple
 """
 128x64 resolution. For use with Image.find_displacement() and other FFT
 based algorithms.
 """
-B160X160: int
+B160X160: tuple
 """160x160 resolution (for the HM01B0)."""
-B320X320: int
+B320X320: tuple
 """320x320 resolution (for the HM01B0)."""
-B64X32: int
+B64X32: tuple
 """
 64x32 resolution. For use with Image.find_displacement() and other FFT
 based algorithms.
 """
-B64X64: int
+B64X64: tuple
 """
 64x64 resolution. For use with Image.find_displacement() and other FFT
 based algorithms.
@@ -100,11 +108,11 @@ HM01B0: int
 """sensor.get_id() returns this for the HM01B0 camera."""
 HM0360: int
 """sensor.get_id() returns this for the HM0360 camera."""
-HQQQQVGA: int
+HQQQQVGA: tuple
 """40x20 resolution."""
-HQQQVGA: int
+HQQQVGA: tuple
 """80x40 resolution."""
-HQQVGA: int
+HQQVGA: tuple
 """160x80 resolution."""
 HQVGA: int
 """240x160 resolution."""
@@ -194,7 +202,7 @@ sensor.ioctl().
 """
 JPEG: int
 """JPEG mode. Compressed JPEG output. Only works for the OV2640/OV5640 cameras."""
-LCD: int
+LCD: tuple
 """128x160 resolution (for use with the LCD shield)."""
 LEPTON: int
 """sensor.get_id() returns this for the LEPTON1/2/3 cameras."""
@@ -234,17 +242,23 @@ QCIF: int
 """176x144 resolution."""
 QHD: int
 """2560x1440 resolution. Only for the OV5640 camera."""
-QQCIF: int
-"""88x72 resolution."""
-QQQQVGA: int
+QQCIF: tuple
+"""
+88x72 resolution.
+
+This and the other tuple-valued framesize constants below are not
+exported by the csi module; they are (w, h) tuples passed to
+csi.CSI.framesize() as custom resolutions.
+"""
+QQQQVGA: tuple
 """40x30 resolution."""
 QQQVGA: int
 """80x60 resolution."""
-QQSIF: int
+QQSIF: tuple
 """88x60 resolution."""
 QQVGA: int
 """160x120 resolution."""
-QQVGA2: int
+QQVGA2: tuple
 """128x160 resolution (for use with the LCD shield)."""
 QSIF: int
 """176x120 resolution."""
@@ -321,21 +335,18 @@ def dealloc_extra_fb() -> None:
 
 def disable_delays(disable: bool | None = None) -> bool | None:
     """
-    If disable is True then disable all settling time delays in the
-    sensor module.
-
-    If called with no arguments returns True if delays are disabled.
+    Deprecated since version 5.0.1: This function is deprecated and will raise OSError. The csi
+    module only accepts this setting at construction time:
+    csi.CSI(delays=False).
     """
     ...
 
 
 def disable_full_flush(disable: bool | None = None) -> bool | None:
     """
-    If disable is True then automatic framebuffer flushing on frame
-    drop is disabled.
-
-    If called with no arguments returns True if automatic flushing is
-    disabled.
+    Deprecated since version 5.0.1: This function is deprecated and will raise OSError. The csi
+    module only accepts this setting at construction time:
+    csi.CSI(fflush=False).
     """
     ...
 
@@ -346,7 +357,7 @@ def flush() -> None:
 
 
 def get_auto_rotation() -> bool:
-    """Returns True if auto rotation mode is enabled."""
+    """Deprecated since version 5.0.1: This function is deprecated and will raise OSError."""
     ...
 
 
@@ -373,8 +384,8 @@ def get_exposure_us() -> int:
 
 def get_fb() -> image.Image | None:
     """
-    Returns the image object returned by a previous call of sensor.snapshot().
-    Returns None if sensor.snapshot() has not been called before.
+    Deprecated since version 5.0.1: This function is deprecated and will raise OSError. Keep the
+    image.Image returned by sensor.snapshot() instead.
     """
     ...
 
@@ -394,8 +405,14 @@ def get_framerate() -> int:
     ...
 
 
-def get_framesize() -> int:
-    """Returns the current frame size for the camera module."""
+def get_framesize() -> int | tuple[int, int]:
+    """
+    Returns the current frame size for the camera module. If a (w, h)
+    tuple (or one of the tuple-valued constants below) was set and the camera
+    is still at that size, the same tuple is returned so that comparisons
+    against the constants keep working; otherwise the csi framesize
+    constant is returned.
+    """
     ...
 
 
@@ -455,7 +472,9 @@ def ioctl(request: int, *args: Any) -> Any:
     Execute a sensor-specific request. request is one of the
     IOCTL_* constants; the remaining positional arguments and
     the return value depend on the request. The supported requests
-    are grouped by sensor family below.
+    are grouped by sensor family below. At most four arguments after
+    request are forwarded to csi.CSI.ioctl(); extra ones are
+    ignored as before.
 
     Generic (any sensor):
 
@@ -689,8 +708,8 @@ def set_auto_gain(enable: int, gain_db: float | None = None, gain_db_ceiling: fl
 
 def set_auto_rotation(enable: bool) -> None:
     """
-    Turns auto rotation mode on (True) or off (False). Defaults to off.
-    Only works when the OpenMV Cam has an imu installed.
+    Deprecated since version 5.0.1: This function is deprecated and will raise OSError. Rotate the
+    image yourself based on imu.roll() / imu.pitch() instead.
     """
     ...
 
@@ -769,10 +788,11 @@ def set_framerate(rate: int) -> None:
     ...
 
 
-def set_framesize(framesize: int) -> None:
+def set_framesize(framesize: int | tuple[int, int]) -> None:
     """
     Sets the frame size for the camera module. See the framesize constants
-    below for valid values.
+    below for valid values. A custom (w, h) tuple is also accepted and is
+    passed to csi.CSI.framesize() as a custom resolution.
     """
     ...
 

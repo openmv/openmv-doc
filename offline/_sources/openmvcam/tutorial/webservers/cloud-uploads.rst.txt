@@ -101,9 +101,10 @@ catching:
 * ``status_code >= 400`` -- the server received the request and
   rejected it. 401 for an expired token, 403 for a revoked one, 413
   for a too-large body, 5xx for the archive being unhealthy.
-* Silent timeout -- ``requests`` uses a default socket timeout (a few
-  seconds); past that it raises :exc:`OSError` with
-  :data:`errno.ETIMEDOUT`.
+* Silent timeout -- ``requests`` applies a 5 second socket timeout by
+  default; past that it raises :exc:`OSError` with
+  :data:`errno.ETIMEDOUT`. Pass ``timeout=`` (seconds, or ``None`` to
+  wait forever) to a slow archive.
 
 For an archive that genuinely matters, you'd queue rejected frames to
 ``/sdcard/pending/`` and retry on a slower loop -- that's a few more
@@ -118,7 +119,10 @@ The MicroPython port is deliberately small. A few things the CPython
 * Connection pooling. Every call opens a new TCP connection.
 * Automatic retries on transient errors. Wrap the call yourself.
 * Streaming responses. ``r.content`` is read into RAM in full;
-  there's no ``stream=True`` equivalent.
+  there's no ``stream=True`` equivalent. (Chunked transfer encoding
+  is decoded, so a chunked reply still lands in ``r.content`` whole.)
+* Redirects. A 3xx reply with a ``Location`` header raises
+  ``NotImplementedError``; point the request at the final URL.
 * Automatic decompression of gzipped responses. Set the
   ``Accept-Encoding`` header explicitly only if the server is
   configured for it.
