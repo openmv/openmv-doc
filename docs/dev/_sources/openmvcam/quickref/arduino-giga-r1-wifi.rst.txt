@@ -672,6 +672,11 @@ board. SPI5 is exposed on the silkscreened
 CAN (FDCAN)
 ~~~~~~~~~~~
 
+.. note::
+
+   CAN is not enabled in the current firmware for this board, so
+   neither :class:`machine.CAN` nor :class:`pyb.CAN` is available.
+
 ============  ====  ====
 Bus           TX    RX
 ============  ====  ====

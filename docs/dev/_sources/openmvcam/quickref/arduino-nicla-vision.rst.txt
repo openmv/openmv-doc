@@ -634,6 +634,27 @@ SPI4          COPI   CIPO   SCLK   CS
     spi.write(b"hello")
     cs.value(1)
 
+CAN
+~~~
+
+============  ====  ====
+Bus           TX    RX
+============  ====  ====
+CAN1          SDA   SCL
+============  ====  ====
+
+::
+
+    from machine import CAN
+
+    can = CAN(1, 500_000)
+    can.set_filters(None)
+    can.send(0x123, b"\xDE\xAD\xBE\xEF")
+    print(can.recv())
+
+CAN1 uses the ``SDA`` (PB9) and ``SCL`` (PB8) header pins, which
+it shares with I2C1.
+
 ADC
 ~~~
 

@@ -18,9 +18,8 @@ peripheral), and an external transceiver to level-shift the signals onto the CAN
 bus.
 
 Available on STM32 OpenMV cams (M4 / M7 / H7 / H7 Plus / Pure Thermal /
-N6, plus the Arduino-branded variants that wire a transceiver). Not
-yet supported on the OpenMV Cam RT1062 (mimxrt port) or the OpenMV
-Cam AE3 (alif port).
+N6, plus the Arduino Portenta H7 and Nicla Vision), the OpenMV Cam
+RT1062 (mimxrt port) and the OpenMV AE3 (alif port).
 
 The ``machine.CAN`` interface is a *low level basic* CAN messaging interface
 that abstracts a CAN controller as an outgoing priority queue for sending

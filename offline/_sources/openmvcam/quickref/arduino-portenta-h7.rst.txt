@@ -701,6 +701,27 @@ SPI2          D8     D10    D9     D7
     spi.write(b"hello")
     cs.value(1)
 
+CAN
+~~~
+
+============  ====  ====
+Bus           TX    RX
+============  ====  ====
+CAN1          PH13  PB8
+============  ====  ====
+
+::
+
+    from machine import CAN
+
+    can = CAN(1, 500_000)
+    can.set_filters(None)
+    can.send(0x123, b"\xDE\xAD\xBE\xEF")
+    print(can.recv())
+
+Both pins are on the bottom 80‑pin high‑density connectors, not
+the MKR‑style headers.
+
 ADC
 ~~~
 
