@@ -17,8 +17,11 @@ fills the left side and holds your open scripts, with
 the *serial terminal* below it showing everything the
 script prints. The *frame buffer viewer* sits at the
 top right and shows what the camera last captured, and
-the *histogram* below it plots the pixel statistics of
-whatever the frame buffer shows. A column of toolbar
+the pane below it holds the *histogram* of whatever
+the frame buffer shows -- or, at the flick of a
+selector, the camera's board information, its memory
+use, the link statistics, or the *channels* of values
+and controls the script publishes. A column of toolbar
 buttons down the far left edge holds the file, edit,
 connect, and run controls, and a status bar along the
 bottom edge reports what the connected camera is doing.
@@ -55,7 +58,9 @@ Windows and Linux; on macOS substitute ``Cmd`` for
    :maxdepth: 1
 
    frame-buffer.rst
+   pane-views.rst
    histogram.rst
+   channels.rst
    recording.rst
 
 .. toctree::

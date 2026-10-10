@@ -35227,6 +35227,15 @@ tools that ship in the `openmv-projects/tools/
 <https://github.com/openmv/openmv-projects/tree/master/tools>`_
 directory use exactly the patterns shown here.
 
+Often, though, no host code is needed at all. OpenMV IDE is itself
+a host: register a :class:`protocol.CBORChannel` of named readings
+and controls and the IDE's :doc:`Channels view
+<../tools/ide/channels>` shows them live as labels, switches,
+sliders, graphs, and depth maps, and sends the operator's changes
+back to the script. :doc:`channels/cbor-channels` is that fast
+path; the rest of the chapter is what it is built on, for when a
+project needs its own host.
+
 .. toctree::
    :caption: Concepts
    :maxdepth: 1
@@ -35248,6 +35257,7 @@ directory use exactly the patterns shown here.
 
    channels/named-channels.rst
    channels/channel-callbacks.rst
+   channels/cbor-channels.rst
 
 .. toctree::
    :caption: Streaming
@@ -36076,6 +36086,201 @@ optional, and the protocol library decides what each channel can
 do based on which ones are present.
 
 
+Widgets and telemetry with CBORChannel
+======================================
+
+The backends on the previous two pages move raw bytes, and a raw
+byte channel needs a host program that knows how to decode them.
+Most of the time what a cam wants to publish is simpler than that:
+a few named readings, a few named controls, a waveform, a depth
+map. For that case the :mod:`protocol` package ships
+:class:`protocol.CBORChannel`, a ready-made backend that holds
+named *fields*, serialises them as CBOR records in the SenML
+layout, and decodes host writes back into field values. Its
+payoff is that **OpenMV IDE already understands it**: register a
+``CBORChannel`` and the IDE's :doc:`Channels view
+<../../tools/ide/channels>` renders every field as a live widget --
+labels, switches, sliders, graphs, maps -- with no host code at
+all. The same records are plain CBOR, so a custom host decodes
+them with any CBOR library when you outgrow the IDE.
+
+.. figure:: https://docs.openmv.io/dev/_images/channels-controls.png
+   :class: framed
+   :alt: The Channels view showing a thermal camera script's controls channel: FPA and AUX temperature readouts with their unit, Measurement and High Temp toggles, Temp Min and Temp Max sliders, and H-Mirror and V-Flip toggles
+
+   The ``controls_channel.py`` example's channel as the
+   IDE renders it: readouts, toggles, and sliders for a
+   FLIR Lepton. Every control writes back to the script.
+
+Readouts and controls
+---------------------
+
+A ``CBORChannel`` is a dictionary of typed fields. ``add`` declares
+each one with a name, a widget ``type``, and the arguments that
+type needs; assigning to ``ch["name"]`` updates a field; the
+``on_write`` callback receives the host's changes::
+
+   import time
+   import protocol
+   from protocol import CBORChannel
+
+   def on_write(ch, name, value):
+       # Called for every control the host changes.
+       print(name, "=", value)
+       if name == "Reset":
+           ch["Count"] = 0
+
+   ch = CBORChannel(on_write=on_write)
+   ch.add("Status", type="label", value="starting")
+   ch.add("Count", type="label", value=0)
+   ch.add("Enable", type="toggle", value=True)
+   ch.add("Threshold", type="slider", min=0, max=100, step=1,
+          value=50, unit="%")
+   ch.add("Gap", type="spinbox", min=0.0, max=15.0, step=0.1,
+          value=1.5, unit="mm")
+   ch.add("Mode", type="radio", options=["Idle", "Track", "Record"],
+          value="Idle")
+   ch.add("Quality", type="select", options=["Low", "Medium", "High"],
+          value="Medium")
+   ch.add("Name", type="lineedit", value="openmv-cam")
+   ch.add("Reset", type="pushbutton")
+   protocol.register(name="controls", backend=ch)
+
+   count = 0
+   while True:
+       if ch["Enable"]:
+           count += 1
+           ch["Count"] = count
+       ch["Status"] = "threshold %d%%" % ch["Threshold"]
+       time.sleep_ms(100)
+
+Run it in the IDE, switch the pane under the frame buffer to
+*Channels*, and the widgets appear: a label is a read-only value
+(with its ``unit`` beside it), ``text`` is a block of static rich
+text, a ``toggle`` is a switch, ``slider`` and ``spinbox`` set a
+number within ``min`` / ``max`` / ``step`` (the spin box for
+precise entry), ``radio`` and ``select`` pick one of ``options``,
+``lineedit`` is a free-text field, and ``pushbutton`` is a
+momentary action that calls ``on_write`` with :data:`True`. The
+script reads its controls back with ``ch["Threshold"]`` whenever
+it likes -- the channel holds the latest value -- and ``on_write``
+is the hook for the ones that need an immediate reaction. A
+``(min, max, value)`` tuple assigned to a slider or spin box moves
+its range along with its value, which is how a control tracks a
+sensor whose limits depend on another setting.
+
+The optional ``on_read(channel)`` callback runs just before the
+channel is serialised for the host -- the place to sample a sensor
+into a label so a reading is only taken when someone is looking::
+
+   def on_read(ch):
+       ch["FPA Temp"] = round(csi0.ioctl(csi.IOCTL_LEPTON_GET_FPA_TEMP), 1)
+
+The ``controls_channel.py`` example under File → Examples →
+``12-Protocol`` uses exactly this shape to expose a FLIR Lepton's
+measurement mode, temperature range, and mirror / flip settings
+while the camera streams.
+
+Waveforms
+---------
+
+A ``waveform`` field carries a block of samples with a sample rate.
+The samples are the raw bytes of an :mod:`array` in the field's
+``typecode`` (unsigned 16-bit by default); for several signals at
+once -- the three axes of an accelerometer -- interleave them and
+say how many ``series`` there are and what to call them::
+
+   import math
+   import time
+   import protocol
+   from array import array
+   from protocol import CBORChannel
+
+   RATE = 1000           # samples per second
+   CHUNK = 100           # samples per update (100 ms)
+
+   ch = CBORChannel()
+   ch.add("Mic", type="waveform", sample_rate=RATE,
+          min=0, max=65535)                           # uint16
+   ch.add("IMU", type="waveform", sample_rate=RATE, series=3,
+          typecode="f", min=-2.0, max=2.0,
+          options=["X", "Y", "Z"], unit="g")          # float32 x 3
+   protocol.register(name="signals", backend=ch)
+
+   t = 0
+   while True:
+       mic = array("H", (int(32768 + 20000 * math.sin(2 * math.pi * 50 * (t + i) / RATE))
+                         for i in range(CHUNK)))
+       imu = array("f")
+       for i in range(CHUNK):
+           phase = 2 * math.pi * 2 * (t + i) / RATE
+           imu.extend((math.sin(phase), math.cos(phase), 1.0))
+       ch["Mic"] = bytes(mic)    # the raw sample bytes
+       ch["IMU"] = bytes(imu)
+       t += CHUNK
+       time.sleep_ms(100)
+
+The IDE plots each waveform as a scrolling graph with one trace per
+series, timestamps each chunk so gaps between updates show as
+gaps, and offers a spectrum view, triggers, markers, and recording
+to CSV, WAV, NumPy, or Edge Impulse files. Replace the synthetic
+sine with :class:`audio` samples or an IMU driver's readings and
+the script is a data-collection tool.
+
+Depth maps
+----------
+
+A ``depth`` field is a ``width`` x ``height`` grid of 32-bit
+floats, one distance per cell -- what a time-of-flight sensor
+produces. ``min`` / ``max`` declare the range the host should map
+to colour; the IDE can also range the colours automatically from
+the data::
+
+   import struct
+   import time
+   import tof
+   import protocol
+   from protocol import CBORChannel
+
+   tof.init()
+   ch = CBORChannel()
+   ch.add("depth", type="depth", width=tof.width(), height=tof.height(),
+          min=0, max=1000)
+   reg = protocol.register(name="ToF", backend=ch)
+
+   while True:
+       try:
+           d, dmin, dmax = tof.read_depth(vflip=True, hmirror=True)
+       except RuntimeError:
+           continue
+       ch["depth"] = struct.pack("<%df" % len(d), *d)
+       reg.send_event(0xFFFF)
+       time.sleep_ms(50)
+
+The ``sensors_channel.py`` example pairs a depth channel like this
+with a readings channel and a face detector on the same camera.
+The :meth:`~protocol.ProtocolChannel.send_event` call is optional
+-- the IDE polls channels on its own -- but it tells an
+event-driven host that a new frame is ready without it having to
+ask.
+
+Decoding on a custom host
+-------------------------
+
+The records are standard CBOR: each channel read returns an array
+of maps keyed by SenML's integer keys (``0`` name, ``1`` unit,
+``2`` numeric value, ``3`` string value, ``8`` data value, and
+negative keys for the widget type, options, range, and
+dimensions). A host that has outgrown the IDE reads the channel
+with :meth:`~openmv.camera.Camera.channel_read` and decodes it
+with any CBOR library (``pip install cbor2``); writing a control
+back is a CBOR array of ``{0: name, 2: value}`` maps sent with
+:meth:`~openmv.camera.Camera.channel_write`. The
+:class:`protocol.CBORChannel` reference lists every key. For most
+projects, though, the IDE's Channels view is the host, and the
+only code is the cam-side script above.
+
+
 Streaming frames
 ================
 
@@ -36450,6 +36655,10 @@ What the chapter built
   ``lock`` / ``unlock``, ``shape``, ``ioctl``, ``flush``,
   ``is_active`` -- and how the protocol library uses the methods
   present on a backend to decide what the channel supports.
+* :class:`protocol.CBORChannel` -- the ready-made backend of named
+  readings, controls, waveforms, and depth maps that OpenMV IDE's
+  Channels view renders as live widgets with no host code, and
+  that a custom host decodes as plain CBOR.
 * The host side: the openmv-python SDK's
   :class:`~openmv.camera.Camera` class, the ``921600``-baud magic
   rate that switches USB-CDC into protocol mode, and the
@@ -36469,8 +36678,13 @@ these features comes up in real code:
 
 * :doc:`/library/omv.protocol` -- the :mod:`protocol` module,
   :func:`protocol.init`, :func:`protocol.register`,
-  :class:`~protocol.ProtocolChannel`, channel flag constants, and
-  the per-cam max-payload table.
+  :class:`~protocol.ProtocolChannel`, :class:`~protocol.CBORChannel`
+  and its field types, channel flag constants, and the per-cam
+  max-payload table.
+* :doc:`The IDE's Channels view <../tools/ide/channels>` -- what
+  each ``CBORChannel`` field type looks like on screen, the graph
+  and depth-map tools, and recording to CSV, WAV, NumPy, and Edge
+  Impulse files.
 * The host SDK -- ``pip install openmv``,
   :class:`openmv.camera.Camera`. Methods touched in this chapter:
   :meth:`~openmv.camera.Camera.update_channels`,
@@ -36497,6 +36711,9 @@ Where to take it next
 
 A few directions cam projects move from here:
 
+* **Staying in the IDE.** For a readout, a few knobs, a waveform,
+  or a depth map, a ``CBORChannel`` and the IDE's Channels view
+  are the whole tool -- no host program to write or ship.
 * **Building a host GUI.** A frame channel feeding a video widget,
   one or two config channels feeding sliders and buttons. For the
   GUI layer itself, `DearPyGui
@@ -36579,8 +36796,11 @@ fills the left side and holds your open scripts, with
 the *serial terminal* below it showing everything the
 script prints. The *frame buffer viewer* sits at the
 top right and shows what the camera last captured, and
-the *histogram* below it plots the pixel statistics of
-whatever the frame buffer shows. A column of toolbar
+the pane below it holds the *histogram* of whatever
+the frame buffer shows -- or, at the flick of a
+selector, the camera's board information, its memory
+use, the link statistics, or the *channels* of values
+and controls the script publishes. A column of toolbar
 buttons down the far left edge holds the file, edit,
 connect, and run controls, and a status bar along the
 bottom edge reports what the connected camera is doing.
@@ -36617,7 +36837,9 @@ Windows and Linux; on macOS substitute ``Cmd`` for
    :maxdepth: 1
 
    frame-buffer.rst
+   pane-views.rst
    histogram.rst
+   channels.rst
    recording.rst
 
 .. toctree::
@@ -36887,7 +37109,13 @@ reports any USB driver problems it finds, naming the
 devices involved. On Linux, a permission error opening
 the serial port almost always means your user is not
 in the ``dialout`` group -- the error dialog shows the
-exact ``adduser`` command that fixes it.
+exact ``adduser`` command that fixes it. On macOS, an
+Apple Silicon Mac is told about the "Allow accessories
+to connect" security setting, which can interrupt a
+camera in bootloader mode mid-update, and an RT1062
+owner is told when the IDE lacks the Input Monitoring
+permission its firmware-flashing tools need; both
+notices can be dismissed for good.
 
 The status bar
 --------------
@@ -36964,14 +37192,27 @@ the script is gone after a reset. Second, what runs is
 the *current editor tab*, exactly as shown, saved or
 not. There is no separate upload step and no stale copy
 on the camera to fall out of sync with your editor.
+The one liberty the IDE takes is stripping the
+comments out of the copy it sends: the script's source
+sits in the camera's RAM while it compiles, and the
+comment-heavy examples are smaller without them. Lines
+are never removed, only emptied, so line numbers in a
+traceback still match your editor.
 
 While a script runs, its ``print()`` output streams
 into the serial terminal and every frame it captures
-appears in the frame buffer viewer. When a script
-raises an unhandled exception, the traceback prints to
-the serial terminal and the IDE jumps the editor to the
-offending line -- for a multi-file application it first
-opens the named file from the camera's drive.
+appears in the frame buffer viewer, and anything it
+publishes as a channel appears in the :doc:`Channels
+view <channels>`. When a script raises an unhandled
+exception, the traceback prints to the serial
+terminal, the IDE jumps the editor to the offending
+line and marks it in red with the error beside it --
+for a multi-file application it first opens the named
+file from the camera's drive. The mark clears when you
+edit the file, run again, or disconnect. When a script
+stops, by Stop or by crashing, the Channels view keeps
+the last values it published on screen until the next
+script starts.
 
 Making a script permanent
 -------------------------
@@ -37075,8 +37316,13 @@ Other categories
 The Python and Copilot categories configure the
 :doc:`editor's <editor>` language intelligence -- the
 bundled Python language server and the optional GitHub
-Copilot sign-in. The remaining categories belong to the
-Qt Creator core and rarely need attention.
+Copilot sign-in. The OpenMV category holds the
+:doc:`third-party repositories <third-party-repositories>`
+page and the camera-protocol settings, among them the
+polling intervals -- including *Channel Polling*, how
+often the :doc:`Channels view <channels>` asks the
+camera for new data. The remaining categories belong
+to the Qt Creator core and rarely need attention.
 
 
 The frame buffer viewer
@@ -37094,11 +37340,12 @@ displays each one as it arrives.
 
 .. figure:: https://docs.openmv.io/dev/_images/frame-buffer.png
    :class: framed
-   :alt: The frame buffer pane showing a live image with a selection rectangle over one object, the Record, Zoom, Disable, and JPG Mode buttons in the title bar, and the histogram below computing from the selection
+   :alt: The frame buffer pane showing a live thermal image, its title reading Frame Buffer (JPEG) with the resolution and focus number, the Record and Zoom buttons and the source and streaming-mode selectors in the title bar, and the RGB histogram of the frame below
 
-   The frame buffer with a region selected: the
-   readout line and the histogram below it compute
-   from the selected pixels only.
+   The frame buffer showing a thermal camera's output.
+   The title reads off the frame format, resolution,
+   and focus number; the histogram below plots the
+   frame.
 
 The preview costs something: compressing and streaming
 each frame takes camera time, so a script generally
@@ -37109,24 +37356,32 @@ trade-off:
 * *Zoom* -- scale the image to fit the pane (on by
   default). Off, the image renders at one screen pixel
   per image pixel.
-* *Disable* -- stop streaming frames entirely, for
-  maximum camera-side performance. The script keeps
-  running; the preview freezes on the last frame
-  behind a "Frame Buffer Disabled" banner until you
-  re-enable it. Use it when benchmarking, since the FPS
-  the script achieves with the preview disabled is the
-  FPS it will achieve standalone.
+* The *source* selector -- which sensor streams to the
+  IDE, or *Off* to stop streaming frames entirely for
+  maximum camera-side performance. On a camera with
+  one image sensor the choice is simply *On* or *Off*;
+  a camera with more than one -- a main sensor and a
+  thermal or event sensor, say -- lists each by name,
+  and the frame buffer follows whichever you pick,
+  independently of which one the script is reading.
+  With the source off the script keeps running and the
+  preview freezes on the last frame behind a "Frame
+  Buffer Off" banner until you turn it back on.
+  Use it when benchmarking, since the FPS the script
+  achieves with the preview off is the FPS it will
+  achieve standalone.
 * *JPG Mode / RAW Mode* -- whether frames are JPEG
   compressed for the trip to the IDE or sent
   uncompressed. The mode starts out at whichever the
   connected camera prefers -- JPG for most. JPG mode
   is much faster; RAW mode shows the exact pixel
-  values at the cost of frame rate. On newer cameras a
-  greyed label beside the button names the format the
-  current frame arrived in.
+  values at the cost of frame rate.
 
-The pane's title reads *Frame Buffer* and, once frames
-are arriving, the resolution of the displayed image.
+The pane's title is also its readout. Once frames are
+arriving it reads *Frame Buffer (JPEG)* -- or the pixel
+format of a raw stream -- followed by the resolution of
+the displayed image and the focus number described
+with the :doc:`histogram <histogram>`.
 
 Selecting a region
 ------------------
@@ -37134,8 +37389,8 @@ Selecting a region
 Click and drag on the image to select a rectangular
 region. While a selection exists, the histogram below
 computes its statistics from the selected pixels only,
-and the readout line above the histogram reports the
-selection's position, size, and pixel count -- the
+and the title's readout adds the selection's position,
+size, and pixel count -- the
 quickest way to read off an ROI tuple for a script, or
 to measure the colour statistics of one object instead
 of the whole scene. Click without dragging to read off
@@ -37156,25 +37411,125 @@ one exact frame from a moving scene, stop the script
 first so the preview freezes on it.
 
 
+The pane views
+==============
+
+The pane below the frame buffer viewer shows more than
+the histogram. A selector at the left of its title bar
+switches it between five views, each a different
+instrument pointed at the connected camera:
+
+* *Histogram* -- the pixel statistics of the current
+  frame, covered on :doc:`its own page <histogram>`.
+* *Board Info* -- what the connected camera is.
+* *Memory* -- how much of its RAM the script is using,
+  live.
+* *Channels* -- the values and controls the script
+  publishes, covered on :doc:`its own page <channels>`.
+* *Statistics* -- what the link between the IDE and
+  the camera is doing.
+
+The selection is remembered across sessions. Only the
+view that is showing does any work: switch away from
+the histogram and its computation stops until you
+switch back, so leaving the pane on Memory or Channels
+costs the preview nothing. Each view explains itself
+when it cannot show anything -- no camera connected, or
+a camera whose firmware does not report the data -- and
+the Board Info, Memory, and Statistics views need a
+camera running the v2 debug protocol (firmware 5.0.0 or
+newer).
+
+Board Info
+----------
+
+Board Info is the camera's identity card: the board
+type and attached sensor, the serial port, the firmware,
+protocol, and bootloader versions, the CPU and device
+ids, the USB vendor and product ids, the sizes of the
+stream buffer, frame buffer, flash, and RAM, and a row
+of yes / no capabilities -- GPU, NPU, ISP, video
+encoder, JPEG codec, DRAM, CRC, performance counters,
+profiler support, Wi-Fi, Bluetooth, SD card, Ethernet,
+high-speed USB, and multiple cores. It is the first
+place to look when a support question starts with
+"which board is this exactly", and the text is
+selectable, so you can copy the lot into a bug report.
+
+.. figure:: https://docs.openmv.io/dev/_images/pane-board-info.png
+   :class: framed
+   :alt: The Board Info view listing an OpenMV N6 with a Lepton sensor: board, sensor, port, firmware, protocol and bootloader versions, CPU and device ids, USB id, buffer sizes, and the yes / no capability rows
+
+   Board Info for an OpenMV N6 with a thermal sensor.
+
+Memory
+------
+
+Memory plots the camera's memory use while a script
+runs: one graph for the MicroPython garbage-collected
+heap and one for each of the firmware's memory pools,
+each with its used / total, free, and peak figures
+underneath and a line marking the highest use seen
+since connect. The graphs scroll with time, so the
+heap's normal sawtooth -- allocations climbing until
+the garbage collector runs -- is obvious at a glance, a
+slow leak shows up as a staircase, and a frame-sized
+allocation as a spike on every loop. The pools also
+report *Persist*, the memory held by long-lived
+allocations such as frame buffers, as distinct from
+what the script churns through.
+
+.. figure:: https://docs.openmv.io/dev/_images/pane-memory.png
+   :class: framed
+   :alt: The Memory view with the GC heap graph showing a sawtooth of allocations and collections, and a memory pool graph below, each with used / total, free, persist, and peak figures
+
+   The Memory view: the heap's sawtooth and a memory
+   pool, with their figures.
+
+Statistics
+----------
+
+Statistics is the dashboard for the debug protocol
+itself. The *Device* and *Host* sections count the
+packets sent and received on each side, checksum and
+sequence errors, retransmits, and transport errors,
+and the *Channels* table between them lists every
+channel the camera has registered with its event count
+and event rate. It is the diagnostic view for a
+connection that misbehaves: a stream that stalls, a
+camera that drops frames over a long cable, or a
+script publishing so fast the link cannot keep up --
+the counters show which side is losing and how badly.
+
+.. figure:: https://docs.openmv.io/dev/_images/pane-statistics.png
+   :class: framed
+   :alt: The Statistics view with the device counters, the per-channel event table, and the host counters stacked in the pane
+
+   The Statistics view: protocol counters for each side
+   and per-channel event rates.
+
+
 The histogram
 =============
 
-Below the frame buffer viewer, the histogram pane plots
-the distribution of pixel values in the current frame
--- or, when a region is selected in the frame buffer,
-in just that region. It updates live with the preview,
+Below the frame buffer viewer, the histogram plots the
+distribution of pixel values in the current frame --
+or, when a region is selected in the frame buffer, in
+just that region. It updates live with the preview,
 which makes it the instrument for the questions that
 come up constantly in machine vision work: what colour
 *is* that object numerically, how much does it vary,
-and how does it separate from the background.
+and how does it separate from the background. It is
+the default of the :doc:`pane's five views
+<pane-views>`; the selector at the left of the title
+bar brings it back from any of the others.
 
 .. figure:: https://docs.openmv.io/dev/_images/histogram.png
    :class: framed
-   :alt: The histogram pane in RGB, with one plot per channel, the statistics under each, and the readout line with the resolution and focus number on top
+   :alt: The histogram pane in RGB for a thermal image, with one filled plot per channel and the mean, median, mode, standard deviation, minimum, maximum, and quartile statistics under each
 
    The histogram in RGB: one plot per channel with its
-   statistics underneath. The readout line on top ends
-   with the focus number.
+   statistics underneath.
 
 The selector in the pane's title bar chooses the colour
 space the statistics are computed in: RGB, Grayscale,
@@ -37200,14 +37555,261 @@ interactively.
 The focus number
 ----------------
 
-The readout line above the histogram ends with a focus
-metric -- a sharpness score computed from the image.
+The frame buffer's title line ends with a focus metric
+-- a sharpness score computed from the image.
 Its absolute value means nothing; its *direction* means
 everything. While adjusting a lens, watch the number:
 it rises as the image gets sharper and peaks at best
 focus. Point the camera at a detailed target at the
 working distance, turn the lens slowly, and stop at the
 maximum.
+
+
+The Channels view
+=================
+
+The frame buffer shows what the camera *sees*; the
+Channels view shows what the script *measures and
+decides*. A script publishes named values over the
+debug protocol -- a temperature, a detection count, a
+microphone waveform, a time-of-flight depth map, or a
+control it wants the user to be able to change -- and
+the IDE renders each one live as a widget, a graph, or
+a map in the pane below the frame buffer. Nothing has
+to be drawn on the image or parsed out of the
+terminal. On the camera side it is a few lines with
+:class:`protocol.CBORChannel`; on the IDE side it is
+the *Channels* entry of the :doc:`pane selector
+<pane-views>`.
+
+.. figure:: https://docs.openmv.io/dev/_images/channels-controls.png
+   :class: framed
+   :alt: The Channels view showing a thermal camera script's controls channel: FPA and AUX temperature readouts with their unit, Measurement and High Temp toggles, Temp Min and Temp Max sliders, and H-Mirror and V-Flip toggles
+
+   A thermal camera script's controls: two temperature
+   readouts, toggles for the measurement modes, and
+   sliders for the temperature range. Changing any of
+   them sends the new value to the script.
+
+The view is organized by channel. Each channel the
+script registers becomes a section with the channel's
+name as its heading, and each record in the channel
+becomes a row under it, in the order the script added
+them. When the script registers a channel or changes
+the shape of one, the view rebuilds itself; when the
+script stops, the last values stay on screen, with the
+controls disabled, until the next script starts.
+
+Widgets
+-------
+
+Readouts and controls take the obvious forms. A *label*
+is a read-only value with its unit; a *text* record is
+a block of static rich text for headings and
+explanations. The writable kinds send their new value
+back to the script the moment you change them, where
+the script's ``on_write`` callback receives the record
+name and value: a *toggle* is a switch, a *slider* and
+a *spinbox* set a number within the script's range and
+step (the spin box for precise entry), *radio* buttons
+and a *select* pick one of the script's options, a
+*lineedit* is a free-text field, and a *pushbutton*
+fires a momentary action. The view keeps your edit on
+screen rather than snapping it back to the camera's
+last-published value while the write is in flight.
+
+On the script side the whole set is a
+:class:`protocol.CBORChannel` with one ``add`` per widget
+and a callback for the writes::
+
+   import time
+   import protocol
+   from protocol import CBORChannel
+
+   def on_write(ch, name, value):
+       print(name, "=", value)      # every change lands here
+
+   ch = CBORChannel(on_write=on_write)
+   ch.add("Status", type="label", value="starting")
+   ch.add("Enable", type="toggle", value=True)
+   ch.add("Threshold", type="slider", min=0, max=100,
+          step=1, value=50, unit="%")
+   ch.add("Mode", type="select",
+          options=["Idle", "Track", "Record"], value="Idle")
+   ch.add("Calibrate", type="pushbutton")
+   protocol.register(name="controls", backend=ch)
+
+   while True:
+       if ch["Enable"]:                   # read a control back
+           ch["Status"] = "threshold %d%%" % ch["Threshold"]
+       time.sleep_ms(100)
+
+Run it and switch the pane to *Channels*: a section named
+*controls* appears with the five widgets, and moving the
+slider prints in the terminal. The other widget types --
+``spinbox``, ``radio``, ``lineedit``, ``text`` -- are one
+more ``add`` each; the :doc:`host protocol chapter
+<../../protocol/channels/cbor-channels>` walks through all
+of them.
+
+Waveform graphs
+---------------
+
+A *waveform* record is a block of interleaved samples
+with a sample rate -- audio, accelerometer axes, an
+ADC trace -- and the view plots it as a scrolling
+graph, one series per axis, named by the script. The
+graph controls are in its toolbar and on the plot
+itself:
+
+* Drag to pan and scroll to zoom; double-click to
+  return to following the live edge. *History* sets
+  how much past data is kept so you can pan back
+  through it.
+* *Auto Scale* fits the vertical axis to the data;
+  off, the axis is the range the script declared.
+* Right-click the plot to drop a *marker* and read the
+  exact time and value of a sample, or to set a
+  *trigger level*. With a *Trigger* armed the graph
+  holds still until the signal crosses the level on a
+  rising or falling edge -- the oscilloscope way of
+  catching a transient -- and *Re-arm* waits for the
+  next one.
+* *Spectrum* switches the graph to a frequency plot of
+  the same data, with a choice of window (Hann,
+  Hamming, Blackman, rectangular), *Averaging* and
+  *Peak Hold* across frames, and a *Log Frequency*
+  axis. The readout under the plot names the peak
+  frequency and its level.
+* *Pause* freezes the graph without affecting a
+  recording; *Stats* adds a min / max / RMS line; and
+  the right-click menu saves the plot as an image.
+
+.. figure:: https://docs.openmv.io/dev/_images/channels-waveform.png
+   :class: framed
+   :alt: The Channels view with two waveform records scrolling live: a 16 kHz microphone trace and a three-series accelerometer trace with its X, Y, and Z legend, each with its Record, Spectrum, Pause, and Stats buttons
+
+   Two waveform records scrolling live: a microphone
+   trace and a three-series IMU trace.
+
+A waveform field takes the sample rate and, for several
+signals at once, the number of interleaved ``series`` and
+their names; each update is the raw bytes of an
+:mod:`array` of samples in the field's ``typecode``::
+
+   import math
+   import time
+   import protocol
+   from array import array
+   from protocol import CBORChannel
+
+   RATE, CHUNK = 1000, 100            # 1 kHz, 100 ms per update
+
+   ch = CBORChannel()
+   ch.add("IMU", type="waveform", sample_rate=RATE, series=3,
+          typecode="f", min=-2.0, max=2.0,
+          options=["X", "Y", "Z"], unit="g")
+   protocol.register(name="signals", backend=ch)
+
+   t = 0
+   while True:
+       block = array("f")
+       for i in range(CHUNK):
+           phase = 2 * math.pi * 2 * (t + i) / RATE
+           block.extend((math.sin(phase), math.cos(phase), 1.0))
+       ch["IMU"] = bytes(block)        # interleaved X, Y, Z
+       t += CHUNK
+       time.sleep_ms(100)
+
+Depth maps
+----------
+
+A *depth* record is a grid of distances -- the frames a
+time-of-flight sensor produces -- and the view draws it
+as a false-colour map scaled up to the graph height.
+The toolbar chooses the rendering: the *palette* (the
+camera's own Depth, Rainbow, and Ironbow palettes, plus
+light and dark palettes for event cameras), the
+*scaling filter* that enlarges the small sensor grid
+(bicubic for a smooth surface, bilinear, or nearest for
+one block per sensor pixel), and the *tone mapping*
+that turns distance into colour: *Script Range* uses
+the range the script declared, *Auto Range* stretches
+the colours over the distances actually present in
+each frame (ignoring the outlying few percent), and
+*Equalize* spreads them over the frame's distribution
+so a flat scene still shows its detail. The header
+reports the map's size, the declared range, and the
+frame's minimum, maximum, and mean; hovering over the
+map reads out the distance under the cursor, and *Save
+Image* writes the rendered map to a PNG.
+
+.. figure:: https://docs.openmv.io/dev/_images/channels-depth.png
+   :class: framed
+   :alt: The Channels view showing an 8 x 8 time-of-flight depth map scaled up smoothly with the Depth palette, the palette, scaling, and tone-mapping selectors in its toolbar, and the header reporting the size, declared range, and the frame's minimum, maximum, and mean
+
+   A time-of-flight depth map of a hand in front of the
+   sensor, with the palette, scaling, and tone-mapping
+   selectors in the toolbar.
+
+A depth field declares its grid size and range; each
+update is the grid as packed 32-bit floats, which is what
+the :mod:`tof` module's reader produces::
+
+   import struct
+   import time
+   import tof
+   import protocol
+   from protocol import CBORChannel
+
+   tof.init()
+   ch = CBORChannel()
+   ch.add("depth", type="depth", width=tof.width(),
+          height=tof.height(), min=0, max=1000)
+   protocol.register(name="ToF", backend=ch)
+
+   while True:
+       try:
+           d, dmin, dmax = tof.read_depth(vflip=True, hmirror=True)
+       except RuntimeError:
+           continue
+       ch["depth"] = struct.pack("<%df" % len(d), *d)
+       time.sleep_ms(50)
+
+Recording
+---------
+
+Every graph and map has a *Record* button, and a
+channel with more than one of them has a *Record All*
+bar that starts them together. Recording writes the
+data as it arrives -- not the rendering -- to a file
+whose format follows the extension you pick in the
+save dialog: *CSV* for spreadsheets and plotting
+tools, *WAV* for single-channel audio waveforms,
+*NumPy* ``.npy`` arrays for Python, and *Edge Impulse*
+JSON or CBOR for uploading straight into an Edge
+Impulse project as training data, with an optional
+label that names the files. Only the formats that can
+hold a record's data are offered; a depth map, for
+example, cannot be a WAV file. A long capture is split
+into numbered parts so no single file grows unwieldy,
+and a recording survives the script re-registering its
+channels. The readout beside the button tracks how
+many samples have been written and the file size.
+
+The pane's *Channel Polling* interval, in the protocol
+section of the preferences, sets how often the IDE asks
+the camera for new channel data; the default suits
+scripts that publish a few times a second, and a script
+streaming audio benefits from a shorter interval.
+
+.. seealso::
+
+   :class:`protocol.CBORChannel` for the script side --
+   the record types, their arguments, and the
+   ``on_write`` callback -- and the ``12-Protocol``
+   examples under File → Examples for working scripts
+   that publish readouts, controls, and a depth map.
 
 
 Recording and video tools
@@ -37225,9 +37827,13 @@ follows the file extension you type into the save
 dialog -- ``.mp4`` is the usual choice, every format
 the bundled FFmpeg encoder supports works, and the
 OpenMV ``ImageReader`` ``.bin`` format produces a
-recording that camera scripts can play back. On save
-the IDE offers to rescale the video, and -- for
-``.bin`` output -- to keep only every Nth frame.
+recording that camera scripts can play back. Video
+output is encoded as H.264, with a key frame every
+second so the result seeks cleanly in any player, and
+a recording rate that came out near a whole number is
+snapped to it (30 FPS rather than 29.97). On save the
+IDE offers to rescale the video, and -- for ``.bin``
+output -- to keep only every Nth frame.
 
 What gets recorded is the preview: the recorder samples
 the displayed frame at a fixed 30 FPS, duplicating
@@ -37319,10 +37925,11 @@ for normal work, where it only adds noise.
 Tracebacks are wired into the editor. When a script
 dies with an unhandled exception, the IDE parses the
 traceback as it prints, jumps the editor to the
-offending line, and -- when the failing file is a
-module on the camera's drive rather than the open
-script -- opens that file at the failing line. You go
-straight from "it crashed" to the line that crashed.
+offending line, marks it in red with the error text
+beside it, and -- when the failing file is a module on
+the camera's drive rather than the open script -- opens
+that file at the failing line. You go straight from
+"it crashed" to the line that crashed.
 
 
 Standalone terminal windows
@@ -37500,7 +38107,11 @@ Development Release fetches and installs the current
 development build for the connected board -- the way to
 pick up a fix or a new feature that has merged but not
 yet shipped. Development builds are exactly that;
-production cameras should track releases.
+production cameras should track releases. A board that
+came from a :doc:`third-party repository
+<third-party-repositories>` takes both its releases
+and its development builds from that vendor's own
+channels.
 
 Independently of firmware, the IDE checks at launch
 whether updated resources -- examples, bundled
@@ -37519,8 +38130,11 @@ source, with frozen scripts or a custom configuration
 baked in. The dialog takes either a firmware binary or
 a board's build-output ``.zip`` bundle (the IDE unpacks
 it and flashes the firmware and ROM file system it
-contains), plus the same erase-filesystem and
-reset-ROMFS checkboxes as the update prompt.
+contains -- or just the ROM file system images, for a
+bundle that carries only those), plus the same
+erase-filesystem and reset-ROMFS checkboxes as the
+update prompt. It works the same for a camera that is
+already sitting in bootloader mode.
 
 .. seealso::
 
@@ -37589,7 +38203,10 @@ A ``.py`` script is cross-compiled to ``.mpy`` bytecode
 for the target board, and a model file is converted for
 the board's NPU accelerator when it has one and the
 model needs it. What lands in ROMFS is always the form
-the camera executes directly.
+the camera executes directly. Files dragged in from
+your file manager go through the same conversions,
+into the folder you drop them on -- or the root when
+you drop on empty space.
 
 .. figure:: https://docs.openmv.io/dev/_images/romfs-editor.png
    :class: framed
@@ -37607,6 +38224,17 @@ production or shipping alongside a custom firmware
 build. Reset ROMFS on OpenMV Cam restores the connected
 camera's ROMFS to the board's defaults, undoing all
 edits.
+
+Reading and writing the camera's ROMFS goes through
+its bootloader, with a progress dialog you can cancel.
+Cancelling a read simply abandons it; cancelling a
+write leaves the ROMFS partially written, so run Reset
+ROMFS or commit again before relying on it. Either way
+the IDE asks the bootloader to restart the camera and
+waits for it to come back -- and if the camera stays
+in bootloader mode instead, it says so, and the
+bootloader dialog on the next connect offers the same
+reset and edit actions.
 
 .. seealso::
 
@@ -39273,8 +39901,12 @@ side.
 The window keeps the parts of OpenMV IDE that show what
 the camera is doing. The *frame buffer viewer* shows
 what the camera last captured, the *serial terminal*
-below shows everything the script prints, and the
-*histogram* plots the pixel statistics of the frame.
+below shows everything the script prints, and the pane
+under the frame buffer plots the *histogram* of the
+frame -- or, through its selector, shows the camera's
+board information, its memory use, the link
+statistics, or the *channels* of readouts and controls
+the product's script publishes.
 The connect and run controls sit on the toolbar, and a
 status bar reports what the connected camera is doing.
 What is missing is everything you would use to *change*
@@ -39309,6 +39941,7 @@ Windows and Linux; on macOS substitute ``Cmd`` for
 
    frame-buffer.rst
    histogram.rst
+   channels.rst
    serial-terminal.rst
 
 .. toctree::
@@ -39416,28 +40049,30 @@ frame over USB and displays each one as it arrives.
 
 .. figure:: https://docs.openmv.io/dev/_images/frame-buffer.png
    :class: framed
-   :alt: The frame buffer pane showing a live image with a selection rectangle over one object, the Zoom, Disable, and JPG Mode buttons in the title bar, and the histogram below computing from the selection
+   :alt: The frame buffer pane showing a live thermal image, its title reading Frame Buffer (JPEG) with the resolution and focus number, the Zoom button and the source and streaming-mode selectors in the title bar, and the RGB histogram of the frame below
 
-   The frame buffer with a region selected: the readout
-   line and the histogram below it compute from the
-   selected pixels only.
+   The frame buffer showing a thermal camera's output,
+   with the histogram of the frame below it.
 
 The pane's title-bar buttons manage the preview:
 
 * *Zoom* -- scale the image to fit the pane (on by
   default). Off, the image renders at one screen pixel
   per image pixel.
-* *Disable* -- stop streaming frames entirely, for
-  maximum camera-side performance. The script keeps
-  running; the preview freezes on the last frame behind
-  a "Frame Buffer Disabled" banner until you re-enable
-  it.
+* The *source* selector -- which sensor streams to the
+  Viewer, or *Off* to stop streaming frames entirely
+  for maximum camera-side performance. A camera with
+  one image sensor offers *On* or *Off*; a camera with
+  more than one lists each by name. With the source off
+  the script keeps running and the preview freezes on
+  the last frame behind a "Frame Buffer Off" banner
+  until you turn it back on.
 * *JPG Mode / RAW Mode* -- whether frames are JPEG
   compressed for the trip to the Viewer or sent
   uncompressed. JPG mode is much faster; RAW mode shows
-  the exact pixel values at the cost of frame rate. On
-  newer cameras a greyed label beside the button names
-  the format the current frame arrived in.
+  the exact pixel values at the cost of frame rate. The
+  pane's title names the format the current frame
+  arrived in.
 
 Selecting a region
 ------------------
@@ -39445,8 +40080,8 @@ Selecting a region
 Click and drag on the image to select a rectangular
 region. While a selection exists, the histogram below
 computes its statistics from the selected pixels only,
-and the readout line above the histogram reports the
-selection's position, size, and pixel count. Click
+and the pane's title adds the selection's position,
+size, and pixel count. Click
 without dragging to read off a single pixel's position;
 click outside the image to clear the selection.
 
@@ -39466,21 +40101,35 @@ first so the preview freezes on it.
 The histogram
 =============
 
-Below the frame buffer viewer, the histogram pane plots
-the distribution of pixel values in the current frame
--- or, when a region is selected in the frame buffer,
-in just that region. It updates live with the preview,
-so you can read what the camera sees numerically: what
+Below the frame buffer viewer, the histogram plots the
+distribution of pixel values in the current frame --
+or, when a region is selected in the frame buffer, in
+just that region. It updates live with the preview, so
+you can read what the camera sees numerically: what
 colour an object is, how much it varies, and how it
 separates from the background.
 
+The histogram is one of five views the pane can show;
+the selector at the left of its title bar switches
+between them. *Board Info* lists what the connected
+camera is -- board, sensor, firmware and bootloader
+versions, memory sizes, and capabilities -- which is
+the information to quote in a support request.
+*Memory* graphs the camera's memory use while the
+script runs. *Statistics* counts the packets, errors,
+and channel events on the link to the camera, for
+diagnosing a connection that misbehaves. *Channels*
+shows the readouts and controls the product's script
+publishes, covered on :doc:`its own page <channels>`.
+The IDE's :doc:`pane views <../ide/pane-views>` page
+describes each in more detail.
+
 .. figure:: https://docs.openmv.io/dev/_images/histogram.png
    :class: framed
-   :alt: The histogram pane in RGB, with one plot per channel, the statistics under each, and the readout line with the resolution and focus number on top
+   :alt: The histogram pane in RGB for a thermal image, with one filled plot per channel and the mean, median, mode, standard deviation, minimum, maximum, and quartile statistics under each
 
    The histogram in RGB: one plot per channel with its
-   statistics underneath. The readout line on top ends
-   with the focus number.
+   statistics underneath.
 
 The selector in the pane's title bar chooses the colour
 space the statistics are computed in: RGB, Grayscale,
@@ -39494,14 +40143,46 @@ scene.
 The focus number
 ----------------
 
-The readout line above the histogram ends with a focus
-metric -- a sharpness score computed from the image.
+The frame buffer's title line ends with a focus metric
+-- a sharpness score computed from the image.
 Its absolute value means nothing; its *direction* means
 everything. While adjusting a lens, watch the number:
 it rises as the image gets sharper and peaks at best
 focus. Point the camera at a detailed target at the
 working distance, turn the lens slowly, and stop at the
 maximum.
+
+
+The Channels view
+=================
+
+A product's script can publish named values and
+controls over the debug protocol -- a reading, a
+detection count, a microphone waveform, a depth map, a
+switch or a threshold the operator may change -- and
+the *Channels* view, selected from the pane below the
+frame buffer, shows them live. Readouts and controls
+appear as labels, toggles, sliders, spin boxes, radio
+buttons, selectors, text fields, and buttons; changing
+a control sends the new value to the script. Waveforms
+appear as scrolling graphs, with a spectrum mode and
+triggers; depth maps appear as false-colour images
+with a choice of palette, scaling, and tone mapping.
+Any graph or map can be recorded to a CSV, WAV, NumPy,
+or Edge Impulse file, and the last values stay on
+screen when the script stops.
+
+.. figure:: https://docs.openmv.io/dev/_images/channels-controls.png
+   :class: framed
+   :alt: The Channels view showing a thermal camera script's controls channel: FPA and AUX temperature readouts with their unit, Measurement and High Temp toggles, Temp Min and Temp Max sliders, and H-Mirror and V-Flip toggles
+
+   A thermal camera script's controls as the Channels
+   view renders them.
+
+The view is the same one OpenMV IDE has; its
+:doc:`Channels view <../ide/channels>` page covers
+every control, the graph and map tools, and recording
+in detail.
 
 
 The serial terminal
@@ -106474,7 +107155,7 @@ Changes to built-in modules:
 Syntax
 ======
 
-Generated Fri 02 Oct 2026 05:28:56 UTC
+Generated Sat 10 Oct 2026 04:13:29 UTC
 
 Literals
 --------
@@ -106657,7 +107338,7 @@ Sample code::
 Core language
 =============
 
-Generated Fri 02 Oct 2026 05:28:56 UTC
+Generated Sat 10 Oct 2026 04:13:29 UTC
 
 Classes
 -------
@@ -107259,7 +107940,7 @@ Sample code::
 +-----------------+------------------------------------------------------------------------------------------------+
 | ::              | ::                                                                                             |
 |                 |                                                                                                |
-|     {'val': 2}  |     {'test': <function test at 0x7f6b49405260>, '__name__': '__main__', '__file__': '<stdin>'} |
+|     {'val': 2}  |     {'test': <function test at 0x7f1bca405260>, '__name__': '__main__', '__file__': '<stdin>'} |
 +-----------------+------------------------------------------------------------------------------------------------+
 
 .. _cpydiff_core_locals_eval:
@@ -107441,7 +108122,7 @@ Sample code::
 Builtin types
 =============
 
-Generated Fri 02 Oct 2026 05:28:56 UTC
+Generated Sat 10 Oct 2026 04:13:29 UTC
 
 Exception
 ---------
@@ -108308,7 +108989,7 @@ Sample code::
 Modules
 =======
 
-Generated Fri 02 Oct 2026 05:28:56 UTC
+Generated Sat 10 Oct 2026 04:13:29 UTC
 
 .. Preamble section inserted into generated output
 
@@ -108603,15 +109284,15 @@ Sample code::
     x = random.getrandbits(64)
     print("{}".format(x))
 
-+--------------------------+--------------------------------------------+
-| CPython output:          | MicroPython output:                        |
-+--------------------------+--------------------------------------------+
-| ::                       | ::                                         |
-|                          |                                            |
-|     14952361388887540653 |     Traceback (most recent call last):     |
-|                          |       File "<stdin>", line 11, in <module> |
-|                          |     ValueError: bits must be 32 or less    |
-+--------------------------+--------------------------------------------+
++-------------------------+--------------------------------------------+
+| CPython output:         | MicroPython output:                        |
++-------------------------+--------------------------------------------+
+| ::                      | ::                                         |
+|                         |                                            |
+|     2426255550664356107 |     Traceback (most recent call last):     |
+|                         |       File "<stdin>", line 11, in <module> |
+|                         |     ValueError: bits must be 32 or less    |
++-------------------------+--------------------------------------------+
 
 .. _cpydiff_modules_random_randint:
 
@@ -108636,7 +109317,7 @@ Sample code::
 +-----------------------------------------------+-----------------------------------------------------------------+
 | ::                                            | ::                                                              |
 |                                               |                                                                 |
-|     x=340282366920938463463374607431768211456 |     Traceback (most recent call last):                          |
+|     x=340282366920938463463374607431768211455 |     Traceback (most recent call last):                          |
 |                                               |       File "<stdin>", line 11, in <module>                      |
 |                                               |     OverflowError: overflow converting long int to machine word |
 +-----------------------------------------------+-----------------------------------------------------------------+
@@ -122715,8 +123396,9 @@ unrelated upstream Qt Creator commits are not.
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.1.0.html">v5.1.0</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
    </details>
@@ -122830,16 +123512,318 @@ version to open its changelog.
    :maxdepth: 1
    :hidden:
 
+   v5.1.0.rst
    v5.0.0.rst
 
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.1.0.html">v5.1.0</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
    </details>
+
+
+.. _changelog_ide_v5_1_0:
+
+v5.1.0
+======
+
+v5.1.0 is a feature release. The pane under the frame buffer grows from a
+histogram into a set of **live views** -- Board Info, Memory, Statistics, and
+the new **Channels** view that turns the values a script publishes into
+widgets, graphs, spectra, and depth maps and records them to files -- the
+frame buffer gets a **source selector** for multi-sensor cameras, the IDE
+learns to load **third-party repositories** of boards, firmware, examples,
+models, and stubs, and video recordings switch to H.264. New boards and
+sensors are supported, the firmware tooling was hardened by a full audit of
+every change since v5.0.0, and a handful of behaviours were brought over from
+OpenMV Studio. It is built on Qt Creator 14.0.2 and bundles firmware v5.0.1.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **Pane views** -- the histogram pane's title bar gains a selector that
+  switches the pane between the **Histogram**, **Board Info** (the connected
+  camera's hardware, versions, and capabilities), **Memory** (live graphs of
+  the MicroPython heap and every UMA pool, with peak tracking), **Statistics**
+  (the debug protocol's packet, error, and per-channel event counters), and
+  **Channels** views.
+- **Channels view** -- a script can publish named channels of data and
+  controls over the debug protocol, and the IDE renders them live: labels,
+  toggles, sliders, spin boxes, radio buttons, line edits, selectors, push
+  buttons, and text blocks that write back to the camera; waveform graphs
+  with pan, zoom, markers, triggers, history, and a spectrum analyzer; and
+  depth maps with the camera's own palettes, three scaling filters, and tone
+  mapping. Any graph or map records to CSV, WAV, NumPy, or Edge Impulse JSON
+  and CBOR files -- including a Record All for a whole channel -- for training
+  data collection. The last values stay on screen when a script stops.
+- **Frame buffer source selector** -- cameras with more than one image sensor
+  show a selector in the frame buffer's title bar to choose which sensor
+  streams to the IDE (or to turn streaming off), the JPG toggle became a
+  JPG / RAW streaming-mode selector, and the pane's title names the format
+  each frame arrived in.
+- **Third-party repositories** -- a vendor can publish a repository of boards,
+  firmware (release and development channels), examples, machine-learning
+  models, and ``.pyi`` stubs; the IDE installs it from a URL or from a folder
+  an installer dropped in, merges it with its own content, keeps it updated,
+  and lets you order vendors by priority. Managed from Preferences → OpenMV →
+  Third Party Repositories.
+- **New hardware** -- the OpenMV N6 Classic board (including its bootloader
+  driver, udev rule, and ROM-DFU recovery entry) and the FLIR Lepton 3.1R and
+  UW sensors.
+- **H.264 recordings** -- the frame buffer recorder and the video converter
+  now encode H.264 instead of MPEG-4 Part 2, with a pinned key-frame interval
+  so recordings seek cleanly and the frame rate snapped to a whole number.
+- **Audit fixes** -- every commit since v5.0.0 was reviewed twice for
+  regressions, with particular attention to the firmware, bootloader, and
+  ROMFS paths; the defects found are fixed in this release (see
+  :ref:`bug fixes <v5_1_0_bug_fixes>`).
+
+New features
+------------
+
+- **Board Info, Memory, and Statistics views** in the histogram pane, with
+  full-bleed styling in both the dark and light themes and selectable text
+  (`cdea506655b <https://github.com/openmv/qt-creator/commit/cdea506655b>`__,
+  `7629a588db9 <https://github.com/openmv/qt-creator/commit/7629a588db9>`__,
+  `e21bd94a395 <https://github.com/openmv/qt-creator/commit/e21bd94a395>`__,
+  `b55dcc412f6 <https://github.com/openmv/qt-creator/commit/b55dcc412f6>`__,
+  `fc744920011 <https://github.com/openmv/qt-creator/commit/fc744920011>`__,
+  `e7dc3bf0092 <https://github.com/openmv/qt-creator/commit/e7dc3bf0092>`__,
+  `448e21db0bd <https://github.com/openmv/qt-creator/commit/448e21db0bd>`__).
+- **Channels view** -- the complete control vocabulary (label, toggle, slider,
+  spin box, radio, line edit, select, push button, text), waveform graphs
+  with a spectrum analyzer (Hann, Hamming, Blackman, and rectangular windows,
+  averaging, peak hold, log frequency), rising and falling-edge triggers,
+  markers, history, and plot export; depth maps with the Depth, Rainbow,
+  Ironbow, and Event palettes, nearest / bilinear / bicubic scaling, Script
+  Range / Auto Range / Equalize tone mapping, a pause button, hover readout,
+  a header with the declared range and the frame's min / max / mean, and
+  Save Image; recording to CSV, WAV, NumPy, and Edge Impulse JSON / CBOR with
+  an optional Edge Impulse label, part splitting for long captures, and
+  Record All; a Channel Polling interval in the protocol preferences
+  (`5b4f31a6b3a <https://github.com/openmv/qt-creator/commit/5b4f31a6b3a>`__,
+  `d1252a24f14 <https://github.com/openmv/qt-creator/commit/d1252a24f14>`__,
+  `bfd7fd72f94 <https://github.com/openmv/qt-creator/commit/bfd7fd72f94>`__,
+  `d1c2ab02a5f <https://github.com/openmv/qt-creator/commit/d1c2ab02a5f>`__,
+  `4808b8ffe26 <https://github.com/openmv/qt-creator/commit/4808b8ffe26>`__,
+  `dfc323b4ec7 <https://github.com/openmv/qt-creator/commit/dfc323b4ec7>`__,
+  `61c077df9a5 <https://github.com/openmv/qt-creator/commit/61c077df9a5>`__,
+  `8c2cd6cf1f1 <https://github.com/openmv/qt-creator/commit/8c2cd6cf1f1>`__,
+  `1534225fcee <https://github.com/openmv/qt-creator/commit/1534225fcee>`__).
+- **Frame buffer source selector and format readout** -- choose the streaming
+  sensor on multi-sensor cameras, or Off; the received frame format is shown
+  in the pane's title; the JPG toggle is now a JPG Mode / RAW Mode selector
+  (`e76284bde9e <https://github.com/openmv/qt-creator/commit/e76284bde9e>`__,
+  `c2baff8d60c <https://github.com/openmv/qt-creator/commit/c2baff8d60c>`__,
+  `afece31cb6a <https://github.com/openmv/qt-creator/commit/afece31cb6a>`__,
+  `76448d7b9dd <https://github.com/openmv/qt-creator/commit/76448d7b9dd>`__).
+- **Third-party repositories** -- file-driven firmware repositories merged
+  with the built-in board list, network updates with a Preferences page,
+  a development firmware channel per vendor, user-controlled vendor priority,
+  vendor examples merged into File → Examples, vendor models merged into the
+  Model Zoo, custom ``.pyi`` stubs fed to code completion, override warnings
+  when a vendor shadows built-in content, and a license check for vendor
+  boards
+  (`21a63a74949 <https://github.com/openmv/qt-creator/commit/21a63a74949>`__,
+  `b5512efe949 <https://github.com/openmv/qt-creator/commit/b5512efe949>`__,
+  `b15afdac479 <https://github.com/openmv/qt-creator/commit/b15afdac479>`__,
+  `1fe693f0b61 <https://github.com/openmv/qt-creator/commit/1fe693f0b61>`__,
+  `ae11ffeffc4 <https://github.com/openmv/qt-creator/commit/ae11ffeffc4>`__,
+  `cf47a37ba65 <https://github.com/openmv/qt-creator/commit/cf47a37ba65>`__,
+  `100bdeb530b <https://github.com/openmv/qt-creator/commit/100bdeb530b>`__,
+  `252924901f7 <https://github.com/openmv/qt-creator/commit/252924901f7>`__,
+  `c75a81f2a4a <https://github.com/openmv/qt-creator/commit/c75a81f2a4a>`__,
+  `3e7f077a738 <https://github.com/openmv/qt-creator/commit/3e7f077a738>`__,
+  `5c5aa3e657c <https://github.com/openmv/qt-creator/commit/5c5aa3e657c>`__,
+  `e3f36adbdcb <https://github.com/openmv/qt-creator/commit/e3f36adbdcb>`__,
+  `b04da8ee888 <https://github.com/openmv/qt-creator/commit/b04da8ee888>`__).
+- **Comment stripping before Run** -- comments are removed from the script
+  before it is sent to the camera, saving camera RAM on comment-heavy
+  scripts; lines are kept, so traceback line numbers still match the editor
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+- **Inline error mark** -- when a script dies with an exception, the editor
+  marks the offending line in red with the error text beside it; the mark
+  clears when you edit the file, run again, or disconnect
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+- **Drag and drop onto the ROMFS editor** -- files dropped from the desktop go
+  through the same script compilation and model conversion as Add File, into
+  the folder they were dropped on
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+
+Editor, terminal, and UI improvements
+--------------------------------------
+
+- **Histograms are computed from full 8-bit RGB** instead of the camera's
+  RGB565 tables, with a shared plot palette, alpha-blended fills, and dimmer
+  grid lines
+  (`238e099373e <https://github.com/openmv/qt-creator/commit/238e099373e>`__,
+  `f126e8f34c0 <https://github.com/openmv/qt-creator/commit/f126e8f34c0>`__,
+  `cebbf0c9e2c <https://github.com/openmv/qt-creator/commit/cebbf0c9e2c>`__).
+- **Hidden pane views do no work** -- the histogram skips its computation and
+  replots while another view is showing or the pane is collapsed, and catches
+  up when shown again; zero-size replots are silenced
+  (`c8730df8399 <https://github.com/openmv/qt-creator/commit/c8730df8399>`__).
+- **Example scripts open with a blank line after the imports**, and the
+  bundled examples were reformatted the same way
+  (`1f88f617ec5 <https://github.com/openmv/qt-creator/commit/1f88f617ec5>`__,
+  `87c8f7d41c7 <https://github.com/openmv/qt-creator/commit/87c8f7d41c7>`__).
+- **Code completion shows private names** -- the embedded language server no
+  longer filters ``_``-prefixed members, which the camera's modules use
+  (`23ab5b38bb3 <https://github.com/openmv/qt-creator/commit/23ab5b38bb3>`__).
+- **macOS** -- the protocol-controls group boxes in the preferences are no
+  longer cramped, item views are guarded against Cocoa accessibility crashes,
+  Apple Silicon users are warned about the "Allow accessories to connect"
+  security setting, and RT1062 users are warned when Input Monitoring is not
+  granted (firmware updates need it); both warnings are shown after connect
+  (`7d7b69367bf <https://github.com/openmv/qt-creator/commit/7d7b69367bf>`__,
+  `69fe7ffc913 <https://github.com/openmv/qt-creator/commit/69fe7ffc913>`__,
+  `742cb4d8c0b <https://github.com/openmv/qt-creator/commit/742cb4d8c0b>`__,
+  `8890eb77834 <https://github.com/openmv/qt-creator/commit/8890eb77834>`__,
+  `89646292e8d <https://github.com/openmv/qt-creator/commit/89646292e8d>`__).
+- **Viewer-mode shortcuts** -- stray shortcuts that broke viewer mode (and the
+  regular IDE) were disabled, and viewer mode no longer persists its cleared
+  shortcuts into the full IDE's settings
+  (`251b422f642 <https://github.com/openmv/qt-creator/commit/251b422f642>`__,
+  `0d153671c1d <https://github.com/openmv/qt-creator/commit/0d153671c1d>`__).
+- **Unknown sensors are named by chip id** in the status bar so they can be
+  identified and added to the sensor table
+  (`df561775b54 <https://github.com/openmv/qt-creator/commit/df561775b54>`__).
+
+Firmware, boards, and tools
+---------------------------
+
+- **OpenMV N6 Classic** support: board entry, Windows DFU driver and installer
+  codes, Linux udev rule
+  (`4ff4a1f239d <https://github.com/openmv/qt-creator/commit/4ff4a1f239d>`__,
+  `bdd6c96ef47 <https://github.com/openmv/qt-creator/commit/bdd6c96ef47>`__,
+  `25fcdc13c6a <https://github.com/openmv/qt-creator/commit/25fcdc13c6a>`__,
+  `7730b699f60 <https://github.com/openmv/qt-creator/commit/7730b699f60>`__).
+- **FLIR Lepton 3.1R and UW** sensor support
+  (`12c03024f3c <https://github.com/openmv/qt-creator/commit/12c03024f3c>`__).
+- **IMX bootloader handoff** -- a pre-armed catcher claims the RT1062's
+  bootloader the instant it enumerates, replacing the spawn-per-probe loop
+  that could miss the one-second window on a loaded host
+  (`3d8b63c6859 <https://github.com/openmv/qt-creator/commit/3d8b63c6859>`__).
+- **Firmware zips** -- Load Custom Firmware accepts romfs-only bundles and
+  bundles with no ROMFS, and custom or development firmware is staged for
+  IMX boards already sitting in bootloader mode
+  (`b6f16f54c1a <https://github.com/openmv/qt-creator/commit/b6f16f54c1a>`__,
+  `94d5fd5c30e <https://github.com/openmv/qt-creator/commit/94d5fd5c30e>`__).
+- **Private staging directories** for development / custom firmware, ROMFS
+  editor images, and video-tool temporary files, so stale files from other
+  processes can never be flashed or converted by mistake
+  (`939154501af <https://github.com/openmv/qt-creator/commit/939154501af>`__,
+  `a288fe712e7 <https://github.com/openmv/qt-creator/commit/a288fe712e7>`__,
+  `5c8c717adec <https://github.com/openmv/qt-creator/commit/5c8c717adec>`__).
+- **H.264 video** -- recordings and conversions encode H.264 with a pinned
+  key-frame interval; a recorded frame rate near a whole number is snapped to
+  it so players report 30 FPS rather than 29.97
+  (`6ad1968341d <https://github.com/openmv/qt-creator/commit/6ad1968341d>`__,
+  `d62c110e155 <https://github.com/openmv/qt-creator/commit/d62c110e155>`__,
+  `bab488a54fe <https://github.com/openmv/qt-creator/commit/bab488a54fe>`__).
+- **Resources zip checksum** -- the IDE's resources update is verified against
+  a SHA-256 published alongside the version
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+- **Honest User-Agent** on requests to OpenMV's servers
+  (`c4279c0213e <https://github.com/openmv/qt-creator/commit/c4279c0213e>`__).
+
+.. _v5_1_0_bug_fixes:
+
+Bug fixes
+---------
+
+Two review passes over every change since v5.0.0 found and fixed the following
+(`ccea3b17d01 <https://github.com/openmv/qt-creator/commit/ccea3b17d01>`__,
+`71826200611 <https://github.com/openmv/qt-creator/commit/71826200611>`__):
+
+- **Firmware and bootloader paths** -- a Load Custom Firmware zip onto a board
+  already in bootloader mode flashed the release build instead; the Alif
+  recovery path now refuses a custom build rather than flashing the release;
+  a bricked N6 Classic was repaired with the plain N6 bootloader and
+  firmware; a stale third-party resource root could steer a bricked built-in
+  board to vendor files; the IMX catcher could proceed to flash after it
+  crashed, ignored Cancel while waiting for the flashloader, and left the
+  serial port open after a cancel during arming; the N6 Classic bootloader
+  had no udev rule; the Windows driver installer's accepted exit codes had a
+  typo.
+- **ROMFS editor** -- Cancel during a ROMFS read reported "Failed to unpack
+  ROMFS!" and waited ten seconds for a camera still in the bootloader; Cancel
+  during a write ended silently with a possibly partial ROMFS; a dfu-util
+  error during a write was reported as success; Cancel in the follow-up
+  dialog discarded every edit; Auto Reconnect could connect underneath the
+  open editor; Edit ROMFS while connected needlessly disconnected and
+  reconnected first; converter temp directories leaked. After a cancelled
+  operation the bootloader is now asked to leave DFU so the camera comes
+  back on its own.
+- **Third-party repositories** -- zip entries are validated before extraction
+  (no path traversal or symlinks), part installs and reinstalls keep the old
+  copy until the new one is in place, a rejected vendor board no longer takes
+  the built-in board it overlapped down with it, a missing PID mask matched
+  nothing at runtime, and base example / model index rows no longer capture
+  same-named vendor files.
+- **Frame buffer and sensors** -- the GENX320 event sensor (chip id above
+  ``0x80000000``) disabled the frame buffer; a saved sensor selection did not
+  survive a restart; the old "disable frame buffer" preference was not
+  migrated; the stream-source command is gated on the protocol version; the
+  focus metric froze while the histogram page was hidden; the frame format
+  lingered in the title after disconnect.
+- **Connect flow** -- the macOS warnings could swallow the "Yes" of the
+  firmware-upgrade prompt; the Model Zoo always opened collapsed with no
+  selection restored; the single-drive fallback for the camera's drive was
+  unreachable when the camera had been plugged in for more than ten seconds.
+- **Channels view and recorder** -- hostile frame sizes could overflow the
+  size checks; the Edge Impulse recorders reallocated on every chunk and are
+  now capped at 64 MB per part; a schema with separators in names could index
+  past the record list; duplicate records orphaned a running recorder; writes
+  are dropped while the view is frozen; the channel list now refreshes on
+  unregister and soft-reboot events.
+- **Video** -- an odd user-entered width broke H.264 encoding on the libx264
+  builds; cancelled or failed ``.bin`` conversions left frames that the next
+  run folded in.
+- **Protocol** -- the read flush that runs before protocol detection is bounded
+  (issue #336)
+  (`77cd13af76f <https://github.com/openmv/qt-creator/commit/77cd13af76f>`__);
+  the camera-drive association no longer loses the race to other volumes
+  (`9877480c304 <https://github.com/openmv/qt-creator/commit/9877480c304>`__).
+- A ``-Wdeprecated-copy`` warning in the serial port info wrapper
+  (`abcfaa8af5e <https://github.com/openmv/qt-creator/commit/abcfaa8af5e>`__).
+
+Localization
+------------
+
+- All 37 catalogs were updated for the pane views, the Channels view and its
+  depth map, and every new string in this release
+  (`1b71f243733 <https://github.com/openmv/qt-creator/commit/1b71f243733>`__,
+  `dc13c23ed81 <https://github.com/openmv/qt-creator/commit/dc13c23ed81>`__,
+  `a7debafdafa <https://github.com/openmv/qt-creator/commit/a7debafdafa>`__,
+  `173a57422f7 <https://github.com/openmv/qt-creator/commit/173a57422f7>`__).
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 14.0.2.
+- **OpenMV IDE** version bumped to 5.1.0.
+- **Bundled firmware:** v5.0.1 (see the :doc:`firmware changelog
+  <../firmware/v5.0.1>`).
+- **New boards and sensors:** OpenMV N6 Classic; FLIR Lepton 3.1R and UW.
+
+Breaking changes
+----------------
+
+None for existing projects. The JPG toggle in the frame buffer's title bar is
+now a JPG Mode / RAW Mode selector, and its old "disable frame buffer" setting
+is migrated into the new source selector's Off entry. Comments are stripped
+from scripts before they run; a script that relies on reading its own source
+text at runtime should not.
 
 
 .. _changelog_ide_v5_0_0:
@@ -131121,8 +132105,9 @@ from. Only OpenMV's own changes are documented here.
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.1.0.html">v5.1.0</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
    </details>
@@ -131141,16 +132126,141 @@ version to open its changelog.
    :maxdepth: 1
    :hidden:
 
+   v5.1.0.rst
    v5.0.0.rst
 
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(1 release)</span></summary>
+     <summary>v5 <span class="count">(2 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.1.0.html">v5.1.0</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
    </details>
+
+
+.. _changelog_viewer_v5_1_0:
+
+v5.1.0
+======
+
+v5.1.0 brings OpenMV Viewer up to date with :doc:`OpenMV IDE 5.1.0
+<../ide/v5.1.0>`, with which it shares its code. The pane under the frame
+buffer becomes a set of **live views** -- the histogram plus Board Info,
+Memory, Statistics, and the new **Channels** view that shows the values and
+controls a product's script publishes -- multi-sensor cameras get a **frame
+buffer source selector**, new boards are supported, and the firmware and
+ROM-file-system recovery paths the Viewer keeps were hardened by a full
+review. It is built on Qt Creator 14.0.2 and bundles firmware v5.0.1.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **Pane views** -- a selector in the histogram pane's title bar switches it
+  between the **Histogram**, **Board Info** (the connected camera's hardware,
+  versions, and capabilities), **Memory** (live graphs of the camera's heap
+  and memory pools), **Statistics** (debug-protocol and per-channel event
+  counters), and **Channels** views.
+- **Channels view** -- when a product's script publishes channels, the Viewer
+  shows them live: readouts and controls (labels, toggles, sliders, spin
+  boxes, radio buttons, line edits, selectors, buttons, and text), waveform
+  graphs with a spectrum analyzer, and depth maps with palettes, scaling, and
+  tone mapping. Graphs and maps can be recorded to CSV, WAV, NumPy, or Edge
+  Impulse files, and the last values stay on screen when the script stops.
+- **Frame buffer source selector** -- cameras with more than one image sensor
+  show a selector to choose which sensor streams to the Viewer, or to turn
+  streaming off; the JPG toggle became a JPG / RAW streaming-mode selector,
+  and the pane's title names the format each frame arrived in.
+- **New hardware** -- the OpenMV N6 Classic board and the FLIR Lepton 3.1R and
+  UW sensors.
+
+What changed
+------------
+
+- **Board Info, Memory, Statistics, and Channels views** in the histogram
+  pane, styled for both the dark and light themes
+  (`cdea506655b <https://github.com/openmv/qt-creator/commit/cdea506655b>`__,
+  `7629a588db9 <https://github.com/openmv/qt-creator/commit/7629a588db9>`__,
+  `5b4f31a6b3a <https://github.com/openmv/qt-creator/commit/5b4f31a6b3a>`__,
+  `dfc323b4ec7 <https://github.com/openmv/qt-creator/commit/dfc323b4ec7>`__,
+  `8c2cd6cf1f1 <https://github.com/openmv/qt-creator/commit/8c2cd6cf1f1>`__).
+- **Frame buffer source selector, streaming-mode selector, and format
+  readout**
+  (`e76284bde9e <https://github.com/openmv/qt-creator/commit/e76284bde9e>`__,
+  `76448d7b9dd <https://github.com/openmv/qt-creator/commit/76448d7b9dd>`__,
+  `afece31cb6a <https://github.com/openmv/qt-creator/commit/afece31cb6a>`__).
+- **Histograms are computed from full 8-bit RGB**, with a shared plot palette
+  (`238e099373e <https://github.com/openmv/qt-creator/commit/238e099373e>`__,
+  `f126e8f34c0 <https://github.com/openmv/qt-creator/commit/f126e8f34c0>`__).
+- **Third-party board firmware** -- a vendor's repository of boards and
+  firmware installed alongside the Viewer is used for firmware updates,
+  including the vendor's own development channel; the Viewer installs only
+  the firmware part of a repository
+  (`21a63a74949 <https://github.com/openmv/qt-creator/commit/21a63a74949>`__,
+  `b15afdac479 <https://github.com/openmv/qt-creator/commit/b15afdac479>`__,
+  `b04da8ee888 <https://github.com/openmv/qt-creator/commit/b04da8ee888>`__).
+- **OpenMV N6 Classic** and **FLIR Lepton 3.1R / UW** support
+  (`4ff4a1f239d <https://github.com/openmv/qt-creator/commit/4ff4a1f239d>`__,
+  `bdd6c96ef47 <https://github.com/openmv/qt-creator/commit/bdd6c96ef47>`__,
+  `25fcdc13c6a <https://github.com/openmv/qt-creator/commit/25fcdc13c6a>`__,
+  `12c03024f3c <https://github.com/openmv/qt-creator/commit/12c03024f3c>`__).
+- **IMX bootloader handoff** -- a pre-armed catcher claims the RT1062's
+  bootloader the instant it enumerates
+  (`3d8b63c6859 <https://github.com/openmv/qt-creator/commit/3d8b63c6859>`__).
+- **macOS warnings** -- Apple Silicon users are told about the "Allow
+  accessories to connect" security setting, and RT1062 users when Input
+  Monitoring (needed for firmware updates) is not granted
+  (`742cb4d8c0b <https://github.com/openmv/qt-creator/commit/742cb4d8c0b>`__,
+  `8890eb77834 <https://github.com/openmv/qt-creator/commit/8890eb77834>`__).
+- **Viewer-mode shortcuts** -- stray shortcuts that broke viewer mode were
+  disabled, and the Viewer no longer writes its cleared shortcuts into the
+  full IDE's settings
+  (`251b422f642 <https://github.com/openmv/qt-creator/commit/251b422f642>`__,
+  `0d153671c1d <https://github.com/openmv/qt-creator/commit/0d153671c1d>`__).
+
+Bug fixes
+---------
+
+Two review passes over every change since v5.0.0 fixed, among others, the
+following that apply to the Viewer
+(`ccea3b17d01 <https://github.com/openmv/qt-creator/commit/ccea3b17d01>`__,
+`71826200611 <https://github.com/openmv/qt-creator/commit/71826200611>`__):
+
+- The macOS warnings could swallow the "Yes" of the firmware-upgrade prompt.
+- A camera's drive association could lose the race to other volumes, and the
+  single-drive fallback was unreachable when the camera had been plugged in
+  for more than ten seconds
+  (`9877480c304 <https://github.com/openmv/qt-creator/commit/9877480c304>`__).
+- The GENX320 event sensor disabled the frame buffer; a saved sensor
+  selection did not survive a restart.
+- Loading a ROM file system onto the camera: Cancel during the write ended
+  silently with a possibly partial ROMFS, and a dfu-util error was reported
+  as success. The bootloader is now asked to leave DFU after a cancelled
+  operation so the camera comes back on its own.
+- A bricked N6 Classic was repaired with the plain N6 bootloader and
+  firmware; a custom firmware zip onto a board already in bootloader mode
+  flashed the release build instead.
+- The read flush that runs before protocol detection is bounded (issue #336)
+  (`77cd13af76f <https://github.com/openmv/qt-creator/commit/77cd13af76f>`__).
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 14.0.2 (shared with OpenMV IDE).
+- **Bundled firmware:** v5.0.1.
+- **New boards and sensors:** OpenMV N6 Classic; FLIR Lepton 3.1R and UW.
+
+Breaking changes
+----------------
+
+None. The JPG toggle in the frame buffer's title bar is now a JPG Mode / RAW
+Mode selector.
 
 
 .. _changelog_viewer_v5_0_0:

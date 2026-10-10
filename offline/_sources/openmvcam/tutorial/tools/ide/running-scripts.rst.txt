@@ -16,14 +16,27 @@ the script is gone after a reset. Second, what runs is
 the *current editor tab*, exactly as shown, saved or
 not. There is no separate upload step and no stale copy
 on the camera to fall out of sync with your editor.
+The one liberty the IDE takes is stripping the
+comments out of the copy it sends: the script's source
+sits in the camera's RAM while it compiles, and the
+comment-heavy examples are smaller without them. Lines
+are never removed, only emptied, so line numbers in a
+traceback still match your editor.
 
 While a script runs, its ``print()`` output streams
 into the serial terminal and every frame it captures
-appears in the frame buffer viewer. When a script
-raises an unhandled exception, the traceback prints to
-the serial terminal and the IDE jumps the editor to the
-offending line -- for a multi-file application it first
-opens the named file from the camera's drive.
+appears in the frame buffer viewer, and anything it
+publishes as a channel appears in the :doc:`Channels
+view <channels>`. When a script raises an unhandled
+exception, the traceback prints to the serial
+terminal, the IDE jumps the editor to the offending
+line and marks it in red with the error beside it --
+for a multi-file application it first opens the named
+file from the camera's drive. The mark clears when you
+edit the file, run again, or disconnect. When a script
+stops, by Stop or by crashing, the Channels view keeps
+the last values it published on screen until the next
+script starts.
 
 Making a script permanent
 -------------------------

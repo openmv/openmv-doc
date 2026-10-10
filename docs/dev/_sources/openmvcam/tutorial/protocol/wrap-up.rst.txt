@@ -30,6 +30,10 @@ What the chapter built
   ``lock`` / ``unlock``, ``shape``, ``ioctl``, ``flush``,
   ``is_active`` -- and how the protocol library uses the methods
   present on a backend to decide what the channel supports.
+* :class:`protocol.CBORChannel` -- the ready-made backend of named
+  readings, controls, waveforms, and depth maps that OpenMV IDE's
+  Channels view renders as live widgets with no host code, and
+  that a custom host decodes as plain CBOR.
 * The host side: the openmv-python SDK's
   :class:`~openmv.camera.Camera` class, the ``921600``-baud magic
   rate that switches USB-CDC into protocol mode, and the
@@ -49,8 +53,13 @@ these features comes up in real code:
 
 * :doc:`/library/omv.protocol` -- the :mod:`protocol` module,
   :func:`protocol.init`, :func:`protocol.register`,
-  :class:`~protocol.ProtocolChannel`, channel flag constants, and
-  the per-cam max-payload table.
+  :class:`~protocol.ProtocolChannel`, :class:`~protocol.CBORChannel`
+  and its field types, channel flag constants, and the per-cam
+  max-payload table.
+* :doc:`The IDE's Channels view <../tools/ide/channels>` -- what
+  each ``CBORChannel`` field type looks like on screen, the graph
+  and depth-map tools, and recording to CSV, WAV, NumPy, and Edge
+  Impulse files.
 * The host SDK -- ``pip install openmv``,
   :class:`openmv.camera.Camera`. Methods touched in this chapter:
   :meth:`~openmv.camera.Camera.update_channels`,
@@ -77,6 +86,9 @@ Where to take it next
 
 A few directions cam projects move from here:
 
+* **Staying in the IDE.** For a readout, a few knobs, a waveform,
+  or a depth map, a ``CBORChannel`` and the IDE's Channels view
+  are the whole tool -- no host program to write or ship.
 * **Building a host GUI.** A frame channel feeding a video widget,
   one or two config channels feeding sliders and buttons. For the
   GUI layer itself, `DearPyGui

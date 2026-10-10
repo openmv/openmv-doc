@@ -30,8 +30,12 @@ side.
 The window keeps the parts of OpenMV IDE that show what
 the camera is doing. The *frame buffer viewer* shows
 what the camera last captured, the *serial terminal*
-below shows everything the script prints, and the
-*histogram* plots the pixel statistics of the frame.
+below shows everything the script prints, and the pane
+under the frame buffer plots the *histogram* of the
+frame -- or, through its selector, shows the camera's
+board information, its memory use, the link
+statistics, or the *channels* of readouts and controls
+the product's script publishes.
 The connect and run controls sit on the toolbar, and a
 status bar reports what the connected camera is doing.
 What is missing is everything you would use to *change*
@@ -66,6 +70,7 @@ Windows and Linux; on macOS substitute ``Cmd`` for
 
    frame-buffer.rst
    histogram.rst
+   channels.rst
    serial-terminal.rst
 
 .. toctree::

@@ -39,7 +39,13 @@ reports any USB driver problems it finds, naming the
 devices involved. On Linux, a permission error opening
 the serial port almost always means your user is not
 in the ``dialout`` group -- the error dialog shows the
-exact ``adduser`` command that fixes it.
+exact ``adduser`` command that fixes it. On macOS, an
+Apple Silicon Mac is told about the "Allow accessories
+to connect" security setting, which can interrupt a
+camera in bootloader mode mid-update, and an RT1062
+owner is told when the IDE lacks the Input Monitoring
+permission its firmware-flashing tools need; both
+notices can be dismissed for good.
 
 The status bar
 --------------

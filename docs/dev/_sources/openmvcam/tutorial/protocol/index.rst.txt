@@ -38,6 +38,15 @@ tools that ship in the `openmv-projects/tools/
 <https://github.com/openmv/openmv-projects/tree/master/tools>`_
 directory use exactly the patterns shown here.
 
+Often, though, no host code is needed at all. OpenMV IDE is itself
+a host: register a :class:`protocol.CBORChannel` of named readings
+and controls and the IDE's :doc:`Channels view
+<../tools/ide/channels>` shows them live as labels, switches,
+sliders, graphs, and depth maps, and sends the operator's changes
+back to the script. :doc:`channels/cbor-channels` is that fast
+path; the rest of the chapter is what it is built on, for when a
+project needs its own host.
+
 .. toctree::
    :caption: Concepts
    :maxdepth: 1
@@ -59,6 +68,7 @@ directory use exactly the patterns shown here.
 
    channels/named-channels.rst
    channels/channel-callbacks.rst
+   channels/cbor-channels.rst
 
 .. toctree::
    :caption: Streaming

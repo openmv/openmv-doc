@@ -49,5 +49,10 @@ Other categories
 The Python and Copilot categories configure the
 :doc:`editor's <editor>` language intelligence -- the
 bundled Python language server and the optional GitHub
-Copilot sign-in. The remaining categories belong to the
-Qt Creator core and rarely need attention.
+Copilot sign-in. The OpenMV category holds the
+:doc:`third-party repositories <third-party-repositories>`
+page and the camera-protocol settings, among them the
+polling intervals -- including *Channel Polling*, how
+often the :doc:`Channels view <channels>` asks the
+camera for new data. The remaining categories belong
+to the Qt Creator core and rarely need attention.

@@ -33,7 +33,11 @@ Development Release fetches and installs the current
 development build for the connected board -- the way to
 pick up a fix or a new feature that has merged but not
 yet shipped. Development builds are exactly that;
-production cameras should track releases.
+production cameras should track releases. A board that
+came from a :doc:`third-party repository
+<third-party-repositories>` takes both its releases
+and its development builds from that vendor's own
+channels.
 
 Independently of firmware, the IDE checks at launch
 whether updated resources -- examples, bundled
@@ -52,8 +56,11 @@ source, with frozen scripts or a custom configuration
 baked in. The dialog takes either a firmware binary or
 a board's build-output ``.zip`` bundle (the IDE unpacks
 it and flashes the firmware and ROM file system it
-contains), plus the same erase-filesystem and
-reset-ROMFS checkboxes as the update prompt.
+contains -- or just the ROM file system images, for a
+bundle that carries only those), plus the same
+erase-filesystem and reset-ROMFS checkboxes as the
+update prompt. It works the same for a camera that is
+already sitting in bootloader mode.
 
 .. seealso::
 

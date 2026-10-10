@@ -1,0 +1,298 @@
+.. _changelog_ide_v5_1_0:
+
+v5.1.0
+======
+
+v5.1.0 is a feature release. The pane under the frame buffer grows from a
+histogram into a set of **live views** -- Board Info, Memory, Statistics, and
+the new **Channels** view that turns the values a script publishes into
+widgets, graphs, spectra, and depth maps and records them to files -- the
+frame buffer gets a **source selector** for multi-sensor cameras, the IDE
+learns to load **third-party repositories** of boards, firmware, examples,
+models, and stubs, and video recordings switch to H.264. New boards and
+sensors are supported, the firmware tooling was hardened by a full audit of
+every change since v5.0.0, and a handful of behaviours were brought over from
+OpenMV Studio. It is built on Qt Creator 14.0.2 and bundles firmware v5.0.1.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **Pane views** -- the histogram pane's title bar gains a selector that
+  switches the pane between the **Histogram**, **Board Info** (the connected
+  camera's hardware, versions, and capabilities), **Memory** (live graphs of
+  the MicroPython heap and every UMA pool, with peak tracking), **Statistics**
+  (the debug protocol's packet, error, and per-channel event counters), and
+  **Channels** views.
+- **Channels view** -- a script can publish named channels of data and
+  controls over the debug protocol, and the IDE renders them live: labels,
+  toggles, sliders, spin boxes, radio buttons, line edits, selectors, push
+  buttons, and text blocks that write back to the camera; waveform graphs
+  with pan, zoom, markers, triggers, history, and a spectrum analyzer; and
+  depth maps with the camera's own palettes, three scaling filters, and tone
+  mapping. Any graph or map records to CSV, WAV, NumPy, or Edge Impulse JSON
+  and CBOR files -- including a Record All for a whole channel -- for training
+  data collection. The last values stay on screen when a script stops.
+- **Frame buffer source selector** -- cameras with more than one image sensor
+  show a selector in the frame buffer's title bar to choose which sensor
+  streams to the IDE (or to turn streaming off), the JPG toggle became a
+  JPG / RAW streaming-mode selector, and the pane's title names the format
+  each frame arrived in.
+- **Third-party repositories** -- a vendor can publish a repository of boards,
+  firmware (release and development channels), examples, machine-learning
+  models, and ``.pyi`` stubs; the IDE installs it from a URL or from a folder
+  an installer dropped in, merges it with its own content, keeps it updated,
+  and lets you order vendors by priority. Managed from Preferences → OpenMV →
+  Third Party Repositories.
+- **New hardware** -- the OpenMV N6 Classic board (including its bootloader
+  driver, udev rule, and ROM-DFU recovery entry) and the FLIR Lepton 3.1R and
+  UW sensors.
+- **H.264 recordings** -- the frame buffer recorder and the video converter
+  now encode H.264 instead of MPEG-4 Part 2, with a pinned key-frame interval
+  so recordings seek cleanly and the frame rate snapped to a whole number.
+- **Audit fixes** -- every commit since v5.0.0 was reviewed twice for
+  regressions, with particular attention to the firmware, bootloader, and
+  ROMFS paths; the defects found are fixed in this release (see
+  :ref:`bug fixes <v5_1_0_bug_fixes>`).
+
+New features
+------------
+
+- **Board Info, Memory, and Statistics views** in the histogram pane, with
+  full-bleed styling in both the dark and light themes and selectable text
+  (`cdea506655b <https://github.com/openmv/qt-creator/commit/cdea506655b>`__,
+  `7629a588db9 <https://github.com/openmv/qt-creator/commit/7629a588db9>`__,
+  `e21bd94a395 <https://github.com/openmv/qt-creator/commit/e21bd94a395>`__,
+  `b55dcc412f6 <https://github.com/openmv/qt-creator/commit/b55dcc412f6>`__,
+  `fc744920011 <https://github.com/openmv/qt-creator/commit/fc744920011>`__,
+  `e7dc3bf0092 <https://github.com/openmv/qt-creator/commit/e7dc3bf0092>`__,
+  `448e21db0bd <https://github.com/openmv/qt-creator/commit/448e21db0bd>`__).
+- **Channels view** -- the complete control vocabulary (label, toggle, slider,
+  spin box, radio, line edit, select, push button, text), waveform graphs
+  with a spectrum analyzer (Hann, Hamming, Blackman, and rectangular windows,
+  averaging, peak hold, log frequency), rising and falling-edge triggers,
+  markers, history, and plot export; depth maps with the Depth, Rainbow,
+  Ironbow, and Event palettes, nearest / bilinear / bicubic scaling, Script
+  Range / Auto Range / Equalize tone mapping, a pause button, hover readout,
+  a header with the declared range and the frame's min / max / mean, and
+  Save Image; recording to CSV, WAV, NumPy, and Edge Impulse JSON / CBOR with
+  an optional Edge Impulse label, part splitting for long captures, and
+  Record All; a Channel Polling interval in the protocol preferences
+  (`5b4f31a6b3a <https://github.com/openmv/qt-creator/commit/5b4f31a6b3a>`__,
+  `d1252a24f14 <https://github.com/openmv/qt-creator/commit/d1252a24f14>`__,
+  `bfd7fd72f94 <https://github.com/openmv/qt-creator/commit/bfd7fd72f94>`__,
+  `d1c2ab02a5f <https://github.com/openmv/qt-creator/commit/d1c2ab02a5f>`__,
+  `4808b8ffe26 <https://github.com/openmv/qt-creator/commit/4808b8ffe26>`__,
+  `dfc323b4ec7 <https://github.com/openmv/qt-creator/commit/dfc323b4ec7>`__,
+  `61c077df9a5 <https://github.com/openmv/qt-creator/commit/61c077df9a5>`__,
+  `8c2cd6cf1f1 <https://github.com/openmv/qt-creator/commit/8c2cd6cf1f1>`__,
+  `1534225fcee <https://github.com/openmv/qt-creator/commit/1534225fcee>`__).
+- **Frame buffer source selector and format readout** -- choose the streaming
+  sensor on multi-sensor cameras, or Off; the received frame format is shown
+  in the pane's title; the JPG toggle is now a JPG Mode / RAW Mode selector
+  (`e76284bde9e <https://github.com/openmv/qt-creator/commit/e76284bde9e>`__,
+  `c2baff8d60c <https://github.com/openmv/qt-creator/commit/c2baff8d60c>`__,
+  `afece31cb6a <https://github.com/openmv/qt-creator/commit/afece31cb6a>`__,
+  `76448d7b9dd <https://github.com/openmv/qt-creator/commit/76448d7b9dd>`__).
+- **Third-party repositories** -- file-driven firmware repositories merged
+  with the built-in board list, network updates with a Preferences page,
+  a development firmware channel per vendor, user-controlled vendor priority,
+  vendor examples merged into File → Examples, vendor models merged into the
+  Model Zoo, custom ``.pyi`` stubs fed to code completion, override warnings
+  when a vendor shadows built-in content, and a license check for vendor
+  boards
+  (`21a63a74949 <https://github.com/openmv/qt-creator/commit/21a63a74949>`__,
+  `b5512efe949 <https://github.com/openmv/qt-creator/commit/b5512efe949>`__,
+  `b15afdac479 <https://github.com/openmv/qt-creator/commit/b15afdac479>`__,
+  `1fe693f0b61 <https://github.com/openmv/qt-creator/commit/1fe693f0b61>`__,
+  `ae11ffeffc4 <https://github.com/openmv/qt-creator/commit/ae11ffeffc4>`__,
+  `cf47a37ba65 <https://github.com/openmv/qt-creator/commit/cf47a37ba65>`__,
+  `100bdeb530b <https://github.com/openmv/qt-creator/commit/100bdeb530b>`__,
+  `252924901f7 <https://github.com/openmv/qt-creator/commit/252924901f7>`__,
+  `c75a81f2a4a <https://github.com/openmv/qt-creator/commit/c75a81f2a4a>`__,
+  `3e7f077a738 <https://github.com/openmv/qt-creator/commit/3e7f077a738>`__,
+  `5c5aa3e657c <https://github.com/openmv/qt-creator/commit/5c5aa3e657c>`__,
+  `e3f36adbdcb <https://github.com/openmv/qt-creator/commit/e3f36adbdcb>`__,
+  `b04da8ee888 <https://github.com/openmv/qt-creator/commit/b04da8ee888>`__).
+- **Comment stripping before Run** -- comments are removed from the script
+  before it is sent to the camera, saving camera RAM on comment-heavy
+  scripts; lines are kept, so traceback line numbers still match the editor
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+- **Inline error mark** -- when a script dies with an exception, the editor
+  marks the offending line in red with the error text beside it; the mark
+  clears when you edit the file, run again, or disconnect
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+- **Drag and drop onto the ROMFS editor** -- files dropped from the desktop go
+  through the same script compilation and model conversion as Add File, into
+  the folder they were dropped on
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+
+Editor, terminal, and UI improvements
+--------------------------------------
+
+- **Histograms are computed from full 8-bit RGB** instead of the camera's
+  RGB565 tables, with a shared plot palette, alpha-blended fills, and dimmer
+  grid lines
+  (`238e099373e <https://github.com/openmv/qt-creator/commit/238e099373e>`__,
+  `f126e8f34c0 <https://github.com/openmv/qt-creator/commit/f126e8f34c0>`__,
+  `cebbf0c9e2c <https://github.com/openmv/qt-creator/commit/cebbf0c9e2c>`__).
+- **Hidden pane views do no work** -- the histogram skips its computation and
+  replots while another view is showing or the pane is collapsed, and catches
+  up when shown again; zero-size replots are silenced
+  (`c8730df8399 <https://github.com/openmv/qt-creator/commit/c8730df8399>`__).
+- **Example scripts open with a blank line after the imports**, and the
+  bundled examples were reformatted the same way
+  (`1f88f617ec5 <https://github.com/openmv/qt-creator/commit/1f88f617ec5>`__,
+  `87c8f7d41c7 <https://github.com/openmv/qt-creator/commit/87c8f7d41c7>`__).
+- **Code completion shows private names** -- the embedded language server no
+  longer filters ``_``-prefixed members, which the camera's modules use
+  (`23ab5b38bb3 <https://github.com/openmv/qt-creator/commit/23ab5b38bb3>`__).
+- **macOS** -- the protocol-controls group boxes in the preferences are no
+  longer cramped, item views are guarded against Cocoa accessibility crashes,
+  Apple Silicon users are warned about the "Allow accessories to connect"
+  security setting, and RT1062 users are warned when Input Monitoring is not
+  granted (firmware updates need it); both warnings are shown after connect
+  (`7d7b69367bf <https://github.com/openmv/qt-creator/commit/7d7b69367bf>`__,
+  `69fe7ffc913 <https://github.com/openmv/qt-creator/commit/69fe7ffc913>`__,
+  `742cb4d8c0b <https://github.com/openmv/qt-creator/commit/742cb4d8c0b>`__,
+  `8890eb77834 <https://github.com/openmv/qt-creator/commit/8890eb77834>`__,
+  `89646292e8d <https://github.com/openmv/qt-creator/commit/89646292e8d>`__).
+- **Viewer-mode shortcuts** -- stray shortcuts that broke viewer mode (and the
+  regular IDE) were disabled, and viewer mode no longer persists its cleared
+  shortcuts into the full IDE's settings
+  (`251b422f642 <https://github.com/openmv/qt-creator/commit/251b422f642>`__,
+  `0d153671c1d <https://github.com/openmv/qt-creator/commit/0d153671c1d>`__).
+- **Unknown sensors are named by chip id** in the status bar so they can be
+  identified and added to the sensor table
+  (`df561775b54 <https://github.com/openmv/qt-creator/commit/df561775b54>`__).
+
+Firmware, boards, and tools
+---------------------------
+
+- **OpenMV N6 Classic** support: board entry, Windows DFU driver and installer
+  codes, Linux udev rule
+  (`4ff4a1f239d <https://github.com/openmv/qt-creator/commit/4ff4a1f239d>`__,
+  `bdd6c96ef47 <https://github.com/openmv/qt-creator/commit/bdd6c96ef47>`__,
+  `25fcdc13c6a <https://github.com/openmv/qt-creator/commit/25fcdc13c6a>`__,
+  `7730b699f60 <https://github.com/openmv/qt-creator/commit/7730b699f60>`__).
+- **FLIR Lepton 3.1R and UW** sensor support
+  (`12c03024f3c <https://github.com/openmv/qt-creator/commit/12c03024f3c>`__).
+- **IMX bootloader handoff** -- a pre-armed catcher claims the RT1062's
+  bootloader the instant it enumerates, replacing the spawn-per-probe loop
+  that could miss the one-second window on a loaded host
+  (`3d8b63c6859 <https://github.com/openmv/qt-creator/commit/3d8b63c6859>`__).
+- **Firmware zips** -- Load Custom Firmware accepts romfs-only bundles and
+  bundles with no ROMFS, and custom or development firmware is staged for
+  IMX boards already sitting in bootloader mode
+  (`b6f16f54c1a <https://github.com/openmv/qt-creator/commit/b6f16f54c1a>`__,
+  `94d5fd5c30e <https://github.com/openmv/qt-creator/commit/94d5fd5c30e>`__).
+- **Private staging directories** for development / custom firmware, ROMFS
+  editor images, and video-tool temporary files, so stale files from other
+  processes can never be flashed or converted by mistake
+  (`939154501af <https://github.com/openmv/qt-creator/commit/939154501af>`__,
+  `a288fe712e7 <https://github.com/openmv/qt-creator/commit/a288fe712e7>`__,
+  `5c8c717adec <https://github.com/openmv/qt-creator/commit/5c8c717adec>`__).
+- **H.264 video** -- recordings and conversions encode H.264 with a pinned
+  key-frame interval; a recorded frame rate near a whole number is snapped to
+  it so players report 30 FPS rather than 29.97
+  (`6ad1968341d <https://github.com/openmv/qt-creator/commit/6ad1968341d>`__,
+  `d62c110e155 <https://github.com/openmv/qt-creator/commit/d62c110e155>`__,
+  `bab488a54fe <https://github.com/openmv/qt-creator/commit/bab488a54fe>`__).
+- **Resources zip checksum** -- the IDE's resources update is verified against
+  a SHA-256 published alongside the version
+  (`677546ee033 <https://github.com/openmv/qt-creator/commit/677546ee033>`__).
+- **Honest User-Agent** on requests to OpenMV's servers
+  (`c4279c0213e <https://github.com/openmv/qt-creator/commit/c4279c0213e>`__).
+
+.. _v5_1_0_bug_fixes:
+
+Bug fixes
+---------
+
+Two review passes over every change since v5.0.0 found and fixed the following
+(`ccea3b17d01 <https://github.com/openmv/qt-creator/commit/ccea3b17d01>`__,
+`71826200611 <https://github.com/openmv/qt-creator/commit/71826200611>`__):
+
+- **Firmware and bootloader paths** -- a Load Custom Firmware zip onto a board
+  already in bootloader mode flashed the release build instead; the Alif
+  recovery path now refuses a custom build rather than flashing the release;
+  a bricked N6 Classic was repaired with the plain N6 bootloader and
+  firmware; a stale third-party resource root could steer a bricked built-in
+  board to vendor files; the IMX catcher could proceed to flash after it
+  crashed, ignored Cancel while waiting for the flashloader, and left the
+  serial port open after a cancel during arming; the N6 Classic bootloader
+  had no udev rule; the Windows driver installer's accepted exit codes had a
+  typo.
+- **ROMFS editor** -- Cancel during a ROMFS read reported "Failed to unpack
+  ROMFS!" and waited ten seconds for a camera still in the bootloader; Cancel
+  during a write ended silently with a possibly partial ROMFS; a dfu-util
+  error during a write was reported as success; Cancel in the follow-up
+  dialog discarded every edit; Auto Reconnect could connect underneath the
+  open editor; Edit ROMFS while connected needlessly disconnected and
+  reconnected first; converter temp directories leaked. After a cancelled
+  operation the bootloader is now asked to leave DFU so the camera comes
+  back on its own.
+- **Third-party repositories** -- zip entries are validated before extraction
+  (no path traversal or symlinks), part installs and reinstalls keep the old
+  copy until the new one is in place, a rejected vendor board no longer takes
+  the built-in board it overlapped down with it, a missing PID mask matched
+  nothing at runtime, and base example / model index rows no longer capture
+  same-named vendor files.
+- **Frame buffer and sensors** -- the GENX320 event sensor (chip id above
+  ``0x80000000``) disabled the frame buffer; a saved sensor selection did not
+  survive a restart; the old "disable frame buffer" preference was not
+  migrated; the stream-source command is gated on the protocol version; the
+  focus metric froze while the histogram page was hidden; the frame format
+  lingered in the title after disconnect.
+- **Connect flow** -- the macOS warnings could swallow the "Yes" of the
+  firmware-upgrade prompt; the Model Zoo always opened collapsed with no
+  selection restored; the single-drive fallback for the camera's drive was
+  unreachable when the camera had been plugged in for more than ten seconds.
+- **Channels view and recorder** -- hostile frame sizes could overflow the
+  size checks; the Edge Impulse recorders reallocated on every chunk and are
+  now capped at 64 MB per part; a schema with separators in names could index
+  past the record list; duplicate records orphaned a running recorder; writes
+  are dropped while the view is frozen; the channel list now refreshes on
+  unregister and soft-reboot events.
+- **Video** -- an odd user-entered width broke H.264 encoding on the libx264
+  builds; cancelled or failed ``.bin`` conversions left frames that the next
+  run folded in.
+- **Protocol** -- the read flush that runs before protocol detection is bounded
+  (issue #336)
+  (`77cd13af76f <https://github.com/openmv/qt-creator/commit/77cd13af76f>`__);
+  the camera-drive association no longer loses the race to other volumes
+  (`9877480c304 <https://github.com/openmv/qt-creator/commit/9877480c304>`__).
+- A ``-Wdeprecated-copy`` warning in the serial port info wrapper
+  (`abcfaa8af5e <https://github.com/openmv/qt-creator/commit/abcfaa8af5e>`__).
+
+Localization
+------------
+
+- All 37 catalogs were updated for the pane views, the Channels view and its
+  depth map, and every new string in this release
+  (`1b71f243733 <https://github.com/openmv/qt-creator/commit/1b71f243733>`__,
+  `dc13c23ed81 <https://github.com/openmv/qt-creator/commit/dc13c23ed81>`__,
+  `a7debafdafa <https://github.com/openmv/qt-creator/commit/a7debafdafa>`__,
+  `173a57422f7 <https://github.com/openmv/qt-creator/commit/173a57422f7>`__).
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 14.0.2.
+- **OpenMV IDE** version bumped to 5.1.0.
+- **Bundled firmware:** v5.0.1 (see the :doc:`firmware changelog
+  <../firmware/v5.0.1>`).
+- **New boards and sensors:** OpenMV N6 Classic; FLIR Lepton 3.1R and UW.
+
+Breaking changes
+----------------
+
+None for existing projects. The JPG toggle in the frame buffer's title bar is
+now a JPG Mode / RAW Mode selector, and its old "disable frame buffer" setting
+is migrated into the new source selector's Off entry. Comments are stripped
+from scripts before they run; a script that relies on reading its own source
+text at runtime should not.

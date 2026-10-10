@@ -45,7 +45,8 @@ for normal work, where it only adds noise.
 Tracebacks are wired into the editor. When a script
 dies with an unhandled exception, the IDE parses the
 traceback as it prints, jumps the editor to the
-offending line, and -- when the failing file is a
-module on the camera's drive rather than the open
-script -- opens that file at the failing line. You go
-straight from "it crashed" to the line that crashed.
+offending line, marks it in red with the error text
+beside it, and -- when the failing file is a module on
+the camera's drive rather than the open script -- opens
+that file at the failing line. You go straight from
+"it crashed" to the line that crashed.

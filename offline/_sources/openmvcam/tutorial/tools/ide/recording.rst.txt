@@ -13,9 +13,13 @@ follows the file extension you type into the save
 dialog -- ``.mp4`` is the usual choice, every format
 the bundled FFmpeg encoder supports works, and the
 OpenMV ``ImageReader`` ``.bin`` format produces a
-recording that camera scripts can play back. On save
-the IDE offers to rescale the video, and -- for
-``.bin`` output -- to keep only every Nth frame.
+recording that camera scripts can play back. Video
+output is encoded as H.264, with a key frame every
+second so the result seeks cleanly in any player, and
+a recording rate that came out near a whole number is
+snapped to it (30 FPS rather than 29.97). On save the
+IDE offers to rescale the video, and -- for ``.bin``
+output -- to keep only every Nth frame.
 
 What gets recorded is the preview: the recorder samples
 the displayed frame at a fixed 30 FPS, duplicating

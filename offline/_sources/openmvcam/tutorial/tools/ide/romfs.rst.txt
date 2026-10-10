@@ -28,7 +28,10 @@ A ``.py`` script is cross-compiled to ``.mpy`` bytecode
 for the target board, and a model file is converted for
 the board's NPU accelerator when it has one and the
 model needs it. What lands in ROMFS is always the form
-the camera executes directly.
+the camera executes directly. Files dragged in from
+your file manager go through the same conversions,
+into the folder you drop them on -- or the root when
+you drop on empty space.
 
 .. figure:: figures/romfs-editor.png
    :class: framed
@@ -46,6 +49,17 @@ production or shipping alongside a custom firmware
 build. Reset ROMFS on OpenMV Cam restores the connected
 camera's ROMFS to the board's defaults, undoing all
 edits.
+
+Reading and writing the camera's ROMFS goes through
+its bootloader, with a progress dialog you can cancel.
+Cancelling a read simply abandons it; cancelling a
+write leaves the ROMFS partially written, so run Reset
+ROMFS or commit again before relying on it. Either way
+the IDE asks the bootloader to restart the camera and
+waits for it to come back -- and if the camera stays
+in bootloader mode instead, it says so, and the
+bootloader dialog on the next connect offers the same
+reset and edit actions.
 
 .. seealso::
 
