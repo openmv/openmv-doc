@@ -1,0 +1,254 @@
+.. currentmodule:: pyb
+.. _pyb.UART:
+
+class UART -- duplex serial communication bus
+=============================================
+
+UART implements the standard UART/USART duplex serial communications protocol.  At
+the physical level it consists of 2 lines: RX and TX.  The unit of communication
+is a character (not to be confused with a string character) which can be 8 or 9
+bits wide.
+
+UART objects can be created and initialised using::
+
+    from pyb import UART
+
+    # init with the given baudrate
+    uart = UART(3, 9600, timeout_char=1000)
+
+    # init with explicit parameters
+    uart.init(9600, bits=8, parity=None, stop=1, timeout_char=1000)
+
+Bits can be 7, 8 or 9.  Parity can be None, 0 (even) or 1 (odd).  Stop can be 1 or 2.
+
+*Note:* with parity=None, only 8 and 9 bits are supported.  With parity enabled,
+only 7 and 8 bits are supported.
+
+A UART object acts like a :std:term:`stream` object and reading and writing is done
+using the standard stream methods::
+
+    uart.read(10)       # read 10 characters, returns a bytes object
+    uart.read()         # read all available characters
+    uart.readline()     # read a line
+    uart.readinto(buf)  # read and store into the given buffer
+    uart.write('abc')   # write the 3 characters
+
+Individual characters can be read/written using::
+
+    uart.readchar()     # read 1 character and returns it as an integer
+    uart.writechar(42)  # write 1 character
+
+To check if there is anything to be read, use::
+
+    uart.any()          # returns the number of characters waiting
+
+*Note:* The stream functions ``read``, ``write``, etc. are new in MicroPython v1.3.4.
+Earlier versions use ``uart.send`` and ``uart.recv``.
+
+Constructors
+------------
+
+.. class:: UART(bus: Union[int, str], *args, **kwargs)
+
+   Construct a UART object on the given ``bus`` (an integer peripheral
+   index, e.g. ``3`` for ``UART3``). With no additional parameters the
+   object is created but not initialised (it retains the previous bus
+   settings, if any); if extra arguments are given the bus is initialised.
+   See :meth:`init` for the available parameters.
+
+   ``UART(3)`` is wired to the same header pins on every STM32 OpenMV Cam:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: 30 30
+
+      * - Signal
+        - Header pin
+      * - ``TX``
+        - ``P4``
+      * - ``RX``
+        - ``P5``
+
+   Additional UART buses are available on some boards:
+
+   .. list-table::
+      :header-rows: 1
+      :widths: 14 18 18 50
+
+      * - Bus
+        - TX pin
+        - RX pin
+        - Available on
+      * - ``UART(1)``
+        - ``P1``
+        - ``P0``
+        - OpenMV Cam M7 / H7 / H7 Plus / Pure Thermal
+      * - ``UART(4)``
+        - ``P2``
+        - ``P3``
+        - OpenMV Cam N6
+      * - ``UART(7)``
+        - ``P14``
+        - ``P13``
+        - OpenMV Cam N6
+
+   Methods
+   -------
+
+   .. method:: init(baudrate: int, bits: int = 8, parity: Optional[int] = None, stop: int = 1, *, timeout: int = 1000, flow: int = 0, timeout_char: int = 0, read_buf_len: int = 64) -> None
+
+      Initialise the UART bus with the given parameters:
+
+        - ``baudrate`` is the clock rate.
+        - ``bits`` is the number of bits per character, 7, 8 or 9.
+        - ``parity`` is the parity, ``None``, 0 (even) or 1 (odd).
+        - ``stop`` is the number of stop bits, 1 or 2.
+        - ``flow`` sets the flow control type. Can be 0, ``UART.RTS``, ``UART.CTS``
+          or ``UART.RTS | UART.CTS``.
+        - ``timeout`` is the timeout in milliseconds to wait for writing/reading the first character.
+        - ``timeout_char`` is the timeout in milliseconds to wait between characters while writing or reading.
+        - ``read_buf_len`` is the character length of the read buffer (0 to disable).
+
+      This method will raise an exception if the baudrate could not be set within
+      5% of the desired value.
+
+      *Note:* with parity=None, only 8 and 9 bits are supported.  With parity enabled,
+      only 7 and 8 bits are supported.
+
+   .. method:: deinit() -> None
+
+      Turn off the UART bus.
+
+   .. method:: any() -> int
+
+      Returns the number of bytes waiting (may be 0).
+
+   .. method:: read(nbytes: Optional[int] = None) -> Optional[bytes]
+
+      Read characters.  If ``nbytes`` is specified then read at most that many bytes.
+      If ``nbytes`` are available in the buffer, returns immediately, otherwise returns
+      when sufficient characters arrive or the timeout elapses.
+
+      If ``nbytes`` is not given then the method reads as much data as possible.  It
+      returns after the timeout has elapsed.
+
+      *Note:* for 9 bit characters each character takes two bytes, ``nbytes`` must
+      be even, and the number of characters is ``nbytes/2``.
+
+      Return value: a bytes object containing the bytes read in.  Returns ``None``
+      on timeout.
+
+   .. method:: readchar() -> int
+
+      Receive a single character on the bus.
+
+      Return value: The character read, as an integer.  Returns -1 on timeout.
+
+   .. method:: readinto(buf: bytearray, nbytes: Optional[int] = None) -> Optional[int]
+
+      Read bytes into the ``buf``.  If ``nbytes`` is specified then read at most
+      that many bytes.  Otherwise, read at most ``len(buf)`` bytes.
+
+      Return value: number of bytes read and stored into ``buf`` or ``None`` on
+      timeout.
+
+   .. method:: readline() -> Optional[bytes]
+
+      Read a line, ending in a newline character. If such a line exists, return is
+      immediate. If the timeout elapses, all available data is returned regardless
+      of whether a newline exists.
+
+      Return value: the line read or ``None`` on timeout if no data is available.
+
+   .. method:: write(buf: Union[bytes, bytearray, str]) -> Optional[int]
+
+      Write the buffer of bytes to the bus.  If characters are 7 or 8 bits wide
+      then each byte is one character.  If characters are 9 bits wide then two
+      bytes are used for each character (little endian), and ``buf`` must contain
+      an even number of bytes.
+
+      Return value: number of bytes written. If a timeout occurs and no bytes
+      were written returns ``None``.
+
+   .. method:: writechar(char: int) -> None
+
+      Write a single character on the bus. ``char`` is an integer to
+      write. See the *CTS flow control* section below for blocking
+      semantics when CTS flow control is enabled.
+
+   .. method:: sendbreak() -> None
+
+      Send a break condition on the bus. This drives the bus low for a
+      duration of 13 bits.
+
+   Constants
+   ---------
+
+   .. data:: RTS
+      :type: int
+
+      Bit flag for the ``flow`` argument of :meth:`init`; enables RTS
+      (request-to-send) hardware flow control on the receive path.
+
+   .. data:: CTS
+      :type: int
+
+      Bit flag for the ``flow`` argument of :meth:`init`; enables CTS
+      (clear-to-send) hardware flow control on the transmit path. May
+      be OR-ed with :data:`RTS` to enable both directions.
+
+Flow Control
+------------
+
+``UART(3)`` supports RTS/CTS hardware flow control. On the OpenMV Cam M7,
+H7, H7 Plus and Pure Thermal the flow-control pins are:
+
+    ``(TX, RX, nRTS, nCTS) = (P4, P5, P1, P2)``
+
+On the OpenMV Cam N6 only ``nRTS`` is exposed (on header pin ``P7``);
+``nCTS`` is not routed to the I/O header.
+
+In the following paragraphs the term "target" refers to the device
+connected to the UART.
+
+When the UART's :meth:`init` method is called with ``flow`` set to one or
+both of ``UART.RTS`` and ``UART.CTS``, the relevant flow-control pins are
+configured. ``nRTS`` is an active-low output and ``nCTS`` is an active-low
+input with pull-up enabled. To wire up flow control, connect the OpenMV
+Cam's ``nCTS`` to the target's ``nRTS`` and the OpenMV Cam's ``nRTS`` to
+the target's ``nCTS``.
+
+CTS: target controls OpenMV Cam transmitter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If CTS flow control is enabled the write behaviour is as follows:
+
+If the OpenMV Cam's ``UART.write(buf)`` method is called, transmission will stall for
+any periods when ``nCTS`` is ``False``. This will result in a timeout if the entire
+buffer was not transmitted in the timeout period. The method returns the number of
+bytes written, enabling the user to write the remainder of the data if required. In
+the event of a timeout, a character will remain in the UART pending ``nCTS``. The
+number of bytes composing this character will be included in the return value.
+
+If ``UART.writechar()`` is called when ``nCTS`` is ``False`` the method will time
+out unless the target asserts ``nCTS`` in time. If it times out ``OSError 116``
+will be raised. The character will be transmitted as soon as the target asserts ``nCTS``.
+
+RTS: OpenMV Cam controls target's transmitter
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If RTS flow control is enabled, behaviour is as follows:
+
+If buffered input is used (``read_buf_len`` > 0), incoming characters are buffered.
+If the buffer becomes full, the next character to arrive will cause ``nRTS`` to go
+``False``: the target should cease transmission. ``nRTS`` will go ``True`` when
+characters are read from the buffer.
+
+Note that the ``any()`` method returns the number of bytes in the buffer. Assume a
+buffer length of ``N`` bytes. If the buffer becomes full, and another character arrives,
+``nRTS`` will be set False, and ``any()`` will return the count ``N``. When
+characters are read the additional character will be placed in the buffer and will
+be included in the result of a subsequent ``any()`` call.
+
+If buffered input is not used (``read_buf_len`` == 0) the arrival of a character will
+cause ``nRTS`` to go ``False`` until the character is read.

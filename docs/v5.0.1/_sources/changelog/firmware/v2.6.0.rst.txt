@@ -1,0 +1,152 @@
+.. _changelog_v2_6_0:
+
+v2.6.0
+======
+
+v2.6.0 updates the core to **MicroPython 1.9.2**, switches
+``find_line_segments()`` to the **LSD** algorithm, adds **MT9V034
+global-shutter** sensor support, ``image.rotation_corr()`` perspective
+correction, :func:`sensor.sleep`, raw image saving, and OpenMV 4 board
+groundwork. ``find_line_segments()``, several framesizes, and MicroPython
+behavior changed — read the breaking changes below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **MicroPython 1.9.2** core update.
+- **LSD line segments** — ``find_line_segments()`` now uses the Line Segment
+  Detector algorithm.
+- **MT9V034** global-shutter sensor support.
+- ``image.rotation_corr()`` — X/Y/Z perspective rotation correction.
+- :func:`sensor.sleep` soft sleep mode and raw (uncompressed) image saving.
+- **Breaking:** ``find_line_segments()`` parameters, several framesize
+  constants, and MicroPython behavior changed — see the breaking changes.
+
+New features
+------------
+
+- ``image.rotation_corr()`` — added X/Y/Z perspective rotation correction
+  with a ``rotation_correction.py`` example.
+- ``sensor.sleep(enable)`` — put the camera into a soft sleep mode (with
+  a sleep-mode example).
+- **Raw images** — ``image.save()`` can now write raw (uncompressed) images.
+- **MT9V034** — added global-shutter sensor support, exposing the
+  ``sensor.MT9V034`` constant.
+- Added a ``lens_correction.py`` example for ``image.lens_corr()`` and
+  OpenMV 4 board support files (board config / bootloader / linker
+  groundwork).
+
+Other changes and improvements
+------------------------------
+
+- Updated the bundled MicroPython to 1.9.2 (1.9 port plumbing, oofatfs);
+  rewrote ``find_line_segments.py`` for the new LSD API (lens correction off
+  by default); updated the host-side ``openmv`` API
+  (``init(portname)`` / ``exec_script`` / ``stop_script``); lowered the
+  OpenMV Cam M4 sensor clock (lower max FPS on the M4); the IDE Stop button
+  now uses a hard forced exception to interrupt scripts more reliably.
+
+Bug fixes
+---------
+
+- Fixed ``image.lens_corr()`` leaving stale pixels (the destination buffer is
+  now cleared before remapping), ``blob.density()`` using integer division
+  (always returned 0, #268), the OpenMV 2 (M4) UART pin mapping, and updated
+  ``qrcodes_with_lens_corr.py`` to use QVGA.
+
+Hardware and board support
+--------------------------
+
+- **MT9V034** global-shutter sensor.
+- **OpenMV 4** — board support files (groundwork).
+- **OpenMV 2 (M4)** — UART pin-mapping fix.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v2.5.0 and v2.6.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *major* — affects most scripts that used the feature; you will need to port
+  code.
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v2_6_0_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v2_6_0_lsd:
+
+``find_line_segments()`` switched to LSD *(major)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``image.find_line_segments()`` was rewritten to use the Line Segment Detector
+(LSD) algorithm. The old ``threshold`` / ``theta_margin`` / ``rho_margin`` /
+``segment_threshold`` / ``x_stride`` / ``y_stride`` parameters were replaced
+with ``merge_distance`` and ``max_theta_diff`` (e.g.
+``find_line_segments(merge_distance=0, max_theta_diff=15)``). It is also no
+longer available on M4-class (OpenMV 2) boards.
+
+*Commits:* `5a3153c8b <https://github.com/openmv/openmv/commit/5a3153c8b>`__,
+`cbe2a4aeb <https://github.com/openmv/openmv/commit/cbe2a4aeb>`__
+
+.. _v2_6_0_framesizes:
+
+Invalid framesize constants removed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The invalid ``sensor.QQQQCIF`` / ``QQQCIF`` / ``QQQQSIF`` / ``QQQSIF`` /
+``HQQQQVGA`` / ``HVGA`` framesize constants were removed (#261). Scripts using
+these must switch to a supported resolution.
+
+*Commits:* `35ab0a26f <https://github.com/openmv/openmv/commit/35ab0a26f>`__
+
+.. _v2_6_0_qrcodes:
+
+``find_qrcodes()`` removed on the OpenMV Cam M4 *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``image.find_qrcodes()`` is no longer compiled in on M4-class (OpenMV 2)
+boards. Use an OpenMV 3 (M7) board or another code feature for QR detection
+on M4 hardware. Other boards are unaffected.
+
+*Commits:* `7dff089e6 <https://github.com/openmv/openmv/commit/7dff089e6>`__
+
+.. _v2_6_0_micropython:
+
+MicroPython updated to 1.9.2 *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The bundled MicroPython core was updated to 1.9.2. Standard-library and
+language behavior follows upstream MicroPython 1.9.2 — re-check scripts that
+depend on version-specific behavior. Notably, an image slice with a step
+other than 1 now raises ``OSError`` instead of ``NotImplementedError``.
+
+*Commits:* `11bed4b99 <https://github.com/openmv/openmv/commit/11bed4b99>`__
+
+.. _v2_6_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v2.6.0 the typical work is:
+
+#. Rewrite ``find_line_segments()`` calls for the LSD parameters
+   (``merge_distance`` / ``max_theta_diff``) and move that processing off the
+   M4 (:ref:`the LSD rework <v2_6_0_lsd>`).
+#. Replace removed framesize constants with a supported resolution
+   (:ref:`the framesize removal <v2_6_0_framesizes>`).
+#. Move M4 QR-code detection to an M7 board
+   (:ref:`the find_qrcodes change <v2_6_0_qrcodes>`).
+#. Re-validate version-specific behavior against MicroPython 1.9.2
+   (:ref:`the MicroPython bump <v2_6_0_micropython>`).
+
+All other scripts run unchanged.

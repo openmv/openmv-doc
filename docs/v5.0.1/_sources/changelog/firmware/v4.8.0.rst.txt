@@ -1,0 +1,314 @@
+.. _changelog_v4_8_0:
+
+v4.8.0
+======
+
+v4.8.0 is a major feature release. Headlining it: a brand-new class-based
+:mod:`csi` camera module with multi-camera support, the **OpenMV N6**
+(STM32N6) board with a Neural-ART NPU, an NPU inference backend, GenX320
+event-camera RAW event mode, a new :mod:`crc` module, a reorganized ML
+post-processing library, and MicroPython 1.26. It also removes a few legacy
+APIs — the ``buzzer`` module and the :mod:`fir` module's FLIR Lepton control — so
+read the breaking changes below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **New** :mod:`csi` **camera module.** A class-based :class:`csi.CSI` API with
+  support for multiple simultaneous cameras, introduced alongside the legacy
+  ``sensor`` module.
+- **OpenMV N6.** The STM32N6 board, with a Neural-ART NPU, triple buffering,
+  Soft-CSI, and a ToF module.
+- **NPU inference.** A ST Neural-ART (STAI) backend for hardware-accelerated
+  model inference.
+- **GenX320 event mode.** RAW event output plus
+  :meth:`~image.Image.draw_event_histogram` for event-camera rendering.
+- **Reorganized ML post-processing** — vendor subpackages
+  (:mod:`ml.postprocessing.ultralytics`, :mod:`~ml.postprocessing.mediapipe`,
+  :mod:`~ml.postprocessing.edgeimpulse`, :mod:`~ml.postprocessing.darknet`)
+  with new BlazeFace / BlazePalm / hand- and face-landmark detectors.
+- **New** :mod:`crc` **module** — hardware-accelerated CRC-16 / CRC-32.
+- **MicroPython updated to 1.26.0.**
+- **Breaking:** the ``buzzer`` module and the ``fir`` module's Lepton control
+  were removed (the Lepton is now a regular camera). See
+  :ref:`the fir/Lepton change <v4_8_0_fir>` and
+  :ref:`the buzzer removal <v4_8_0_buzzer>`.
+
+New features
+------------
+
+- **The new** :mod:`csi` **camera module** — a class-based :class:`csi.CSI`
+  object with multiple simultaneous cameras (up to three on the N6),
+  non-blocking snapshot, custom ``(w, h)`` frame sizes, and an informative
+  ``print()`` / repr. It is introduced alongside the legacy ``sensor`` module
+  (not a drop-in replacement).
+- :mod:`crc` — :func:`crc.crc16` and :func:`crc.crc32`, hardware-accelerated
+  with a software fallback, on the OpenMV N6 and AE3.
+- :meth:`image.Image.draw_image` gained a ``transform=`` keyword (a 2-D float
+  ``ndarray`` matrix for affine/perspective warps, GPU-accelerated on STM32 and
+  Alif); the same transform is available in image conversion.
+- :meth:`~image.Image.draw_event_histogram` — render event-camera histograms.
+- **GenX320 RAW event mode** — :data:`csi.IOCTL_GENX320_SET_MODE` with
+  :data:`csi.GENX320_MODE_HISTO` / :data:`csi.GENX320_MODE_EVENT`,
+  :data:`csi.IOCTL_GENX320_READ_EVENTS`, :data:`csi.IOCTL_GENX320_CALIBRATE`,
+  event-type constants, and new example scripts.
+- **ML** — a ST Neural-ART (STAI) NPU inference backend; :class:`ml.Model`
+  gained a ``postprocess=`` keyword (the post-processor now runs automatically
+  inside ``predict()`` even without a callback); :mod:`ml.postprocessing` was
+  reorganized into vendor subpackages —
+  :mod:`ml.postprocessing.ultralytics` (``YoloV5``, ``YoloV8``),
+  :mod:`ml.postprocessing.darknet` (``YoloV2``, ``YoloLC``),
+  :mod:`ml.postprocessing.edgeimpulse` (``Fomo``), and
+  :mod:`ml.postprocessing.mediapipe` (``BlazeFace``, ``BlazePalm``,
+  ``HandLandmarks``, ``FaceLandmarks``) — the old snake_case names remain as
+  aliases; :func:`ml.utils.draw_keypoints` and :func:`ml.utils.draw_skeleton`
+  were added; bundled ROMFS models grew (BlazeFace, YOLO-LC, YOLOv8n,
+  palm/hand/face landmarks).
+- :mod:`audio` — MDF digital-microphone input on the STM32N6.
+- **Display** — an SSD1351 OLED driver and example; ``SPIDisplay`` controllers
+  can override their init commands; the SPI display constructor gained
+  ``hmirror`` / ``vflip`` keywords.
+- **On-device profiler** — SysTick + Armv8.1-M PMU cycle/event counters with
+  function-level instrumentation, readable over the debug link
+  (``pyopenmv`` gained profiling and ELF-symbol support).
+- **New sensor support** — PixArt PS5520; FLIR BOSON on the OpenMV H7 Plus;
+  GenX320 auto-detect.
+
+Other changes and improvements
+------------------------------
+
+- **MicroPython updated to 1.26.0.**
+- **Camera startup** — the sensor clock was decoupled from CSI state, camera
+  detection at boot is faster (the most common config is tried first), and the
+  OpenMV 3 OV7725 default clock was corrected.
+- **Image quality** — software ISP gamma correction (Alif and STM32) and
+  bad-pixel correction (STM32) are on by default; the PAG7936 and PS5520
+  sensors gained auto-white-balance controls.
+- **Performance** — :meth:`image.Image.to_ndarray` is accelerated with Helium
+  SIMD and the FOMO post-processor was vectorized with ulab.
+- **FLIR Lepton driver rewritten** to receive frames asynchronously in the
+  background — rotation/``transpose`` now works, drawing upscales bilinearly,
+  and reset is faster.
+- **Capture throughput** — the i.MX RT1062 CSI now uses full DMA offload, and
+  the STM32 N6 has a hardware-GPU :meth:`~image.Image.draw_image`.
+
+Bug fixes
+---------
+
+Camera and sensors:
+
+- Fixed RGB565 / GRAYSCALE / BAYER / YUV422 modes across the STM32 sensors,
+  PAJ6100 on the OpenMV H7 / H7 Plus, OpenMV 2 QVGA RGB565, and the N6 CSI
+  mono / RGB-YUV configuration; the software test camera now resets
+  deterministically.
+- Auto-white-balance no longer turns the image green at low or variable frame
+  rates (a 250 ms moving average replaces the every-100-frames sample), and
+  PS5520 luminance flicker is fixed.
+
+Image processing:
+
+- Fixed a draw-line rendering glitch; :meth:`image.Image.flush` now flushes the
+  JPEG buffer of the image it was called on; :class:`~ml.preprocessing.Normalization`
+  now applies mean/stdev to float inputs; image-from-file allocation is fixed.
+
+Camera capture:
+
+- Fixed severe image corruption on non-JPEG transfers (the frame interrupt is
+  now enabled only in JPEG mode), JPEG mode-3 support, and DMA line-size and
+  small-buffer lockups on STM32; VOSPI / Lepton synchronization is more
+  reliable, notably on the N6.
+
+Misc:
+
+- :func:`omv.board_id` returns the correct UID on RT1060; ``YoloV2`` no longer
+  crashes when constructed without explicit anchors.
+
+Hardware and board support
+--------------------------
+
+- **OpenMV N6** — STM32N6 with a Neural-ART NPU, triple buffering, SPI LCD/TV
+  output, Soft-CSI, the :mod:`tof` module, and bundled ROMFS models.
+- **Arduino GIGA** — MIPI DSI display output.
+- **New sensors** — PixArt PS5520; FLIR BOSON on the OpenMV H7 Plus; GenX320
+  auto-detect.
+- **OpenMV Pure Thermal** — the FLIR Lepton is now a regular (secondary)
+  camera sensor.
+- **Alif AE3** — software ISP gamma correction, the :mod:`crc` module, and SPI
+  fixes.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v4.7.0 and v4.8.0. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *major* — most scripts that used it need edits.
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+- *tooling* — only affects host tools / building from source.
+
+Changes are grouped by impact in that order — *major* first, then *minor*,
+*behavior*, and *tooling*. If you just want to port your code, jump to the
+:ref:`migration checklist <v4_8_0_migration>` at the end for a condensed to-do
+list. Each commit hash links to its diff on GitHub.
+
+.. _v4_8_0_fir:
+
+FLIR Lepton moved off the ``fir`` module *(major)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The FLIR Lepton is now driven as a regular camera sensor instead of through the
+:mod:`fir` module. Lepton control was removed from :mod:`fir`: the
+``FIR_LEPTON`` type and the ``radiometric()``, ``register_vsync_cb()``,
+``register_frame_cb()``, ``get_frame_available()``, and ``trigger_ffc()``
+methods are gone. Capture the Lepton like any other camera (it appears as a
+secondary sensor on the OpenMV Pure Thermal); the Pure Thermal example was
+rewritten to the new API. The non-Lepton :mod:`fir` sensors (Grid-EYE, MLX,
+AMG8833) are unchanged.
+
+*Commits:* `bacfb7aeb <https://github.com/openmv/openmv/commit/bacfb7aeb>`__,
+`117710566 <https://github.com/openmv/openmv/commit/117710566>`__,
+`592a22902 <https://github.com/openmv/openmv/commit/592a22902>`__,
+`1a614202e <https://github.com/openmv/openmv/commit/1a614202e>`__
+
+.. _v4_8_0_buzzer:
+
+``buzzer`` module removed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``buzzer`` module was removed from the STM32 and i.MX RT ports. Drive the
+buzzer with :class:`machine.PWM` instead; a Pure Thermal buzzer example using
+PWM was added.
+
+*Commits:* `ccb947924 <https://github.com/openmv/openmv/commit/ccb947924>`__,
+`444120f2d <https://github.com/openmv/openmv/commit/444120f2d>`__
+
+.. _v4_8_0_omv_fb:
+
+``omv.disable_fb()`` removed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``omv.disable_fb()`` function was removed; frame-buffer streaming is
+controlled through the camera API now. The legacy RPC desktop scripts that
+relied on it were also removed.
+
+*Commits:* `84c3db58a <https://github.com/openmv/openmv/commit/84c3db58a>`__,
+`6fe99051c <https://github.com/openmv/openmv/commit/6fe99051c>`__
+
+.. _v4_8_0_csi:
+
+``csi`` is new — its API is not yet frozen *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :mod:`csi` module is introduced in v4.8.0 and its API evolved during the
+release: ``csi.fb()`` was removed, and :meth:`csi.CSI.snapshot` ``(image=...)``
+now requires a *mutable* image and draws/scales the captured frame into it
+instead of doing a raw deep copy. Early adopters of the new module should
+re-test; the legacy ``sensor`` API is unaffected.
+
+*Commits:* `0bc0385eb <https://github.com/openmv/openmv/commit/0bc0385eb>`__,
+`8cd7a309f <https://github.com/openmv/openmv/commit/8cd7a309f>`__
+
+.. _v4_8_0_imageio:
+
+``image.ImageIO`` stream mode and ``close()`` *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:class:`image.ImageIO` — the ``mode`` argument now accepts only lowercase
+``'r'`` / ``'w'`` (uppercase is rejected with an updated error message), and
+opening with ``'w'`` always truncates/recreates the file instead of
+preserving an existing stream. ``ImageIO.close()`` is now idempotent (closing
+an already-closed stream no longer raises) and returns ``None`` instead of the
+stream object.
+
+*Commits:* `715c4cbba <https://github.com/openmv/openmv/commit/715c4cbba>`__,
+`21ceec422 <https://github.com/openmv/openmv/commit/21ceec422>`__
+
+.. _v4_8_0_blaze:
+
+BlazeFace / BlazePalm return value *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :class:`~ml.postprocessing.mediapipe.BlazeFace` and
+:class:`~ml.postprocessing.mediapipe.BlazePalm` post-processors (new in this
+release) now return a single bounding-box list instead of the full per-class
+list — callers index the result directly rather than ``[0]``.
+
+*Commit:* `75e16b573 <https://github.com/openmv/openmv/commit/75e16b573>`__
+
+.. _v4_8_0_mlcb:
+
+ML post-processor callback receives raw tensors *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A :class:`ml.Model` ``predict()`` post-process callback now receives the raw
+(quantized) output-tensor references instead of pre-converted float
+``ndarray``\ s — this avoids memory exhaustion on large models. If no callback
+is supplied, the float ``ndarray`` is still returned. Custom callbacks must
+dequantize the tensors themselves (the built-in post-processors already do).
+
+*Commit:* `84e6ee650 <https://github.com/openmv/openmv/commit/84e6ee650>`__
+
+.. _v4_8_0_clock:
+
+Camera clock decoupled from CSI state *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The sensor clock is now independent of CSI state. ``set_clock`` /
+``set_frequency`` only reconfigures the clock when the requested frequency
+differs by more than a tolerance, and ``get_clk_frequency`` takes a boolean to
+return the exact (rather than nominal) frequency. The default clock is 24 MHz
+on the OpenMV N6 and AE3, so no explicit ``set_clock()`` is needed at boot.
+Scripts that toggled the clock for timing-sensitive captures should re-check
+their assumptions.
+
+*Commits:* `2040a0a00 <https://github.com/openmv/openmv/commit/2040a0a00>`__,
+`09c0052df <https://github.com/openmv/openmv/commit/09c0052df>`__,
+`66ade9aea <https://github.com/openmv/openmv/commit/66ade9aea>`__,
+`7e0a251bc <https://github.com/openmv/openmv/commit/7e0a251bc>`__,
+`e6f43f3ca <https://github.com/openmv/openmv/commit/e6f43f3ca>`__
+
+.. _v4_8_0_tooling:
+
+USB debug protocol and firmware targets *(tooling)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+None of this affects MicroPython scripts. Obsolete USBDBG commands
+(``SCRIPT_SAVE``, ``TEMPLATE_SAVE``, ``DESCRIPTOR_SAVE``, ``ATTR_READ``,
+``ATTR_WRITE``, ``TX_INPUT``, ``SET_TIME``) were removed and unsupported
+commands from older IDEs are now flushed instead of crashing TinyUSB boards on
+connect; the legacy STM32 UVC firmware target was removed. Old host tools
+should update; see the
+`firmware repository <https://github.com/openmv/openmv>`__ history for detail.
+
+*Commits:* `90bd11e93 <https://github.com/openmv/openmv/commit/90bd11e93>`__,
+`657c9a632 <https://github.com/openmv/openmv/commit/657c9a632>`__,
+`35182f035 <https://github.com/openmv/openmv/commit/35182f035>`__
+
+.. _v4_8_0_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v4.8.0 the typical work is:
+
+#. If you used the FLIR Lepton through :mod:`fir`, switch to capturing it as a
+   camera sensor (:ref:`the fir/Lepton change <v4_8_0_fir>`).
+#. Replace any ``buzzer`` use with :class:`machine.PWM`
+   (:ref:`the buzzer removal <v4_8_0_buzzer>`).
+#. Remove ``omv.disable_fb()`` calls
+   (:ref:`the omv.disable_fb() removal <v4_8_0_omv_fb>`).
+#. For :class:`image.ImageIO`: use lowercase ``'r'``/``'w'`` and expect
+   ``'w'`` to truncate (:ref:`the ImageIO change <v4_8_0_imageio>`).
+#. For custom ML post-process callbacks: dequantize the raw tensor references
+   yourself, or rely on the default float path
+   (:ref:`the callback change <v4_8_0_mlcb>`).
+#. Re-check any script that drove the sensor clock for timing-sensitive
+   captures (:ref:`the clock change <v4_8_0_clock>`).

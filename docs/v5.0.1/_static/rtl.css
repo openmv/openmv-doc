@@ -1,0 +1,162 @@
+/*
+ * Right-to-left (Arabic, Hebrew) layout for the Shibuya theme.
+ *
+ * partials/extra-head.html sets <html dir="rtl"> for RTL builds. The page body
+ * (.sy-page) is a flexbox row [left sidebar | main | right TOC], so dir="rtl"
+ * already mirrors the column order automatically -- the nav tree moves to the
+ * right and the "on this page" panel to the left. These rules fix the
+ * remaining details that use *physical* left/right and therefore do not follow
+ * dir on their own, and -- importantly -- keep code blocks and API signatures
+ * left-to-right.
+ *
+ * This file is loaded for every language but every rule is scoped to
+ * [dir="rtl"], so it is completely inert for left-to-right builds.
+ *
+ * STATUS: parked / future work. The RTL layout is currently DISABLED via
+ * RTL_ENABLED = False in conf.py, so <html dir="rtl"> is never emitted and none
+ * of these rules apply. See the "Right-to-left layout ... DISABLED" note in
+ * conf.py for why. Kept here so re-enabling is a one-line change.
+ */
+
+/* ── Keep code and API signatures left-to-right ──────────────────────────
+   Source code, REPL output, and Python signatures are always LTR, even on an
+   RTL page. Inline <code> inside prose is left alone; the bidi algorithm
+   already renders it correctly within the right-to-left text run. */
+[dir="rtl"] .highlight,
+[dir="rtl"] .highlight pre,
+[dir="rtl"] pre,
+[dir="rtl"] .highlighttable,
+[dir="rtl"] .doctest,
+[dir="rtl"] .sig {
+    direction: ltr;
+    text-align: left;
+}
+/* Signature hanging-indent is authored for LTR; restore its physical paddings. */
+[dir="rtl"] .sig {
+    text-indent: -2.4rem;
+    padding: 0.25rem 0.5rem 0.25rem 3rem;
+}
+
+/* ── List indentation moves to the inline-start (right) side ─────────────── */
+[dir="rtl"] .yue ul,
+[dir="rtl"] .yue ol {
+    padding-left: 0;
+    padding-right: 1.625em;
+}
+[dir="rtl"] .yue ol > li,
+[dir="rtl"] .yue ul > li {
+    padding-left: 0;
+    padding-right: 0.375em;
+}
+
+/* ── Admonitions: accent border + title bar on the right edge ────────────── */
+[dir="rtl"] .admonition {
+    border-left: 0;
+    border-right: 4px solid var(--color-3);
+}
+[dir="rtl"] .admonition-title {
+    margin-left: -1rem;
+    margin-right: -19px;
+}
+[dir="rtl"] .admonition.deprecated::before,
+[dir="rtl"] .deprecated::before {
+    left: auto;
+    right: -12px;
+}
+
+/* ── Block quotes: quote bar on the right ────────────────────────────────── */
+[dir="rtl"] blockquote {
+    border-left: 0;
+    border-right: 0.25rem solid var(--yue-c-quote-border);
+    padding-left: 0;
+    padding-right: 1rem;
+}
+
+/* ── Left navigation tree: expand chevron + its reserved gutter flip ──────── */
+[dir="rtl"] .globaltoc li > button {
+    right: auto;
+    left: 0;
+}
+[dir="rtl"] .globaltoc li:has(> button) > a {
+    padding-right: 0;
+    padding-left: 1.6rem;
+}
+
+/* ── Horizontal chevrons point the other way ─────────────────────────────
+   The prev/next page navigation uses chevron-left (Previous) and
+   chevron-right (Next); in RTL "previous" is to the right and "next" to the
+   left, so mirror these horizontal chevrons. Vertical chevrons (down/up, used
+   by dropdowns and the sidebar expanders) are left alone. */
+[dir="rtl"] .i-lucide.chevron-left,
+[dir="rtl"] .i-lucide.chevron-right {
+    transform: scaleX(-1);
+}
+
+/* ── "Copy page" dropdown + button align to the inline-start edge ─────────── */
+[dir="rtl"] #copy-page-content {
+    right: auto;
+    left: 0;
+}
+[dir="rtl"] .copy-page-wrapper.lg\:absolute {
+    right: auto;
+    left: 1.5rem;
+}
+/* The H1 reserves space for the copy-page button with padding-right (button
+   on the right in LTR). In RTL the button is on the left, so reserve there
+   instead or the right-aligned title runs underneath it. */
+[dir="rtl"] .copy-page-wrapper + .yue > section > h1:first-of-type {
+    padding-right: 0;
+    padding-left: 180px;
+}
+/* Dropdown rows: the icon's gap is authored as margin-right (icon-on-left);
+   in RTL the icon is on the right, so move the gap to its inline-start side
+   or the label collides with the icon. Same for the trailing external-link. */
+[dir="rtl"] #copy-page-content .iconify-icon,
+[dir="rtl"] #copy-page-content iconify-icon {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+[dir="rtl"] #copy-page-content a::after {
+    margin-left: 0;
+    margin-right: 0.1rem;
+}
+
+/* ── Search box: the keyboard-shortcut hint moves to the inline-start edge ──
+   It is pinned right:0, which is where the right-aligned RTL query text
+   starts, so the text runs under it. Move it to the left in RTL. */
+[dir="rtl"] .searchbox kbd,
+[dir="rtl"] .searchbox button,
+[dir="rtl"] .searchform input[name="q"] + button {
+    right: auto;
+    left: 0;
+}
+
+/* ── Mobile off-canvas drawers come in from the mirrored side ─────────────
+   Scoped to the mobile breakpoint only. On desktop these sidebars are static
+   flex items that dir="rtl" already mirrors, so touching their transform/
+   position here would push them off-canvas. */
+@media (max-width: 1279px) {
+    [dir="rtl"] #lside {
+        left: auto;
+        right: 0;
+        transform: translate(100%);
+    }
+    [dir="rtl"] #rside {
+        right: auto;
+        left: 0;
+        transform: translate(-110%);
+        box-shadow: 12px 0 16px var(--gray-a1);
+    }
+    /* Open state: slide the drawer in. The theme's #lside[aria-hidden=false]
+       rule has the same specificity as our closed-state rule above and, being
+       loaded first, would lose by source order -- leaving the drawer off-screen
+       (a visible overlay but no content). Re-assert the open transform here. */
+    [dir="rtl"] #lside[aria-hidden="false"],
+    [dir="rtl"] #rside[aria-hidden="false"] {
+        transform: translate(0);
+    }
+    [dir="rtl"] .rside-close {
+        right: auto;
+        left: 16px;
+    }
+}

@@ -1,0 +1,171 @@
+.. _changelog_v3_6_1:
+
+v3.6.1
+======
+
+v3.6.1 is a big release. It introduces the :mod:`imu` module (LSM6DS3), a
+suite of new :mod:`sensor` getter APIs with **IMU-driven auto-rotation**, 4-point
+perspective ``rotation_corr()``, and brings up the **Arduino Portenta H7** with
+the **HIMAX HM01B0** and **OV7690** cameras. Several :mod:`sensor` / :mod:`image`
+APIs changed and TensorFlow was dropped on the M7 — read the breaking changes
+below.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- :mod:`imu` module — accelerometer / gyro / temperature / roll / pitch on
+  the LSM6DS3 (OpenMV 4 / Portenta).
+- **Sensor getters + auto-rotation** — ``get_pixformat()`` / ``get_framesize()``
+  / ``get_hmirror()`` / ``get_vflip()`` / ``get_windowing()``,
+  ``set_transpose()`` / ``set_auto_rotation()``, and IMU-driven snapshot
+  rotation.
+- **Perspective correction** — ``rotation_corr()`` gains ``fov`` and
+  ``corners`` (4-point) keywords.
+- **New hardware** — Arduino Portenta H7, HIMAX HM01B0, and OV7690 camera.
+- **Breaking:** ``set_pixformat()`` / ``set_framesize()`` now return ``None``,
+  :func:`sensor.set_framerate` was removed, TensorFlow was dropped on the M7,
+  and ``lens_corr()`` / ``linpolar()`` now require even dimensions — see the
+  breaking changes.
+
+New features
+------------
+
+- :mod:`imu` — a new IMU module: :func:`imu.acceleration_mg`,
+  :func:`imu.angular_rate_mdps`, :func:`imu.temperature_c`, :func:`imu.roll`,
+  :func:`imu.pitch`, and :func:`imu.sleep` (LSM6DS3 on OpenMV 4 / Portenta).
+- **Sensor getters** — added :func:`sensor.get_pixformat`,
+  ``get_framesize()``, ``get_hmirror()``, ``get_vflip()``,
+  ``get_windowing()``, ``set_transpose()`` / ``get_transpose()``, and
+  ``set_auto_rotation()`` / ``get_auto_rotation()``.
+- **Auto-rotation** — :func:`sensor.snapshot` uses the IMU to flip / mirror /
+  transpose frames when auto-rotation is enabled.
+- ``rotation_corr()`` — added ``fov`` and ``corners`` (4-point
+  perspective) keywords, with perspective-correction examples.
+- ``lcd.init()`` — added a ``bgr`` keyword argument.
+- :class:`collections.deque` — enabled in the MicroPython build.
+- Added ``sensor.OV7690`` and ``sensor.HM01B0`` id constants and a
+  numpy-like :mod:`ulab` image-filter example.
+
+Other changes and improvements
+------------------------------
+
+- Significantly optimized the image filters (median / mode / mean / …) and
+  ``find_circles()`` and lens correction; ``alloc_extra_fb`` can now allocate
+  any number of bytes; the person-detection model was rebuilt with a new
+  average-pool op.
+
+Bug fixes
+---------
+
+Camera and sensors:
+
+- Fixed OV2640 ``sleep()`` (now uses the COM2 standby register instead of the
+  power-down pin), the FSYNC pin configuration, the HM01B0 HSYNC/VSYNC
+  polarities and I2C address/scanning, the Portenta sensor power-down GPIO and
+  camera reset pin, and disabled auto-rotation when the IMU pitch is near
+  90°/270°.
+
+Imaging and system:
+
+- Fixed an image-filter boundary-check bug, a hardfault when disabling the
+  D-cache, booting on boards without an SD card, a ``tf.load()``
+  ``load_to_fb`` bug, the person-detection stack overflow (H7 stack raised to
+  ≥12 KB), and the USB descriptor offsets for high-speed mode on the
+  OpenMV 4 Plus.
+
+Hardware and board support
+--------------------------
+
+- **Arduino Portenta H7** — initial board bring-up (STM32H747 clock/OSC/HSE
+  config, CMSIS headers, ADC, SDRAM, Arduino USB PID).
+- **HIMAX HM01B0** — new monochrome camera driver (Bayer, external-oscillator
+  clock).
+- **OV7690** — new camera driver.
+- **LSM6DS3 IMU** — OpenMV 4 / Portenta.
+
+Breaking API changes
+--------------------
+
+User-visible API breaks between v3.6.0 and v3.6.1. Scope: Python C-modules in
+``modules/`` and Python libraries in ``scripts/libraries/``.
+
+Each change is tagged with its impact:
+
+- *minor* — narrow API; only affects scripts that used it.
+- *behavior* — same API, different results; re-check tuned scripts.
+
+Changes are grouped by impact in that order. If you just want to port your
+code, jump to the :ref:`migration checklist <v3_6_1_migration>` at the end.
+Each commit hash links to its diff on GitHub.
+
+.. _v3_6_1_setframerate:
+
+:func:`sensor.set_framerate` removed *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The no-op :func:`sensor.set_framerate` stub was removed; calling it now raises
+``AttributeError``. Remove the call and control frame timing via
+framesize/exposure instead. (A working ``set_framerate()`` is re-introduced in
+v4.0.2.)
+
+*Commits:* `705e98f91 <https://github.com/openmv/openmv/commit/705e98f91>`__
+
+.. _v3_6_1_tfm7:
+
+TensorFlow dropped on the OpenMV Cam M7 *(minor)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+TensorFlow (the ``tf`` module) was disabled on the OpenMV Cam M7 / OpenMV 3
+(it no longer fits). ``import tf`` on the M7 fails — use an H7-class camera
+for TensorFlow. (``tf`` is re-enabled on the F7 in v3.6.3.)
+
+*Commits:* `2ae875077 <https://github.com/openmv/openmv/commit/2ae875077>`__
+
+.. _v3_6_1_setreturn:
+
+``set_pixformat()`` / ``set_framesize()`` return ``None`` *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:func:`sensor.set_pixformat` and :func:`sensor.set_framesize` now return ``None``
+instead of ``True``, and an unsupported pixel format now raises a
+``ValueError`` instead of an assertion. Code that checked the return value
+(e.g. ``if sensor.set_pixformat(...):``) must stop doing so, and code that
+caught ``AssertionError`` for unsupported formats must catch ``ValueError``.
+
+*Commits:* `f314ac4e7 <https://github.com/openmv/openmv/commit/f314ac4e7>`__
+
+.. _v3_6_1_evendims:
+
+``lens_corr()`` / ``linpolar()`` / ``logpolar()`` require even dimensions *(behavior)*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``image.lens_corr()`` and ``image.linpolar()`` / ``image.logpolar()`` now
+require even image width and height and raise an error on odd dimensions.
+Crop or resize the image to even dimensions before calling these methods.
+
+*Commits:* `b36460a36 <https://github.com/openmv/openmv/commit/b36460a36>`__,
+`2b26ca17b <https://github.com/openmv/openmv/commit/2b26ca17b>`__
+
+.. _v3_6_1_migration:
+
+Migration checklist
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a clean port to v3.6.1 the typical work is:
+
+#. Remove :func:`sensor.set_framerate` calls
+   (:ref:`the set_framerate removal <v3_6_1_setframerate>`).
+#. Move TensorFlow workloads off the OpenMV Cam M7
+   (:ref:`the M7 TensorFlow change <v3_6_1_tfm7>`).
+#. Stop relying on the return value of ``set_pixformat()`` /
+   ``set_framesize()`` and catch ``ValueError`` for unsupported pixel formats
+   (:ref:`the return-value change <v3_6_1_setreturn>`).
+#. Ensure even image dimensions before ``lens_corr()`` / ``linpolar()`` /
+   ``logpolar()`` (:ref:`the even-dimension requirement <v3_6_1_evendims>`).
+
+All other scripts run unchanged.

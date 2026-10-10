@@ -1,0 +1,154 @@
+.. _changelog_ide_v4_8_11:
+
+v4.8.11
+=======
+
+v4.8.11 is a stability and correctness release focused on macOS robustness,
+external-tool serialization, and firmware-update reliability. It is built on
+Qt Creator 14.0.2 (unchanged from the previous release) and contains no
+breaking changes for user projects.
+
+.. contents:: On this page
+   :backlinks: none
+   :local:
+   :depth: 1
+
+Highlights
+----------
+
+- **macOS crash hardening** — eliminated an intermittent silent
+  ``NSRangeException`` abort caused by updating tree/list/combo selections
+  before a panel or popup was fully built or mid-async-refresh, across the
+  outline combo, call/type hierarchy, completion and locator popups, project
+  tree, and more.
+- **Serialized external tools** — the loader progress dialog is now
+  application-modal and suspends all device polling, so running dfu-util,
+  bossac, picotool, and the other tools can no longer be re-entered by the
+  camera stream or auto-reconnect.
+- **Reliable firmware updates** — auto-reconnect can no longer hijack a
+  firmware update mid-flash, which previously dropped the real continuation
+  and popped a spurious DFU dialog.
+- **Hello World safety** — connecting a board no longer occasionally
+  overwrites a Hello World program you have typed into, by comparing against a
+  pristine snapshot instead of the unreliable modified flag.
+- **Clearer DFU errors** — the "no matching interface" error now names the
+  detected board and the firmware file names it accepts instead of dumping a
+  raw VID/PID.
+
+New features
+------------
+
+- **ST Edge AI (STM32N6)** now produces the relocatable network binary
+  directly via the compiler's ``--relocatable`` mode, removing the separate
+  Python relocation step and the extra **Relocation CLI Options** field from
+  the dialog (`7613135c5 <https://github.com/openmv/qt-creator/commit/7613135c5>`__).
+
+Other changes and improvements
+------------------------------
+
+- **DFU interface errors** now name the detected board and list the firmware
+  file names that board accepts, with guidance to rename or pick the correct
+  file, instead of dumping a raw VID/PID
+  (`ac509b369 <https://github.com/openmv/qt-creator/commit/ac509b369>`__).
+- **macOS tab navigation** shortcuts now use reachable ``Cmd+Shift+[`` /
+  ``Cmd+Shift+]`` (prev/next) and ``Cmd+Alt+[`` / ``Cmd+Alt+]`` (move) instead
+  of the unpressable ``Ctrl+PageUp`` / ``Ctrl+PageDown``; Windows and Linux
+  bindings are unchanged
+  (`6c09e10b1 <https://github.com/openmv/qt-creator/commit/6c09e10b1>`__).
+- **License/board requests** to ``upload.openmv.io`` (``check.php``,
+  ``insert.php``, ``register.php``) now send a per-platform browser-style
+  ``User-Agent`` so the license server can identify the client OS
+  (`6bfd74b36 <https://github.com/openmv/qt-creator/commit/6bfd74b36>`__).
+
+Bug fixes
+---------
+
+- Fixed an intermittent macOS crash (a silent ``NSRangeException`` abort with
+  no crash dialog) where updating tree/list/combo selections while a panel or
+  popup was still hidden or mid-async-refresh would index into an unbuilt
+  Cocoa accessibility cache. Selection, scroll, and expand are now deferred or
+  guarded across the outline combo, call/type hierarchy, code-completion
+  popup, locator popup, **Save Items** dialog, project tree, folder
+  navigation, **Open Documents**, the **Issues**/**Tasks** list, and the
+  tree-view combobox
+  (`94c8f9def <https://github.com/openmv/qt-creator/commit/94c8f9def>`__,
+  `ae40a3806 <https://github.com/openmv/qt-creator/commit/ae40a3806>`__,
+  `ed23b5c60 <https://github.com/openmv/qt-creator/commit/ed23b5c60>`__,
+  `c6baf89cd <https://github.com/openmv/qt-creator/commit/c6baf89cd>`__,
+  `d7b6f5838 <https://github.com/openmv/qt-creator/commit/d7b6f5838>`__,
+  `d8b70609c <https://github.com/openmv/qt-creator/commit/d8b70609c>`__,
+  `21740d9c2 <https://github.com/openmv/qt-creator/commit/21740d9c2>`__,
+  `9217fc8a9 <https://github.com/openmv/qt-creator/commit/9217fc8a9>`__,
+  `fe75924d5 <https://github.com/openmv/qt-creator/commit/fe75924d5>`__,
+  `9cc247ffb <https://github.com/openmv/qt-creator/commit/9cc247ffb>`__,
+  `3ca71e915 <https://github.com/openmv/qt-creator/commit/3ca71e915>`__,
+  `559b6005f <https://github.com/openmv/qt-creator/commit/559b6005f>`__).
+- Fixed a separate macOS crash (``NSRangeException``/``SIGABRT``) in the code
+  outline combobox caused by a stale out-of-range index when the Python
+  language server refreshed symbols asynchronously; ``setCurrentIndex`` now
+  re-validates row/column bounds against the live model
+  (`3e0ce89f1 <https://github.com/openmv/qt-creator/commit/3e0ce89f1>`__).
+- Hardened the **ROMFS model editor** and **dataset editor** against
+  ``QFileSystemModel`` async races by deferring the tree pre-expand until the
+  directory finishes loading and only selecting newly created
+  files/folders/models once the model has a valid index for them
+  (`5eaa91aff <https://github.com/openmv/qt-creator/commit/5eaa91aff>`__).
+- External-tool operations (dfu-util, bossac, picotool, alif, imx, ST Cube,
+  mpy-cross, vela, ST Edge AI, video convert) no longer let the camera stream
+  or queued work re-enter a device operation behind the running tool: the
+  loader progress dialog is now application-modal and device polling is fully
+  suspended while it is shown
+  (`3069e8ec0 <https://github.com/openmv/qt-creator/commit/3069e8ec0>`__).
+- Auto-reconnect no longer hijacks a firmware update mid-flash via a sticky
+  firmware-update-in-progress flag latched for the whole
+  forced/bootloader/erase operation that the reconnect timer now also checks
+  (`b7745484a <https://github.com/openmv/qt-creator/commit/b7745484a>`__).
+- Connecting a board no longer occasionally overwrites a Hello World program
+  you have typed into, by comparing the live document against a pristine
+  snapshot captured at open instead of relying on the unreliable modified flag
+  before auto-syncing the per-sensor example
+  (`6f4539d44 <https://github.com/openmv/qt-creator/commit/6f4539d44>`__).
+- Scrolling up in the serial terminal during fast continuous output no longer
+  yanks the view back to the bottom: the append paths now follow the sticky
+  user-scroll-intent flag instead of re-deriving "at bottom" from a scrollbar
+  position that each chunk had just re-pinned
+  (`9aea0f1a2 <https://github.com/openmv/qt-creator/commit/9aea0f1a2>`__).
+- ``Escape`` now reliably closes the **Code Profiler** dialog regardless of
+  which child widget has focus
+  (`203ffd1e6 <https://github.com/openmv/qt-creator/commit/203ffd1e6>`__).
+- On macOS, global menu and command keyboard shortcuts now work app-wide
+  instead of only when the editor had focus, by parenting the hidden menu bar
+  into the main window on every platform
+  (`6d52cbe73 <https://github.com/openmv/qt-creator/commit/6d52cbe73>`__).
+- The bundled Python interpreter is now forced as the default on every launch,
+  so a stale persisted default no longer silently disables the Python language
+  server (completion and call hints)
+  (`1d5069a52 <https://github.com/openmv/qt-creator/commit/1d5069a52>`__).
+- Hardened OpenMV settings I/O against re-entrancy: ``beginGroup`` /
+  ``endGroup`` on the shared global settings object (which spawn modal dialogs
+  and run nested event loops) are replaced with full key paths, so a
+  re-entrant settings access during a modal dialog can no longer misfile keys
+  under the wrong group. On-disk paths are byte-identical, so existing users'
+  settings are preserved exactly
+  (`91e78a9e3 <https://github.com/openmv/qt-creator/commit/91e78a9e3>`__,
+  `f4bb9f48c <https://github.com/openmv/qt-creator/commit/f4bb9f48c>`__).
+- Fixed a regression where several dialogs and helpers that receive the shared
+  settings object did bare-key I/O at the settings root instead of under
+  ``OpenMV/``, losing the model zoo's window geometry, splitter, and expanded
+  state and the six loader dialogs' state (dfu-util, imx, bossac, alif,
+  picotool, and ST Cube Programmer) along with the mpy-cross, vela, and ST
+  Edge AI compiler options; the group is now baked into each key so the
+  correct path is used
+  (`258448bdf <https://github.com/openmv/qt-creator/commit/258448bdf>`__).
+
+Platform and tool support
+-------------------------
+
+- **Qt Creator base:** 14.0.2.
+- **OpenMV IDE** version bumped to 4.8.11.
+
+Breaking changes
+----------------
+
+None. All changes are bug fixes and improvements layered on the existing Qt
+Creator 14.0.2 base; existing projects and workflows are unaffected.

@@ -1,0 +1,276 @@
+:mod:`time` --- time related functions
+======================================
+
+.. module:: time
+   :synopsis: time related functions
+
+The ``time`` module provides functions for getting the current time and date,
+measuring time intervals, and for delays.
+
+**Time Epoch**: The Alif- and i.MX RT-based OpenMV Cams use the POSIX epoch
+of 1970-01-01 00:00:00 UTC. The STM32-based OpenMV Cams use an epoch of
+2000-01-01 00:00:00 UTC. The epoch year can be determined at runtime with
+``gmtime(0)[0]``.
+
+**Maintaining actual calendar date/time**: This requires a Real Time Clock
+(RTC). On the OpenMV Cam the system time is provided by the
+:class:`machine.RTC` object. The current calendar time may be set with
+``machine.RTC().datetime(tuple)`` and is maintained by one of:
+
+* A backup battery (an optional component on some OpenMV Cams).
+* A networked time protocol such as :mod:`ntptime` (requires a network
+  connection).
+* Setting it manually on each power-up. The RTC is then typically maintained
+  across soft resets, but is lost on power loss unless a backup battery is
+  fitted.
+
+If the calendar time is not maintained, the functions below that reference
+the current absolute time will not behave as expected.
+
+Functions
+---------
+
+.. function:: gmtime(secs: Optional[int] = None) -> Tuple[int, int, int, int, int, int, int, int]
+              localtime(secs: Optional[int] = None) -> Tuple[int, int, int, int, int, int, int, int]
+
+   Convert the time *secs* expressed in seconds since the Epoch (see above) into an
+   8-tuple which contains: ``(year, month, mday, hour, minute, second, weekday, yearday)``
+   If *secs* is not provided or None, then the current time from the RTC is used.
+
+   The `gmtime()` function returns a date-time tuple in UTC, and `localtime()` returns a
+   date-time tuple in local time.
+
+   The format of the entries in the 8-tuple are:
+
+   * year includes the century (for example 2014).
+   * month   is 1-12
+   * mday    is 1-31
+   * hour    is 0-23
+   * minute  is 0-59
+   * second  is 0-59
+   * weekday is 0-6 for Mon-Sun
+   * yearday is 1-366
+
+.. function:: mktime(date_time_tuple: Tuple[int, int, int, int, int, int, int, int]) -> int
+
+   This is inverse function of localtime. It's argument is a full 8-tuple
+   which expresses a time as per localtime. It returns an integer which is
+   the number of seconds since the time epoch.
+
+.. function:: sleep(seconds: float) -> None
+
+   Sleep for the given number of seconds. *seconds* may be a floating-point
+   number, to sleep for a fractional number of seconds. For finer-grained or
+   integer-only delays use the `sleep_ms()` and `sleep_us()` functions.
+
+   Calling :func:`sleep`, including ``sleep(0)`` is guaranteed to call pending callback
+   functions.
+
+.. function:: sleep_ms(ms: int) -> None
+
+   Delay for given number of milliseconds, should be positive or 0.
+
+   This function will delay for at least the given number of milliseconds, but
+   may take longer than that if other processing must take place, for example
+   interrupt handlers or other threads.  Passing in 0 for *ms* will still allow
+   this other processing to occur.  Use `sleep_us()` for more precise delays.
+
+   Calling :func:`sleep_ms`, including ``sleep_ms(0)`` is guaranteed to call
+   pending callback functions.
+
+.. function:: sleep_us(us: int) -> None
+
+   Delay for given number of microseconds, should be positive or 0.
+
+   This function attempts to provide an accurate delay of at least *us*
+   microseconds, but it may take longer if the system has other higher priority
+   processing to perform.
+
+.. function:: ticks_ms() -> int
+
+    Returns an increasing millisecond counter with an arbitrary reference point, that
+    wraps around after some value.
+
+    The wrap-around value is not explicitly exposed, but we will
+    refer to it as *TICKS_MAX* to simplify discussion. Period of the values is
+    *TICKS_PERIOD = TICKS_MAX + 1*. *TICKS_PERIOD* is guaranteed to be a power of
+    two, but otherwise may differ from port to port. The same period value is used
+    for all of `ticks_ms()`, `ticks_us()`, `ticks_cpu()` functions (for
+    simplicity). Thus, these functions will return a value in range [*0* ..
+    *TICKS_MAX*], inclusive, total *TICKS_PERIOD* values. Note that only
+    non-negative values are used. For the most part, you should treat values returned
+    by these functions as opaque. The only operations available for them are
+    `ticks_diff()` and `ticks_add()` functions described below.
+
+    Note: Performing standard mathematical operations (+, -) or relational
+    operators (<, <=, >, >=) directly on these value will lead to invalid
+    result. Performing mathematical operations and then passing their results
+    as arguments to `ticks_diff()` or `ticks_add()` will also lead to
+    invalid results from the latter functions.
+
+.. function:: ticks_us() -> int
+
+   Just like `ticks_ms()` above, but in microseconds.
+
+.. function:: ticks_cpu() -> int
+
+   Similar to `ticks_ms()` and `ticks_us()`, but with the highest possible resolution
+   in the system. This is usually CPU clocks, and that's why the function is named that
+   way. But it doesn't have to be a CPU clock, some other timing source available in a
+   system (e.g. high-resolution timer) can be used instead. The exact timing unit
+   (resolution) of this function is not specified on ``time`` module level, but
+   documentation for a specific port may provide more specific information. This
+   function is intended for very fine benchmarking or very tight real-time loops.
+   Avoid using it in portable code. It is available on all OpenMV Cams.
+
+
+.. function:: ticks_add(ticks: int, delta: int) -> int
+
+   Offset ticks value by a given number, which can be either positive or negative.
+   Given a *ticks* value, this function allows to calculate ticks value *delta*
+   ticks before or after it, following modular-arithmetic definition of tick values
+   (see `ticks_ms()` above). *ticks* parameter must be a direct result of call
+   to `ticks_ms()`, `ticks_us()`, or `ticks_cpu()` functions (or from previous
+   call to `ticks_add()`). However, *delta* can be an arbitrary integer number
+   or numeric expression. `ticks_add()` is useful for calculating deadlines for
+   events/tasks. (Note: you must use `ticks_diff()` function to work with
+   deadlines.)
+
+   Examples::
+
+        # Find out what ticks value there was 100ms ago
+        print(ticks_add(time.ticks_ms(), -100))
+
+        # Calculate deadline for operation and test for it
+        deadline = ticks_add(time.ticks_ms(), 200)
+        while ticks_diff(deadline, time.ticks_ms()) > 0:
+            do_a_little_of_something()
+
+        # Find out TICKS_MAX used by this port
+        print(ticks_add(0, -1))
+
+
+.. function:: ticks_diff(ticks1: int, ticks2: int) -> int
+
+   Measure ticks difference between values returned from `ticks_ms()`, `ticks_us()`,
+   or `ticks_cpu()` functions, as a signed value which may wrap around.
+
+   The argument order is the same as for subtraction
+   operator, ``ticks_diff(ticks1, ticks2)`` has the same meaning as ``ticks1 - ticks2``.
+   However, values returned by `ticks_ms()`, etc. functions may wrap around, so
+   directly using subtraction on them will produce incorrect result. That is why
+   `ticks_diff()` is needed, it implements modular (or more specifically, ring)
+   arithmetic to produce correct result even for wrap-around values (as long as they not
+   too distant in between, see below). The function returns **signed** value in the range
+   [*-TICKS_PERIOD/2* .. *TICKS_PERIOD/2-1*] (that's a typical range definition for
+   two's-complement signed binary integers). If the result is negative, it means that
+   *ticks1* occurred earlier in time than *ticks2*. Otherwise, it means that
+   *ticks1* occurred after *ticks2*. This holds **only** if *ticks1* and *ticks2*
+   are apart from each other for no more than *TICKS_PERIOD/2-1* ticks. If that does
+   not hold, incorrect result will be returned. Specifically, if two tick values are
+   apart for *TICKS_PERIOD/2-1* ticks, that value will be returned by the function.
+   However, if *TICKS_PERIOD/2* of real-time ticks has passed between them, the
+   function will return *-TICKS_PERIOD/2* instead, i.e. result value will wrap around
+   to the negative range of possible values.
+
+   Informal rationale of the constraints above: Suppose you are locked in a room with no
+   means to monitor passing of time except a standard 12-notch clock. Then if you look at
+   dial-plate now, and don't look again for another 13 hours (e.g., if you fall for a
+   long sleep), then once you finally look again, it may seem to you that only 1 hour
+   has passed. To avoid this mistake, just look at the clock regularly. Your application
+   should do the same. "Too long sleep" metaphor also maps directly to application
+   behaviour: don't let your application run any single task for too long. Run tasks
+   in steps, and do time-keeping in between.
+
+   `ticks_diff()` is designed to accommodate various usage patterns, among them:
+
+   * Polling with timeout. In this case, the order of events is known, and you will deal
+     only with positive results of `ticks_diff()`::
+
+        # Wait for GPIO pin to be asserted, but at most 500us
+        start = time.ticks_us()
+        while pin.value() == 0:
+            if time.ticks_diff(time.ticks_us(), start) > 500:
+                raise TimeoutError
+
+   * Scheduling events. In this case, `ticks_diff()` result may be negative
+     if an event is overdue::
+
+        # This code snippet is not optimized
+        now = time.ticks_ms()
+        scheduled_time = task.scheduled_time()
+        if ticks_diff(scheduled_time, now) > 0:
+            print("Too early, let's nap")
+            sleep_ms(ticks_diff(scheduled_time, now))
+            task.run()
+        elif ticks_diff(scheduled_time, now) == 0:
+            print("Right at time!")
+            task.run()
+        elif ticks_diff(scheduled_time, now) < 0:
+            print("Oops, running late, tell task to run faster!")
+            task.run(run_faster=true)
+
+   Note: Do not pass `time()` values to `ticks_diff()`, you should use
+   normal mathematical operations on them. But note that `time()` may (and will)
+   also overflow. This is known as https://en.wikipedia.org/wiki/Year_2038_problem .
+
+
+.. function:: time() -> int
+
+   Returns the number of seconds, as an integer, since the Epoch, assuming that
+   underlying RTC is set and maintained as described above. If an RTC is not set, this
+   function returns number of seconds since a port-specific reference point in time (for
+   embedded boards without a battery-backed RTC, usually since power up or reset). If you
+   want to develop portable MicroPython application, you should not rely on this function
+   to provide higher than second precision.  If you need higher precision, absolute
+   timestamps, use `time_ns()`.  If relative times are acceptable then use the
+   `ticks_ms()` and `ticks_us()` functions.  If you need calendar time, `gmtime()` or
+   `localtime()` without an argument is a better choice.
+
+   .. admonition:: Difference to CPython
+      :class: attention
+
+      In CPython this function returns the number of seconds since the Unix
+      epoch (1970-01-01 00:00 UTC) as a floating-point value, usually with
+      microsecond precision. On the OpenMV Cam it returns an **integer** with
+      one-second precision -- the hardware cannot represent both a long time
+      range and sub-second precision in a float -- and the epoch differs by
+      board (see *Time Epoch* above). Without a battery-backed RTC that has
+      been set, it instead counts seconds since power-up/reset.
+
+.. function:: time_ns() -> int
+
+    Similar to `time()` but returns nanoseconds since the Epoch, as an integer (usually
+    a big integer, so will allocate on the heap).
+
+Constructors
+------------
+
+.. class:: clock()
+
+   Returns a clock object.
+
+   Methods
+   -------
+
+   .. method:: tick() -> None
+
+      Starts tracking elapsed time.
+
+   .. method:: fps() -> float
+
+      Stops tracking the elapsed time and returns the current FPS
+      (frames per second).
+
+      Always call ``tick`` first before calling this function.
+
+   .. method:: avg() -> float
+
+      Stops tracking the elapsed time and returns the current average elapsed time
+      in milliseconds.
+
+      Always call ``tick`` first before calling this function.
+
+   .. method:: reset() -> None
+
+      Resets the clock object.
