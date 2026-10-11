@@ -83,6 +83,36 @@ def test_make_offline(load_ci, tmp_path):
     assert se.MARK in css and ".nav-versions" in css  # both switchers hidden
 
 
+def test_make_offline_drops_legacy_only_assets(load_ci, tmp_path):
+    # The website also carries translated copies of the legacy section
+    # (<locale>/legacy/). Those must not make legacy assets look shared.
+    se = load_ci("snapshot_english")
+    rel = tmp_path / "release"
+    for d in ("legacy", "de/legacy", "library", "_downloads/aaaa", "_downloads/bbbb", "_images"):
+        (rel / d).mkdir(parents=True)
+    (rel / "_downloads" / "aaaa" / "old.zip").write_text("x", encoding="utf-8")
+    (rel / "_downloads" / "bbbb" / "shared.zip").write_text("x", encoding="utf-8")
+    (rel / "_images" / "old.png").write_text("x", encoding="utf-8")
+    (rel / "_images" / "new.png").write_text("x", encoding="utf-8")
+    legacy_page = ('<a href="../_downloads/aaaa/old.zip"></a><img src="../_images/old.png">'
+                   '<a href="../_downloads/bbbb/shared.zip"></a>')
+    (rel / "legacy" / "files.html").write_text(legacy_page, encoding="utf-8")
+    (rel / "de" / "legacy" / "files.html").write_text(legacy_page, encoding="utf-8")
+    (rel / "library" / "index.html").write_text(
+        '<a href="../_downloads/bbbb/shared.zip"></a><img src="../_images/new.png">',
+        encoding="utf-8")
+    out = tmp_path / "offline"
+
+    se.make_offline(str(rel), str(out), ["de"])
+
+    assert not (out / "legacy").exists()
+    assert not (out / "de").exists()
+    assert not (out / "_downloads" / "aaaa").exists()             # legacy-only download
+    assert not (out / "_images" / "old.png").exists()             # legacy-only image
+    assert (out / "_downloads" / "bbbb" / "shared.zip").exists()  # also used by a shipped page
+    assert (out / "_images" / "new.png").exists()
+
+
 def test_cmd_reconcile_demotes_only_non_latest_current(load_ci, tmp_path):
     se = load_ci("snapshot_english")
     docs = tmp_path / "docs"

@@ -113,18 +113,17 @@ def make_offline(release_dir, out_dir, locs, stubs_dir=None):
     # Drop the assets that ONLY the Legacy pages reference -- the camera photos,
     # demo videos, and every download file -- from the shared collected dirs, so
     # the desktop/IDE bundle carries none of the historical downloads. Anything
-    # also referenced by a non-legacy page is kept.
+    # also referenced by a page the bundle ships is kept.
     import re as _re
 
-    def _asset_refs(html_root, want_legacy):
+    def _asset_refs(html_root, want_dir):
         # _downloads files have URL-encoded names in hrefs, so match them at the
         # per-file hash-dir level (hashes are always clean hex); _images/_sources
         # match at the full path.
         refs = set()
         for root, _dirs, files in os.walk(html_root):
             rel = os.path.relpath(root, html_root)
-            in_legacy = rel == "legacy" or rel.startswith("legacy" + os.sep)
-            if in_legacy != want_legacy:
+            if not want_dir(rel.split(os.sep)):
                 continue
             for fn in files:
                 if not fn.endswith(".html"):
@@ -138,7 +137,16 @@ def make_offline(release_dir, out_dir, locs, stubs_dir=None):
                     refs.add(m.split("#")[0].split("?")[0])
         return refs
 
-    legacy_only = _asset_refs(release_dir, True) - _asset_refs(release_dir, False)
+    # Legacy pages are legacy/ and every translated copy of it (<locale>/legacy/).
+    # The kept set comes from the pages actually copied into the bundle: judging
+    # it from the whole release counted the translated legacy pages as
+    # "non-legacy", so every legacy asset looked shared and none was dropped.
+    def _is_legacy(parts):
+        return (parts[0] == "legacy") or (len(parts) > 1 and parts[0] in locs
+                                          and parts[1] == "legacy")
+
+    legacy_only = (_asset_refs(release_dir, _is_legacy)
+                   - _asset_refs(out_dir, lambda parts: True))
     for rel in legacy_only:
         p = os.path.join(out_dir, *rel.split("/"))
         if os.path.isdir(p):
