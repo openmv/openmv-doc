@@ -27,8 +27,9 @@ unrelated upstream Qt Creator commits are not.
 .. raw:: html
 
    <details class="changelog-major" open>
-     <summary>v5 <span class="count">(2 releases)</span></summary>
+     <summary>v5 <span class="count">(3 releases)</span></summary>
      <ul class="changelog-versions">
+       <li><a href="v5.1.1.html">v5.1.1</a></li>
        <li><a href="v5.1.0.html">v5.1.0</a></li>
        <li><a href="v5.0.0.html">v5.0.0</a></li>
      </ul>
