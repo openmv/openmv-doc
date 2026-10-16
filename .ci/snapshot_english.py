@@ -85,6 +85,83 @@ def make_web(snapshot, locs):
           f"lang switcher {'hidden' if hid else 'already/none'}")
 
 
+def prune_legacy_links(out_dir):
+    """Remove every pointer to the Legacy pages the offline bundle leaves out:
+    the sidebar toctree entry (on every page), the "next page" links from the
+    page before it in the toctree (license.html), and the Legacy documents'
+    entries in the search index (their doc indices stay so the others line up;
+    nothing refers to them any more)."""
+    import re as _re
+    up = r"(?:\.\./)*"
+    patterns = [
+        # sidebar: <li class="toctree-l1 ..."><a ... href=legacy/index.html>Legacy</a></li>
+        _re.compile(r'<li class="toctree-l1[^"]*"><a class="reference internal" '
+                    r'href="?' + up + r'legacy/index\.html"?>[^<]*</a></li>'),
+        # <head>: <link title="..." href=legacy/index.html rel=next>
+        _re.compile(r'<link [^>]*href="?' + up + r'legacy/[^>]*>'),
+        # footer: <div class=navigation-next><a href=legacy/index.html> ... </a></div>
+        _re.compile(r'<div class="?navigation-next"?><a href="?' + up +
+                    r'legacy/[^>]*>.*?</a></div>', _re.S),
+    ]
+    leftover = []
+    for root, _dirs, files in os.walk(out_dir):
+        for fn in files:
+            if not fn.endswith(".html"):
+                continue
+            path = os.path.join(root, fn)
+            with open(path, encoding="utf-8") as fh:
+                txt = fh.read()
+            new = txt
+            for pat in patterns:
+                new = pat.sub("", new)
+            if new != txt:
+                with open(path, "w", encoding="utf-8", newline="") as fh:
+                    fh.write(new)
+            if _re.search(r'href="?' + up + r'legacy/', new):
+                leftover.append(os.path.relpath(path, out_dir))
+    if leftover:
+        print(f"  WARNING: links to legacy/ remain in {len(leftover)} page(s), "
+              f"e.g. {leftover[:3]}")
+
+    index = os.path.join(out_dir, "searchindex.js")
+    if not os.path.isfile(index):
+        return
+    with open(index, encoding="utf-8") as fh:
+        txt = fh.read()
+    head, body = txt[:txt.index("(") + 1], txt[txt.index("(") + 1:txt.rindex(")")]
+    data = json.loads(body)
+    gone = {i for i, name in enumerate(data["docnames"])
+            if name == "legacy" or name.startswith("legacy/")}
+    if not gone:
+        return
+
+    def keep_docs(value):
+        # terms/titleterms map to a doc index or a list of them
+        if isinstance(value, int):
+            return None if value in gone else value
+        value = [i for i in value if i not in gone]
+        return value or None
+
+    def keep_refs(value):
+        # alltitles/indexentries/objects map to lists of [docindex, ...]
+        value = [ref for ref in value if ref[0] not in gone]
+        return value or None
+
+    for key, keep in (("terms", keep_docs), ("titleterms", keep_docs),
+                      ("alltitles", keep_refs), ("indexentries", keep_refs),
+                      ("objects", keep_refs)):
+        table = data.get(key, {})
+        for name in list(table):
+            value = keep(table[name])
+            if value is None:
+                del table[name]
+            else:
+                table[name] = value
+    with open(index, "w", encoding="utf-8", newline="") as fh:
+        fh.write(head + json.dumps(data, ensure_ascii=False,
+                                   separators=(",", ":")) + txt[txt.rindex(")"):])
+
+
 def make_offline(release_dir, out_dir, locs, stubs_dir=None):
     """Build the committed offline/ bundle that desktop apps consume:
       * the Qt IDE displays the rendered English HTML,
@@ -153,6 +230,7 @@ def make_offline(release_dir, out_dir, locs, stubs_dir=None):
             shutil.rmtree(p)
         elif os.path.isfile(p):
             os.remove(p)
+    prune_legacy_links(out_dir)
     # drop llms (unused by either consumer); KEEP _sources for Studio's genpyi
     for rel in ("llms.txt", "llms-full.txt"):
         p = os.path.join(out_dir, rel)
