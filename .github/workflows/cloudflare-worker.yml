@@ -1,0 +1,27 @@
+name: Cloudflare Worker
+
+# Deploys the /latest/* redirect Worker (.ci/cloudflare/) when its code or
+# config changes on master. Releases need no redeploy: the Worker reads the
+# newest release from /versions.json on each request. Run it by hand
+# (workflow_dispatch) to redeploy after rotating the token.
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - ".ci/cloudflare/**"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy Worker
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        workingDirectory: .ci/cloudflare
+        command: deploy
