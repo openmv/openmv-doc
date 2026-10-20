@@ -4,20 +4,23 @@
 // (meta refresh + JS) and the 404.html shim handle browsers, but clients that
 // don't run JavaScript (curl, crawlers, LLM fetchers) get a 404 for any
 // /latest/<page>. This Worker answers /latest and /latest/* with a 302 to the
-// same path under the newest release, keeping the query string.
+// same path under the newest release, keeping the query string. The site root
+// "/" gets a 302 straight to the newest release too (one hop, not via
+// /latest/).
 //
 // The newest release is read from /versions.json (written by gen_versions.py
 // on every deploy), so nothing here changes between releases. 302, not 301,
 // because the target moves with each release.
 //
-// Route: docs.openmv.io/latest*   (see wrangler.toml)
+// Routes: docs.openmv.io/latest* and docs.openmv.io/ (root only; see
+// wrangler.toml)
 
 const VERSIONS_TTL = 300; // seconds to cache versions.json at the edge
 
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const m = url.pathname.match(/^\/latest(\/.*)?$/);
+    const m = url.pathname === "/" ? [] : url.pathname.match(/^\/latest(\/.*)?$/);
     if (!m) return fetch(request);
 
     let latest = null;

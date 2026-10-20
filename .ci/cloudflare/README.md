@@ -8,10 +8,11 @@ run JavaScript (curl, crawlers, LLM fetch tools, intersphinx) get a 404 for any
 
 This Worker fixes that at the Cloudflare edge. It answers `/latest` and
 `/latest/*` with a **302** to the same path under the newest release, keeping
-the query string:
+the query string. The site root `/` gets a 302 straight to the newest release:
 
 ```
 /latest/library/index.html?x=1  ->  /v5.0.1/library/index.html?x=1
+/                               ->  /v5.0.1/
 ```
 
 The newest release comes from `/versions.json`, which `.ci/gen_versions.py`
@@ -56,9 +57,11 @@ cd .ci/cloudflare && npx wrangler deploy
 ## Files
 
 - `latest-redirect.js`: the Worker.
-- `wrangler.toml`: the Worker name (`docs-latest-redirect`) and its route,
-  `docs.openmv.io/latest*` on the `openmv.io` zone. Only matching requests run
-  the Worker, so the rest of the site never touches it.
+- `wrangler.toml`: the Worker name (`docs-latest-redirect`) and its routes on
+  the `openmv.io` zone: `docs.openmv.io/latest*`, and `docs.openmv.io/`, which
+  has no wildcard and so matches only the root. Only matching requests run the
+  Worker, so the rest of the site, including `/robots.txt` and `/llms.txt`,
+  never touches it.
 
 The machine-read files `llms.txt`, `llms-full.txt` and `objects.inv` don't
 depend on this Worker. `gen_versions.py` also writes real copies of them into
