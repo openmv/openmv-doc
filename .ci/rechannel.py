@@ -4,8 +4,8 @@
 A release is a *copy* of the rolling ``dev`` build (no rebuild). The build bakes
 the channel into a few absolute/root-relative URLs:
 
-  * ``https://docs.openmv.io/dev/...``  -- canonical, og:url, llms.txt, the
-    "Open in ChatGPT" raw-source base.
+  * ``https://docs.openmv.io/dev/...``  -- canonical, og:url, llms.txt,
+    sitemap.xml, the "Open in ChatGPT" raw-source base.
   * ``href=/dev/<lang>/...``            -- hreflang alternates + the language
     switcher (minified HTML, so the value may be unquoted).
 
@@ -23,7 +23,7 @@ import sys
 
 def rechannel(root, frm, to):
     """Rewrite the version channel ``frm`` -> ``to`` in the channel-bearing
-    URL/attribute forms of every .html/.txt file under ``root``. Returns
+    URL/attribute forms of every .html/.txt/.xml file under ``root``. Returns
     ``(changed, scanned)``."""
     abs_re = re.compile(r"docs\.openmv\.io/" + re.escape(frm) + r"/")
     # (href|src)= , an optional quote, then /<frm>/
@@ -34,7 +34,7 @@ def rechannel(root, frm, to):
     scanned = 0
     for dp, _, files in os.walk(root):
         for fn in files:
-            if not (fn.endswith(".html") or fn.endswith(".txt")):
+            if not fn.endswith((".html", ".txt", ".xml")):
                 continue
             p = os.path.join(dp, fn)
             scanned += 1

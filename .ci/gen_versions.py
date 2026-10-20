@@ -7,6 +7,9 @@ folders actually present (``dev`` + ``vX.Y.Z`` snapshots) and writes:
   docs/versions.json        -- consumed by static/nav-versions.js (the switcher)
   docs/index.html           -- root redirect to /latest/
   docs/latest/index.html    -- redirect to the newest release (or /dev/ if none)
+  docs/latest/{llms.txt,llms-full.txt,objects.inv}, docs/llms*.txt
+                            -- copies of the newest release's machine-read files
+  docs/robots.txt           -- allow all; Sitemap: the newest release's sitemap
 
 "dev" is the rolling master build; each "vX.Y.Z" is a frozen snapshot. "latest"
 is an alias for the newest release. Usage: gen_versions.py <docs-dir>
@@ -15,6 +18,7 @@ import sys
 import os
 import re
 import json
+import shutil
 
 VERSION_RE = re.compile(r"^v\d+\.\d+")
 
@@ -22,6 +26,15 @@ VERSION_RE = re.compile(r"^v\d+\.\d+")
 # reachable "legacy" snapshots in the switcher but are never treated as the
 # newest/"latest" release, so the root never redirects to them.
 LEGACY_BEFORE = (5, 0, 0)
+
+# Machine-read files of the newest release, copied to /latest/ (and, for the
+# sphinx-llms-txt files, the site root) for clients that don't follow the
+# JavaScript redirects: name -> also copy to the site root.
+MIRROR_FILES = {
+    "llms.txt": True,
+    "llms-full.txt": True,
+    "objects.inv": False,  # intersphinx inventory
+}
 
 
 def version_key(name):
@@ -102,6 +115,34 @@ def main(argv=None):
     os.makedirs(os.path.join(docs, "latest"), exist_ok=True)
     with open(os.path.join(docs, "latest", "index.html"), "w", encoding="utf-8") as f:
         f.write(redirect_html(latest_target))
+
+    # GitHub Pages can't issue HTTP redirects, and the /latest/ deep-link
+    # rewrite in 404.html needs JavaScript, so non-browser clients (curl, LLM
+    # fetchers, intersphinx) 404 on /latest/<file>. Publish real copies of the
+    # machine-read files so they resolve without a redirect. They are
+    # byte-identical to the release's files (git stores the blob once).
+    for name, at_root in MIRROR_FILES.items():
+        src = os.path.join(docs, latest if latest else "dev", name)
+        dsts = [os.path.join(docs, "latest", name)]
+        if at_root:
+            dsts.append(os.path.join(docs, name))
+        for dst in dsts:
+            if os.path.exists(src):
+                shutil.copyfile(src, dst)
+            elif os.path.exists(dst):
+                os.remove(dst)
+
+    # robots.txt advertises only the newest release's sitemap, so search engines
+    # index one current copy rather than dev + every snapshot. Snapshots built
+    # before sitemap support have no sitemap.xml; then just allow everything.
+    lines = ["User-agent: *", "Allow: /"]
+    sitemap_channel = latest if latest else "dev"
+    if os.path.exists(os.path.join(docs, sitemap_channel, "sitemap.xml")):
+        lines += ["", "Sitemap: https://docs.openmv.io/{}/sitemap.xml".format(
+            sitemap_channel)]
+    with open(os.path.join(docs, "robots.txt"), "w", encoding="utf-8",
+              newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
 
     print("versions.json:", [v["id"] for v in versions], "latest:", latest)
 

@@ -58,3 +58,33 @@ def test_main_writes_versions_and_redirects(load_ci, tmp_path):
     assert [v["id"] for v in data["versions"]] == ["dev", "v5.0.0"]
     assert (tmp_path / "index.html").exists()
     assert (tmp_path / "latest" / "index.html").exists()
+
+
+def test_main_mirrors_machine_files_and_writes_robots(load_ci, tmp_path):
+    gv = load_ci("gen_versions")
+    rel = tmp_path / "v5.0.1"
+    rel.mkdir()
+    (tmp_path / "dev").mkdir()
+    for name in ("llms.txt", "llms-full.txt", "objects.inv", "sitemap.xml"):
+        (rel / name).write_bytes(name.encode())
+    gv.main([str(tmp_path)])
+
+    for name in ("llms.txt", "llms-full.txt", "objects.inv"):
+        assert (tmp_path / "latest" / name).read_bytes() == name.encode()
+    assert (tmp_path / "llms.txt").exists()
+    assert (tmp_path / "llms-full.txt").exists()
+    assert not (tmp_path / "objects.inv").exists()  # /latest/ only
+    robots = (tmp_path / "robots.txt").read_text(encoding="utf-8")
+    assert "Sitemap: https://docs.openmv.io/v5.0.1/sitemap.xml" in robots
+
+
+def test_main_robots_without_sitemap_and_stale_mirror_removed(load_ci, tmp_path):
+    gv = load_ci("gen_versions")
+    (tmp_path / "v5.0.1").mkdir()
+    (tmp_path / "latest").mkdir()
+    (tmp_path / "latest" / "llms.txt").write_text("stale", encoding="utf-8")
+    gv.main([str(tmp_path)])
+
+    assert not (tmp_path / "latest" / "llms.txt").exists()
+    robots = (tmp_path / "robots.txt").read_text(encoding="utf-8")
+    assert "Allow: /" in robots and "Sitemap" not in robots

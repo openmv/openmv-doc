@@ -24,7 +24,17 @@ def test_rechannel_rewrites_abs_and_rel(load_ci, tmp_path):
     assert (changed, scanned) == (1, 1)
 
 
-def test_rechannel_only_scans_html_and_txt(load_ci, tmp_path):
+def test_rechannel_rewrites_sitemap_xml(load_ci, tmp_path):
+    rc = load_ci("rechannel")
+    sm = tmp_path / "sitemap.xml"
+    sm.write_text("<loc>https://docs.openmv.io/dev/index.html</loc>",
+                  encoding="utf-8")
+    changed, scanned = rc.rechannel(str(tmp_path), "dev", "v5.0.0")
+    assert "docs.openmv.io/v5.0.0/index.html" in sm.read_text(encoding="utf-8")
+    assert (changed, scanned) == (1, 1)
+
+
+def test_rechannel_only_scans_html_txt_xml(load_ci, tmp_path):
     rc = load_ci("rechannel")
     (tmp_path / "data.json").write_text("docs.openmv.io/dev/", encoding="utf-8")
     changed, scanned = rc.rechannel(str(tmp_path), "dev", "v5.0.0")
